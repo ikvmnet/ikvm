@@ -4,7 +4,7 @@
     /// <summary>
     /// Describes a generic constraint type.
     /// </summary>
-    public readonly partial struct ManagedGenericConstraintSignature
+    internal readonly partial struct ManagedGenericConstraintSignature
     {
 
 

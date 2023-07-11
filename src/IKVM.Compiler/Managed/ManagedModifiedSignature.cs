@@ -4,7 +4,7 @@
     /// <summary>
     /// Describes a modified type.
     /// </summary>
-    public readonly partial struct ManagedModifiedSignature 
+    internal readonly partial struct ManagedModifiedSignature 
     {
 
         /// <summary>
@@ -14,7 +14,10 @@
         /// <param name="modifier"></param>
         /// <param name="required"></param>
         /// <returns></returns>
-        internal static ManagedModifiedSignature Create(in ManagedSignatureData baseType, in ManagedSignatureData modifier, bool required) => new ManagedModifiedSignature(new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Modified, required), baseType, modifier, null));
+        internal ManagedModifiedSignature(in ManagedSignatureData baseType, in ManagedSignatureData modifier, bool required)
+        {
+            ManagedSignatureData.Write(new ManagedSignatureCodeData(ManagedSignatureKind.Modified, required), baseType, modifier, null, out data);
+        }
 
         /// <summary>
         /// Gets the base type that was modified

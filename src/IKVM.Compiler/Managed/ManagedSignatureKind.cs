@@ -4,7 +4,7 @@
     /// <summary>
     /// 
     /// </summary>
-    public enum ManagedSignatureKind : byte
+    internal enum ManagedSignatureKind : byte
     {
 
         Type,

@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 using IKVM.Compiler.Collections;
 
@@ -11,78 +12,121 @@ namespace IKVM.Compiler.Managed.Reflection
     /// <summary>
     /// Maintains a context for a specific assembly file.
     /// </summary>
-    internal class ReflectionAssemblyContext : IManagedAssemblyContext
+    internal class ReflectionAssemblyContext : IManagedAssemblyContext, IManagedAssemblyResolver
     {
 
-        /// <summary>
-        /// Loads the given <see cref="Assembly"/> into a new <see cref="ManagedAssembly"/>.
-        /// </summary>
-        /// <param name="assembly"></param>
-        /// <returns></returns>
-        public static ManagedAssembly Load(Assembly assembly) => new ReflectionAssemblyContext(assembly).Assembly;
+        record class CacheEntry<T>(T Value);
 
-        readonly Assembly reflectionAssembly;
-        readonly ManagedAssembly assembly;
-        readonly ConcurrentDictionary<Type, ManagedType> typeCache = new ConcurrentDictionary<Type, ManagedType>();
+        const BindingFlags BINDING_FLAGS = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+
+        readonly IReflectionAssemblyResolver resolver;
+        readonly ConditionalWeakTable<Assembly, ManagedAssembly> assemblyCache = new();
+        readonly ConditionalWeakTable<Type, ManagedType> typeCache = new();
+        readonly ConditionalWeakTable<Type, CacheEntry<ManagedExportedType>> exportedTypeCache = new();
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="reflectionAssembly"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionAssemblyContext(Assembly reflectionAssembly)
+        /// <param name="resolver"></param>
+        public ReflectionAssemblyContext(IReflectionAssemblyResolver resolver)
         {
-            this.reflectionAssembly = reflectionAssembly;
-
-            assembly = LoadAssembly();
+            this.resolver = resolver;
         }
 
         /// <summary>
-        /// Gets the underlying <see cref="System.Reflection.Assembly"/> source.
-        /// </summary>
-        public Assembly ReflectionAssembly => reflectionAssembly;
-
-        /// <summary>
-        /// Gets the assembly that defines this context.
-        /// </summary>
-        public ManagedAssembly Assembly => assembly;
-
-        /// <summary>
-        /// Implements the IManagedAssemblyContext.ResolveTypes method.
+        /// Implements the <see cref="IManagedAssemblyContext.LoadAssembly(ManagedAssembly, out ManagedAssemblyData)" /> method.
         /// </summary>
         /// <param name="assembly"></param>
+        /// <param name="data"></param>
         /// <returns></returns>
-        ManagedType? IManagedAssemblyContext.ResolveType(ManagedAssembly assembly, string typeName) => ResolveType(assembly, typeName);
+        void IManagedAssemblyContext.LoadAssembly(ManagedAssembly assembly, out ManagedAssemblyData data) => LoadAssembly(assembly, out data);
 
         /// <summary>
-        /// Implements the IManagedAssemblyContext.ResolveTypes method.
+        /// Implements the <see cref="IManagedAssemblyContext.ResolveTypes(ManagedAssembly)"/> method.
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
         IEnumerable<ManagedType> IManagedAssemblyContext.ResolveTypes(ManagedAssembly assembly) => ResolveTypes(assembly);
 
         /// <summary>
-        /// Lodas the types from the specified assembly.
+        /// Implements the <see cref="IManagedAssemblyContext.ResolveType(ManagedAssembly, string)"/> method.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ManagedType? IManagedAssemblyContext.ResolveType(ManagedAssembly assembly, string typeName) => ResolveType(assembly, typeName);
+
+        /// <summary>
+        /// Implements the <see cref="IManagedAssemblyContext.ResolveExportedTypes(ManagedAssembly)"/> method.
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        IEnumerable<ManagedType> ResolveTypes(ManagedAssembly assembly)
-        {
-            if (assembly != this.assembly)
-                throw new ManagedTypeException("Invalid context for assembly.");
+        IEnumerable<ManagedExportedType> IManagedAssemblyContext.ResolveExportedTypes(ManagedAssembly assembly) => ResolveExportedTypes(assembly);
 
-            return ResolveTypes(reflectionAssembly.GetTypes());
+        /// <summary>
+        /// Implements the <see cref="IManagedAssemblyContext.ResolveExportedType(ManagedAssembly, string)"/> method.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ManagedExportedType? IManagedAssemblyContext.ResolveExportedType(ManagedAssembly assembly, string typeName) => ResolveExportedType(assembly, typeName);
+
+        /// <summary>
+        /// Implements the <see cref="IManagedAssemblyContext.LoadType(ManagedType,  out ManagedTypeData)"/> method.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="result"></param>
+        void IManagedAssemblyContext.LoadType(ManagedType type, out ManagedTypeData result) => LoadType(type, out result);
+
+        /// <summary>
+        /// Implements the <see cref="IManagedAssemblyContext.ResolveNestedTypes(ManagedType)"/> method.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedType> IManagedAssemblyContext.ResolveNestedTypes(ManagedType type) => ResolveNestedTypes(type);
+
+        /// <summary>
+        /// Implements the <see cref="IManagedAssemblyContext.ResolveNestedType(ManagedType,  string)"/> method.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ManagedType? IManagedAssemblyContext.ResolveNestedType(ManagedType type, string typeName) => ResolveNestedType(type, typeName);
+
+        /// <summary>
+        /// Attempts to load the managed assembly from the specified assembly name.
+        /// </summary>
+        /// <param name="assemblyName"></param>
+        /// <returns></returns>
+        ManagedAssembly? IManagedAssemblyResolver.ResolveAssembly(AssemblyName assemblyName) => ResolveAssembly(assemblyName);
+
+        /// <summary>
+        /// Resolves the managed assembly associated with the given reflection assembly.
+        /// </summary>
+        /// <param name="assemblyName"></param>
+        /// <returns></returns>
+        ManagedAssembly? ResolveAssembly(AssemblyName assemblyName)
+        {
+            return resolver.Resolve(assemblyName) is Assembly assembly ? ResolveAssembly(assembly) : null;
         }
 
         /// <summary>
-        /// Loads the types from the given collection.
+        /// Resolves the managed assembly associated with the given reflection assembly.
         /// </summary>
-        /// <param name="reflectionTypes"></param>
+        /// <param name="refAssembly"></param>
         /// <returns></returns>
-        IEnumerable<ManagedType> ResolveTypes(Type[] reflectionTypes)
+        ManagedAssembly ResolveAssembly(Assembly refAssembly)
         {
-            for (int i = 0; i < reflectionTypes.Length; i++)
-                yield return ResolveType(reflectionTypes[i]) ?? throw new InvalidOperationException();
+            return assemblyCache.GetValue(refAssembly, CreateAssembly);
+        }
+
+        /// <summary>
+        /// Resolves the managed assembly owned by this context.
+        /// </summary>
+        /// <returns></returns>
+        ManagedAssembly CreateAssembly(Assembly refAssembly)
+        {
+            return new ManagedAssembly(this, refAssembly, refAssembly.GetName());
         }
 
         /// <summary>
@@ -93,433 +137,610 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <returns></returns>
         ManagedType? ResolveType(ManagedAssembly assembly, string typeName)
         {
-            if (assembly != this.assembly)
-                return null;
-
-            var type = reflectionAssembly.GetType(typeName);
-            if (type == null)
-                return null;
-
-            return ResolveType(type);
+            var refType = ((Assembly)assembly.Handle).GetType(typeName);
+            return refType != null ? ResolveType(assembly, refType) : null;
         }
 
         /// <summary>
-        /// Resolves the specified type from this assembly.
+        /// Resolves the specified type.
         /// </summary>
-        /// <param name="reflectionType"></param>
+        /// <param name="assembly"></param>
+        /// <param name="refType"></param>
         /// <returns></returns>
-        ManagedType ResolveType(Type reflectionType)
+        ManagedType ResolveType(ManagedAssembly assembly, Type refType)
         {
-            return typeCache.GetOrAdd(reflectionType, _ => new ManagedType(new ReflectionTypeContext(this, _)));
+            return typeCache.GetValue(refType, _ => CreateType(assembly, refType));
+        }
+
+        /// <summary>
+        /// Creates a new managed type for the specified type.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="refType"></param>
+        /// <returns></returns>
+        ManagedType CreateType(ManagedAssembly assembly, Type refType)
+        {
+            return new ManagedType(assembly, refType, refType.Name, refType.Attributes);
+        }
+
+        /// <summary>
+        /// Resolves all available types on the given assembly.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedType> ResolveTypes(ManagedAssembly assembly)
+        {
+            var refAssembly = (Assembly)assembly.Handle;
+            return ResolveTypes(assembly, refAssembly.GetTypes());
+        }
+
+        /// <summary>
+        /// Resolves all available exported types on the given assembly.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="refAssembly"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedExportedType> ResolveExportedTypes(ManagedAssembly assembly)
+        {
+            var refAssembly = (Assembly)assembly.Handle;
+            return ResolveExportedTypes(assembly, refAssembly.GetExportedTypes());
+        }
+
+        /// <summary>
+        /// Loads the types from the given collection.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="refTypes"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedType> ResolveTypes(ManagedAssembly assembly, Type[] refTypes)
+        {
+            for (int i = 0; i < refTypes.Length; i++)
+                yield return ResolveType(assembly, refTypes[i]) ?? throw new InvalidOperationException();
+        }
+
+        /// <summary>
+        /// Loads the types from the given collection.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="refTypes"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedExportedType> ResolveExportedTypes(ManagedAssembly assembly, Type[] refTypes)
+        {
+            for (int i = 0; i < refTypes.Length; i++)
+                yield return ResolveExportedType(assembly, refTypes[i]);
+        }
+
+        /// <summary>
+        /// Resolves the specified exported type.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ManagedExportedType? ResolveExportedType(ManagedAssembly assembly, string typeName)
+        {
+            var refAssembly = (Assembly)assembly.Handle;
+            var refExportedType = refAssembly.GetExportedTypes().FirstOrDefault(i => i.FullName == typeName);
+            return refExportedType != null ? ResolveExportedType(assembly, refExportedType) : null;
+        }
+
+        /// <summary>
+        /// Resolves the specified exported type.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="refType"></param>
+        /// <returns></returns>
+        ManagedExportedType ResolveExportedType(ManagedAssembly assembly, Type refType)
+        {
+            return exportedTypeCache.GetValue(refType, _ => CreateExportedType(assembly, _)).Value;
+        }
+
+        /// <summary>
+        /// Creates a new managed type for the specified type.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="refType"></param>
+        /// <returns></returns>
+        CacheEntry<ManagedExportedType> CreateExportedType(ManagedAssembly assembly, Type refType)
+        {
+            var result = new ManagedExportedType();
+            result.Name = refType.FullName ?? throw new ManagedTypeException("Missing type name.");
+            LoadExportedTypeCustomAttributes(assembly, refType.GetCustomAttributesData(), out result.CustomAttributes);
+            return new CacheEntry<ManagedExportedType>(result);
+        }
+
+        /// <summary>
+        /// Resolves all nested types of the specified type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedType> ResolveNestedTypes(ManagedType type)
+        {
+            var refType = (Type)type.Handle;
+            foreach (var i in refType.GetNestedTypes(BINDING_FLAGS))
+                yield return ResolveType(type.Assembly, i);
+        }
+
+        /// <summary>
+        /// Resolves the nested type of the specified type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ManagedType? ResolveNestedType(ManagedType type, string typeName)
+        {
+            var refType = (Type)type.Handle;
+            return refType.GetNestedType(typeName, BINDING_FLAGS) is Type t ? ResolveType(type.Assembly, t) : null;
         }
 
         /// <summary>
         /// Resolves a reference to the specified type.
         /// </summary>
-        /// <param name="reflectionType"></param>
+        /// <param name="assembly"></param>
+        /// <param name="refType"></param>
         /// <returns></returns>
-        ManagedTypeRef ResolveTypeReference(Type reflectionType)
+        ManagedTypeRef ResolveTypeReference(ManagedAssembly assembly, Type refType)
         {
-            return new ManagedTypeRef(this, reflectionType.Assembly.GetName(), reflectionType.FullName!, ResolveType(reflectionType));
+            return new ManagedTypeRef(refType.Assembly.GetName(), refType.FullName!);
         }
 
         /// <summary>
         /// Resolves a signature from the specified type.
         /// </summary>
-        /// <param name="reflectionType"></param>
+        /// <param name="assembly"></param>
+        /// <param name="refType"></param>
         /// <returns></returns>
-        ManagedSignature ResolveTypeSignature(Type reflectionType)
+        ManagedSignature ResolveTypeSignature(ManagedAssembly assembly, Type refType)
         {
-            if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Void")
+            if (refType.IsPrimitive && refType.FullName == "System.Void")
                 return ManagedSignature.Void;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Boolean")
+            else if (refType.IsPrimitive && refType.FullName == "System.Boolean")
                 return ManagedSignature.Boolean;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Byte")
+            else if (refType.IsPrimitive && refType.FullName == "System.Byte")
                 return ManagedSignature.Byte;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.SByte")
+            else if (refType.IsPrimitive && refType.FullName == "System.SByte")
                 return ManagedSignature.SByte;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Char")
+            else if (refType.IsPrimitive && refType.FullName == "System.Char")
                 return ManagedSignature.Char;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Int16")
+            else if (refType.IsPrimitive && refType.FullName == "System.Int16")
                 return ManagedSignature.Int16;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.UInt16")
+            else if (refType.IsPrimitive && refType.FullName == "System.UInt16")
                 return ManagedSignature.UInt16;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Int32")
+            else if (refType.IsPrimitive && refType.FullName == "System.Int32")
                 return ManagedSignature.Int32;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.UInt32")
+            else if (refType.IsPrimitive && refType.FullName == "System.UInt32")
                 return ManagedSignature.UInt32;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Int64")
+            else if (refType.IsPrimitive && refType.FullName == "System.Int64")
                 return ManagedSignature.Int64;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.UInt64")
+            else if (refType.IsPrimitive && refType.FullName == "System.UInt64")
                 return ManagedSignature.UInt64;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Single")
+            else if (refType.IsPrimitive && refType.FullName == "System.Single")
                 return ManagedSignature.Single;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Double")
+            else if (refType.IsPrimitive && refType.FullName == "System.Double")
                 return ManagedSignature.Double;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.IntPtr")
+            else if (refType.IsPrimitive && refType.FullName == "System.IntPtr")
                 return ManagedSignature.IntPtr;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.UIntPtr")
+            else if (refType.IsPrimitive && refType.FullName == "System.UIntPtr")
                 return ManagedSignature.UIntPtr;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Object")
+            else if (refType.IsPrimitive && refType.FullName == "System.Object")
                 return ManagedSignature.Object;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.String")
+            else if (refType.IsPrimitive && refType.FullName == "System.String")
                 return ManagedSignature.String;
-            else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.TypedReference")
+            else if (refType.IsPrimitive && refType.FullName == "System.TypedReference")
                 return ManagedSignature.TypedReference;
 #if NETFRAMEWORK
-            else if (reflectionType.IsArray && reflectionType.GetArrayRank() == 1 && reflectionType == reflectionType.GetElementType().MakeArrayType())
+            else if (refType.IsArray && refType.GetArrayRank() == 1 && refType == refType.GetElementType().MakeArrayType())
 #else
-            else if (reflectionType.IsSZArray)
+            else if (refType.IsSZArray)
 #endif
-                return ResolveTypeSignature(reflectionType.GetElementType()!).CreateArray();
-            else if (reflectionType.IsArray)
+                return ResolveTypeSignature(assembly, refType.GetElementType()!).CreateArray();
+            else if (refType.IsArray)
                 throw new ManagedTypeException("Unsupported multidimensional array type.");
-            else if (reflectionType.IsByRef)
-                return ResolveTypeSignature(reflectionType.GetElementType()!).CreateByRef();
-            else if (reflectionType.IsPointer)
-                return ResolveTypeSignature(reflectionType.GetElementType()!).CreatePointer();
-            else if (reflectionType.IsGenericType)
+            else if (refType.IsByRef)
+                return ResolveTypeSignature(assembly, refType.GetElementType()!).CreateByRef();
+            else if (refType.IsPointer)
+                return ResolveTypeSignature(assembly, refType.GetElementType()!).CreatePointer();
+            else if (refType.IsGenericType)
             {
-                var a = reflectionType.GetGenericArguments();
+                var a = refType.GetGenericArguments();
                 var l = new FixedValueList4<ManagedSignature>(a.Length);
 
                 for (int i = 0; i < a.Length; i++)
-                    l[i] = ResolveTypeSignature(a[i]);
+                    l[i] = ResolveTypeSignature(assembly, a[i]);
 
-                return ResolveTypeSignature(reflectionType.GetGenericTypeDefinition()).CreateGeneric(l.AsReadOnly());
+                return ResolveTypeSignature(assembly, refType.GetGenericTypeDefinition()).CreateGeneric(l);
             }
             else
-                return ManagedTypeSignature.Create(ResolveTypeReference(reflectionType));
+                return ManagedSignature.Type(ResolveTypeReference(assembly, refType));
         }
 
         /// <summary>
-        /// Loads a managed assembly from the source.
+        /// Loads the data for the specified assembly.
         /// </summary>
-        /// <param name="primary"></param>
+        /// <param name="assembly"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ManagedAssembly LoadAssembly()
+        void LoadAssembly(ManagedAssembly assembly, out ManagedAssemblyData result)
         {
-            return new ManagedAssembly(this, assembly.Name, LoadCustomAttributes(reflectionAssembly.GetCustomAttributesData()));
+            var refAssembly = (Assembly)assembly.Handle;
+            result = new ManagedAssemblyData();
+            LoadAssemblyCustomAttributes(assembly, refAssembly.GetCustomAttributesData(), out result.CustomAttributes);
         }
 
         /// <summary>
         /// Loads the custom attributes from the given collection.
         /// </summary>
-        /// <param name="reflectionAttributes"></param>
-        /// <param name="handles"></param>
+        /// <param name="assembly"></param>
+        /// <param name="refAttributeList"></param>
+        /// <param name="list"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList1<ManagedCustomAttribute> LoadCustomAttributes(IList<CustomAttributeData> reflectionAttributes)
+        void LoadAssemblyCustomAttributes(ManagedAssembly assembly, IList<CustomAttributeData> refAttributeList, out FixedValueList8<ManagedCustomAttribute> list)
         {
-            var l = new FixedValueList1<ManagedCustomAttribute>(reflectionAttributes.Count);
+            list = new FixedValueList8<ManagedCustomAttribute>(refAttributeList.Count);
 
-            var i = 0;
-            foreach (var attribute in reflectionAttributes)
-                l[i++] = LoadCustomAttribute(attribute);
-
-            return l.AsReadOnly();
+            for (int i = 0; i < refAttributeList.Count; i++)
+                LoadAssemblyCustomAttribute(assembly, refAttributeList[i], out list.GetItemRef(i));
         }
 
         /// <summary>
         /// Loads the given custom attribute.
         /// </summary>
-        /// <param name="reflectionAttribute"></param>
+        /// <param name="assembly"></param>
+        /// <param name="refAttribute"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ManagedCustomAttribute LoadCustomAttribute(CustomAttributeData reflectionAttribute)
+        void LoadAssemblyCustomAttribute(ManagedAssembly assembly, CustomAttributeData refAttribute, out ManagedCustomAttribute result)
         {
-            return new ManagedCustomAttribute();
+            result = new ManagedCustomAttribute();
         }
 
         /// <summary>
-        /// Loads a <see cref="ManagedType"/> from the given <see cref="Type"/>.
+        /// Loads the data for the specified type.
         /// </summary>
-        /// <param name="reflectionType"></param>
-        /// <returns></returns>
-        internal ManagedTypeData LoadType(ManagedType type, Type reflectionType)
+        /// <param name="type"></param>
+        /// <param name="result"></param>
+        void LoadType(ManagedType type, out ManagedTypeData result)
         {
-            if (reflectionType.IsGenericType)
-                throw new ManagedTypeException("Cannot load a generic type.");
+            var refType = (Type)type.Handle;
+            result.DeclaringType = refType.DeclaringType != null ? ResolveType(type.Assembly, refType.DeclaringType) : null;
+            LoadTypeGenericParameters(type, refType.GetGenericArguments(), out result.GenericParameters);
+            LoadTypeCustomAttributes(type, refType.GetCustomAttributesData(), out result.CustomAttributes);
+            result.BaseType = refType.BaseType != null ? ResolveTypeSignature(type.Assembly, refType.BaseType) : null;
+            LoadTypeInterfaces(type, refType.GetInterfaces(), out result.Interfaces);
+            LoadTypeFields(type, refType.GetFields(BINDING_FLAGS), out result.Fields);
+            LoadTypeMethods(type, refType.GetMethods(BINDING_FLAGS), out result.Methods);
+            LoadTypeProperties(type, refType.GetProperties(BINDING_FLAGS), out result.Properties);
+            LoadTypeEvents(type, refType.GetEvents(BINDING_FLAGS), out result.Events);
+            LoadTypeNestedTypes(type, refType.GetNestedTypes(), out result.NestedTypes);
+        }
 
-            return new ManagedTypeData(
-                assembly,
-                reflectionType.DeclaringType != null ? ResolveType(reflectionType.DeclaringType) : null,
-                reflectionType.FullName!,
-                reflectionType.Attributes,
-                LoadGenericParameters(reflectionType.GetGenericArguments()),
-                LoadCustomAttributes(reflectionType.GetCustomAttributesData()),
-                reflectionType.BaseType != null ? ResolveTypeSignature(reflectionType.BaseType) : null,
-                LoadInterfaces(reflectionType.GetInterfaces()),
-                LoadFields(reflectionType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)),
-                LoadMethods(reflectionType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)),
-                LoadProperties(reflectionType.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)),
-                LoadEvents(reflectionType.GetEvents(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)),
-                LoadNestedTypes(reflectionType.GetNestedTypes()));
+        /// <summary>
+        /// Loads the custom attributes from the given collection.
+        /// </summary>
+        /// <param name="refAttributeList"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        void LoadTypeCustomAttributes(ManagedType type, IList<CustomAttributeData> refAttributeList, out FixedValueList1<ManagedCustomAttribute> result)
+        {
+            result = new FixedValueList1<ManagedCustomAttribute>(refAttributeList.Count);
+
+            for (int i = 0; i < refAttributeList.Count; i++)
+                LoadTypeCustomAttribute(type, refAttributeList[i], out result.GetItemRef(i));
+        }
+
+        /// <summary>
+        /// Loads the given custom attribute.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="refAttribute"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        void LoadTypeCustomAttribute(ManagedType type, CustomAttributeData refAttribute, out ManagedCustomAttribute result)
+        {
+            result = new ManagedCustomAttribute();
         }
 
         /// <summary>
         /// Loads the generic parameters from the given collection.
         /// </summary>
-        /// <param name="reflectionFields"></param>
+        /// <param name="type"></param>
+        /// <param name="refParameterList"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList1<ManagedGenericParameter> LoadGenericParameters(Type[] reflectionInterfaces)
+        void LoadTypeGenericParameters(ManagedType type, Type[] refParameterList, out FixedValueList1<ManagedGenericParameter> result)
         {
-            var l = new FixedValueList1<ManagedGenericParameter>(reflectionInterfaces.Length);
+            result = new FixedValueList1<ManagedGenericParameter>(refParameterList.Length);
 
-            for (int i = 0; i < reflectionInterfaces.Length; i++)
-                l[i] = LoadGenericParameter(reflectionInterfaces[i]);
-
-            return l.AsReadOnly();
+            for (int i = 0; i < refParameterList.Length; i++)
+                LoadTypeGenericParameter(type, refParameterList[i], out result.GetItemRef(i));
         }
 
         /// <summary>
         /// Loads the given interface.
         /// </summary>
-        /// <param name="reflectionGenericParameter"></param>
+        /// <param name="type"></param>
+        /// <param name="refParameter"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ManagedGenericParameter LoadGenericParameter(Type reflectionGenericParameter)
+        void LoadTypeGenericParameter(ManagedType type, Type refParameter, out ManagedGenericParameter result)
         {
-            return new ManagedGenericParameter(reflectionGenericParameter.Name, LoadGenericParameterConstraints(reflectionGenericParameter.GetGenericParameterConstraints()));
+            result = new ManagedGenericParameter();
+            result.Name = refParameter.Name;
+            LoadTypeGenericParameterConstraints(type, refParameter.GetGenericParameterConstraints(), out result.Constraints);
         }
 
         /// <summary>
         /// Loads the generic parameter constraints from the given collection.
         /// </summary>
-        /// <param name="reflectionGenericParameterConstraints"></param>
+        /// <param name="type"></param>
+        /// <param name="refConstraintList"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList1<ManagedGenericParameterConstraint> LoadGenericParameterConstraints(Type[] reflectionGenericParameterConstraints)
+        void LoadTypeGenericParameterConstraints(ManagedType type, Type[] refConstraintList, out FixedValueList1<ManagedGenericParameterConstraint> result)
         {
-            var l = new FixedValueList1<ManagedGenericParameterConstraint>(reflectionGenericParameterConstraints.Length);
+            result = new FixedValueList1<ManagedGenericParameterConstraint>(refConstraintList.Length);
 
-            var i = 0;
-            foreach (var constraint in reflectionGenericParameterConstraints)
-                l[i++] = LoadGenericParameterConstraint(constraint);
-
-            return l.AsReadOnly();
+            for (int i = 0; i < refConstraintList.Length; i++)
+                LoadTypeGenericParameterConstraint(type, refConstraintList[i], out result.GetItemRef(i));
         }
 
         /// <summary>
         /// Loads the given interface.
         /// </summary>
-        /// <param name="reflectionGenericParameterConstraint"></param>
+        /// <param name="type"></param>
+        /// <param name="refConstraint"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ManagedGenericParameterConstraint LoadGenericParameterConstraint(Type reflectionGenericParameterConstraint)
+        void LoadTypeGenericParameterConstraint(ManagedType type, Type refConstraint, out ManagedGenericParameterConstraint result)
         {
-            return new ManagedGenericParameterConstraint(ResolveTypeSignature(reflectionGenericParameterConstraint), LoadCustomAttributes(reflectionGenericParameterConstraint.GetCustomAttributesData()));
+            result = new ManagedGenericParameterConstraint();
+            result.Type = ResolveTypeSignature(type.Assembly, refConstraint);
+            LoadTypeCustomAttributes(type, refConstraint.GetCustomAttributesData(), out result.CustomAttributes);
         }
 
         /// <summary>
-        /// Loads the fields from the given collection.
+        /// Loads the interfaces from the given collection.
         /// </summary>
-        /// <param name="reflectionFields"></param>
+        /// <param name="refInterfaceList"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList2<ManagedInterface> LoadInterfaces(Type[] reflectionInterfaces)
+        void LoadTypeInterfaces(ManagedType type, Type[] refInterfaceList, out FixedValueList2<ManagedInterface> result)
         {
-            var l = new FixedValueList2<ManagedInterface>(reflectionInterfaces.Length);
+            result = new FixedValueList2<ManagedInterface>(refInterfaceList.Length);
 
-            var i = 0;
-            foreach (var iface in reflectionInterfaces)
-                l[i++] = LoadInterface(iface);
-
-            return l.AsReadOnly();
+            for (int i = 0; i < refInterfaceList.Length; i++)
+                LoadTypeInterface(type, refInterfaceList[i], out result.GetItemRef(i));
         }
 
         /// <summary>
         /// Loads the given interface.
         /// </summary>
-        /// <param name="reflectionInterface"></param>
+        /// <param name="refInterface"></param>
         /// <returns></returns>
-        ManagedInterface LoadInterface(Type reflectionInterface)
+        void LoadTypeInterface(ManagedType type, Type refInterface, out ManagedInterface result)
         {
-            return new ManagedInterface(ResolveTypeSignature(reflectionInterface), LoadCustomAttributes(reflectionInterface.GetCustomAttributesData()));
+            result = new ManagedInterface();
+            result.Type = ResolveTypeSignature(type.Assembly, refInterface);
+            LoadTypeCustomAttributes(type, refInterface.GetCustomAttributesData(), out result.CustomAttributes);
         }
 
         /// <summary>
         /// Loads the fields from the given collection.
         /// </summary>
-        /// <param name="reflectionFields"></param>
+        /// <param name="refFieldList"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList4<ManagedField> LoadFields(FieldInfo[] reflectionFields)
+        void LoadTypeFields(ManagedType type, FieldInfo[] refFieldList, out FixedValueList4<ManagedField> result)
         {
-            var l = new FixedValueList4<ManagedField>(reflectionFields.Length);
+            result = new FixedValueList4<ManagedField>(refFieldList.Length);
 
-            var i = 0;
-            foreach (var field in reflectionFields)
-                l[i++] = LoadField(field);
-
-            return l.AsReadOnly();
+            for (int i = 0; i < refFieldList.Length; i++)
+                LoadTypeField(type, refFieldList[i], out result.GetItemRef(i));
         }
 
         /// <summary>
         /// Loads the given field.
         /// </summary>
-        /// <param name="reflectionField"></param>
+        /// <param name="type"></param>
+        /// <param name="refField"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ManagedField LoadField(FieldInfo reflectionField)
+        void LoadTypeField(ManagedType type, FieldInfo refField, out ManagedField result)
         {
-            return new ManagedField(
-                reflectionField.Name,
-                LoadCustomAttributes(reflectionField.GetCustomAttributesData()),
-                reflectionField.Attributes,
-                ResolveTypeSignature(reflectionField.FieldType));
+            result = new ManagedField();
+            result.Name = refField.Name;
+            result.Attributes = refField.Attributes;
+            LoadTypeCustomAttributes(type, refField.GetCustomAttributesData(), out result.CustomAttributes);
+            result.FieldType = ResolveTypeSignature(type.Assembly, refField.FieldType);
         }
 
         /// <summary>
         /// Loads the methods from the given collection.
         /// </summary>
-        /// <param name="reflectionMethods"></param>
+        /// <param name="type"></param>
+        /// <param name="refMethodList"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList4<ManagedMethod> LoadMethods(MethodBase[] reflectionMethods)
+        void LoadTypeMethods(ManagedType type, MethodBase[] refMethodList, out FixedValueList4<ManagedMethod> result)
         {
-            var l = new FixedValueList4<ManagedMethod>(reflectionMethods.Length);
+            result = new FixedValueList4<ManagedMethod>(refMethodList.Length);
 
-            var i = 0;
-            foreach (var method in reflectionMethods)
-                l[i++] = LoadMethod(method);
-
-            return l.AsReadOnly();
+            for (int i = 0; i < refMethodList.Length; i++)
+                LoadTypeMethod(type, refMethodList[i], out result.GetItemRef(i));
         }
 
         /// <summary>
         /// Loads the given method.
         /// </summary>
-        /// <param name="reflectionMethod"></param>
+        /// <param name="type"></param>
+        /// <param name="refMethod"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ManagedMethod LoadMethod(MethodBase reflectionMethod)
+        void LoadTypeMethod(ManagedType type, MethodBase refMethod, out ManagedMethod result)
         {
-            if (reflectionMethod is ConstructorInfo ctor)
-                return new ManagedMethod(
-                    ctor.Name,
-                    ctor.Attributes,
-                    ctor.MethodImplementationFlags,
-                    ReadOnlyFixedValueList1<ManagedGenericParameter>.Empty,
-                    LoadCustomAttributes(reflectionMethod.GetCustomAttributesData()),
-                    ManagedSignature.Void,
-                    LoadParameters(ctor.GetParameters()));
-            else if (reflectionMethod is MethodInfo method)
-                return new ManagedMethod(
-                    method.Name,
-                    method.Attributes,
-                    method.MethodImplementationFlags,
-                    LoadGenericParameters(method.GetGenericArguments()),
-                    LoadCustomAttributes(reflectionMethod.GetCustomAttributesData()),
-                    ResolveTypeSignature(method.ReturnType),
-                    LoadParameters(method.GetParameters()));
-            else
-                throw new ManagedTypeException();
+            result = new ManagedMethod(false);
+            result.Name = refMethod.Name;
+            result.Attributes = refMethod.Attributes;
+            result.ImplAttributes = refMethod.MethodImplementationFlags;
+            LoadTypeCustomAttributes(type, refMethod.GetCustomAttributesData(), out result.CustomAttributes);
+            LoadTypeParameters(type, refMethod.GetParameters(), out result.Parameters);
+
+            switch (refMethod)
+            {
+                case ConstructorInfo ctor:
+                    result.GenericParameters = FixedValueList1<ManagedGenericParameter>.Empty;
+                    result.ReturnType = ManagedSignature.Void;
+                    break;
+                case MethodInfo method:
+                    result = new ManagedMethod(false);
+                    LoadTypeGenericParameters(type, method.GetGenericArguments(), out result.GenericParameters);
+                    result.ReturnType = ResolveTypeSignature(type.Assembly, method.ReturnType);
+                    break;
+            }
         }
 
         /// <summary>
         /// Loads the properties from the given collection.
         /// </summary>
-        /// <param name="reflectionProperties"></param>
+        /// <param name="type"></param>
+        /// <param name="refPropertyList"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList4<ManagedProperty> LoadProperties(PropertyInfo[] reflectionProperties)
+        void LoadTypeProperties(ManagedType type, PropertyInfo[] refPropertyList, out FixedValueList4<ManagedProperty> result)
         {
-            var l = new FixedValueList4<ManagedProperty>(reflectionProperties.Length);
+            result = new FixedValueList4<ManagedProperty>(refPropertyList.Length);
 
-            var i = 0;
-            foreach (var property in reflectionProperties)
-                l[i++] = LoadProperty(property);
-
-            return l.AsReadOnly();
+            for (int i = 0; i < refPropertyList.Length; i++)
+                LoadTypeProperty(type, refPropertyList[i], out result.GetItemRef(i));
         }
 
         /// <summary>
         /// Loads the given property.
         /// </summary>
-        /// <param name="reflectionMethod"></param>
+        /// <param name="type"></param>
+        /// <param name="refProperty"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ManagedProperty LoadProperty(PropertyInfo reflectionMethod)
+        void LoadTypeProperty(ManagedType type, PropertyInfo refProperty, out ManagedProperty result)
         {
-            return new ManagedProperty(
-                reflectionMethod.Name,
-                reflectionMethod.Attributes,
-                LoadCustomAttributes(reflectionMethod.GetCustomAttributesData()),
-                ResolveTypeSignature(reflectionMethod.PropertyType));
+            result = new ManagedProperty();
+            result.Name = refProperty.Name;
+            result.Attributes = refProperty.Attributes;
+            LoadTypeCustomAttributes(type, refProperty.GetCustomAttributesData(), out result.CustomAttributes);
+            result.PropertyType = ResolveTypeSignature(type.Assembly, refProperty.PropertyType);
         }
 
         /// <summary>
-        /// Loads the properties from the given collection.
+        /// Loads the evemts from the given collection.
         /// </summary>
-        /// <param name="reflectionEvents"></param>
+        /// <param name="type"></param>
+        /// <param name="refEventList"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList1<ManagedEvent> LoadEvents(EventInfo[] reflectionEvents)
+        void LoadTypeEvents(ManagedType type, EventInfo[] refEventList, out FixedValueList1<ManagedEvent> result)
         {
-            var l = new FixedValueList1<ManagedEvent>(reflectionEvents.Length);
+            result = new FixedValueList1<ManagedEvent>(refEventList.Length);
 
-            var i = 0;
-            foreach (var method in reflectionEvents)
-                l[i++] = LoadEvent(method);
-
-            return l.AsReadOnly();
+            for (int i = 0; i < refEventList.Length; i++)
+                LoadTypeEvent(type, refEventList[i], out result.GetItemRef(i));
         }
 
         /// <summary>
-        /// Loads the given property.
+        /// Loads the given event.
         /// </summary>
-        /// <param name="reflectionEvent"></param>
+        /// <param name="type"></param>
+        /// <param name="refEvent"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ManagedEvent LoadEvent(EventInfo reflectionEvent)
+        void LoadTypeEvent(ManagedType type, EventInfo refEvent, out ManagedEvent result)
         {
-            return new ManagedEvent(
-                reflectionEvent.Name,
-                reflectionEvent.Attributes,
-                LoadCustomAttributes(reflectionEvent.GetCustomAttributesData()),
-                ResolveTypeSignature(reflectionEvent.EventHandlerType));
+            result = new ManagedEvent();
+            result.Name = refEvent.Name;
+            result.Attributes = refEvent.Attributes;
+            LoadTypeCustomAttributes(type, refEvent.GetCustomAttributesData(), out result.CustomAttributes);
+            result.EventHandlerType = ResolveTypeSignature(type.Assembly, refEvent.EventHandlerType!);
         }
 
         /// <summary>
-        /// Loads the methods from the given collection.
+        /// Loads the parameters from the given collection.
         /// </summary>
-        /// <param name="reflectionParameters"></param>
+        /// <param name="type"></param>
+        /// <param name="refParameterList"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList4<ManagedParameter> LoadParameters(ParameterInfo[] reflectionParameters)
+        void LoadTypeParameters(ManagedType type, ParameterInfo[] refParameterList, out FixedValueList4<ManagedParameter> result)
         {
-            var l = new FixedValueList4<ManagedParameter>(reflectionParameters.Length);
+            result = new FixedValueList4<ManagedParameter>(refParameterList.Length);
 
-            var i = 0;
-            foreach (var parameter in reflectionParameters)
-                l[i++] = LoadParameter(parameter);
-
-            return l.AsReadOnly();
+            for (int i = 0; i < refParameterList.Length; i++)
+                LoadTypeParameter(type, refParameterList[i], out result.GetItemRef(i));
         }
 
         /// <summary>
         /// Loads the given parameter.
         /// </summary>
-        /// <param name="reflectionParameter"></param>
+        /// <param name="type"></param>
+        /// <param name="refParameter"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ManagedParameter LoadParameter(ParameterInfo reflectionParameter)
+        void LoadTypeParameter(ManagedType type, ParameterInfo refParameter, out ManagedParameter result)
         {
-            return new ManagedParameter(
-                reflectionParameter.Name,
-                reflectionParameter.Attributes,
-                LoadCustomAttributes(reflectionParameter.GetCustomAttributesData()),
-                ResolveTypeSignature(reflectionParameter.ParameterType));
+            result = new ManagedParameter();
+            result.Name = refParameter.Name;
+            result.Attributes = refParameter.Attributes;
+            LoadTypeCustomAttributes(type, refParameter.GetCustomAttributesData(), out result.CustomAttributes);
+            result.ParameterType = ResolveTypeSignature(type.Assembly, refParameter.ParameterType);
         }
 
         /// <summary>
         /// Loads the nested types from the given collection.
         /// </summary>
-        /// <param name="reflectionMethods"></param>
+        /// <param name="type"></param>
+        /// <param name="refTypeList"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList1<ManagedType> LoadNestedTypes(Type[] reflectionTypes)
+        void LoadTypeNestedTypes(ManagedType type, Type[] refTypeList, out FixedValueList1<ManagedType> result)
         {
-            var l = new FixedValueList1<ManagedType>(reflectionTypes.Length);
+            result = new FixedValueList1<ManagedType>(refTypeList.Length);
 
-            for (int i = 0; i < reflectionTypes.Length; i++)
-                l[i] = LoadNestedType(reflectionTypes[i]);
-
-            return l.AsReadOnly();
+            for (int i = 0; i < refTypeList.Length; i++)
+                LoadTypeNestedType(type, refTypeList[i], out result.GetItemRef(i));
         }
 
         /// <summary>
         /// Loads the given nested type.
         /// </summary>
-        /// <param name="reflectionType"></param>
+        /// <param name="type"></param>
+        /// <param name="refType"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ManagedType LoadNestedType(Type reflectionType)
+        void LoadTypeNestedType(ManagedType type, Type refType, out ManagedType result)
         {
-            return ResolveType(reflectionType);
+            result = ResolveType(type.Assembly, refType);
+        }
+
+        /// <summary>
+        /// Loads the custom attributes from the given collection.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="refAttributeList"></param>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        void LoadExportedTypeCustomAttributes(ManagedAssembly assembly, IList<CustomAttributeData> refAttributeList, out FixedValueList1<ManagedCustomAttribute> list)
+        {
+            list = new FixedValueList1<ManagedCustomAttribute>(refAttributeList.Count);
+
+            for (int i = 0; i < refAttributeList.Count; i++)
+                LoadAssemblyCustomAttribute(assembly, refAttributeList[i], out list.GetItemRef(i));
+        }
+
+        /// <summary>
+        /// Loads the given custom attribute.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="refAttribute"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        void LoadExportedTypeCustomAttribute(ManagedAssembly assembly, CustomAttributeData refAttribute, out ManagedCustomAttribute result)
+        {
+            result = new ManagedCustomAttribute();
         }
 
     }

@@ -1,7 +1,7 @@
 ﻿namespace IKVM.Compiler.Collections
 {
 
-    public static partial class FixedValueList
+    internal static partial class FixedValueList
     {
 
 

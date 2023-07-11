@@ -6,7 +6,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes a reference to a generic parameter of a type.
     /// </summary>
-    public readonly struct ManagedGenericTypeParameterRef
+    internal readonly struct ManagedGenericTypeParameterRef
     {
 
         readonly int index;

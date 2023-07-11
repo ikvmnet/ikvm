@@ -4,15 +4,16 @@
     /// <summary>
     /// Describes a primtive type.
     /// </summary>
-    public readonly partial struct ManagedPrimitiveTypeSignature
+    internal readonly partial struct ManagedPrimitiveTypeSignature
     {
 
         /// <summary>
-        /// Creates a new primitive type signature.
+        /// Initializes a new instance.
         /// </summary>
-        /// <param name="code"></param>
-        /// <returns></returns>
-        internal static ManagedPrimitiveTypeSignature Create(ManagedPrimitiveTypeCode code) => new ManagedPrimitiveTypeSignature(new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.PrimitiveType, code), null, null, null));
+        internal ManagedPrimitiveTypeSignature(ManagedPrimitiveTypeCode code)
+        {
+            ManagedSignatureData.Write(new ManagedSignatureCodeData(ManagedSignatureKind.PrimitiveType, code), null, null, null, out data);
+        }
 
         /// <summary>
         /// Gets the underlying primitive type code.

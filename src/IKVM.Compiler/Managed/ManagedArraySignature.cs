@@ -6,7 +6,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes an array type.
     /// </summary>
-    public readonly partial struct ManagedArraySignature
+    internal readonly partial struct ManagedArraySignature
     {
 
         /// <summary>
@@ -17,7 +17,10 @@ namespace IKVM.Compiler.Managed
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
         /// <returns></returns>
-        internal static ManagedArraySignature Create(in ManagedSignatureData elementTypeData, int rank, in ReadOnlyFixedValueList2<int> sizes, in ReadOnlyFixedValueList2<int> lowerBounds) => new ManagedArraySignature(new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Array, new ManagedArrayShape(rank, sizes, lowerBounds)), elementTypeData, null, null));
+        internal ManagedArraySignature(in ManagedSignatureData elementTypeData, int rank, in FixedValueList2<int> sizes, in FixedValueList2<int> lowerBounds)
+        {
+            ManagedSignatureData.Write(new ManagedSignatureCodeData(ManagedSignatureKind.Array, new ManagedArrayShape(rank, sizes, lowerBounds)), elementTypeData, null, null, out data);
+        }
 
     }
 

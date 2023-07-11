@@ -9,7 +9,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a list of generic parameters on a <see cref="ManagedType"/>.
     /// </summary>
-    public readonly struct ManagedTypeGenericParameterList : IReadOnlyList<ManagedGenericParameter>, IEnumerable<ManagedGenericParameter>
+    internal readonly struct ManagedTypeGenericParameterList : IReadOnlyList<ManagedGenericParameter>, IEnumerable<ManagedGenericParameter>
     {
 
         /// <summary>

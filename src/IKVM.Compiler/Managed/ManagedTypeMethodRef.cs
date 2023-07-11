@@ -4,7 +4,7 @@
     /// <summary>
     /// Describes a reference to a managed method.
     /// </summary>
-    public readonly struct ManagedTypeMethodRef
+    internal readonly struct ManagedTypeMethodRef
     {
 
         readonly ManagedType type;

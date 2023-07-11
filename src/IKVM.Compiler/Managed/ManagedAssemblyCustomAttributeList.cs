@@ -9,7 +9,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a list of attributes on a <see cref="ManagedAssembly"/>.
     /// </summary>
-    public readonly struct ManagedAssemblyCustomAttributeList : IReadOnlyList<ManagedCustomAttribute>, IEnumerable<ManagedCustomAttribute>
+    internal readonly struct ManagedAssemblyCustomAttributeList : IReadOnlyList<ManagedCustomAttribute>, IEnumerable<ManagedCustomAttribute>
     {
 
         /// <summary>
@@ -34,12 +34,12 @@ namespace IKVM.Compiler.Managed
             /// Moves to the next item.
             /// </summary>
             /// <returns></returns>
-            public bool MoveNext() => assembly.customAttributes.Count > ++pos;
+            public bool MoveNext() => assembly.data.CustomAttributes.Count > ++pos;
 
             /// <summary>
             /// Gets a reference to the current item.
             /// </summary>
-            public readonly ref readonly ManagedCustomAttribute Current => ref assembly.customAttributes.GetItemRef(pos);
+            public readonly ref readonly ManagedCustomAttribute Current => ref assembly.data.CustomAttributes.GetItemRef(pos);
 
             /// <summary>
             /// Resets the enumerator.
@@ -72,12 +72,12 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public readonly ref readonly ManagedCustomAttribute this[int index] => ref assembly.customAttributes.GetItemRef(index);
+        public readonly ref readonly ManagedCustomAttribute this[int index] => ref assembly.data.CustomAttributes.GetItemRef(index);
 
         /// <summary>
         /// Gets the count of items in the list.
         /// </summary>
-        public readonly int Count => assembly.customAttributes.Count;
+        public readonly int Count => assembly.data.CustomAttributes.Count;
 
         /// <summary>
         /// Gets an enumerator that iterates over the items in the list.

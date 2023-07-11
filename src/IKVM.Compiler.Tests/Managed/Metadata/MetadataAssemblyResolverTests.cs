@@ -1,11 +1,5 @@
 ﻿using System;
-using System.IO;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 
-using FluentAssertions;
-
-using IKVM.Compiler.Managed;
 using IKVM.Compiler.Managed.Metadata;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -18,18 +12,25 @@ namespace IKVM.Compiler.Tests.Managed.Metadata
     {
 
         [TestMethod]
-        public async Task CanResolveAssembly()
+        public void CanResolveAssembly()
         {
 
-            var d = Path.GetDirectoryName(typeof(object).Assembly.Location);
-            var r = new MetadataAssemblyResolver(new MetadataAssemblyPathLoader(new[] { d }));
-            var a = await r.ResolveAsync(typeof(object).Assembly.GetName());
-            var t = a.ResolveType("System.Object");
-            //var m = t.Methods.Resolve("Equals");
-            //m.Name.Should().Be("Equals");
+            var l = typeof(object).Assembly.Location;
+            var r = new MetadataAssemblyContext(new MetadataPathReaderResolver(new[] { l }));
+            var a = r.ResolveAssembly(typeof(object).Assembly.GetName());
 
-            foreach (var tt in a.ResolveTypes())
-                Console.WriteLine(tt);
+            foreach (var t in a.ResolveTypes())
+            {
+                Console.WriteLine(t.Name);
+                foreach (var m in t.Methods)
+                {
+                    Console.Write("   ");
+                    Console.Write(m.Name);
+                    Console.Write(": ");
+                    Console.Write(m.ReturnType);
+                    Console.WriteLine();
+                }
+            }
         }
 
     }

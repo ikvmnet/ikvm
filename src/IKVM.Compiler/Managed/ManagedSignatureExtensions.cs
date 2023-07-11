@@ -6,7 +6,7 @@ using IKVM.Compiler.Collections;
 namespace IKVM.Compiler.Managed
 {
 
-    public static partial class ManagedSignatureExtensions
+    internal static partial class ManagedSignatureExtensions
     {
 
     }

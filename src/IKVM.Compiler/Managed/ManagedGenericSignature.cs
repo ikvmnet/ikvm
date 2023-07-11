@@ -6,7 +6,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes a generic type.
     /// </summary>
-    public readonly partial struct ManagedGenericSignature 
+    internal readonly partial struct ManagedGenericSignature
     {
 
         /// <summary>
@@ -14,8 +14,10 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="baseType"></param>
         /// <param name="genericParameters"></param>
-        /// <returns></returns>
-        internal static ManagedGenericSignature Create(in ManagedSignatureData baseType, ReadOnlyFixedValueList4<ManagedSignatureData> genericParameters) => new ManagedGenericSignature(new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Generic), baseType, null, genericParameters));
+        internal ManagedGenericSignature(in ManagedSignatureData baseType, in FixedValueList4<ManagedSignatureData> genericParameters)
+        {
+            ManagedSignatureData.Write(new ManagedSignatureCodeData(ManagedSignatureKind.Generic), baseType, null, genericParameters, out data);
+        }
 
     }
 

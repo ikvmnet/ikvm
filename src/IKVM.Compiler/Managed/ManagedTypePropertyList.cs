@@ -9,7 +9,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a list of properties on a <see cref="ManagedType"/>.
     /// </summary>
-    public readonly struct ManagedTypePropertyList : IReadOnlyList<ManagedProperty>, IEnumerable<ManagedProperty>
+    internal readonly struct ManagedTypePropertyList : IReadOnlyList<ManagedProperty>, IEnumerable<ManagedProperty>
     {
 
         /// <summary>

@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 
 using IKVM.Compiler.Collections;
 
@@ -11,7 +9,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes a managed signature.
     /// </summary>
-    public readonly partial struct ManagedSignature :
+    internal readonly partial struct ManagedSignature :
         IEquatable<ManagedSignature>,
         IEquatable<ManagedTypeSignature>,
         IEquatable<ManagedPrimitiveTypeSignature>,
@@ -27,24 +25,34 @@ namespace IKVM.Compiler.Managed
         IEquatable<ManagedFunctionPointerSignature>
     {
 
-        public static readonly ManagedPrimitiveTypeSignature Void = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.Void);
-        public static readonly ManagedPrimitiveTypeSignature Boolean = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.Boolean);
-        public static readonly ManagedPrimitiveTypeSignature Byte = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.Byte);
-        public static readonly ManagedPrimitiveTypeSignature SByte = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.SByte);
-        public static readonly ManagedPrimitiveTypeSignature Char = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.Char);
-        public static readonly ManagedPrimitiveTypeSignature Int16 = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.Int16);
-        public static readonly ManagedPrimitiveTypeSignature UInt16 = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.UInt16);
-        public static readonly ManagedPrimitiveTypeSignature Int32 = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.Int32);
-        public static readonly ManagedPrimitiveTypeSignature UInt32 = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.UInt32);
-        public static readonly ManagedPrimitiveTypeSignature Int64 = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.Int64);
-        public static readonly ManagedPrimitiveTypeSignature UInt64 = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.UInt64);
-        public static readonly ManagedPrimitiveTypeSignature Single = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.Single);
-        public static readonly ManagedPrimitiveTypeSignature Double = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.Double);
-        public static readonly ManagedPrimitiveTypeSignature IntPtr = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.IntPtr);
-        public static readonly ManagedPrimitiveTypeSignature UIntPtr = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.UIntPtr);
-        public static readonly ManagedPrimitiveTypeSignature Object = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.Object);
-        public static readonly ManagedPrimitiveTypeSignature String = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.String);
-        public static readonly ManagedPrimitiveTypeSignature TypedReference = ManagedPrimitiveTypeSignature.Create(ManagedPrimitiveTypeCode.TypedReference);
+        public static readonly ManagedPrimitiveTypeSignature Void = new(ManagedPrimitiveTypeCode.Void);
+        public static readonly ManagedPrimitiveTypeSignature Boolean = new(ManagedPrimitiveTypeCode.Boolean);
+        public static readonly ManagedPrimitiveTypeSignature Byte = new(ManagedPrimitiveTypeCode.Byte);
+        public static readonly ManagedPrimitiveTypeSignature SByte = new(ManagedPrimitiveTypeCode.SByte);
+        public static readonly ManagedPrimitiveTypeSignature Char = new(ManagedPrimitiveTypeCode.Char);
+        public static readonly ManagedPrimitiveTypeSignature Int16 = new(ManagedPrimitiveTypeCode.Int16);
+        public static readonly ManagedPrimitiveTypeSignature UInt16 = new(ManagedPrimitiveTypeCode.UInt16);
+        public static readonly ManagedPrimitiveTypeSignature Int32 = new(ManagedPrimitiveTypeCode.Int32);
+        public static readonly ManagedPrimitiveTypeSignature UInt32 = new(ManagedPrimitiveTypeCode.UInt32);
+        public static readonly ManagedPrimitiveTypeSignature Int64 = new(ManagedPrimitiveTypeCode.Int64);
+        public static readonly ManagedPrimitiveTypeSignature UInt64 = new(ManagedPrimitiveTypeCode.UInt64);
+        public static readonly ManagedPrimitiveTypeSignature Single = new(ManagedPrimitiveTypeCode.Single);
+        public static readonly ManagedPrimitiveTypeSignature Double = new(ManagedPrimitiveTypeCode.Double);
+        public static readonly ManagedPrimitiveTypeSignature IntPtr = new(ManagedPrimitiveTypeCode.IntPtr);
+        public static readonly ManagedPrimitiveTypeSignature UIntPtr = new(ManagedPrimitiveTypeCode.UIntPtr);
+        public static readonly ManagedPrimitiveTypeSignature Object = new(ManagedPrimitiveTypeCode.Object);
+        public static readonly ManagedPrimitiveTypeSignature String = new(ManagedPrimitiveTypeCode.String);
+        public static readonly ManagedPrimitiveTypeSignature TypedReference = new(ManagedPrimitiveTypeCode.TypedReference);
+
+        /// <summary>
+        /// Creates a new type signature.
+        /// </summary>
+        /// <param name="typeRef"></param>
+        /// <returns></returns>
+        public static ManagedTypeSignature Type(in ManagedTypeRef typeRef)
+        {
+            return new ManagedTypeSignature(typeRef);
+        }
 
         /// <summary>
         /// Creates a new function pointer signature.
@@ -52,7 +60,11 @@ namespace IKVM.Compiler.Managed
         /// <param name="parameterTypes"></param>
         /// <param name="returnType"></param>
         /// <returns></returns>
-        public static ManagedFunctionPointerSignature FunctionPointer(ReadOnlyFixedValueList4<ManagedSignature> parameterTypes, ManagedSignature returnType) => ManagedFunctionPointerSignature.Create(parameterTypes.ToDataList4(), returnType.data);
+        public static ManagedFunctionPointerSignature FunctionPointer(in ManagedSignature returnType, in FixedValueList4<ManagedSignature> parameterTypes)
+        {
+            parameterTypes.ToDataList4(out var parameterTypes_);
+            return new ManagedFunctionPointerSignature(parameterTypes_, returnType.data);
+        }
 
         /// <summary>
         /// Creates a new function pointer signature.
@@ -60,7 +72,11 @@ namespace IKVM.Compiler.Managed
         /// <param name="parameterTypes"></param>
         /// <param name="returnType"></param>
         /// <returns></returns>
-        public static ManagedFunctionPointerSignature FunctionPointer(ReadOnlySpan<ManagedSignature> parameterTypes, ManagedSignature returnType) => ManagedFunctionPointerSignature.Create(parameterTypes.ToDataList4(), returnType.data);
+        public static ManagedFunctionPointerSignature FunctionPointer(in ManagedSignature returnType, ReadOnlySpan<ManagedSignature> parameterTypes)
+        {
+            parameterTypes.ToDataList4(out var parameterTypes_);
+            return new ManagedFunctionPointerSignature(parameterTypes_, returnType.data);
+        }
 
         /// <summary>
         /// Creates a new function pointer signature.
@@ -68,7 +84,11 @@ namespace IKVM.Compiler.Managed
         /// <param name="parameterTypes"></param>
         /// <param name="returnType"></param>
         /// <returns></returns>
-        public static ManagedFunctionPointerSignature FunctionPointer(IReadOnlyList<ManagedSignature> parameterTypes, ManagedSignature returnType) => ManagedFunctionPointerSignature.Create(parameterTypes.ToDataList4(), returnType.data);
+        public static ManagedFunctionPointerSignature FunctionPointer(in ManagedSignature returnType, IReadOnlyList<ManagedSignature> parameterTypes)
+        {
+            parameterTypes.ToDataList4(out var parameterTypes_);
+            return new ManagedFunctionPointerSignature(parameterTypes_, returnType.data);
+        }
 
         /// <summary>
         /// Creates a new function pointer signature.
@@ -76,15 +96,19 @@ namespace IKVM.Compiler.Managed
         /// <param name="parameterTypes"></param>
         /// <param name="returnType"></param>
         /// <returns></returns>
-        public static ManagedFunctionPointerSignature FunctionPointer(ManagedSignature[] parameterTypes, ManagedSignature returnType) => ManagedFunctionPointerSignature.Create(parameterTypes.ToDataList4(), returnType.data);
+        public static ManagedFunctionPointerSignature FunctionPointer(in ManagedSignature returnType, params ManagedSignature[] parameterTypes)
+        {
+            parameterTypes.ToDataList4(out var parameterTypes_);
+            return new ManagedFunctionPointerSignature(parameterTypes_, returnType.data);
+        }
 
         internal readonly ManagedSignatureData data;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="elementType"></param>
-        internal ManagedSignature(in ManagedSignatureData data)
+        /// <param name="data"></param>
+        internal ManagedSignature(bool copy, in ManagedSignatureData data)
         {
             this.data = data;
         }
@@ -128,13 +152,13 @@ namespace IKVM.Compiler.Managed
         };
 
         /// <inheritdoc />
-        bool IEquatable<ManagedSignature>.Equals(ManagedSignature other) => Equals(other);
+        readonly bool IEquatable<ManagedSignature>.Equals(ManagedSignature other) => Equals(other);
 
         /// <summary>
         /// Gets a unique hash code for this signature.
         /// </summary>
         /// <returns></returns>
-        public override int GetHashCode() => Kind switch
+        public override readonly int GetHashCode() => Kind switch
         {
             ManagedSignatureKind.Type => ((ManagedTypeSignature)this).GetHashCode(),
             ManagedSignatureKind.PrimitiveType => ((ManagedPrimitiveTypeSignature)this).GetHashCode(),
@@ -152,22 +176,7 @@ namespace IKVM.Compiler.Managed
         };
 
         /// <inheritdoc />
-        public override string? ToString() => Kind switch
-        {
-            ManagedSignatureKind.Type => ((ManagedTypeSignature)this).ToString(),
-            ManagedSignatureKind.PrimitiveType => ((ManagedPrimitiveTypeSignature)this).ToString(),
-            ManagedSignatureKind.SZArray => ((ManagedSZArraySignature)this).ToString(),
-            ManagedSignatureKind.Array => ((ManagedArraySignature)this).ToString(),
-            ManagedSignatureKind.ByRef => ((ManagedByRefSignature)this).ToString(),
-            ManagedSignatureKind.Generic => ((ManagedGenericSignature)this).ToString(),
-            ManagedSignatureKind.GenericConstraint => ((ManagedGenericConstraintSignature)this).ToString(),
-            ManagedSignatureKind.GenericTypeParameter => ((ManagedGenericTypeParameterSignature)this).ToString(),
-            ManagedSignatureKind.GenericMethodParameter => ((ManagedGenericMethodParameterSignature)this).ToString(),
-            ManagedSignatureKind.Modified => ((ManagedModifiedSignature)this).ToString(),
-            ManagedSignatureKind.Pointer => ((ManagedPointerSignature)this).ToString(),
-            ManagedSignatureKind.FunctionPointer => ((ManagedFunctionPointerSignature)this).ToString(),
-            _ => throw new ManagedTypeException("Invalid signature kind."),
-        };
+        public override readonly string? ToString() => data.ToString();
 
     }
 

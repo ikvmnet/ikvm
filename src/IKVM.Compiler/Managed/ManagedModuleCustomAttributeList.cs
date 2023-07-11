@@ -7,39 +7,39 @@ namespace IKVM.Compiler.Managed
 {
 
     /// <summary>
-    /// Represents a list of interfaces on a <see cref="ManagedType"/>.
+    /// Represents a list of attributes on a <see cref="ManagedModule"/>.
     /// </summary>
-    public readonly struct ManagedInterfaceList : IReadOnlyList<ManagedInterface>, IEnumerable<ManagedInterface>
+    internal readonly struct ManagedModuleCustomAttributeList : IReadOnlyList<ManagedCustomAttribute>, IEnumerable<ManagedCustomAttribute>
     {
 
         /// <summary>
         /// Provides an enumerator that iterates over the items in the list.
         /// </summary>
-        public struct Enumerator : IEnumerator<ManagedInterface>
+        public struct Enumerator : IEnumerator<ManagedCustomAttribute>
         {
 
-            readonly ManagedType type;
+            readonly ManagedModule module;
             int pos = -1;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="type"></param>
-            public Enumerator(ManagedType type)
+            /// <param name="assembly"></param>
+            public Enumerator(ManagedModule assembly)
             {
-                this.type = type;
+                this.module = assembly;
             }
 
             /// <summary>
             /// Moves to the next item.
             /// </summary>
             /// <returns></returns>
-            public bool MoveNext() => type.data.Interfaces.Count > ++pos;
+            public bool MoveNext() => module.customAttributes.Count > ++pos;
 
             /// <summary>
             /// Gets a reference to the current item.
             /// </summary>
-            public readonly ref readonly ManagedInterface Current => ref type.data.Interfaces.GetItemRef(pos);
+            public readonly ref readonly ManagedCustomAttribute Current => ref module.customAttributes.GetItemRef(pos);
 
             /// <summary>
             /// Resets the enumerator.
@@ -52,44 +52,44 @@ namespace IKVM.Compiler.Managed
             public readonly void Dispose() { }
 
             /// <inheritdoc />
-            readonly ManagedInterface IEnumerator<ManagedInterface>.Current => Current;
+            readonly ManagedCustomAttribute IEnumerator<ManagedCustomAttribute>.Current => Current;
 
             /// <inheritdoc />
             readonly object IEnumerator.Current => Current;
 
         }
 
-        readonly ManagedType type;
+        readonly ManagedModule module;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="type"></param>
-        public ManagedInterfaceList(ManagedType type) => this.type = type;
+        /// <param name="assembly"></param>
+        public ManagedModuleCustomAttributeList(ManagedModule assembly) => this.module = assembly;
 
         /// <summary>
         /// Gets the item at the specified index.
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public readonly ref readonly ManagedInterface this[int index] => ref type.data.Interfaces.GetItemRef(index);
+        public readonly ref readonly ManagedCustomAttribute this[int index] => ref module.customAttributes.GetItemRef(index);
 
         /// <summary>
         /// Gets the count of items in the list.
         /// </summary>
-        public readonly int Count => type.data.Interfaces.Count;
+        public readonly int Count => module.customAttributes.Count;
 
         /// <summary>
         /// Gets an enumerator that iterates over the items in the list.
         /// </summary>
         /// <returns></returns>
-        public readonly Enumerator GetEnumerator() => new(type);
+        public readonly Enumerator GetEnumerator() => new(module);
 
         /// <inheritdoc />
-        ManagedInterface IReadOnlyList<ManagedInterface>.this[int index] => this[index];
+        ManagedCustomAttribute IReadOnlyList<ManagedCustomAttribute>.this[int index] => this[index];
 
         /// <inheritdoc />
-        IEnumerator<ManagedInterface> IEnumerable<ManagedInterface>.GetEnumerator() => GetEnumerator();
+        IEnumerator<ManagedCustomAttribute> IEnumerable<ManagedCustomAttribute>.GetEnumerator() => GetEnumerator();
 
         /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

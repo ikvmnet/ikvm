@@ -11,9 +11,21 @@ namespace IKVM.Compiler.Managed
     internal readonly struct ManagedArrayShape
     {
 
-        readonly int rank;
-        readonly ReadOnlyFixedValueList2<int> sizes;
-        readonly ReadOnlyFixedValueList2<int> lowerBounds;
+
+        /// <summary>
+        /// Gets the number of dimensions in the array.
+        /// </summary>
+        public readonly int Rank;
+
+        /// <summary>
+        /// Describes the size of each rank.
+        /// </summary>
+        public readonly FixedValueList2<int> Sizes;
+
+        /// <summary>
+        /// Describes the lower bounds of each rank.
+        /// </summary>
+        public readonly FixedValueList2<int> LowerBounds;
 
         /// <summary>
         /// Initializes a new instance.
@@ -21,16 +33,16 @@ namespace IKVM.Compiler.Managed
         /// <param name="rank"></param>
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
-        public ManagedArrayShape(int rank, in ReadOnlyFixedValueList2<int> sizes, in ReadOnlyFixedValueList2<int> lowerBounds)
+        public ManagedArrayShape(int rank, in FixedValueList2<int> sizes, in FixedValueList2<int> lowerBounds)
         {
             if (sizes.Count > rank)
                 throw new ArgumentOutOfRangeException(nameof(sizes), null, "sizes may be shorter than rank but not longer");
             if (lowerBounds.Count > rank)
                 throw new ArgumentOutOfRangeException(nameof(lowerBounds), null, "sizes may be shorter than rank but not longer");
 
-            this.rank = rank;
-            this.sizes = sizes;
-            this.lowerBounds = lowerBounds;
+            Rank = rank;
+            Sizes = sizes;
+            LowerBounds = lowerBounds;
         }
 
         /// <summary>
@@ -40,29 +52,24 @@ namespace IKVM.Compiler.Managed
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
         public ManagedArrayShape(int rank, int[] sizes, int[] lowerBounds) :
-            this(rank, new ReadOnlyFixedValueList2<int>(new FixedValueList2<int>(sizes)), new ReadOnlyFixedValueList2<int>(new FixedValueList2<int>(lowerBounds)))
+            this(rank, new FixedValueList2<int>(new FixedValueList2<int>(sizes)), new FixedValueList2<int>(new FixedValueList2<int>(lowerBounds)))
         {
 
         }
 
         /// <summary>
-        /// Gets the number of dimensions in the array.
+        /// Gets the lower bound of the given rank.
         /// </summary>
-        public readonly int Rank => rank;
+        /// <param name="rank"></param>
+        /// <returns></returns>
+        public readonly int? GetSize(int rank) => rank < Sizes.Count ? Sizes[rank] : null;
 
         /// <summary>
         /// Gets the lower bound of the given rank.
         /// </summary>
         /// <param name="rank"></param>
         /// <returns></returns>
-        public readonly int? GetSize(int rank) => rank < sizes.Count ? sizes[rank] : null;
-
-        /// <summary>
-        /// Gets the lower bound of the given rank.
-        /// </summary>
-        /// <param name="rank"></param>
-        /// <returns></returns>
-        public readonly int? GetLowerBound(int rank) => rank < lowerBounds.Count ? lowerBounds[rank] : null;
+        public readonly int? GetLowerBound(int rank) => rank < LowerBounds.Count ? LowerBounds[rank] : null;
 
     }
 

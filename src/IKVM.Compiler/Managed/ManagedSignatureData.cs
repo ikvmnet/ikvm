@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 using IKVM.Compiler.Collections;
 
@@ -11,303 +12,270 @@ namespace IKVM.Compiler.Managed
     /// <remarks>
     /// The first four elements of the sequence can be stored inline. If more codes are required, the memory list can be expanded to map to sequences of those.
     /// </remarks>
-    internal readonly struct ManagedSignatureData
+    internal struct ManagedSignatureData
     {
 
-        internal readonly short length;
-        internal readonly ManagedSignatureCode local0;
-        internal readonly ManagedSignatureCode local1;
-        internal readonly ManagedSignatureCode local2;
-        internal readonly ManagedSignatureCode local3;
-        internal readonly ReadOnlyFixedValueList2<ReadOnlyMemory<ManagedSignatureCode>> memory;
+        /// <summary>
+        /// Total length of the signature data.
+        /// </summary>
+        internal short Length;
 
         /// <summary>
-        /// Initializes a new code, with one or two optional arguments, and an optional dynamic argument.
+        /// First local code.
         /// </summary>
-        /// <param name="data"></param>
+        internal ManagedSignatureCode Local0;
+
+        /// <summary>
+        /// Second local code.
+        /// </summary>
+        internal ManagedSignatureCode Local1;
+
+        /// <summary>
+        /// Third local code.
+        /// </summary>
+        internal ManagedSignatureCode Local2;
+
+        /// <summary>
+        /// Fourth local code.
+        /// </summary>
+        internal ManagedSignatureCode Local3;
+
+        /// <summary>
+        /// Fixed list of additional code memory.
+        /// </summary>
+        internal FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>> Memory;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="codeData"></param>
         /// <param name="arg0"></param>
         /// <param name="arg1"></param>
         /// <param name="argv"></param>
-        internal ManagedSignatureData(in ManagedSignatureCodeData data, in ManagedSignatureData? arg0, in ManagedSignatureData? arg1, in ReadOnlyFixedValueList4<ManagedSignatureData>? argv)
+        public ManagedSignatureData(in ManagedSignatureCodeData codeData, in ManagedSignatureData? arg0, in ManagedSignatureData? arg1, in FixedValueList4<ManagedSignatureData>? argv)
         {
-            var arg0Pos = arg0 != null ? WriteSignature(arg0.Value, ref length, ref local0, ref local1, ref local2, ref local3, ref memory) : short.MinValue;
-            var arg1Pos = arg1 != null ? WriteSignature(arg1.Value, ref length, ref local0, ref local1, ref local2, ref local3, ref memory) : short.MinValue;
-            var argvPos = argv != null ? WriteSignatureList(argv.Value, ref length, ref local0, ref local1, ref local2, ref local3, ref memory) : ReadOnlyFixedValueList2<short>.Empty;
+            Write(codeData, arg0, arg1, argv, out this);
+        }
+
+        /// <summary>
+        /// Writes a new <see cref="ManagedSignatureData"/> instance from the specified input.
+        /// </summary>
+        /// <param name="codeData"></param>
+        /// <param name="arg0"></param>
+        /// <param name="arg1"></param>
+        /// <param name="argv"></param>
+        public static void Write(in ManagedSignatureCodeData codeData, in ManagedSignatureData? arg0, in ManagedSignatureData? arg1, in FixedValueList4<ManagedSignatureData>? argv, out ManagedSignatureData result)
+        {
+            result = new ManagedSignatureData();
+
+            // write existing arguments and calculate absolute positions
+            var arg0Pos = arg0 != null ? WriteSignature(arg0.Value, ref result) : short.MinValue;
+            var arg1Pos = arg1 != null ? WriteSignature(arg1.Value, ref result) : short.MinValue;
+            var argvPos = argv != null ? WriteSignatureList(argv.Value, ref result) : FixedValueList2<short>.Empty;
 
             // transform absolute position into relative
-            var arg0Off = arg0Pos != short.MinValue ? (short)(arg0Pos - length) : (short)0;
-            var arg1Off = arg1Pos != short.MinValue ? (short)(arg1Pos - length) : (short)0;
+            var arg0Off = arg0Pos != short.MinValue ? (short)(arg0Pos - result.Length) : (short)0;
+            var arg1Off = arg1Pos != short.MinValue ? (short)(arg1Pos - result.Length) : (short)0;
             var argvOff = new FixedValueList2<short>(argvPos.Count);
             for (int i = 0; i < argvPos.Count; i++)
-                argvOff[i] = (short)(argvPos[i] - length);
+                argvOff[i] = (short)(argvPos[i] - result.Length);
 
-            WriteCode(new ManagedSignatureCode(data, arg0Off, arg1Off, argvOff.AsReadOnly()), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+            // write new code
+            WriteCode(new ManagedSignatureCode(codeData, arg0Off, arg1Off, argvOff), ref result);
         }
 
         /// <summary>
         /// Encodes an existing signature into the passed structure fields.
         /// </summary>
-        /// <param name="sig"></param>
-        /// <param name="length"></param>
-        /// <param name="local0"></param>
-        /// <param name="local1"></param>
-        /// <param name="local2"></param>
-        /// <param name="local3"></param>
-        /// <param name="memory"></param>
+        /// <param name="source"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        static internal short WriteSignature(in ManagedSignatureData sig, ref short length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList2<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        static internal short WriteSignature(in ManagedSignatureData source, ref ManagedSignatureData result)
         {
-            switch (length)
+            switch (source.Length)
             {
-                case 0:
-                    switch (sig.length)
-                    {
-                        case 1:
-                            local0 = sig.local0;
-                            length += 1;
-                            break;
-                        case 2:
-                            local0 = sig.local0;
-                            local1 = sig.local1;
-                            length += 2;
-                            break;
-                        case 3:
-                            local0 = sig.local0;
-                            local1 = sig.local1;
-                            local2 = sig.local2;
-                            length += 3;
-                            break;
-                        default:
-                            local0 = sig.local0;
-                            local1 = sig.local1;
-                            local2 = sig.local2;
-                            local3 = sig.local3;
-                            length += 4;
-                            break;
-                    }
-                    break;
                 case 1:
-                    switch (sig.length)
-                    {
-                        case 1:
-                            local1 = sig.local0;
-                            length += 1;
-                            break;
-                        case 2:
-                            local1 = sig.local0;
-                            local2 = sig.local1;
-                            length += 2;
-                            break;
-                        case 3:
-                            local1 = sig.local0;
-                            local2 = sig.local1;
-                            local3 = sig.local2;
-                            length += 3;
-                            break;
-                        default:
-                            local1 = sig.local0;
-                            local2 = sig.local1;
-                            local3 = sig.local2;
-                            length += 3;
-
-                            WriteMemory(new ManagedSignatureCode[1] { sig.local3 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
-                            length += 1;
-
-                            break;
-                    }
+                    WriteCode(source.Local0, ref result);
                     break;
                 case 2:
-                    switch (sig.length)
-                    {
-                        case 1:
-                            local2 = sig.local0;
-                            length += 1;
-                            break;
-                        case 2:
-                            local2 = sig.local0;
-                            local3 = sig.local1;
-                            length += 2;
-                            break;
-                        case 3:
-                            local2 = sig.local0;
-                            local3 = sig.local1;
-                            length += 2;
-
-                            WriteMemory(new ManagedSignatureCode[1] { sig.local2 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
-                            length += 1;
-
-                            break;
-                        default:
-                            local2 = sig.local0;
-                            local3 = sig.local1;
-                            length += 2;
-
-                            WriteMemory(new ManagedSignatureCode[2] { sig.local2, sig.local3 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
-                            length += 1;
-
-                            break;
-                    }
+                    WriteCode(source.Local0, ref result);
+                    WriteCode(source.Local1, ref result);
                     break;
                 case 3:
-                    switch (sig.length)
-                    {
-                        case 1:
-                            local3 = sig.local0;
-                            length += 1;
-                            break;
-                        case 2:
-                            local3 = sig.local0;
-                            length += 1;
-
-                            WriteMemory(new ManagedSignatureCode[1] { sig.local1 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
-                            length += 1;
-
-                            break;
-                        case 3:
-                            local2 = sig.local0;
-                            length += 1;
-
-                            WriteMemory(new ManagedSignatureCode[2] { sig.local1, sig.local2 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
-                            length += 2;
-
-                            break;
-                        default:
-                            local2 = sig.local0;
-                            length += 1;
-
-                            WriteMemory(new ManagedSignatureCode[3] { sig.local1, sig.local2, sig.local3 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
-                            length += 3;
-
-                            break;
-                    }
+                    WriteCode(source.Local0, ref result);
+                    WriteCode(source.Local1, ref result);
+                    WriteCode(source.Local2, ref result);
                     break;
                 default:
-                    switch (sig.length)
-                    {
-                        case 1:
-                            WriteMemory(new ManagedSignatureCode[1] { sig.local0 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
-                            length += 1;
-                            break;
-                        case 2:
-                            WriteMemory(new ManagedSignatureCode[2] { sig.local0, sig.local1 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
-                            length += 2;
-                            break;
-                        case 3:
-                            WriteMemory(new ManagedSignatureCode[3] { sig.local0, sig.local1, sig.local2 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
-                            length += 3;
-                            break;
-                        default:
-                            WriteMemory(new ManagedSignatureCode[4] { sig.local0, sig.local1, sig.local2, sig.local3 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
-                            length += 4;
-                            break;
-                    }
+                    WriteCode(source.Local0, ref result);
+                    WriteCode(source.Local1, ref result);
+                    WriteCode(source.Local2, ref result);
+                    WriteCode(source.Local3, ref result);
                     break;
             }
 
             // copy remainder of signature
-            WriteMemoryList(sig.memory, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+            WriteMemoryList(source.Memory, int.MaxValue, ref result);
 
             // return position of code of signature (should be last index)
-            return (short)(length - 1);
+            return (short)(result.Length - 1);
         }
 
         /// <summary>
         /// Encodes an existing signature into the passed structure fields.
         /// </summary>
         /// <param name="sigs"></param>
-        /// <param name="length"></param>
-        /// <param name="local0"></param>
-        /// <param name="local1"></param>
-        /// <param name="local2"></param>
-        /// <param name="local3"></param>
-        /// <param name="memory"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        static internal ReadOnlyFixedValueList2<short> WriteSignatureList(in ReadOnlyFixedValueList4<ManagedSignatureData> sigs, ref short length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList2<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        static internal FixedValueList2<short> WriteSignatureList(in FixedValueList4<ManagedSignatureData> sigs, ref ManagedSignatureData result)
         {
             var l = new FixedValueList2<short>(sigs.Count);
 
             for (int i = 0; i < sigs.Count; i++)
-                l[i] = WriteSignature(sigs[i], ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+                l[i] = WriteSignature(sigs[i], ref result);
 
-            return l.AsReadOnly();
+            return l;
+        }
+
+        /// <summary>
+        /// Packs the blocks into a single block if a threshold is exceeded.
+        /// </summary>
+        /// <param name="result"></param>
+        static internal void Pack(ref FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>> blocks)
+        {
+            // at 8 blocks added, we pack the blocks into a single block
+            if (blocks.Count >= 8)
+            {
+                var s = 0;
+                for (int i = 0; i < blocks.Count; i++)
+                    s += blocks[i].Length;
+
+                // copy existing blocks into new block
+                var m = new ManagedSignatureCode[s];
+                var p = 0;
+                for (int i = 0; i < blocks.Count; i++)
+                {
+                    var b = blocks[i];
+                    b.Span.CopyTo(m.AsSpan(p));
+                    p += b.Length;
+                }
+
+                // rebuild list with single new block
+                blocks = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(1);
+                blocks[0] = m;
+            }
         }
 
         /// <summary>
         /// Appends a new code into the passed structure fields and returns the position of that code.
         /// </summary>
-        /// <param name="code"></param>
-        /// <param name="length"></param>
-        /// <param name="local0"></param>
-        /// <param name="local1"></param>
-        /// <param name="local2"></param>
-        /// <param name="local3"></param>
-        /// <param name="memory"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        static internal short WriteCode(in ManagedSignatureCode code, ref short length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList2<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        static internal void WriteCode(in ManagedSignatureCode code, ref ManagedSignatureData result)
         {
-            switch (length)
+            switch (result.Length)
             {
                 case 0:
-                    local0 = code;
-                    length++;
+                    result.Local0 = code;
+                    result.Length++;
                     break;
                 case 1:
-                    local1 = code;
-                    length++;
+                    result.Local1 = code;
+                    result.Length++;
                     break;
                 case 2:
-                    local2 = code;
-                    length++;
+                    result.Local2 = code;
+                    result.Length++;
                     break;
                 case 3:
-                    local3 = code;
-                    length++;
+                    result.Local3 = code;
+                    result.Length++;
                     break;
                 default:
-                    WriteMemory(new ManagedSignatureCode[1] { code }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+                    // append single code into new block
+                    var l = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(result.Memory.Count + 1, result.Memory);
+                    l[result.Memory.Count] = new[] { code };
+                    result.Memory = l;
+                    result.Length++;
                     break;
             }
 
-            return (short)(length - 1);
+            Pack(ref result.Memory);
         }
 
         /// <summary>
         /// Appends a block of codes into the passed structure fields.
         /// </summary>
-        /// <param name="length"></param>
         /// <param name="block"></param>
-        static internal void WriteMemory(ReadOnlyMemory<ManagedSignatureCode> block, ref short length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList2<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        /// <param name="result"></param>
+        static internal void WriteMemory(ReadOnlyMemory<ManagedSignatureCode> block, int total, ref ManagedSignatureData result)
         {
-            var l = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(1);
-            l[0] = block;
-            WriteMemoryList(l.AsReadOnly(), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+            // copy existing memory into new list, of size capable of holding existing and all new blocks (max)
+            var l = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(result.Memory.Count + 1, result.Memory);
+            var c = (short)result.Memory.Count; // track total blocks written (might be less on split)
+
+            // draing memory block until we're left with nothing
+            while (block.Length > 0 && result.Length < total)
+            {
+                switch (result.Length)
+                {
+                    case 0:
+                        result.Local0 = block.Span[0];
+                        result.Length++;
+                        block = block.Slice(1, total);
+                        break;
+                    case 1:
+                        result.Local1 = block.Span[0];
+                        result.Length++;
+                        block = block.Slice(1, total);
+                        break;
+                    case 2:
+                        result.Local2 = block.Span[0];
+                        result.Length++;
+                        block = block.Slice(1, total);
+                        break;
+                    case 3:
+                        result.Local3 = block.Span[0];
+                        result.Length++;
+                        block = block.Slice(1, total);
+                        break;
+                    default:
+                        l[c++] = block;
+                        result.Length += (short)block.Length;
+                        block = block.Slice(block.Length); // should result in empty slice
+                        break;
+                }
+            }
+
+            // final block count is different than max assumed, rebuild list
+            if (l.Count != c)
+                l = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(c, l);
+
+            // save new memory list
+            Pack(ref l);
+            result.Memory = l;
         }
 
         /// <summary>
         /// Appends a set of blocks of codes into the passed structure fields.
         /// </summary>
         /// <param name="blocks"></param>
-        /// <param name="length"></param>
-        /// <param name="local0"></param>
-        /// <param name="local1"></param>
-        /// <param name="local2"></param>
-        /// <param name="local3"></param>
-        /// <param name="memory"></param>
-        static internal void WriteMemoryList(in ReadOnlyFixedValueList2<ReadOnlyMemory<ManagedSignatureCode>> blocks, ref short length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList2<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        /// <param name="result"></param>
+        static internal void WriteMemoryList(in FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>> blocks, int total, ref ManagedSignatureData result)
         {
             // skip work if no blocks
             if (blocks.Count == 0)
                 return;
 
             // at 8 blocks added, we pack the blocks into a single block
-            if (memory.Count >= 8)
+            if (result.Memory.Count >= 8)
             {
                 // copy existing blocks into new block
-                var m = new ManagedSignatureCode[length - 4];
+                var m = new ManagedSignatureCode[result.Length - 4];
                 var p = 0;
-                for (int i = 0; i < memory.Count; i++)
+                for (int i = 0; i < result.Memory.Count; i++)
                 {
-                    var b = memory[i];
+                    var b = result.Memory[i];
                     b.Span.CopyTo(m.AsSpan(p));
                     p += b.Length;
                 }
@@ -315,46 +283,46 @@ namespace IKVM.Compiler.Managed
                 // rebuild list with single new block
                 var n = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(1);
                 n[0] = m;
-                memory = n.AsReadOnly();
+                result.Memory = n;
             }
 
             // copy existing memory into new list, of size capable of holding existing and all new blocks (max)
-            var l = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(memory.Count + blocks.Count, memory);
-            var c = (short)memory.Count; // track total blocks written (might be less on split)
+            var l = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(result.Memory.Count + blocks.Count, result.Memory);
+            var c = (short)result.Memory.Count; // track total blocks written (might be less on split)
 
             // process each memory block until we run out
-            for (int i = 0; i < blocks.Count; i++)
+            for (int i = 0; i < blocks.Count && result.Length < total; i++)
             {
                 var m = blocks[i];
 
                 // draing memory block until we're left with nothing
-                while (m.Length > 0)
+                while (m.Length > 0 && result.Length < total)
                 {
-                    switch (length)
+                    switch (result.Length)
                     {
                         case 0:
-                            local0 = m.Span[0];
-                            length++;
-                            m = m.Slice(1);
+                            result.Local0 = m.Span[0];
+                            result.Length++;
+                            m = m.Slice(1, total);
                             break;
                         case 1:
-                            local1 = m.Span[0];
-                            length++;
-                            m = m.Slice(1);
+                            result.Local1 = m.Span[0];
+                            result.Length++;
+                            m = m.Slice(1, total);
                             break;
                         case 2:
-                            local2 = m.Span[0];
-                            length++;
-                            m = m.Slice(1);
+                            result.Local2 = m.Span[0];
+                            result.Length++;
+                            m = m.Slice(1, total);
                             break;
                         case 3:
-                            local3 = m.Span[0];
-                            length++;
-                            m = m.Slice(1);
+                            result.Local3 = m.Span[0];
+                            result.Length++;
+                            m = m.Slice(1, total);
                             break;
                         default:
                             l[c++] = m;
-                            length += (short)m.Length;
+                            result.Length += (short)m.Length;
                             m = m.Slice(m.Length); // should result in empty slice
                             break;
                     }
@@ -366,7 +334,204 @@ namespace IKVM.Compiler.Managed
                 l = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(c, l);
 
             // save new memory list
-            memory = l.AsReadOnly();
+            Pack(ref l);
+            result.Memory = l;
+        }
+
+        /// <summary>
+        /// Extracts a data structure for the code at the specified index.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        static internal void ExtractCode(in ManagedSignatureData source, int index, ref ManagedSignatureData result)
+        {
+            // get starting position by navigating backwards
+            var start = index;
+            var code = source.GetCodeRef(index);
+
+            // follow code to earliest reference: this will be the starting position of the copy
+            while (true)
+            {
+                // calculate earliest offset of current code
+                var offset = code.Arg0;
+                for (var i = 0; i < code.Argv.Count; i++)
+                    offset = Math.Min(offset, code.Argv[i]);
+
+                // current code has no arguments, we're done
+                if (offset == 0)
+                    break;
+
+                // caculate new offset, resolve code at position
+                start += offset;
+                code = source.GetCodeRef(start);
+            }
+
+            // total number of codes to copy beginning at p
+            var total = index - start + 1;
+
+            // copy source slots to result slots
+            while (start < 4 && result.Length < total)
+            {
+                switch (start)
+                {
+                    case 0:
+                        WriteCode(source.Local0, ref result);
+                        break;
+                    case 1:
+                        WriteCode(source.Local1, ref result);
+                        break;
+                    case 2:
+                        WriteCode(source.Local2, ref result);
+                        break;
+                    case 3:
+                        WriteCode(source.Local3, ref result);
+                        break;
+                }
+
+                // increment position, decrement remaining size to copy
+                start++;
+            }
+
+            // we have more to copy
+            // import and slice each block until we reach end
+            for (int i = 0; i < source.Memory.Count && result.Length < total; i++)
+            {
+                var block = source.Memory[i];
+
+                // draing memory block until we're left with nothing
+                while (block.Length > 0 && result.Length < total)
+                {
+                    switch (result.Length)
+                    {
+                        case 0:
+                            result.Local0 = block.Span[0];
+                            result.Length++;
+                            block = block.Slice(1, total);
+                            break;
+                        case 1:
+                            result.Local1 = block.Span[0];
+                            result.Length++;
+                            block = block.Slice(1, total);
+                            break;
+                        case 2:
+                            result.Local2 = block.Span[0];
+                            result.Length++;
+                            block = block.Slice(1, total);
+                            break;
+                        case 3:
+                            result.Local3 = block.Span[0];
+                            result.Length++;
+                            block = block.Slice(1, total);
+                            break;
+                        default:
+                            WriteMemory(block, int.MaxValue, ref result);
+                            block = block.Slice(block.Length); // should result in empty slice
+                            break;
+                    }
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public override readonly string ToString()
+        {
+            return CodeToString(Length - 1);
+        }
+
+        /// <summary>
+        /// Returns a string representation of the signature starting at the specified code position.
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        readonly string CodeToString(int i)
+        {
+            ref readonly var code = ref this.GetCodeRef(i);
+
+            var arg0Pos = code.Arg0 != 0 ? i + code.Arg0 : -1;
+            var arg1Pos = code.Arg1 != 0 ? i + code.Arg1 : -1;
+
+            return code.Data.Kind switch
+            {
+                ManagedSignatureKind.Type => code.Data.Type_Type!.Value.TypeName,
+                ManagedSignatureKind.PrimitiveType => PrimitiveTypeCodeToString(code.Data.Primitive_TypeCode!.Value),
+                ManagedSignatureKind.SZArray => $"{CodeToString(arg0Pos)}[]",
+                ManagedSignatureKind.Array => $"{CodeToString(arg0Pos)}{ArrayShapeToString(code.Data.Array_Shape!.Value)}",
+                ManagedSignatureKind.ByRef => $"{CodeToString(arg0Pos)}&",
+                ManagedSignatureKind.Generic => $"{CodeToString(arg0Pos)}{GenericParametersToString(code.Argv)}>",
+                ManagedSignatureKind.GenericConstraint => throw new System.NotImplementedException(),
+                ManagedSignatureKind.GenericTypeParameter => code.Data.GenericTypeParameter_Parameter.Value.Index.ToString(),
+                ManagedSignatureKind.GenericMethodParameter => code.Data.GenericMethodParameter_Parameter.Value.Index.ToString(),
+                ManagedSignatureKind.Modified => throw new System.NotImplementedException(),
+                ManagedSignatureKind.Pointer => $"{CodeToString(arg0Pos)}*",
+                ManagedSignatureKind.FunctionPointer => throw new System.NotImplementedException(),
+                _ => throw new NotImplementedException(),
+            };
+        }
+
+        /// <summary>
+        /// Gets the string representation of a primitive type code.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        readonly string PrimitiveTypeCodeToString(ManagedPrimitiveTypeCode type) => type switch
+        {
+            ManagedPrimitiveTypeCode.Boolean => "bool",
+            ManagedPrimitiveTypeCode.Byte => "byte",
+            ManagedPrimitiveTypeCode.SByte => "sbyte",
+            ManagedPrimitiveTypeCode.Char => "char",
+            ManagedPrimitiveTypeCode.Int16 => "short",
+            ManagedPrimitiveTypeCode.UInt16 => "ushort",
+            ManagedPrimitiveTypeCode.Int32 => "int",
+            ManagedPrimitiveTypeCode.UInt32 => "uint",
+            ManagedPrimitiveTypeCode.Int64 => "long",
+            ManagedPrimitiveTypeCode.UInt64 => "ulong",
+            ManagedPrimitiveTypeCode.Single => "float",
+            ManagedPrimitiveTypeCode.Double => "double",
+            ManagedPrimitiveTypeCode.IntPtr => "nint",
+            ManagedPrimitiveTypeCode.UIntPtr => "unint",
+            ManagedPrimitiveTypeCode.Object => "object",
+            ManagedPrimitiveTypeCode.String => "string",
+            ManagedPrimitiveTypeCode.TypedReference => "System.TypedReference",
+            ManagedPrimitiveTypeCode.Void => "void",
+            _ => throw new NotImplementedException(),
+        };
+
+        /// <summary>
+        /// Returns a string representation of an array specifier.
+        /// </summary>
+        /// <param name="shape"></param>
+        /// <returns></returns>
+        readonly string ArrayShapeToString(in ManagedArrayShape shape)
+        {
+            var b = new StringBuilder();
+            b.Append("[");
+            for (int i = 0; i < shape.Rank - 1; i++)
+                b.Append(", ");
+
+            b.Append("]");
+            return b.ToString();
+        }
+
+        /// <summary>
+        /// Returns a string of a generic specifier.
+        /// </summary>
+        /// <param name="argv"></param>
+        /// <returns></returns>
+        readonly string GenericParametersToString(in FixedValueList2<short> argv)
+        {
+            var b = new StringBuilder();
+            b.Append("<");
+            for (int i = 0; i < argv.Count; i++)
+            {
+                b.Append(CodeToString(argv[i]));
+                if (i < argv.Count - 1)
+                    b.Append(", ");
+            }
+
+            b.Append(">");
+            return b.ToString();
         }
 
     }

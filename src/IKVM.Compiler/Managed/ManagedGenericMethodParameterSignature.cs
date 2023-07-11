@@ -4,15 +4,17 @@
     /// <summary>
     /// Describes a generic method parameter type.
     /// </summary>
-    public readonly partial struct ManagedGenericMethodParameterSignature
+    internal readonly partial struct ManagedGenericMethodParameterSignature
     {
 
         /// <summary>
-        /// Creates a new generic method parameter signature.
+        /// Initializes a new instance.
         /// </summary>
         /// <param name="parameter"></param>
-        /// <returns></returns>
-        internal static ManagedGenericMethodParameterSignature Create(in ManagedGenericMethodParameterRef parameter) => new ManagedGenericMethodParameterSignature(new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.GenericMethodParameter, parameter), null, null, null));
+        internal ManagedGenericMethodParameterSignature(in ManagedGenericMethodParameterRef parameter)
+        {
+            ManagedSignatureData.Write(new ManagedSignatureCodeData(ManagedSignatureKind.GenericMethodParameter, parameter), null, null, null, out data);
+        }
 
     }
 

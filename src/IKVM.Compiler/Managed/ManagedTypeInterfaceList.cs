@@ -7,15 +7,15 @@ namespace IKVM.Compiler.Managed
 {
 
     /// <summary>
-    /// Represents a list of fields on a <see cref="ManagedType"/>.
+    /// Represents a list of interfaces on a <see cref="ManagedType"/>.
     /// </summary>
-    internal readonly struct ManagedTypeFieldList : IReadOnlyList<ManagedField>, IEnumerable<ManagedField>
+    internal readonly struct ManagedTypeInterfaceList : IReadOnlyList<ManagedInterface>, IEnumerable<ManagedInterface>
     {
 
         /// <summary>
         /// Provides an enumerator that iterates over the items in the list.
         /// </summary>
-        public struct Enumerator : IEnumerator<ManagedField>
+        internal struct Enumerator : IEnumerator<ManagedInterface>
         {
 
             readonly ManagedType type;
@@ -34,12 +34,12 @@ namespace IKVM.Compiler.Managed
             /// Moves to the next item.
             /// </summary>
             /// <returns></returns>
-            public bool MoveNext() => type.data.Fields.Count > ++pos;
+            public bool MoveNext() => type.data.Interfaces.Count > ++pos;
 
             /// <summary>
             /// Gets a reference to the current item.
             /// </summary>
-            public readonly ref readonly ManagedField Current => ref type.data.Fields.GetItemRef(pos);
+            public readonly ref readonly ManagedInterface Current => ref type.data.Interfaces.GetItemRef(pos);
 
             /// <summary>
             /// Resets the enumerator.
@@ -52,7 +52,7 @@ namespace IKVM.Compiler.Managed
             public readonly void Dispose() { }
 
             /// <inheritdoc />
-            readonly ManagedField IEnumerator<ManagedField>.Current => Current;
+            readonly ManagedInterface IEnumerator<ManagedInterface>.Current => Current;
 
             /// <inheritdoc />
             readonly object IEnumerator.Current => Current;
@@ -65,33 +65,19 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="type"></param>
-        public ManagedTypeFieldList(ManagedType type) => this.type = type;
+        public ManagedTypeInterfaceList(ManagedType type) => this.type = type;
 
         /// <summary>
         /// Gets the item at the specified index.
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public readonly ref readonly ManagedField this[int index] => ref type.data.Fields.GetItemRef(index);
+        public readonly ref readonly ManagedInterface this[int index] => ref type.data.Interfaces.GetItemRef(index);
 
         /// <summary>
         /// Gets the count of items in the list.
         /// </summary>
-        public readonly int Count => type.data.Fields.Count;
-
-        /// <summary>
-        /// Gets the first field, if any, on the type with the specified name.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public readonly ref readonly ManagedField Resolve(string name)
-        {
-            foreach (ref readonly var m in this)
-                if (m.Name == name)
-                    return ref m;
-
-            return ref ManagedField.Nil;
-        }
+        public readonly int Count => type.data.Interfaces.Count;
 
         /// <summary>
         /// Gets an enumerator that iterates over the items in the list.
@@ -100,10 +86,10 @@ namespace IKVM.Compiler.Managed
         public readonly Enumerator GetEnumerator() => new(type);
 
         /// <inheritdoc />
-        ManagedField IReadOnlyList<ManagedField>.this[int index] => this[index];
+        ManagedInterface IReadOnlyList<ManagedInterface>.this[int index] => this[index];
 
         /// <inheritdoc />
-        IEnumerator<ManagedField> IEnumerable<ManagedField>.GetEnumerator() => GetEnumerator();
+        IEnumerator<ManagedInterface> IEnumerable<ManagedInterface>.GetEnumerator() => GetEnumerator();
 
         /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

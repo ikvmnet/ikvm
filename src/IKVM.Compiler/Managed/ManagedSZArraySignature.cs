@@ -6,15 +6,17 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes a single rank zero bound array type.
     /// </summary>
-    public readonly partial struct ManagedSZArraySignature
+    internal readonly partial struct ManagedSZArraySignature
     {
 
         /// <summary>
-        /// Creates a new array signature.
+        /// Initializes a new instance.
         /// </summary>
         /// <param name="elementTypeData"></param>
-        /// <returns></returns>
-        internal static ManagedSZArraySignature Create(in ManagedSignatureData elementTypeData) => new ManagedSZArraySignature(new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), elementTypeData, null, null));
+        public ManagedSZArraySignature(in ManagedSignatureData elementTypeData)
+        {
+            ManagedSignatureData.Write(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), elementTypeData, null, null, out data);
+        }
 
     }
 

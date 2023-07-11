@@ -11,7 +11,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a list of methods on a <see cref="ManagedType"/>.
     /// </summary>
-    public readonly struct ManagedTypeMethodList : IReadOnlyList<ManagedMethod>, IEnumerable<ManagedMethod>
+    internal readonly struct ManagedTypeMethodList : IReadOnlyList<ManagedMethod>, IEnumerable<ManagedMethod>
     {
 
         /// <summary>

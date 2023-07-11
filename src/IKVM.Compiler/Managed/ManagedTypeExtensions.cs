@@ -1,13 +1,10 @@
-﻿using System;
-using System.Buffers;
-
-namespace IKVM.Compiler.Managed
+﻿namespace IKVM.Compiler.Managed
 {
 
     /// <summary>
     /// Provides extension methods for working with a <see cref="ManagedType"/>.
     /// </summary>
-    public static class ManagedTypeExtensions
+    internal static class ManagedTypeExtensions
     {
 
         /// <summary>

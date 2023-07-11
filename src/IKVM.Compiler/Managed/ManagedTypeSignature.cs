@@ -4,15 +4,17 @@
     /// <summary>
     /// Describes a type.
     /// </summary>
-    public readonly partial struct ManagedTypeSignature
+    internal readonly partial struct ManagedTypeSignature
     {
 
         /// <summary>
-        /// Creates a new <see cref="ManagedTypeSignature"/>.
+        /// Initializes a new instance.
         /// </summary>
         /// <param name="typeRef"></param>
-        /// <returns></returns>
-        internal static ManagedTypeSignature Create(in ManagedTypeRef typeRef) => new ManagedTypeSignature(new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Type, typeRef), null, null, null));
+        public ManagedTypeSignature(in ManagedTypeRef typeRef)
+        {
+            ManagedSignatureData.Write(new ManagedSignatureCodeData(ManagedSignatureKind.Type, typeRef), null, null, null, out data);
+        }
 
         /// <summary>
         /// Gets the type reference refered to by this signature.

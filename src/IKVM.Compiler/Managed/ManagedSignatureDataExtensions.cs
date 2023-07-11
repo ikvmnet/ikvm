@@ -18,20 +18,20 @@ namespace IKVM.Compiler.Managed
         /// <exception cref="ManagedTypeException"></exception>
         public static ref readonly ManagedSignatureCode GetLastCode(this in ManagedSignatureData self)
         {
-            switch (self.length)
+            switch (self.Length)
             {
                 case 0:
                     throw new ManagedTypeException("Invalid signature data.");
                 case 1:
-                    return ref self.local0;
+                    return ref self.Local0;
                 case 2:
-                    return ref self.local1;
+                    return ref self.Local1;
                 case 3:
-                    return ref self.local2;
+                    return ref self.Local2;
                 case 4:
-                    return ref self.local3;
+                    return ref self.Local3;
                 default:
-                    var m = self.memory[self.memory.Count - 1].Span;
+                    var m = self.Memory[self.Memory.Count - 1].Span;
                     return ref m[m.Length - 1];
             }
         }
@@ -42,26 +42,26 @@ namespace IKVM.Compiler.Managed
         /// <param name="index"></param>
         /// <returns></returns>
         /// <exception cref="IndexOutOfRangeException"></exception>
-        public static ref readonly ManagedSignatureCode GetCode(this in ManagedSignatureData self, int index)
+        public static ref readonly ManagedSignatureCode GetCodeRef(this in ManagedSignatureData self, int index)
         {
-            if (index >= self.length)
+            if (index >= self.Length)
                 throw new IndexOutOfRangeException();
 
             switch (index)
             {
                 case 0:
-                    return ref self.local0;
+                    return ref self.Local0;
                 case 1:
-                    return ref self.local1;
+                    return ref self.Local1;
                 case 2:
-                    return ref self.local2;
+                    return ref self.Local2;
                 case 3:
-                    return ref self.local3;
+                    return ref self.Local3;
                 default:
                     var p = 4;
-                    for (int i = 0; i < self.memory.Count; i++)
+                    for (int i = 0; i < self.Memory.Count; i++)
                     {
-                        var m = self.memory[i];
+                        var m = self.Memory[i];
                         if (m.Length < index - p)
                             return ref m.Span[index - p];
                         else
@@ -72,46 +72,6 @@ namespace IKVM.Compiler.Managed
 
             // should not happen due to length check
             throw new InvalidOperationException();
-        }
-
-        /// <summary>
-        /// Extracts a data structure for the code at the specified index.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public static ManagedSignatureData GetCodeData(this in ManagedSignatureData self, int index)
-        {
-            int length = 0;
-            ManagedSignatureCode local0;
-            ManagedSignatureCode local1;
-            ManagedSignatureCode local2;
-            ManagedSignatureCode local3;
-            FixedValueList4<Memory<ManagedSignatureCode>> memory;
-
-            // get code at index
-            var c = GetCode(self, index);
-
-            // get starting position by navigating backwards
-            var p = index;
-
-            // follow code to earliest reference: this will be the starting position of the copy
-            while (true)
-            {
-                var o = c.Arg0;
-                for (int i = 0; i < c.Argv.Count; i++)
-                    o = Math.Min(o, c.Argv[i]);
-
-                // code has no args
-                if (o == 0)
-                    break;
-
-                // caculate new offset, resolve code at position
-                p = p + o;
-                c = GetCode(self, p);
-            }
-
-            throw new NotImplementedException();
         }
 
     }

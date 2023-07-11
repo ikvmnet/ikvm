@@ -4,7 +4,7 @@
     /// <summary>
     /// A discriminated union containing the fields required to store a single code.
     /// </summary>
-    readonly struct ManagedSignatureCodeData 
+    internal readonly struct ManagedSignatureCodeData 
     {
 
         public readonly ManagedSignatureKind Kind;

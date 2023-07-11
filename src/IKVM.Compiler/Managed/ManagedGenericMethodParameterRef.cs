@@ -6,7 +6,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes a reference to a generic parameter of a method.
     /// </summary>
-    public readonly struct ManagedGenericMethodParameterRef
+    internal readonly struct ManagedGenericMethodParameterRef
     {
 
         readonly int methodIndex;

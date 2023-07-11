@@ -1,6 +1,5 @@
-﻿using System.Reflection;
-
-using IKVM.Compiler.Collections;
+﻿using System.Collections.Generic;
+using System.Reflection;
 
 namespace IKVM.Compiler.Managed
 {
@@ -8,10 +7,16 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes a managed type.
     /// </summary>
-    public sealed class ManagedType
+    /// <remarks>
+    /// The backing data of this class is loaded on demand upon first access from the associated type context.
+    /// </remarks>
+    internal sealed class ManagedType
     {
 
-        readonly IManagedTypeContext context;
+        readonly ManagedAssembly assembly;
+        readonly object handle;
+        readonly string name;
+        readonly TypeAttributes attributes;
 
         internal ManagedTypeData data;
         bool load = true;
@@ -19,10 +24,16 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="context"></param>
-        internal ManagedType(IManagedTypeContext context)
+        /// <param name="assembly"></param>
+        /// <param name="handle"></param>
+        /// <param name="name"></param>
+        /// <param name="attributes"></param>
+        internal ManagedType(ManagedAssembly assembly, object handle , string name, TypeAttributes attributes)
         {
-            this.context = context;
+            this.assembly = assembly;
+            this.handle = handle;
+            this.name = name;
+            this.attributes = attributes;
         }
 
         /// <summary>
@@ -33,22 +44,30 @@ namespace IKVM.Compiler.Managed
             // multiple threads may enter load at the same time, but this should be safe
             if (load)
             {
-                data = context.LoadType(this);
+                assembly.Context.LoadType(this, out data);
                 load = false;
             }
         }
 
         /// <summary>
+        /// Gets the internal handle to the underlying type source.
+        /// </summary>
+        public object Handle => handle;
+
+        /// <summary>
         /// Gets the parent assembly of this type.
         /// </summary>
-        public ManagedAssembly Assembly
-        {
-            get
-            {
-                LazyLoad();
-                return data.Assembly;
-            }
-        }
+        public ManagedAssembly Assembly => assembly;
+
+        /// <summary>
+        /// Gets the name of the managed type.
+        /// </summary>
+        public string Name => name;
+
+        /// <summary>
+        /// Gets the attributes for the type.
+        /// </summary>
+        public TypeAttributes Attributes => attributes;
 
         /// <summary>
         /// Gets the parent type of this type.
@@ -59,30 +78,6 @@ namespace IKVM.Compiler.Managed
             {
                 LazyLoad();
                 return data.DeclaringType;
-            }
-        }
-
-        /// <summary>
-        /// Gets the name of the managed type.
-        /// </summary>
-        public string Name
-        {
-            get
-            {
-                LazyLoad();
-                return data.Name;
-            }
-        }
-
-        /// <summary>
-        /// Gets the attributes for the type.
-        /// </summary>
-        public TypeAttributes Attributes
-        {
-            get
-            {
-                LazyLoad();
-                return data.Attributes;
             }
         }
 
@@ -125,12 +120,12 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of interfaces implemented on the managed type.
         /// </summary>
-        public ManagedInterfaceList Interfaces
+        public ManagedTypeInterfaceList Interfaces
         {
             get
             {
                 LazyLoad();
-                return new ManagedInterfaceList(this);
+                return new ManagedTypeInterfaceList(this);
             }
         }
 
@@ -185,14 +180,12 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of nested types within the managed type.
         /// </summary>
-        public ReadOnlyFixedValueList1<ManagedType> NestedTypes
-        {
-            get
-            {
-                LazyLoad();
-                return data.NestedTypes;
-            }
-        }
+        public IEnumerable<ManagedType> ResolveNestedTypes() => assembly.Context.ResolveNestedTypes(this);
+
+        /// <summary>
+        /// Gets the nested type with the specified name.
+        /// </summary>
+        public ManagedType? ResolveNestedType(string name) => assembly.Context.ResolveNestedType(this, name);
 
         /// <inhericdoc />
         public override string ToString() => Name;

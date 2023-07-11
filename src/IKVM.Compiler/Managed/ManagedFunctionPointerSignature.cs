@@ -6,7 +6,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes a function pointer type.
     /// </summary>
-    public readonly partial struct ManagedFunctionPointerSignature
+    internal readonly partial struct ManagedFunctionPointerSignature
     {
 
         /// <summary>
@@ -14,8 +14,10 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="parameterTypes"></param>
         /// <param name="returnType"></param>
-        /// <returns></returns>
-        internal static ManagedFunctionPointerSignature Create(ReadOnlyFixedValueList4<ManagedSignatureData> parameterTypes, ManagedSignatureData returnType) => new ManagedFunctionPointerSignature(new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.FunctionPointer), returnType, null, parameterTypes));
+        internal ManagedFunctionPointerSignature(in FixedValueList4<ManagedSignatureData> parameterTypes, in ManagedSignatureData returnType)
+        {
+            ManagedSignatureData.Write(new ManagedSignatureCodeData(ManagedSignatureKind.FunctionPointer), returnType, null, parameterTypes, out data);
+        }
 
     }
 

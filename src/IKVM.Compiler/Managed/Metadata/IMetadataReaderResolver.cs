@@ -1,5 +1,5 @@
-﻿using System.Reflection.Metadata;
-using System.Threading.Tasks;
+﻿using System.Reflection;
+using System.Reflection.Metadata;
 
 namespace IKVM.Compiler.Managed.Metadata
 {
@@ -7,8 +7,15 @@ namespace IKVM.Compiler.Managed.Metadata
     /// <summary>
     /// Provides the capability of resolver a <see cref="MetadataReader"/>.
     /// </summary>
-    public interface IMetadataReaderAssemblyFileLoader
+    public interface IMetadataReaderResolver
     {
+
+        /// <summary>
+        /// Loads the metadata reader for the given assembly name.
+        /// </summary>
+        /// <param name="assemblyName"></param>
+        /// <returns></returns>
+        MetadataReader? Resolve(AssemblyName assemblyName);
 
         /// <summary>
         /// Loads the metadata reader associated with an assembly file of the given primary assembly.
@@ -17,7 +24,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="primaryPath"></param>
         /// <param name="file"></param>
         /// <returns></returns>
-        ValueTask<MetadataReader?> LoadAsync(MetadataReader primary, string primaryPath, AssemblyFile file);
+        MetadataReader? Resolve(MetadataReader primary, string primaryPath, AssemblyFile file);
 
     }
 

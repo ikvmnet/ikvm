@@ -9,7 +9,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a list of attributes on a <see cref="ManagedType"/>.
     /// </summary>
-    public readonly struct ManagedTypeCustomAttributeList : IReadOnlyList<ManagedCustomAttribute>, IEnumerable<ManagedCustomAttribute>
+    internal readonly struct ManagedTypeCustomAttributeList : IReadOnlyList<ManagedCustomAttribute>, IEnumerable<ManagedCustomAttribute>
     {
 
         /// <summary>

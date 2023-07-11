@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 using IKVM.Compiler.Collections;
@@ -14,91 +15,299 @@ namespace IKVM.Compiler.Managed.Metadata
     /// <summary>
     /// Represents an assembly loaded from System.Reflection.Metadata.
     /// </summary>
-    internal class MetadataAssemblyContext : IManagedAssemblyContext
+    internal class MetadataAssemblyContext : IManagedAssemblyContext, IManagedAssemblyResolver
     {
 
-        readonly IMetadataReaderAssemblyFileLoader? files;
-        readonly MetadataReader primary;
-        readonly ManagedAssembly assembly;
-        readonly MetadataSignatureTypeProvider signatureTypeProvider;
+        record class CacheValue<T>(T Value);
 
-        readonly ConcurrentDictionary<string, TypeDefinitionHandle?> typeNameCache = new ConcurrentDictionary<string, TypeDefinitionHandle?>();
-        readonly ConcurrentDictionary<TypeDefinitionHandle, ManagedType> typeDefsCache = new ConcurrentDictionary<TypeDefinitionHandle, ManagedType>();
+        /// <summary>
+        /// Gets or creates a new value associated with the incoming value cache.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="cache"></param>
+        /// <param name="create"></param>
+        /// <returns></returns>
+        static T GetOrCreate<T>(WeakReference<T> cache, Func<T> create) where T : class
+        {
+            if (cache.TryGetTarget(out var result) == false)
+                cache.SetTarget(result = create());
+
+            return result;
+        }
+
+        readonly IMetadataReaderResolver resolver;
+        readonly MetadataSignatureTypeProvider signatureTypeProvider;
+        readonly ConcurrentDictionary<AssemblyName, WeakReference<MetadataReader>?> assemblyNameCache = new();
+        readonly ConditionalWeakTable<MetadataReader, WeakReference<ManagedAssembly>> assemblyCache = new();
+        readonly ConditionalWeakTable<MetadataReader, ConcurrentDictionary<string, WeakReference<CacheValue<TypeDefinition>>?>> typeNameCache = new();
+        readonly ConditionalWeakTable<MetadataReader, ConcurrentDictionary<TypeDefinition, WeakReference<ManagedType>>> typeCache = new();
+        readonly ConditionalWeakTable<MetadataReader, ConcurrentDictionary<string, WeakReference<CacheValue<ExportedType>>?>> exportedTypeNameCache = new();
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="primary"></param>
         /// <param name="resolver"></param>
-        /// <param name="files"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        public MetadataAssemblyContext(MetadataReader primary, IMetadataReaderAssemblyFileLoader? files = null)
+        public MetadataAssemblyContext(IMetadataReaderResolver resolver)
         {
-            this.primary = primary;
-            this.files = files;
-
-            // initialize instance by loading the primary reader
-            signatureTypeProvider = new MetadataSignatureTypeProvider(this);
-            assembly = LoadAssembly();
+            this.resolver = resolver;
+            this.signatureTypeProvider = new MetadataSignatureTypeProvider(this);
         }
 
         /// <summary>
-        /// Loads a managed assembly from the specified reader.
+        /// Attempts to resolve a new weak reference to the reader for the given assembly name.
         /// </summary>
-        /// <param name="primary"></param>
+        /// <param name="assemblyName"></param>
         /// <returns></returns>
-        ManagedAssembly LoadAssembly()
+        WeakReference<MetadataReader>? ResolveMetadataReaderWeakReference(AssemblyName assemblyName)
         {
-            var assemblyDef = primary.GetAssemblyDefinition();
-            return new ManagedAssembly(this, assemblyDef.GetAssemblyName(), LoadCustomAttributes(primary, assemblyDef.GetCustomAttributes(), MetadataGenericContext.Empty));
+            return resolver.Resolve(assemblyName) is MetadataReader reader ? new WeakReference<MetadataReader>(reader) : null;
         }
 
         /// <summary>
-        /// Gets the <see cref="MetadataReader"/> associated with the context.
+        /// Implements the <see cref="IManagedAssemblyContext.LoadAssembly(ManagedAssembly,  out ManagedAssemblyData)" /> method.
         /// </summary>
-        public MetadataReader Primary => primary;
+        /// <param name="assembly"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        void IManagedAssemblyContext.LoadAssembly(ManagedAssembly assembly, out ManagedAssemblyData data) => LoadAssembly(assembly, out data);
 
         /// <summary>
-        /// Gets the assembly that defines this context.
+        /// Implements the <see cref="IManagedAssemblyContext.ResolveTypes(ManagedAssembly)"/> method.
         /// </summary>
-        public ManagedAssembly Assembly => assembly;
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedType> IManagedAssemblyContext.ResolveTypes(ManagedAssembly assembly) => ResolveTypes(assembly);
 
         /// <summary>
-        /// Implements the IManagedAssemblyContext.ResolveTypes method.
+        /// Implements the <see cref="IManagedAssemblyContext.ResolveType(ManagedAssembly, string)"/> method.
         /// </summary>
         /// <param name="assembly"></param>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ManagedType? IManagedAssemblyContext.ResolveType(ManagedAssembly assembly, string typeName) => ResolveType(typeName);
+        ManagedType? IManagedAssemblyContext.ResolveType(ManagedAssembly assembly, string typeName) => ResolveType(assembly, typeName);
 
         /// <summary>
-        /// Implements the IManagedAssemblyContext.ResolveTypes method.
+        /// Implements the <see cref="IManagedAssemblyContext.ResolveExportedTypes(ManagedAssembly)"/> method.
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        IEnumerable<ManagedType> IManagedAssemblyContext.ResolveTypes(ManagedAssembly assembly) => ResolveTypes();
+        IEnumerable<ManagedExportedType> IManagedAssemblyContext.ResolveExportedTypes(ManagedAssembly assembly) => ResolveExportedTypes(assembly);
 
         /// <summary>
-        /// Resolves the named type from this assembly.
+        /// Implements the <see cref="IManagedAssemblyContext.ResolveExportedTypes(ManagedAssembly, string)"/> method.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        ManagedExportedType? IManagedAssemblyContext.ResolveExportedType(ManagedAssembly assembly, string typeName) => ResolveExportedType(assembly, typeName);
+
+        /// <summary>
+        /// Implements the <see cref="IManagedAssemblyContext.LoadType(ManagedType, out ManagedTypeData)"/> method.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="result"></param>
+        void IManagedAssemblyContext.LoadType(ManagedType type, out ManagedTypeData result) => LoadType(type, out result);
+
+        /// <summary>
+        /// Implements the <see cref="IManagedAssemblyContext.ResolveNestedTypes(ManagedType)"/> method.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedType> IManagedAssemblyContext.ResolveNestedTypes(ManagedType type) => ResolveNestedTypes(type);
+
+        /// <summary>
+        /// Implements the <see cref="IManagedAssemblyContext.ResolveNestedType(ManagedType, string)"/> method.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ManagedType? IManagedAssemblyContext.ResolveNestedType(ManagedType type, string typeName) => ResolveNestedType(type, typeName);
+
+        /// <summary>
+        /// Implements the <see cref="IManagedAssemblyResolver.ResolveAssembly(AssemblyName)"/> method.
+        /// </summary>
+        /// <param name="assemblyName"></param>
+        /// <returns></returns>
+        ManagedAssembly? IManagedAssemblyResolver.ResolveAssembly(AssemblyName assemblyName) => ResolveAssembly(assemblyName);
+
+        /// <summary>
+        /// Resolves the <see cref="ManagedAssembly"/> with the given name.
+        /// </summary>
+        /// <param name="assemblyName"></param>
+        /// <returns></returns>
+        public ManagedAssembly? ResolveAssembly(AssemblyName assemblyName)
+        {
+            var readerCache = assemblyNameCache.GetOrAdd(assemblyName, ResolveMetadataReaderWeakReference);
+            var reader = readerCache != null ? GetOrCreate(readerCache, () => resolver.Resolve(assemblyName)!) : null;
+            return reader != null ? ResolveAssembly(reader) : null;
+        }
+
+        /// <summary>
+        /// Resolves the managed assembly associated with the given primary metadata reader.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <returns></returns>
+        ManagedAssembly ResolveAssembly(MetadataReader reader)
+        {
+            return GetOrCreate(assemblyCache.GetValue(reader, _ => new WeakReference<ManagedAssembly>(CreateAssembly(_))), () => CreateAssembly(reader));
+        }
+
+        /// <summary>
+        /// Resolves the managed assembly associated with the given primary metadata reader.
+        /// </summary>
+        /// <returns></returns>
+        ManagedAssembly CreateAssembly(MetadataReader reader)
+        {
+            var assemblyDef = reader.GetAssemblyDefinition();
+            return new ManagedAssembly(this, reader, assemblyDef.GetAssemblyName());
+        }
+
+        /// <summary>
+        /// Resolves the type with the specified name from the given assembly.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ManagedType? ResolveType(ManagedAssembly assembly, string typeName)
+        {
+            return ResolveType(assembly, (MetadataReader)assembly.Handle, typeName);
+        }
+
+        /// <summary>
+        /// Resolves the type with the specified name from the given assembly.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="reader"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ManagedType? ResolveType(ManagedAssembly assembly, MetadataReader reader, string typeName)
+        {
+            var typeNameCacheEntry = typeNameCache.GetValue(reader, _ => new ConcurrentDictionary<string, WeakReference<CacheValue<TypeDefinition>>?>());
+            var typeRef = typeNameCacheEntry.GetOrAdd(typeName, _ => FindTypeDefWeakReference(typeNameCacheEntry, reader, _));
+            var typeDef = typeRef != null ? GetOrCreate(typeRef, () => FindTypeDefCacheValue(typeNameCacheEntry, reader, typeName)!) : null;
+            return typeDef != null ? ResolveType(assembly, reader, typeDef.Value) : null;
+        }
+
+        /// <summary>
+        /// Searches for a matching type name in the given reader, and returns the weak reference to the cache value to the type definition.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        WeakReference<CacheValue<TypeDefinition>>? FindTypeDefWeakReference(ConcurrentDictionary<string, WeakReference<CacheValue<TypeDefinition>>?> typeNameCache, MetadataReader reader, string typeName)
+        {
+            var typeDefCacheValue = FindTypeDefCacheValue(typeNameCache, reader, typeName);
+            return typeDefCacheValue != null ? new WeakReference<CacheValue<TypeDefinition>>(typeDefCacheValue) : null;
+        }
+
+        /// <summary>
+        /// Searches for a matching type name in the given reader, and returns a cache value to the type definition.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        CacheValue<TypeDefinition>? FindTypeDefCacheValue(ConcurrentDictionary<string, WeakReference<CacheValue<TypeDefinition>>?> typeNameCache, MetadataReader reader, string typeName)
+        {
+            var typeDef = FindTypeDefinition(typeNameCache, reader, typeName);
+            return typeDef != null ? new CacheValue<TypeDefinition>(typeDef.Value) : null;
+        }
+
+        /// <summary>
+        /// Searches for a matching type name in the given reader and returns the type definition. Preemptively caches encountered entries.
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ManagedType? ResolveType(string typeName)
+        TypeDefinition? FindTypeDefinition(ConcurrentDictionary<string, WeakReference<CacheValue<TypeDefinition>>?> typeNameCache, MetadataReader reader, string typeName)
         {
-            var handle = typeNameCache.GetOrAdd(typeName, FindTypeHandle);
-            if (handle == null)
-                return null;
+            var l = reader.TypeDefinitions;
+            var e = l.GetEnumerator();
 
-            return ResolveType(primary, handle.Value);
+            for (int i = 0; i < l.Count; i++)
+            {
+                e.MoveNext();
+                var t = reader.GetTypeDefinition(e.Current);
+                var n = GetTypeName(reader, t);
+                if (n != typeName)
+                    typeNameCache.GetOrAdd(n, _ => new WeakReference<CacheValue<TypeDefinition>>(new CacheValue<TypeDefinition>(t)));
+                else
+                    return t;
+            }
+
+            return null;
         }
 
         /// <summary>
         /// Resolves the specified type from this assembly.
         /// </summary>
+        /// <param name="assembly"></param>
         /// <param name="reader"></param>
-        /// <param name="handle"></param>
+        /// <param name="typeDef"></param>
         /// <returns></returns>
-        internal ManagedType ResolveType(MetadataReader reader, TypeDefinitionHandle handle) => typeDefsCache.GetOrAdd(handle, _ => new ManagedType(new MetadataTypeContext(this, reader, _)));
+        ManagedType ResolveType(ManagedAssembly assembly, MetadataReader reader, TypeDefinition typeDef)
+        {
+            var typeCacheEntry = typeCache.GetValue(reader, _ => new ConcurrentDictionary<TypeDefinition, WeakReference<ManagedType>>());
+            return GetOrCreate(typeCacheEntry.GetOrAdd(typeDef, _ => new WeakReference<ManagedType>(CreateType(assembly, reader, _))), () => CreateType(assembly, reader, typeDef));
+        }
+
+        /// <summary>
+        /// Creates a new type instance.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="reader"></param>
+        /// <param name="typeDef"></param>
+        /// <returns></returns>
+        ManagedType CreateType(ManagedAssembly assembly, MetadataReader reader, TypeDefinition typeDef)
+        {
+            return new ManagedType(assembly, (reader, typeDef), GetTypeName(reader, typeDef), typeDef.Attributes);
+        }
+
+        /// <summary>
+        /// Resolves the type for the assembly by the handle.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedType> ResolveTypes(ManagedAssembly assembly)
+        {
+            return ResolveTypes(assembly, (MetadataReader)assembly.Handle);
+        }
+
+        /// <summary>
+        /// Resolves the type for the assembly by the handle.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="reader"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedType> ResolveTypes(ManagedAssembly assembly, MetadataReader reader)
+        {
+            return ResolveTypes(assembly, reader, reader.TypeDefinitions);
+        }
+
+        /// <summary>
+        /// Resolves all the types for the assembly.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="reader"></param>
+        /// <param name="handles"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        IEnumerable<ManagedType> ResolveTypes(ManagedAssembly assembly, MetadataReader reader, TypeDefinitionHandleCollection handles)
+        {
+            foreach (var handle in handles)
+                yield return ResolveType(assembly, reader, reader.GetTypeDefinition(handle)) ?? throw new InvalidOperationException();
+        }
+
+        /// <summary>
+        /// Loads the managed assembly.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        void LoadAssembly(ManagedAssembly assembly, out ManagedAssemblyData result)
+        {
+            var reader = (MetadataReader)assembly.Handle;
+            var assemblyDef = reader.GetAssemblyDefinition();
+            result = new ManagedAssemblyData();
+            LoadAssemblyCustomAttributes(assembly, reader, assemblyDef.GetCustomAttributes(), MetadataGenericContext.Empty, out result.CustomAttributes);
+        }
 
         /// <summary>
         /// Resolves a type reference from the given entity.
@@ -123,10 +332,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="handle"></param>
         /// <param name="genericContext"></param>
         /// <returns></returns>
-        internal ManagedTypeRef ResolveTypeReference(MetadataReader reader, TypeDefinitionHandle handle, MetadataGenericContext genericContext)
+        ManagedTypeRef ResolveTypeReference(MetadataReader reader, TypeDefinitionHandle handle, MetadataGenericContext genericContext)
         {
-            var type = reader.GetTypeDefinition(handle);
-            return new ManagedTypeRef(this, assembly.Name, GetTypeName(reader, type), ResolveType(reader, handle));
+            return new ManagedTypeRef(reader.GetAssemblyDefinition().GetAssemblyName(), GetTypeName(reader, reader.GetTypeDefinition(handle)));
         }
 
         /// <summary>
@@ -136,7 +344,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="handle"></param>
         /// <param name="genericContext"></param>
         /// <returns></returns>
-        internal ManagedTypeRef ResolveTypeReference(MetadataReader reader, TypeReferenceHandle handle, MetadataGenericContext genericContext)
+        ManagedTypeRef ResolveTypeReference(MetadataReader reader, TypeReferenceHandle handle, MetadataGenericContext genericContext)
         {
             var typeReference = reader.GetTypeReference(handle);
             var typeName = GetTypeName(reader, typeReference);
@@ -145,7 +353,8 @@ namespace IKVM.Compiler.Managed.Metadata
             if (typeReference.ResolutionScope.Kind == HandleKind.TypeReference)
             {
                 var declaringTypeHandle = (TypeReferenceHandle)typeReference.ResolutionScope;
-                return new ManagedTypeRef(this, ResolveAssemblyName(reader, declaringTypeHandle), typeName);
+                var declaringType = ResolveTypeReference(reader, declaringTypeHandle, genericContext);
+                return new ManagedTypeRef(declaringType.AssemblyName, typeName);
             }
 
             // type reference is nested under a type in another assembly
@@ -154,11 +363,10 @@ namespace IKVM.Compiler.Managed.Metadata
                 var assemblyReferenceHandle = (AssemblyReferenceHandle)typeReference.ResolutionScope;
                 var assemblyReference = reader.GetAssemblyReference(assemblyReferenceHandle);
                 var assemblyName = assemblyReference.GetAssemblyName();
-                return new ManagedTypeRef(this, assemblyName, typeName);
+                return new ManagedTypeRef(assemblyName, typeName);
             }
 
-            // type lives in the same assembly, resolve by string
-            return new ManagedTypeRef(this, Assembly.Name, typeName, ResolveType(typeName));
+            throw new ManagedTypeException("Invalid type reference pointing to same assembly.");
         }
 
         /// <summary>
@@ -169,7 +377,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="genericContext"></param>
         /// <returns></returns>
         /// <exception cref="ManagedTypeException"></exception>
-        internal ManagedTypeRef ResolveTypeReference(MetadataReader reader, TypeSpecificationHandle handle, MetadataGenericContext genericContext)
+        ManagedTypeRef ResolveTypeReference(MetadataReader reader, TypeSpecificationHandle handle, MetadataGenericContext genericContext)
         {
             var signature = ResolveTypeSignature(reader, handle, genericContext);
             if (signature.Kind == ManagedSignatureKind.Type)
@@ -186,7 +394,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="genericContext"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        internal ManagedSignature ResolveTypeSignature(MetadataReader reader, EntityHandle handle, MetadataGenericContext genericContext) => handle.Kind switch
+        ManagedSignature ResolveTypeSignature(MetadataReader reader, EntityHandle handle, MetadataGenericContext genericContext) => handle.Kind switch
         {
             HandleKind.TypeReference => ResolveTypeSignature(reader, (TypeReferenceHandle)handle, genericContext),
             HandleKind.TypeDefinition => ResolveTypeSignature(reader, (TypeDefinitionHandle)handle, genericContext),
@@ -201,9 +409,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="handle"></param>
         /// <param name="genericContext"></param>
         /// <returns></returns>
-        internal ManagedSignature ResolveTypeSignature(MetadataReader reader, TypeDefinitionHandle handle, MetadataGenericContext genericContext)
+        ManagedSignature ResolveTypeSignature(MetadataReader reader, TypeDefinitionHandle handle, MetadataGenericContext genericContext)
         {
-            return ManagedTypeSignature.Create(ResolveTypeReference(reader, handle, genericContext));
+            return new ManagedTypeSignature(ResolveTypeReference(reader, handle, genericContext));
         }
 
         /// <summary>
@@ -213,9 +421,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="handle"></param>
         /// <param name="genericContext"></param>
         /// <returns></returns>
-        internal ManagedSignature ResolveTypeSignature(MetadataReader reader, TypeReferenceHandle handle, MetadataGenericContext genericContext)
+        ManagedSignature ResolveTypeSignature(MetadataReader reader, TypeReferenceHandle handle, MetadataGenericContext genericContext)
         {
-            return ManagedTypeSignature.Create(ResolveTypeReference(reader, handle, genericContext));
+            return ManagedSignature.Type(ResolveTypeReference(reader, handle, genericContext));
         }
 
         /// <summary>
@@ -225,7 +433,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="handle"></param>
         /// <param name="genericContext"></param>
         /// <returns></returns>
-        internal ManagedSignature ResolveTypeSignature(MetadataReader reader, TypeSpecificationHandle handle, MetadataGenericContext genericContext)
+        ManagedSignature ResolveTypeSignature(MetadataReader reader, TypeSpecificationHandle handle, MetadataGenericContext genericContext)
         {
             var spec = reader.GetTypeSpecification(handle);
             return spec.DecodeSignature(signatureTypeProvider, genericContext);
@@ -234,241 +442,447 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <summary>
         /// Resolves the assembly name of the given type reference.
         /// </summary>
+        /// <param name="assembly"></param>
         /// <param name="reader"></param>
         /// <param name="handle"></param>
         /// <returns></returns>
-        AssemblyName ResolveAssemblyName(MetadataReader reader, TypeReferenceHandle handle)
+        AssemblyName ResolveAssemblyName(ManagedAssembly assembly, MetadataReader reader, TypeReferenceHandle handle)
         {
             var typeReference = reader.GetTypeReference(handle);
 
             if (typeReference.ResolutionScope.Kind == HandleKind.TypeReference)
-                return ResolveAssemblyName(reader, (TypeReferenceHandle)typeReference.ResolutionScope);
+                return ResolveAssemblyName(assembly, reader, (TypeReferenceHandle)typeReference.ResolutionScope);
 
             if (typeReference.ResolutionScope.Kind == HandleKind.AssemblyReference)
-                return reader.GetAssemblyReference(((AssemblyReferenceHandle)typeReference.ResolutionScope)).GetAssemblyName();
+                return reader.GetAssemblyReference((AssemblyReferenceHandle)typeReference.ResolutionScope).GetAssemblyName();
 
             return assembly.Name;
         }
 
         /// <summary>
-        /// Resolves the type definition with the specified name.
+        /// Loads the exported types from this assembly.
         /// </summary>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedExportedType> ResolveExportedTypes(ManagedAssembly assembly)
+        {
+            var reader = (MetadataReader)assembly.Handle;
+            return ResolveExportedTypes(assembly, reader, reader.ExportedTypes);
+        }
+
+        /// <summary>
+        /// Loads the exported types from this assembly.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="reader"></param>
+        /// <param name="handles"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedExportedType> ResolveExportedTypes(ManagedAssembly assembly, MetadataReader reader, ExportedTypeHandleCollection handles)
+        {
+            foreach (var handle in handles)
+                yield return ResolveExportedType(assembly, reader, handle);
+        }
+
+        /// <summary>
+        /// Resolves the specified exported type from this assembly.
+        /// </summary>
+        /// <param name="assembly"></param>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        TypeDefinitionHandle? FindTypeHandle(string typeName)
+        ManagedExportedType? ResolveExportedType(ManagedAssembly assembly, string typeName)
         {
-            var l = primary.TypeDefinitions;
+            var reader = (MetadataReader)assembly.Handle;
+            return ResolveExportedType(assembly, reader, typeName);
+        }
+
+        /// <summary>
+        /// Resolves the specified exported type from this assembly.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="reader"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ManagedExportedType? ResolveExportedType(ManagedAssembly assembly, MetadataReader reader, string typeName)
+        {
+            var exportedTypeNameCacheEntry = exportedTypeNameCache.GetValue(reader, _ => new ConcurrentDictionary<string, WeakReference<CacheValue<ExportedType>>?>());
+            var typeRef = exportedTypeNameCacheEntry.GetOrAdd(typeName, _ => FindExportedTypeWeakReference(exportedTypeNameCacheEntry, reader, _));
+            var typeDef = typeRef != null ? GetOrCreate(typeRef, () => FindExportedTypeDefCacheValue(exportedTypeNameCacheEntry, reader, typeName)!) : null;
+            return typeDef != null ? ResolveExportedType(assembly, reader, typeDef.Value) : null;
+        }
+
+        /// <summary>
+        /// Searches for a matching exported type name in the given reader, and returns the weak reference to the cache value to the type definition.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        WeakReference<CacheValue<ExportedType>>? FindExportedTypeWeakReference(ConcurrentDictionary<string, WeakReference<CacheValue<ExportedType>>?> typeNameCache, MetadataReader reader, string typeName)
+        {
+            var typeDefCacheValue = FindExportedTypeDefCacheValue(typeNameCache, reader, typeName);
+            return typeDefCacheValue != null ? new WeakReference<CacheValue<ExportedType>>(typeDefCacheValue) : null;
+        }
+
+        /// <summary>
+        /// Searches for a matching exported type name in the given reader, and returns a cache value to the type definition.
+        /// </summary>
+        /// <param name="typeNameCache"></param>
+        /// <param name="reader"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        CacheValue<ExportedType>? FindExportedTypeDefCacheValue(ConcurrentDictionary<string, WeakReference<CacheValue<ExportedType>>?> typeNameCache, MetadataReader reader, string typeName)
+        {
+            var typeDef = FindExportedTypeDefinition(typeNameCache, reader, typeName);
+            return typeDef != null ? new CacheValue<ExportedType>(typeDef.Value) : null;
+        }
+
+        /// <summary>
+        /// Searches for a matching exported type name in the given reader and returns the type definition. Preemptively caches encountered entries.
+        /// </summary>
+        /// <param name="exportedTypeNameCache"></param>
+        /// <param name="reader"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ExportedType? FindExportedTypeDefinition(ConcurrentDictionary<string, WeakReference<CacheValue<ExportedType>>?> exportedTypeNameCache, MetadataReader reader, string typeName)
+        {
+            var l = reader.ExportedTypes;
             var e = l.GetEnumerator();
 
             for (int i = 0; i < l.Count; i++)
             {
                 e.MoveNext();
-                var t = primary.GetTypeDefinition(e.Current);
-                var n = GetTypeName(primary, t);
-                typeNameCache.TryAdd(n, e.Current); // preemptively fill cache
-
-                if (n == typeName)
-                    return e.Current;
+                var t = reader.GetExportedType(e.Current);
+                var n = GetExportedTypeName(reader, t);
+                if (n != typeName)
+                    exportedTypeNameCache.GetOrAdd(n, _ => new WeakReference<CacheValue<ExportedType>>(new CacheValue<ExportedType>(t)));
+                else
+                    return t;
             }
 
             return null;
         }
 
         /// <summary>
-        /// Lodas the types from the specified assembly.
+        /// Resolves the specified exported type from this assembly.
         /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="reader"></param>
+        /// <param name="exportedTypeHandle"></param>
         /// <returns></returns>
-        IEnumerable<ManagedType> ResolveTypes()
+        ManagedExportedType ResolveExportedType(ManagedAssembly assembly, MetadataReader reader, ExportedTypeHandle exportedTypeHandle)
         {
-            return ResolveTypes(primary, primary.TypeDefinitions);
+            return ResolveExportedType(assembly, reader, reader.GetExportedType(exportedTypeHandle));
         }
 
         /// <summary>
-        /// Loads the types from the given collection.
+        /// Resolves the specified exported type from this assembly.
         /// </summary>
+        /// <param name="assembly"></param>
         /// <param name="reader"></param>
-        /// <param name="handles"></param>
+        /// <param name="exportedType"></param>
         /// <returns></returns>
-        IEnumerable<ManagedType> ResolveTypes(MetadataReader reader, TypeDefinitionHandleCollection handles)
+        ManagedExportedType ResolveExportedType(ManagedAssembly assembly, MetadataReader reader, ExportedType exportedType)
         {
-            foreach (var handle in handles)
-                yield return ResolveType(reader, handle) ?? throw new InvalidOperationException();
+            return CreateExportedType(assembly, reader, exportedType);
         }
 
         /// <summary>
-        /// Loads the types from the given collection.
+        /// Creates a new <see cref="ManagedExportedType"/> instance.
         /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="handles"></param>
+        /// <param name="exportedType"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList1<ManagedType> ResolveTypes(MetadataReader reader, ImmutableArray<TypeDefinitionHandle> handles)
+        ManagedExportedType CreateExportedType(ManagedAssembly assembly, MetadataReader reader, ExportedType exportedType)
         {
-            var l = new FixedValueList1<ManagedType>(handles.Length);
+            var result = new ManagedExportedType();
+            result.Name = GetExportedTypeName(reader, exportedType);
+            LoadExportedTypeCustomAttributes(result, reader, exportedType.GetCustomAttributes(), MetadataGenericContext.Empty, out result.CustomAttributes);
+            return result;
+        }
 
-            var i = 0;
-            foreach (var handle in handles)
-                l[i++] = ResolveType(reader, handle);
+        /// <summary>
+        /// Resolves all nested types of the specified type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedType> ResolveNestedTypes(ManagedType type)
+        {
+            var (reader, typeDef) = ((MetadataReader, TypeDefinition))type.Handle;
+            return ResolveNestedTypes(type, reader, typeDef);
+        }
 
-            return l.AsReadOnly();
+        /// <summary>
+        /// Resolves all nested types of the specified type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="reader"></param>
+        /// <param name="typeDef"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedType> ResolveNestedTypes(ManagedType type, MetadataReader reader, TypeDefinition typeDef)
+        {
+            foreach (var handle in typeDef.GetNestedTypes())
+                yield return ResolveType(type.Assembly, reader, reader.GetTypeDefinition(handle));
+        }
+
+        /// <summary>
+        /// Resolves the nested type of the specified type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ManagedType? ResolveNestedType(ManagedType type, string typeName)
+        {
+            var (reader, typeDef) = ((MetadataReader, TypeDefinition))type.Handle;
+            return ResolveNestedType(type, reader, typeDef, typeName);
+        }
+
+        /// <summary>
+        /// Resolves all nested types of the specified type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="reader"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ManagedType? ResolveNestedType(ManagedType type, MetadataReader reader, TypeDefinition typeDef, string typeName)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
         /// Loads the custom attributes from the given collection.
         /// </summary>
+        /// <param name="assembly"></param>
         /// <param name="reader"></param>
         /// <param name="handles"></param>
-        /// <returns></returns>
-        ReadOnlyFixedValueList1<ManagedCustomAttribute> LoadCustomAttributes(MetadataReader reader, CustomAttributeHandleCollection handles, MetadataGenericContext genericContext)
+        /// <param name="genericContext"></param>
+        /// <param name="result"></param>
+        void LoadAssemblyCustomAttributes(ManagedAssembly assembly, MetadataReader reader, CustomAttributeHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList8<ManagedCustomAttribute> result)
         {
-            var l = new FixedValueList1<ManagedCustomAttribute>(handles.Count);
+            result = new FixedValueList8<ManagedCustomAttribute>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
-                l[i++] = LoadCustomAttribute(reader, handle);
-
-            return l.AsReadOnly();
+            {
+                LoadAssemblyCustomAttribute(assembly, reader, handle, i, genericContext, out result.GetItemRef(i));
+                i++;
+            }
         }
 
         /// <summary>
         /// Loads the given custom attribute.
         /// </summary>
+        /// <param name="assembly"></param>
         /// <param name="reader"></param>
         /// <param name="handle"></param>
-        /// <returns></returns>
-        ManagedCustomAttribute LoadCustomAttribute(MetadataReader reader, CustomAttributeHandle handle)
+        /// <param name="index"></param>
+        /// <param name="genericContext"></param>
+        /// <param name="result"></param>
+        void LoadAssemblyCustomAttribute(ManagedAssembly assembly, MetadataReader reader, CustomAttributeHandle handle, int index, MetadataGenericContext genericContext, out ManagedCustomAttribute result)
         {
-            var a = reader.GetCustomAttribute(handle);
-            return new ManagedCustomAttribute();
+            result = new ManagedCustomAttribute();
         }
 
         /// <summary>
-        /// Loads a <see cref="ManagedType"/> from the given <see cref="TypeDefinitionHandle"/>.
+        /// Loads the custom attributes from the given collection.
         /// </summary>
-        /// <param name="managedType"></param>
+        /// <param name="exportedType"></param>
+        /// <param name="reader"></param>
+        /// <param name="handles"></param>
+        /// <param name="genericContext"></param>
+        /// <param name="result"></param>
+        void LoadExportedTypeCustomAttributes(ManagedExportedType exportedType, MetadataReader reader, CustomAttributeHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList1<ManagedCustomAttribute> result)
+        {
+            result = new FixedValueList1<ManagedCustomAttribute>(handles.Count);
+
+            var i = 0;
+            foreach (var handle in handles)
+            {
+                LoadExportedTypeCustomAttribute(exportedType, reader, handle, i, genericContext, out result.GetItemRef(i));
+                i++;
+            }
+        }
+
+        /// <summary>
+        /// Loads the given custom attribute..
+        /// </summary>
+        /// <param name="exportedType"></param>
         /// <param name="reader"></param>
         /// <param name="handle"></param>
-        /// <returns></returns>
-        internal ManagedTypeData LoadType(ManagedType managedType, MetadataReader reader, TypeDefinitionHandle handle)
+        /// <param name="index"></param>
+        /// <param name="genericContext"></param>
+        /// <param name="result"></param>
+        void LoadExportedTypeCustomAttribute(ManagedExportedType exportedType, MetadataReader reader, CustomAttributeHandle handle, int index, MetadataGenericContext genericContext, out ManagedCustomAttribute result)
         {
-            var type = reader.GetTypeDefinition(handle);
+            result = new ManagedCustomAttribute();
+        }
+
+        /// <summary>
+        /// Loads the managed type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="result"></param>
+        void LoadType(ManagedType type, out ManagedTypeData result)
+        {
+            var (reader, typeDef) = ((MetadataReader, TypeDefinition))type.Handle;
 
             // build generic context for type
-            var genericTypeParametersRef = new FixedValueList1<ManagedGenericTypeParameterRef>(type.GetGenericParameters().Count);
+            var genericTypeParametersRef = new FixedValueList1<ManagedGenericTypeParameterRef>(typeDef.GetGenericParameters().Count);
             for (int i = 0; i < genericTypeParametersRef.Count; i++)
                 genericTypeParametersRef[i] = new ManagedGenericTypeParameterRef(i);
-            var genericContext = new MetadataGenericContext(genericTypeParametersRef.AsReadOnly(), null);
+            var genericContext = new MetadataGenericContext(genericTypeParametersRef, null);
 
             // load type data
-            var declaringType = ResolveDeclaringType(reader, handle);
-            var typeName = GetTypeName(reader, type);
-            var genericParameters = LoadGenericParameters(reader, type.GetGenericParameters(), genericContext);
-            var customAttributes = LoadCustomAttributes(reader, type.GetCustomAttributes(), genericContext);
-            var baseType = type.BaseType.IsNil == false ? ResolveTypeSignature(reader, type.BaseType, genericContext) : (ManagedSignature?)null;
-            var interfaces = LoadInterfaces(reader, type.GetInterfaceImplementations(), genericContext);
-            var fields = LoadFields(reader, type.GetFields(), genericContext);
-            var methods = LoadMethods(reader, type.GetMethods(), genericContext);
-            var properties = LoadProperties(reader, type.GetProperties(), genericContext);
-            var events = LoadEvents(reader, type.GetEvents(), genericContext);
-            var nestedTypes = LoadNestedTypes(reader, type.GetNestedTypes());
-
-            // return type data
-            return new ManagedTypeData(assembly, declaringType, typeName, type.Attributes, genericParameters, customAttributes, baseType, interfaces, fields, methods, properties, events, nestedTypes);
+            result = new ManagedTypeData();
+            result.DeclaringType = ResolveDeclaringType(type, reader, typeDef);
+            LoadTypeCustomAttributes(type, reader, typeDef.GetCustomAttributes(), genericContext, out result.CustomAttributes);
+            LoadTypeGenericParameters(type, reader, typeDef.GetGenericParameters(), genericContext, out result.GenericParameters);
+            result.BaseType = typeDef.BaseType.IsNil == false ? ResolveTypeSignature(reader, typeDef.BaseType, genericContext) : null;
+            LoadTypeInterfaces(type, reader, typeDef.GetInterfaceImplementations(), genericContext, out result.Interfaces);
+            LoadTypeFields(type, reader, typeDef.GetFields(), genericContext, out result.Fields);
+            LoadTypeMethods(type, reader, typeDef.GetMethods(), genericContext, out result.Methods);
+            LoadTypeProperties(type, reader, typeDef.GetProperties(), genericContext, out result.Properties);
+            LoadTypeEvents(type, reader, typeDef.GetEvents(), genericContext, out result.Events);
         }
 
         /// <summary>
         /// Gets a type reference to the declaring type of a type definition.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="reader"></param>
-        /// <param name="handle"></param>
+        /// <param name="typeDef"></param>
         /// <returns></returns>
-        ManagedType? ResolveDeclaringType(MetadataReader reader, TypeDefinitionHandle handle)
+        ManagedType? ResolveDeclaringType(ManagedType type, MetadataReader reader, TypeDefinition typeDef)
         {
-            var declaringTypeHandle = reader.GetTypeDefinition(handle).GetDeclaringType();
-            if (declaringTypeHandle.IsNil)
-                return null;
-
-            return ResolveType(reader, declaringTypeHandle);
+            var declaringTypeHandle = typeDef.GetDeclaringType();
+            return declaringTypeHandle.IsNil == false ? ResolveType(type.Assembly, reader, reader.GetTypeDefinition(declaringTypeHandle)) : null;
         }
 
         /// <summary>
-        /// Loads the generic parameters from the given collection.
+        /// Loads the custom attributes from the given collection.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="reader"></param>
         /// <param name="handles"></param>
-        /// <returns></returns>
-        ReadOnlyFixedValueList1<ManagedGenericParameter> LoadGenericParameters(MetadataReader reader, GenericParameterHandleCollection handles, MetadataGenericContext genericContext)
+        /// <param name="genericContext"></param>
+        /// <param name="result"></param>
+        void LoadTypeCustomAttributes(ManagedType type, MetadataReader reader, CustomAttributeHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList1<ManagedCustomAttribute> result)
         {
-            var l = new FixedValueList1<ManagedGenericParameter>(handles.Count);
+            result = new FixedValueList1<ManagedCustomAttribute>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
-                l[i++] = LoadGenericParameter(reader, handle, genericContext);
-
-            return l.AsReadOnly();
+            {
+                LoadTypeCustomAttribute(type, reader, handle, i, genericContext, out result.GetItemRef(i));
+                i++;
+            }
         }
 
         /// <summary>
-        /// Loads the generic parameter.
+        /// Loads the given custom attribute.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="reader"></param>
         /// <param name="handle"></param>
-        /// <returns></returns>
-        ManagedGenericParameter LoadGenericParameter(MetadataReader reader, GenericParameterHandle handle, MetadataGenericContext genericContext)
+        /// <param name="index"></param>
+        /// <param name="genericContext"></param>
+        /// <param name="result"></param>
+        void LoadTypeCustomAttribute(ManagedType type, MetadataReader reader, CustomAttributeHandle handle, int index, MetadataGenericContext genericContext, out ManagedCustomAttribute result)
         {
-            var parameter = reader.GetGenericParameter(handle);
-
-            return new ManagedGenericParameter(
-                reader.GetString(parameter.Name),
-                LoadGenericParameterConstraints(reader, parameter.GetConstraints(), genericContext));
+            result = new ManagedCustomAttribute();
         }
 
         /// <summary>
         /// Loads the generic parameter constraints from the given collection.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="reader"></param>
         /// <param name="handles"></param>
-        /// <returns></returns>
-        ReadOnlyFixedValueList1<ManagedGenericParameterConstraint> LoadGenericParameterConstraints(MetadataReader reader, GenericParameterConstraintHandleCollection handles, MetadataGenericContext genericContext)
+        /// <param name="genericContext"></param>
+        /// <param name="result"></param>
+        void LoadTypeGenericParameters(ManagedType type, MetadataReader reader, GenericParameterHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList1<ManagedGenericParameter> result)
         {
-            var l = new FixedValueList1<ManagedGenericParameterConstraint>(handles.Count);
+            result = new FixedValueList1<ManagedGenericParameter>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
-                l[i++] = LoadGenericParameterConstraint(reader, handle, genericContext);
+            {
+                LoadTypeGenericParameter(type, reader, handle, i, genericContext, out result.GetItemRef(i));
+                i++;
+            }
+        }
 
-            return l.AsReadOnly();
+        /// <summary>
+        /// Loads the generic parameter.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="reader"></param>
+        /// <param name="handle"></param>
+        /// <param name="index"></param>
+        /// <param name="genericContext"></param>
+        /// <param name="result"></param>
+        void LoadTypeGenericParameter(ManagedType type, MetadataReader reader, GenericParameterHandle handle, int index, MetadataGenericContext genericContext, out ManagedGenericParameter result)
+        {
+            var parameter = reader.GetGenericParameter(handle);
+
+            result = new ManagedGenericParameter();
+            result.Name = reader.GetString(parameter.Name);
+            LoadTypeGenericParameterConstraints(type, reader, parameter.GetConstraints(), genericContext, out result.Constraints);
+        }
+
+        /// <summary>
+        /// Loads the generic parameter constraints from the given collection.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="reader"></param>
+        /// <param name="handles"></param>
+        /// <param name="genericContext"></param>
+        /// <param name="result"></param>
+        void LoadTypeGenericParameterConstraints(ManagedType type, MetadataReader reader, GenericParameterConstraintHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList1<ManagedGenericParameterConstraint> result)
+        {
+            result = new FixedValueList1<ManagedGenericParameterConstraint>(handles.Count);
+
+            var i = 0;
+            foreach (var handle in handles)
+            {
+                LoadTypeGenericParameterConstraint(type, reader, handle, i, genericContext, out result.GetItemRef(i));
+                i++;
+            }
         }
 
         /// <summary>
         /// Loads the generic parameter constraint.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="reader"></param>
         /// <param name="handle"></param>
-        /// <returns></returns>
-        ManagedGenericParameterConstraint LoadGenericParameterConstraint(MetadataReader reader, GenericParameterConstraintHandle handle, MetadataGenericContext genericContext)
+        /// <param name="index"></param>
+        /// <param name="genericContext"></param>
+        /// <param name="result"></param>
+        void LoadTypeGenericParameterConstraint(ManagedType type, MetadataReader reader, GenericParameterConstraintHandle handle, int index, MetadataGenericContext genericContext, out ManagedGenericParameterConstraint result)
         {
             var constraint = reader.GetGenericParameterConstraint(handle);
 
-            return new ManagedGenericParameterConstraint(
-                ResolveTypeSignature(reader, constraint.Type, genericContext),
-                LoadCustomAttributes(reader, constraint.GetCustomAttributes(), genericContext));
+            result = new ManagedGenericParameterConstraint();
+            LoadTypeCustomAttributes(type, reader, constraint.GetCustomAttributes(), genericContext, out result.CustomAttributes);
+            result.Type = ResolveTypeSignature(reader, constraint.Type, genericContext);
         }
 
         /// <summary>
         /// Loads the interface implementations from the given collection.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="reader"></param>
         /// <param name="handles"></param>
-        /// <returns></returns>
-        ReadOnlyFixedValueList2<ManagedInterface> LoadInterfaces(MetadataReader reader, InterfaceImplementationHandleCollection handles, MetadataGenericContext genericContext)
+        /// <param name="genericContext"></param>
+        /// <param name="result"></param>
+        void LoadTypeInterfaces(ManagedType type, MetadataReader reader, InterfaceImplementationHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList2<ManagedInterface> result)
         {
-            var l = new FixedValueList2<ManagedInterface>(handles.Count);
+            result = new FixedValueList2<ManagedInterface>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
-                l[i++] = LoadInterface(reader, handle, genericContext);
-
-            return l.AsReadOnly();
+            {
+                LoadTypeInterface(type, reader, handle, i, genericContext, out result.GetItemRef(i));
+                i++;
+            }
         }
 
         /// <summary>
@@ -477,82 +891,85 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="reader"></param>
         /// <param name="handle"></param>
         /// <returns></returns>
-        ManagedInterface LoadInterface(MetadataReader reader, InterfaceImplementationHandle handle, MetadataGenericContext genericContext)
+        void LoadTypeInterface(ManagedType type, MetadataReader reader, InterfaceImplementationHandle handle, int index, MetadataGenericContext genericContext, out ManagedInterface result)
         {
             var iface = reader.GetInterfaceImplementation(handle);
 
-            return new ManagedInterface(
-                ResolveTypeSignature(reader, iface.Interface, genericContext),
-                LoadCustomAttributes(reader, iface.GetCustomAttributes(), genericContext));
+            result = new ManagedInterface();
+            LoadTypeCustomAttributes(type, reader, iface.GetCustomAttributes(), genericContext, out result.CustomAttributes);
+            result.Type = ResolveTypeSignature(reader, iface.Interface, genericContext);
         }
 
         /// <summary>
         /// Loads the fields from the given collection.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <param name="genericContext"></param>
-        /// <returns></returns>
-        ReadOnlyFixedValueList4<ManagedField> LoadFields(MetadataReader reader, FieldDefinitionHandleCollection handles, MetadataGenericContext genericContext)
+        /// <param name="result"></param>
+        void LoadTypeFields(ManagedType type, MetadataReader reader, FieldDefinitionHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList4<ManagedField> result)
         {
-            var l = new FixedValueList4<ManagedField>(handles.Count);
-            var e = handles.GetEnumerator();
+            result = new FixedValueList4<ManagedField>(handles.Count);
 
-            for (int i = 0; i < handles.Count; i++)
+            var i = 0;
+            foreach (var handle in handles)
             {
-                e.MoveNext();
-                l[i] = LoadField(reader, e.Current, genericContext);
+                LoadTypeField(type, reader, handle, i, genericContext, out result.GetItemRef(i));
+                i++;
             }
-
-            return l.AsReadOnly();
         }
 
         /// <summary>
         /// Loads the given field.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="reader"></param>
         /// <param name="handle"></param>
+        /// <param name="index"></param>
         /// <param name="genericContext"></param>
-        /// <returns></returns>
-        ManagedField LoadField(MetadataReader reader, FieldDefinitionHandle handle, MetadataGenericContext genericContext)
+        /// <param name="result"></param>
+        void LoadTypeField(ManagedType type, MetadataReader reader, FieldDefinitionHandle handle, int index, MetadataGenericContext genericContext, out ManagedField result)
         {
             var field = reader.GetFieldDefinition(handle);
-            var fieldName = reader.GetString(field.Name);
-            var signature = field.DecodeSignature(signatureTypeProvider, genericContext);
 
-            return new ManagedField(
-                fieldName,
-                LoadCustomAttributes(reader, field.GetCustomAttributes(), genericContext),
-                field.Attributes,
-                signature);
+            result = new ManagedField();
+            result.Name = (string?)reader.GetString(field.Name);
+            result.Attributes = field.Attributes;
+            LoadTypeCustomAttributes(type, reader, field.GetCustomAttributes(), genericContext, out result.CustomAttributes);
+            result.FieldType = field.DecodeSignature(signatureTypeProvider, genericContext);
         }
 
         /// <summary>
         /// Loads the methods from the given collection.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="reader"></param>
         /// <param name="handles"></param>
-        /// <returns></returns>
-        ReadOnlyFixedValueList4<ManagedMethod> LoadMethods(MetadataReader reader, MethodDefinitionHandleCollection handles, MetadataGenericContext genericContext)
+        /// <param name="genericContext"></param>
+        /// <param name="result"></param>
+        void LoadTypeMethods(ManagedType type, MetadataReader reader, MethodDefinitionHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList4<ManagedMethod> result)
         {
-            var l = new FixedValueList4<ManagedMethod>(handles.Count);
+            result = new FixedValueList4<ManagedMethod>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
-                l[i++] = LoadMethod(reader, handle, i, genericContext);
-
-            return l.AsReadOnly();
+            {
+                LoadTypeMethod(type, reader, handle, i, genericContext, out result.GetItemRef(i));
+                i++;
+            }
         }
 
         /// <summary>
         /// Loads the given method.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="reader"></param>
         /// <param name="handle"></param>
         /// <param name="index"></param>
         /// <param name="genericContext"></param>
-        /// <returns></returns>
-        ManagedMethod LoadMethod(MetadataReader reader, MethodDefinitionHandle handle, int index, MetadataGenericContext genericContext)
+        /// <param name="result"></param>
+        void LoadTypeMethod(ManagedType type, MetadataReader reader, MethodDefinitionHandle handle, int index, MetadataGenericContext genericContext, out ManagedMethod result)
         {
             var method = reader.GetMethodDefinition(handle);
 
@@ -560,17 +977,19 @@ namespace IKVM.Compiler.Managed.Metadata
             var genericMethodParametersRef = new FixedValueList1<ManagedGenericMethodParameterRef>(method.GetGenericParameters().Count);
             for (int i = 0; i < genericMethodParametersRef.Count; i++)
                 genericMethodParametersRef[i] = new ManagedGenericMethodParameterRef(index, i);
-            genericContext = new MetadataGenericContext(genericContext.TypeParameters, genericMethodParametersRef.AsReadOnly());
+            genericContext = new MetadataGenericContext(genericContext.TypeParameters, genericMethodParametersRef);
 
             // decode method data
-            var name = reader.GetString(method.Name);
             var signature = method.DecodeSignature(signatureTypeProvider, genericContext);
-            var genericParameters = LoadGenericParameters(reader, method.GetGenericParameters(), genericContext);
-            var customAttributes = LoadCustomAttributes(reader, method.GetCustomAttributes(), genericContext);
-            var parameters = LoadParameters(reader, signature.ParameterTypes, method.GetParameters(), genericContext);
 
-            // return method data
-            return new ManagedMethod(name, method.Attributes, method.ImplAttributes, genericParameters, customAttributes, signature.ReturnType, parameters);
+            result = new ManagedMethod();
+            result.Name = reader.GetString(method.Name);
+            result.Attributes = method.Attributes;
+            result.ImplAttributes = method.ImplAttributes;
+            LoadTypeCustomAttributes(type, reader, method.GetCustomAttributes(), genericContext, out result.CustomAttributes);
+            LoadTypeGenericParameters(type, reader, method.GetGenericParameters(), genericContext, out result.GenericParameters);
+            LoadTypeParameters(type, reader, signature.ParameterTypes, method.GetParameters(), genericContext, out result.Parameters);
+            result.ReturnType = signature.ReturnType;
         }
 
         /// <summary>
@@ -579,66 +998,71 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList4<ManagedProperty> LoadProperties(MetadataReader reader, PropertyDefinitionHandleCollection handles, MetadataGenericContext genericContext)
+        void LoadTypeProperties(ManagedType type, MetadataReader reader, PropertyDefinitionHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList4<ManagedProperty> result)
         {
-            var l = new FixedValueList4<ManagedProperty>(handles.Count);
+            result = new FixedValueList4<ManagedProperty>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
-                l[i++] = LoadProperty(reader, handle, i, genericContext);
-
-            return l.AsReadOnly();
+            {
+                LoadTypeProperty(type, reader, handle, i, genericContext, out result.GetItemRef(i));
+                i++;
+            }
         }
 
         /// <summary>
         /// Loads the given property.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="reader"></param>
         /// <param name="handle"></param>
         /// <param name="index"></param>
         /// <param name="genericContext"></param>
-        /// <returns></returns>
-        ManagedProperty LoadProperty(MetadataReader reader, PropertyDefinitionHandle handle, int index, MetadataGenericContext genericContext)
+        /// <param name="result"></param>
+        void LoadTypeProperty(ManagedType type, MetadataReader reader, PropertyDefinitionHandle handle, int index, MetadataGenericContext genericContext, out ManagedProperty result)
         {
             var property = reader.GetPropertyDefinition(handle);
-            var name = reader.GetString(property.Name);
-            var signature = property.DecodeSignature(signatureTypeProvider, genericContext);
-            var customAttributes = LoadCustomAttributes(reader, property.GetCustomAttributes(), genericContext);
-            return new ManagedProperty(name, property.Attributes, customAttributes, signature.ReturnType);
+
+            result = new ManagedProperty();
+            result.Name = reader.GetString(property.Name);
+            result.Attributes = property.Attributes;
+            result.PropertyType = property.DecodeSignature(signatureTypeProvider, genericContext).ReturnType;
+            LoadTypeCustomAttributes(type, reader, property.GetCustomAttributes(), genericContext, out result.CustomAttributes);
         }
 
         /// <summary>
-        /// Loads the properties from the given collection.
+        /// Loads the events from the given collection.
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList1<ManagedEvent> LoadEvents(MetadataReader reader, EventDefinitionHandleCollection handles, MetadataGenericContext genericContext)
+        void LoadTypeEvents(ManagedType type, MetadataReader reader, EventDefinitionHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList1<ManagedEvent> result)
         {
-            var l = new FixedValueList1<ManagedEvent>(handles.Count);
+            result = new FixedValueList1<ManagedEvent>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
-                l[i++] = LoadEvent(reader, handle, i, genericContext);
-
-            return l.AsReadOnly();
+            {
+                LoadTypeEvent(type, reader, handle, i, genericContext, out result.GetItemRef(i));
+                i++;
+            }
         }
 
         /// <summary>
-        /// Loads the given property.
+        /// Loads the given event.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="reader"></param>
         /// <param name="handle"></param>
-        /// <param name="index"></param>
         /// <param name="genericContext"></param>
-        /// <returns></returns>
-        ManagedEvent LoadEvent(MetadataReader reader, EventDefinitionHandle handle, int index, MetadataGenericContext genericContext)
+        /// <param name="result"></param>
+        void LoadTypeEvent(ManagedType type, MetadataReader reader, EventDefinitionHandle handle, int index, MetadataGenericContext genericContext, out ManagedEvent result)
         {
+            result = new ManagedEvent();
             var evt = reader.GetEventDefinition(handle);
-            var name = reader.GetString(evt.Name);
-            var type = ResolveTypeSignature(reader, evt.Type, genericContext);
-            var customAttributes = LoadCustomAttributes(reader, evt.GetCustomAttributes(), genericContext);
-            return new ManagedEvent(name, evt.Attributes, customAttributes, type);
+            result.Name = reader.GetString(evt.Name);
+            LoadTypeCustomAttributes(type, reader, evt.GetCustomAttributes(), genericContext, out result.CustomAttributes);
+            result.EventHandlerType = ResolveTypeSignature(reader, evt.Type, genericContext);
         }
 
         /// <summary>
@@ -647,70 +1071,47 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList4<ManagedParameter> LoadParameters(MetadataReader reader, ImmutableArray<ManagedSignature> parameterTypes, ParameterHandleCollection handles, MetadataGenericContext genericContext)
+        void LoadTypeParameters(ManagedType type, MetadataReader reader, ImmutableArray<ManagedSignature> parameterTypes, ParameterHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList4<ManagedParameter> result)
         {
-            var l = new FixedValueList4<ManagedParameter>(parameterTypes.Length);
-            var e = handles.GetEnumerator();
+            result = new FixedValueList4<ManagedParameter>(Math.Max(parameterTypes.Length, handles.Count));
 
-            for (int i = 0; i < parameterTypes.Length; i++)
-                l[i] = LoadParameter(reader, parameterTypes[i], e.MoveNext() ? e.Current : new ParameterHandle(), genericContext);
-
-            return l.AsReadOnly();
+            var i = 0;
+            foreach (var handle in handles)
+            {
+                LoadParameter(type, reader, parameterTypes.Length < i ? parameterTypes[i] : null, handle, i, genericContext, out result.GetItemRef(i));
+                i++;
+            }
         }
 
         /// <summary>
         /// Loads the given custom attribute.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="reader"></param>
         /// <param name="parameterType"></param>
         /// <param name="handle"></param>
+        /// <param name="genericContext"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        ManagedParameter LoadParameter(MetadataReader reader, ManagedSignature parameterType, ParameterHandle handle, MetadataGenericContext genericContext)
+        void LoadParameter(ManagedType type, MetadataReader reader, ManagedSignature? parameterType, ParameterHandle handle, int index, MetadataGenericContext genericContext, out ManagedParameter result)
         {
+            result = new ManagedParameter();
+            result.ParameterType = parameterType ?? default;
+
             // handle might be null, but signature might specify
             if (handle.IsNil == false)
             {
                 var parameter = reader.GetParameter(handle);
-                return new ManagedParameter(
-                    reader.GetString(parameter.Name),
-                    parameter.Attributes,
-                    LoadCustomAttributes(reader, parameter.GetCustomAttributes(), genericContext),
-                    parameterType);
+                result.Name = reader.GetString(parameter.Name);
+                result.Attributes = parameter.Attributes;
+                LoadTypeCustomAttributes(type, reader, parameter.GetCustomAttributes(), genericContext, out result.CustomAttributes);
             }
             else
-                return new ManagedParameter(
-                    null,
-                    ParameterAttributes.None,
-                    new ReadOnlyFixedValueList1<ManagedCustomAttribute>(),
-                    parameterType);
-        }
-
-        /// <summary>
-        /// Loads the nested types from the given collection.
-        /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="handles"></param>
-        /// <returns></returns>
-        ReadOnlyFixedValueList1<ManagedType> LoadNestedTypes(MetadataReader reader, IList<TypeDefinitionHandle> handles)
-        {
-            var l = new FixedValueList1<ManagedType>(handles.Count);
-
-            var i = 0;
-            foreach (var handle in handles)
-                l[i] = LoadNestedType(reader, handle);
-
-            return l.AsReadOnly();
-        }
-
-        /// <summary>
-        /// Loads the given nested type.
-        /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        ManagedType LoadNestedType(MetadataReader reader, TypeDefinitionHandle handle)
-        {
-            return ResolveType(reader, handle);
+            {
+                result.Name = null;
+                result.Attributes = ParameterAttributes.None;
+                result.CustomAttributes = new FixedValueList1<ManagedCustomAttribute>();
+            }
         }
 
         /// <summary>
@@ -773,6 +1174,36 @@ namespace IKVM.Compiler.Managed.Metadata
 
             // append simple type name
             b.Append(reader.GetString(definition.Name));
+
+            return b.ToString();
+        }
+
+        /// <summary>
+        /// Generates a full type name string for the given exported type.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        string GetExportedTypeName(MetadataReader reader, ExportedType type)
+        {
+            var b = new StringBuilder();
+
+            // may be a nested type
+            if (type.Implementation.Kind == HandleKind.ExportedType)
+            {
+                // nested exports
+                throw new NotImplementedException();
+            }
+
+            // may have namespace
+            if (type.Namespace.IsNil == false)
+            {
+                var ns = reader.GetString(type.Namespace);
+                b.Append(ns).Append('.');
+            }
+
+            // append simple type name
+            b.Append(reader.GetString(type.Name));
 
             return b.ToString();
         }

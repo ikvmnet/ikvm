@@ -34,7 +34,7 @@ namespace IKVM.Compiler.Managed.Metadata
 
         public ManagedSignature GetFunctionPointerType(MethodSignature<ManagedSignature> signature)
         {
-            return ManagedSignature.FunctionPointer(signature.ParameterTypes, signature.ReturnType);
+            return ManagedSignature.FunctionPointer(signature.ReturnType, signature.ParameterTypes);
         }
 
         public ManagedSignature GetGenericInstantiation(ManagedSignature genericType, ImmutableArray<ManagedSignature> typeArguments)
@@ -44,7 +44,7 @@ namespace IKVM.Compiler.Managed.Metadata
 
         public ManagedSignature GetGenericTypeParameter(MetadataGenericContext genericContext, int index)
         {
-            return ManagedGenericTypeParameterSignature.Create(genericContext.TypeParameters[index]);
+            return new ManagedGenericTypeParameterSignature(genericContext.TypeParameters[index]);
         }
 
         public ManagedSignature GetGenericMethodParameter(MetadataGenericContext genericContext, int index)
@@ -52,7 +52,7 @@ namespace IKVM.Compiler.Managed.Metadata
             if (genericContext.MethodParameters == null)
                 throw new ManagedTypeException("No generic method context.");
 
-            return ManagedGenericMethodParameterSignature.Create(genericContext.MethodParameters.Value[index]);
+            return new ManagedGenericMethodParameterSignature(genericContext.MethodParameters.Value[index]);
         }
 
         public ManagedSignature GetModifiedType(ManagedSignature modifier, ManagedSignature unmodifiedType, bool isRequired)
@@ -101,13 +101,13 @@ namespace IKVM.Compiler.Managed.Metadata
         public ManagedSignature GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
         {
             var typeReference = context.ResolveTypeReference(reader, handle, MetadataGenericContext.Empty);
-            return ManagedTypeSignature.Create(typeReference);
+            return ManagedSignature.Type(typeReference);
         }
 
         public ManagedSignature GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
         {
             var typeReference = context.ResolveTypeReference(reader, handle, MetadataGenericContext.Empty);
-            return ManagedTypeSignature.Create(typeReference);
+            return ManagedSignature.Type(typeReference);
         }
 
         public ManagedSignature GetTypeFromSpecification(MetadataReader reader, MetadataGenericContext genericContext, TypeSpecificationHandle handle, byte rawTypeKind)

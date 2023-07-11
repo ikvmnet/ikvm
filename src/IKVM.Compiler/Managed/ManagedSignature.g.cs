@@ -3,20 +3,20 @@
 namespace IKVM.Compiler.Managed
 {
 
-    public readonly partial struct ManagedSignature
+    internal readonly partial struct ManagedSignature
     {
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static implicit operator ManagedSignature(in ManagedTypeSignature value) => new ManagedSignature(value.data);
+        public static implicit operator ManagedSignature(in ManagedTypeSignature value) => new ManagedSignature(true, value.data);
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedTypeSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static explicit operator ManagedTypeSignature(in ManagedSignature value) => new ManagedTypeSignature(value.data);
+        public static explicit operator ManagedTypeSignature(in ManagedSignature value) => new ManagedTypeSignature(true, value.data);
 
         /// <summary>
         /// Returns <c>true</c> if this signature is equal to the specified signature.
@@ -35,19 +35,21 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedTypeSignature : IEquatable<ManagedSignature>, IEquatable<ManagedTypeSignature>
+    internal readonly partial struct ManagedTypeSignature : IEquatable<ManagedSignature>, IEquatable<ManagedTypeSignature>
     {
     
         /// <summary>
         /// Returns <c>true</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator ==(in ManagedTypeSignature x, in ManagedTypeSignature y) => x.Equals(y);
         
         /// <summary>
         /// Returns <c>false</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator !=(in ManagedTypeSignature x, in ManagedTypeSignature y) => x.Equals(y) == false;
 
         internal readonly ManagedSignatureData data;
@@ -56,7 +58,7 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="data"></param>
-        internal ManagedTypeSignature(in ManagedSignatureData data)
+        internal ManagedTypeSignature(bool copy, in ManagedSignatureData data)
         {
             var c = data.GetLastCode();
             if (c.Data.Kind != ManagedSignatureKind.Type)
@@ -95,7 +97,13 @@ namespace IKVM.Compiler.Managed
         /// Gets a unique hash code for this signature.
         /// </summary>
         /// <returns></returns>
-        public override readonly int GetHashCode() => data.GetHashCode();
+        public readonly override int GetHashCode() => data.GetHashCode();
+        
+        /// <summary>
+        /// Gets a string representation of the type.
+        /// </summary>
+        /// <returns></returns>
+        public readonly override string ToString() => data.ToString();
 
         /// <inheritdoc />
         readonly bool IEquatable<ManagedTypeSignature>.Equals(ManagedTypeSignature other) => Equals(other);
@@ -105,20 +113,20 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedSignature
+    internal readonly partial struct ManagedSignature
     {
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static implicit operator ManagedSignature(in ManagedPrimitiveTypeSignature value) => new ManagedSignature(value.data);
+        public static implicit operator ManagedSignature(in ManagedPrimitiveTypeSignature value) => new ManagedSignature(true, value.data);
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedPrimitiveTypeSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static explicit operator ManagedPrimitiveTypeSignature(in ManagedSignature value) => new ManagedPrimitiveTypeSignature(value.data);
+        public static explicit operator ManagedPrimitiveTypeSignature(in ManagedSignature value) => new ManagedPrimitiveTypeSignature(true, value.data);
 
         /// <summary>
         /// Returns <c>true</c> if this signature is equal to the specified signature.
@@ -137,19 +145,21 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedPrimitiveTypeSignature : IEquatable<ManagedSignature>, IEquatable<ManagedPrimitiveTypeSignature>
+    internal readonly partial struct ManagedPrimitiveTypeSignature : IEquatable<ManagedSignature>, IEquatable<ManagedPrimitiveTypeSignature>
     {
     
         /// <summary>
         /// Returns <c>true</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator ==(in ManagedPrimitiveTypeSignature x, in ManagedPrimitiveTypeSignature y) => x.Equals(y);
         
         /// <summary>
         /// Returns <c>false</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator !=(in ManagedPrimitiveTypeSignature x, in ManagedPrimitiveTypeSignature y) => x.Equals(y) == false;
 
         internal readonly ManagedSignatureData data;
@@ -158,7 +168,7 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="data"></param>
-        internal ManagedPrimitiveTypeSignature(in ManagedSignatureData data)
+        internal ManagedPrimitiveTypeSignature(bool copy, in ManagedSignatureData data)
         {
             var c = data.GetLastCode();
             if (c.Data.Kind != ManagedSignatureKind.PrimitiveType)
@@ -197,7 +207,13 @@ namespace IKVM.Compiler.Managed
         /// Gets a unique hash code for this signature.
         /// </summary>
         /// <returns></returns>
-        public override readonly int GetHashCode() => data.GetHashCode();
+        public readonly override int GetHashCode() => data.GetHashCode();
+        
+        /// <summary>
+        /// Gets a string representation of the type.
+        /// </summary>
+        /// <returns></returns>
+        public readonly override string ToString() => data.ToString();
 
         /// <inheritdoc />
         readonly bool IEquatable<ManagedPrimitiveTypeSignature>.Equals(ManagedPrimitiveTypeSignature other) => Equals(other);
@@ -207,20 +223,20 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedSignature
+    internal readonly partial struct ManagedSignature
     {
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static implicit operator ManagedSignature(in ManagedSZArraySignature value) => new ManagedSignature(value.data);
+        public static implicit operator ManagedSignature(in ManagedSZArraySignature value) => new ManagedSignature(true, value.data);
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedSZArraySignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static explicit operator ManagedSZArraySignature(in ManagedSignature value) => new ManagedSZArraySignature(value.data);
+        public static explicit operator ManagedSZArraySignature(in ManagedSignature value) => new ManagedSZArraySignature(true, value.data);
 
         /// <summary>
         /// Returns <c>true</c> if this signature is equal to the specified signature.
@@ -239,19 +255,21 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedSZArraySignature : IEquatable<ManagedSignature>, IEquatable<ManagedSZArraySignature>
+    internal readonly partial struct ManagedSZArraySignature : IEquatable<ManagedSignature>, IEquatable<ManagedSZArraySignature>
     {
     
         /// <summary>
         /// Returns <c>true</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator ==(in ManagedSZArraySignature x, in ManagedSZArraySignature y) => x.Equals(y);
         
         /// <summary>
         /// Returns <c>false</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator !=(in ManagedSZArraySignature x, in ManagedSZArraySignature y) => x.Equals(y) == false;
 
         internal readonly ManagedSignatureData data;
@@ -260,7 +278,7 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="data"></param>
-        internal ManagedSZArraySignature(in ManagedSignatureData data)
+        internal ManagedSZArraySignature(bool copy, in ManagedSignatureData data)
         {
             var c = data.GetLastCode();
             if (c.Data.Kind != ManagedSignatureKind.SZArray)
@@ -299,7 +317,13 @@ namespace IKVM.Compiler.Managed
         /// Gets a unique hash code for this signature.
         /// </summary>
         /// <returns></returns>
-        public override readonly int GetHashCode() => data.GetHashCode();
+        public readonly override int GetHashCode() => data.GetHashCode();
+        
+        /// <summary>
+        /// Gets a string representation of the type.
+        /// </summary>
+        /// <returns></returns>
+        public readonly override string ToString() => data.ToString();
 
         /// <inheritdoc />
         readonly bool IEquatable<ManagedSZArraySignature>.Equals(ManagedSZArraySignature other) => Equals(other);
@@ -309,20 +333,20 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedSignature
+    internal readonly partial struct ManagedSignature
     {
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static implicit operator ManagedSignature(in ManagedArraySignature value) => new ManagedSignature(value.data);
+        public static implicit operator ManagedSignature(in ManagedArraySignature value) => new ManagedSignature(true, value.data);
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedArraySignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static explicit operator ManagedArraySignature(in ManagedSignature value) => new ManagedArraySignature(value.data);
+        public static explicit operator ManagedArraySignature(in ManagedSignature value) => new ManagedArraySignature(true, value.data);
 
         /// <summary>
         /// Returns <c>true</c> if this signature is equal to the specified signature.
@@ -341,19 +365,21 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedArraySignature : IEquatable<ManagedSignature>, IEquatable<ManagedArraySignature>
+    internal readonly partial struct ManagedArraySignature : IEquatable<ManagedSignature>, IEquatable<ManagedArraySignature>
     {
     
         /// <summary>
         /// Returns <c>true</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator ==(in ManagedArraySignature x, in ManagedArraySignature y) => x.Equals(y);
         
         /// <summary>
         /// Returns <c>false</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator !=(in ManagedArraySignature x, in ManagedArraySignature y) => x.Equals(y) == false;
 
         internal readonly ManagedSignatureData data;
@@ -362,7 +388,7 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="data"></param>
-        internal ManagedArraySignature(in ManagedSignatureData data)
+        internal ManagedArraySignature(bool copy, in ManagedSignatureData data)
         {
             var c = data.GetLastCode();
             if (c.Data.Kind != ManagedSignatureKind.Array)
@@ -401,7 +427,13 @@ namespace IKVM.Compiler.Managed
         /// Gets a unique hash code for this signature.
         /// </summary>
         /// <returns></returns>
-        public override readonly int GetHashCode() => data.GetHashCode();
+        public readonly override int GetHashCode() => data.GetHashCode();
+        
+        /// <summary>
+        /// Gets a string representation of the type.
+        /// </summary>
+        /// <returns></returns>
+        public readonly override string ToString() => data.ToString();
 
         /// <inheritdoc />
         readonly bool IEquatable<ManagedArraySignature>.Equals(ManagedArraySignature other) => Equals(other);
@@ -411,20 +443,20 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedSignature
+    internal readonly partial struct ManagedSignature
     {
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static implicit operator ManagedSignature(in ManagedByRefSignature value) => new ManagedSignature(value.data);
+        public static implicit operator ManagedSignature(in ManagedByRefSignature value) => new ManagedSignature(true, value.data);
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedByRefSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static explicit operator ManagedByRefSignature(in ManagedSignature value) => new ManagedByRefSignature(value.data);
+        public static explicit operator ManagedByRefSignature(in ManagedSignature value) => new ManagedByRefSignature(true, value.data);
 
         /// <summary>
         /// Returns <c>true</c> if this signature is equal to the specified signature.
@@ -443,19 +475,21 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedByRefSignature : IEquatable<ManagedSignature>, IEquatable<ManagedByRefSignature>
+    internal readonly partial struct ManagedByRefSignature : IEquatable<ManagedSignature>, IEquatable<ManagedByRefSignature>
     {
     
         /// <summary>
         /// Returns <c>true</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator ==(in ManagedByRefSignature x, in ManagedByRefSignature y) => x.Equals(y);
         
         /// <summary>
         /// Returns <c>false</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator !=(in ManagedByRefSignature x, in ManagedByRefSignature y) => x.Equals(y) == false;
 
         internal readonly ManagedSignatureData data;
@@ -464,7 +498,7 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="data"></param>
-        internal ManagedByRefSignature(in ManagedSignatureData data)
+        internal ManagedByRefSignature(bool copy, in ManagedSignatureData data)
         {
             var c = data.GetLastCode();
             if (c.Data.Kind != ManagedSignatureKind.ByRef)
@@ -503,7 +537,13 @@ namespace IKVM.Compiler.Managed
         /// Gets a unique hash code for this signature.
         /// </summary>
         /// <returns></returns>
-        public override readonly int GetHashCode() => data.GetHashCode();
+        public readonly override int GetHashCode() => data.GetHashCode();
+        
+        /// <summary>
+        /// Gets a string representation of the type.
+        /// </summary>
+        /// <returns></returns>
+        public readonly override string ToString() => data.ToString();
 
         /// <inheritdoc />
         readonly bool IEquatable<ManagedByRefSignature>.Equals(ManagedByRefSignature other) => Equals(other);
@@ -513,20 +553,20 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedSignature
+    internal readonly partial struct ManagedSignature
     {
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static implicit operator ManagedSignature(in ManagedGenericSignature value) => new ManagedSignature(value.data);
+        public static implicit operator ManagedSignature(in ManagedGenericSignature value) => new ManagedSignature(true, value.data);
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedGenericSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static explicit operator ManagedGenericSignature(in ManagedSignature value) => new ManagedGenericSignature(value.data);
+        public static explicit operator ManagedGenericSignature(in ManagedSignature value) => new ManagedGenericSignature(true, value.data);
 
         /// <summary>
         /// Returns <c>true</c> if this signature is equal to the specified signature.
@@ -545,19 +585,21 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedGenericSignature : IEquatable<ManagedSignature>, IEquatable<ManagedGenericSignature>
+    internal readonly partial struct ManagedGenericSignature : IEquatable<ManagedSignature>, IEquatable<ManagedGenericSignature>
     {
     
         /// <summary>
         /// Returns <c>true</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator ==(in ManagedGenericSignature x, in ManagedGenericSignature y) => x.Equals(y);
         
         /// <summary>
         /// Returns <c>false</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator !=(in ManagedGenericSignature x, in ManagedGenericSignature y) => x.Equals(y) == false;
 
         internal readonly ManagedSignatureData data;
@@ -566,7 +608,7 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="data"></param>
-        internal ManagedGenericSignature(in ManagedSignatureData data)
+        internal ManagedGenericSignature(bool copy, in ManagedSignatureData data)
         {
             var c = data.GetLastCode();
             if (c.Data.Kind != ManagedSignatureKind.Generic)
@@ -605,7 +647,13 @@ namespace IKVM.Compiler.Managed
         /// Gets a unique hash code for this signature.
         /// </summary>
         /// <returns></returns>
-        public override readonly int GetHashCode() => data.GetHashCode();
+        public readonly override int GetHashCode() => data.GetHashCode();
+        
+        /// <summary>
+        /// Gets a string representation of the type.
+        /// </summary>
+        /// <returns></returns>
+        public readonly override string ToString() => data.ToString();
 
         /// <inheritdoc />
         readonly bool IEquatable<ManagedGenericSignature>.Equals(ManagedGenericSignature other) => Equals(other);
@@ -615,20 +663,20 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedSignature
+    internal readonly partial struct ManagedSignature
     {
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static implicit operator ManagedSignature(in ManagedGenericConstraintSignature value) => new ManagedSignature(value.data);
+        public static implicit operator ManagedSignature(in ManagedGenericConstraintSignature value) => new ManagedSignature(true, value.data);
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedGenericConstraintSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static explicit operator ManagedGenericConstraintSignature(in ManagedSignature value) => new ManagedGenericConstraintSignature(value.data);
+        public static explicit operator ManagedGenericConstraintSignature(in ManagedSignature value) => new ManagedGenericConstraintSignature(true, value.data);
 
         /// <summary>
         /// Returns <c>true</c> if this signature is equal to the specified signature.
@@ -647,19 +695,21 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedGenericConstraintSignature : IEquatable<ManagedSignature>, IEquatable<ManagedGenericConstraintSignature>
+    internal readonly partial struct ManagedGenericConstraintSignature : IEquatable<ManagedSignature>, IEquatable<ManagedGenericConstraintSignature>
     {
     
         /// <summary>
         /// Returns <c>true</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator ==(in ManagedGenericConstraintSignature x, in ManagedGenericConstraintSignature y) => x.Equals(y);
         
         /// <summary>
         /// Returns <c>false</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator !=(in ManagedGenericConstraintSignature x, in ManagedGenericConstraintSignature y) => x.Equals(y) == false;
 
         internal readonly ManagedSignatureData data;
@@ -668,7 +718,7 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="data"></param>
-        internal ManagedGenericConstraintSignature(in ManagedSignatureData data)
+        internal ManagedGenericConstraintSignature(bool copy, in ManagedSignatureData data)
         {
             var c = data.GetLastCode();
             if (c.Data.Kind != ManagedSignatureKind.GenericConstraint)
@@ -707,7 +757,13 @@ namespace IKVM.Compiler.Managed
         /// Gets a unique hash code for this signature.
         /// </summary>
         /// <returns></returns>
-        public override readonly int GetHashCode() => data.GetHashCode();
+        public readonly override int GetHashCode() => data.GetHashCode();
+        
+        /// <summary>
+        /// Gets a string representation of the type.
+        /// </summary>
+        /// <returns></returns>
+        public readonly override string ToString() => data.ToString();
 
         /// <inheritdoc />
         readonly bool IEquatable<ManagedGenericConstraintSignature>.Equals(ManagedGenericConstraintSignature other) => Equals(other);
@@ -717,20 +773,20 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedSignature
+    internal readonly partial struct ManagedSignature
     {
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static implicit operator ManagedSignature(in ManagedGenericTypeParameterSignature value) => new ManagedSignature(value.data);
+        public static implicit operator ManagedSignature(in ManagedGenericTypeParameterSignature value) => new ManagedSignature(true, value.data);
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedGenericTypeParameterSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static explicit operator ManagedGenericTypeParameterSignature(in ManagedSignature value) => new ManagedGenericTypeParameterSignature(value.data);
+        public static explicit operator ManagedGenericTypeParameterSignature(in ManagedSignature value) => new ManagedGenericTypeParameterSignature(true, value.data);
 
         /// <summary>
         /// Returns <c>true</c> if this signature is equal to the specified signature.
@@ -749,19 +805,21 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedGenericTypeParameterSignature : IEquatable<ManagedSignature>, IEquatable<ManagedGenericTypeParameterSignature>
+    internal readonly partial struct ManagedGenericTypeParameterSignature : IEquatable<ManagedSignature>, IEquatable<ManagedGenericTypeParameterSignature>
     {
     
         /// <summary>
         /// Returns <c>true</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator ==(in ManagedGenericTypeParameterSignature x, in ManagedGenericTypeParameterSignature y) => x.Equals(y);
         
         /// <summary>
         /// Returns <c>false</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator !=(in ManagedGenericTypeParameterSignature x, in ManagedGenericTypeParameterSignature y) => x.Equals(y) == false;
 
         internal readonly ManagedSignatureData data;
@@ -770,7 +828,7 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="data"></param>
-        internal ManagedGenericTypeParameterSignature(in ManagedSignatureData data)
+        internal ManagedGenericTypeParameterSignature(bool copy, in ManagedSignatureData data)
         {
             var c = data.GetLastCode();
             if (c.Data.Kind != ManagedSignatureKind.GenericTypeParameter)
@@ -809,7 +867,13 @@ namespace IKVM.Compiler.Managed
         /// Gets a unique hash code for this signature.
         /// </summary>
         /// <returns></returns>
-        public override readonly int GetHashCode() => data.GetHashCode();
+        public readonly override int GetHashCode() => data.GetHashCode();
+        
+        /// <summary>
+        /// Gets a string representation of the type.
+        /// </summary>
+        /// <returns></returns>
+        public readonly override string ToString() => data.ToString();
 
         /// <inheritdoc />
         readonly bool IEquatable<ManagedGenericTypeParameterSignature>.Equals(ManagedGenericTypeParameterSignature other) => Equals(other);
@@ -819,20 +883,20 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedSignature
+    internal readonly partial struct ManagedSignature
     {
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static implicit operator ManagedSignature(in ManagedGenericMethodParameterSignature value) => new ManagedSignature(value.data);
+        public static implicit operator ManagedSignature(in ManagedGenericMethodParameterSignature value) => new ManagedSignature(true, value.data);
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedGenericMethodParameterSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static explicit operator ManagedGenericMethodParameterSignature(in ManagedSignature value) => new ManagedGenericMethodParameterSignature(value.data);
+        public static explicit operator ManagedGenericMethodParameterSignature(in ManagedSignature value) => new ManagedGenericMethodParameterSignature(true, value.data);
 
         /// <summary>
         /// Returns <c>true</c> if this signature is equal to the specified signature.
@@ -851,19 +915,21 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedGenericMethodParameterSignature : IEquatable<ManagedSignature>, IEquatable<ManagedGenericMethodParameterSignature>
+    internal readonly partial struct ManagedGenericMethodParameterSignature : IEquatable<ManagedSignature>, IEquatable<ManagedGenericMethodParameterSignature>
     {
     
         /// <summary>
         /// Returns <c>true</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator ==(in ManagedGenericMethodParameterSignature x, in ManagedGenericMethodParameterSignature y) => x.Equals(y);
         
         /// <summary>
         /// Returns <c>false</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator !=(in ManagedGenericMethodParameterSignature x, in ManagedGenericMethodParameterSignature y) => x.Equals(y) == false;
 
         internal readonly ManagedSignatureData data;
@@ -872,7 +938,7 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="data"></param>
-        internal ManagedGenericMethodParameterSignature(in ManagedSignatureData data)
+        internal ManagedGenericMethodParameterSignature(bool copy, in ManagedSignatureData data)
         {
             var c = data.GetLastCode();
             if (c.Data.Kind != ManagedSignatureKind.GenericMethodParameter)
@@ -911,7 +977,13 @@ namespace IKVM.Compiler.Managed
         /// Gets a unique hash code for this signature.
         /// </summary>
         /// <returns></returns>
-        public override readonly int GetHashCode() => data.GetHashCode();
+        public readonly override int GetHashCode() => data.GetHashCode();
+        
+        /// <summary>
+        /// Gets a string representation of the type.
+        /// </summary>
+        /// <returns></returns>
+        public readonly override string ToString() => data.ToString();
 
         /// <inheritdoc />
         readonly bool IEquatable<ManagedGenericMethodParameterSignature>.Equals(ManagedGenericMethodParameterSignature other) => Equals(other);
@@ -921,20 +993,20 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedSignature
+    internal readonly partial struct ManagedSignature
     {
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static implicit operator ManagedSignature(in ManagedModifiedSignature value) => new ManagedSignature(value.data);
+        public static implicit operator ManagedSignature(in ManagedModifiedSignature value) => new ManagedSignature(true, value.data);
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedModifiedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static explicit operator ManagedModifiedSignature(in ManagedSignature value) => new ManagedModifiedSignature(value.data);
+        public static explicit operator ManagedModifiedSignature(in ManagedSignature value) => new ManagedModifiedSignature(true, value.data);
 
         /// <summary>
         /// Returns <c>true</c> if this signature is equal to the specified signature.
@@ -953,19 +1025,21 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedModifiedSignature : IEquatable<ManagedSignature>, IEquatable<ManagedModifiedSignature>
+    internal readonly partial struct ManagedModifiedSignature : IEquatable<ManagedSignature>, IEquatable<ManagedModifiedSignature>
     {
     
         /// <summary>
         /// Returns <c>true</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator ==(in ManagedModifiedSignature x, in ManagedModifiedSignature y) => x.Equals(y);
         
         /// <summary>
         /// Returns <c>false</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator !=(in ManagedModifiedSignature x, in ManagedModifiedSignature y) => x.Equals(y) == false;
 
         internal readonly ManagedSignatureData data;
@@ -974,7 +1048,7 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="data"></param>
-        internal ManagedModifiedSignature(in ManagedSignatureData data)
+        internal ManagedModifiedSignature(bool copy, in ManagedSignatureData data)
         {
             var c = data.GetLastCode();
             if (c.Data.Kind != ManagedSignatureKind.Modified)
@@ -1013,7 +1087,13 @@ namespace IKVM.Compiler.Managed
         /// Gets a unique hash code for this signature.
         /// </summary>
         /// <returns></returns>
-        public override readonly int GetHashCode() => data.GetHashCode();
+        public readonly override int GetHashCode() => data.GetHashCode();
+        
+        /// <summary>
+        /// Gets a string representation of the type.
+        /// </summary>
+        /// <returns></returns>
+        public readonly override string ToString() => data.ToString();
 
         /// <inheritdoc />
         readonly bool IEquatable<ManagedModifiedSignature>.Equals(ManagedModifiedSignature other) => Equals(other);
@@ -1023,20 +1103,20 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedSignature
+    internal readonly partial struct ManagedSignature
     {
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static implicit operator ManagedSignature(in ManagedPointerSignature value) => new ManagedSignature(value.data);
+        public static implicit operator ManagedSignature(in ManagedPointerSignature value) => new ManagedSignature(true, value.data);
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedPointerSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static explicit operator ManagedPointerSignature(in ManagedSignature value) => new ManagedPointerSignature(value.data);
+        public static explicit operator ManagedPointerSignature(in ManagedSignature value) => new ManagedPointerSignature(true, value.data);
 
         /// <summary>
         /// Returns <c>true</c> if this signature is equal to the specified signature.
@@ -1055,19 +1135,21 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedPointerSignature : IEquatable<ManagedSignature>, IEquatable<ManagedPointerSignature>
+    internal readonly partial struct ManagedPointerSignature : IEquatable<ManagedSignature>, IEquatable<ManagedPointerSignature>
     {
     
         /// <summary>
         /// Returns <c>true</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator ==(in ManagedPointerSignature x, in ManagedPointerSignature y) => x.Equals(y);
         
         /// <summary>
         /// Returns <c>false</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator !=(in ManagedPointerSignature x, in ManagedPointerSignature y) => x.Equals(y) == false;
 
         internal readonly ManagedSignatureData data;
@@ -1076,7 +1158,7 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="data"></param>
-        internal ManagedPointerSignature(in ManagedSignatureData data)
+        internal ManagedPointerSignature(bool copy, in ManagedSignatureData data)
         {
             var c = data.GetLastCode();
             if (c.Data.Kind != ManagedSignatureKind.Pointer)
@@ -1115,7 +1197,13 @@ namespace IKVM.Compiler.Managed
         /// Gets a unique hash code for this signature.
         /// </summary>
         /// <returns></returns>
-        public override readonly int GetHashCode() => data.GetHashCode();
+        public readonly override int GetHashCode() => data.GetHashCode();
+        
+        /// <summary>
+        /// Gets a string representation of the type.
+        /// </summary>
+        /// <returns></returns>
+        public readonly override string ToString() => data.ToString();
 
         /// <inheritdoc />
         readonly bool IEquatable<ManagedPointerSignature>.Equals(ManagedPointerSignature other) => Equals(other);
@@ -1125,20 +1213,20 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedSignature
+    internal readonly partial struct ManagedSignature
     {
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static implicit operator ManagedSignature(in ManagedFunctionPointerSignature value) => new ManagedSignature(value.data);
+        public static implicit operator ManagedSignature(in ManagedFunctionPointerSignature value) => new ManagedSignature(true, value.data);
 
         /// <summary>
         /// Casts the given signature to a <see cref="ManagedFunctionPointerSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static explicit operator ManagedFunctionPointerSignature(in ManagedSignature value) => new ManagedFunctionPointerSignature(value.data);
+        public static explicit operator ManagedFunctionPointerSignature(in ManagedSignature value) => new ManagedFunctionPointerSignature(true, value.data);
 
         /// <summary>
         /// Returns <c>true</c> if this signature is equal to the specified signature.
@@ -1157,19 +1245,21 @@ namespace IKVM.Compiler.Managed
 
     }
 
-    public readonly partial struct ManagedFunctionPointerSignature : IEquatable<ManagedSignature>, IEquatable<ManagedFunctionPointerSignature>
+    internal readonly partial struct ManagedFunctionPointerSignature : IEquatable<ManagedSignature>, IEquatable<ManagedFunctionPointerSignature>
     {
     
         /// <summary>
         /// Returns <c>true</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator ==(in ManagedFunctionPointerSignature x, in ManagedFunctionPointerSignature y) => x.Equals(y);
         
         /// <summary>
         /// Returns <c>false</c> if the two signatures are equal to each other.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="x"></param
+        /// <param name="y"></param>
         public static bool operator !=(in ManagedFunctionPointerSignature x, in ManagedFunctionPointerSignature y) => x.Equals(y) == false;
 
         internal readonly ManagedSignatureData data;
@@ -1178,7 +1268,7 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="data"></param>
-        internal ManagedFunctionPointerSignature(in ManagedSignatureData data)
+        internal ManagedFunctionPointerSignature(bool copy, in ManagedSignatureData data)
         {
             var c = data.GetLastCode();
             if (c.Data.Kind != ManagedSignatureKind.FunctionPointer)
@@ -1217,7 +1307,13 @@ namespace IKVM.Compiler.Managed
         /// Gets a unique hash code for this signature.
         /// </summary>
         /// <returns></returns>
-        public override readonly int GetHashCode() => data.GetHashCode();
+        public readonly override int GetHashCode() => data.GetHashCode();
+        
+        /// <summary>
+        /// Gets a string representation of the type.
+        /// </summary>
+        /// <returns></returns>
+        public readonly override string ToString() => data.ToString();
 
         /// <inheritdoc />
         readonly bool IEquatable<ManagedFunctionPointerSignature>.Equals(ManagedFunctionPointerSignature other) => Equals(other);

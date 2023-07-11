@@ -9,7 +9,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a list of events on a <see cref="ManagedType"/>.
     /// </summary>
-    public readonly struct ManagedTypeEventList : IReadOnlyList<ManagedEvent>, IEnumerable<ManagedEvent>
+    internal readonly struct ManagedTypeEventList : IReadOnlyList<ManagedEvent>, IEnumerable<ManagedEvent>
     {
 
         /// <summary>

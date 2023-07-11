@@ -4,15 +4,17 @@
     /// <summary>
     /// Describes a pointer type.
     /// </summary>
-    public readonly partial struct ManagedPointerSignature
+    internal readonly partial struct ManagedPointerSignature
     {
 
         /// <summary>
-        /// Creates a new pointer signature.
+        /// Initializes a new instance.
         /// </summary>
         /// <param name="baseType"></param>
-        /// <returns></returns>
-        internal static ManagedPointerSignature Create(ManagedSignatureData baseType) => new ManagedPointerSignature(new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Pointer), baseType, null, null));
+        public ManagedPointerSignature(in ManagedSignatureData baseType)
+        {
+            ManagedSignatureData.Write(new ManagedSignatureCodeData(ManagedSignatureKind.Pointer), baseType, null, null, out data);
+        }
 
     }
 

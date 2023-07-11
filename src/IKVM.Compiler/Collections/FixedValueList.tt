@@ -29,7 +29,7 @@ foreach (var size in new[]
 {
 #>
 
-    public static partial class ReadOnlyFixedValueList
+    internal static partial class FixedValueList
     {
 
         /// <summary>
@@ -37,72 +37,21 @@ foreach (var size in new[]
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public static ref readonly T GetItemRef<T>(this in ReadOnlyFixedValueList<#= size #><T> self, int index)
+        public static ref T GetItemRef<T>(this ref FixedValueList<#= size #><T> self, int index)
         {
             switch (index)
             {
-                case 0:
-                    return ref self.list.item0;
-                default:
-                    return ref self.list.more![index - 1];
-            }
-        }
-
-    }
-
-    /// <summary>
-    /// A fixed structural <see cref="IReadOnlyList{T}"/> implementation that optimizes for short lists.
-    /// </summary>
-    /// <typeparam name="TList"></typeparam>
-    public readonly struct ReadOnlyFixedValueList<#= size #><T>
+<#
+    for (int i = 0; i < size; i++)
     {
-
-        /// <summary>
-        /// Returns an empty list.
-        /// </summary>
-        public static readonly ReadOnlyFixedValueList<#= size #><T> Empty = new ReadOnlyFixedValueList<#= size #><T>();
-
-        internal readonly FixedValueList<#= size #><T> list;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="list"></param>
-        public ReadOnlyFixedValueList<#= size #>(in FixedValueList<#= size #><T> list)
-        {
-            this.list = list;
-        }
-
-        /// <summary>
-        /// Gets the item at the specified index.
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public readonly T this[int index] => list[index];
-
-        /// <summary>
-        /// Gets the number of items in the list.
-        /// </summary>
-        public readonly int Count => list.Count;
-
+#>
+                case <#= i #>:
+                    return ref self.item<#= i #>;
+<#
     }
-
-    public static partial class FixedValueList
-    {
-
-        /// <summary>
-        /// Gets the item at the specified index.
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public static ref readonly T GetItemRef<T>(this in FixedValueList<#= size #><T> self, int index)
-        {
-            switch (index)
-            {
-                case 0:
-                    return ref self.item0;
+#>
                 default:
-                    return ref self.more![index - 1];
+                    return ref self.more![index - <#= size #>];
             }
         }
 
@@ -112,8 +61,13 @@ foreach (var size in new[]
     /// A fixed structural list implementation that optimizes for lists up to <#= size #> items.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public partial struct FixedValueList<#= size #><T>
+    internal partial struct FixedValueList<#= size #><T>
     {
+
+        /// <summary>
+        /// Returns an empty list.
+        /// </summary>
+        public static readonly FixedValueList<#= size #><T> Empty = new FixedValueList<#= size #><T>();
 
         internal readonly int count;
 <#
@@ -140,7 +94,7 @@ foreach (var size in new[]
             if (count > <#= size #>)
             {
                 var size = count - <#= size #>;
-                more = new T[(size + (size - 1)) & -size];
+                more = new T[size];
             }
         }
 
@@ -171,13 +125,9 @@ foreach (var size in new[]
 <#
     }
 #>
-
             if (this.count > <#= size #>)
-            {
-                var s = this.count - <#= size #>;
-                for (int i = 0; i < s; i++)
-                    more[i] = source[i + <#= size #>];
-            }
+                for (int i = <#= size #>; i < this.count; i++)
+                    more[i - <#= size #>] = source[i];
         }
 
         /// <summary>
@@ -213,35 +163,6 @@ foreach (var size in new[]
         /// Initializes a new instance.
         /// </summary>
         /// <param name="source"></param>
-        public FixedValueList<#= size #>(in ReadOnlyFixedValueList<#= size #><T> source) :
-            this(source.Count, source)
-        {
-
-        }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="count"></param>
-        /// <param name="source"></param>
-        public FixedValueList<#= size #>(int count, in ReadOnlyFixedValueList<#= size #><T> source) :
-            this(count)
-        {
-<#
-    for (int i = 0; i < size; i++)
-    {
-#>
-            item<#= i #> = source.list.item<#= i #>;
-<#
-    }
-#>
-            source.list.more?.AsSpan(0, Math.Min(source.list.more.Length, count - <#= size #>)).CopyTo(more);
-        }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="source"></param>
         public FixedValueList<#= size #>(IList<T> source) :
             this(source.Count)
         {
@@ -254,13 +175,9 @@ foreach (var size in new[]
 <#
     }
 #>
-
             if (this.count > <#= size #>)
-            {
-                var s = this.count - <#= size #>;
-                for (int i = 0; i < s; i++)
-                    more[i] = source[i + <#= size #>];
-            }
+                for (int i = <#= size #>; i < this.count; i++)
+                    more[i - <#= size #>] = source[i];
         }
 
         /// <summary>
@@ -279,13 +196,9 @@ foreach (var size in new[]
 <#
     }
 #>
-
             if (this.count > <#= size #>)
-            {
-                var s = this.count - <#= size #>;
-                for (int i = 0; i < s; i++)
-                    more[i] = source[i + <#= size #>];
-            }
+                for (int i = <#= size #>; i < this.count; i++)
+                    more[i - <#= size #>] = source[i];
         }
 
         /// <summary>
@@ -334,7 +247,7 @@ foreach (var size in new[]
             switch (index)
             {
 <#
-    for (int i = size - 1; i >= 0; i--)
+    for (int i = 0; i < size; i++)
     {
 #>
                 case <#= i #>:
@@ -358,7 +271,7 @@ foreach (var size in new[]
             switch (index)
             {
 <#
-    for (int i = size - 1; i >= 0; i--)
+    for (int i = 0; i < size; i++)
     {
 #>
                 case <#= i #>:
@@ -377,15 +290,6 @@ foreach (var size in new[]
         /// Gets the number of items in the list.
         /// </summary>
         public readonly int Count => count;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <returns></returns>
-        public ReadOnlyFixedValueList<#= size #><T> AsReadOnly()
-        {
-            return new ReadOnlyFixedValueList<#= size #><T>(this);
-        }
 
     }
 <#

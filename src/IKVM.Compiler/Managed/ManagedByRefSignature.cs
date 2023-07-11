@@ -4,15 +4,17 @@
     /// <summary>
     /// Describes a by-ref type.
     /// </summary>
-    public readonly partial struct ManagedByRefSignature
+    internal readonly partial struct ManagedByRefSignature
     {
 
         /// <summary>
-        /// Creates a new by-ref signature.
+        /// Creates a new by-ref signature
         /// </summary>
         /// <param name="baseType"></param>
-        /// <returns></returns>
-        internal static ManagedByRefSignature Create(ManagedSignatureData baseType) => new ManagedByRefSignature(new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.ByRef), baseType, null, null));
+        internal ManagedByRefSignature(in ManagedSignatureData baseType)
+        {
+            ManagedSignatureData.Write(new ManagedSignatureCodeData(ManagedSignatureKind.ByRef), baseType, null, null, out data);
+        }
 
     }
 

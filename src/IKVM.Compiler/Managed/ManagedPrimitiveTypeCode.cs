@@ -1,7 +1,7 @@
 ﻿namespace IKVM.Compiler.Managed
 {
 
-    public enum ManagedPrimitiveTypeCode
+    internal enum ManagedPrimitiveTypeCode
     {
 
         Boolean = 2,

@@ -1,4 +1,6 @@
-﻿using IKVM.Compiler.Collections;
+﻿using System;
+
+using IKVM.Compiler.Collections;
 
 namespace IKVM.Compiler.Managed
 {
@@ -6,7 +8,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes an element in a managed signature sequence.
     /// </summary>
-    readonly struct ManagedSignatureCode
+    internal readonly struct ManagedSignatureCode
     {
 
         /// <summary>
@@ -27,16 +29,16 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Sequence of reverse offsets within the hosting sequence from this code to each code element within the variable argument list.
         /// </summary>
-        public readonly ReadOnlyFixedValueList2<short> Argv;
+        public readonly FixedValueList2<short> Argv;
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Populates a code instance with the specified data.
         /// </summary>
         /// <param name="data"></param>
         /// <param name="arg0"></param>
         /// <param name="arg1"></param>
         /// <param name="argv"></param>
-        public ManagedSignatureCode(in ManagedSignatureCodeData data, short arg0, short arg1, in ReadOnlyFixedValueList2<short> argv)
+        public ManagedSignatureCode(in ManagedSignatureCodeData data, short arg0, short arg1, in FixedValueList2<short> argv)
         {
             Data = data;
             Arg0 = arg0;
