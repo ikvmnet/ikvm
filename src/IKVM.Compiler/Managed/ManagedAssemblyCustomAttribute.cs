@@ -23,10 +23,10 @@
         /// <summary>
         /// Gets the type that declared this attribute.
         /// </summary>
-        public ManagedAssembly DeclaringAssembly => assembly;
+        public readonly ManagedAssembly DeclaringAssembly => assembly;
 
         /// <inheritdoc />
-        public override string ToString() => "";
+        public override readonly string ToString() => "";
 
     }
 

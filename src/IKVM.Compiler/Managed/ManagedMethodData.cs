@@ -65,9 +65,6 @@ namespace IKVM.Compiler.Managed
             IsNil = isNil;
         }
 
-        /// <inhericdoc />
-        public override readonly string ToString() => Name ?? "";
-
     }
 
 }

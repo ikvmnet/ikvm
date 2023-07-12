@@ -1,4 +1,6 @@
-﻿namespace IKVM.Compiler.Managed
+﻿using IKVM.Compiler.Collections;
+
+namespace IKVM.Compiler.Managed
 {
 
     /// <summary>
@@ -23,15 +25,15 @@
         /// <summary>
         /// Gets the type that declared this property.
         /// </summary>
-        public ManagedType DeclaringType => type;
+        public readonly ManagedType DeclaringType => type;
 
         /// <summary>
         /// Gets the name of the property.
         /// </summary>
-        public string Name => type.data.Properties[index].Name ?? "";
+        public readonly string Name => type.data.Properties.GetItemRef(index).Name ?? "";
 
         /// <inheritdoc />
-        public override string ToString() => Name;
+        public override readonly string ToString() => Name;
 
     }
 

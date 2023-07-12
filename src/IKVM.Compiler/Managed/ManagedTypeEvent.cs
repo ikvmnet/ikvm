@@ -23,15 +23,15 @@
         /// <summary>
         /// Gets the type that declared this event.
         /// </summary>
-        public ManagedType DeclaringType => type;
+        public readonly  ManagedType DeclaringType => type;
 
         /// <summary>
         /// Gets the name of the event.
         /// </summary>
-        public string Name => type.data.Events[index].Name;
+        public readonly  string Name => type.data.Events[index].Name;
 
         /// <inheritdoc />
-        public override string ToString() => type.data.Events[index].ToString();
+        public override readonly string ToString() => Name;
 
     }
 

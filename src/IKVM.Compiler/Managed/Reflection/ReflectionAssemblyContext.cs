@@ -448,9 +448,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <param name="refParameterList"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        void LoadTypeGenericParameters(ManagedType type, Type[] refParameterList, out FixedValueList1<ManagedGenericParameter> result)
+        void LoadTypeGenericParameters(ManagedType type, Type[] refParameterList, out FixedValueList1<ManagedGenericParameterData> result)
         {
-            result = new FixedValueList1<ManagedGenericParameter>(refParameterList.Length);
+            result = new FixedValueList1<ManagedGenericParameterData>(refParameterList.Length);
 
             for (int i = 0; i < refParameterList.Length; i++)
                 LoadTypeGenericParameter(type, refParameterList[i], out result.GetItemRef(i));
@@ -463,9 +463,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <param name="refParameter"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        void LoadTypeGenericParameter(ManagedType type, Type refParameter, out ManagedGenericParameter result)
+        void LoadTypeGenericParameter(ManagedType type, Type refParameter, out ManagedGenericParameterData result)
         {
-            result = new ManagedGenericParameter();
+            result = new ManagedGenericParameterData();
             result.Name = refParameter.Name;
             LoadTypeGenericParameterConstraints(type, refParameter.GetGenericParameterConstraints(), out result.Constraints);
         }
@@ -477,9 +477,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <param name="refConstraintList"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        void LoadTypeGenericParameterConstraints(ManagedType type, Type[] refConstraintList, out FixedValueList1<ManagedGenericParameterConstraint> result)
+        void LoadTypeGenericParameterConstraints(ManagedType type, Type[] refConstraintList, out FixedValueList1<ManagedGenericParameterConstraintData> result)
         {
-            result = new FixedValueList1<ManagedGenericParameterConstraint>(refConstraintList.Length);
+            result = new FixedValueList1<ManagedGenericParameterConstraintData>(refConstraintList.Length);
 
             for (int i = 0; i < refConstraintList.Length; i++)
                 LoadTypeGenericParameterConstraint(type, refConstraintList[i], out result.GetItemRef(i));
@@ -492,9 +492,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <param name="refConstraint"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        void LoadTypeGenericParameterConstraint(ManagedType type, Type refConstraint, out ManagedGenericParameterConstraint result)
+        void LoadTypeGenericParameterConstraint(ManagedType type, Type refConstraint, out ManagedGenericParameterConstraintData result)
         {
-            result = new ManagedGenericParameterConstraint();
+            result = new ManagedGenericParameterConstraintData();
             result.Type = ResolveSignature(refConstraint);
             LoadTypeCustomAttributes(type, refConstraint.GetCustomAttributesData(), out result.CustomAttributes);
         }
@@ -587,7 +587,7 @@ namespace IKVM.Compiler.Managed.Reflection
             switch (refMethod)
             {
                 case ConstructorInfo ctor:
-                    result.GenericParameters = FixedValueList1<ManagedGenericParameter>.Empty;
+                    result.GenericParameters = FixedValueList1<ManagedGenericParameterData>.Empty;
                     result.ReturnType = ResolveSignature(typeof(void));
                     break;
                 case MethodInfo method:

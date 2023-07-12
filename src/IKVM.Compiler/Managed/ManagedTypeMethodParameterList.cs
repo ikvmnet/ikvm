@@ -1,43 +1,42 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 
+using IKVM.Compiler.Collections;
+
 namespace IKVM.Compiler.Managed
 {
 
-    /// <summary>
-    /// Represents a list of generic parameters on a <see cref="ManagedType"/>.
-    /// </summary>
-    internal readonly struct ManagedTypeGenericParameterList : IReadOnlyList<ManagedTypeGenericParameter>, IEnumerable<ManagedTypeGenericParameter>
+    internal readonly partial struct ManagedTypeMethodParameterList : IReadOnlyList<ManagedTypeMethodParameter>, IEnumerable<ManagedTypeMethodParameter>
     {
 
         /// <summary>
         /// Provides an enumerator that iterates over the items in the list.
         /// </summary>
-        public struct Enumerator : IEnumerator<ManagedTypeGenericParameter>
+        public struct Enumerator : IEnumerator<ManagedTypeMethodParameter>
         {
 
-            readonly ManagedType type;
+            readonly ManagedTypeMethod method;
             int index = -1;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="type"></param>
-            public Enumerator(ManagedType type)
+            /// <param name="method"></param>
+            public Enumerator(ManagedTypeMethod method)
             {
-                this.type = type;
+                this.method = method;
             }
 
             /// <summary>
             /// Moves to the next item.
             /// </summary>
             /// <returns></returns>
-            public bool MoveNext() => type.data.GenericParameters.Count > ++index;
+            public bool MoveNext() => method.type.data.Methods.GetItemRef(method.index).Parameters.Count > ++index;
 
             /// <summary>
             /// Gets a reference to the current item.
             /// </summary>
-            public readonly ManagedTypeGenericParameter Current => new ManagedTypeGenericParameter(type, index);
+            public readonly ManagedTypeMethodParameter Current => new ManagedTypeMethodParameter(method, index);
 
             /// <summary>
             /// Resets the enumerator.
@@ -50,48 +49,47 @@ namespace IKVM.Compiler.Managed
             public readonly void Dispose() { }
 
             /// <inheritdoc />
-            readonly ManagedTypeGenericParameter IEnumerator<ManagedTypeGenericParameter>.Current => Current;
+            readonly ManagedTypeMethodParameter IEnumerator<ManagedTypeMethodParameter>.Current => Current;
 
             /// <inheritdoc />
             readonly object IEnumerator.Current => Current;
 
         }
 
-        readonly ManagedType type;
+        readonly ManagedTypeMethod method;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="type"></param>
-        public ManagedTypeGenericParameterList(ManagedType type) => this.type = type;
+        /// <param name="assembly"></param>
+        public ManagedTypeMethodParameterList(ManagedTypeMethod method) => this.method = method;
 
         /// <summary>
         /// Gets the item at the specified index.
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public readonly ManagedTypeGenericParameter this[int index] => new ManagedTypeGenericParameter(type, index);
+        public readonly ManagedTypeMethodParameter this[int index] => new ManagedTypeMethodParameter(method, index);
 
         /// <summary>
         /// Gets the count of items in the list.
         /// </summary>
-        public readonly int Count => type.data.GenericParameters.Count;
+        public readonly int Count => method.type.data.Methods.GetItemRef(method.index).Parameters.Count;
 
         /// <summary>
         /// Gets an enumerator that iterates over the items in the list.
         /// </summary>
         /// <returns></returns>
-        public readonly Enumerator GetEnumerator() => new(type);
+        public readonly Enumerator GetEnumerator() => new(method);
 
         /// <inheritdoc />
-        ManagedTypeGenericParameter IReadOnlyList<ManagedTypeGenericParameter>.this[int index] => this[index];
+        ManagedTypeMethodParameter IReadOnlyList<ManagedTypeMethodParameter>.this[int index] => this[index];
 
         /// <inheritdoc />
-        IEnumerator<ManagedTypeGenericParameter> IEnumerable<ManagedTypeGenericParameter>.GetEnumerator() => GetEnumerator();
+        IEnumerator<ManagedTypeMethodParameter> IEnumerable<ManagedTypeMethodParameter>.GetEnumerator() => GetEnumerator();
 
         /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     }
-
 }

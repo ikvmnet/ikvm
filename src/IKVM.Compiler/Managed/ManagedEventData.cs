@@ -31,9 +31,6 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         public ManagedSignature EventHandlerType;
 
-        /// <inhericdoc />
-        public override readonly string ToString() => Name;
-
     }
 
 }

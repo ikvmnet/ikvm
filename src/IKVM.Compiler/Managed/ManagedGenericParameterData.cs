@@ -6,7 +6,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a generic type parameter of a type or method.
     /// </summary>
-    internal struct ManagedGenericParameter
+    internal struct ManagedGenericParameterData
     {
 
         /// <summary>
@@ -17,7 +17,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the constraints applied to this generic parameter.
         /// </summary>
-        public FixedValueList1<ManagedGenericParameterConstraint> Constraints;
+        public FixedValueList1<ManagedGenericParameterConstraintData> Constraints;
 
     }
 

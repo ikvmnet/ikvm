@@ -884,9 +884,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="handles"></param>
         /// <param name="genericContext"></param>
         /// <param name="result"></param>
-        void LoadTypeGenericParameters(ManagedType type, MetadataReader reader, GenericParameterHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList1<ManagedGenericParameter> result)
+        void LoadTypeGenericParameters(ManagedType type, MetadataReader reader, GenericParameterHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList1<ManagedGenericParameterData> result)
         {
-            result = new FixedValueList1<ManagedGenericParameter>(handles.Count);
+            result = new FixedValueList1<ManagedGenericParameterData>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
@@ -905,11 +905,11 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="index"></param>
         /// <param name="genericContext"></param>
         /// <param name="result"></param>
-        void LoadTypeGenericParameter(ManagedType type, MetadataReader reader, GenericParameterHandle handle, int index, MetadataGenericContext genericContext, out ManagedGenericParameter result)
+        void LoadTypeGenericParameter(ManagedType type, MetadataReader reader, GenericParameterHandle handle, int index, MetadataGenericContext genericContext, out ManagedGenericParameterData result)
         {
             var parameter = reader.GetGenericParameter(handle);
 
-            result = new ManagedGenericParameter();
+            result = new ManagedGenericParameterData();
             result.Name = reader.GetString(parameter.Name);
             LoadTypeGenericParameterConstraints(type, reader, parameter.GetConstraints(), genericContext, out result.Constraints);
         }
@@ -922,9 +922,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="handles"></param>
         /// <param name="genericContext"></param>
         /// <param name="result"></param>
-        void LoadTypeGenericParameterConstraints(ManagedType type, MetadataReader reader, GenericParameterConstraintHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList1<ManagedGenericParameterConstraint> result)
+        void LoadTypeGenericParameterConstraints(ManagedType type, MetadataReader reader, GenericParameterConstraintHandleCollection handles, MetadataGenericContext genericContext, out FixedValueList1<ManagedGenericParameterConstraintData> result)
         {
-            result = new FixedValueList1<ManagedGenericParameterConstraint>(handles.Count);
+            result = new FixedValueList1<ManagedGenericParameterConstraintData>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
@@ -943,11 +943,11 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="index"></param>
         /// <param name="genericContext"></param>
         /// <param name="result"></param>
-        void LoadTypeGenericParameterConstraint(ManagedType type, MetadataReader reader, GenericParameterConstraintHandle handle, int index, MetadataGenericContext genericContext, out ManagedGenericParameterConstraint result)
+        void LoadTypeGenericParameterConstraint(ManagedType type, MetadataReader reader, GenericParameterConstraintHandle handle, int index, MetadataGenericContext genericContext, out ManagedGenericParameterConstraintData result)
         {
             var constraint = reader.GetGenericParameterConstraint(handle);
 
-            result = new ManagedGenericParameterConstraint();
+            result = new ManagedGenericParameterConstraintData();
             LoadTypeCustomAttributes(type, reader, constraint.GetCustomAttributes(), genericContext, out result.CustomAttributes);
             result.Type = ResolveTypeSignature(reader, constraint.Type, genericContext);
         }

@@ -1,4 +1,6 @@
-﻿namespace IKVM.Compiler.Managed
+﻿using IKVM.Compiler.Collections;
+
+namespace IKVM.Compiler.Managed
 {
 
     /// <summary>
@@ -14,6 +16,7 @@
         /// Initializes a new instance.
         /// </summary>
         /// <param name="type"></param>
+        /// <param name="index"></param>
         internal ManagedTypeInterface(ManagedType type, int index)
         {
             this.type = type;
@@ -23,15 +26,15 @@
         /// <summary>
         /// Gets the type that declared this interface.
         /// </summary>
-        public ManagedType DeclaringType => type;
+        public readonly ManagedType DeclaringType => type;
 
         /// <summary>
         /// Gets the signature of the type of the interface which is implemented
         /// </summary>
-        public ManagedSignature Type => type.data.Interfaces[index].Type;
+        public readonly ManagedSignature Type => type.data.Interfaces.GetItemRef(index).Type;
 
         /// <inheritdoc />
-        public override string ToString() => Type.ToString();
+        public override readonly string ToString() => Type.ToString() ?? "";
 
     }
 

@@ -3,7 +3,7 @@
 namespace IKVM.Compiler.Managed
 {
 
-    internal struct ManagedGenericParameterConstraint
+    internal struct ManagedGenericParameterConstraintData
     {
 
         /// <summary>

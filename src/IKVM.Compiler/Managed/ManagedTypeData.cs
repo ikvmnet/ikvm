@@ -17,7 +17,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the generic parameters on the managed type.
         /// </summary>
-        public FixedValueList1<ManagedGenericParameter> GenericParameters;
+        public FixedValueList1<ManagedGenericParameterData> GenericParameters;
 
         /// <summary>
         /// Gets the set of custom attributes applied to the type.

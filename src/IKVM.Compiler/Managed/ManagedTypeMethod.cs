@@ -7,8 +7,8 @@
     internal readonly struct ManagedTypeMethod
     {
 
-        readonly ManagedType type;
-        readonly int index;
+        internal readonly ManagedType type;
+        internal readonly int index;
 
         /// <summary>
         /// Initializes a new instance.
@@ -29,6 +29,11 @@
         /// Gets the name of the method.
         /// </summary>
         public string Name => type.data.Methods[index].Name ?? "";
+
+        /// <summary>
+        /// Gets the parameters of the method.
+        /// </summary>
+        public ManagedTypeMethodParameterList Parameters => new ManagedTypeMethodParameterList(this);
 
         /// <summary>
         /// Gets the return type of the method.
