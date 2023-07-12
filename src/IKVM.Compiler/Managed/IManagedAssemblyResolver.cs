@@ -14,7 +14,7 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="assemblyName"></param>
         /// <returns></returns>
-        ManagedAssembly? ResolveAssembly(AssemblyName assemblyName);
+        ManagedAssembly? ResolveAssembly(string assemblyName);
 
     }
 

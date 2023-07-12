@@ -14,7 +14,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the custom attributes applied to this constraint.
         /// </summary>
-        public FixedValueList1<ManagedCustomAttribute> CustomAttributes;
+        public FixedValueList1<ManagedCustomAttributeData> CustomAttributes;
 
     }
 

@@ -1,5 +1,7 @@
 ﻿using System;
 
+using FluentAssertions;
+
 using IKVM.Compiler.Managed.Metadata;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -12,12 +14,26 @@ namespace IKVM.Compiler.Tests.Managed.Metadata
     {
 
         [TestMethod]
+        public void ShouldReturnNullOnMissingAssemblyResolve()
+        {
+            var r = new MetadataAssemblyContext(new MetadataPathReaderResolver(new[] { typeof(object).Assembly.Location }), typeof(void).Assembly.GetName().Name);
+            r.ResolveAssembly("Missing.Exception").Should().BeNull();
+        }
+
+        [TestMethod]
+        public void ShouldReturnNullOnMissingTypeResolve()
+        {
+            var r = new MetadataAssemblyContext(new MetadataPathReaderResolver(new[] { typeof(object).Assembly.Location }), typeof(void).Assembly.GetName().Name);
+            var a = r.ResolveAssembly(typeof(object).Assembly.GetName().Name);
+            var t = a.ResolveType("Missing.Type").Should().BeNull();
+        }
+
+        [TestMethod]
         public void CanResolveAssembly()
         {
-
             var l = typeof(object).Assembly.Location;
-            var r = new MetadataAssemblyContext(new MetadataPathReaderResolver(new[] { l }));
-            var a = r.ResolveAssembly(typeof(object).Assembly.GetName());
+            var r = new MetadataAssemblyContext(new MetadataPathReaderResolver(new[] { typeof(object).Assembly.Location }), typeof(void).Assembly.GetName().Name);
+            var a = r.ResolveAssembly(typeof(object).Assembly.GetName().Name);
 
             foreach (var t in a.ResolveTypes())
             {

@@ -8,7 +8,6 @@
     {
 
         Type,
-        PrimitiveType,
         SZArray,
         Array,
         ByRef,

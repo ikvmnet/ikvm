@@ -12,7 +12,6 @@ namespace IKVM.Compiler.Managed
 foreach (var type in new[]
 {
     "Type",
-    "PrimitiveType",
     "SZArray",
     "Array",
     "ByRef",
@@ -75,6 +74,34 @@ foreach (var type in new[]
         /// <param name="x"></param
         /// <param name="y"></param>
         public static bool operator !=(in Managed<#= type #>Signature x, in Managed<#= type #>Signature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in Managed<#= type #>Signature x, in ManagedSignature y) => x.Equals(y);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in Managed<#= type #>Signature x, in ManagedSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedSignature x, in Managed<#= type #>Signature y) => y.Equals(x);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedSignature x, in Managed<#= type #>Signature y) => y.Equals(x) == false;
 
         internal readonly ManagedSignatureData data;
 

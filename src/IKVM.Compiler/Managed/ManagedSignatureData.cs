@@ -173,6 +173,8 @@ namespace IKVM.Compiler.Managed
         /// <returns></returns>
         static internal void WriteCode(in ManagedSignatureCode code, ref ManagedSignatureData result)
         {
+            Pack(ref result.Memory);
+
             switch (result.Length)
             {
                 case 0:
@@ -199,8 +201,6 @@ namespace IKVM.Compiler.Managed
                     result.Length++;
                     break;
             }
-
-            Pack(ref result.Memory);
         }
 
         /// <summary>
@@ -210,6 +210,8 @@ namespace IKVM.Compiler.Managed
         /// <param name="result"></param>
         static internal void WriteMemory(ReadOnlyMemory<ManagedSignatureCode> block, int total, ref ManagedSignatureData result)
         {
+            Pack(ref result.Memory);
+
             // copy existing memory into new list, of size capable of holding existing and all new blocks (max)
             var l = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(result.Memory.Count + 1, result.Memory);
             var c = (short)result.Memory.Count; // track total blocks written (might be less on split)
@@ -252,7 +254,6 @@ namespace IKVM.Compiler.Managed
                 l = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(c, l);
 
             // save new memory list
-            Pack(ref l);
             result.Memory = l;
         }
 
@@ -263,28 +264,11 @@ namespace IKVM.Compiler.Managed
         /// <param name="result"></param>
         static internal void WriteMemoryList(in FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>> blocks, int total, ref ManagedSignatureData result)
         {
+            Pack(ref result.Memory);
+
             // skip work if no blocks
             if (blocks.Count == 0)
                 return;
-
-            // at 8 blocks added, we pack the blocks into a single block
-            if (result.Memory.Count >= 8)
-            {
-                // copy existing blocks into new block
-                var m = new ManagedSignatureCode[result.Length - 4];
-                var p = 0;
-                for (int i = 0; i < result.Memory.Count; i++)
-                {
-                    var b = result.Memory[i];
-                    b.Span.CopyTo(m.AsSpan(p));
-                    p += b.Length;
-                }
-
-                // rebuild list with single new block
-                var n = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(1);
-                n[0] = m;
-                result.Memory = n;
-            }
 
             // copy existing memory into new list, of size capable of holding existing and all new blocks (max)
             var l = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(result.Memory.Count + blocks.Count, result.Memory);
@@ -334,7 +318,6 @@ namespace IKVM.Compiler.Managed
                 l = new FixedValueList2<ReadOnlyMemory<ManagedSignatureCode>>(c, l);
 
             // save new memory list
-            Pack(ref l);
             result.Memory = l;
         }
 
@@ -344,8 +327,10 @@ namespace IKVM.Compiler.Managed
         /// <param name="source"></param>
         /// <param name="index"></param>
         /// <returns></returns>
-        static internal void ExtractCode(in ManagedSignatureData source, int index, ref ManagedSignatureData result)
+        internal static void ExtractCode(in ManagedSignatureData source, int index, out ManagedSignatureData result)
         {
+            result = new ManagedSignatureData();
+
             // get starting position by navigating backwards
             var start = index;
             var code = source.GetCodeRef(index);
@@ -354,7 +339,7 @@ namespace IKVM.Compiler.Managed
             while (true)
             {
                 // calculate earliest offset of current code
-                var offset = code.Arg0;
+                var offset = Math.Min(code.Arg0, code.Arg1);
                 for (var i = 0; i < code.Argv.Count; i++)
                     offset = Math.Min(offset, code.Argv[i]);
 
@@ -453,50 +438,20 @@ namespace IKVM.Compiler.Managed
 
             return code.Data.Kind switch
             {
-                ManagedSignatureKind.Type => code.Data.Type_Type!.Value.TypeName,
-                ManagedSignatureKind.PrimitiveType => PrimitiveTypeCodeToString(code.Data.Primitive_TypeCode!.Value),
+                ManagedSignatureKind.Type => code.Data.Type!.Name,
                 ManagedSignatureKind.SZArray => $"{CodeToString(arg0Pos)}[]",
-                ManagedSignatureKind.Array => $"{CodeToString(arg0Pos)}{ArrayShapeToString(code.Data.Array_Shape!.Value)}",
+                ManagedSignatureKind.Array => $"{CodeToString(arg0Pos)}{ArrayShapeToString(code.Data.Data.Array_Shape)}",
                 ManagedSignatureKind.ByRef => $"{CodeToString(arg0Pos)}&",
-                ManagedSignatureKind.Generic => $"{CodeToString(arg0Pos)}{GenericParametersToString(code.Argv)}>",
+                ManagedSignatureKind.Generic => $"{CodeToString(arg0Pos)}{GenericParametersToString(i, code.Argv)}",
                 ManagedSignatureKind.GenericConstraint => throw new System.NotImplementedException(),
-                ManagedSignatureKind.GenericTypeParameter => code.Data.GenericTypeParameter_Parameter.Value.Index.ToString(),
-                ManagedSignatureKind.GenericMethodParameter => code.Data.GenericMethodParameter_Parameter.Value.Index.ToString(),
+                ManagedSignatureKind.GenericTypeParameter => code.Data.Data.GenericTypeParameter_Parameter.Index.ToString(),
+                ManagedSignatureKind.GenericMethodParameter => code.Data.Data.GenericMethodParameter_Parameter.Index.ToString(),
                 ManagedSignatureKind.Modified => throw new System.NotImplementedException(),
                 ManagedSignatureKind.Pointer => $"{CodeToString(arg0Pos)}*",
                 ManagedSignatureKind.FunctionPointer => throw new System.NotImplementedException(),
                 _ => throw new NotImplementedException(),
             };
         }
-
-        /// <summary>
-        /// Gets the string representation of a primitive type code.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        readonly string PrimitiveTypeCodeToString(ManagedPrimitiveTypeCode type) => type switch
-        {
-            ManagedPrimitiveTypeCode.Boolean => "bool",
-            ManagedPrimitiveTypeCode.Byte => "byte",
-            ManagedPrimitiveTypeCode.SByte => "sbyte",
-            ManagedPrimitiveTypeCode.Char => "char",
-            ManagedPrimitiveTypeCode.Int16 => "short",
-            ManagedPrimitiveTypeCode.UInt16 => "ushort",
-            ManagedPrimitiveTypeCode.Int32 => "int",
-            ManagedPrimitiveTypeCode.UInt32 => "uint",
-            ManagedPrimitiveTypeCode.Int64 => "long",
-            ManagedPrimitiveTypeCode.UInt64 => "ulong",
-            ManagedPrimitiveTypeCode.Single => "float",
-            ManagedPrimitiveTypeCode.Double => "double",
-            ManagedPrimitiveTypeCode.IntPtr => "nint",
-            ManagedPrimitiveTypeCode.UIntPtr => "unint",
-            ManagedPrimitiveTypeCode.Object => "object",
-            ManagedPrimitiveTypeCode.String => "string",
-            ManagedPrimitiveTypeCode.TypedReference => "System.TypedReference",
-            ManagedPrimitiveTypeCode.Void => "void",
-            _ => throw new NotImplementedException(),
-        };
 
         /// <summary>
         /// Returns a string representation of an array specifier.
@@ -517,15 +472,16 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Returns a string of a generic specifier.
         /// </summary>
+        /// <param name="pos"></param>
         /// <param name="argv"></param>
         /// <returns></returns>
-        readonly string GenericParametersToString(in FixedValueList2<short> argv)
+        readonly string GenericParametersToString(int pos, in FixedValueList2<short> argv)
         {
             var b = new StringBuilder();
             b.Append("<");
             for (int i = 0; i < argv.Count; i++)
             {
-                b.Append(CodeToString(argv[i]));
+                b.Append(CodeToString(pos + argv[i]));
                 if (i < argv.Count - 1)
                     b.Append(", ");
             }

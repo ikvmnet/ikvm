@@ -6,7 +6,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes an interface of a managed type.
     /// </summary>
-    internal struct ManagedInterface
+    internal struct ManagedInterfaceData
     {
 
         /// <summary>
@@ -17,7 +17,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of custom attributes applied to the interface.
         /// </summary>
-        public FixedValueList1<ManagedCustomAttribute> CustomAttributes;
+        public FixedValueList1<ManagedCustomAttributeData> CustomAttributes;
 
     }
 

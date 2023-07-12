@@ -71,6 +71,18 @@ namespace IKVM.Compiler.Managed
         }
 
         /// <summary>
+        /// Gets the set of references to other assemblies.
+        /// </summary>
+        public ManagedAssemblyReferenceList References
+        {
+            get
+            {
+                LazyLoad();
+                return new ManagedAssemblyReferenceList(this);
+            }
+        }
+
+        /// <summary>
         /// Gets the types that make up this assembly.
         /// </summary>
         public IEnumerable<ManagedType> ResolveTypes() => context.ResolveTypes(this);

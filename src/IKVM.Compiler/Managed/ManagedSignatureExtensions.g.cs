@@ -215,6 +215,15 @@ namespace IKVM.Compiler.Managed
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
         /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in ManagedSignature self, int rank) => new ManagedArraySignature(self.data, rank);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
         public static ManagedArraySignature CreateArray(this in ManagedSignature self, int rank, FixedValueList2<int> sizes, FixedValueList2<int> lowerBounds) => new ManagedArraySignature(self.data, rank, sizes, lowerBounds);
 
         /// <summary>
@@ -308,6 +317,15 @@ namespace IKVM.Compiler.Managed
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
         /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in ManagedTypeSignature self, int rank) => new ManagedArraySignature(self.data, rank);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
         public static ManagedArraySignature CreateArray(this in ManagedTypeSignature self, int rank, FixedValueList2<int> sizes, FixedValueList2<int> lowerBounds) => new ManagedArraySignature(self.data, rank, sizes, lowerBounds);
 
         /// <summary>
@@ -392,100 +410,16 @@ namespace IKVM.Compiler.Managed
         /// Creates a new array type with this type as the element type.
         /// </summary>
         /// <returns></returns>
-        public static ManagedSZArraySignature CreateArray(this in ManagedPrimitiveTypeSignature self) => new ManagedSZArraySignature(self.data);
-
-        /// <summary>
-        /// Creates a new array type with this type as the element type.
-        /// </summary>
-        /// <param name="rank"></param>
-        /// <param name="sizes"></param>
-        /// <param name="lowerBounds"></param>
-        /// <returns></returns>
-        public static ManagedArraySignature CreateArray(this in ManagedPrimitiveTypeSignature self, int rank, FixedValueList2<int> sizes, FixedValueList2<int> lowerBounds) => new ManagedArraySignature(self.data, rank, sizes, lowerBounds);
-
-        /// <summary>
-        /// Creates a new array type with this type as the element type.
-        /// </summary>
-        /// <param name="rank"></param>
-        /// <param name="sizes"></param>
-        /// <param name="lowerBounds"></param>
-        /// <returns></returns>
-        public static ManagedArraySignature CreateArray(this in ManagedPrimitiveTypeSignature self, int rank, ReadOnlySpan<int> sizes, ReadOnlySpan<int> lowerBounds) => new ManagedArraySignature(self.data, rank, new FixedValueList2<int>(new FixedValueList2<int>(sizes)), new FixedValueList2<int>(new FixedValueList2<int>(lowerBounds)));
-
-        /// <summary>
-        /// Creates a new array type with this type as the element type.
-        /// </summary>
-        /// <param name="rank"></param>
-        /// <param name="sizes"></param>
-        /// <param name="lowerBounds"></param>
-        /// <returns></returns>
-        public static ManagedArraySignature CreateArray(this in ManagedPrimitiveTypeSignature self, int rank, IReadOnlyList<int> sizes, IReadOnlyList<int> lowerBounds) => new ManagedArraySignature(self.data, rank, new FixedValueList2<int>(new FixedValueList2<int>(sizes)), new FixedValueList2<int>(new FixedValueList2<int>(lowerBounds)));
-
-        /// <summary>
-        /// Creates a new array type with this type as the element type.
-        /// </summary>
-        /// <param name="rank"></param>
-        /// <param name="sizes"></param>
-        /// <param name="lowerBounds"></param>
-        /// <returns></returns>
-        public static ManagedArraySignature CreateArray(this in ManagedPrimitiveTypeSignature self, int rank, int[] sizes, int[] lowerBounds) => new ManagedArraySignature(self.data, rank, new FixedValueList2<int>(new FixedValueList2<int>(sizes)), new FixedValueList2<int>(new FixedValueList2<int>(lowerBounds)));
-
-        /// <summary>
-        /// Creates a new by-ref type with this type as the base type.
-        /// </summary>
-        /// <returns></returns>
-        public static ManagedByRefSignature CreateByRef(this in ManagedPrimitiveTypeSignature self) => new ManagedByRefSignature(self.data);
-
-        /// <summary>
-        /// Creates a new generic type with this type as the base type.
-        /// </summary>
-        /// <param name="genericParameters"></param>
-        /// <returns></returns>
-        public static ManagedGenericSignature CreateGeneric(this in ManagedPrimitiveTypeSignature self, FixedValueList4<ManagedSignature> genericParameters)
-        {
-            ToDataList4(genericParameters, out var genericParameters_);
-            return new ManagedGenericSignature(self.data, genericParameters_);
-        }
-
-        /// <summary>
-        /// Creates a new generic type with this type as the base type.
-        /// </summary>
-        /// <param name="genericParameters"></param>
-        /// <returns></returns>
-        public static ManagedGenericSignature CreateGeneric(this in ManagedPrimitiveTypeSignature self, IReadOnlyList<ManagedSignature> genericParameters)
-        {
-            ToDataList4(genericParameters, out var genericParameters_);
-            return new ManagedGenericSignature(self.data, genericParameters_);
-        }
-
-        /// <summary>
-        /// Creates a new generic type with this type as the base type.
-        /// </summary>
-        /// <param name="genericParameters"></param>
-        /// <returns></returns>
-        public static ManagedGenericSignature CreateGeneric(this in ManagedPrimitiveTypeSignature self, params ManagedSignature[] genericParameters)
-        {
-            ToDataList4(genericParameters, out var genericParameters_);
-            return new ManagedGenericSignature(self.data, genericParameters_);
-        }
-
-        /// <summary>
-        /// Creates a new modified type with this type as the base type.
-        /// </summary>
-        /// <returns></returns>
-        public static ManagedModifiedSignature CreateModified(this in ManagedPrimitiveTypeSignature self, in ManagedSignature modifier, bool required) => new ManagedModifiedSignature(self.data, modifier.data, required);
-
-        /// <summary>
-        /// Creates a new pointer type with this type as the base type.
-        /// </summary>
-        /// <returns></returns>
-        public static ManagedPointerSignature CreatePointer(this in ManagedPrimitiveTypeSignature self) => new ManagedPointerSignature(self.data);
-
-        /// <summary>
-        /// Creates a new array type with this type as the element type.
-        /// </summary>
-        /// <returns></returns>
         public static ManagedSZArraySignature CreateArray(this in ManagedSZArraySignature self) => new ManagedSZArraySignature(self.data);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in ManagedSZArraySignature self, int rank) => new ManagedArraySignature(self.data, rank);
 
         /// <summary>
         /// Creates a new array type with this type as the element type.
@@ -587,6 +521,15 @@ namespace IKVM.Compiler.Managed
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
         /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in ManagedArraySignature self, int rank) => new ManagedArraySignature(self.data, rank);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
         public static ManagedArraySignature CreateArray(this in ManagedArraySignature self, int rank, FixedValueList2<int> sizes, FixedValueList2<int> lowerBounds) => new ManagedArraySignature(self.data, rank, sizes, lowerBounds);
 
         /// <summary>
@@ -672,6 +615,15 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <returns></returns>
         public static ManagedSZArraySignature CreateArray(this in ManagedByRefSignature self) => new ManagedSZArraySignature(self.data);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in ManagedByRefSignature self, int rank) => new ManagedArraySignature(self.data, rank);
 
         /// <summary>
         /// Creates a new array type with this type as the element type.
@@ -773,6 +725,15 @@ namespace IKVM.Compiler.Managed
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
         /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in ManagedGenericSignature self, int rank) => new ManagedArraySignature(self.data, rank);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
         public static ManagedArraySignature CreateArray(this in ManagedGenericSignature self, int rank, FixedValueList2<int> sizes, FixedValueList2<int> lowerBounds) => new ManagedArraySignature(self.data, rank, sizes, lowerBounds);
 
         /// <summary>
@@ -858,6 +819,15 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <returns></returns>
         public static ManagedSZArraySignature CreateArray(this in ManagedGenericConstraintSignature self) => new ManagedSZArraySignature(self.data);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in ManagedGenericConstraintSignature self, int rank) => new ManagedArraySignature(self.data, rank);
 
         /// <summary>
         /// Creates a new array type with this type as the element type.
@@ -959,6 +929,15 @@ namespace IKVM.Compiler.Managed
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
         /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in ManagedGenericTypeParameterSignature self, int rank) => new ManagedArraySignature(self.data, rank);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
         public static ManagedArraySignature CreateArray(this in ManagedGenericTypeParameterSignature self, int rank, FixedValueList2<int> sizes, FixedValueList2<int> lowerBounds) => new ManagedArraySignature(self.data, rank, sizes, lowerBounds);
 
         /// <summary>
@@ -1044,6 +1023,15 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <returns></returns>
         public static ManagedSZArraySignature CreateArray(this in ManagedGenericMethodParameterSignature self) => new ManagedSZArraySignature(self.data);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in ManagedGenericMethodParameterSignature self, int rank) => new ManagedArraySignature(self.data, rank);
 
         /// <summary>
         /// Creates a new array type with this type as the element type.
@@ -1145,6 +1133,15 @@ namespace IKVM.Compiler.Managed
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
         /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in ManagedModifiedSignature self, int rank) => new ManagedArraySignature(self.data, rank);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
         public static ManagedArraySignature CreateArray(this in ManagedModifiedSignature self, int rank, FixedValueList2<int> sizes, FixedValueList2<int> lowerBounds) => new ManagedArraySignature(self.data, rank, sizes, lowerBounds);
 
         /// <summary>
@@ -1238,6 +1235,15 @@ namespace IKVM.Compiler.Managed
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
         /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in ManagedPointerSignature self, int rank) => new ManagedArraySignature(self.data, rank);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
         public static ManagedArraySignature CreateArray(this in ManagedPointerSignature self, int rank, FixedValueList2<int> sizes, FixedValueList2<int> lowerBounds) => new ManagedArraySignature(self.data, rank, sizes, lowerBounds);
 
         /// <summary>
@@ -1323,6 +1329,15 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <returns></returns>
         public static ManagedSZArraySignature CreateArray(this in ManagedFunctionPointerSignature self) => new ManagedSZArraySignature(self.data);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in ManagedFunctionPointerSignature self, int rank) => new ManagedArraySignature(self.data, rank);
 
         /// <summary>
         /// Creates a new array type with this type as the element type.

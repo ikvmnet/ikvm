@@ -12,7 +12,12 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of custom attributes applied to the assembly.
         /// </summary>
-        public FixedValueList8<ManagedCustomAttribute> CustomAttributes;
+        public FixedValueList8<ManagedCustomAttributeData> CustomAttributes;
+
+        /// <summary>
+        /// Gets the set of references to other assemblies.
+        /// </summary>
+        public FixedValueList8<ManagedAssemblyReferenceData> References;
 
     }
 

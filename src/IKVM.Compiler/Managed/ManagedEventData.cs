@@ -8,7 +8,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a managed event.
     /// </summary>
-    internal struct ManagedEvent
+    internal struct ManagedEventData
     {
 
         /// <summary>
@@ -24,7 +24,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of custom attributes applied to the event.
         /// </summary>
-        public FixedValueList1<ManagedCustomAttribute> CustomAttributes;
+        public FixedValueList1<ManagedCustomAttributeData> CustomAttributes;
 
         /// <summary>
         /// Gets the type of the event.

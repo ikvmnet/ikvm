@@ -31,6 +31,15 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="rank"></param>
+        public ManagedArrayShape(int rank)
+        {
+            Rank = rank;
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="rank"></param>
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
         public ManagedArrayShape(int rank, in FixedValueList2<int> sizes, in FixedValueList2<int> lowerBounds)

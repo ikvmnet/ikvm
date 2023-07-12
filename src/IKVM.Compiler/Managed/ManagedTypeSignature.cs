@@ -10,16 +10,16 @@
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="typeRef"></param>
-        public ManagedTypeSignature(in ManagedTypeRef typeRef)
+        /// <param name="type"></param>
+        public ManagedTypeSignature(ManagedType type)
         {
-            ManagedSignatureData.Write(new ManagedSignatureCodeData(ManagedSignatureKind.Type, typeRef), null, null, null, out data);
+            ManagedSignatureData.Write(new ManagedSignatureCodeData(ManagedSignatureKind.Type, type), null, null, null, out data);
         }
 
         /// <summary>
         /// Gets the type reference refered to by this signature.
         /// </summary>
-        public readonly ManagedTypeRef TypeRef => data.GetLastCode().Data.Type_Type!.Value;
+        public readonly ManagedType Type => data.GetLastCode().Data.Type!;
 
     }
 

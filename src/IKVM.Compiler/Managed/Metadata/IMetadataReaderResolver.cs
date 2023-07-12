@@ -15,7 +15,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// </summary>
         /// <param name="assemblyName"></param>
         /// <returns></returns>
-        MetadataReader? Resolve(AssemblyName assemblyName);
+        MetadataReader? Resolve(string assemblyName);
 
         /// <summary>
         /// Loads the metadata reader associated with an assembly file of the given primary assembly.

@@ -8,13 +8,13 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a managed field.
     /// </summary>
-    internal struct ManagedField
+    internal struct ManagedFieldData
     {
 
         /// <summary>
         /// Gets the null value of a managed field.
         /// </summary>
-        public static readonly ManagedField Nil = new ManagedField(true);
+        public static readonly ManagedFieldData Nil = new ManagedFieldData(true);
 
         /// <summary>
         /// If set the value is null.
@@ -34,7 +34,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of custom attributes applied to the field.
         /// </summary>
-        public FixedValueList1<ManagedCustomAttribute> CustomAttributes;
+        public FixedValueList1<ManagedCustomAttributeData> CustomAttributes;
 
         /// <summary>
         /// Gets the type of the field.
@@ -44,7 +44,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public ManagedField(bool isNil)
+        public ManagedFieldData(bool isNil)
         {
             IsNil = isNil;
         }

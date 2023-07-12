@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Reflection;
+﻿using System.Reflection;
 
 using FluentAssertions;
 
@@ -15,107 +14,69 @@ namespace IKVM.Compiler.Tests.Managed
     {
 
         [TestMethod]
-        public void CanCreatePrimitiveType()
-        {
-            var primitiveType = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.PrimitiveType, ManagedPrimitiveTypeCode.Int32), null, null, null);
-            primitiveType.Length.Should().Be(1);
-            primitiveType.Local0.Data.Kind.Should().Be(ManagedSignatureKind.PrimitiveType);
-            primitiveType.Local0.Data.Primitive_TypeCode.Should().Be(ManagedPrimitiveTypeCode.Int32);
-        }
-
-        [TestMethod]
         public void CanCreateType()
         {
-            var assemblyName = new AssemblyName("Test.Assembly");
-            var typeName = "Test.Assembly";
-            var typeRef = new ManagedTypeRef(assemblyName, typeName);
-            var type = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Type, typeRef), null, null, null);
-            type.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
-            type.Local0.Data.Type_Type.Value.AssemblyName.Should().Be(assemblyName);
-            type.Local0.Data.Type_Type.Value.TypeName.Should().Be(typeName);
-        }
-
-        [TestMethod]
-        public void CanCreateSZArrayOfPrimitiveType()
-        {
-            var primitiveType = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.PrimitiveType, ManagedPrimitiveTypeCode.Int32), null, null, null);
-            primitiveType.Length.Should().Be(1);
-            primitiveType.Local0.Data.Kind.Should().Be(ManagedSignatureKind.PrimitiveType);
-            primitiveType.Local0.Data.Primitive_TypeCode.Should().Be(ManagedPrimitiveTypeCode.Int32);
-
-            var arrayType = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), primitiveType, null, null);
-            arrayType.Length.Should().Be(2);
-            arrayType.Local0.Data.Kind.Should().Be(ManagedSignatureKind.PrimitiveType);
-            arrayType.Local0.Data.Primitive_TypeCode.Should().Be(ManagedPrimitiveTypeCode.Int32);
-            arrayType.Local1.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            var assembly = new ManagedAssembly(null, null, new AssemblyName("Test.Assembly"));
+            var type = new ManagedType(assembly, null, "Test.Assembly", TypeAttributes.Public);
+            var sig = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Type, type), null, null, null);
+            sig.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
+            sig.Local0.Data.Type.Assembly.Should().BeSameAs(assembly);
+            sig.Local0.Data.Type.Should().BeSameAs(type);
         }
 
         [TestMethod]
         public void CanCreateSZArrayOfType()
         {
-            var assemblyName = new AssemblyName("Test.Assembly");
-            var typeName = "Test.Assembly";
-            var typeRef = new ManagedTypeRef(assemblyName, typeName);
-            var type = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Type, typeRef), null, null, null);
-            type.Length.Should().Be(1);
-            type.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
-            type.Local0.Data.Type_Type.Value.AssemblyName.Should().Be(assemblyName);
-            type.Local0.Data.Type_Type.Value.TypeName.Should().Be(typeName);
+            var assembly = new ManagedAssembly(null, null, new AssemblyName("Test.Assembly"));
+            var type = new ManagedType(assembly, null, "Test.Assembly", TypeAttributes.Public);
 
-            var arrayType = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), type, null, null);
+            var sig = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Type, type), null, null, null);
+            sig.Length.Should().Be(1);
+            sig.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
+            sig.Local0.Data.Type.Assembly.Should().BeSameAs(assembly);
+            sig.Local0.Data.Type.Should().BeSameAs(type);
+
+            var arrayType = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), sig, null, null);
             arrayType.Length.Should().Be(2);
             arrayType.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
-            arrayType.Local0.Data.Type_Type.Value.TypeName.Should().Be(typeName);
+            arrayType.Local0.Data.Type.Should().Be(type);
             arrayType.Local1.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
-        }
-
-        [TestMethod]
-        public void CanCreateArrayOfPrimitiveType()
-        {
-            var primitiveType = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.PrimitiveType, ManagedPrimitiveTypeCode.Int32), null, null, null);
-
-            var arrayType = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Array, new ManagedArrayShape(1, new[] { 1 }, new int[] { })), primitiveType, null, null);
-            arrayType.Length.Should().Be(2);
-            arrayType.Local0.Data.Kind.Should().Be(ManagedSignatureKind.PrimitiveType);
-            arrayType.Local0.Data.Primitive_TypeCode.Should().Be(ManagedPrimitiveTypeCode.Int32);
-            arrayType.Local1.Data.Kind.Should().Be(ManagedSignatureKind.Array);
-            arrayType.Local1.Data.Array_Shape.Should().NotBeNull();
-            arrayType.Local1.Data.Array_Shape.Value.Rank.Should().Be(1);
-            arrayType.Local1.Data.Array_Shape.Value.GetSize(0).Should().Be(1);
-            arrayType.Local1.Data.Array_Shape.Value.GetLowerBound(0).Should().BeNull();
         }
 
         [TestMethod]
         public void CanCreateArrayOfType()
         {
-            var assemblyName = new AssemblyName("Test.Assembly");
-            var typeName = "Test.Assembly";
-            var typeRef = new ManagedTypeRef(assemblyName, typeName);
-            var type = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Type, typeRef), null, null, null);
+            var assembly = new ManagedAssembly(null, null, new AssemblyName("Test.Assembly"));
+            var type = new ManagedType(assembly, null, "Test.Assembly", TypeAttributes.Public);
 
-            var arrayType = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Array, new ManagedArrayShape(1, new int[] { 1 }, new int[] { })), type, null, null);
-            arrayType.Length.Should().Be(2);
-            arrayType.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
-            arrayType.Local0.Data.Type_Type.Should().Be(typeRef);
-            arrayType.Local1.Data.Kind.Should().Be(ManagedSignatureKind.Array);
-            arrayType.Local1.Data.Array_Shape.Should().NotBeNull();
-            arrayType.Local1.Data.Array_Shape.Value.Rank.Should().Be(1);
-            arrayType.Local1.Data.Array_Shape.Value.GetSize(0).Should().Be(1);
-            arrayType.Local1.Data.Array_Shape.Value.GetLowerBound(0).Should().BeNull();
+            var local0 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Type, type), null, null, null);
+
+            var local1 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Array, new ManagedArrayShape(1, new int[] { 1 }, new int[] { })), local0, null, null);
+            local1.Length.Should().Be(2);
+            local1.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
+            local1.Local0.Data.Type.Should().Be(type);
+            local1.Local1.Data.Kind.Should().Be(ManagedSignatureKind.Array);
+            local1.Local1.Data.Data.Array_Shape.Should().NotBeNull();
+            local1.Local1.Data.Data.Array_Shape.Rank.Should().Be(1);
+            local1.Local1.Data.Data.Array_Shape.GetSize(0).Should().Be(1);
+            local1.Local1.Data.Data.Array_Shape.GetLowerBound(0).Should().BeNull();
         }
 
         [TestMethod]
         public void CanPackMemory()
         {
-            var local0 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.PrimitiveType, ManagedPrimitiveTypeCode.Int32), null, null, null);
+            var assembly = new ManagedAssembly(null, null, new AssemblyName("Test.Assembly"));
+            var type = new ManagedType(assembly, null, "Test.Assembly", TypeAttributes.Public);
+
+            var local0 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Type, type), null, null, null);
             local0.Length.Should().Be(1);
-            local0.Local0.Data.Kind.Should().Be(ManagedSignatureKind.PrimitiveType);
+            local0.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
             local0.Local0.Arg0.Should().Be(0);
             local0.Local0.Argv.Count.Should().Be(0);
 
             var local1 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), local0, null, null);
             local1.Length.Should().Be(2);
-            local1.Local0.Data.Kind.Should().Be(ManagedSignatureKind.PrimitiveType);
+            local1.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
             local1.Local0.Arg0.Should().Be(0);
             local1.Local0.Argv.Count.Should().Be(0);
             local1.Local1.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
@@ -124,7 +85,7 @@ namespace IKVM.Compiler.Tests.Managed
 
             var local2 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), local1, null, null);
             local2.Length.Should().Be(3);
-            local2.Local0.Data.Kind.Should().Be(ManagedSignatureKind.PrimitiveType);
+            local2.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
             local2.Local0.Arg0.Should().Be(0);
             local2.Local0.Argv.Count.Should().Be(0);
             local2.Local1.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
@@ -136,7 +97,7 @@ namespace IKVM.Compiler.Tests.Managed
 
             var local3 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), local2, null, null);
             local3.Length.Should().Be(4);
-            local3.Local0.Data.Kind.Should().Be(ManagedSignatureKind.PrimitiveType);
+            local3.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
             local3.Local0.Arg0.Should().Be(0);
             local3.Local0.Argv.Count.Should().Be(0);
             local3.Local1.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
@@ -151,7 +112,7 @@ namespace IKVM.Compiler.Tests.Managed
 
             var mem0 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), local3, null, null);
             mem0.Length.Should().Be(5);
-            mem0.Local0.Data.Kind.Should().Be(ManagedSignatureKind.PrimitiveType);
+            mem0.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
             mem0.Local0.Arg0.Should().Be(0);
             mem0.Local0.Argv.Count.Should().Be(0);
             mem0.Local1.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
@@ -170,7 +131,7 @@ namespace IKVM.Compiler.Tests.Managed
 
             var mem1 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), mem0, null, null);
             mem1.Length.Should().Be(6);
-            mem1.Local0.Data.Kind.Should().Be(ManagedSignatureKind.PrimitiveType);
+            mem1.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
             mem1.Local0.Arg0.Should().Be(0);
             mem1.Local0.Argv.Count.Should().Be(0);
             mem1.Local1.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
@@ -268,6 +229,119 @@ namespace IKVM.Compiler.Tests.Managed
             mem8.Memory[1].Span[0].Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
             mem8.Memory[1].Span[0].Arg0.Should().Be(-1);
             mem8.Memory[1].Span[0].Argv.Count.Should().Be(0);
+        }
+
+        [TestMethod]
+        public void CanExtractLocalArg()
+        {
+            var assembly = new ManagedAssembly(null, null, new AssemblyName("Test.Assembly"));
+            var type = new ManagedType(assembly, null, "Test.Assembly", TypeAttributes.Public);
+
+            var local0 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Type, type), null, null, null);
+            local0.Length.Should().Be(1);
+            local0.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
+            local0.Local0.Arg0.Should().Be(0);
+            local0.Local0.Argv.Count.Should().Be(0);
+
+            var local1 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), local0, null, null);
+            local1.Length.Should().Be(2);
+            local1.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
+            local1.Local0.Arg0.Should().Be(0);
+            local1.Local0.Argv.Count.Should().Be(0);
+            local1.Local1.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            local1.Local1.Arg0.Should().Be(-1);
+            local1.Local1.Argv.Count.Should().Be(0);
+            
+            ManagedSignatureData.ExtractCode(local1, 0, out var result);
+            result.Length.Should().Be(1);
+            result.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
+            result.Local0.Arg0.Should().Be(0);
+            result.Local0.Argv.Count.Should().Be(0);
+        }
+
+        [TestMethod]
+        public void CanExtractMemoryToLocal()
+        {
+            var assembly = new ManagedAssembly(null, null, new AssemblyName("Test.Assembly"));
+            var type = new ManagedType(assembly, null, "Test.Assembly", TypeAttributes.Public);
+
+            var local0 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Type, type), null, null, null);
+            local0.Length.Should().Be(1);
+            local0.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
+            local0.Local0.Arg0.Should().Be(0);
+            local0.Local0.Argv.Count.Should().Be(0);
+
+            var local1 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), local0, null, null);
+            local1.Length.Should().Be(2);
+            local1.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
+            local1.Local0.Arg0.Should().Be(0);
+            local1.Local0.Argv.Count.Should().Be(0);
+            local1.Local1.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            local1.Local1.Arg0.Should().Be(-1);
+            local1.Local1.Argv.Count.Should().Be(0);
+
+            var local2 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), local1, null, null);
+            local2.Length.Should().Be(3);
+            local2.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
+            local2.Local0.Arg0.Should().Be(0);
+            local2.Local0.Argv.Count.Should().Be(0);
+            local2.Local1.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            local2.Local1.Arg0.Should().Be(-1);
+            local2.Local1.Argv.Count.Should().Be(0);
+            local2.Local2.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            local2.Local2.Arg0.Should().Be(-1);
+            local2.Local2.Argv.Count.Should().Be(0);
+
+            var local3 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), local2, null, null);
+            local3.Length.Should().Be(4);
+            local3.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
+            local3.Local0.Arg0.Should().Be(0);
+            local3.Local0.Argv.Count.Should().Be(0);
+            local3.Local1.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            local3.Local1.Arg0.Should().Be(-1);
+            local3.Local1.Argv.Count.Should().Be(0);
+            local3.Local2.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            local3.Local2.Arg0.Should().Be(-1);
+            local3.Local2.Argv.Count.Should().Be(0);
+            local3.Local3.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            local3.Local3.Arg0.Should().Be(-1);
+            local3.Local3.Argv.Count.Should().Be(0);
+
+            var mem0 = new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.SZArray), local3, null, null);
+            mem0.Length.Should().Be(5);
+            mem0.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
+            mem0.Local0.Arg0.Should().Be(0);
+            mem0.Local0.Argv.Count.Should().Be(0);
+            mem0.Local1.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            mem0.Local1.Arg0.Should().Be(-1);
+            mem0.Local1.Argv.Count.Should().Be(0);
+            mem0.Local2.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            mem0.Local2.Arg0.Should().Be(-1);
+            mem0.Local2.Argv.Count.Should().Be(0);
+            mem0.Local3.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            mem0.Local3.Arg0.Should().Be(-1);
+            mem0.Local3.Argv.Count.Should().Be(0);
+            mem0.Memory.Count.Should().Be(1);
+            mem0.Memory[0].Span[0].Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            mem0.Memory[0].Span[0].Arg0.Should().Be(-1);
+            mem0.Memory[0].Span[0].Argv.Count.Should().Be(0);
+
+            // backs up one level, removing memory
+            ManagedSignatureData.ExtractCode(mem0, 3, out var result);
+            result.Length.Should().Be(4);
+            result.Local0.Data.Kind.Should().Be(ManagedSignatureKind.Type);
+            result.Local0.Arg0.Should().Be(0);
+            result.Local0.Argv.Count.Should().Be(0);
+            result.Local1.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            result.Local1.Arg0.Should().Be(-1);
+            result.Local1.Argv.Count.Should().Be(0);
+            result.Local2.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            result.Local2.Arg0.Should().Be(-1);
+            result.Local2.Argv.Count.Should().Be(0);
+            result.Local3.Data.Kind.Should().Be(ManagedSignatureKind.SZArray);
+            result.Local3.Arg0.Should().Be(-1);
+            result.Local3.Argv.Count.Should().Be(0);
+            result.Memory.Count.Should().Be(0);
         }
 
     }

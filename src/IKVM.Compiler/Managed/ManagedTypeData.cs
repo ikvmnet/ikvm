@@ -22,7 +22,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of custom attributes applied to the type.
         /// </summary>
-        public FixedValueList1<ManagedCustomAttribute> CustomAttributes;
+        public FixedValueList1<ManagedCustomAttributeData> CustomAttributes;
 
         /// <summary>
         /// Gets a reference to the base type.
@@ -32,32 +32,27 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of interfaces implemented on the managed type.
         /// </summary>
-        public FixedValueList2<ManagedInterface> Interfaces;
+        public FixedValueList2<ManagedInterfaceData> Interfaces;
 
         /// <summary>
         /// Gets the set of fields declared on the managed type.
         /// </summary>
-        public FixedValueList4<ManagedField> Fields;
+        public FixedValueList4<ManagedFieldData> Fields;
 
         /// <summary>
         /// Gets the set of methods declared on the managed type.
         /// </summary>
-        public FixedValueList4<ManagedMethod> Methods;
+        public FixedValueList4<ManagedMethodData> Methods;
 
         /// <summary>
         /// Gets the set of properties declared on the managed type.
         /// </summary>
-        public FixedValueList4<ManagedProperty> Properties;
+        public FixedValueList4<ManagedPropertyData> Properties;
 
         /// <summary>
         /// Gets the set of fields declared on the managed type.
         /// </summary>
-        public FixedValueList1<ManagedEvent> Events;
-
-        /// <summary>
-        /// Gets the set of nested types within the managed type.
-        /// </summary>
-        public FixedValueList1<ManagedType> NestedTypes;
+        public FixedValueList1<ManagedEventData> Events;
 
     }
 

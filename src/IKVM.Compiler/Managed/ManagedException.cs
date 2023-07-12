@@ -6,13 +6,13 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes an error regarding a managed type.
     /// </summary>
-    public class ManagedTypeException : Exception
+    internal class ManagedException : Exception
     {
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public ManagedTypeException()
+        public ManagedException()
         {
 
         }
@@ -22,7 +22,7 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="message"></param>
-        public ManagedTypeException(string? message) :
+        public ManagedException(string? message) :
             base(message)
         {
 

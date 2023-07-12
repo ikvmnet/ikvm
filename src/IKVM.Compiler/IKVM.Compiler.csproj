@@ -11,14 +11,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="Collections\FixedValueList.g.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>FixedValueList.tt</DependentUpon>
-      </None>
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="System.Reflection.Metadata" Version="6.0.1" />
         <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     </ItemGroup>
@@ -33,8 +25,16 @@
 
     <ItemGroup>
         <None Update="Collections\FixedValueList.tt">
-          <Generator>TextTemplatingFileGenerator</Generator>
-          <LastGenOutput>FixedValueList.g.cs</LastGenOutput>
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>FixedValueList.g.cs</LastGenOutput>
+        </None>
+        <None Update="Managed\ManagedTypeEntityList.g.tt">
+            <LastGenOutput>ManagedTypeEntityList.g.cs</LastGenOutput>
+            <Generator>TextTemplatingFileGenerator</Generator>
+        </None>
+        <None Update="Managed\ManagedAssemblyEntityList.g.tt">
+            <LastGenOutput>ManagedAssemblyEntityList.g.cs</LastGenOutput>
+            <Generator>TextTemplatingFileGenerator</Generator>
         </None>
         <None Update="Managed\ManagedSignature.g.tt">
             <LastGenOutput>ManagedSignature.g.cs</LastGenOutput>
@@ -48,9 +48,19 @@
 
     <ItemGroup>
         <Compile Update="Collections\FixedValueList.g.cs">
-          <DesignTime>True</DesignTime>
-          <AutoGen>True</AutoGen>
-          <DependentUpon>FixedValueList.tt</DependentUpon>
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>FixedValueList.tt</DependentUpon>
+        </Compile>
+        <Compile Update="Managed\ManagedTypeEntityList.g.cs">
+            <DependentUpon>ManagedTypeEntityList.g.tt</DependentUpon>
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+        </Compile>
+        <Compile Update="Managed\ManagedAssemblyEntityList.g.cs">
+            <DependentUpon>ManagedAssemblyEntityList.g.tt</DependentUpon>
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
         </Compile>
         <Compile Update="Managed\ManagedSignature.g.cs">
             <DependentUpon>ManagedSignature.g.tt</DependentUpon>

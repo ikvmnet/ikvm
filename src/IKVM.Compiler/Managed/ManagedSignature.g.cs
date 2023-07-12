@@ -51,6 +51,34 @@ namespace IKVM.Compiler.Managed
         /// <param name="x"></param
         /// <param name="y"></param>
         public static bool operator !=(in ManagedTypeSignature x, in ManagedTypeSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedTypeSignature x, in ManagedSignature y) => x.Equals(y);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedTypeSignature x, in ManagedSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedSignature x, in ManagedTypeSignature y) => y.Equals(x);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedSignature x, in ManagedTypeSignature y) => y.Equals(x) == false;
 
         internal readonly ManagedSignatureData data;
 
@@ -120,116 +148,6 @@ namespace IKVM.Compiler.Managed
         /// Casts the given signature to a <see cref="ManagedSignature"/>.
         /// </summary>
         /// <param name="value"></param>
-        public static implicit operator ManagedSignature(in ManagedPrimitiveTypeSignature value) => new ManagedSignature(true, value.data);
-
-        /// <summary>
-        /// Casts the given signature to a <see cref="ManagedPrimitiveTypeSignature"/>.
-        /// </summary>
-        /// <param name="value"></param>
-        public static explicit operator ManagedPrimitiveTypeSignature(in ManagedSignature value) => new ManagedPrimitiveTypeSignature(true, value.data);
-
-        /// <summary>
-        /// Returns <c>true</c> if this signature is equal to the specified signature.
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public readonly bool Equals(in ManagedPrimitiveTypeSignature obj) => obj.Equals(this);
-        
-        /// <summary>
-        /// Returns <c>true</c> if this signature is equal to the specified signature.
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        /// <inheritdoc />
-        bool IEquatable<ManagedPrimitiveTypeSignature>.Equals(ManagedPrimitiveTypeSignature other) => Equals(other);
-
-    }
-
-    internal readonly partial struct ManagedPrimitiveTypeSignature : IEquatable<ManagedSignature>, IEquatable<ManagedPrimitiveTypeSignature>
-    {
-    
-        /// <summary>
-        /// Returns <c>true</c> if the two signatures are equal to each other.
-        /// </summary>
-        /// <param name="x"></param
-        /// <param name="y"></param>
-        public static bool operator ==(in ManagedPrimitiveTypeSignature x, in ManagedPrimitiveTypeSignature y) => x.Equals(y);
-        
-        /// <summary>
-        /// Returns <c>false</c> if the two signatures are equal to each other.
-        /// </summary>
-        /// <param name="x"></param
-        /// <param name="y"></param>
-        public static bool operator !=(in ManagedPrimitiveTypeSignature x, in ManagedPrimitiveTypeSignature y) => x.Equals(y) == false;
-
-        internal readonly ManagedSignatureData data;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="data"></param>
-        internal ManagedPrimitiveTypeSignature(bool copy, in ManagedSignatureData data)
-        {
-            var c = data.GetLastCode();
-            if (c.Data.Kind != ManagedSignatureKind.PrimitiveType)
-                throw new InvalidCastException($"Signature of type {c.Data.Kind} is not of kind PrimitiveType.");
-
-            this.data = data;
-        }
-
-        /// <summary>
-        /// Returns <c>true</c> if this signature is equal to the specified signature.
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public override readonly bool Equals(object obj) => obj switch
-        {
-            ManagedSignature s => Equals(s),
-            ManagedPrimitiveTypeSignature s => Equals(s),
-            _ => false,
-        };
-
-        /// <summary>
-        /// Returns <c>true</c> if this signature is equal to the specified signature.
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public readonly bool Equals(in ManagedSignature obj) => data.Equals(obj.data);
-
-        /// <summary>
-        /// Returns <c>true</c> if this signature is equal to the specified signature.
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public readonly bool Equals(in ManagedPrimitiveTypeSignature obj) => data.Equals(obj.data);
-
-        /// <summary>
-        /// Gets a unique hash code for this signature.
-        /// </summary>
-        /// <returns></returns>
-        public readonly override int GetHashCode() => data.GetHashCode();
-        
-        /// <summary>
-        /// Gets a string representation of the type.
-        /// </summary>
-        /// <returns></returns>
-        public readonly override string ToString() => data.ToString();
-
-        /// <inheritdoc />
-        readonly bool IEquatable<ManagedPrimitiveTypeSignature>.Equals(ManagedPrimitiveTypeSignature other) => Equals(other);
-
-        /// <inheritdoc />
-        readonly bool IEquatable<ManagedSignature>.Equals(ManagedSignature other) => Equals(other);
-
-    }
-
-    internal readonly partial struct ManagedSignature
-    {
-
-        /// <summary>
-        /// Casts the given signature to a <see cref="ManagedSignature"/>.
-        /// </summary>
-        /// <param name="value"></param>
         public static implicit operator ManagedSignature(in ManagedSZArraySignature value) => new ManagedSignature(true, value.data);
 
         /// <summary>
@@ -271,6 +189,34 @@ namespace IKVM.Compiler.Managed
         /// <param name="x"></param
         /// <param name="y"></param>
         public static bool operator !=(in ManagedSZArraySignature x, in ManagedSZArraySignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedSZArraySignature x, in ManagedSignature y) => x.Equals(y);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedSZArraySignature x, in ManagedSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedSignature x, in ManagedSZArraySignature y) => y.Equals(x);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedSignature x, in ManagedSZArraySignature y) => y.Equals(x) == false;
 
         internal readonly ManagedSignatureData data;
 
@@ -381,6 +327,34 @@ namespace IKVM.Compiler.Managed
         /// <param name="x"></param
         /// <param name="y"></param>
         public static bool operator !=(in ManagedArraySignature x, in ManagedArraySignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedArraySignature x, in ManagedSignature y) => x.Equals(y);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedArraySignature x, in ManagedSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedSignature x, in ManagedArraySignature y) => y.Equals(x);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedSignature x, in ManagedArraySignature y) => y.Equals(x) == false;
 
         internal readonly ManagedSignatureData data;
 
@@ -491,6 +465,34 @@ namespace IKVM.Compiler.Managed
         /// <param name="x"></param
         /// <param name="y"></param>
         public static bool operator !=(in ManagedByRefSignature x, in ManagedByRefSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedByRefSignature x, in ManagedSignature y) => x.Equals(y);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedByRefSignature x, in ManagedSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedSignature x, in ManagedByRefSignature y) => y.Equals(x);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedSignature x, in ManagedByRefSignature y) => y.Equals(x) == false;
 
         internal readonly ManagedSignatureData data;
 
@@ -601,6 +603,34 @@ namespace IKVM.Compiler.Managed
         /// <param name="x"></param
         /// <param name="y"></param>
         public static bool operator !=(in ManagedGenericSignature x, in ManagedGenericSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedGenericSignature x, in ManagedSignature y) => x.Equals(y);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedGenericSignature x, in ManagedSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedSignature x, in ManagedGenericSignature y) => y.Equals(x);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedSignature x, in ManagedGenericSignature y) => y.Equals(x) == false;
 
         internal readonly ManagedSignatureData data;
 
@@ -711,6 +741,34 @@ namespace IKVM.Compiler.Managed
         /// <param name="x"></param
         /// <param name="y"></param>
         public static bool operator !=(in ManagedGenericConstraintSignature x, in ManagedGenericConstraintSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedGenericConstraintSignature x, in ManagedSignature y) => x.Equals(y);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedGenericConstraintSignature x, in ManagedSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedSignature x, in ManagedGenericConstraintSignature y) => y.Equals(x);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedSignature x, in ManagedGenericConstraintSignature y) => y.Equals(x) == false;
 
         internal readonly ManagedSignatureData data;
 
@@ -821,6 +879,34 @@ namespace IKVM.Compiler.Managed
         /// <param name="x"></param
         /// <param name="y"></param>
         public static bool operator !=(in ManagedGenericTypeParameterSignature x, in ManagedGenericTypeParameterSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedGenericTypeParameterSignature x, in ManagedSignature y) => x.Equals(y);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedGenericTypeParameterSignature x, in ManagedSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedSignature x, in ManagedGenericTypeParameterSignature y) => y.Equals(x);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedSignature x, in ManagedGenericTypeParameterSignature y) => y.Equals(x) == false;
 
         internal readonly ManagedSignatureData data;
 
@@ -931,6 +1017,34 @@ namespace IKVM.Compiler.Managed
         /// <param name="x"></param
         /// <param name="y"></param>
         public static bool operator !=(in ManagedGenericMethodParameterSignature x, in ManagedGenericMethodParameterSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedGenericMethodParameterSignature x, in ManagedSignature y) => x.Equals(y);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedGenericMethodParameterSignature x, in ManagedSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedSignature x, in ManagedGenericMethodParameterSignature y) => y.Equals(x);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedSignature x, in ManagedGenericMethodParameterSignature y) => y.Equals(x) == false;
 
         internal readonly ManagedSignatureData data;
 
@@ -1041,6 +1155,34 @@ namespace IKVM.Compiler.Managed
         /// <param name="x"></param
         /// <param name="y"></param>
         public static bool operator !=(in ManagedModifiedSignature x, in ManagedModifiedSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedModifiedSignature x, in ManagedSignature y) => x.Equals(y);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedModifiedSignature x, in ManagedSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedSignature x, in ManagedModifiedSignature y) => y.Equals(x);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedSignature x, in ManagedModifiedSignature y) => y.Equals(x) == false;
 
         internal readonly ManagedSignatureData data;
 
@@ -1151,6 +1293,34 @@ namespace IKVM.Compiler.Managed
         /// <param name="x"></param
         /// <param name="y"></param>
         public static bool operator !=(in ManagedPointerSignature x, in ManagedPointerSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedPointerSignature x, in ManagedSignature y) => x.Equals(y);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedPointerSignature x, in ManagedSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedSignature x, in ManagedPointerSignature y) => y.Equals(x);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedSignature x, in ManagedPointerSignature y) => y.Equals(x) == false;
 
         internal readonly ManagedSignatureData data;
 
@@ -1261,6 +1431,34 @@ namespace IKVM.Compiler.Managed
         /// <param name="x"></param
         /// <param name="y"></param>
         public static bool operator !=(in ManagedFunctionPointerSignature x, in ManagedFunctionPointerSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedFunctionPointerSignature x, in ManagedSignature y) => x.Equals(y);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedFunctionPointerSignature x, in ManagedSignature y) => x.Equals(y) == false;
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator ==(in ManagedSignature x, in ManagedFunctionPointerSignature y) => y.Equals(x);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="x"></param
+        /// <param name="y"></param>
+        public static bool operator !=(in ManagedSignature x, in ManagedFunctionPointerSignature y) => y.Equals(x) == false;
 
         internal readonly ManagedSignatureData data;
 

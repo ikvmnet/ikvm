@@ -17,7 +17,17 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of custom attributes applied to the exported type.
         /// </summary>
-        public FixedValueList1<ManagedCustomAttribute> CustomAttributes;
+        public FixedValueList1<ManagedCustomAttributeData> CustomAttributes;
+
+        /// <summary>
+        /// Whether or not the type export is a forwarder.
+        /// </summary>
+        public bool IsForwarder;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public ManagedType Implementation;
 
         /// <inhericdoc />
         public override readonly string ToString() => Name;

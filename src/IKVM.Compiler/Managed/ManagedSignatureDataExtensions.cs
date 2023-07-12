@@ -15,13 +15,13 @@ namespace IKVM.Compiler.Managed
         /// Gets the last code in the data structure.
         /// </summary>
         /// <returns></returns>
-        /// <exception cref="ManagedTypeException"></exception>
+        /// <exception cref="ManagedException"></exception>
         public static ref readonly ManagedSignatureCode GetLastCode(this in ManagedSignatureData self)
         {
             switch (self.Length)
             {
                 case 0:
-                    throw new ManagedTypeException("Invalid signature data.");
+                    throw new ManagedException("Invalid signature data.");
                 case 1:
                     return ref self.Local0;
                 case 2:
@@ -62,7 +62,7 @@ namespace IKVM.Compiler.Managed
                     for (int i = 0; i < self.Memory.Count; i++)
                     {
                         var m = self.Memory[i];
-                        if (m.Length < index - p)
+                        if (index - p < m.Length)
                             return ref m.Span[index - p];
                         else
                             p += m.Length;

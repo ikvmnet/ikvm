@@ -32,7 +32,7 @@
         /// <summary>
         /// Gets whether the modifier is required.
         /// </summary>
-        public readonly bool Required => data.GetLastCode().Data.Modified_Required!.Value;
+        public readonly bool Required => data.GetLastCode().Data.Data.Modified_Required;
 
     }
 

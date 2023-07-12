@@ -14,7 +14,7 @@ namespace IKVM.Compiler.Managed
         readonly IManagedModuleContext context;
 
         internal string name;
-        internal FixedValueList1<ManagedCustomAttribute> customAttributes;
+        internal FixedValueList1<ManagedCustomAttributeData> customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
@@ -22,7 +22,7 @@ namespace IKVM.Compiler.Managed
         /// <param name="context"></param>
         /// <param name="name"></param>
         /// <param name="customAttributes"></param>
-        public ManagedModule(IManagedModuleContext context, string name, in FixedValueList1<ManagedCustomAttribute> customAttributes)
+        public ManagedModule(IManagedModuleContext context, string name, in FixedValueList1<ManagedCustomAttributeData> customAttributes)
         {
             this.context = context;
             this.name = name;

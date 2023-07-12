@@ -1,25 +1,38 @@
-﻿using System.Collections;
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+using System;
+using System.Collections;
 using System.Collections.Generic;
 
 using IKVM.Compiler.Collections;
 
 namespace IKVM.Compiler.Managed
 {
+<#
+var items = new string[2, 3] {
+    { "AssemblyReference", "AssemblyReference", "References" },
+    { "AssemblyCustomAttribute", "AssemblyCustomAttribute", "CustomAttributes" },
+};
 
-    /// <summary>
-    /// Represents a list of attributes on a <see cref="ManagedAssembly"/>.
-    /// </summary>
-    internal readonly struct ManagedAssemblyCustomAttributeList : IReadOnlyList<ManagedCustomAttribute>, IEnumerable<ManagedCustomAttribute>
+for (int i = 0; i < items.GetLength(0); i++)
+{
+#>
+
+    internal readonly partial struct Managed<#= items[i, 0] #>List : IReadOnlyList<Managed<#= items[i, 1] #>>, IEnumerable<Managed<#= items[i, 1] #>>
     {
 
         /// <summary>
         /// Provides an enumerator that iterates over the items in the list.
         /// </summary>
-        public struct Enumerator : IEnumerator<ManagedCustomAttribute>
+        public struct Enumerator : IEnumerator<Managed<#= items[i, 1] #>>
         {
 
             readonly ManagedAssembly assembly;
-            int pos = -1;
+            int index = -1;
 
             /// <summary>
             /// Initializes a new instance.
@@ -34,17 +47,17 @@ namespace IKVM.Compiler.Managed
             /// Moves to the next item.
             /// </summary>
             /// <returns></returns>
-            public bool MoveNext() => assembly.data.CustomAttributes.Count > ++pos;
+            public bool MoveNext() => assembly.data.<#= items[i, 2] #>.Count > ++index;
 
             /// <summary>
             /// Gets a reference to the current item.
             /// </summary>
-            public readonly ref readonly ManagedCustomAttribute Current => ref assembly.data.CustomAttributes.GetItemRef(pos);
+            public readonly Managed<#= items[i, 1] #> Current => new Managed<#= items[i, 1] #>(assembly, index);
 
             /// <summary>
             /// Resets the enumerator.
             /// </summary>
-            public void Reset() => pos = -1;
+            public void Reset() => index = -1;
 
             /// <summary>
             /// Disposes of the enumerator.
@@ -52,7 +65,7 @@ namespace IKVM.Compiler.Managed
             public readonly void Dispose() { }
 
             /// <inheritdoc />
-            readonly ManagedCustomAttribute IEnumerator<ManagedCustomAttribute>.Current => Current;
+            readonly Managed<#= items[i, 1] #> IEnumerator<Managed<#= items[i, 1] #>>.Current => Current;
 
             /// <inheritdoc />
             readonly object IEnumerator.Current => Current;
@@ -65,19 +78,19 @@ namespace IKVM.Compiler.Managed
         /// Initializes a new instance.
         /// </summary>
         /// <param name="assembly"></param>
-        public ManagedAssemblyCustomAttributeList(ManagedAssembly assembly) => this.assembly = assembly;
+        public Managed<#= items[i, 0] #>List(ManagedAssembly assembly) => this.assembly = assembly;
 
         /// <summary>
         /// Gets the item at the specified index.
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public readonly ref readonly ManagedCustomAttribute this[int index] => ref assembly.data.CustomAttributes.GetItemRef(index);
+        public readonly Managed<#= items[i, 1] #> this[int index] => new Managed<#= items[i, 1] #>(assembly, index);
 
         /// <summary>
         /// Gets the count of items in the list.
         /// </summary>
-        public readonly int Count => assembly.data.CustomAttributes.Count;
+        public readonly int Count => assembly.data.<#= items[i, 2] #>.Count;
 
         /// <summary>
         /// Gets an enumerator that iterates over the items in the list.
@@ -86,14 +99,17 @@ namespace IKVM.Compiler.Managed
         public readonly Enumerator GetEnumerator() => new(assembly);
 
         /// <inheritdoc />
-        ManagedCustomAttribute IReadOnlyList<ManagedCustomAttribute>.this[int index] => this[index];
+        Managed<#= items[i, 1] #> IReadOnlyList<Managed<#= items[i, 1] #>>.this[int index] => this[index];
 
         /// <inheritdoc />
-        IEnumerator<ManagedCustomAttribute> IEnumerable<ManagedCustomAttribute>.GetEnumerator() => GetEnumerator();
+        IEnumerator<Managed<#= items[i, 1] #>> IEnumerable<Managed<#= items[i, 1] #>>.GetEnumerator() => GetEnumerator();
 
         /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     }
+<#
+}
+#>
 
 }

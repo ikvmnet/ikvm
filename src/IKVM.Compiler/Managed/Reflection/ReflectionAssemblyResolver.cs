@@ -6,7 +6,7 @@ namespace IKVM.Compiler.Managed.Reflection
     internal class ReflectionAssemblyResolver : IReflectionAssemblyResolver
     {
 
-        public Assembly? Resolve(AssemblyName assemblyName)
+        public Assembly? Resolve(string assemblyName)
         {
             try
             {

@@ -8,7 +8,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a managed property.
     /// </summary>
-    internal struct ManagedProperty
+    internal struct ManagedPropertyData
     {
 
         /// <summary>
@@ -19,7 +19,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of custom attributes applied to the property.
         /// </summary>
-        public FixedValueList1<ManagedCustomAttribute> CustomAttributes;
+        public FixedValueList1<ManagedCustomAttributeData> CustomAttributes;
 
         /// <summary>
         /// Gets the attributes of the property.

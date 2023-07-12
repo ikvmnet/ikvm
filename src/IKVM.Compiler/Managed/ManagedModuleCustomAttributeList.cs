@@ -9,13 +9,13 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a list of attributes on a <see cref="ManagedModule"/>.
     /// </summary>
-    internal readonly struct ManagedModuleCustomAttributeList : IReadOnlyList<ManagedCustomAttribute>, IEnumerable<ManagedCustomAttribute>
+    internal readonly struct ManagedModuleCustomAttributeList : IReadOnlyList<ManagedCustomAttributeData>, IEnumerable<ManagedCustomAttributeData>
     {
 
         /// <summary>
         /// Provides an enumerator that iterates over the items in the list.
         /// </summary>
-        public struct Enumerator : IEnumerator<ManagedCustomAttribute>
+        public struct Enumerator : IEnumerator<ManagedCustomAttributeData>
         {
 
             readonly ManagedModule module;
@@ -39,7 +39,7 @@ namespace IKVM.Compiler.Managed
             /// <summary>
             /// Gets a reference to the current item.
             /// </summary>
-            public readonly ref readonly ManagedCustomAttribute Current => ref module.customAttributes.GetItemRef(pos);
+            public readonly ref readonly ManagedCustomAttributeData Current => ref module.customAttributes.GetItemRef(pos);
 
             /// <summary>
             /// Resets the enumerator.
@@ -52,7 +52,7 @@ namespace IKVM.Compiler.Managed
             public readonly void Dispose() { }
 
             /// <inheritdoc />
-            readonly ManagedCustomAttribute IEnumerator<ManagedCustomAttribute>.Current => Current;
+            readonly ManagedCustomAttributeData IEnumerator<ManagedCustomAttributeData>.Current => Current;
 
             /// <inheritdoc />
             readonly object IEnumerator.Current => Current;
@@ -72,7 +72,7 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public readonly ref readonly ManagedCustomAttribute this[int index] => ref module.customAttributes.GetItemRef(index);
+        public readonly ref readonly ManagedCustomAttributeData this[int index] => ref module.customAttributes.GetItemRef(index);
 
         /// <summary>
         /// Gets the count of items in the list.
@@ -86,10 +86,10 @@ namespace IKVM.Compiler.Managed
         public readonly Enumerator GetEnumerator() => new(module);
 
         /// <inheritdoc />
-        ManagedCustomAttribute IReadOnlyList<ManagedCustomAttribute>.this[int index] => this[index];
+        ManagedCustomAttributeData IReadOnlyList<ManagedCustomAttributeData>.this[int index] => this[index];
 
         /// <inheritdoc />
-        IEnumerator<ManagedCustomAttribute> IEnumerable<ManagedCustomAttribute>.GetEnumerator() => GetEnumerator();
+        IEnumerator<ManagedCustomAttributeData> IEnumerable<ManagedCustomAttributeData>.GetEnumerator() => GetEnumerator();
 
         /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

@@ -81,7 +81,6 @@ foreach (var type in new[]
 {
     "ManagedSignature",
     "ManagedTypeSignature",
-    "ManagedPrimitiveTypeSignature",
     "ManagedSZArraySignature",
     "ManagedArraySignature",
     "ManagedByRefSignature",
@@ -101,6 +100,15 @@ foreach (var type in new[]
         /// </summary>
         /// <returns></returns>
         public static ManagedSZArraySignature CreateArray(this in <#= type #> self) => new ManagedSZArraySignature(self.data);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in <#= type #> self, int rank) => new ManagedArraySignature(self.data, rank);
 
         /// <summary>
         /// Creates a new array type with this type as the element type.

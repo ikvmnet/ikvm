@@ -4,7 +4,7 @@
     /// <summary>
     /// Describes a managed custom attribute type.
     /// </summary>
-    internal struct ManagedCustomAttribute
+    internal struct ManagedCustomAttributeData
     {
 
 

@@ -29,7 +29,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// </summary>
         /// <param name="assemblyName"></param>
         /// <returns></returns>
-        public MetadataReader? Resolve(AssemblyName assemblyName)
+        public MetadataReader? Resolve(string assemblyName)
         {
             foreach (var i in paths)
                 if (TryOpen(assemblyName, i, out var pe))
@@ -45,11 +45,11 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="path"></param>
         /// <param name="reader"></param>
         /// <returns></returns>
-        bool TryOpen(AssemblyName assemblyName, string path, out PEReader? reader)
+        bool TryOpen(string assemblyName, string path, out PEReader? reader)
         {
             reader = null;
 
-            var n = assemblyName.Name + ".dll";
+            var n = assemblyName + ".dll";
             if (Path.GetFileName(path) != n)
                 return false;
             if (File.Exists(path) == false)
@@ -65,7 +65,7 @@ namespace IKVM.Compiler.Managed.Metadata
 
             // read metadata, check that matches
             var rd = pe.GetMetadataReader();
-            if (rd.GetAssemblyDefinition().GetAssemblyName().Name != assemblyName.Name)
+            if (rd.GetAssemblyDefinition().GetAssemblyName().Name != assemblyName)
             {
                 pe.Dispose();
                 return false;

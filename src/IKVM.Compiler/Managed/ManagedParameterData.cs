@@ -8,7 +8,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a managed method parameter.
     /// </summary>
-    internal struct ManagedParameter
+    internal struct ManagedParameterData
     {
 
         /// <summary>
@@ -24,7 +24,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the custom attributes on the parameter.
         /// </summary>
-        public FixedValueList1<ManagedCustomAttribute> CustomAttributes;
+        public FixedValueList1<ManagedCustomAttributeData> CustomAttributes;
 
         /// <summary>
         /// Gets the type of the parameter.

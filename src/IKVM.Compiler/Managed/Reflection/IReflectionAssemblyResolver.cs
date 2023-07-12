@@ -14,7 +14,7 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="assemblyName"></param>
         /// <returns></returns>
-        Assembly? Resolve(AssemblyName assemblyName);
+        Assembly? Resolve(string assemblyName);
 
     }
 

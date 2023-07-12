@@ -8,13 +8,13 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a managed method.
     /// </summary>
-    internal struct ManagedMethod
+    internal struct ManagedMethodData
     {
 
         /// <summary>
         /// Gets a reference to a nil version of the type.
         /// </summary>
-        public static readonly ManagedMethod Nil = new ManagedMethod(true);
+        public static readonly ManagedMethodData Nil = new ManagedMethodData(true);
 
         /// <summary>
         /// Gest whether or not the value is null.
@@ -44,7 +44,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of custom attributes applied to the method.
         /// </summary>
-        public FixedValueList1<ManagedCustomAttribute> CustomAttributes;
+        public FixedValueList1<ManagedCustomAttributeData> CustomAttributes;
 
         /// <summary>
         /// Gets the return type of the method.
@@ -54,19 +54,19 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of parameters of the method.
         /// </summary>
-        public FixedValueList4<ManagedParameter> Parameters;
+        public FixedValueList4<ManagedParameterData> Parameters;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="isNil"></param>
-        public ManagedMethod(bool isNil)
+        public ManagedMethodData(bool isNil)
         {
             IsNil = isNil;
         }
 
         /// <inhericdoc />
-        public override readonly string ToString() => Name;
+        public override readonly string ToString() => Name ?? "";
 
     }
 

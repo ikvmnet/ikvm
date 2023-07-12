@@ -12,14 +12,16 @@ namespace IKVM.Compiler.Managed.Metadata
     {
 
         readonly MetadataAssemblyContext context;
+        readonly string coreAssemblyName;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        public MetadataSignatureTypeProvider(MetadataAssemblyContext context)
+        public MetadataSignatureTypeProvider(MetadataAssemblyContext context, string coreAssemblyName)
         {
             this.context = context;
+            this.coreAssemblyName = coreAssemblyName;
         }
 
         public ManagedSignature GetArrayType(ManagedSignature elementType, ArrayShape shape)
@@ -50,7 +52,7 @@ namespace IKVM.Compiler.Managed.Metadata
         public ManagedSignature GetGenericMethodParameter(MetadataGenericContext genericContext, int index)
         {
             if (genericContext.MethodParameters == null)
-                throw new ManagedTypeException("No generic method context.");
+                throw new ManagedException("No generic method context.");
 
             return new ManagedGenericMethodParameterSignature(genericContext.MethodParameters.Value[index]);
         }
@@ -70,27 +72,41 @@ namespace IKVM.Compiler.Managed.Metadata
             return elementType.CreatePointer();
         }
 
-        public ManagedSignature GetPrimitiveType(PrimitiveTypeCode typeCode) => typeCode switch
+        public ManagedSignature GetPrimitiveType(PrimitiveTypeCode typeCode)
         {
-            PrimitiveTypeCode.Boolean => ManagedSignature.Boolean,
-            PrimitiveTypeCode.Byte => ManagedSignature.Byte,
-            PrimitiveTypeCode.SByte => ManagedSignature.SByte,
-            PrimitiveTypeCode.Char => ManagedSignature.Char,
-            PrimitiveTypeCode.Int16 => ManagedSignature.Int16,
-            PrimitiveTypeCode.UInt16 => ManagedSignature.UInt16,
-            PrimitiveTypeCode.Int32 => ManagedSignature.Int32,
-            PrimitiveTypeCode.UInt32 => ManagedSignature.UInt32,
-            PrimitiveTypeCode.Int64 => ManagedSignature.Int64,
-            PrimitiveTypeCode.UInt64 => ManagedSignature.UInt64,
-            PrimitiveTypeCode.Single => ManagedSignature.Single,
-            PrimitiveTypeCode.Double => ManagedSignature.Double,
-            PrimitiveTypeCode.IntPtr => ManagedSignature.IntPtr,
-            PrimitiveTypeCode.UIntPtr => ManagedSignature.UIntPtr,
-            PrimitiveTypeCode.Object => ManagedSignature.Object,
-            PrimitiveTypeCode.String => ManagedSignature.String,
-            PrimitiveTypeCode.TypedReference => ManagedSignature.TypedReference,
-            PrimitiveTypeCode.Void => ManagedSignature.Void,
-            _ => throw new ManagedTypeException(),
+            var assembly = context.ResolveAssembly(coreAssemblyName);
+            if (assembly == null)
+                throw new ManagedResolveException("Cannot resolve core assembly.");
+
+            var typeName = GetPrimitiveTypeName(typeCode);
+            var type = assembly.ResolveType(typeName);
+            if (type == null)
+                throw new ManagedResolveException($"Cannot resolve primitive type '{typeName}'.");
+
+            return ManagedSignature.Type(type);
+        }
+
+        string GetPrimitiveTypeName(PrimitiveTypeCode typeCode) => typeCode switch
+        {
+            PrimitiveTypeCode.Boolean => "System.Boolean",
+            PrimitiveTypeCode.Byte => "System.Byte",
+            PrimitiveTypeCode.SByte => "System.SByte",
+            PrimitiveTypeCode.Char => "System.Char",
+            PrimitiveTypeCode.Int16 => "System.Int16",
+            PrimitiveTypeCode.UInt16 => "System.UInt16",
+            PrimitiveTypeCode.Int32 => "System.Int32",
+            PrimitiveTypeCode.UInt32 => "System.UInt32",
+            PrimitiveTypeCode.Int64 => "System.Int64",
+            PrimitiveTypeCode.UInt64 => "System.UInt64",
+            PrimitiveTypeCode.Single => "System.Single",
+            PrimitiveTypeCode.Double => "System.Double",
+            PrimitiveTypeCode.IntPtr => "System.IntPtr",
+            PrimitiveTypeCode.UIntPtr => "System.UIntPtr",
+            PrimitiveTypeCode.Object => "System.Object",
+            PrimitiveTypeCode.String => "System.String",
+            PrimitiveTypeCode.TypedReference => "System.TypedReference",
+            PrimitiveTypeCode.Void => "System.Void",
+            _ => throw new ManagedException(),
         };
 
         public ManagedSignature GetSZArrayType(ManagedSignature elementType)
@@ -100,13 +116,13 @@ namespace IKVM.Compiler.Managed.Metadata
 
         public ManagedSignature GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
         {
-            var typeReference = context.ResolveTypeReference(reader, handle, MetadataGenericContext.Empty);
+            var typeReference = context.ResolveType(reader, handle, MetadataGenericContext.Empty);
             return ManagedSignature.Type(typeReference);
         }
 
         public ManagedSignature GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
         {
-            var typeReference = context.ResolveTypeReference(reader, handle, MetadataGenericContext.Empty);
+            var typeReference = context.ResolveType(reader, handle, MetadataGenericContext.Empty);
             return ManagedSignature.Type(typeReference);
         }
 

@@ -1,25 +1,41 @@
-﻿using System.Collections;
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+using System.Collections;
 using System.Collections.Generic;
 
 using IKVM.Compiler.Collections;
 
 namespace IKVM.Compiler.Managed
 {
+<#
+var items = new string[,] {
+    { "TypeCustomAttribute", "TypeCustomAttribute", "CustomAttributes" },
+    { "TypeInterface", "TypeInterface", "Interfaces" },
+    { "TypeField", "TypeField", "Fields" },
+    { "TypeMethod", "TypeMethod", "Methods" },
+    { "TypeProperty", "TypeProperty", "Properties" },
+    { "TypeEvent", "TypeEvent", "Events" },
+};
 
-    /// <summary>
-    /// Represents a list of fields on a <see cref="ManagedType"/>.
-    /// </summary>
-    internal readonly struct ManagedTypeFieldList : IReadOnlyList<ManagedField>, IEnumerable<ManagedField>
+for (int i = 0; i < items.GetLength(0); i++)
+{
+#>
+
+    internal readonly partial struct Managed<#= items[i, 0] #>List : IReadOnlyList<Managed<#= items[i, 1] #>>, IEnumerable<Managed<#= items[i, 1] #>>
     {
 
         /// <summary>
         /// Provides an enumerator that iterates over the items in the list.
         /// </summary>
-        public struct Enumerator : IEnumerator<ManagedField>
+        public struct Enumerator : IEnumerator<Managed<#= items[i, 1] #>>
         {
 
             readonly ManagedType type;
-            int pos = -1;
+            int index = -1;
 
             /// <summary>
             /// Initializes a new instance.
@@ -34,17 +50,17 @@ namespace IKVM.Compiler.Managed
             /// Moves to the next item.
             /// </summary>
             /// <returns></returns>
-            public bool MoveNext() => type.data.Fields.Count > ++pos;
+            public bool MoveNext() => type.data.<#= items[i, 2] #>.Count > ++index;
 
             /// <summary>
             /// Gets a reference to the current item.
             /// </summary>
-            public readonly ref readonly ManagedField Current => ref type.data.Fields.GetItemRef(pos);
+            public readonly Managed<#= items[i, 1] #> Current => new Managed<#= items[i, 1] #>(type, index);
 
             /// <summary>
             /// Resets the enumerator.
             /// </summary>
-            public void Reset() => pos = -1;
+            public void Reset() => index = -1;
 
             /// <summary>
             /// Disposes of the enumerator.
@@ -52,7 +68,7 @@ namespace IKVM.Compiler.Managed
             public readonly void Dispose() { }
 
             /// <inheritdoc />
-            readonly ManagedField IEnumerator<ManagedField>.Current => Current;
+            readonly Managed<#= items[i, 1] #> IEnumerator<Managed<#= items[i, 1] #>>.Current => Current;
 
             /// <inheritdoc />
             readonly object IEnumerator.Current => Current;
@@ -64,34 +80,20 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="type"></param>
-        public ManagedTypeFieldList(ManagedType type) => this.type = type;
+        /// <param name="assembly"></param>
+        public Managed<#= items[i, 0] #>List(ManagedType type) => this.type = type;
 
         /// <summary>
         /// Gets the item at the specified index.
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public readonly ref readonly ManagedField this[int index] => ref type.data.Fields.GetItemRef(index);
+        public readonly Managed<#= items[i, 1] #> this[int index] => new Managed<#= items[i, 1] #>(type, index);
 
         /// <summary>
         /// Gets the count of items in the list.
         /// </summary>
-        public readonly int Count => type.data.Fields.Count;
-
-        /// <summary>
-        /// Gets the first field, if any, on the type with the specified name.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public readonly ref readonly ManagedField Resolve(string name)
-        {
-            foreach (ref readonly var m in this)
-                if (m.Name == name)
-                    return ref m;
-
-            return ref ManagedField.Nil;
-        }
+        public readonly int Count => type.data.<#= items[i, 2] #>.Count;
 
         /// <summary>
         /// Gets an enumerator that iterates over the items in the list.
@@ -100,14 +102,17 @@ namespace IKVM.Compiler.Managed
         public readonly Enumerator GetEnumerator() => new(type);
 
         /// <inheritdoc />
-        ManagedField IReadOnlyList<ManagedField>.this[int index] => this[index];
+        Managed<#= items[i, 1] #> IReadOnlyList<Managed<#= items[i, 1] #>>.this[int index] => this[index];
 
         /// <inheritdoc />
-        IEnumerator<ManagedField> IEnumerable<ManagedField>.GetEnumerator() => GetEnumerator();
+        IEnumerator<Managed<#= items[i, 1] #>> IEnumerable<Managed<#= items[i, 1] #>>.GetEnumerator() => GetEnumerator();
 
         /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     }
+<#
+}
+#>
 
 }
