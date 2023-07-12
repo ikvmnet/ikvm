@@ -12,11 +12,6 @@ namespace IKVM.Compiler.Managed
     {
 
         /// <summary>
-        /// Gets a reference to a nil version of the type.
-        /// </summary>
-        public static readonly ManagedMethodData Nil = new ManagedMethodData(true);
-
-        /// <summary>
         /// Gest whether or not the value is null.
         /// </summary>
         public readonly bool IsNil;
@@ -55,15 +50,6 @@ namespace IKVM.Compiler.Managed
         /// Gets the set of parameters of the method.
         /// </summary>
         public FixedValueList4<ManagedParameterData> Parameters;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="isNil"></param>
-        public ManagedMethodData(bool isNil)
-        {
-            IsNil = isNil;
-        }
 
     }
 
