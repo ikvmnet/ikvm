@@ -39,7 +39,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of generic parameters on the method.
         /// </summary>
-        public FixedValueList1<ManagedGenericParameter> GenericParameters;
+        public FixedValueList1<ManagedGenericParameterData> GenericParameters;
 
         /// <summary>
         /// Gets the set of custom attributes applied to the method.
