@@ -1,0 +1,35 @@
+﻿using System;
+using IKVM.ByteCode.Syntax;
+
+namespace IKVM.Compiler.Managed.Reader
+{
+
+    /// <summary>
+    /// Provides utilities for working with managed types.
+    /// </summary>
+    static class ManagedTypeUtil
+    {
+
+        /// <summary>
+        /// Returns <c>true</c> if the specified managed type is a compiled Java type.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <returns></returns>
+        public static bool IsJavaType(ManagedType info)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Returns the Java type name for a managed type.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <returns></returns>
+        public static JavaClassName GetJavaClassName(ManagedType info)
+        {
+            throw new NotImplementedException();
+        }
+
+    }
+
+}

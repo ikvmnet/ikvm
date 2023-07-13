@@ -28,19 +28,19 @@
             <Generator>TextTemplatingFileGenerator</Generator>
             <LastGenOutput>FixedValueList.g.cs</LastGenOutput>
         </None>
-        <None Update="Managed\ManagedTypeEntityList.g.tt">
+        <None Update="Managed\Reader\ManagedTypeEntityList.g.tt">
             <LastGenOutput>ManagedTypeEntityList.g.cs</LastGenOutput>
             <Generator>TextTemplatingFileGenerator</Generator>
         </None>
-        <None Update="Managed\ManagedAssemblyEntityList.g.tt">
+        <None Update="Managed\Reader\ManagedAssemblyEntityList.g.tt">
             <LastGenOutput>ManagedAssemblyEntityList.g.cs</LastGenOutput>
             <Generator>TextTemplatingFileGenerator</Generator>
         </None>
-        <None Update="Managed\ManagedSignature.g.tt">
+        <None Update="Managed\Reader\ManagedSignature.g.tt">
             <LastGenOutput>ManagedSignature.g.cs</LastGenOutput>
             <Generator>TextTemplatingFileGenerator</Generator>
         </None>
-        <None Update="Managed\ManagedSignatureExtensions.g.tt">
+        <None Update="Managed\Reader\ManagedSignatureExtensions.g.tt">
             <Generator>TextTemplatingFileGenerator</Generator>
             <LastGenOutput>ManagedSignatureExtensions.g.cs</LastGenOutput>
         </None>
@@ -52,22 +52,22 @@
             <AutoGen>True</AutoGen>
             <DependentUpon>FixedValueList.tt</DependentUpon>
         </Compile>
-        <Compile Update="Managed\ManagedTypeEntityList.g.cs">
+        <Compile Update="Managed\Reader\ManagedTypeEntityList.g.cs">
             <DependentUpon>ManagedTypeEntityList.g.tt</DependentUpon>
             <DesignTime>True</DesignTime>
             <AutoGen>True</AutoGen>
         </Compile>
-        <Compile Update="Managed\ManagedAssemblyEntityList.g.cs">
+        <Compile Update="Managed\Reader\ManagedAssemblyEntityList.g.cs">
             <DependentUpon>ManagedAssemblyEntityList.g.tt</DependentUpon>
             <DesignTime>True</DesignTime>
             <AutoGen>True</AutoGen>
         </Compile>
-        <Compile Update="Managed\ManagedSignature.g.cs">
+        <Compile Update="Managed\Reader\ManagedSignature.g.cs">
             <DependentUpon>ManagedSignature.g.tt</DependentUpon>
             <DesignTime>True</DesignTime>
             <AutoGen>True</AutoGen>
         </Compile>
-        <Compile Update="Managed\ManagedSignatureExtensions.g.cs">
+        <Compile Update="Managed\Reader\ManagedSignatureExtensions.g.cs">
             <DesignTime>True</DesignTime>
             <AutoGen>True</AutoGen>
             <DependentUpon>ManagedSignatureExtensions.g.tt</DependentUpon>

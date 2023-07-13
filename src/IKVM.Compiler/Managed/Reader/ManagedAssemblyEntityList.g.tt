@@ -1,0 +1,113 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+using System.Collections;
+using System.Collections.Generic;
+
+namespace IKVM.Compiler.Managed.Reader
+{
+<#
+var items = new string[,] {
+    { "AssemblyReference", "AssemblyReference", "References" },
+    { "AssemblyCustomAttribute", "AssemblyCustomAttribute", "CustomAttributes" },
+    { "AssemblyModule", "Module", "Modules" }
+};
+
+for (int i = 0; i < items.GetLength(0); i++)
+{
+#>
+
+    internal readonly partial struct Managed<#= items[i, 0] #>List : IReadOnlyList<Managed<#= items[i, 1] #>>, IEnumerable<Managed<#= items[i, 1] #>>
+    {
+
+        /// <summary>
+        /// Provides an enumerator that iterates over the items in the list.
+        /// </summary>
+        public struct Enumerator : IEnumerator<Managed<#= items[i, 1] #>>
+        {
+
+            readonly ManagedAssembly assembly;
+            int index = -1;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="assembly"></param>
+            public Enumerator(ManagedAssembly assembly)
+            {
+                this.assembly = assembly;
+            }
+
+            /// <summary>
+            /// Moves to the next item.
+            /// </summary>
+            /// <returns></returns>
+            public bool MoveNext() => assembly.data.<#= items[i, 2] #>.Count > ++index;
+
+            /// <summary>
+            /// Gets a reference to the current item.
+            /// </summary>
+            public readonly Managed<#= items[i, 1] #> Current => new Managed<#= items[i, 1] #>(assembly, index);
+
+            /// <summary>
+            /// Resets the enumerator.
+            /// </summary>
+            public void Reset() => index = -1;
+
+            /// <summary>
+            /// Disposes of the enumerator.
+            /// </summary>
+            public readonly void Dispose() { }
+
+            /// <inheritdoc />
+            readonly Managed<#= items[i, 1] #> IEnumerator<Managed<#= items[i, 1] #>>.Current => Current;
+
+            /// <inheritdoc />
+            readonly object IEnumerator.Current => Current;
+
+        }
+
+        readonly ManagedAssembly assembly;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="assembly"></param>
+        public Managed<#= items[i, 0] #>List(ManagedAssembly assembly) => this.assembly = assembly;
+
+        /// <summary>
+        /// Gets the item at the specified index.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public readonly Managed<#= items[i, 1] #> this[int index] => new Managed<#= items[i, 1] #>(assembly, index);
+
+        /// <summary>
+        /// Gets the count of items in the list.
+        /// </summary>
+        public readonly int Count => assembly.data.<#= items[i, 2] #>.Count;
+
+        /// <summary>
+        /// Gets an enumerator that iterates over the items in the list.
+        /// </summary>
+        /// <returns></returns>
+        public readonly Enumerator GetEnumerator() => new(assembly);
+
+        /// <inheritdoc />
+        Managed<#= items[i, 1] #> IReadOnlyList<Managed<#= items[i, 1] #>>.this[int index] => this[index];
+
+        /// <inheritdoc />
+        IEnumerator<Managed<#= items[i, 1] #>> IEnumerable<Managed<#= items[i, 1] #>>.GetEnumerator() => GetEnumerator();
+
+        /// <inheritdoc />
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    }
+<#
+}
+#>
+
+}
