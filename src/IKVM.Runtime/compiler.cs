@@ -28,6 +28,7 @@ using System.Diagnostics.SymbolStore;
 
 using IKVM.Attributes;
 using IKVM.Internal;
+using IKVM.ByteCode;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -44,8 +45,6 @@ using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
 using LocalVariableTableEntry = IKVM.Internal.ClassFile.Method.LocalVariableTableEntry;
 using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
-
-using IKVM.ByteCode;
 
 namespace IKVM.Runtime
 {
@@ -75,11 +74,6 @@ namespace IKVM.Runtime
         }
 
     }
-
-}
-
-namespace IKVM.Runtime
-{
 
     sealed class Compiler
     {
