@@ -36,7 +36,7 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    sealed class DefaultInterfaceMethodWrapper : SmartMethodWrapper
+    sealed class DefaultInterfaceMethodWrapper : RuntimeSmartJavaMethod
     {
 
         MethodInfo impl;
@@ -59,22 +59,22 @@ namespace IKVM.Runtime
             this.impl = impl;
         }
 
-        internal static MethodInfo GetImpl(MethodWrapper mw)
+        internal static MethodInfo GetImpl(RuntimeJavaMethod mw)
         {
             var dimw = mw as DefaultInterfaceMethodWrapper;
             if (dimw != null)
                 return dimw.impl;
             else
-                return ((GhostMethodWrapper)mw).GetDefaultImpl();
+                return ((RuntimeGhostJavaMethod)mw).GetDefaultImpl();
         }
 
-        internal static void SetImpl(MethodWrapper mw, MethodInfo impl)
+        internal static void SetImpl(RuntimeJavaMethod mw, MethodInfo impl)
         {
             var dimw = mw as DefaultInterfaceMethodWrapper;
             if (dimw != null)
                 dimw.impl = impl;
             else
-                ((GhostMethodWrapper)mw).SetDefaultImpl(impl);
+                ((RuntimeGhostJavaMethod)mw).SetDefaultImpl(impl);
         }
 
 #if EMITTERS

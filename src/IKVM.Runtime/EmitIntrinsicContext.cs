@@ -31,18 +31,18 @@ namespace IKVM.Runtime
     sealed class EmitIntrinsicContext
     {
 
-        internal readonly MethodWrapper Method;
-        internal readonly DynamicTypeWrapper.FinishContext Context;
+        internal readonly RuntimeJavaMethod Method;
+        internal readonly RuntimeByteCodeJavaType.FinishContext Context;
         internal readonly CodeEmitter Emitter;
         readonly CodeInfo ma;
         internal readonly int OpcodeIndex;
-        internal readonly MethodWrapper Caller;
+        internal readonly RuntimeJavaMethod Caller;
         internal readonly ClassFile ClassFile;
         internal readonly Instruction[] Code;
         internal readonly InstructionFlags[] Flags;
         internal bool NonLeaf = true;
 
-        internal EmitIntrinsicContext(MethodWrapper method, DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, CodeInfo ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
+        internal EmitIntrinsicContext(RuntimeJavaMethod method, RuntimeByteCodeJavaType.FinishContext context, CodeEmitter ilgen, CodeInfo ma, int opcodeIndex, RuntimeJavaMethod caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
         {
             this.Method = method;
             this.Context = context;

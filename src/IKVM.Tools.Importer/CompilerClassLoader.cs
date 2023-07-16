@@ -936,7 +936,7 @@ namespace IKVM.Tools.Importer
                     AttributeHelper.SetRemappedType(typeBuilder, shadowType);
                 }
 
-                List<MethodWrapper> methods = new List<MethodWrapper>();
+                var methods = new List<RuntimeJavaMethod>();
 
                 if (c.Constructors != null)
                 {
@@ -956,9 +956,9 @@ namespace IKVM.Tools.Importer
                 // add methods from our super classes (e.g. Throwable should have Object's methods)
                 if (!this.IsFinal && !this.IsInterface && this.BaseTypeWrapper != null)
                 {
-                    foreach (MethodWrapper mw in BaseTypeWrapper.GetMethods())
+                    foreach (var mw in BaseTypeWrapper.GetMethods())
                     {
-                        RemappedMethodWrapper rmw = mw as RemappedMethodWrapper;
+                        var rmw = mw as RemappedMethodWrapper;
                         if (rmw != null && (rmw.IsPublic || rmw.IsProtected))
                         {
                             if (!FindMethod(methods, rmw.Name, rmw.Signature))
@@ -986,7 +986,7 @@ namespace IKVM.Tools.Importer
                     {
                         var iface = classLoader.LoadClassByDottedName(c.Interfaces[i].Class);
                         interfaceWrappers[i] = iface;
-                        foreach (MethodWrapper mw in iface.GetMethods())
+                        foreach (var mw in iface.GetMethods())
                         {
                             // make sure default interface methods are implemented (they currently have to be explicitly implemented in map.xml)
                             if (mw.IsVirtual && !mw.IsAbstract)
@@ -1005,9 +1005,9 @@ namespace IKVM.Tools.Importer
                 }
             }
 
-            private static bool FindMethod(List<MethodWrapper> methods, string name, string sig)
+            private static bool FindMethod(List<RuntimeJavaMethod> methods, string name, string sig)
             {
-                foreach (MethodWrapper mw in methods)
+                foreach (var mw in methods)
                 {
                     if (mw.Name == name && mw.Signature == sig)
                     {
@@ -1017,7 +1017,7 @@ namespace IKVM.Tools.Importer
                 return false;
             }
 
-            abstract class RemappedMethodBaseWrapper : MethodWrapper
+            abstract class RemappedMethodBaseWrapper : RuntimeJavaMethod
             {
                 internal RemappedMethodBaseWrapper(RemapperTypeWrapper typeWrapper, string name, string sig, Modifiers modifiers)
                     : base(typeWrapper, name, sig, null, null, null, modifiers, MemberFlags.None)
@@ -1321,7 +1321,7 @@ namespace IKVM.Tools.Importer
                                 {
                                     ilgen.EmitLdarg(i);
                                 }
-                                MethodWrapper mw = tw.GetMethodWrapper(m.Name, m.Sig, false);
+                                var mw = tw.GetMethodWrapper(m.Name, m.Sig, false);
                                 mw.Link();
                                 mw.EmitCallvirt(ilgen);
                                 ilgen.Emit(OpCodes.Ret);
@@ -1831,7 +1831,7 @@ namespace IKVM.Tools.Importer
                                         throw new NotImplementedException("remapped constant field of type: " + f.Sig);
                                 }
                                 fb.SetConstant(constant);
-                                fields.Add(new ConstantFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig, LoadMode.LoadOrThrow), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, constant, MemberFlags.None));
+                                fields.Add(new RuntimeConstantJavaField(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig, LoadMode.LoadOrThrow), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, constant, MemberFlags.None));
                             }
                             else
                             {
@@ -1885,16 +1885,15 @@ namespace IKVM.Tools.Importer
                     // For all inherited methods, we emit a method that hides the inherited method and
                     // annotate it with EditorBrowsableAttribute(EditorBrowsableState.Never) to make
                     // sure the inherited methods don't show up in Intellisense.
-                    Dictionary<string, MethodBuilder> methods = new Dictionary<string, MethodBuilder>();
-                    foreach (MethodWrapper mw in GetMethods())
+                    var methods = new Dictionary<string, MethodBuilder>();
+                    foreach (var mw in GetMethods())
                     {
-                        MethodBuilder mb = mw.GetMethod() as MethodBuilder;
+                        var mb = mw.GetMethod() as MethodBuilder;
                         if (mb != null)
-                        {
                             methods.Add(MakeMethodKey(mb), mb);
-                        }
                     }
-                    foreach (MethodInfo mi in typeBuilder.BaseType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy))
+
+                    foreach (var mi in typeBuilder.BaseType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy))
                     {
                         string key = MakeMethodKey(mi);
                         if (!methods.ContainsKey(key))
@@ -1927,7 +1926,8 @@ namespace IKVM.Tools.Importer
                             methods[key] = mb;
                         }
                     }
-                    foreach (PropertyInfo pi in typeBuilder.BaseType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
+
+                    foreach (var pi in typeBuilder.BaseType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
                     {
                         ParameterInfo[] paramInfo = pi.GetIndexParameters();
                         Type[] paramTypes = new Type[paramInfo.Length];
@@ -1950,22 +1950,21 @@ namespace IKVM.Tools.Importer
 
                 typeBuilder.CreateType();
                 if (helperTypeBuilder != null)
-                {
                     helperTypeBuilder.CreateType();
-                }
             }
 
             private static string MakeMethodKey(MethodInfo method)
             {
-                StringBuilder sb = new StringBuilder();
+                var sb = new StringBuilder();
                 sb.Append(method.ReturnType.AssemblyQualifiedName).Append(":").Append(method.Name);
-                ParameterInfo[] paramInfo = method.GetParameters();
-                Type[] paramTypes = new Type[paramInfo.Length];
+                var paramInfo = method.GetParameters();
+                var paramTypes = new Type[paramInfo.Length];
                 for (int i = 0; i < paramInfo.Length; i++)
                 {
                     paramTypes[i] = paramInfo[i].ParameterType;
                     sb.Append(":").Append(paramInfo[i].ParameterType.AssemblyQualifiedName);
                 }
+
                 return sb.ToString();
             }
 
@@ -1973,9 +1972,8 @@ namespace IKVM.Tools.Importer
             {
                 // FXBUG .NET 1.1 doesn't allow static methods on interfaces
                 if (typeBuilder.IsInterface)
-                {
                     return;
-                }
+
                 MethodAttributes attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
                 MethodBuilder mb = typeBuilder.DefineMethod("__<instanceof>", attr, Types.Boolean, new Type[] { Types.Object });
                 AttributeHelper.HideFromJava(mb);
@@ -2075,7 +2073,7 @@ namespace IKVM.Tools.Importer
                 ilgen.DoEmit();
             }
 
-            internal override MethodBase LinkMethod(MethodWrapper mw)
+            internal override MethodBase LinkMethod(RuntimeJavaMethod mw)
             {
                 return ((RemappedMethodBaseWrapper)mw).DoLink();
             }
@@ -2351,7 +2349,7 @@ namespace IKVM.Tools.Importer
             return prologue;
         }
 
-        internal MapXml.ReplaceMethodCall[] GetReplacedMethodsFor(MethodWrapper mw)
+        internal MapXml.ReplaceMethodCall[] GetReplacedMethodsFor(RuntimeJavaMethod mw)
         {
             if (mapxml_ReplacedMethods == null)
                 return null;
@@ -2934,7 +2932,7 @@ namespace IKVM.Tools.Importer
             Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
             foreach (RuntimeJavaType tw in allwrappers)
             {
-                DynamicTypeWrapper dtw = tw as DynamicTypeWrapper;
+                RuntimeByteCodeJavaType dtw = tw as RuntimeByteCodeJavaType;
                 if (dtw != null)
                 {
                     dtw.CreateStep2();

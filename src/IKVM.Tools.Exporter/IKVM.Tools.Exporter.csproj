@@ -38,12 +38,12 @@
         <Compile Include="..\IKVM.Runtime\StubGen\**\*.cs" LinkBase="IKVM.Runtime\StubGen" />
         <Compile Include="..\IKVM.Runtime\LoadMode.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\CodeGenOptions.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\MethodWrapper.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\SmartMethodWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeJavaMethod.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeSmartJavaMethod.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\MemberFlags.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeJavaField.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\SimpleOpCode.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\GhostMethodWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeGhostJavaMethod.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\AccessStubMethodWrapper.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\AccessStubConstructorMethodWrapper.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\TypicalMethodWrapper.cs" LinkBase="IKVM.Runtime" />
@@ -70,7 +70,7 @@
         <Compile Include="..\IKVM.Runtime\Vfs\**\*.cs" LinkBase="IKVM.Runtime\Vfs" />
         <Compile Include="..\IKVM.Runtime\RuntimeUtil.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeSimpleJavaField.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\ConstantFieldWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeConstantJavaField.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\VolatileLongDoubleFieldWrapper.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\CompiledAccessStubFieldWrapper.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\CompiledPropertyFieldWrapper.cs" LinkBase="IKVM.Runtime" />

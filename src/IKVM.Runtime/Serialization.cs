@@ -69,7 +69,7 @@ namespace IKVM.Runtime
                 return true;
         }
 
-        internal static MethodBuilder AddAutomagicSerialization(DynamicTypeWrapper wrapper, TypeBuilder typeBuilder)
+        internal static MethodBuilder AddAutomagicSerialization(RuntimeByteCodeJavaType wrapper, TypeBuilder typeBuilder)
         {
             MethodBuilder serializationCtor = null;
             if ((wrapper.Modifiers & IKVM.Attributes.Modifiers.Enum) != 0)
@@ -160,14 +160,14 @@ namespace IKVM.Runtime
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ldarg_1);
             RuntimeJavaType serializationHelper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.Serialization");
-            MethodWrapper mw = serializationHelper.GetMethodWrapper("writeObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
+            RuntimeJavaMethod mw = serializationHelper.GetMethodWrapper("writeObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
             mw.Link();
             mw.EmitCall(ilgen);
             ilgen.Emit(OpCodes.Ret);
             ilgen.DoEmit();
         }
 
-        static MethodBuilder AddConstructor(TypeBuilder tb, MethodWrapper defaultConstructor, MethodBase serializationConstructor, bool callReadObject)
+        static MethodBuilder AddConstructor(TypeBuilder tb, RuntimeJavaMethod defaultConstructor, MethodBase serializationConstructor, bool callReadObject)
         {
             MethodBuilder ctor = ReflectUtil.DefineConstructor(tb, MethodAttributes.Family, new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
             AttributeHelper.HideFromJava(ctor);
@@ -188,7 +188,7 @@ namespace IKVM.Runtime
                 ilgen.Emit(OpCodes.Ldarg_0);
                 ilgen.Emit(OpCodes.Ldarg_1);
                 RuntimeJavaType serializationHelper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.Serialization");
-                MethodWrapper mw = serializationHelper.GetMethodWrapper("readObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
+                RuntimeJavaMethod mw = serializationHelper.GetMethodWrapper("readObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
                 mw.Link();
                 mw.EmitCall(ilgen);
             }
@@ -197,7 +197,7 @@ namespace IKVM.Runtime
             return ctor;
         }
 
-        static void AddReadResolve(DynamicTypeWrapper wrapper, TypeBuilder tb)
+        static void AddReadResolve(RuntimeByteCodeJavaType wrapper, TypeBuilder tb)
         {
             var mw = wrapper.GetMethodWrapper("readResolve", "()Ljava.lang.Object;", false);
             if (mw != null && !wrapper.IsSubTypeOf(iobjectreference))

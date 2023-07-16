@@ -36,7 +36,7 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    sealed class AccessStubMethodWrapper : SmartMethodWrapper
+    sealed class AccessStubMethodWrapper : RuntimeSmartJavaMethod
     {
 
         readonly MethodInfo stubVirtual;

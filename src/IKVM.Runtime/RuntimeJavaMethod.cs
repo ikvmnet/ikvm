@@ -41,13 +41,12 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    abstract class MethodWrapper : RuntimeJavaMember
+    abstract class RuntimeJavaMethod : RuntimeJavaMember
     {
 
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
         volatile java.lang.reflect.Executable reflectionMethod;
 #endif
-        internal static readonly MethodWrapper[] EmptyArray = new MethodWrapper[0];
         MethodBase method;
         string[] declaredExceptions;
         RuntimeJavaType returnTypeWrapper;
@@ -95,7 +94,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal MethodWrapper(RuntimeJavaType declaringType, string name, string sig, MethodBase method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodBase method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, modifiers, flags)
         {
             Profiler.Count("MethodWrapper");
@@ -259,7 +258,7 @@ namespace IKVM.Runtime
         }
 #endif // !FIRST_PASS
 
-        internal static MethodWrapper FromExecutable(java.lang.reflect.Executable executable)
+        internal static RuntimeJavaMethod FromExecutable(java.lang.reflect.Executable executable)
         {
 #if FIRST_PASS
             return null;
@@ -270,9 +269,9 @@ namespace IKVM.Runtime
 #endif // !IMPORTER && !EXPORTER
 
         [System.Security.SecurityCritical]
-        internal static MethodWrapper FromCookie(IntPtr cookie)
+        internal static RuntimeJavaMethod FromCookie(IntPtr cookie)
         {
-            return (MethodWrapper)FromCookieImpl(cookie);
+            return (RuntimeJavaMethod)FromCookieImpl(cookie);
         }
 
         internal bool IsLinked

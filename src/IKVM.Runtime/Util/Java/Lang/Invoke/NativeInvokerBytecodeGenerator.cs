@@ -589,7 +589,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                         default:
                             throw new BailoutException(Bailout.UnsupportedRefKind, member);
                     }
-                    MethodWrapper mw = GetMethodWrapper(member);
+                    RuntimeJavaMethod mw = GetMethodWrapper(member);
                     if (!IsStaticallyInvocable(mw))
                     {
                         throw new BailoutException(Bailout.NotStaticallyInvocable, member);
@@ -1120,12 +1120,12 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                 && member.getName() == "invokeBasic";
         }
 
-        private static MethodWrapper GetMethodWrapper(java.lang.invoke.MemberName member)
+        private static RuntimeJavaMethod GetMethodWrapper(java.lang.invoke.MemberName member)
         {
             return RuntimeJavaType.FromClass(member.getDeclaringClass()).GetMethodWrapper(member.getName(), member.getSignature().Replace('/', '.'), true);
         }
 
-        private static bool IsStaticallyInvocable(MethodWrapper mw)
+        private static bool IsStaticallyInvocable(RuntimeJavaMethod mw)
         {
             if (mw == null || mw.DeclaringType.IsUnloadable || mw.DeclaringType.IsGhost || mw.DeclaringType.IsNonPrimitiveValueType || mw.IsFinalizeOrClone || mw.IsDynamicOnly)
             {

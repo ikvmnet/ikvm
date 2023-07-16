@@ -21,26 +21,21 @@
   jeroen@frijters.net
   
 */
-using System.Diagnostics;
+using System;
 
 using IKVM.Attributes;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 #else
 using System.Reflection;
-using System.Reflection.Emit;
 #endif
 
 namespace IKVM.Runtime
 {
 
-    sealed class GhostMethodWrapper : SmartMethodWrapper
+    abstract class RuntimeSmartJavaMethod : RuntimeJavaMethod
     {
-
-        MethodInfo ghostMethod;
-        MethodInfo defaultImpl;
 
         /// <summary>
         /// Initializes a new instance.
@@ -49,66 +44,65 @@ namespace IKVM.Runtime
         /// <param name="name"></param>
         /// <param name="sig"></param>
         /// <param name="method"></param>
-        /// <param name="ghostMethod"></param>
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal GhostMethodWrapper(RuntimeJavaType declaringType, string name, string sig, MethodBase method, MethodInfo ghostMethod, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeSmartJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodBase method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
         {
-            // make sure we weren't handed the ghostMethod in the wrapper value type
-            Debug.Assert(method == null || method.DeclaringType.IsInterface);
-            this.ghostMethod = ghostMethod;
+
         }
 
 #if EMITTERS
 
-        protected override void CallImpl(CodeEmitter ilgen)
+        internal sealed override void EmitCall(CodeEmitter ilgen)
         {
-            ilgen.Emit(OpCodes.Call, defaultImpl);
+            AssertLinked();
+            CallImpl(ilgen);
         }
 
-        protected override void CallvirtImpl(CodeEmitter ilgen)
+        protected virtual void CallImpl(CodeEmitter ilgen)
         {
-            ilgen.Emit(OpCodes.Call, ghostMethod);
+            throw new InvalidOperationException();
         }
 
-#endif
-
-#if !IMPORTER && !EXPORTER && !FIRST_PASS
-
-        [HideFromJava]
-        internal override object Invoke(object obj, object[] args)
+        internal sealed override void EmitCallvirt(CodeEmitter ilgen)
         {
-            return InvokeAndUnwrapException(ghostMethod, DeclaringType.GhostWrap(obj), args);
+            AssertLinked();
+            if (DeclaringType.IsNonPrimitiveValueType)
+            {
+                // callvirt isn't allowed on a value type
+                // (we don't need to check for a null reference, because we're always dealing with an unboxed value)
+                CallImpl(ilgen);
+            }
+            else
+            {
+                CallvirtImpl(ilgen);
+            }
         }
 
-#endif
-
-        internal void SetDefaultImpl(MethodInfo impl)
+        protected virtual void CallvirtImpl(CodeEmitter ilgen)
         {
-            this.defaultImpl = impl;
+            throw new InvalidOperationException();
         }
 
-        internal MethodInfo GetDefaultImpl()
+        internal sealed override void EmitNewobj(CodeEmitter ilgen)
         {
-            return defaultImpl;
+            AssertLinked();
+            NewobjImpl(ilgen);
+            if (DeclaringType.IsNonPrimitiveValueType)
+            {
+                DeclaringType.EmitBox(ilgen);
+            }
         }
 
-#if IMPORTER
-
-        internal void SetGhostMethod(MethodBuilder mb)
+        protected virtual void NewobjImpl(CodeEmitter ilgen)
         {
-            this.ghostMethod = mb;
+            throw new InvalidOperationException();
         }
 
-        internal MethodBuilder GetGhostMethod()
-        {
-            return (MethodBuilder)ghostMethod;
-        }
-
-#endif
+#endif // EMITTERS
 
     }
 

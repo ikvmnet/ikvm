@@ -41,7 +41,7 @@ using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 static class AtomicReferenceFieldUpdaterEmitter
 {
 
-	internal static bool Emit(DynamicTypeWrapper.FinishContext context, RuntimeJavaType wrapper, CodeEmitter ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code, InstructionFlags[] flags)
+	internal static bool Emit(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaType wrapper, CodeEmitter ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code, InstructionFlags[] flags)
 	{
 		if (i >= 3
 			&& (flags[i - 0] & InstructionFlags.BranchTarget) == 0

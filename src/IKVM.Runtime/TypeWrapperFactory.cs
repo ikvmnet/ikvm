@@ -52,7 +52,7 @@ namespace IKVM.Runtime
 
         internal abstract bool ReserveName(string name);
 
-        internal abstract string AllocMangledName(DynamicTypeWrapper tw);
+        internal abstract string AllocMangledName(RuntimeByteCodeJavaType tw);
 
         internal abstract Type DefineUnloadable(string name);
 

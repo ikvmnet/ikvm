@@ -45,10 +45,10 @@ namespace IKVM.Runtime
 {
 
 #if IMPORTER
-    abstract partial class DynamicTypeWrapper : RuntimeJavaType
+    abstract partial class RuntimeByteCodeJavaType : RuntimeJavaType
 #else
 #pragma warning disable 628 // don't complain about protected members in sealed type
-    sealed partial class DynamicTypeWrapper : RuntimeJavaType
+    sealed partial class RuntimeByteCodeJavaType : RuntimeJavaType
 #endif
     {
 
@@ -114,9 +114,9 @@ namespace IKVM.Runtime
         }
 
 #if IMPORTER
-        internal DynamicTypeWrapper(RuntimeJavaType host, ClassFile f, CompilerClassLoader classLoader, ProtectionDomain pd)
+        internal RuntimeByteCodeJavaType(RuntimeJavaType host, ClassFile f, CompilerClassLoader classLoader, ProtectionDomain pd)
 #else
-        internal DynamicTypeWrapper(RuntimeJavaType host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain pd)
+        internal RuntimeByteCodeJavaType(RuntimeJavaType host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain pd)
 #endif
             : base(f.IsInternal ? TypeFlags.InternalAccess : host != null ? TypeFlags.Anonymous : TypeFlags.None, f.Modifiers, f.Name)
         {
@@ -128,7 +128,7 @@ namespace IKVM.Runtime
                 // interfaces can't "override" final methods in object
                 foreach (ClassFile.Method method in f.Methods)
                 {
-                    MethodWrapper mw;
+                    RuntimeJavaMethod mw;
                     if (method.IsVirtual
                         && (mw = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(method.Name, method.Signature, false)) != null
                         && mw.IsVirtual
@@ -269,7 +269,7 @@ namespace IKVM.Runtime
             DelegateInnerClassCheck(iface.IsInterface);
             DelegateInnerClassCheck(iface.IsPublic);
             DelegateInnerClassCheck(iface.GetClassLoader() == classLoader);
-            MethodWrapper[] methods = iface.GetMethods();
+            RuntimeJavaMethod[] methods = iface.GetMethods();
             DelegateInnerClassCheck(methods.Length == 1 && methods[0].Name == "Invoke");
             if (methods[0].Signature != invoke.Signature)
             {
@@ -384,7 +384,7 @@ namespace IKVM.Runtime
             }
         }
 
-        static bool CheckRequireOverrideStub(MethodWrapper mw1, MethodWrapper mw2)
+        static bool CheckRequireOverrideStub(RuntimeJavaMethod mw1, RuntimeJavaMethod mw2)
         {
             // TODO this is too late to generate LinkageErrors so we need to figure this out earlier
             if (!TypesMatchForOverride(mw1.ReturnType, mw2.ReturnType))
@@ -409,7 +409,7 @@ namespace IKVM.Runtime
                 return false;
         }
 
-        void GenerateOverrideStub(TypeBuilder typeBuilder, MethodWrapper baseMethod, MethodInfo target, MethodWrapper targetMethod)
+        void GenerateOverrideStub(TypeBuilder typeBuilder, RuntimeJavaMethod baseMethod, MethodInfo target, RuntimeJavaMethod targetMethod)
         {
             Debug.Assert(!baseMethod.HasCallerID);
 
@@ -639,11 +639,17 @@ namespace IKVM.Runtime
 #if IMPORTER
 
         protected abstract void AddMapXmlFields(ref RuntimeJavaField[] fields);
+
         protected abstract bool EmitMapXmlMethodPrologueAndOrBody(CodeEmitter ilgen, ClassFile f, ClassFile.Method m);
-        protected abstract void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, MethodWrapper[] methods);
-        protected abstract MethodBuilder DefineGhostMethod(TypeBuilder typeBuilder, string name, MethodAttributes attribs, MethodWrapper mw);
-        protected abstract void FinishGhost(TypeBuilder typeBuilder, MethodWrapper[] methods);
+
+        protected abstract void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, RuntimeJavaMethod[] methods);
+
+        protected abstract MethodBuilder DefineGhostMethod(TypeBuilder typeBuilder, string name, MethodAttributes attribs, RuntimeJavaMethod mw);
+
+        protected abstract void FinishGhost(TypeBuilder typeBuilder, RuntimeJavaMethod[] methods);
+
         protected abstract void FinishGhostStep2();
+
         protected abstract TypeBuilder DefineGhostType(string mangledTypeName, TypeAttributes typeAttribs);
 
 #endif // IMPORTER
@@ -690,7 +696,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-        internal override MethodBase LinkMethod(MethodWrapper mw)
+        internal override MethodBase LinkMethod(RuntimeJavaMethod mw)
         {
             mw.AssertLinked();
             return impl.LinkMethod(mw);
@@ -712,9 +718,9 @@ namespace IKVM.Runtime
             return impl.GetGenericSignature();
         }
 
-        internal override string GetGenericMethodSignature(MethodWrapper mw)
+        internal override string GetGenericMethodSignature(RuntimeJavaMethod mw)
         {
-            MethodWrapper[] methods = GetMethods();
+            RuntimeJavaMethod[] methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
             {
                 if (methods[i] == mw)
@@ -740,9 +746,9 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
+        internal override MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod mw)
         {
-            MethodWrapper[] methods = GetMethods();
+            RuntimeJavaMethod[] methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
             {
                 if (methods[i] == mw)
@@ -851,9 +857,9 @@ namespace IKVM.Runtime
             return DecodeAnnotations(impl.GetDeclaredAnnotations());
         }
 
-        internal override object[] GetMethodAnnotations(MethodWrapper mw)
+        internal override object[] GetMethodAnnotations(RuntimeJavaMethod mw)
         {
-            MethodWrapper[] methods = GetMethods();
+            RuntimeJavaMethod[] methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
             {
                 if (methods[i] == mw)
@@ -865,9 +871,9 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override object[][] GetParameterAnnotations(MethodWrapper mw)
+        internal override object[][] GetParameterAnnotations(RuntimeJavaMethod mw)
         {
-            MethodWrapper[] methods = GetMethods();
+            RuntimeJavaMethod[] methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
             {
                 if (methods[i] == mw)
@@ -903,9 +909,9 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override object GetAnnotationDefault(MethodWrapper mw)
+        internal override object GetAnnotationDefault(RuntimeJavaMethod mw)
         {
-            MethodWrapper[] methods = GetMethods();
+            RuntimeJavaMethod[] methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
             {
                 if (methods[i] == mw)
@@ -929,15 +935,17 @@ namespace IKVM.Runtime
 #endif
 
 #if IMPORTER
+
         protected virtual Type GetBaseTypeForDefineType()
         {
             return BaseTypeWrapper.TypeAsBaseType;
         }
 
-        internal virtual MethodWrapper[] GetReplacedMethodsFor(MethodWrapper mw)
+        internal virtual RuntimeJavaMethod[] GetReplacedMethodsFor(RuntimeJavaMethod mw)
         {
             return null;
         }
+
 #endif // IMPORTER
 
         internal override MethodBase GetSerializationConstructor()
@@ -1027,7 +1035,7 @@ namespace IKVM.Runtime
             return impl.GetRawTypeAnnotations();
         }
 
-        internal override byte[] GetMethodRawTypeAnnotations(MethodWrapper mw)
+        internal override byte[] GetMethodRawTypeAnnotations(RuntimeJavaMethod mw)
         {
             Finish();
             return impl.GetMethodRawTypeAnnotations(Array.IndexOf(GetMethods(), mw));

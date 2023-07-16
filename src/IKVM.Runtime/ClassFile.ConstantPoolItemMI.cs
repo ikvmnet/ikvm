@@ -33,8 +33,8 @@ namespace IKVM.Runtime
 
             RuntimeJavaType[] argTypeWrappers;
             RuntimeJavaType retTypeWrapper;
-            protected MethodWrapper method;
-            protected MethodWrapper invokespecialMethod;
+            protected RuntimeJavaMethod method;
+            protected RuntimeJavaMethod invokespecialMethod;
 
             /// <summary>
             /// Initializes a new instance.
@@ -98,12 +98,12 @@ namespace IKVM.Runtime
                 return retTypeWrapper;
             }
 
-            internal MethodWrapper GetMethod()
+            internal RuntimeJavaMethod GetMethod()
             {
                 return method;
             }
 
-            internal MethodWrapper GetMethodForInvokespecial()
+            internal RuntimeJavaMethod GetMethodForInvokespecial()
             {
                 return invokespecialMethod != null ? invokespecialMethod : method;
             }

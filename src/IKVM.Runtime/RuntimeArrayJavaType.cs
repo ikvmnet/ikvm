@@ -84,7 +84,7 @@ namespace IKVM.Runtime
         {
             var mw = new SimpleCallMethodWrapper(this, "clone", "()Ljava.lang.Object;", CloneMethod, CoreClasses.java.lang.Object.Wrapper, RuntimeJavaType.EmptyArray, Modifiers.Public, MemberFlags.HideFromReflection, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
             mw.Link();
-            SetMethods(new MethodWrapper[] { mw });
+            SetMethods(new RuntimeJavaMethod[] { mw });
             SetFields(RuntimeJavaField.EmptyArray);
         }
 

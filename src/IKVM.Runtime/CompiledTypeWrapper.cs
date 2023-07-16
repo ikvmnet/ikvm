@@ -46,6 +46,9 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
+    /// <summary>
+    /// Represents a runtime java type derived from a .NET assembly which was the result of the static compiler.
+    /// </summary>
     class CompiledTypeWrapper : RuntimeJavaType
     {
 
@@ -109,7 +112,7 @@ namespace IKVM.Runtime
 
             protected override void LazyPublishMethods()
             {
-                List<MethodWrapper> list = new List<MethodWrapper>();
+                List<RuntimeJavaMethod> list = new List<RuntimeJavaMethod>();
                 const BindingFlags bindingFlags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
                 foreach (ConstructorInfo ctor in type.GetConstructors(bindingFlags))
                 {
@@ -142,7 +145,7 @@ namespace IKVM.Runtime
                                 mbHelper = method;
                             }
                         }
-                        MethodWrapper mw = new CompiledRemappedMethodWrapper(this, m.Name, sig, method, retType, paramTypes, modifiers, false, mbHelper, null);
+                        RuntimeJavaMethod mw = new CompiledRemappedMethodWrapper(this, m.Name, sig, method, retType, paramTypes, modifiers, false, mbHelper, null);
                         mw.SetDeclaredExceptions(m.Throws);
                         list.Add(mw);
                     }
@@ -150,7 +153,7 @@ namespace IKVM.Runtime
                 SetMethods(list.ToArray());
             }
 
-            private void AddMethod(List<MethodWrapper> list, MethodBase method)
+            private void AddMethod(List<RuntimeJavaMethod> list, MethodBase method)
             {
                 HideFromJavaFlags flags = AttributeHelper.GetHideFromJavaFlags(method);
                 if ((flags & HideFromJavaFlags.Code) == 0
@@ -176,7 +179,7 @@ namespace IKVM.Runtime
                 SetFields(list.ToArray());
             }
 
-            private MethodWrapper CreateRemappedMethodWrapper(MethodBase mb, HideFromJavaFlags hideFromJavaflags)
+            private RuntimeJavaMethod CreateRemappedMethodWrapper(MethodBase mb, HideFromJavaFlags hideFromJavaflags)
             {
                 ExModifiers modifiers = AttributeHelper.GetModifiers(mb, false);
                 string name;
@@ -845,7 +848,7 @@ namespace IKVM.Runtime
             }
         }
 
-        private sealed class DelegateConstructorMethodWrapper : MethodWrapper
+        private sealed class DelegateConstructorMethodWrapper : RuntimeJavaMethod
         {
             private readonly ConstructorInfo constructor;
             private MethodInfo invoke;
@@ -863,7 +866,7 @@ namespace IKVM.Runtime
 
             protected override void DoLinkMethod()
             {
-                MethodWrapper mw = GetParameters()[0].GetMethods()[0];
+                RuntimeJavaMethod mw = GetParameters()[0].GetMethods()[0];
                 mw.Link();
                 invoke = (MethodInfo)mw.GetMethod();
             }
@@ -881,7 +884,7 @@ namespace IKVM.Runtime
         protected override void LazyPublishMethods()
         {
             bool isDelegate = type.BaseType == Types.MulticastDelegate;
-            List<MethodWrapper> methods = new List<MethodWrapper>();
+            List<RuntimeJavaMethod> methods = new List<RuntimeJavaMethod>();
             const BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
             foreach (ConstructorInfo ctor in type.GetConstructors(flags))
             {
@@ -907,7 +910,7 @@ namespace IKVM.Runtime
             SetMethods(methods.ToArray());
         }
 
-        private void AddMethods(MethodInfo[] add, List<MethodWrapper> methods)
+        private void AddMethods(MethodInfo[] add, List<RuntimeJavaMethod> methods)
         {
             foreach (MethodInfo method in add)
             {
@@ -915,7 +918,7 @@ namespace IKVM.Runtime
             }
         }
 
-        private void AddMethodOrConstructor(MethodBase method, HideFromJavaFlags hideFromJavaFlags, List<MethodWrapper> methods)
+        private void AddMethodOrConstructor(MethodBase method, HideFromJavaFlags hideFromJavaFlags, List<RuntimeJavaMethod> methods)
         {
             if ((hideFromJavaFlags & HideFromJavaFlags.Code) != 0)
             {
@@ -955,7 +958,7 @@ namespace IKVM.Runtime
                         return;
                     }
                     MethodInfo impl;
-                    MethodWrapper mw;
+                    RuntimeJavaMethod mw;
                     if (IsGhost && (mods.Modifiers & (Modifiers.Static | Modifiers.Private)) == 0)
                     {
                         Type[] types = new Type[paramTypes.Length];
@@ -964,10 +967,10 @@ namespace IKVM.Runtime
                             types[i] = paramTypes[i].TypeAsSignatureType;
                         }
                         MethodInfo ifmethod = TypeAsBaseType.GetMethod(method.Name, types);
-                        mw = new GhostMethodWrapper(this, name, sig, ifmethod, (MethodInfo)method, retType, paramTypes, mods.Modifiers, flags);
+                        mw = new RuntimeGhostJavaMethod(this, name, sig, ifmethod, (MethodInfo)method, retType, paramTypes, mods.Modifiers, flags);
                         if (!mw.IsAbstract)
                         {
-                            ((GhostMethodWrapper)mw).SetDefaultImpl(TypeAsSignatureType.GetMethod(NamePrefix.DefaultMethod + method.Name, types));
+                            ((RuntimeGhostJavaMethod)mw).SetDefaultImpl(TypeAsSignatureType.GetMethod(NamePrefix.DefaultMethod + method.Name, types));
                         }
                     }
                     else if (method.IsSpecialName && method.Name.StartsWith(NamePrefix.PrivateInterfaceInstanceMethod, StringComparison.Ordinal))
@@ -1160,7 +1163,7 @@ namespace IKVM.Runtime
             }
         }
 
-        private sealed class CompiledRemappedMethodWrapper : SmartMethodWrapper
+        private sealed class CompiledRemappedMethodWrapper : RuntimeSmartJavaMethod
         {
             private readonly MethodInfo mbHelper;
 #if !IMPORTER
@@ -1371,7 +1374,7 @@ namespace IKVM.Runtime
                 {
                     flags |= MemberFlags.InternalAccess;
                 }
-                return new ConstantFieldWrapper(this, type, name, type.SigName, modifiers.Modifiers, field, null, flags);
+                return new RuntimeConstantJavaField(this, type, name, type.SigName, modifiers.Modifiers, field, null, flags);
             }
             else
             {
@@ -1415,7 +1418,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override string GetGenericMethodSignature(MethodWrapper mw)
+        internal override string GetGenericMethodSignature(RuntimeJavaMethod mw)
         {
             if (mw is CompiledRemappedMethodWrapper)
             {
@@ -1447,7 +1450,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
+        internal override MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod mw)
         {
             MethodBase mb = mw.GetMethod();
             if (mb == null)
@@ -1491,7 +1494,7 @@ namespace IKVM.Runtime
             return type.GetCustomAttributes(false);
         }
 
-        internal override object[] GetMethodAnnotations(MethodWrapper mw)
+        internal override object[] GetMethodAnnotations(RuntimeJavaMethod mw)
         {
             MethodBase mb = mw.GetMethod();
             if (mb == null)
@@ -1502,7 +1505,7 @@ namespace IKVM.Runtime
             return mb.GetCustomAttributes(false);
         }
 
-        internal override object[][] GetParameterAnnotations(MethodWrapper mw)
+        internal override object[][] GetParameterAnnotations(RuntimeJavaMethod mw)
         {
             MethodBase mb = mw.GetMethod();
             if (mb == null)
@@ -1669,7 +1672,7 @@ namespace IKVM.Runtime
             return AttributeHelper.GetRuntimeVisibleTypeAnnotations(type);
         }
 
-        internal override byte[] GetMethodRawTypeAnnotations(MethodWrapper mw)
+        internal override byte[] GetMethodRawTypeAnnotations(RuntimeJavaMethod mw)
         {
             MethodBase mb = mw.GetMethod();
             return mb == null ? null : AttributeHelper.GetRuntimeVisibleTypeAnnotations(mb);

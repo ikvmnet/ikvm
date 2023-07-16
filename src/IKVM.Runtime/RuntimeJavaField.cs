@@ -48,7 +48,6 @@ namespace IKVM.Runtime
         volatile java.lang.reflect.Field reflectionField;
         sun.reflect.FieldAccessor jniAccessor;
 #endif
-        internal static readonly RuntimeJavaField[] EmptyArray = new RuntimeJavaField[0];
         FieldInfo field;
         RuntimeJavaType fieldType;
 
@@ -81,7 +80,7 @@ namespace IKVM.Runtime
                 && (IsPublic || (IsProtected && !DeclaringType.IsFinal))
                 && !DeclaringType.GetClassLoader().StrictFinalFieldSemantics
                 && DeclaringType.IsDynamic
-                && !(this is ConstantFieldWrapper)
+                && !(this is RuntimeConstantJavaField)
                 && !(this is DynamicPropertyFieldWrapper))
             {
                 SetType2FinalField();

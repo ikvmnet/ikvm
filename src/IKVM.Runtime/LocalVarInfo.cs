@@ -38,7 +38,7 @@ namespace IKVM.Runtime
 		private readonly LocalVar[/*instructionIndex*/][/*localIndex*/] invokespecialLocalVars;
 		private readonly LocalVar[/*index*/] allLocalVars;
 
-		internal LocalVarInfo(CodeInfo ma, ClassFile classFile, ClassFile.Method method, UntangledExceptionTable exceptions, MethodWrapper mw, ClassLoaderWrapper classLoader)
+		internal LocalVarInfo(CodeInfo ma, ClassFile classFile, ClassFile.Method method, UntangledExceptionTable exceptions, RuntimeJavaMethod mw, ClassLoaderWrapper classLoader)
 		{
 			Dictionary<int, string>[] localStoreReaders = FindLocalVariables(ma, mw, classFile, method);
 
@@ -338,7 +338,7 @@ namespace IKVM.Runtime
 			}
 		}
 
-		private static Dictionary<int, string>[] FindLocalVariables(CodeInfo codeInfo, MethodWrapper mw, ClassFile classFile, ClassFile.Method method)
+		private static Dictionary<int, string>[] FindLocalVariables(CodeInfo codeInfo, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method)
 		{
 			FindLocalVarState[] state = new FindLocalVarState[method.Instructions.Length];
 			state[0].changed = true;

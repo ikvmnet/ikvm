@@ -32,24 +32,10 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    abstract class MirandaMethodWrapper : SmartMethodWrapper
+    abstract class RuntimeMirandaJavaMethod : RuntimeSmartJavaMethod
     {
 
-        readonly MethodWrapper ifmethod;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="declaringType"></param>
-        /// <param name="ifmethod"></param>
-        /// <param name="modifiers"></param>
-        MirandaMethodWrapper(RuntimeJavaType declaringType, MethodWrapper ifmethod, Modifiers modifiers) :
-            base(declaringType, ifmethod.Name, ifmethod.Signature, null, null, null, modifiers, MemberFlags.HideFromReflection | MemberFlags.MirandaMethod)
-        {
-            this.ifmethod = ifmethod;
-        }
-
-        sealed class AbstractMirandaMethodWrapper : MirandaMethodWrapper
+        sealed class AbstractMirandaMethodWrapper : RuntimeMirandaJavaMethod
         {
 
             /// <summary>
@@ -57,7 +43,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="declaringType"></param>
             /// <param name="ifmethod"></param>
-            internal AbstractMirandaMethodWrapper(RuntimeJavaType declaringType, MethodWrapper ifmethod) :
+            internal AbstractMirandaMethodWrapper(RuntimeJavaType declaringType, RuntimeJavaMethod ifmethod) :
                 base(declaringType, ifmethod, Modifiers.Public | Modifiers.Abstract)
             {
 
@@ -65,7 +51,7 @@ namespace IKVM.Runtime
 
         }
 
-        sealed class DefaultMirandaMethodWrapper : MirandaMethodWrapper
+        sealed class DefaultMirandaMethodWrapper : RuntimeMirandaJavaMethod
         {
 
             /// <summary>
@@ -73,7 +59,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="declaringType"></param>
             /// <param name="ifmethod"></param>
-            internal DefaultMirandaMethodWrapper(RuntimeJavaType declaringType, MethodWrapper ifmethod) :
+            internal DefaultMirandaMethodWrapper(RuntimeJavaType declaringType, RuntimeJavaMethod ifmethod) :
                 base(declaringType, ifmethod, Modifiers.Public)
             {
 
@@ -81,7 +67,7 @@ namespace IKVM.Runtime
 
         }
 
-        sealed class ErrorMirandaMethodWrapper : MirandaMethodWrapper
+        sealed class ErrorMirandaMethodWrapper : RuntimeMirandaJavaMethod
         {
 
             string error;
@@ -92,13 +78,13 @@ namespace IKVM.Runtime
             /// <param name="declaringType"></param>
             /// <param name="ifmethod"></param>
             /// <param name="error"></param>
-            internal ErrorMirandaMethodWrapper(RuntimeJavaType declaringType, MethodWrapper ifmethod, string error) :
+            internal ErrorMirandaMethodWrapper(RuntimeJavaType declaringType, RuntimeJavaMethod ifmethod, string error) :
                 base(declaringType, ifmethod, Modifiers.Public)
             {
                 this.error = error;
             }
 
-            protected override MirandaMethodWrapper AddConflictError(MethodWrapper mw)
+            protected override RuntimeMirandaJavaMethod AddConflictError(RuntimeJavaMethod mw)
             {
                 error += " " + mw.DeclaringType.Name + "." + mw.Name;
                 return this;
@@ -111,19 +97,30 @@ namespace IKVM.Runtime
 
         }
 
-        internal static MirandaMethodWrapper Create(RuntimeJavaType declaringType, MethodWrapper ifmethod)
+        readonly RuntimeJavaMethod ifmethod;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="declaringType"></param>
+        /// <param name="ifmethod"></param>
+        /// <param name="modifiers"></param>
+        RuntimeMirandaJavaMethod(RuntimeJavaType declaringType, RuntimeJavaMethod ifmethod, Modifiers modifiers) :
+            base(declaringType, ifmethod.Name, ifmethod.Signature, null, null, null, modifiers, MemberFlags.HideFromReflection | MemberFlags.MirandaMethod)
         {
-            DefaultMirandaMethodWrapper dmmw = ifmethod as DefaultMirandaMethodWrapper;
-            if (dmmw != null)
-            {
-                return new DefaultMirandaMethodWrapper(declaringType, dmmw.BaseMethod);
-            }
-            return ifmethod.IsAbstract
-                ? (MirandaMethodWrapper)new AbstractMirandaMethodWrapper(declaringType, ifmethod)
-                : (MirandaMethodWrapper)new DefaultMirandaMethodWrapper(declaringType, ifmethod);
+            this.ifmethod = ifmethod;
         }
 
-        internal MirandaMethodWrapper Update(MethodWrapper mw)
+        internal static RuntimeMirandaJavaMethod Create(RuntimeJavaType declaringType, RuntimeJavaMethod ifmethod)
+        {
+            var dmmw = ifmethod as DefaultMirandaMethodWrapper;
+            if (dmmw != null)
+                return new DefaultMirandaMethodWrapper(declaringType, dmmw.BaseMethod);
+
+            return ifmethod.IsAbstract ? new AbstractMirandaMethodWrapper(declaringType, ifmethod) : new DefaultMirandaMethodWrapper(declaringType, ifmethod);
+        }
+
+        internal RuntimeMirandaJavaMethod Update(RuntimeJavaMethod mw)
         {
             if (ifmethod == mw)
             {
@@ -153,7 +150,7 @@ namespace IKVM.Runtime
             }
         }
 
-        protected virtual MirandaMethodWrapper AddConflictError(MethodWrapper mw)
+        protected virtual RuntimeMirandaJavaMethod AddConflictError(RuntimeJavaMethod mw)
         {
             return new ErrorMirandaMethodWrapper(DeclaringType, ifmethod, "Conflicting default methods:")
                 .AddConflictError(ifmethod)
@@ -165,7 +162,7 @@ namespace IKVM.Runtime
             get { return Error != null && Error.StartsWith("Conflicting default methods:"); }
         }
 
-        internal MethodWrapper BaseMethod
+        internal RuntimeJavaMethod BaseMethod
         {
             get { return ifmethod; }
         }
@@ -176,6 +173,7 @@ namespace IKVM.Runtime
         }
 
 #if EMITTERS
+
         protected override void CallImpl(CodeEmitter ilgen)
         {
             ilgen.Emit(OpCodes.Call, GetMethod());
@@ -185,7 +183,9 @@ namespace IKVM.Runtime
         {
             ilgen.Emit(OpCodes.Callvirt, GetMethod());
         }
+
 #endif // EMITTERS
+
     }
 
 }

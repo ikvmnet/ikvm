@@ -152,13 +152,13 @@ namespace IKVM.Java.Externs.sun.reflect
         sealed class MethodAccessorImpl : global::sun.reflect.MethodAccessor
         {
 
-            readonly MethodWrapper mw;
+            readonly RuntimeJavaMethod mw;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="mw"></param>
-            internal MethodAccessorImpl(MethodWrapper mw)
+            internal MethodAccessorImpl(RuntimeJavaMethod mw)
             {
                 this.mw = mw ?? throw new ArgumentNullException(nameof(mw));
                 mw.Link();
@@ -208,13 +208,13 @@ namespace IKVM.Java.Externs.sun.reflect
         sealed class ConstructorAccessorImpl : global::sun.reflect.ConstructorAccessor
         {
 
-            readonly MethodWrapper mw;
+            readonly RuntimeJavaMethod mw;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="mw"></param>
-            internal ConstructorAccessorImpl(MethodWrapper mw)
+            internal ConstructorAccessorImpl(RuntimeJavaMethod mw)
             {
                 this.mw = mw;
                 mw.Link();
@@ -239,7 +239,7 @@ namespace IKVM.Java.Externs.sun.reflect
         sealed class SerializationConstructorAccessorImpl : global::sun.reflect.ConstructorAccessor
         {
 
-            readonly MethodWrapper mw;
+            readonly RuntimeJavaMethod mw;
             readonly Type type;
 
             /// <summary>
@@ -250,7 +250,7 @@ namespace IKVM.Java.Externs.sun.reflect
             internal SerializationConstructorAccessorImpl(global::java.lang.reflect.Constructor constructorToCall, global::java.lang.Class classToInstantiate)
             {
                 this.type = RuntimeJavaType.FromClass(classToInstantiate).TypeAsBaseType;
-                var mw = MethodWrapper.FromExecutable(constructorToCall);
+                var mw = RuntimeJavaMethod.FromExecutable(constructorToCall);
                 if (mw.DeclaringType != CoreClasses.java.lang.Object.Wrapper)
                 {
                     this.mw = mw;
@@ -537,7 +537,7 @@ namespace IKVM.Java.Externs.sun.reflect
             /// Initializes a new instance.
             /// </summary>
             /// <param name="mw"></param>
-            internal FastMethodAccessorImpl(MethodWrapper mw)
+            internal FastMethodAccessorImpl(RuntimeJavaMethod mw)
             {
                 try
                 {
@@ -727,7 +727,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
             internal FastConstructorAccessorImpl(global::java.lang.reflect.Constructor constructor)
             {
-                var mw = MethodWrapper.FromExecutable(constructor);
+                var mw = RuntimeJavaMethod.FromExecutable(constructor);
 
                 RuntimeJavaType[] parameters;
                 try
@@ -849,7 +849,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
             internal FastSerializationConstructorAccessorImpl(global::java.lang.reflect.Constructor constructorToCall, global::java.lang.Class classToInstantiate)
             {
-                MethodWrapper constructor = MethodWrapper.FromExecutable(constructorToCall);
+                RuntimeJavaMethod constructor = RuntimeJavaMethod.FromExecutable(constructorToCall);
                 if (constructor.GetParameters().Length != 0)
                 {
                     throw new NotImplementedException("Serialization constructor cannot have parameters");
@@ -899,7 +899,7 @@ namespace IKVM.Java.Externs.sun.reflect
         {
             private readonly Type type;
 
-            internal ActivatorConstructorAccessor(MethodWrapper mw)
+            internal ActivatorConstructorAccessor(RuntimeJavaMethod mw)
             {
                 this.type = mw.DeclaringType.TypeAsBaseType;
             }
@@ -920,7 +920,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 }
             }
 
-            internal static bool IsSuitable(MethodWrapper mw)
+            internal static bool IsSuitable(RuntimeJavaMethod mw)
             {
                 MethodBase mb = mw.GetMethod();
                 return mb != null
@@ -2095,7 +2095,7 @@ namespace IKVM.Java.Externs.sun.reflect
 #if FIRST_PASS
 		return null;
 #else
-            MethodWrapper mw = MethodWrapper.FromExecutable(method);
+            RuntimeJavaMethod mw = RuntimeJavaMethod.FromExecutable(method);
 #if !NO_REF_EMIT
             if (!mw.IsDynamicOnly)
             {
@@ -2111,7 +2111,7 @@ namespace IKVM.Java.Externs.sun.reflect
 #if FIRST_PASS
 		return null;
 #else
-            MethodWrapper mw = MethodWrapper.FromExecutable(constructor);
+            RuntimeJavaMethod mw = RuntimeJavaMethod.FromExecutable(constructor);
             if (ActivatorConstructorAccessor.IsSuitable(mw))
             {
                 // we special case public default constructors, because in that case using Activator.CreateInstance()

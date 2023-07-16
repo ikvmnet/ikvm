@@ -57,11 +57,11 @@ namespace IKVM.Java.Externs.java.lang.invoke
             global::java.lang.reflect.Field field;
             if ((method = refObj as global::java.lang.reflect.Method) != null)
             {
-                InitMethodImpl(self, MethodWrapper.FromExecutable(method), wantSpecial);
+                InitMethodImpl(self, RuntimeJavaMethod.FromExecutable(method), wantSpecial);
             }
             else if ((constructor = refObj as global::java.lang.reflect.Constructor) != null)
             {
-                InitMethodImpl(self, MethodWrapper.FromExecutable(constructor), wantSpecial);
+                InitMethodImpl(self, RuntimeJavaMethod.FromExecutable(constructor), wantSpecial);
             }
             else if ((field = refObj as global::java.lang.reflect.Field) != null)
             {
@@ -78,7 +78,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 #endif
         }
 
-        static void InitMethodImpl(global::java.lang.invoke.MemberName self, MethodWrapper mw, bool wantSpecial)
+        static void InitMethodImpl(global::java.lang.invoke.MemberName self, RuntimeJavaMethod mw, bool wantSpecial)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -105,7 +105,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
             {
                 flags |= global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeVirtual << global::java.lang.invoke.MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
             }
-            if (mw.HasCallerID || DynamicTypeWrapper.RequiresDynamicReflectionCallerClass(mw.DeclaringType.Name, mw.Name, mw.Signature))
+            if (mw.HasCallerID || RuntimeByteCodeJavaType.RequiresDynamicReflectionCallerClass(mw.DeclaringType.Name, mw.Name, mw.Signature))
             {
                 flags |= global::java.lang.invoke.MemberName.CALLER_SENSITIVE;
             }
@@ -214,7 +214,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
             bool invokeSpecial = self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeSpecial;
             bool newInvokeSpecial = self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_newInvokeSpecial;
             bool searchBaseClasses = !newInvokeSpecial;
-            MethodWrapper mw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), searchBaseClasses);
+            RuntimeJavaMethod mw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), searchBaseClasses);
             if (mw == null)
             {
                 if (self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeInterface)
@@ -274,7 +274,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
                 flags += global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeSpecial << global::java.lang.invoke.MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
                 self._flags(flags);
             }
-            if (mw.HasCallerID || DynamicTypeWrapper.RequiresDynamicReflectionCallerClass(mw.DeclaringType.Name, mw.Name, mw.Signature))
+            if (mw.HasCallerID || RuntimeByteCodeJavaType.RequiresDynamicReflectionCallerClass(mw.DeclaringType.Name, mw.Name, mw.Signature))
             {
                 self._flags(self._flags() | global::java.lang.invoke.MemberName.CALLER_SENSITIVE);
             }
@@ -337,7 +337,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 #endif
 
         // TODO consider caching this delegate in MethodWrapper
-        static Delegate CreateMemberNameDelegate(MethodWrapper mw, global::java.lang.Class caller, bool doDispatch, global::java.lang.invoke.MethodType type)
+        static Delegate CreateMemberNameDelegate(RuntimeJavaMethod mw, global::java.lang.Class caller, bool doDispatch, global::java.lang.invoke.MethodType type)
         {
 #if FIRST_PASS
             throw new NotImplementedException();

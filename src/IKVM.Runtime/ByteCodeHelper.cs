@@ -405,7 +405,7 @@ namespace IKVM.Runtime
             return null;
 #else
             RuntimeJavaType tw = RuntimeJavaType.FromClass(global::ikvm.runtime.Util.getClassFromObject(obj));
-            MethodWrapper mw = tw.GetMethodWrapper(name, sig, true);
+            RuntimeJavaMethod mw = tw.GetMethodWrapper(name, sig, true);
             if (mw == null || mw.IsStatic || !mw.IsPublic)
             {
 #if NO_REF_EMIT

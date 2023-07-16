@@ -566,7 +566,7 @@ namespace IKVM.Java.Externs.java.lang
                     // TODO we should get the message from somewhere
                     throw new ClassFormatError(wrapper.Name);
                 }
-                MethodWrapper[] methods = wrapper.GetMethods();
+                RuntimeJavaMethod[] methods = wrapper.GetMethods();
                 List<global::java.lang.reflect.Method> list = new List<global::java.lang.reflect.Method>(methods.Length);
                 for (int i = 0; i < methods.Length; i++)
                 {
@@ -613,7 +613,7 @@ namespace IKVM.Java.Externs.java.lang
                     // TODO we should get the message from somewhere
                     throw new ClassFormatError(wrapper.Name);
                 }
-                MethodWrapper[] methods = wrapper.GetMethods();
+                RuntimeJavaMethod[] methods = wrapper.GetMethods();
                 List<global::java.lang.reflect.Constructor> list = new List<global::java.lang.reflect.Constructor>();
                 for (int i = 0; i < methods.Length; i++)
                 {

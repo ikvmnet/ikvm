@@ -301,7 +301,7 @@ namespace IKVM.Runtime
         }
     }
 
-    sealed class PrivateInterfaceMethodWrapper : SmartMethodWrapper
+    sealed class PrivateInterfaceMethodWrapper : RuntimeSmartJavaMethod
     {
         /// <summary>
         /// Initializes a new instance.

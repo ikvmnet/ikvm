@@ -41,10 +41,10 @@ namespace IKVM.Runtime
 {
 
 #if IMPORTER
-    abstract partial class DynamicTypeWrapper : RuntimeJavaType
+    abstract partial class RuntimeByteCodeJavaType : RuntimeJavaType
 #else
 #pragma warning disable 628 // don't complain about protected members in sealed type
-    sealed partial class DynamicTypeWrapper
+    sealed partial class RuntimeByteCodeJavaType
 #endif
     {
 
@@ -119,7 +119,7 @@ namespace IKVM.Runtime
                 return this;
             }
 
-            internal override MethodBase LinkMethod(MethodWrapper mw)
+            internal override MethodBase LinkMethod(RuntimeJavaMethod mw)
             {
                 // we should never be called, because all methods on a finished type are already linked
                 Debug.Assert(false);

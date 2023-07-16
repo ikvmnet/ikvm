@@ -162,7 +162,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override string AllocMangledName(DynamicTypeWrapper tw)
+        internal override string AllocMangledName(RuntimeByteCodeJavaType tw)
         {
             lock (dynamicTypes)
             {
@@ -212,7 +212,7 @@ namespace IKVM.Runtime
             return null;
 #else
             // this step can throw a retargettable exception, if the class is incorrect
-            DynamicTypeWrapper type = new DynamicTypeWrapper(host, f, classLoader, protectionDomain);
+            RuntimeByteCodeJavaType type = new RuntimeByteCodeJavaType(host, f, classLoader, protectionDomain);
             // This step actually creates the TypeBuilder. It is not allowed to throw any exceptions,
             // if an exception does occur, it is due to a programming error in the IKVM or CLR runtime
             // and will cause a CriticalFailure and exit the process.

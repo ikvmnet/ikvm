@@ -30,29 +30,29 @@ namespace IKVM.Runtime
     {
 
         private static readonly RuntimeJavaType javaLangByte;
-        private static readonly MethodWrapper byteValue;
-        private static readonly MethodWrapper valueOfByte;
+        private static readonly RuntimeJavaMethod byteValue;
+        private static readonly RuntimeJavaMethod valueOfByte;
         private static readonly RuntimeJavaType javaLangBoolean;
-        private static readonly MethodWrapper booleanValue;
-        private static readonly MethodWrapper valueOfBoolean;
+        private static readonly RuntimeJavaMethod booleanValue;
+        private static readonly RuntimeJavaMethod valueOfBoolean;
         private static readonly RuntimeJavaType javaLangShort;
-        private static readonly MethodWrapper shortValue;
-        private static readonly MethodWrapper valueOfShort;
+        private static readonly RuntimeJavaMethod shortValue;
+        private static readonly RuntimeJavaMethod valueOfShort;
         private static readonly RuntimeJavaType javaLangCharacter;
-        private static readonly MethodWrapper charValue;
-        private static readonly MethodWrapper valueOfCharacter;
+        private static readonly RuntimeJavaMethod charValue;
+        private static readonly RuntimeJavaMethod valueOfCharacter;
         private static readonly RuntimeJavaType javaLangInteger;
-        private static readonly MethodWrapper intValue;
-        private static readonly MethodWrapper valueOfInteger;
+        private static readonly RuntimeJavaMethod intValue;
+        private static readonly RuntimeJavaMethod valueOfInteger;
         private static readonly RuntimeJavaType javaLangFloat;
-        private static readonly MethodWrapper floatValue;
-        private static readonly MethodWrapper valueOfFloat;
+        private static readonly RuntimeJavaMethod floatValue;
+        private static readonly RuntimeJavaMethod valueOfFloat;
         private static readonly RuntimeJavaType javaLangLong;
-        private static readonly MethodWrapper longValue;
-        private static readonly MethodWrapper valueOfLong;
+        private static readonly RuntimeJavaMethod longValue;
+        private static readonly RuntimeJavaMethod valueOfLong;
         private static readonly RuntimeJavaType javaLangDouble;
-        private static readonly MethodWrapper doubleValue;
-        private static readonly MethodWrapper valueOfDouble;
+        private static readonly RuntimeJavaMethod doubleValue;
+        private static readonly RuntimeJavaMethod valueOfDouble;
 
         static Boxer()
         {

@@ -310,7 +310,7 @@ namespace IKVM.Runtime
                 return dm.CreateDelegate();
             }
 
-            internal static Delegate CreateDynamicOnly(MethodWrapper mw, java.lang.invoke.MethodType type)
+            internal static Delegate CreateDynamicOnly(RuntimeJavaMethod mw, java.lang.invoke.MethodType type)
             {
                 FinishTypes(type);
                 DynamicMethodBuilder dm = new DynamicMethodBuilder("CustomInvoke:" + mw.Name, type, null, mw, null, null, true);
@@ -325,13 +325,13 @@ namespace IKVM.Runtime
                     dm.Ldarg(0);
                     dm.BoxArgs(1);
                 }
-                dm.Callvirt(typeof(MethodWrapper).GetMethod("Invoke", BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.Callvirt(typeof(RuntimeJavaMethod).GetMethod("Invoke", BindingFlags.Instance | BindingFlags.NonPublic));
                 dm.UnboxReturnValue();
                 dm.Ret();
                 return dm.CreateDelegate();
             }
 
-            internal static Delegate CreateMemberName(MethodWrapper mw, global::java.lang.invoke.MethodType type, bool doDispatch)
+            internal static Delegate CreateMemberName(RuntimeJavaMethod mw, global::java.lang.invoke.MethodType type, bool doDispatch)
             {
                 FinishTypes(type);
                 RuntimeJavaType tw = mw.DeclaringType;
@@ -450,12 +450,12 @@ namespace IKVM.Runtime
                 ilgen.Emit(OpCodes.Callvirt, method);
             }
 
-            internal void Call(MethodWrapper mw)
+            internal void Call(RuntimeJavaMethod mw)
             {
                 mw.EmitCall(ilgen);
             }
 
-            internal void Callvirt(MethodWrapper mw)
+            internal void Callvirt(RuntimeJavaMethod mw)
             {
                 mw.EmitCallvirt(ilgen);
             }

@@ -307,7 +307,7 @@ namespace IKVM.Runtime
                     namedFields = new FieldInfo[0];
                     fieldValues = new object[0];
                 }
-                MethodWrapper mw = t.GetMethodWrapper("<init>", attr.Sig, false);
+                var mw = t.GetMethodWrapper("<init>", attr.Sig, false);
                 if (mw == null)
                 {
                     throw new InvalidOperationException(string.Format("Constructor missing: {0}::<init>{1}", attr.Class, attr.Sig));

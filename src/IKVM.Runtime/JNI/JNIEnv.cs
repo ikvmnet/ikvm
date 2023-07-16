@@ -421,7 +421,7 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         internal static int GetMethodArgs(JNIEnv* pEnv, nint method, byte* sig)
         {
-            var args = MethodWrapper.FromCookie(method).GetParameters();
+            var args = RuntimeJavaMethod.FromCookie(method).GetParameters();
             for (var i = 0; i < args.Length; i++)
                 sig[i] = args[i].IsPrimitive ? (byte)args[i].SigName[0] : (byte)'L';
 
@@ -496,7 +496,7 @@ namespace IKVM.Runtime.JNI
 
         internal static jmethodID FromReflectedMethod(JNIEnv* pEnv, jobject method)
         {
-            return MethodWrapper.FromExecutable((java.lang.reflect.Executable)pEnv->UnwrapRef(method)).Cookie;
+            return RuntimeJavaMethod.FromExecutable((java.lang.reflect.Executable)pEnv->UnwrapRef(method)).Cookie;
         }
 
         internal static jfieldID FromReflectedField(JNIEnv* pEnv, jobject field)
@@ -506,7 +506,7 @@ namespace IKVM.Runtime.JNI
 
         internal static jobject ToReflectedMethod(JNIEnv* pEnv, jclass clazz_ignored, jmethodID method, jboolean isStatic)
         {
-            return pEnv->MakeLocalRef(MethodWrapper.FromCookie(method).ToMethodOrConstructor(true));
+            return pEnv->MakeLocalRef(RuntimeJavaMethod.FromCookie(method).ToMethodOrConstructor(true));
         }
 
         internal static jclass GetSuperclass(JNIEnv* pEnv, jclass sub)
@@ -766,7 +766,7 @@ namespace IKVM.Runtime.JNI
             var obj = UnwrapRef(env, objHandle);
 
             // resolve the method being invoked on the object
-            var mw = MethodWrapper.FromCookie(methodID);
+            var mw = RuntimeJavaMethod.FromCookie(methodID);
             mw.Link();
             mw.ResolveMethod();
 
@@ -847,7 +847,7 @@ namespace IKVM.Runtime.JNI
         /// <param name="argarray"></param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException"></exception>
-        static object InvokeNonVirtual(ManagedJNIEnv env, MethodWrapper mw, object obj, object[] argarray)
+        static object InvokeNonVirtual(ManagedJNIEnv env, RuntimeJavaMethod mw, object obj, object[] argarray)
         {
             if (mw.HasCallerID || mw.IsDynamicOnly)
                 throw new NotSupportedException();
@@ -902,7 +902,7 @@ namespace IKVM.Runtime.JNI
             return w2.IsAssignableTo(w1) ? JNI_TRUE : JNI_FALSE;
         }
 
-        static MethodWrapper GetMethodImpl(RuntimeJavaType tw, string name, string sig)
+        static RuntimeJavaMethod GetMethodImpl(RuntimeJavaType tw, string name, string sig)
         {
             for (; ; )
             {
@@ -941,7 +941,7 @@ namespace IKVM.Runtime.JNI
             return list;
         }
 
-        static MethodWrapper GetInterfaceMethodImpl(RuntimeJavaType tw, string name, string sig)
+        static RuntimeJavaMethod GetInterfaceMethodImpl(RuntimeJavaType tw, string name, string sig)
         {
             foreach (var iface in TransitiveInterfaces(tw))
             {
@@ -964,7 +964,7 @@ namespace IKVM.Runtime.JNI
                 var methodname = (IntPtr)name == IntPtr.Zero ? "<init>" : DecodeMUTF8Argument(name, nameof(name));
                 var methodsig = DecodeMUTF8Argument(sig, nameof(sig));
 
-                MethodWrapper mw = null;
+                RuntimeJavaMethod mw = null;
 
                 // don't allow dotted names!
                 if (methodsig.IndexOf('.') < 0)

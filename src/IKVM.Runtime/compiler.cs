@@ -83,11 +83,11 @@ namespace IKVM.Runtime
         internal static readonly MethodInfo getTypeFromHandleMethod;
         internal static readonly MethodInfo getTypeMethod;
         static readonly MethodInfo keepAliveMethod;
-        internal static readonly MethodWrapper getClassFromTypeHandle;
-        internal static readonly MethodWrapper getClassFromTypeHandle2;
-        readonly DynamicTypeWrapper.FinishContext context;
-        readonly DynamicTypeWrapper clazz;
-        readonly MethodWrapper mw;
+        internal static readonly RuntimeJavaMethod getClassFromTypeHandle;
+        internal static readonly RuntimeJavaMethod getClassFromTypeHandle2;
+        readonly RuntimeByteCodeJavaType.FinishContext context;
+        readonly RuntimeByteCodeJavaType clazz;
+        readonly RuntimeJavaMethod mw;
         readonly ClassFile classFile;
         readonly ClassFile.Method m;
         readonly CodeEmitter ilGenerator;
@@ -103,7 +103,7 @@ namespace IKVM.Runtime
         int[] scopeBegin;
         int[] scopeClose;
 #if IMPORTER
-        readonly MethodWrapper[] replacedMethodWrappers;
+        readonly RuntimeJavaMethod[] replacedMethodWrappers;
 #endif
 
         static Compiler()
@@ -114,7 +114,7 @@ namespace IKVM.Runtime
             // HACK we need to special case core compilation, because the __<map> methods are HideFromJava
             if (CoreClasses.java.lang.Throwable.Wrapper.TypeAsBaseType is TypeBuilder)
             {
-                MethodWrapper mw;
+                RuntimeJavaMethod mw;
                 mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
                 mw.Link();
                 suppressFillInStackTraceMethod = (MethodInfo)mw.GetMethod();
@@ -137,7 +137,7 @@ namespace IKVM.Runtime
             getClassFromTypeHandle2.Link();
         }
 
-        private Compiler(DynamicTypeWrapper.FinishContext context, RuntimeJavaType host, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ClassLoaderWrapper classLoader)
+        private Compiler(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaType host, RuntimeByteCodeJavaType clazz, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ClassLoaderWrapper classLoader)
         {
             this.context = context;
             this.clazz = clazz;
@@ -149,7 +149,7 @@ namespace IKVM.Runtime
             this.strictfp = m.IsStrictfp;
             if (mw.IsConstructor)
             {
-                MethodWrapper finalize = clazz.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, true);
+                RuntimeJavaMethod finalize = clazz.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, true);
                 keepAlive = finalize != null && finalize.DeclaringType != CoreClasses.java.lang.Object.Wrapper && finalize.DeclaringType != CoreClasses.cli.System.Object.Wrapper && finalize.DeclaringType != CoreClasses.java.lang.Throwable.Wrapper && finalize.DeclaringType != CoreClasses.cli.System.Exception.Wrapper;
             }
 #if IMPORTER
@@ -533,7 +533,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static void Compile(DynamicTypeWrapper.FinishContext context, RuntimeJavaType host, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ref bool nonleaf)
+        internal static void Compile(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaType host, RuntimeByteCodeJavaType clazz, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ref bool nonleaf)
         {
             var classLoader = clazz.GetClassLoader();
             if (classLoader.EmitDebugInfo)
@@ -1252,7 +1252,7 @@ namespace IKVM.Runtime
                     case NormalizedByteCode.__invokestatic:
                     case NormalizedByteCode.__methodhandle_link:
                         {
-                            MethodWrapper method = GetMethodCallEmitter(instr.NormalizedOpCode, instr.Arg1);
+                            RuntimeJavaMethod method = GetMethodCallEmitter(instr.NormalizedOpCode, instr.Arg1);
                             if (method.IsIntrinsic && method.EmitIntrinsic(new EmitIntrinsicContext(method, context, ilGenerator, ma, i, mw, classFile, code, flags)))
                             {
                                 break;
@@ -2566,7 +2566,7 @@ namespace IKVM.Runtime
                             string message = harderrors[instr.HardErrorMessageId];
                             Tracer.Error(Tracer.Compiler, "{0}: {1}\n\tat {2}.{3}{4}", exceptionType.Name, message, classFile.Name, m.Name, m.Signature);
                             ilGenerator.Emit(OpCodes.Ldstr, message);
-                            MethodWrapper method = exceptionType.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
+                            RuntimeJavaMethod method = exceptionType.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
                             method.Link();
                             method.EmitNewobj(ilGenerator);
                             if (wrapIncompatibleClassChangeError)
@@ -2721,7 +2721,7 @@ namespace IKVM.Runtime
         {
             private static readonly Type typeofOpenIndyCallSite;
             private static readonly Type typeofCallSite;
-            private static readonly MethodWrapper methodLookup;
+            private static readonly RuntimeJavaMethod methodLookup;
 
             static InvokeDynamicBuilder()
             {
@@ -2835,7 +2835,7 @@ namespace IKVM.Runtime
                     return false;
                 }
                 ClassFile.ConstantPoolItemMethodHandle mh = compiler.classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex);
-                MethodWrapper mw = mh.Member as MethodWrapper;
+                RuntimeJavaMethod mw = mh.Member as RuntimeJavaMethod;
                 switch (mh.Kind)
                 {
                     case ReferenceKind.InvokeStatic:
@@ -3133,7 +3133,7 @@ namespace IKVM.Runtime
                 if (code[index].NormalizedOpCode == NormalizedByteCode.__invokespecial)
                 {
                     ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(code[index].Arg1);
-                    MethodWrapper mw = cpi.GetMethodForInvokespecial();
+                    RuntimeJavaMethod mw = cpi.GetMethodForInvokespecial();
                     return !mw.IsConstructor || mw.DeclaringType != tw;
                 }
                 if ((flags[index] & InstructionFlags.BranchTarget) != 0
@@ -3399,7 +3399,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal sealed class MethodHandleMethodWrapper : MethodWrapper
+        internal sealed class MethodHandleMethodWrapper : RuntimeJavaMethod
         {
 
             private readonly Compiler compiler;
@@ -3672,9 +3672,9 @@ namespace IKVM.Runtime
 
         private sealed class DynamicBinder
         {
-            private MethodWrapper mw;
+            private RuntimeJavaMethod mw;
 
-            internal MethodWrapper Get(Compiler compiler, ReferenceKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
+            internal RuntimeJavaMethod Get(Compiler compiler, ReferenceKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
             {
                 return mw ?? (mw = new DynamicBinderMethodWrapper(cpi, Emit(compiler, kind, cpi, privileged), kind));
             }
@@ -3751,7 +3751,7 @@ namespace IKVM.Runtime
                 return mb;
             }
 
-            private sealed class DynamicBinderMethodWrapper : MethodWrapper
+            private sealed class DynamicBinderMethodWrapper : RuntimeJavaMethod
             {
                 private readonly MethodInfo method;
 
@@ -3778,9 +3778,9 @@ namespace IKVM.Runtime
             }
         }
 
-        private MethodWrapper GetMethodCallEmitter(NormalizedByteCode invoke, int constantPoolIndex)
+        private RuntimeJavaMethod GetMethodCallEmitter(NormalizedByteCode invoke, int constantPoolIndex)
         {
-            ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(constantPoolIndex);
+            var cpi = classFile.GetMethodref(constantPoolIndex);
 #if IMPORTER
             if (replacedMethodWrappers != null)
             {
@@ -3790,14 +3790,14 @@ namespace IKVM.Runtime
                         && replacedMethodWrappers[i].Name == cpi.Name
                         && replacedMethodWrappers[i].Signature == cpi.Signature)
                     {
-                        MethodWrapper rmw = replacedMethodWrappers[i];
+                        var rmw = replacedMethodWrappers[i];
                         rmw.Link();
                         return rmw;
                     }
                 }
             }
 #endif
-            MethodWrapper mw = null;
+            RuntimeJavaMethod mw = null;
             switch (invoke)
             {
                 case NormalizedByteCode.__invokespecial:
@@ -3831,7 +3831,7 @@ namespace IKVM.Runtime
             return mw;
         }
 
-        private MethodWrapper GetDynamicMethodWrapper(int index, NormalizedByteCode invoke, ClassFile.ConstantPoolItemMI cpi)
+        private RuntimeJavaMethod GetDynamicMethodWrapper(int index, NormalizedByteCode invoke, ClassFile.ConstantPoolItemMI cpi)
         {
             ReferenceKind kind;
             switch (invoke)
@@ -3878,7 +3878,7 @@ namespace IKVM.Runtime
             return context.GetValue<DynamicBinder>(index | ((byte)kind << 24)).Get(this, kind, cpi, privileged);
         }
 
-        private RuntimeJavaType ComputeThisType(RuntimeJavaType type, MethodWrapper method, NormalizedByteCode invoke)
+        private RuntimeJavaType ComputeThisType(RuntimeJavaType type, RuntimeJavaMethod method, NormalizedByteCode invoke)
         {
             if (type == VerifierTypeWrapper.UninitializedThis
                 || VerifierTypeWrapper.IsThis(type))

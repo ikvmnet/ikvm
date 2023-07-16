@@ -37,7 +37,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
 #if FIRST_PASS
 		    return null;
 #else
-            MethodWrapper mw = MethodWrapper.FromExecutable(_this);
+            RuntimeJavaMethod mw = RuntimeJavaMethod.FromExecutable(_this);
             MethodParametersEntry[] methodParameters = mw.DeclaringType.GetMethodParameters(mw);
             if (methodParameters == null)
             {
@@ -58,13 +58,13 @@ namespace IKVM.Java.Externs.java.lang.reflect
 
         public static byte[] getTypeAnnotationBytes0(global::java.lang.reflect.Executable _this)
         {
-            MethodWrapper mw = MethodWrapper.FromExecutable(_this);
+            RuntimeJavaMethod mw = RuntimeJavaMethod.FromExecutable(_this);
             return mw.DeclaringType.GetMethodRawTypeAnnotations(mw);
         }
 
         public static object declaredAnnotationsImpl(global::java.lang.reflect.Executable executable)
         {
-            MethodWrapper mw = MethodWrapper.FromExecutable(executable);
+            RuntimeJavaMethod mw = RuntimeJavaMethod.FromExecutable(executable);
             return IKVM.Java.Externs.java.lang.Class.AnnotationsToMap(mw.DeclaringType.GetClassLoader(), mw.DeclaringType.GetMethodAnnotations(mw));
         }
 
@@ -73,7 +73,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
 #if FIRST_PASS
 		    return null;
 #else
-            MethodWrapper mw = MethodWrapper.FromExecutable(executable);
+            RuntimeJavaMethod mw = RuntimeJavaMethod.FromExecutable(executable);
             object[][] objAnn = mw.DeclaringType.GetParameterAnnotations(mw);
             if (objAnn == null)
             {

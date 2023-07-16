@@ -60,7 +60,7 @@ namespace IKVM.Runtime
                 this.methodSignature = string.Intern(methodSignature);
             }
 
-            internal IntrinsicKey(MethodWrapper mw)
+            internal IntrinsicKey(RuntimeJavaMethod mw)
             {
                 this.className = mw.DeclaringType.Name;
                 this.methodName = mw.Name;
@@ -153,7 +153,7 @@ namespace IKVM.Runtime
                 eic.Emitter.EmitLdc_I4(1);
         }
 
-        internal static bool IsIntrinsic(MethodWrapper mw)
+        internal static bool IsIntrinsic(RuntimeJavaMethod mw)
         {
             return intrinsics.ContainsKey(new IntrinsicKey(mw)) && mw.DeclaringType.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader();
         }
@@ -335,7 +335,7 @@ namespace IKVM.Runtime
                     arg++;
                 }
                 eic.Emitter.EmitLdarg(arg);
-                MethodWrapper mw;
+                RuntimeJavaMethod mw;
                 if (MatchInvokeStatic(eic, 1, "java.lang.ClassLoader", "getClassLoader", "(Ljava.lang.Class;)Ljava.lang.ClassLoader;"))
                 {
                     eic.PatchOpCode(1, NormalizedByteCode.__nop);
@@ -349,10 +349,10 @@ namespace IKVM.Runtime
                 mw.EmitCallvirt(eic.Emitter);
                 return true;
             }
-            else if (DynamicTypeWrapper.RequiresDynamicReflectionCallerClass(eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature))
+            else if (RuntimeByteCodeJavaType.RequiresDynamicReflectionCallerClass(eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature))
             {
                 // since the non-intrinsic version of Reflection.getCallerClass() always throws an exception, we have to redirect to the dynamic version
-                MethodWrapper getCallerClass = ClassLoaderWrapper.LoadClassCritical("sun.reflect.Reflection").GetMethodWrapper("getCallerClass", "(I)Ljava.lang.Class;", false);
+                var getCallerClass = ClassLoaderWrapper.LoadClassCritical("sun.reflect.Reflection").GetMethodWrapper("getCallerClass", "(I)Ljava.lang.Class;", false);
                 getCallerClass.Link();
                 eic.Emitter.EmitLdc_I4(2);
                 getCallerClass.EmitCall(eic.Emitter);

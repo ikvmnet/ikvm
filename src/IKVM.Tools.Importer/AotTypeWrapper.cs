@@ -36,7 +36,7 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Tools.Importer
 {
 
-    sealed class AotTypeWrapper : DynamicTypeWrapper
+    sealed class AotTypeWrapper : RuntimeByteCodeJavaType
     {
 
         private FieldInfo ghostRefField;
@@ -47,7 +47,7 @@ namespace IKVM.Tools.Importer
         private TypeBuilder typeBuilderGhostInterface;
         private Annotation annotation;
         private Type enumType;
-        private MethodWrapper[] replacedMethods;
+        private RuntimeJavaMethod[] replacedMethods;
         private WorkaroundBaseClass workaroundBaseClass;
 
         /// <summary>
@@ -69,17 +69,17 @@ namespace IKVM.Tools.Importer
                 // FXBUG
                 // if the current class widens access on an abstract base class method,
                 // we need to inject an artificial base class to workaround a C# compiler bug
-                List<MethodWrapper> methods = null;
-                foreach (MethodWrapper mw in GetMethods())
+                List<RuntimeJavaMethod> methods = null;
+                foreach (var mw in GetMethods())
                 {
                     if (!mw.IsStatic && mw.IsPublic)
                     {
-                        MethodWrapper baseMethod = baseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+                        var baseMethod = baseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
                         if (baseMethod != null && baseMethod.IsAbstract && baseMethod.IsProtected)
                         {
                             if (methods == null)
                             {
-                                methods = new List<MethodWrapper>();
+                                methods = new List<RuntimeJavaMethod>();
                             }
                             methods.Add(baseMethod);
                         }
@@ -92,13 +92,13 @@ namespace IKVM.Tools.Importer
                     {
                         name = "_" + name;
                     }
-                    TypeWrapperFactory context = classLoader.GetTypeWrapperFactory();
-                    TypeBuilder typeBuilder = context.ModuleBuilder.DefineType(name, TypeAttributes.Public | TypeAttributes.Abstract, base.GetBaseTypeForDefineType());
+                    var context = classLoader.GetTypeWrapperFactory();
+                    var typeBuilder = context.ModuleBuilder.DefineType(name, TypeAttributes.Public | TypeAttributes.Abstract, base.GetBaseTypeForDefineType());
                     AttributeHelper.HideFromJava(typeBuilder);
                     AttributeHelper.SetEditorBrowsableNever(typeBuilder);
                     workaroundBaseClass = new WorkaroundBaseClass(this, typeBuilder, methods.ToArray());
-                    List<MethodWrapper> constructors = new List<MethodWrapper>();
-                    foreach (MethodWrapper mw in baseTypeWrapper.GetMethods())
+                    var constructors = new List<RuntimeJavaMethod>();
+                    foreach (var mw in baseTypeWrapper.GetMethods())
                     {
                         if (ReferenceEquals(mw.Name, StringConstants.INIT) && mw.IsAccessibleFrom(baseTypeWrapper, this, this))
                         {
@@ -123,12 +123,13 @@ namespace IKVM.Tools.Importer
 
         private sealed class WorkaroundBaseClass
         {
+
             private readonly AotTypeWrapper wrapper;
             private readonly TypeBuilder typeBuilder;
-            private readonly MethodWrapper[] methods;
+            private readonly RuntimeJavaMethod[] methods;
             private MethodBuilder baseSerializationCtor;
 
-            internal WorkaroundBaseClass(AotTypeWrapper wrapper, TypeBuilder typeBuilder, MethodWrapper[] methods)
+            internal WorkaroundBaseClass(AotTypeWrapper wrapper, TypeBuilder typeBuilder, RuntimeJavaMethod[] methods)
             {
                 this.wrapper = wrapper;
                 this.typeBuilder = typeBuilder;
@@ -148,7 +149,7 @@ namespace IKVM.Tools.Importer
             {
                 if (!typeBuilder.IsCreated())
                 {
-                    foreach (MethodWrapper mw in methods)
+                    foreach (var mw in methods)
                     {
                         MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, mw.Name, MethodAttributes.FamORAssem | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.CheckAccessOnOverride);
                         AttributeHelper.HideFromJava(mb);
@@ -161,15 +162,16 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private sealed class ConstructorForwarder : MethodWrapper
+        private sealed class ConstructorForwarder : RuntimeJavaMethod
         {
+
             private readonly TypeWrapperFactory context;
             private readonly TypeBuilder typeBuilder;
-            private readonly MethodWrapper ctor;
+            private readonly RuntimeJavaMethod ctor;
             private MethodBuilder constructorBuilder;
 
-            internal ConstructorForwarder(TypeWrapperFactory context, TypeBuilder typeBuilder, MethodWrapper ctor)
-                : base(ctor.DeclaringType, ctor.Name, ctor.Signature, null, null, null, ctor.Modifiers, MemberFlags.None)
+            internal ConstructorForwarder(TypeWrapperFactory context, TypeBuilder typeBuilder, RuntimeJavaMethod ctor) :
+                base(ctor.DeclaringType, ctor.Name, ctor.Signature, null, null, null, ctor.Modifiers, MemberFlags.None)
             {
                 this.context = context;
                 this.typeBuilder = typeBuilder;
@@ -248,7 +250,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private void AddParameterMetadata(MethodBuilder method, MethodWrapper mw)
+        private void AddParameterMetadata(MethodBuilder method, RuntimeJavaMethod mw)
         {
             ParameterBuilder[] pbs;
             if ((mw.DeclaringType.IsPublic && (mw.IsPublic || mw.IsProtected)) || classLoader.EmitDebugInfo)
@@ -339,7 +341,7 @@ namespace IKVM.Tools.Importer
             return false;
         }
 
-        static MethodAttributes GetPropertyMethodAttributes(MethodWrapper mw, bool final)
+        static MethodAttributes GetPropertyMethodAttributes(RuntimeJavaMethod mw, bool final)
         {
             var attribs = MethodAttributes.HideBySig;
             if (mw.IsStatic)
@@ -390,8 +392,8 @@ namespace IKVM.Tools.Importer
                         AttributeHelper.SetCustomAttribute(classLoader, propbuilder, attr);
                     }
                 }
-                MethodWrapper getter = null;
-                MethodWrapper setter = null;
+                RuntimeJavaMethod getter = null;
+                RuntimeJavaMethod setter = null;
                 if (prop.Getter != null)
                 {
                     getter = GetMethodWrapper(prop.Getter.Name, prop.Getter.Sig, true);
@@ -411,7 +413,7 @@ namespace IKVM.Tools.Importer
                 bool final = (getter != null && getter.IsFinal) || (setter != null && setter.IsFinal);
                 if (getter != null)
                 {
-                    MethodWrapper mw = getter;
+                    RuntimeJavaMethod mw = getter;
                     if (!CheckPropertyArgs(mw.GetParametersForDefineMethod(), indexer) || mw.ReturnType != typeWrapper)
                     {
                         Console.Error.WriteLine("Warning: ignoring invalid property getter for {0}::{1}", clazz.Name, prop.Name);
@@ -449,20 +451,20 @@ namespace IKVM.Tools.Importer
                 }
                 if (setter != null)
                 {
-                    MethodWrapper mw = setter;
-                    Type[] args = ArrayUtil.Concat(indexer, typeWrapper.TypeAsSignatureType);
+                    RuntimeJavaMethod mw = setter;
+                    var args = ArrayUtil.Concat(indexer, typeWrapper.TypeAsSignatureType);
                     if (!CheckPropertyArgs(args, mw.GetParametersForDefineMethod()))
                     {
                         Console.Error.WriteLine("Warning: ignoring invalid property setter for {0}::{1}", clazz.Name, prop.Name);
                     }
                     else
                     {
-                        MethodBuilder mb = mw.GetMethod() as MethodBuilder;
+                        var mb = mw.GetMethod() as MethodBuilder;
                         if (mb == null || mb.DeclaringType != typeBuilder || (!mb.IsFinal && final))
                         {
                             mb = typeBuilder.DefineMethod("set_" + prop.Name, GetPropertyMethodAttributes(mw, final), mw.ReturnTypeForDefineMethod, args);
                             AttributeHelper.HideFromJava(mb);
-                            CodeEmitter ilgen = CodeEmitter.Create(mb);
+                            var ilgen = CodeEmitter.Create(mb);
                             if (mw.IsStatic)
                             {
                                 for (int i = 0; i <= indexer.Length; i++)
@@ -562,7 +564,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        protected override void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, MethodWrapper[] methods)
+        protected override void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, RuntimeJavaMethod[] methods)
         {
             Dictionary<string, IKVM.Tools.Importer.MapXml.Class> mapxml = classLoader.GetMapXmlClasses();
             if (mapxml != null)
@@ -588,14 +590,10 @@ namespace IKVM.Tools.Importer
                                 {
                                     if (fw.Name == field.Name && fw.Signature == field.Sig)
                                     {
-                                        FieldBuilder fb = fw.GetField() as FieldBuilder;
+                                        var fb = fw.GetField() as FieldBuilder;
                                         if (fb != null)
-                                        {
                                             foreach (IKVM.Tools.Importer.MapXml.Attribute attr in field.Attributes)
-                                            {
                                                 AttributeHelper.SetCustomAttribute(classLoader, fb, attr);
-                                            }
-                                        }
                                     }
                                 }
                             }
@@ -614,6 +612,7 @@ namespace IKVM.Tools.Importer
                                     Console.Error.WriteLine("Error: Constructor {0}.<init>{1} in xml remap file doesn't have a body.", clazz.Name, constructor.Sig);
                                     continue;
                                 }
+
                                 bool setmodifiers = false;
                                 MethodAttributes attribs = 0;
                                 MapModifiers(constructor.Modifiers, true, out setmodifiers, ref attribs, false);
@@ -626,34 +625,26 @@ namespace IKVM.Tools.Importer
                                     AttributeHelper.SetModifiers(cb, (Modifiers)constructor.Modifiers, false);
                                 }
                                 CompilerClassLoader.AddDeclaredExceptions(cb, constructor.Throws);
-                                CodeEmitter ilgen = CodeEmitter.Create(cb);
+                                var ilgen = CodeEmitter.Create(cb);
                                 constructor.Emit(classLoader, ilgen);
                                 ilgen.DoEmit();
                                 if (constructor.Attributes != null)
-                                {
                                     foreach (IKVM.Tools.Importer.MapXml.Attribute attr in constructor.Attributes)
-                                    {
                                         AttributeHelper.SetCustomAttribute(classLoader, cb, attr);
-                                    }
-                                }
                             }
                         }
                         foreach (IKVM.Tools.Importer.MapXml.Constructor constructor in clazz.Constructors)
                         {
                             if (constructor.Attributes != null)
                             {
-                                foreach (MethodWrapper mw in methods)
+                                foreach (var mw in methods)
                                 {
                                     if (mw.Name == "<init>" && mw.Signature == constructor.Sig)
                                     {
-                                        MethodBuilder mb = mw.GetMethod() as MethodBuilder;
+                                        var mb = mw.GetMethod() as MethodBuilder;
                                         if (mb != null)
-                                        {
                                             foreach (IKVM.Tools.Importer.MapXml.Attribute attr in constructor.Attributes)
-                                            {
                                                 AttributeHelper.SetCustomAttribute(classLoader, mb, attr);
-                                            }
-                                        }
                                     }
                                 }
                             }
@@ -685,7 +676,7 @@ namespace IKVM.Tools.Importer
                                 }
                                 if (method.Override != null)
                                 {
-                                    MethodWrapper mw = GetClassLoader().LoadClassByDottedName(method.Override.Class).GetMethodWrapper(method.Override.Name, method.Sig, true);
+                                    var mw = GetClassLoader().LoadClassByDottedName(method.Override.Class).GetMethodWrapper(method.Override.Name, method.Sig, true);
                                     mw.Link();
                                     typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
                                 }
@@ -709,7 +700,7 @@ namespace IKVM.Tools.Importer
                         {
                             if (method.Attributes != null)
                             {
-                                foreach (MethodWrapper mw in methods)
+                                foreach (var mw in methods)
                                 {
                                     if (mw.Name == method.Name && mw.Signature == method.Sig)
                                     {
@@ -738,11 +729,10 @@ namespace IKVM.Tools.Importer
                             {
                                 foreach (Method m in iface.Methods)
                                 {
-                                    MethodWrapper mw = tw.GetMethodWrapper(m.Name, m.Sig, false);
+                                    var mw = tw.GetMethodWrapper(m.Name, m.Sig, false);
                                     if (mw == null)
-                                    {
                                         throw new InvalidOperationException("Method " + m.Name + m.Sig + " not found in interface " + tw.Name);
-                                    }
+
                                     mw.Link();
                                     MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(this, typeBuilder, tw.Name + "/" + m.Name, MethodAttributes.Private | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.CheckAccessOnOverride);
                                     AttributeHelper.HideFromJava(mb);
@@ -758,19 +748,20 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        protected override MethodBuilder DefineGhostMethod(TypeBuilder typeBuilder, string name, MethodAttributes attribs, MethodWrapper mw)
+        protected override MethodBuilder DefineGhostMethod(TypeBuilder typeBuilder, string name, MethodAttributes attribs, RuntimeJavaMethod mw)
         {
             if (typeBuilderGhostInterface != null && mw.IsVirtual)
             {
                 DefineMethodHelper helper = mw.GetDefineMethodHelper();
                 MethodBuilder stub = helper.DefineMethod(this, typeBuilder, name, MethodAttributes.Public);
-                ((GhostMethodWrapper)mw).SetGhostMethod(stub);
+                ((RuntimeGhostJavaMethod)mw).SetGhostMethod(stub);
                 return helper.DefineMethod(this, typeBuilderGhostInterface, name, attribs);
             }
+
             return null;
         }
 
-        protected override void FinishGhost(TypeBuilder typeBuilder, MethodWrapper[] methods)
+        protected override void FinishGhost(TypeBuilder typeBuilder, RuntimeJavaMethod[] methods)
         {
             if (typeBuilderGhostInterface != null)
             {
@@ -778,7 +769,7 @@ namespace IKVM.Tools.Importer
                 for (int i = 0; i < methods.Length; i++)
                 {
                     // skip <clinit> and non-virtual interface methods introduced in Java 8
-                    GhostMethodWrapper gmw = methods[i] as GhostMethodWrapper;
+                    var gmw = methods[i] as RuntimeGhostJavaMethod;
                     if (gmw != null)
                     {
                         var args = methods[i].GetParameters();
@@ -808,7 +799,7 @@ namespace IKVM.Tools.Importer
                             ilgen.Emit(OpCodes.Isinst, implementers[j].TypeAsTBD);
                             label = ilgen.DefineLabel();
                             ilgen.EmitBrfalse(label);
-                            MethodWrapper mw = implementers[j].GetMethodWrapper(methods[i].Name, methods[i].Signature, true);
+                            var mw = implementers[j].GetMethodWrapper(methods[i].Name, methods[i].Signature, true);
                             if (mw == null)
                             {
                                 if (methods[i].IsAbstract)
@@ -1168,7 +1159,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private sealed class ReplacedMethodWrapper : MethodWrapper
+        private sealed class ReplacedMethodWrapper : RuntimeJavaMethod
         {
             private IKVM.Tools.Importer.MapXml.InstructionList code;
 
@@ -1214,30 +1205,27 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        internal override MethodWrapper[] GetReplacedMethodsFor(MethodWrapper mw)
+        internal override RuntimeJavaMethod[] GetReplacedMethodsFor(RuntimeJavaMethod mw)
         {
             IKVM.Tools.Importer.MapXml.ReplaceMethodCall[] replacedMethods = ((CompilerClassLoader)GetClassLoader()).GetReplacedMethodsFor(mw);
-            MethodWrapper[] baseReplacedMethodWrappers = base.GetReplacedMethodsFor(mw);
+            var baseReplacedMethodWrappers = base.GetReplacedMethodsFor(mw);
             if (replacedMethods != null || baseReplacedMethodWrappers != null || this.replacedMethods != null)
             {
-                List<MethodWrapper> list = new List<MethodWrapper>();
+                var list = new List<RuntimeJavaMethod>();
+
                 if (replacedMethods != null)
-                {
                     for (int i = 0; i < replacedMethods.Length; i++)
-                    {
                         list.Add(new ReplacedMethodWrapper(GetClassLoader().LoadClassByDottedName(replacedMethods[i].Class), replacedMethods[i].Name, replacedMethods[i].Sig, replacedMethods[i].Code));
-                    }
-                }
+
                 if (baseReplacedMethodWrappers != null)
-                {
                     list.AddRange(baseReplacedMethodWrappers);
-                }
+
                 if (this.replacedMethods != null)
-                {
                     list.AddRange(this.replacedMethods);
-                }
+
                 return list.ToArray();
             }
+
             return null;
         }
 
@@ -1246,20 +1234,12 @@ namespace IKVM.Tools.Importer
             get { return true; }
         }
 
-        internal MethodWrapper ReplaceMethodWrapper(MethodWrapper mw)
+        internal RuntimeJavaMethod ReplaceMethodWrapper(RuntimeJavaMethod mw)
         {
             if (replacedMethods != null)
-            {
-                foreach (MethodWrapper r in replacedMethods)
-                {
-                    if (mw.DeclaringType == r.DeclaringType
-                        && mw.Name == r.Name
-                        && mw.Signature == r.Signature)
-                    {
+                foreach (var r in replacedMethods)
+                    if (mw.DeclaringType == r.DeclaringType && mw.Name == r.Name && mw.Signature == r.Signature)
                         return r;
-                    }
-                }
-            }
 
             return mw;
         }

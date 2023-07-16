@@ -42,7 +42,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Wraps a const field.
     /// </summary>
-    sealed class ConstantFieldWrapper : RuntimeJavaField
+    sealed class RuntimeConstantJavaField : RuntimeJavaField
     {
 
         // NOTE this field wrapper can represent a .NET enum, but in that case "constant" contains the raw constant value (i.e. the boxed underlying primitive value, not a boxed enum)
@@ -64,7 +64,7 @@ namespace IKVM.Runtime
         /// <param name="constant"></param>
         /// <param name="flags"></param>
         /// <exception cref="InternalException"></exception>
-        internal ConstantFieldWrapper(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, object constant, MemberFlags flags) :
+        internal RuntimeConstantJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, object constant, MemberFlags flags) :
             base(declaringType, fieldType, name, sig, modifiers, field, flags)
         {
             if (IsStatic == false)

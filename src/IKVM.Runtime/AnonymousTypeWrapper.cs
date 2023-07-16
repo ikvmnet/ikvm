@@ -23,21 +23,9 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 using IKVM.Attributes;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-#endif
-
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
 
 namespace IKVM.Runtime
 {
@@ -71,8 +59,7 @@ namespace IKVM.Runtime
 
         private static string GetName(Type type)
         {
-            return ClassLoaderWrapper.GetWrapperFromType(type.DeclaringType).Name
-                + type.Name.Replace(NestedTypeName.IntrinsifiedAnonymousClass, "$$Lambda$");
+            return ClassLoaderWrapper.GetWrapperFromType(type.DeclaringType).Name + type.Name.Replace(NestedTypeName.IntrinsifiedAnonymousClass, "$$Lambda$");
         }
 
         internal override ClassLoaderWrapper GetClassLoader()
@@ -94,22 +81,23 @@ namespace IKVM.Runtime
         {
             get
             {
-                RuntimeJavaType[] interfaces = GetImplementedInterfacesAsTypeWrappers(type);
+                var interfaces = GetImplementedInterfacesAsTypeWrappers(type);
                 if (type.IsSerializable)
                 {
                     // we have to remove the System.Runtime.Serialization.ISerializable interface
-                    List<RuntimeJavaType> list = new List<RuntimeJavaType>(interfaces);
+                    var list = new List<RuntimeJavaType>(interfaces);
                     list.RemoveAll(Serialization.IsISerializable);
                     return list.ToArray();
                 }
+
                 return interfaces;
             }
         }
 
         protected override void LazyPublishMembers()
         {
-            List<MethodWrapper> methods = new List<MethodWrapper>();
-            foreach (MethodInfo mi in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            var methods = new List<RuntimeJavaMethod>();
+            foreach (var mi in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
                 if (mi.IsSpecialName)
                 {
@@ -117,34 +105,33 @@ namespace IKVM.Runtime
                 }
                 else if (mi.IsPublic)
                 {
-                    RuntimeJavaType returnType;
-                    RuntimeJavaType[] parameterTypes;
-                    string signature;
-                    GetSig(mi, out returnType, out parameterTypes, out signature);
+                    GetSig(mi, out var returnType, out var parameterTypes, out var signature);
                     methods.Add(new TypicalMethodWrapper(this, mi.Name, signature, mi, returnType, parameterTypes, Modifiers.Public, MemberFlags.None));
                 }
                 else if (mi.Name == "writeReplace")
                 {
-                    methods.Add(new TypicalMethodWrapper(this, "writeReplace", "()Ljava.lang.Object;", mi, CoreClasses.java.lang.Object.Wrapper, RuntimeJavaType.EmptyArray,
-                        Modifiers.Private | Modifiers.Final, MemberFlags.None));
+                    methods.Add(new TypicalMethodWrapper(this, "writeReplace", "()Ljava.lang.Object;", mi, CoreClasses.java.lang.Object.Wrapper, RuntimeJavaType.EmptyArray, Modifiers.Private | Modifiers.Final, MemberFlags.None));
                 }
             }
+
             SetMethods(methods.ToArray());
-            List<RuntimeJavaField> fields = new List<RuntimeJavaField>();
-            foreach (FieldInfo fi in type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+
+            var fields = new List<RuntimeJavaField>();
+            foreach (var fi in type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
-                RuntimeJavaType fieldType = CompiledTypeWrapper.GetFieldTypeWrapper(fi);
+                var fieldType = CompiledTypeWrapper.GetFieldTypeWrapper(fi);
                 fields.Add(new RuntimeSimpleJavaField(this, fieldType, fi, fi.Name, fieldType.SigName, new ExModifiers(Modifiers.Private | Modifiers.Final, false)));
             }
+
             SetFields(fields.ToArray());
         }
 
-        private void GetSig(MethodInfo mi, out RuntimeJavaType returnType, out RuntimeJavaType[] parameterTypes, out string signature)
+        void GetSig(MethodInfo mi, out RuntimeJavaType returnType, out RuntimeJavaType[] parameterTypes, out string signature)
         {
             returnType = CompiledTypeWrapper.GetParameterTypeWrapper(mi.ReturnParameter);
-            ParameterInfo[] parameters = mi.GetParameters();
+            var parameters = mi.GetParameters();
             parameterTypes = new RuntimeJavaType[parameters.Length];
-            System.Text.StringBuilder sb = new System.Text.StringBuilder("(");
+            var sb = new System.Text.StringBuilder("(");
             for (int i = 0; i < parameters.Length; i++)
             {
                 parameterTypes[i] = CompiledTypeWrapper.GetParameterTypeWrapper(parameters[i]);

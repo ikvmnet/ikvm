@@ -42,9 +42,9 @@ namespace IKVM.Runtime
     sealed class DefineMethodHelper
     {
 
-        private readonly MethodWrapper mw;
+        private readonly RuntimeJavaMethod mw;
 
-        internal DefineMethodHelper(MethodWrapper mw)
+        internal DefineMethodHelper(RuntimeJavaMethod mw)
         {
             this.mw = mw;
         }
@@ -54,7 +54,7 @@ namespace IKVM.Runtime
             get { return mw.GetParameters().Length + (mw.HasCallerID ? 1 : 0); }
         }
 
-        internal MethodBuilder DefineMethod(DynamicTypeWrapper context, TypeBuilder tb, string name, MethodAttributes attribs)
+        internal MethodBuilder DefineMethod(RuntimeByteCodeJavaType context, TypeBuilder tb, string name, MethodAttributes attribs)
         {
             return DefineMethod(context.GetClassLoader().GetTypeWrapperFactory(), tb, name, attribs, null, false);
         }
@@ -81,7 +81,7 @@ namespace IKVM.Runtime
                 parameterTypes[i + firstParam] = mustBePublic
                     ? parameters[i].TypeAsPublicSignatureType
                     : parameters[i].TypeAsSignatureType;
-                modopt[i + firstParam] = DynamicTypeWrapper.GetModOpt(context, parameters[i], mustBePublic);
+                modopt[i + firstParam] = RuntimeByteCodeJavaType.GetModOpt(context, parameters[i], mustBePublic);
             }
             if (mw.HasCallerID)
             {
@@ -90,11 +90,11 @@ namespace IKVM.Runtime
             Type returnType = mustBePublic
                 ? mw.ReturnType.TypeAsPublicSignatureType
                 : mw.ReturnType.TypeAsSignatureType;
-            Type[] modoptReturnType = DynamicTypeWrapper.GetModOpt(context, mw.ReturnType, mustBePublic);
+            Type[] modoptReturnType = RuntimeByteCodeJavaType.GetModOpt(context, mw.ReturnType, mustBePublic);
             return tb.DefineMethod(name, attribs, CallingConventions.Standard, returnType, null, modoptReturnType, parameterTypes, null, modopt);
         }
 
-        internal MethodBuilder DefineConstructor(DynamicTypeWrapper context, TypeBuilder tb, MethodAttributes attribs)
+        internal MethodBuilder DefineConstructor(RuntimeByteCodeJavaType context, TypeBuilder tb, MethodAttributes attribs)
         {
             return DefineConstructor(context.GetClassLoader().GetTypeWrapperFactory(), tb, attribs);
         }

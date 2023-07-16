@@ -32,7 +32,7 @@ using System.Reflection;
 namespace IKVM.Runtime
 {
 
-    sealed class SimpleCallMethodWrapper : MethodWrapper
+    sealed class SimpleCallMethodWrapper : RuntimeJavaMethod
     {
 
         readonly SimpleOpCode call;

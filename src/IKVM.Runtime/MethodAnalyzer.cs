@@ -50,7 +50,7 @@ namespace IKVM.Runtime
         private readonly static RuntimeJavaType java_lang_ThreadDeath;
         private readonly RuntimeJavaType host;  // used to by Unsafe.defineAnonymousClass() to provide access to private members of the host
         private readonly RuntimeJavaType wrapper;
-        private readonly MethodWrapper mw;
+        private readonly RuntimeJavaMethod mw;
         private readonly ClassFile classFile;
         private readonly ClassFile.Method method;
         private readonly ClassLoaderWrapper classLoader;
@@ -73,7 +73,7 @@ namespace IKVM.Runtime
             java_lang_ThreadDeath = ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadDeath");
         }
 
-        internal MethodAnalyzer(RuntimeJavaType host, RuntimeJavaType wrapper, MethodWrapper mw, ClassFile classFile, ClassFile.Method method, ClassLoaderWrapper classLoader)
+        internal MethodAnalyzer(RuntimeJavaType host, RuntimeJavaType wrapper, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method, ClassLoaderWrapper classLoader)
         {
             if (method.VerifyError != null)
             {
@@ -1474,7 +1474,7 @@ namespace IKVM.Runtime
                             && instructions[i + 1].TargetIndex > i
                             && (flags[i + 1] & InstructionFlags.BranchTarget) == 0)
                         {
-                            var field = classFile.GetFieldref(instructions[i].Arg1).GetField() as ConstantFieldWrapper;
+                            var field = classFile.GetFieldref(instructions[i].Arg1).GetField() as RuntimeConstantJavaField;
                             if (field != null && field.FieldTypeWrapper == RuntimePrimitiveJavaType.BOOLEAN && (bool)field.GetConstantValue())
                             {
                                 // We know the branch will always be taken, so we replace the getstatic/ifne by a goto.
@@ -1486,7 +1486,7 @@ namespace IKVM.Runtime
             }
         }
 
-        private void PatchHardErrorsAndDynamicMemberAccess(RuntimeJavaType wrapper, MethodWrapper mw)
+        private void PatchHardErrorsAndDynamicMemberAccess(RuntimeJavaType wrapper, RuntimeJavaMethod mw)
         {
             // Now we do another pass to find "hard error" instructions
             if (true)
@@ -2557,7 +2557,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                MethodWrapper targetMethod = invoke == NormalizedByteCode.__invokespecial ? cpi.GetMethodForInvokespecial() : cpi.GetMethod();
+                RuntimeJavaMethod targetMethod = invoke == NormalizedByteCode.__invokespecial ? cpi.GetMethodForInvokespecial() : cpi.GetMethod();
                 if (targetMethod != null)
                 {
                     string errmsg = CheckLoaderConstraints(cpi, targetMethod);
@@ -2630,7 +2630,7 @@ namespace IKVM.Runtime
             return str.Replace('.', '/');
         }
 
-        private void PatchFieldAccess(RuntimeJavaType wrapper, MethodWrapper mw, ref ClassFile.Method.Instruction instr, StackState stack)
+        private void PatchFieldAccess(RuntimeJavaType wrapper, RuntimeJavaMethod mw, ref ClassFile.Method.Instruction instr, StackState stack)
         {
             ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
             bool isStatic;
@@ -2808,7 +2808,7 @@ namespace IKVM.Runtime
             return index;
         }
 
-        private string CheckLoaderConstraints(ClassFile.ConstantPoolItemMI cpi, MethodWrapper mw)
+        private string CheckLoaderConstraints(ClassFile.ConstantPoolItemMI cpi, RuntimeJavaMethod mw)
         {
 #if NETFRAMEWORK
             if (cpi.GetRetType() != mw.ReturnType && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)

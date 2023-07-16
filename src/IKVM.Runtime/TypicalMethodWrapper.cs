@@ -36,7 +36,7 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    sealed class TypicalMethodWrapper : SmartMethodWrapper
+    sealed class TypicalMethodWrapper : RuntimeSmartJavaMethod
     {
 
         /// <summary>

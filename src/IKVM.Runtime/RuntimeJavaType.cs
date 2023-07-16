@@ -59,7 +59,7 @@ namespace IKVM.Runtime
         readonly string name; // java name (e.g. java.lang.Object)
         readonly Modifiers modifiers;
         TypeFlags flags;
-        MethodWrapper[] methods;
+        RuntimeJavaMethod[] methods;
         RuntimeJavaField[] fields;
 #if !IMPORTER && !EXPORTER
         java.lang.Class classObject;
@@ -713,8 +713,8 @@ namespace IKVM.Runtime
 
         protected virtual void LazyPublishMembers()
         {
-            methods ??= MethodWrapper.EmptyArray;
-            fields ??= RuntimeJavaField.EmptyArray;
+            methods ??= Array.Empty<RuntimeJavaMethod>();
+            fields ??= Array.Empty<RuntimeJavaField>();
         }
 
         protected virtual void LazyPublishMethods()
@@ -731,7 +731,7 @@ namespace IKVM.Runtime
         /// Gets the set of methods defined by this type.
         /// </summary>
         /// <returns></returns>
-        internal MethodWrapper[] GetMethods()
+        internal RuntimeJavaMethod[] GetMethods()
         {
             if (methods == null)
             {
@@ -741,7 +741,7 @@ namespace IKVM.Runtime
                     {
 #if IMPORTER
                         if (IsUnloadable || !CheckMissingBaseTypes(TypeAsBaseType))
-                            return methods = MethodWrapper.EmptyArray;
+                            return methods = Array.Empty<RuntimeJavaMethod>();
 #endif
                         LazyPublishMethods();
                     }
@@ -765,7 +765,7 @@ namespace IKVM.Runtime
                     {
 #if IMPORTER
                         if (IsUnloadable || !CheckMissingBaseTypes(TypeAsBaseType))
-                            return fields = RuntimeJavaField.EmptyArray;
+                            return fields = Array.Empty<RuntimeJavaField>();
 #endif
 
                         LazyPublishFields();
@@ -801,7 +801,7 @@ namespace IKVM.Runtime
         }
 #endif
 
-        internal MethodWrapper GetMethodWrapper(string name, string sig, bool inherit)
+        internal RuntimeJavaMethod GetMethodWrapper(string name, string sig, bool inherit)
         {
             // we need to get the methods before calling string.IsInterned, because getting them might cause the strings to be interned
             var methods = GetMethods();
@@ -822,9 +822,9 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal MethodWrapper GetInterfaceMethod(string name, string sig)
+        internal RuntimeJavaMethod GetInterfaceMethod(string name, string sig)
         {
-            MethodWrapper method = GetMethodWrapper(name, sig, false);
+            RuntimeJavaMethod method = GetMethodWrapper(name, sig, false);
             if (method != null)
             {
                 return method;
@@ -841,7 +841,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal void SetMethods(MethodWrapper[] methods)
+        internal void SetMethods(RuntimeJavaMethod[] methods)
         {
             Debug.Assert(methods != null);
             System.Threading.Thread.MemoryBarrier();
@@ -1221,7 +1221,7 @@ namespace IKVM.Runtime
                 {
                     iface.LinkAll();
                 }
-                foreach (MethodWrapper mw in GetMethods())
+                foreach (RuntimeJavaMethod mw in GetMethods())
                 {
                     mw.Link();
                 }
@@ -1450,7 +1450,7 @@ namespace IKVM.Runtime
 #endif
 
         // NOTE don't call this method, call MethodWrapper.Link instead
-        internal virtual MethodBase LinkMethod(MethodWrapper mw)
+        internal virtual MethodBase LinkMethod(RuntimeJavaMethod mw)
         {
             return mw.GetMethod();
         }
@@ -1472,7 +1472,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal virtual string GetGenericMethodSignature(MethodWrapper mw)
+        internal virtual string GetGenericMethodSignature(RuntimeJavaMethod mw)
         {
             return null;
         }
@@ -1482,7 +1482,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal virtual MethodParametersEntry[] GetMethodParameters(MethodWrapper mw)
+        internal virtual MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod mw)
         {
             return null;
         }
@@ -1498,12 +1498,12 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal virtual object[] GetMethodAnnotations(MethodWrapper mw)
+        internal virtual object[] GetMethodAnnotations(RuntimeJavaMethod mw)
         {
             return null;
         }
 
-        internal virtual object[][] GetParameterAnnotations(MethodWrapper mw)
+        internal virtual object[][] GetParameterAnnotations(RuntimeJavaMethod mw)
         {
             return null;
         }
@@ -1523,7 +1523,7 @@ namespace IKVM.Runtime
             return -1;
         }
 
-        internal virtual object GetAnnotationDefault(MethodWrapper mw)
+        internal virtual object GetAnnotationDefault(RuntimeJavaMethod mw)
         {
             MethodBase mb = mw.GetMethod();
             if (mb != null)
@@ -1666,7 +1666,7 @@ namespace IKVM.Runtime
 #if EXPORTER
             get { return false; }
 #else
-            get { return this is DynamicTypeWrapper; }
+            get { return this is RuntimeByteCodeJavaType; }
 #endif
         }
 
@@ -1680,7 +1680,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal virtual byte[] GetMethodRawTypeAnnotations(MethodWrapper mw)
+        internal virtual byte[] GetMethodRawTypeAnnotations(RuntimeJavaMethod mw)
         {
             return null;
         }

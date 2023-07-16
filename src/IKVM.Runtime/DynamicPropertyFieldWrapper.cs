@@ -48,11 +48,11 @@ namespace IKVM.Runtime
     sealed class DynamicPropertyFieldWrapper : RuntimeJavaField
     {
 
-        readonly MethodWrapper getter;
-        readonly MethodWrapper setter;
+        readonly RuntimeJavaMethod getter;
+        readonly RuntimeJavaMethod setter;
         PropertyBuilder pb;
 
-        MethodWrapper GetMethod(string name, string sig, bool isstatic)
+        RuntimeJavaMethod GetMethod(string name, string sig, bool isstatic)
         {
             if (name != null)
             {
