@@ -41,7 +41,7 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
         {
             using var mem = new MemoryStream();
 #if FIRST_PASS == false
-            StubGen.StubGenerator.WriteClass(mem, TypeWrapper.FromClass(c), true, true, true, true, false);
+            StubGen.StubGenerator.WriteClass(mem, RuntimeJavaType.FromClass(c), true, true, true, true, false);
 #endif
             return mem.ToArray();
         }
@@ -78,7 +78,7 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
 
         public static object LoadClassFromAssembly(Assembly asm, string className)
         {
-            TypeWrapper tw = AssemblyClassLoader.FromAssembly(asm).LoadClassByDottedNameFast(className);
+            RuntimeJavaType tw = AssemblyClassLoader.FromAssembly(asm).LoadClassByDottedNameFast(className);
             if (tw != null)
             {
                 return tw.ClassObject;

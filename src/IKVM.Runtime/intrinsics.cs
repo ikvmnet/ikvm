@@ -134,16 +134,16 @@ namespace IKVM.Runtime
         /// <param name="eic"></param>
         /// <param name="tw"></param>
         /// <returns></returns>
-        static void EmitArrayIndexScale(EmitIntrinsicContext eic, TypeWrapper tw)
+        static void EmitArrayIndexScale(EmitIntrinsicContext eic, RuntimeJavaType tw)
         {
             var et = tw.ElementTypeWrapper;
-            if (et == PrimitiveTypeWrapper.BYTE || et == PrimitiveTypeWrapper.BOOLEAN)
+            if (et == RuntimePrimitiveJavaType.BYTE || et == RuntimePrimitiveJavaType.BOOLEAN)
                 eic.Emitter.EmitLdc_I4(1);
-            else if (et == PrimitiveTypeWrapper.CHAR || et == PrimitiveTypeWrapper.SHORT)
+            else if (et == RuntimePrimitiveJavaType.CHAR || et == RuntimePrimitiveJavaType.SHORT)
                 eic.Emitter.EmitLdc_I4(2);
-            else if (et == PrimitiveTypeWrapper.INT || et == PrimitiveTypeWrapper.FLOAT)
+            else if (et == RuntimePrimitiveJavaType.INT || et == RuntimePrimitiveJavaType.FLOAT)
                 eic.Emitter.EmitLdc_I4(4);
-            else if (et == PrimitiveTypeWrapper.LONG || et == PrimitiveTypeWrapper.DOUBLE)
+            else if (et == RuntimePrimitiveJavaType.LONG || et == RuntimePrimitiveJavaType.DOUBLE)
                 eic.Emitter.EmitLdc_I4(8);
             else if (et.IsPrimitive == false && et.IsNonPrimitiveValueType)
                 eic.Emitter.Emit(OpCodes.Sizeof, et.TypeAsArrayType);
@@ -195,7 +195,7 @@ namespace IKVM.Runtime
                 && eic.Match(1, NormalizedByteCode.__ldc) && eic.GetConstantType(1) == ClassFile.ConstantType.Class
                 && (eic.Match(2, NormalizedByteCode.__if_acmpeq) || eic.Match(2, NormalizedByteCode.__if_acmpne)))
             {
-                TypeWrapper tw = eic.GetClassLiteral(1);
+                RuntimeJavaType tw = eic.GetClassLiteral(1);
                 if (tw.IsGhost || tw.IsGhostArray || tw.IsUnloadable || (tw.IsRemapped && tw.IsFinal && tw is DotNetTypeWrapper))
                 {
                     return false;
@@ -214,7 +214,7 @@ namespace IKVM.Runtime
             if (eic.MatchRange(-1, 2)
                 && eic.Match(-1, NormalizedByteCode.__ldc))
             {
-                TypeWrapper classLiteral = eic.GetClassLiteral(-1);
+                RuntimeJavaType classLiteral = eic.GetClassLiteral(-1);
                 if (!classLiteral.IsUnloadable && classLiteral.GetClassLoader().RemoveAsserts)
                 {
                     eic.Emitter.Emit(OpCodes.Pop);
@@ -225,7 +225,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-        private static bool IsSafeForGetClassOptimization(TypeWrapper tw)
+        private static bool IsSafeForGetClassOptimization(RuntimeJavaType tw)
         {
             // because of ghost arrays, we don't optimize if both types are either java.lang.Object or an array
             return tw != CoreClasses.java.lang.Object.Wrapper && !tw.IsArray;
@@ -462,11 +462,11 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
-        /// Returns true if the given <see cref="TypeWrapper"/> specifies an array type suitable for an unsafe operation.
+        /// Returns true if the given <see cref="RuntimeJavaType"/> specifies an array type suitable for an unsafe operation.
         /// </summary>
         /// <param name="tw"></param>
         /// <returns></returns>
-        internal static bool IsSupportedArrayTypeForUnsafeOperation(TypeWrapper tw)
+        internal static bool IsSupportedArrayTypeForUnsafeOperation(RuntimeJavaType tw)
         {
             return tw.IsArray && !tw.IsGhostArray && !tw.ElementTypeWrapper.IsPrimitive && !tw.ElementTypeWrapper.IsNonPrimitiveValueType;
         }
@@ -901,7 +901,7 @@ namespace IKVM.Runtime
             // 2 Object (obj)
             // 1 long (offset)
             // 0 int (delta)
-            TypeWrapper twUnsafe = eic.GetStackTypeWrapper(0, 3);
+            RuntimeJavaType twUnsafe = eic.GetStackTypeWrapper(0, 3);
             if (twUnsafe == VerifierTypeWrapper.Null)
             {
                 return false;

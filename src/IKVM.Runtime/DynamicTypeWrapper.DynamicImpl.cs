@@ -37,7 +37,7 @@ namespace IKVM.Runtime
 {
 
 #if IMPORTER
-    abstract partial class DynamicTypeWrapper : TypeWrapper
+    abstract partial class DynamicTypeWrapper : RuntimeJavaType
 #else
 #pragma warning disable 628 // don't complain about protected members in sealed type
     sealed partial class DynamicTypeWrapper
@@ -48,8 +48,8 @@ namespace IKVM.Runtime
         {
 
             internal abstract Type Type { get; }
-            internal abstract TypeWrapper[] InnerClasses { get; }
-            internal abstract TypeWrapper DeclaringTypeWrapper { get; }
+            internal abstract RuntimeJavaType[] InnerClasses { get; }
+            internal abstract RuntimeJavaType DeclaringTypeWrapper { get; }
             internal abstract Modifiers ReflectiveModifiers { get; }
             internal abstract DynamicImpl Finish();
             internal abstract MethodBase LinkMethod(MethodWrapper mw);
@@ -70,7 +70,7 @@ namespace IKVM.Runtime
             internal abstract byte[] GetRawTypeAnnotations();
             internal abstract byte[] GetMethodRawTypeAnnotations(int index);
             internal abstract byte[] GetFieldRawTypeAnnotations(int index);
-            internal abstract TypeWrapper Host { get; }
+            internal abstract RuntimeJavaType Host { get; }
 
         }
 

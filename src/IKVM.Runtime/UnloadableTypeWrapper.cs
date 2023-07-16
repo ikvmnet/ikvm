@@ -38,7 +38,7 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
-    sealed class UnloadableTypeWrapper : TypeWrapper
+    sealed class UnloadableTypeWrapper : RuntimeJavaType
     {
 
         internal const string ContainerTypeName = "__<Unloadable>";
@@ -50,7 +50,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="name"></param>
         internal UnloadableTypeWrapper(string name) :
-            base(TypeFlags.None, TypeWrapper.UnloadableModifiersHack, name)
+            base(TypeFlags.None, RuntimeJavaType.UnloadableModifiersHack, name)
         {
 
         }
@@ -67,14 +67,14 @@ namespace IKVM.Runtime
             this.customModifier = customModifier;
         }
 
-        internal override TypeWrapper BaseTypeWrapper => null;
+        internal override RuntimeJavaType BaseTypeWrapper => null;
 
         internal override ClassLoaderWrapper GetClassLoader()
         {
             return null;
         }
 
-        internal override TypeWrapper EnsureLoadable(ClassLoaderWrapper loader)
+        internal override RuntimeJavaType EnsureLoadable(ClassLoaderWrapper loader)
         {
             var tw = loader.LoadClassByDottedNameFast(this.Name);
             if (tw == null)
@@ -102,7 +102,7 @@ namespace IKVM.Runtime
 
         internal override Type TypeAsTBD => throw new InvalidOperationException("get_Type called on UnloadableTypeWrapper: " + Name);
 
-        internal override TypeWrapper[] Interfaces
+        internal override RuntimeJavaType[] Interfaces
         {
             get
             {
@@ -110,7 +110,7 @@ namespace IKVM.Runtime
                 if (missingType != null)
                 {
                     StaticCompiler.IssueMissingTypeMessage(missingType);
-                    return TypeWrapper.EmptyArray;
+                    return RuntimeJavaType.EmptyArray;
                 }
 #endif
 
@@ -118,9 +118,9 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override TypeWrapper[] InnerClasses => throw new InvalidOperationException("get_InnerClasses called on UnloadableTypeWrapper: " + Name);
+        internal override RuntimeJavaType[] InnerClasses => throw new InvalidOperationException("get_InnerClasses called on UnloadableTypeWrapper: " + Name);
 
-        internal override TypeWrapper DeclaringTypeWrapper => throw new InvalidOperationException("get_DeclaringTypeWrapper called on UnloadableTypeWrapper: " + Name);
+        internal override RuntimeJavaType DeclaringTypeWrapper => throw new InvalidOperationException("get_DeclaringTypeWrapper called on UnloadableTypeWrapper: " + Name);
 
         internal override void Finish()
         {

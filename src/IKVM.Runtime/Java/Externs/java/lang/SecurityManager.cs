@@ -69,7 +69,7 @@ namespace IKVM.Java.Externs.java.lang
         {
             var currentClass = currentLoadedClass0(thisSecurityManager);
             if (currentClass != null)
-                return TypeWrapper.FromClass(currentClass).GetClassLoader().GetJavaClassLoader();
+                return RuntimeJavaType.FromClass(currentClass).GetClassLoader().GetJavaClassLoader();
 
             return null;
         }

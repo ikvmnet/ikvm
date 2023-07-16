@@ -47,7 +47,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Represents an intrinsified anonymous class. Currently only used by LambdaMetafactory.
     /// </summary>
-    sealed class AnonymousTypeWrapper : TypeWrapper
+    sealed class AnonymousTypeWrapper : RuntimeJavaType
     {
 
         readonly Type type;
@@ -85,20 +85,20 @@ namespace IKVM.Runtime
             get { return type; }
         }
 
-        internal override TypeWrapper BaseTypeWrapper
+        internal override RuntimeJavaType BaseTypeWrapper
         {
             get { return CoreClasses.java.lang.Object.Wrapper; }
         }
 
-        internal override TypeWrapper[] Interfaces
+        internal override RuntimeJavaType[] Interfaces
         {
             get
             {
-                TypeWrapper[] interfaces = GetImplementedInterfacesAsTypeWrappers(type);
+                RuntimeJavaType[] interfaces = GetImplementedInterfacesAsTypeWrappers(type);
                 if (type.IsSerializable)
                 {
                     // we have to remove the System.Runtime.Serialization.ISerializable interface
-                    List<TypeWrapper> list = new List<TypeWrapper>(interfaces);
+                    List<RuntimeJavaType> list = new List<RuntimeJavaType>(interfaces);
                     list.RemoveAll(Serialization.IsISerializable);
                     return list.ToArray();
                 }
@@ -117,15 +117,15 @@ namespace IKVM.Runtime
                 }
                 else if (mi.IsPublic)
                 {
-                    TypeWrapper returnType;
-                    TypeWrapper[] parameterTypes;
+                    RuntimeJavaType returnType;
+                    RuntimeJavaType[] parameterTypes;
                     string signature;
                     GetSig(mi, out returnType, out parameterTypes, out signature);
                     methods.Add(new TypicalMethodWrapper(this, mi.Name, signature, mi, returnType, parameterTypes, Modifiers.Public, MemberFlags.None));
                 }
                 else if (mi.Name == "writeReplace")
                 {
-                    methods.Add(new TypicalMethodWrapper(this, "writeReplace", "()Ljava.lang.Object;", mi, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray,
+                    methods.Add(new TypicalMethodWrapper(this, "writeReplace", "()Ljava.lang.Object;", mi, CoreClasses.java.lang.Object.Wrapper, RuntimeJavaType.EmptyArray,
                         Modifiers.Private | Modifiers.Final, MemberFlags.None));
                 }
             }
@@ -133,17 +133,17 @@ namespace IKVM.Runtime
             List<FieldWrapper> fields = new List<FieldWrapper>();
             foreach (FieldInfo fi in type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
-                TypeWrapper fieldType = CompiledTypeWrapper.GetFieldTypeWrapper(fi);
+                RuntimeJavaType fieldType = CompiledTypeWrapper.GetFieldTypeWrapper(fi);
                 fields.Add(new SimpleFieldWrapper(this, fieldType, fi, fi.Name, fieldType.SigName, new ExModifiers(Modifiers.Private | Modifiers.Final, false)));
             }
             SetFields(fields.ToArray());
         }
 
-        private void GetSig(MethodInfo mi, out TypeWrapper returnType, out TypeWrapper[] parameterTypes, out string signature)
+        private void GetSig(MethodInfo mi, out RuntimeJavaType returnType, out RuntimeJavaType[] parameterTypes, out string signature)
         {
             returnType = CompiledTypeWrapper.GetParameterTypeWrapper(mi.ReturnParameter);
             ParameterInfo[] parameters = mi.GetParameters();
-            parameterTypes = new TypeWrapper[parameters.Length];
+            parameterTypes = new RuntimeJavaType[parameters.Length];
             System.Text.StringBuilder sb = new System.Text.StringBuilder("(");
             for (int i = 0; i < parameters.Length; i++)
             {

@@ -123,7 +123,7 @@ namespace IKVM.Java.Externs.sun.reflect
         public static int getClassAccessFlags(global::java.lang.Class clazz)
         {
             // the mask comes from JVM_RECOGNIZED_CLASS_MODIFIERS in src/hotspot/share/vm/prims/jvm.h
-            int mods = (int)TypeWrapper.FromClass(clazz).Modifiers & 0x7631;
+            int mods = (int)RuntimeJavaType.FromClass(clazz).Modifiers & 0x7631;
             // interface implies abstract
             mods |= (mods & 0x0200) << 1;
             return mods;
@@ -131,8 +131,8 @@ namespace IKVM.Java.Externs.sun.reflect
 
         public static bool checkInternalAccess(global::java.lang.Class currentClass, global::java.lang.Class memberClass)
         {
-            var current = TypeWrapper.FromClass(currentClass);
-            var member = TypeWrapper.FromClass(memberClass);
+            var current = RuntimeJavaType.FromClass(currentClass);
+            var member = RuntimeJavaType.FromClass(memberClass);
             return member.IsInternal && member.InternalsVisibleTo(current);
         }
 

@@ -2659,7 +2659,7 @@ namespace IKVM.Runtime
 
         internal void EmitThrow(string dottedClassName)
         {
-            TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
+            RuntimeJavaType exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
             MethodWrapper mw = exception.GetMethodWrapper("<init>", "()V", false);
             mw.Link();
             mw.EmitNewobj(this);
@@ -2668,7 +2668,7 @@ namespace IKVM.Runtime
 
         internal void EmitThrow(string dottedClassName, string message)
         {
-            TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
+            RuntimeJavaType exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
             Emit(OpCodes.Ldstr, message);
             MethodWrapper mw = exception.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
             mw.Link();

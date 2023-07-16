@@ -63,7 +63,7 @@ namespace IKVM.Java.Externs.java.lang
             if (name == null)
                 throw new global::java.lang.NullPointerException();
 
-            TypeWrapper tw = null;
+            RuntimeJavaType tw = null;
             if (name.IndexOf(',') > 0)
             {
                 // we essentially require full trust before allowing arbitrary types to be loaded,
@@ -130,7 +130,7 @@ namespace IKVM.Java.Externs.java.lang
         /// <returns></returns>
         public static byte[] getRawTypeAnnotations(global::java.lang.Class thisClass)
         {
-            return TypeWrapper.FromClass(thisClass).GetRawTypeAnnotations();
+            return RuntimeJavaType.FromClass(thisClass).GetRawTypeAnnotations();
         }
 
 #if !FIRST_PASS
@@ -183,7 +183,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return new ConstantPoolImpl(TypeWrapper.FromClass(self).GetConstantPool());
+            return new ConstantPoolImpl(RuntimeJavaType.FromClass(self).GetConstantPool());
 #endif
         }
 
@@ -195,7 +195,7 @@ namespace IKVM.Java.Externs.java.lang
         /// <returns></returns>
         public static bool isInstance(global::java.lang.Class self, object obj)
         {
-            return TypeWrapper.FromClass(self).IsInstance(obj);
+            return RuntimeJavaType.FromClass(self).IsInstance(obj);
         }
 
         /// <summary>
@@ -213,7 +213,7 @@ namespace IKVM.Java.Externs.java.lang
             if (otherClass == null)
                 throw new global::java.lang.NullPointerException();
 #endif
-            return TypeWrapper.FromClass(otherClass).IsAssignableTo(TypeWrapper.FromClass(self));
+            return RuntimeJavaType.FromClass(otherClass).IsAssignableTo(RuntimeJavaType.FromClass(self));
         }
 
         /// <summary>
@@ -223,41 +223,41 @@ namespace IKVM.Java.Externs.java.lang
         /// <returns></returns>
         public static bool isInterface(global::java.lang.Class self)
         {
-            return TypeWrapper.FromClass(self).IsInterface;
+            return RuntimeJavaType.FromClass(self).IsInterface;
         }
 
         public static bool isArray(global::java.lang.Class thisClass)
         {
-            return TypeWrapper.FromClass(thisClass).IsArray;
+            return RuntimeJavaType.FromClass(thisClass).IsArray;
         }
 
         public static bool isPrimitive(global::java.lang.Class thisClass)
         {
-            return TypeWrapper.FromClass(thisClass).IsPrimitive;
+            return RuntimeJavaType.FromClass(thisClass).IsPrimitive;
         }
 
         public static string getName0(global::java.lang.Class thisClass)
         {
-            var tw = TypeWrapper.FromClass(thisClass);
+            var tw = RuntimeJavaType.FromClass(thisClass);
             if (tw.IsPrimitive)
             {
-                if (tw == PrimitiveTypeWrapper.BYTE)
+                if (tw == RuntimePrimitiveJavaType.BYTE)
                     return "byte";
-                else if (tw == PrimitiveTypeWrapper.CHAR)
+                else if (tw == RuntimePrimitiveJavaType.CHAR)
                     return "char";
-                else if (tw == PrimitiveTypeWrapper.DOUBLE)
+                else if (tw == RuntimePrimitiveJavaType.DOUBLE)
                     return "double";
-                else if (tw == PrimitiveTypeWrapper.FLOAT)
+                else if (tw == RuntimePrimitiveJavaType.FLOAT)
                     return "float";
-                else if (tw == PrimitiveTypeWrapper.INT)
+                else if (tw == RuntimePrimitiveJavaType.INT)
                     return "int";
-                else if (tw == PrimitiveTypeWrapper.LONG)
+                else if (tw == RuntimePrimitiveJavaType.LONG)
                     return "long";
-                else if (tw == PrimitiveTypeWrapper.SHORT)
+                else if (tw == RuntimePrimitiveJavaType.SHORT)
                     return "short";
-                else if (tw == PrimitiveTypeWrapper.BOOLEAN)
+                else if (tw == RuntimePrimitiveJavaType.BOOLEAN)
                     return "boolean";
-                else if (tw == PrimitiveTypeWrapper.VOID)
+                else if (tw == RuntimePrimitiveJavaType.VOID)
                     return "void";
             }
 
@@ -274,17 +274,17 @@ namespace IKVM.Java.Externs.java.lang
 
         public static string getSigName(global::java.lang.Class thisClass)
         {
-            return TypeWrapper.FromClass(thisClass).SigName;
+            return RuntimeJavaType.FromClass(thisClass).SigName;
         }
 
         public static global::java.lang.ClassLoader getClassLoader0(global::java.lang.Class thisClass)
         {
-            return TypeWrapper.FromClass(thisClass).GetClassLoader().GetJavaClassLoader();
+            return RuntimeJavaType.FromClass(thisClass).GetClassLoader().GetJavaClassLoader();
         }
 
         public static global::java.lang.Class getSuperclass(global::java.lang.Class thisClass)
         {
-            var super = TypeWrapper.FromClass(thisClass).BaseTypeWrapper;
+            var super = RuntimeJavaType.FromClass(thisClass).BaseTypeWrapper;
             return super != null ? super.ClassObject : null;
         }
 
@@ -293,7 +293,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var ifaces = TypeWrapper.FromClass(thisClass).Interfaces;
+            var ifaces = RuntimeJavaType.FromClass(thisClass).Interfaces;
             var interfaces = new global::java.lang.Class[ifaces.Length];
             for (int i = 0; i < ifaces.Length; i++)
                 interfaces[i] = ifaces[i].ClassObject;
@@ -304,7 +304,7 @@ namespace IKVM.Java.Externs.java.lang
 
         public static global::java.lang.Class getComponentType(global::java.lang.Class thisClass)
         {
-            var tw = TypeWrapper.FromClass(thisClass);
+            var tw = RuntimeJavaType.FromClass(thisClass);
             return tw.IsArray ? tw.ElementTypeWrapper.ClassObject : null;
         }
 
@@ -313,7 +313,7 @@ namespace IKVM.Java.Externs.java.lang
             // the 0x7FFF mask comes from JVM_ACC_WRITTEN_FLAGS in hotspot\src\share\vm\utilities\accessFlags.hpp
             // masking out ACC_SUPER comes from instanceKlass::compute_modifier_flags() in hotspot\src\share\vm\oops\instanceKlass.cpp
             const int mask = 0x7FFF & (int)~IKVM.Attributes.Modifiers.Super;
-            return (int)TypeWrapper.FromClass(thisClass).ReflectiveModifiers & mask;
+            return (int)RuntimeJavaType.FromClass(thisClass).ReflectiveModifiers & mask;
         }
 
         public static object[] getSigners(global::java.lang.Class thisClass)
@@ -336,7 +336,7 @@ namespace IKVM.Java.Externs.java.lang
         {
             try
             {
-                var tw = TypeWrapper.FromClass(thisClass);
+                var tw = RuntimeJavaType.FromClass(thisClass);
                 tw.Finish();
                 var enc = tw.GetEnclosingMethod();
                 if (enc == null)
@@ -354,7 +354,7 @@ namespace IKVM.Java.Externs.java.lang
         {
             try
             {
-                var wrapper = TypeWrapper.FromClass(thisClass);
+                var wrapper = RuntimeJavaType.FromClass(thisClass);
                 wrapper.Finish();
                 var decl = wrapper.DeclaringTypeWrapper;
                 if (decl == null)
@@ -365,7 +365,7 @@ namespace IKVM.Java.Externs.java.lang
                     throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", decl.Name, wrapper.Name));
 
                 decl.Finish();
-                TypeWrapper[] declInner = decl.InnerClasses;
+                RuntimeJavaType[] declInner = decl.InnerClasses;
                 for (int i = 0; i < declInner.Length; i++)
                 {
                     if (declInner[i].Name == wrapper.Name && declInner[i].EnsureLoadable(decl.GetClassLoader()) == wrapper)
@@ -386,7 +386,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var wrapper = TypeWrapper.FromClass(thisClass);
+            var wrapper = RuntimeJavaType.FromClass(thisClass);
             if (wrapper.IsArray)
                 return null;
 
@@ -421,21 +421,21 @@ namespace IKVM.Java.Externs.java.lang
         /// <exception cref="ArgumentException"></exception>
         public static global::java.lang.Class getPrimitiveClass(string name) => name switch
         {
-            "byte" => PrimitiveTypeWrapper.BYTE.ClassObject,
-            "char" => PrimitiveTypeWrapper.CHAR.ClassObject,
-            "double" => PrimitiveTypeWrapper.DOUBLE.ClassObject,
-            "float" => PrimitiveTypeWrapper.FLOAT.ClassObject,
-            "int" => PrimitiveTypeWrapper.INT.ClassObject,
-            "long" => PrimitiveTypeWrapper.LONG.ClassObject,
-            "short" => PrimitiveTypeWrapper.SHORT.ClassObject,
-            "boolean" => PrimitiveTypeWrapper.BOOLEAN.ClassObject,
-            "void" => PrimitiveTypeWrapper.VOID.ClassObject,
+            "byte" => RuntimePrimitiveJavaType.BYTE.ClassObject,
+            "char" => RuntimePrimitiveJavaType.CHAR.ClassObject,
+            "double" => RuntimePrimitiveJavaType.DOUBLE.ClassObject,
+            "float" => RuntimePrimitiveJavaType.FLOAT.ClassObject,
+            "int" => RuntimePrimitiveJavaType.INT.ClassObject,
+            "long" => RuntimePrimitiveJavaType.LONG.ClassObject,
+            "short" => RuntimePrimitiveJavaType.SHORT.ClassObject,
+            "boolean" => RuntimePrimitiveJavaType.BOOLEAN.ClassObject,
+            "void" => RuntimePrimitiveJavaType.VOID.ClassObject,
             _ => throw new ArgumentException(name),
         };
 
         public static string getGenericSignature0(global::java.lang.Class thisClass)
         {
-            TypeWrapper tw = TypeWrapper.FromClass(thisClass);
+            RuntimeJavaType tw = RuntimeJavaType.FromClass(thisClass);
             tw.Finish();
             return tw.GetGenericSignature();
         }
@@ -492,7 +492,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             return null;
 #else
-            TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
+            RuntimeJavaType wrapper = RuntimeJavaType.FromClass(thisClass);
             try
             {
                 wrapper.Finish();
@@ -513,7 +513,7 @@ namespace IKVM.Java.Externs.java.lang
             Profiler.Enter("Class.getDeclaredFields0");
             try
             {
-                TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
+                RuntimeJavaType wrapper = RuntimeJavaType.FromClass(thisClass);
                 // we need to finish the type otherwise all fields will not be in the field map yet
                 wrapper.Finish();
                 FieldWrapper[] fields = wrapper.GetFields();
@@ -554,7 +554,7 @@ namespace IKVM.Java.Externs.java.lang
             Profiler.Enter("Class.getDeclaredMethods0");
             try
             {
-                TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
+                RuntimeJavaType wrapper = RuntimeJavaType.FromClass(thisClass);
                 wrapper.Finish();
                 if (wrapper.HasVerifyError)
                 {
@@ -601,7 +601,7 @@ namespace IKVM.Java.Externs.java.lang
             Profiler.Enter("Class.getDeclaredConstructors0");
             try
             {
-                TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
+                RuntimeJavaType wrapper = RuntimeJavaType.FromClass(thisClass);
                 wrapper.Finish();
                 if (wrapper.HasVerifyError)
                 {
@@ -646,14 +646,14 @@ namespace IKVM.Java.Externs.java.lang
 #else
             try
             {
-                TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
+                RuntimeJavaType wrapper = RuntimeJavaType.FromClass(thisClass);
                 // NOTE to get at the InnerClasses we need to finish the type
                 wrapper.Finish();
-                TypeWrapper[] wrappers = wrapper.InnerClasses;
+                RuntimeJavaType[] wrappers = wrapper.InnerClasses;
                 global::java.lang.Class[] innerclasses = new global::java.lang.Class[wrappers.Length];
                 for (int i = 0; i < innerclasses.Length; i++)
                 {
-                    TypeWrapper tw = wrappers[i].EnsureLoadable(wrapper.GetClassLoader());
+                    RuntimeJavaType tw = wrappers[i].EnsureLoadable(wrapper.GetClassLoader());
                     if (!tw.IsAccessibleFrom(wrapper))
                     {
                         throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", tw.Name, wrapper.Name));
@@ -672,7 +672,7 @@ namespace IKVM.Java.Externs.java.lang
 
         public static bool desiredAssertionStatus0(global::java.lang.Class clazz)
         {
-            return IKVM.Runtime.Assertions.IsEnabled(TypeWrapper.FromClass(clazz));
+            return IKVM.Runtime.Assertions.IsEnabled(RuntimeJavaType.FromClass(clazz));
         }
 
     }

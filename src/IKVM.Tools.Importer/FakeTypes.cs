@@ -66,7 +66,7 @@ namespace IKVM.Tools.Importer
 
 		internal static void Create(ModuleBuilder modb, ClassLoaderWrapper loader)
 		{
-			TypeBuilder tb = modb.DefineType(DotNetTypeWrapper.GenericDelegateInterfaceTypeName, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
+			var tb = modb.DefineType(DotNetTypeWrapper.GenericDelegateInterfaceTypeName, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
 			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(Types.MulticastDelegate);
 			genericDelegateInterfaceType = tb.CreateType();
 
@@ -78,11 +78,11 @@ namespace IKVM.Tools.Importer
 
 		internal static void Finish(ClassLoaderWrapper loader)
 		{
-			TypeBuilder tb = (TypeBuilder)genericEnumEnumType;
-			TypeWrapper enumTypeWrapper = loader.LoadClassByDottedName("java.lang.Enum");
+			var tb = (TypeBuilder)genericEnumEnumType;
+			var enumTypeWrapper = loader.LoadClassByDottedName("java.lang.Enum");
 			enumTypeWrapper.Finish();
 			tb.SetParent(enumTypeWrapper.TypeAsBaseType);
-			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Private, new Type[] { Types.String, Types.Int32 }));
+			var ilgen = CodeEmitter.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Private, new Type[] { Types.String, Types.Int32 }));
 			ilgen.Emit(OpCodes.Ldarg_0);
 			ilgen.Emit(OpCodes.Ldarg_1);
 			ilgen.Emit(OpCodes.Ldarg_2);
@@ -94,15 +94,15 @@ namespace IKVM.Tools.Importer
 
 		private static void CreateEnumEnum(ModuleBuilder modb, ClassLoaderWrapper loader)
 		{
-			TypeBuilder tb = modb.DefineType(DotNetTypeWrapper.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public);
-			GenericTypeParameterBuilder gtpb = tb.DefineGenericParameters("T")[0];
+			var tb = modb.DefineType(DotNetTypeWrapper.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public);
+			var gtpb = tb.DefineGenericParameters("T")[0];
 			gtpb.SetBaseTypeConstraint(Types.Enum);
 			genericEnumEnumType = tb;
 		}
 
 		private static Type CreateAnnotationType(ModuleBuilder modb, string name)
 		{
-			TypeBuilder tb = modb.DefineType(name, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
+			var tb = modb.DefineType(name, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
 			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(Types.Attribute);
 			return tb.CreateType();
 		}
@@ -115,5 +115,7 @@ namespace IKVM.Tools.Importer
 			genericAttributeAnnotationMultipleType = assembly.GetType(DotNetTypeWrapper.GenericAttributeAnnotationMultipleTypeName);
 			genericAttributeAnnotationReturnValueType = assembly.GetType(DotNetTypeWrapper.GenericAttributeAnnotationReturnValueTypeName);
 		}
+
 	}
+
 }

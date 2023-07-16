@@ -54,7 +54,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal GhostMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, MethodInfo ghostMethod, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal GhostMethodWrapper(RuntimeJavaType declaringType, string name, string sig, MethodBase method, MethodInfo ghostMethod, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
         {
             // make sure we weren't handed the ghostMethod in the wrapper value type

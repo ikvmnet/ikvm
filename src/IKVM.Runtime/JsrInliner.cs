@@ -385,10 +385,10 @@ namespace IKVM.Runtime
 				{
 					thisType = null;
 				}
-				TypeWrapper[] argTypeWrappers = mw.GetParameters();
+				RuntimeJavaType[] argTypeWrappers = mw.GetParameters();
 				for (int i = 0; i < argTypeWrappers.Length; i++)
 				{
-					TypeWrapper tw = argTypeWrappers[i];
+					RuntimeJavaType tw = argTypeWrappers[i];
 					SimpleType type;
 					if (tw.IsWidePrimitive)
 					{

@@ -36,7 +36,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
         // called from map.xml as a replacement for Class.isInstance() in JlInvoke.MethodHandleImpl.castReference()
         public static bool Class_isInstance(global::java.lang.Class clazz, object obj)
         {
-            var tw = TypeWrapper.FromClass(clazz);
+            var tw = RuntimeJavaType.FromClass(clazz);
             // handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
             return tw.IsInstance(obj) || (tw == CoreClasses.cli.System.Object.Wrapper && obj is Array);
         }
@@ -116,7 +116,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
                 {
                     parameters1[i] = mw.GetParameters()[i].ClassObject;
                 }
-                global::java.lang.invoke.MethodType mt = global::java.lang.invoke.MethodType.methodType(PrimitiveTypeWrapper.VOID.ClassObject, parameters1);
+                global::java.lang.invoke.MethodType mt = global::java.lang.invoke.MethodType.methodType(RuntimePrimitiveJavaType.VOID.ClassObject, parameters1);
                 self._type(mt);
                 self._flags(flags);
                 self._clazz(mw.DeclaringType.ClassObject);
@@ -214,12 +214,12 @@ namespace IKVM.Java.Externs.java.lang.invoke
             bool invokeSpecial = self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeSpecial;
             bool newInvokeSpecial = self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_newInvokeSpecial;
             bool searchBaseClasses = !newInvokeSpecial;
-            MethodWrapper mw = TypeWrapper.FromClass(self.getDeclaringClass()).GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), searchBaseClasses);
+            MethodWrapper mw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), searchBaseClasses);
             if (mw == null)
             {
                 if (self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeInterface)
                 {
-                    mw = TypeWrapper.FromClass(self.getDeclaringClass()).GetInterfaceMethod(self.getName(), self.getSignature().Replace('/', '.'));
+                    mw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetInterfaceMethod(self.getName(), self.getSignature().Replace('/', '.'));
                     if (mw == null)
                     {
                         mw = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), false);
@@ -282,7 +282,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 
         private static void ResolveField(global::java.lang.invoke.MemberName self)
         {
-            FieldWrapper fw = TypeWrapper.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
+            FieldWrapper fw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
             if (fw == null)
             {
                 throw new global::java.lang.NoSuchFieldError(self.getName());
@@ -349,7 +349,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
             // HACK this code is duplicated in compiler.cs
             if (mw.IsFinalizeOrClone)
             {
-                TypeWrapper thisType = TypeWrapper.FromClass(caller);
+                RuntimeJavaType thisType = RuntimeJavaType.FromClass(caller);
                 // HACK we may need to redirect finalize or clone from java.lang.Object/Throwable
                 // to a more specific base type.
                 if (thisType.IsAssignableTo(CoreClasses.cli.System.Object.Wrapper))
@@ -365,7 +365,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
                     mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
                 }
             }
-            TypeWrapper tw = mw.DeclaringType;
+            RuntimeJavaType tw = mw.DeclaringType;
             tw.Finish();
             mw.Link();
             mw.ResolveMethod();
@@ -394,7 +394,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
             if (matchName != null || matchSig != null || matchFlags != global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD)
                 throw new NotImplementedException();
 
-            var methods = TypeWrapper.FromClass(defc).GetMethods();
+            var methods = RuntimeJavaType.FromClass(defc).GetMethods();
             for (int i = skip, len = Math.Min(results.Length, methods.Length - skip); i < len; i++)
                 if (!methods[i].IsConstructor && !methods[i].IsClassInitializer)
                     results[i - skip] = new global::java.lang.invoke.MemberName((global::java.lang.reflect.Method)methods[i].ToMethodOrConstructor(true), false);
@@ -414,7 +414,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var fw = TypeWrapper.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
+            var fw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
             if (fw.IsStatic)
                 throw new global::java.lang.IllegalArgumentException();
 
@@ -433,7 +433,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var fw = TypeWrapper.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
+            var fw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
             if (fw.IsStatic == false)
                 throw new global::java.lang.IllegalArgumentException();
 
@@ -452,7 +452,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var fw = TypeWrapper.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
+            var fw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
             if (fw.IsStatic == false)
                 throw new global::java.lang.IllegalArgumentException();
 

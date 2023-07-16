@@ -54,31 +54,31 @@ namespace IKVM.Java.Externs.sun.reflect
 
 #if !FIRST_PASS
 
-        static object ConvertPrimitive(TypeWrapper tw, object value)
+        static object ConvertPrimitive(RuntimeJavaType tw, object value)
         {
-            if (tw == PrimitiveTypeWrapper.BOOLEAN)
+            if (tw == RuntimePrimitiveJavaType.BOOLEAN)
             {
                 if (value is global::java.lang.Boolean boolean)
                     return boolean.booleanValue();
             }
-            else if (tw == PrimitiveTypeWrapper.BYTE)
+            else if (tw == RuntimePrimitiveJavaType.BYTE)
             {
                 if (value is global::java.lang.Byte @byte)
                     return @byte.byteValue();
             }
-            else if (tw == PrimitiveTypeWrapper.CHAR)
+            else if (tw == RuntimePrimitiveJavaType.CHAR)
             {
                 if (value is global::java.lang.Character character)
                     return character.charValue();
             }
-            else if (tw == PrimitiveTypeWrapper.SHORT)
+            else if (tw == RuntimePrimitiveJavaType.SHORT)
             {
                 if (value is global::java.lang.Short || value is global::java.lang.Byte)
                 {
                     return ((global::java.lang.Number)value).shortValue();
                 }
             }
-            else if (tw == PrimitiveTypeWrapper.INT)
+            else if (tw == RuntimePrimitiveJavaType.INT)
             {
                 if (value is global::java.lang.Integer || value is global::java.lang.Short || value is global::java.lang.Byte)
                 {
@@ -89,7 +89,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     return (int)((global::java.lang.Character)value).charValue();
                 }
             }
-            else if (tw == PrimitiveTypeWrapper.LONG)
+            else if (tw == RuntimePrimitiveJavaType.LONG)
             {
                 if (value is global::java.lang.Long || value is global::java.lang.Integer || value is global::java.lang.Short || value is global::java.lang.Byte)
                 {
@@ -100,7 +100,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     return (long)((global::java.lang.Character)value).charValue();
                 }
             }
-            else if (tw == PrimitiveTypeWrapper.FLOAT)
+            else if (tw == RuntimePrimitiveJavaType.FLOAT)
             {
                 if (value is global::java.lang.Float || value is global::java.lang.Long || value is global::java.lang.Integer || value is global::java.lang.Short || value is global::java.lang.Byte)
                 {
@@ -111,7 +111,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     return (float)((global::java.lang.Character)value).charValue();
                 }
             }
-            else if (tw == PrimitiveTypeWrapper.DOUBLE)
+            else if (tw == RuntimePrimitiveJavaType.DOUBLE)
             {
                 if (value is global::java.lang.Double || value is global::java.lang.Float || value is global::java.lang.Long || value is global::java.lang.Integer || value is global::java.lang.Short || value is global::java.lang.Byte)
                 {
@@ -125,7 +125,7 @@ namespace IKVM.Java.Externs.sun.reflect
             throw new global::java.lang.IllegalArgumentException();
         }
 
-        static object[] ConvertArgs(ClassLoaderWrapper loader, TypeWrapper[] argumentTypes, object[] args)
+        static object[] ConvertArgs(ClassLoaderWrapper loader, RuntimeJavaType[] argumentTypes, object[] args)
         {
             var nargs = new object[args == null ? 0 : args.Length];
             if (nargs.Length != argumentTypes.Length)
@@ -196,7 +196,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     throw new global::java.lang.reflect.InvocationTargetException(global::ikvm.runtime.Util.mapException(e));
                 }
 
-                if (mw.ReturnType.IsPrimitive && mw.ReturnType != PrimitiveTypeWrapper.VOID)
+                if (mw.ReturnType.IsPrimitive && mw.ReturnType != RuntimePrimitiveJavaType.VOID)
                     retval = JVM.Box(retval);
                 else
                     retval = mw.ReturnType.GhostUnwrap(retval);
@@ -249,7 +249,7 @@ namespace IKVM.Java.Externs.sun.reflect
             /// <param name="classToInstantiate"></param>
             internal SerializationConstructorAccessorImpl(global::java.lang.reflect.Constructor constructorToCall, global::java.lang.Class classToInstantiate)
             {
-                this.type = TypeWrapper.FromClass(classToInstantiate).TypeAsBaseType;
+                this.type = RuntimeJavaType.FromClass(classToInstantiate).TypeAsBaseType;
                 var mw = MethodWrapper.FromExecutable(constructorToCall);
                 if (mw.DeclaringType != CoreClasses.java.lang.Object.Wrapper)
                 {
@@ -294,28 +294,28 @@ namespace IKVM.Java.Externs.sun.reflect
             static readonly MethodInfo longValue = typeof(global::java.lang.Long).GetMethod("longValue", Type.EmptyTypes);
             static readonly MethodInfo doubleValue = typeof(global::java.lang.Double).GetMethod("doubleValue", Type.EmptyTypes);
 
-            internal static void EmitUnboxArg(CodeEmitter ilgen, TypeWrapper type)
+            internal static void EmitUnboxArg(CodeEmitter ilgen, RuntimeJavaType type)
             {
-                if (type == PrimitiveTypeWrapper.BYTE)
+                if (type == RuntimePrimitiveJavaType.BYTE)
                 {
                     ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Byte));
                     ilgen.Emit(OpCodes.Call, byteValue);
                 }
-                else if (type == PrimitiveTypeWrapper.BOOLEAN)
+                else if (type == RuntimePrimitiveJavaType.BOOLEAN)
                 {
                     ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Boolean));
                     ilgen.Emit(OpCodes.Call, booleanValue);
                 }
-                else if (type == PrimitiveTypeWrapper.CHAR)
+                else if (type == RuntimePrimitiveJavaType.CHAR)
                 {
                     ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Character));
                     ilgen.Emit(OpCodes.Call, charValue);
                 }
-                else if (type == PrimitiveTypeWrapper.SHORT
-                    || type == PrimitiveTypeWrapper.INT
-                    || type == PrimitiveTypeWrapper.FLOAT
-                    || type == PrimitiveTypeWrapper.LONG
-                    || type == PrimitiveTypeWrapper.DOUBLE)
+                else if (type == RuntimePrimitiveJavaType.SHORT
+                    || type == RuntimePrimitiveJavaType.INT
+                    || type == RuntimePrimitiveJavaType.FLOAT
+                    || type == RuntimePrimitiveJavaType.LONG
+                    || type == RuntimePrimitiveJavaType.DOUBLE)
                 {
                     ilgen.Emit(OpCodes.Dup);
                     ilgen.Emit(OpCodes.Isinst, typeof(global::java.lang.Byte));
@@ -328,7 +328,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     CodeEmitterLabel done = ilgen.DefineLabel();
                     ilgen.EmitBr(done);
                     ilgen.MarkLabel(next);
-                    if (type == PrimitiveTypeWrapper.SHORT)
+                    if (type == RuntimePrimitiveJavaType.SHORT)
                     {
                         ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Short));
                         ilgen.Emit(OpCodes.Call, shortValue);
@@ -353,7 +353,7 @@ namespace IKVM.Java.Externs.sun.reflect
                         Expand(ilgen, type);
                         ilgen.EmitBr(done);
                         ilgen.MarkLabel(next);
-                        if (type == PrimitiveTypeWrapper.INT)
+                        if (type == RuntimePrimitiveJavaType.INT)
                         {
                             ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Integer));
                             ilgen.Emit(OpCodes.Call, intValue);
@@ -369,7 +369,7 @@ namespace IKVM.Java.Externs.sun.reflect
                             Expand(ilgen, type);
                             ilgen.EmitBr(done);
                             ilgen.MarkLabel(next);
-                            if (type == PrimitiveTypeWrapper.LONG)
+                            if (type == RuntimePrimitiveJavaType.LONG)
                             {
                                 ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Long));
                                 ilgen.Emit(OpCodes.Call, longValue);
@@ -385,12 +385,12 @@ namespace IKVM.Java.Externs.sun.reflect
                                 Expand(ilgen, type);
                                 ilgen.EmitBr(done);
                                 ilgen.MarkLabel(next);
-                                if (type == PrimitiveTypeWrapper.FLOAT)
+                                if (type == RuntimePrimitiveJavaType.FLOAT)
                                 {
                                     ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Float));
                                     ilgen.Emit(OpCodes.Call, floatValue);
                                 }
-                                else if (type == PrimitiveTypeWrapper.DOUBLE)
+                                else if (type == RuntimePrimitiveJavaType.DOUBLE)
                                 {
                                     ilgen.Emit(OpCodes.Dup);
                                     ilgen.Emit(OpCodes.Isinst, typeof(global::java.lang.Float));
@@ -418,57 +418,57 @@ namespace IKVM.Java.Externs.sun.reflect
                 }
             }
 
-            internal static void BoxReturnValue(CodeEmitter ilgen, TypeWrapper type)
+            internal static void BoxReturnValue(CodeEmitter ilgen, RuntimeJavaType type)
             {
-                if (type == PrimitiveTypeWrapper.VOID)
+                if (type == RuntimePrimitiveJavaType.VOID)
                 {
                     ilgen.Emit(OpCodes.Ldnull);
                 }
-                else if (type == PrimitiveTypeWrapper.BYTE)
+                else if (type == RuntimePrimitiveJavaType.BYTE)
                 {
                     ilgen.Emit(OpCodes.Call, valueOfByte);
                 }
-                else if (type == PrimitiveTypeWrapper.BOOLEAN)
+                else if (type == RuntimePrimitiveJavaType.BOOLEAN)
                 {
                     ilgen.Emit(OpCodes.Call, valueOfBoolean);
                 }
-                else if (type == PrimitiveTypeWrapper.CHAR)
+                else if (type == RuntimePrimitiveJavaType.CHAR)
                 {
                     ilgen.Emit(OpCodes.Call, valueOfChar);
                 }
-                else if (type == PrimitiveTypeWrapper.SHORT)
+                else if (type == RuntimePrimitiveJavaType.SHORT)
                 {
                     ilgen.Emit(OpCodes.Call, valueOfShort);
                 }
-                else if (type == PrimitiveTypeWrapper.INT)
+                else if (type == RuntimePrimitiveJavaType.INT)
                 {
                     ilgen.Emit(OpCodes.Call, valueOfInt);
                 }
-                else if (type == PrimitiveTypeWrapper.FLOAT)
+                else if (type == RuntimePrimitiveJavaType.FLOAT)
                 {
                     ilgen.Emit(OpCodes.Call, valueOfFloat);
                 }
-                else if (type == PrimitiveTypeWrapper.LONG)
+                else if (type == RuntimePrimitiveJavaType.LONG)
                 {
                     ilgen.Emit(OpCodes.Call, valueOfLong);
                 }
-                else if (type == PrimitiveTypeWrapper.DOUBLE)
+                else if (type == RuntimePrimitiveJavaType.DOUBLE)
                 {
                     ilgen.Emit(OpCodes.Call, valueOfDouble);
                 }
             }
 
-            static void Expand(CodeEmitter ilgen, TypeWrapper type)
+            static void Expand(CodeEmitter ilgen, RuntimeJavaType type)
             {
-                if (type == PrimitiveTypeWrapper.FLOAT)
+                if (type == RuntimePrimitiveJavaType.FLOAT)
                 {
                     ilgen.Emit(OpCodes.Conv_R4);
                 }
-                else if (type == PrimitiveTypeWrapper.LONG)
+                else if (type == RuntimePrimitiveJavaType.LONG)
                 {
                     ilgen.Emit(OpCodes.Conv_I8);
                 }
-                else if (type == PrimitiveTypeWrapper.DOUBLE)
+                else if (type == RuntimePrimitiveJavaType.DOUBLE)
                 {
                     ilgen.Emit(OpCodes.Conv_R8);
                 }
@@ -504,7 +504,7 @@ namespace IKVM.Java.Externs.sun.reflect
             {
 
                 readonly FastMethodAccessorImpl outer;
-                readonly TypeWrapper tw;
+                readonly RuntimeJavaType tw;
                 readonly Invoker invoker;
 
                 /// <summary>
@@ -513,7 +513,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 /// <param name="outer"></param>
                 /// <param name="tw"></param>
                 /// <param name="invoker"></param>
-                internal RunClassInit(FastMethodAccessorImpl outer, TypeWrapper tw, Invoker invoker)
+                internal RunClassInit(FastMethodAccessorImpl outer, RuntimeJavaType tw, Invoker invoker)
                 {
                     this.outer = outer;
                     this.tw = tw;
@@ -729,7 +729,7 @@ namespace IKVM.Java.Externs.sun.reflect
             {
                 var mw = MethodWrapper.FromExecutable(constructor);
 
-                TypeWrapper[] parameters;
+                RuntimeJavaType[] parameters;
                 try
                 {
                     mw.DeclaringType.Finish();
@@ -778,7 +778,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     ilgen.Emit(OpCodes.Ldarg_0);
                     ilgen.EmitLdc_I4(i);
                     ilgen.Emit(OpCodes.Ldelem_Ref);
-                    TypeWrapper tw = parameters[i];
+                    RuntimeJavaType tw = parameters[i];
                     BoxUtil.EmitUnboxArg(ilgen, tw);
                     tw.EmitConvStackTypeToSignatureType(ilgen, null);
                     ilgen.Emit(OpCodes.Stloc, args[i]);
@@ -859,7 +859,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 Type type;
                 try
                 {
-                    TypeWrapper wrapper = TypeWrapper.FromClass(classToInstantiate);
+                    RuntimeJavaType wrapper = RuntimeJavaType.FromClass(classToInstantiate);
                     wrapper.Finish();
                     type = wrapper.TypeAsBaseType;
                 }
@@ -1132,7 +1132,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 private bool IsSlowPathCompatible(FieldWrapper fw)
                 {
 #if !NO_REF_EMIT
-                    if (fw.IsVolatile && (fw.FieldTypeWrapper == PrimitiveTypeWrapper.LONG || fw.FieldTypeWrapper == PrimitiveTypeWrapper.DOUBLE))
+                    if (fw.IsVolatile && (fw.FieldTypeWrapper == RuntimePrimitiveJavaType.LONG || fw.FieldTypeWrapper == RuntimePrimitiveJavaType.DOUBLE))
                     {
                         return false;
                     }
@@ -1910,7 +1910,7 @@ namespace IKVM.Java.Externs.sun.reflect
 #if !NO_REF_EMIT
             private Delegate GenerateFastGetter(Type delegateType, Type fieldType, FieldWrapper fw)
             {
-                TypeWrapper fieldTypeWrapper;
+                RuntimeJavaType fieldTypeWrapper;
                 try
                 {
                     fieldTypeWrapper = fw.FieldTypeWrapper.EnsureLoadable(fw.DeclaringType.GetClassLoader());
@@ -1956,7 +1956,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
             private Delegate GenerateFastSetter(Type delegateType, Type fieldType, FieldWrapper fw)
             {
-                TypeWrapper fieldTypeWrapper;
+                RuntimeJavaType fieldTypeWrapper;
                 try
                 {
                     fieldTypeWrapper = fw.FieldTypeWrapper.EnsureLoadable(fw.DeclaringType.GetClassLoader());
@@ -2025,38 +2025,38 @@ namespace IKVM.Java.Externs.sun.reflect
 
             internal static FieldAccessorImplBase Create(FieldWrapper field, bool isFinal)
             {
-                TypeWrapper type = field.FieldTypeWrapper;
+                RuntimeJavaType type = field.FieldTypeWrapper;
                 if (type.IsPrimitive)
                 {
-                    if (type == PrimitiveTypeWrapper.BYTE)
+                    if (type == RuntimePrimitiveJavaType.BYTE)
                     {
                         return new ByteField(field, isFinal);
                     }
-                    if (type == PrimitiveTypeWrapper.BOOLEAN)
+                    if (type == RuntimePrimitiveJavaType.BOOLEAN)
                     {
                         return new BooleanField(field, isFinal);
                     }
-                    if (type == PrimitiveTypeWrapper.CHAR)
+                    if (type == RuntimePrimitiveJavaType.CHAR)
                     {
                         return new CharField(field, isFinal);
                     }
-                    if (type == PrimitiveTypeWrapper.SHORT)
+                    if (type == RuntimePrimitiveJavaType.SHORT)
                     {
                         return new ShortField(field, isFinal);
                     }
-                    if (type == PrimitiveTypeWrapper.INT)
+                    if (type == RuntimePrimitiveJavaType.INT)
                     {
                         return new IntField(field, isFinal);
                     }
-                    if (type == PrimitiveTypeWrapper.FLOAT)
+                    if (type == RuntimePrimitiveJavaType.FLOAT)
                     {
                         return new FloatField(field, isFinal);
                     }
-                    if (type == PrimitiveTypeWrapper.LONG)
+                    if (type == RuntimePrimitiveJavaType.LONG)
                     {
                         return new LongField(field, isFinal);
                     }
-                    if (type == PrimitiveTypeWrapper.DOUBLE)
+                    if (type == RuntimePrimitiveJavaType.DOUBLE)
                     {
                         return new DoubleField(field, isFinal);
                     }

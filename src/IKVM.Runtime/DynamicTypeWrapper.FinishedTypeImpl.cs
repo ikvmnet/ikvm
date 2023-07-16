@@ -41,7 +41,7 @@ namespace IKVM.Runtime
 {
 
 #if IMPORTER
-    abstract partial class DynamicTypeWrapper : TypeWrapper
+    abstract partial class DynamicTypeWrapper : RuntimeJavaType
 #else
 #pragma warning disable 628 // don't complain about protected members in sealed type
     sealed partial class DynamicTypeWrapper
@@ -52,15 +52,15 @@ namespace IKVM.Runtime
         {
 
             readonly Type type;
-            readonly TypeWrapper[] innerclasses;
-            readonly TypeWrapper declaringTypeWrapper;
+            readonly RuntimeJavaType[] innerclasses;
+            readonly RuntimeJavaType declaringTypeWrapper;
             readonly Modifiers reflectiveModifiers;
             readonly MethodInfo clinitMethod;
             readonly MethodInfo finalizeMethod;
             readonly Metadata metadata;
-            readonly TypeWrapper host;
+            readonly RuntimeJavaType host;
 
-            internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, MethodInfo clinitMethod, MethodInfo finalizeMethod, TypeWrapper host)
+            internal FinishedTypeImpl(Type type, RuntimeJavaType[] innerclasses, RuntimeJavaType declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, MethodInfo clinitMethod, MethodInfo finalizeMethod, RuntimeJavaType host)
             {
                 this.type = type;
                 this.innerclasses = innerclasses;
@@ -72,7 +72,7 @@ namespace IKVM.Runtime
                 this.host = host;
             }
 
-            internal override TypeWrapper[] InnerClasses
+            internal override RuntimeJavaType[] InnerClasses
             {
                 get
                 {
@@ -81,7 +81,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal override TypeWrapper DeclaringTypeWrapper
+            internal override RuntimeJavaType DeclaringTypeWrapper
             {
                 get
                 {
@@ -208,7 +208,7 @@ namespace IKVM.Runtime
                 return Metadata.GetFieldRawTypeAnnotations(metadata, index);
             }
 
-            internal override TypeWrapper Host
+            internal override RuntimeJavaType Host
             {
                 get { return host; }
             }

@@ -68,7 +68,7 @@ namespace IKVM.Runtime
         {
             // we add optional modifiers to make the signature unique
             int firstParam = firstParameter == null ? 0 : 1;
-            TypeWrapper[] parameters = mw.GetParameters();
+            RuntimeJavaType[] parameters = mw.GetParameters();
             Type[] parameterTypes = new Type[parameters.Length + (mw.HasCallerID ? 1 : 0) + firstParam];
             Type[][] modopt = new Type[parameterTypes.Length][];
             if (firstParameter != null)

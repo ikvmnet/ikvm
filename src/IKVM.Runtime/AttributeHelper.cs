@@ -110,7 +110,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        private static object ParseValue(ClassLoaderWrapper loader, TypeWrapper tw, string val)
+        private static object ParseValue(ClassLoaderWrapper loader, RuntimeJavaType tw, string val)
         {
             if (tw == CoreClasses.java.lang.String.Wrapper)
             {
@@ -126,42 +126,42 @@ namespace IKVM.Runtime
             }
             else if (tw.TypeAsTBD == Types.Type)
             {
-                TypeWrapper valtw = loader.LoadClassByDottedNameFast(val);
+                RuntimeJavaType valtw = loader.LoadClassByDottedNameFast(val);
                 if (valtw != null)
                 {
                     return valtw.TypeAsBaseType;
                 }
                 return StaticCompiler.Universe.GetType(val, true);
             }
-            else if (tw == PrimitiveTypeWrapper.BOOLEAN)
+            else if (tw == RuntimePrimitiveJavaType.BOOLEAN)
             {
                 return bool.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.BYTE)
+            else if (tw == RuntimePrimitiveJavaType.BYTE)
             {
                 return (byte)sbyte.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.CHAR)
+            else if (tw == RuntimePrimitiveJavaType.CHAR)
             {
                 return char.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.SHORT)
+            else if (tw == RuntimePrimitiveJavaType.SHORT)
             {
                 return short.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.INT)
+            else if (tw == RuntimePrimitiveJavaType.INT)
             {
                 return int.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.FLOAT)
+            else if (tw == RuntimePrimitiveJavaType.FLOAT)
             {
                 return float.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.LONG)
+            else if (tw == RuntimePrimitiveJavaType.LONG)
             {
                 return long.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.DOUBLE)
+            else if (tw == RuntimePrimitiveJavaType.DOUBLE)
             {
                 return double.Parse(val);
             }
@@ -204,13 +204,13 @@ namespace IKVM.Runtime
         private static void GetAttributeArgsAndTypes(ClassLoaderWrapper loader, IKVM.Tools.Importer.MapXml.Attribute attr, out Type[] argTypes, out object[] args)
         {
             // TODO add error handling
-            TypeWrapper[] twargs = loader.ArgTypeWrapperListFromSig(attr.Sig, LoadMode.Link);
+            RuntimeJavaType[] twargs = loader.ArgTypeWrapperListFromSig(attr.Sig, LoadMode.Link);
             argTypes = new Type[twargs.Length];
             args = new object[argTypes.Length];
             for (int i = 0; i < twargs.Length; i++)
             {
                 argTypes[i] = twargs[i].TypeAsSignatureType;
-                TypeWrapper tw = twargs[i];
+                RuntimeJavaType tw = twargs[i];
                 if (tw == CoreClasses.java.lang.Object.Wrapper)
                 {
                     tw = loader.FieldTypeWrapperFromSig(attr.Params[i].Sig, LoadMode.Link);
@@ -287,7 +287,7 @@ namespace IKVM.Runtime
                 {
                     throw new NotImplementedException("Setting property values on Java attributes is not implemented");
                 }
-                TypeWrapper t = loader.LoadClassByDottedName(attr.Class);
+                RuntimeJavaType t = loader.LoadClassByDottedName(attr.Class);
                 FieldInfo[] namedFields;
                 object[] fieldValues;
                 if (attr.Fields != null)
@@ -532,7 +532,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        internal static void SetImplementsAttribute(TypeBuilder typeBuilder, TypeWrapper[] ifaceWrappers)
+        internal static void SetImplementsAttribute(TypeBuilder typeBuilder, RuntimeJavaType[] ifaceWrappers)
         {
             var interfaces = new string[ifaceWrappers.Length];
             for (int i = 0; i < interfaces.Length; i++)

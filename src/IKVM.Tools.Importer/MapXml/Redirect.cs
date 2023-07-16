@@ -87,8 +87,8 @@ namespace IKVM.Tools.Importer.MapXml
 #if NETCOREAPP
 				Class = Class.Replace("mscorlib", Universe.CoreLibName);
 #endif
-                Type type = StaticCompiler.Universe.GetType(Class, true);
-                MethodInfo mi = type.GetMethod(Name, redirParamTypes);
+                var type = StaticCompiler.Universe.GetType(Class, true);
+                var mi = type.GetMethod(Name, redirParamTypes);
                 if (mi == null)
                 {
                     throw new InvalidOperationException();
@@ -97,8 +97,8 @@ namespace IKVM.Tools.Importer.MapXml
             }
             else
             {
-                TypeWrapper tw = loader.LoadClassByDottedName(Class);
-                MethodWrapper mw = tw.GetMethodWrapper(Name, Sig, false);
+                var tw = loader.LoadClassByDottedName(Class);
+                var mw = tw.GetMethodWrapper(Name, Sig, false);
                 if (mw == null)
                 {
                     throw new InvalidOperationException();

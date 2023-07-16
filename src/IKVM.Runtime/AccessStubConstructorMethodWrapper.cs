@@ -51,8 +51,8 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal AccessStubConstructorMethodWrapper(TypeWrapper declaringType, string sig, ConstructorInfo core, ConstructorInfo stub, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
-            base(declaringType, StringConstants.INIT, sig, core, PrimitiveTypeWrapper.VOID, parameterTypes, modifiers, flags)
+        internal AccessStubConstructorMethodWrapper(RuntimeJavaType declaringType, string sig, ConstructorInfo core, ConstructorInfo stub, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+            base(declaringType, StringConstants.INIT, sig, core, RuntimePrimitiveJavaType.VOID, parameterTypes, modifiers, flags)
         {
             this.stub = stub;
         }

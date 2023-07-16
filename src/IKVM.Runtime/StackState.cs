@@ -37,13 +37,13 @@ namespace IKVM.Runtime
             sp = state.GetStackHeight();
         }
 
-        internal TypeWrapper PeekType()
+        internal RuntimeJavaType PeekType()
         {
             if (sp == 0)
             {
                 throw new VerifyError("Unable to pop operand off an empty stack");
             }
-            TypeWrapper type = state.GetStackByIndex(sp - 1);
+            RuntimeJavaType type = state.GetStackByIndex(sp - 1);
             if (VerifierTypeWrapper.IsThis(type))
             {
                 type = ((VerifierTypeWrapper)type).UnderlyingType;
@@ -51,13 +51,13 @@ namespace IKVM.Runtime
             return type;
         }
 
-        internal TypeWrapper PopAnyType()
+        internal RuntimeJavaType PopAnyType()
         {
             if (sp == 0)
             {
                 throw new VerifyError("Unable to pop operand off an empty stack");
             }
-            TypeWrapper type = state.GetStackByIndex(--sp);
+            RuntimeJavaType type = state.GetStackByIndex(--sp);
             if (VerifierTypeWrapper.IsThis(type))
             {
                 type = ((VerifierTypeWrapper)type).UnderlyingType;
@@ -70,13 +70,13 @@ namespace IKVM.Runtime
             return type;
         }
 
-        internal TypeWrapper PopType(TypeWrapper baseType)
+        internal RuntimeJavaType PopType(RuntimeJavaType baseType)
         {
             return InstructionState.PopTypeImpl(baseType, PopAnyType());
         }
 
         // NOTE this can *not* be used to pop double or long
-        internal TypeWrapper PopType()
+        internal RuntimeJavaType PopType()
         {
             return InstructionState.PopTypeImpl(PopAnyType());
         }
@@ -101,19 +101,19 @@ namespace IKVM.Runtime
             InstructionState.PopLongImpl(PopAnyType());
         }
 
-        internal TypeWrapper PopArrayType()
+        internal RuntimeJavaType PopArrayType()
         {
             return InstructionState.PopArrayTypeImpl(PopAnyType());
         }
 
         // either null or an initialized object reference
-        internal TypeWrapper PopObjectType()
+        internal RuntimeJavaType PopObjectType()
         {
             return InstructionState.PopObjectTypeImpl(PopAnyType());
         }
 
         // null or an initialized object reference derived from baseType (or baseType)
-        internal TypeWrapper PopObjectType(TypeWrapper baseType)
+        internal RuntimeJavaType PopObjectType(RuntimeJavaType baseType)
         {
             return InstructionState.PopObjectTypeImpl(baseType, PopObjectType());
         }

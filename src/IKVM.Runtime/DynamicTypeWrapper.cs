@@ -45,10 +45,10 @@ namespace IKVM.Runtime
 {
 
 #if IMPORTER
-    abstract partial class DynamicTypeWrapper : TypeWrapper
+    abstract partial class DynamicTypeWrapper : RuntimeJavaType
 #else
 #pragma warning disable 628 // don't complain about protected members in sealed type
-    sealed partial class DynamicTypeWrapper : TypeWrapper
+    sealed partial class DynamicTypeWrapper : RuntimeJavaType
 #endif
     {
 
@@ -64,15 +64,15 @@ namespace IKVM.Runtime
         protected readonly ClassLoaderWrapper classLoader;
 #endif
         volatile DynamicImpl impl;
-        readonly TypeWrapper baseTypeWrapper;
-        readonly TypeWrapper[] interfaces;
+        readonly RuntimeJavaType baseTypeWrapper;
+        readonly RuntimeJavaType[] interfaces;
         readonly string sourceFileName;
 #if !IMPORTER
         byte[][] lineNumberTables;
 #endif
         MethodBase automagicSerializationCtor;
 
-        TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, ProtectionDomain pd, ClassFile.ConstantPoolItemClass clazz)
+        RuntimeJavaType LoadTypeWrapper(ClassLoaderWrapper classLoader, ProtectionDomain pd, ClassFile.ConstantPoolItemClass clazz)
         {
             // check for patched constant pool items
             var tw = clazz.GetClassType();
@@ -86,7 +86,7 @@ namespace IKVM.Runtime
             return tw;
         }
 
-        private static void CheckMissing(TypeWrapper prev, TypeWrapper tw)
+        private static void CheckMissing(RuntimeJavaType prev, RuntimeJavaType tw)
         {
 #if IMPORTER
             do
@@ -102,7 +102,7 @@ namespace IKVM.Runtime
                     throw new FatalCompilerErrorException(Message.MissingBaseType, mt.FullName, mt.Assembly.FullName,
                         prev.TypeAsBaseType.FullName, prev.TypeAsBaseType.Module.Name);
                 }
-                foreach (TypeWrapper iface in tw.Interfaces)
+                foreach (RuntimeJavaType iface in tw.Interfaces)
                 {
                     CheckMissing(tw, iface);
                 }
@@ -114,9 +114,9 @@ namespace IKVM.Runtime
         }
 
 #if IMPORTER
-        internal DynamicTypeWrapper(TypeWrapper host, ClassFile f, CompilerClassLoader classLoader, ProtectionDomain pd)
+        internal DynamicTypeWrapper(RuntimeJavaType host, ClassFile f, CompilerClassLoader classLoader, ProtectionDomain pd)
 #else
-        internal DynamicTypeWrapper(TypeWrapper host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain pd)
+        internal DynamicTypeWrapper(RuntimeJavaType host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain pd)
 #endif
             : base(f.IsInternal ? TypeFlags.InternalAccess : host != null ? TypeFlags.Anonymous : TypeFlags.None, f.Modifiers, f.Name)
         {
@@ -169,10 +169,10 @@ namespace IKVM.Runtime
             }
 
             ClassFile.ConstantPoolItemClass[] interfaces = f.Interfaces;
-            this.interfaces = new TypeWrapper[interfaces.Length];
+            this.interfaces = new RuntimeJavaType[interfaces.Length];
             for (int i = 0; i < interfaces.Length; i++)
             {
-                TypeWrapper iface = LoadTypeWrapper(classLoader, pd, interfaces[i]);
+                RuntimeJavaType iface = LoadTypeWrapper(classLoader, pd, interfaces[i]);
                 if (!iface.IsAccessibleFrom(this))
                 {
                     throw new IllegalAccessError("Class " + f.Name + " cannot access its superinterface " + iface.Name);
@@ -264,7 +264,7 @@ namespace IKVM.Runtime
             {
                 throw new VerifyError("Delegate may not declare any fields");
             }
-            TypeWrapper iface = classLoader.LoadClassByDottedNameFast(f.Name + DotNetTypeWrapper.DelegateInterfaceSuffix);
+            RuntimeJavaType iface = classLoader.LoadClassByDottedNameFast(f.Name + DotNetTypeWrapper.DelegateInterfaceSuffix);
             DelegateInnerClassCheck(iface != null);
             DelegateInnerClassCheck(iface.IsInterface);
             DelegateInnerClassCheck(iface.IsPublic);
@@ -305,12 +305,12 @@ namespace IKVM.Runtime
         {
             get
             {
-                TypeWrapper baseTypeWrapper = BaseTypeWrapper;
+                RuntimeJavaType baseTypeWrapper = BaseTypeWrapper;
                 return baseTypeWrapper != null && baseTypeWrapper.TypeAsTBD == Types.MulticastDelegate;
             }
         }
 
-        internal sealed override TypeWrapper BaseTypeWrapper
+        internal sealed override RuntimeJavaType BaseTypeWrapper
         {
             get { return baseTypeWrapper; }
         }
@@ -328,7 +328,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override TypeWrapper[] Interfaces
+        internal override RuntimeJavaType[] Interfaces
         {
             get
             {
@@ -336,7 +336,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override TypeWrapper[] InnerClasses
+        internal override RuntimeJavaType[] InnerClasses
         {
             get
             {
@@ -344,7 +344,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override TypeWrapper DeclaringTypeWrapper
+        internal override RuntimeJavaType DeclaringTypeWrapper
         {
             get
             {
@@ -399,7 +399,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-        static bool TypesMatchForOverride(TypeWrapper tw1, TypeWrapper tw2)
+        static bool TypesMatchForOverride(RuntimeJavaType tw1, RuntimeJavaType tw2)
         {
             if (tw1 == tw2)
                 return true;
@@ -437,7 +437,7 @@ namespace IKVM.Runtime
             ilgen.DoEmit();
         }
 
-        static void ConvertStubArg(TypeWrapper src, TypeWrapper dst, CodeEmitter ilgen)
+        static void ConvertStubArg(RuntimeJavaType src, RuntimeJavaType dst, CodeEmitter ilgen)
         {
             if (src != dst)
             {
@@ -945,12 +945,12 @@ namespace IKVM.Runtime
             return automagicSerializationCtor;
         }
 
-        private Type[] GetModOpt(TypeWrapper tw, bool mustBePublic)
+        private Type[] GetModOpt(RuntimeJavaType tw, bool mustBePublic)
         {
             return GetModOpt(GetClassLoader().GetTypeWrapperFactory(), tw, mustBePublic);
         }
 
-        internal static Type[] GetModOpt(TypeWrapperFactory context, TypeWrapper tw, bool mustBePublic)
+        internal static Type[] GetModOpt(TypeWrapperFactory context, RuntimeJavaType tw, bool mustBePublic)
         {
             Type[] modopt = Type.EmptyTypes;
             if (tw.IsUnloadable)
@@ -962,7 +962,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                TypeWrapper tw1 = tw.IsArray ? tw.GetUltimateElementTypeWrapper() : tw;
+                RuntimeJavaType tw1 = tw.IsArray ? tw.GetUltimateElementTypeWrapper() : tw;
                 if (tw1.IsErasedOrBoxedPrimitiveOrRemapped || tw.IsGhostArray || (mustBePublic && !tw1.IsPublic))
                 {
                     // FXBUG Ref.Emit refuses arrays in custom modifiers, so we add an array type for each dimension
@@ -977,7 +977,7 @@ namespace IKVM.Runtime
             return modopt;
         }
 
-        private static Type GetModOptHelper(TypeWrapper tw)
+        private static Type GetModOptHelper(RuntimeJavaType tw)
         {
             Debug.Assert(!tw.IsUnloadable);
             if (tw.IsArray)
@@ -1040,7 +1040,7 @@ namespace IKVM.Runtime
         }
 
 #if !IMPORTER && !EXPORTER
-        internal override TypeWrapper Host
+        internal override RuntimeJavaType Host
         {
             get { return impl.Host; }
         }

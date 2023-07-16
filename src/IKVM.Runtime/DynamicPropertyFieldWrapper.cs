@@ -69,7 +69,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal DynamicPropertyFieldWrapper(TypeWrapper declaringType, ClassFile.Field fld) :
+        internal DynamicPropertyFieldWrapper(RuntimeJavaType declaringType, ClassFile.Field fld) :
             base(declaringType, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null)
         {
             getter = GetMethod(fld.PropertyGetter, "()" + fld.Signature, fld.IsStatic);
@@ -133,7 +133,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static void EmitThrowNoSuchMethodErrorForGetter(CodeEmitter ilgen, TypeWrapper type, MemberWrapper member)
+        internal static void EmitThrowNoSuchMethodErrorForGetter(CodeEmitter ilgen, RuntimeJavaType type, MemberWrapper member)
         {
 #if IMPORTER
             StaticCompiler.IssueMessage(Message.EmittedNoSuchMethodError, "<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature);

@@ -47,7 +47,7 @@ namespace IKVM.Runtime
     abstract class MemberWrapper
     {
 
-        readonly TypeWrapper declaringType;
+        readonly RuntimeJavaType declaringType;
         readonly string name;
         readonly string sig;
         protected readonly Modifiers modifiers;
@@ -71,7 +71,7 @@ namespace IKVM.Runtime
 
         }
 
-        protected MemberWrapper(TypeWrapper declaringType, string name, string sig, Modifiers modifiers, MemberFlags flags)
+        protected MemberWrapper(RuntimeJavaType declaringType, string name, string sig, Modifiers modifiers, MemberFlags flags)
         {
             Debug.Assert(declaringType != null);
             this.declaringType = declaringType;
@@ -98,13 +98,13 @@ namespace IKVM.Runtime
             return (MemberWrapper)GCHandle.FromIntPtr(cookie).Target;
         }
 
-        internal TypeWrapper DeclaringType => declaringType;
+        internal RuntimeJavaType DeclaringType => declaringType;
 
         internal string Name => name;
 
         internal string Signature => sig;
 
-        internal bool IsAccessibleFrom(TypeWrapper referencedType, TypeWrapper caller, TypeWrapper instance)
+        internal bool IsAccessibleFrom(RuntimeJavaType referencedType, RuntimeJavaType caller, RuntimeJavaType instance)
         {
             if (referencedType.IsAccessibleFrom(caller))
             {
@@ -121,7 +121,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-        private bool IsPublicOrProtectedMemberAccessible(TypeWrapper caller, TypeWrapper instance)
+        private bool IsPublicOrProtectedMemberAccessible(RuntimeJavaType caller, RuntimeJavaType instance)
         {
             if (IsPublic || (IsProtected && caller.IsSubTypeOf(DeclaringType) && (IsStatic || instance.IsUnloadable || instance.IsSubTypeOf(caller))))
             {
@@ -130,7 +130,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-        private bool InPracticeInternalsVisibleTo(TypeWrapper caller)
+        private bool InPracticeInternalsVisibleTo(RuntimeJavaType caller)
         {
 #if !IMPORTER
             if (DeclaringType.TypeAsTBD.Assembly.Equals(caller.TypeAsTBD.Assembly))
@@ -318,7 +318,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal PrivateInterfaceMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal PrivateInterfaceMethodWrapper(RuntimeJavaType declaringType, string name, string sig, MethodBase method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
         {
 

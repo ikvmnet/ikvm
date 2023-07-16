@@ -49,7 +49,7 @@ namespace IKVM.Runtime
         /// <param name="name"></param>
         /// <param name="sig"></param>
         /// <param name="modifiers"></param>
-        internal VolatileLongDoubleFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers) :
+        internal VolatileLongDoubleFieldWrapper(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers) :
             base(declaringType, fieldType, name, sig, modifiers, fi)
         {
             if (sig != "J" && sig != "D")
@@ -76,11 +76,11 @@ namespace IKVM.Runtime
                 il.Emit(OpCodes.Ldflda, fi);
             }
 
-            if (FieldTypeWrapper == PrimitiveTypeWrapper.LONG)
+            if (FieldTypeWrapper == RuntimePrimitiveJavaType.LONG)
             {
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileReadLong);
             }
-            else if (FieldTypeWrapper == PrimitiveTypeWrapper.DOUBLE)
+            else if (FieldTypeWrapper == RuntimePrimitiveJavaType.DOUBLE)
             {
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileReadDouble);
             }
@@ -111,11 +111,11 @@ namespace IKVM.Runtime
 
             il.Emit(OpCodes.Ldloc, value);
 
-            if (FieldTypeWrapper == PrimitiveTypeWrapper.LONG)
+            if (FieldTypeWrapper == RuntimePrimitiveJavaType.LONG)
             {
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileWriteLong);
             }
-            else if (FieldTypeWrapper == PrimitiveTypeWrapper.DOUBLE)
+            else if (FieldTypeWrapper == RuntimePrimitiveJavaType.DOUBLE)
             {
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileWriteDouble);
             }
@@ -141,11 +141,11 @@ namespace IKVM.Runtime
                 il.Emit(OpCodes.Ldflda, fi);
             }
 
-            if (FieldTypeWrapper == PrimitiveTypeWrapper.LONG)
+            if (FieldTypeWrapper == RuntimePrimitiveJavaType.LONG)
             {
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileReadLong);
             }
-            else if (FieldTypeWrapper == PrimitiveTypeWrapper.DOUBLE)
+            else if (FieldTypeWrapper == RuntimePrimitiveJavaType.DOUBLE)
             {
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileReadDouble);
             }
@@ -176,11 +176,11 @@ namespace IKVM.Runtime
 
             il.Emit(OpCodes.Ldloc, value);
 
-            if (FieldTypeWrapper == PrimitiveTypeWrapper.LONG)
+            if (FieldTypeWrapper == RuntimePrimitiveJavaType.LONG)
             {
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileWriteLong);
             }
-            else if (FieldTypeWrapper == PrimitiveTypeWrapper.DOUBLE)
+            else if (FieldTypeWrapper == RuntimePrimitiveJavaType.DOUBLE)
             {
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileWriteDouble);
             }
@@ -214,11 +214,11 @@ namespace IKVM.Runtime
             il.Emit(OpCodes.Ldloc, expect);
             il.Emit(OpCodes.Ldloc, value);
 
-            if (FieldTypeWrapper == PrimitiveTypeWrapper.LONG)
+            if (FieldTypeWrapper == RuntimePrimitiveJavaType.LONG)
             {
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.CompareAndSwapLong);
             }
-            else if (FieldTypeWrapper == PrimitiveTypeWrapper.DOUBLE)
+            else if (FieldTypeWrapper == RuntimePrimitiveJavaType.DOUBLE)
             {
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.CompareAndSwapDouble);
             }

@@ -113,12 +113,12 @@ namespace IKVM.Runtime
                 get { return cpi.GetMember(); }
             }
 
-            internal TypeWrapper GetClassType()
+            internal RuntimeJavaType GetClassType()
             {
                 return cpi.GetClassType();
             }
 
-            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 cpi.Link(thisType, mode);
             }

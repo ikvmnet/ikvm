@@ -74,7 +74,7 @@ namespace IKVM.Runtime
         }
 
         // for delegate types used for "ldc <MethodType>" we don't want ghost arrays to be erased
-        internal static Type CreateDelegateTypeForLoadConstant(TypeWrapper[] args, TypeWrapper ret)
+        internal static Type CreateDelegateTypeForLoadConstant(RuntimeJavaType[] args, RuntimeJavaType ret)
         {
             Type[] typeArgs = new Type[args.Length];
             for (int i = 0; i < args.Length; i++)
@@ -84,7 +84,7 @@ namespace IKVM.Runtime
             return CreateDelegateType(typeArgs, TypeWrapperToTypeForLoadConstant(ret));
         }
 
-        private static Type TypeWrapperToTypeForLoadConstant(TypeWrapper tw)
+        private static Type TypeWrapperToTypeForLoadConstant(RuntimeJavaType tw)
         {
             if (tw.IsGhostArray)
             {

@@ -44,16 +44,16 @@ namespace IKVM.Runtime
 
         static readonly CustomAttributeBuilder serializableAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SerializableAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
         static readonly CustomAttributeBuilder securityCriticalAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SecurityCriticalAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
-        static readonly TypeWrapper iserializable = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(ISerializable)));
-        static readonly TypeWrapper iobjectreference = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(IObjectReference)));
-        static readonly TypeWrapper externalizable = ClassLoaderWrapper.LoadClassCritical("java.io.Externalizable");
+        static readonly RuntimeJavaType iserializable = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(ISerializable)));
+        static readonly RuntimeJavaType iobjectreference = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(IObjectReference)));
+        static readonly RuntimeJavaType externalizable = ClassLoaderWrapper.LoadClassCritical("java.io.Externalizable");
 
-        internal static bool IsISerializable(TypeWrapper wrapper)
+        internal static bool IsISerializable(RuntimeJavaType wrapper)
         {
             return wrapper == iserializable;
         }
 
-        static bool IsSafeForAutomagicSerialization(TypeWrapper wrapper)
+        static bool IsSafeForAutomagicSerialization(RuntimeJavaType wrapper)
         {
             if (wrapper.TypeAsBaseType.IsSerializable)
                 return false;
@@ -159,7 +159,7 @@ namespace IKVM.Runtime
             CodeEmitter ilgen = CodeEmitter.Create(getObjectData);
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ldarg_1);
-            TypeWrapper serializationHelper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.Serialization");
+            RuntimeJavaType serializationHelper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.Serialization");
             MethodWrapper mw = serializationHelper.GetMethodWrapper("writeObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
             mw.Link();
             mw.EmitCall(ilgen);
@@ -187,7 +187,7 @@ namespace IKVM.Runtime
             {
                 ilgen.Emit(OpCodes.Ldarg_0);
                 ilgen.Emit(OpCodes.Ldarg_1);
-                TypeWrapper serializationHelper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.Serialization");
+                RuntimeJavaType serializationHelper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.Serialization");
                 MethodWrapper mw = serializationHelper.GetMethodWrapper("readObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
                 mw.Link();
                 mw.EmitCall(ilgen);

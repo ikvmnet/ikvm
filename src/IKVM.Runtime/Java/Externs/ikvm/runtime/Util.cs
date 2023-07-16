@@ -40,7 +40,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
             return GetTypeWrapperFromObject(o).ClassObject;
         }
 
-        internal static TypeWrapper GetTypeWrapperFromObject(object o)
+        internal static RuntimeJavaType GetTypeWrapperFromObject(object o)
         {
             var ghostType = GhostTag.GetTag(o);
             if (ghostType != null)
@@ -149,7 +149,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
         /// <returns></returns>
         public static Type getInstanceTypeFromClass(global::java.lang.Class classObject)
         {
-            var wrapper = TypeWrapper.FromClass(classObject);
+            var wrapper = RuntimeJavaType.FromClass(classObject);
             if (wrapper.IsRemapped && wrapper.IsFinal)
                 return wrapper.TypeAsTBD;
             else
@@ -163,7 +163,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
         /// <returns></returns>
         public static Type getRuntimeTypeFromClass(global::java.lang.Class classObject)
         {
-            var wrapper = TypeWrapper.FromClass(classObject);
+            var wrapper = RuntimeJavaType.FromClass(classObject);
             wrapper.Finish();
 
             if (wrapper.IsRemapped && wrapper.IsFinal)

@@ -29,28 +29,28 @@ namespace IKVM.Runtime
     static class Boxer
     {
 
-        private static readonly TypeWrapper javaLangByte;
+        private static readonly RuntimeJavaType javaLangByte;
         private static readonly MethodWrapper byteValue;
         private static readonly MethodWrapper valueOfByte;
-        private static readonly TypeWrapper javaLangBoolean;
+        private static readonly RuntimeJavaType javaLangBoolean;
         private static readonly MethodWrapper booleanValue;
         private static readonly MethodWrapper valueOfBoolean;
-        private static readonly TypeWrapper javaLangShort;
+        private static readonly RuntimeJavaType javaLangShort;
         private static readonly MethodWrapper shortValue;
         private static readonly MethodWrapper valueOfShort;
-        private static readonly TypeWrapper javaLangCharacter;
+        private static readonly RuntimeJavaType javaLangCharacter;
         private static readonly MethodWrapper charValue;
         private static readonly MethodWrapper valueOfCharacter;
-        private static readonly TypeWrapper javaLangInteger;
+        private static readonly RuntimeJavaType javaLangInteger;
         private static readonly MethodWrapper intValue;
         private static readonly MethodWrapper valueOfInteger;
-        private static readonly TypeWrapper javaLangFloat;
+        private static readonly RuntimeJavaType javaLangFloat;
         private static readonly MethodWrapper floatValue;
         private static readonly MethodWrapper valueOfFloat;
-        private static readonly TypeWrapper javaLangLong;
+        private static readonly RuntimeJavaType javaLangLong;
         private static readonly MethodWrapper longValue;
         private static readonly MethodWrapper valueOfLong;
-        private static readonly TypeWrapper javaLangDouble;
+        private static readonly RuntimeJavaType javaLangDouble;
         private static readonly MethodWrapper doubleValue;
         private static readonly MethodWrapper valueOfDouble;
 
@@ -99,9 +99,9 @@ namespace IKVM.Runtime
             valueOfDouble.Link();
         }
 
-        internal static void EmitUnbox(CodeEmitter ilgen, TypeWrapper tw, bool cast)
+        internal static void EmitUnbox(CodeEmitter ilgen, RuntimeJavaType tw, bool cast)
         {
-            if (tw == PrimitiveTypeWrapper.BYTE)
+            if (tw == RuntimePrimitiveJavaType.BYTE)
             {
                 if (cast)
                 {
@@ -109,7 +109,7 @@ namespace IKVM.Runtime
                 }
                 byteValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.BOOLEAN)
+            else if (tw == RuntimePrimitiveJavaType.BOOLEAN)
             {
                 if (cast)
                 {
@@ -117,7 +117,7 @@ namespace IKVM.Runtime
                 }
                 booleanValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.SHORT)
+            else if (tw == RuntimePrimitiveJavaType.SHORT)
             {
                 if (cast)
                 {
@@ -125,7 +125,7 @@ namespace IKVM.Runtime
                 }
                 shortValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.CHAR)
+            else if (tw == RuntimePrimitiveJavaType.CHAR)
             {
                 if (cast)
                 {
@@ -133,7 +133,7 @@ namespace IKVM.Runtime
                 }
                 charValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.INT)
+            else if (tw == RuntimePrimitiveJavaType.INT)
             {
                 if (cast)
                 {
@@ -141,7 +141,7 @@ namespace IKVM.Runtime
                 }
                 intValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.FLOAT)
+            else if (tw == RuntimePrimitiveJavaType.FLOAT)
             {
                 if (cast)
                 {
@@ -149,7 +149,7 @@ namespace IKVM.Runtime
                 }
                 floatValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.LONG)
+            else if (tw == RuntimePrimitiveJavaType.LONG)
             {
                 if (cast)
                 {
@@ -157,7 +157,7 @@ namespace IKVM.Runtime
                 }
                 longValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.DOUBLE)
+            else if (tw == RuntimePrimitiveJavaType.DOUBLE)
             {
                 if (cast)
                 {
@@ -171,37 +171,37 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static void EmitBox(CodeEmitter ilgen, TypeWrapper tw)
+        internal static void EmitBox(CodeEmitter ilgen, RuntimeJavaType tw)
         {
-            if (tw == PrimitiveTypeWrapper.BYTE)
+            if (tw == RuntimePrimitiveJavaType.BYTE)
             {
                 valueOfByte.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.BOOLEAN)
+            else if (tw == RuntimePrimitiveJavaType.BOOLEAN)
             {
                 valueOfBoolean.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.SHORT)
+            else if (tw == RuntimePrimitiveJavaType.SHORT)
             {
                 valueOfShort.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.CHAR)
+            else if (tw == RuntimePrimitiveJavaType.CHAR)
             {
                 valueOfCharacter.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.INT)
+            else if (tw == RuntimePrimitiveJavaType.INT)
             {
                 valueOfInteger.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.FLOAT)
+            else if (tw == RuntimePrimitiveJavaType.FLOAT)
             {
                 valueOfFloat.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.LONG)
+            else if (tw == RuntimePrimitiveJavaType.LONG)
             {
                 valueOfLong.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.DOUBLE)
+            else if (tw == RuntimePrimitiveJavaType.DOUBLE)
             {
                 valueOfDouble.EmitCall(ilgen);
             }

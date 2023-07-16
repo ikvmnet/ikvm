@@ -338,7 +338,7 @@ namespace IKVM.Runtime
             {
                 return DotNetTypeWrapper.GetName(type);
             }
-            TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
+            RuntimeJavaType tw = ClassLoaderWrapper.GetWrapperFromType(type);
             if (tw != null)
             {
                 if (tw.IsPrimitive)
@@ -368,7 +368,7 @@ namespace IKVM.Runtime
                     {
                         return -1;
                     }
-                    TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
+                    RuntimeJavaType tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
                     if (tw != null)
                     {
                         return tw.GetSourceLineNumber(mb, ilOffset);
@@ -387,7 +387,7 @@ namespace IKVM.Runtime
                 {
                     return null;
                 }
-                TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
+                RuntimeJavaType tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
                 if (tw != null)
                 {
                     return tw.GetSourceFileName();

@@ -61,9 +61,9 @@ namespace IKVM.Runtime
 #endif
 
 #if IMPORTER
-        readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
+        readonly Dictionary<string, RuntimeJavaType> dynamicTypes = new Dictionary<string, RuntimeJavaType>();
 #else
-        static readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
+        static readonly Dictionary<string, RuntimeJavaType> dynamicTypes = new Dictionary<string, RuntimeJavaType>();
 #endif
         readonly ModuleBuilder moduleBuilder;
         readonly bool hasInternalAccess;
@@ -121,9 +121,9 @@ namespace IKVM.Runtime
             return Resolve(dynamicTypes, args.Name);
         }
 
-        static Assembly Resolve(Dictionary<string, TypeWrapper> dict, string name)
+        static Assembly Resolve(Dictionary<string, RuntimeJavaType> dict, string name)
         {
-            TypeWrapper type;
+            RuntimeJavaType type;
             lock (dict)
                 dict.TryGetValue(name, out type);
 
@@ -170,7 +170,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static string TypeNameMangleImpl(Dictionary<string, TypeWrapper> dict, string name, TypeWrapper tw)
+        internal static string TypeNameMangleImpl(Dictionary<string, RuntimeJavaType> dict, string name, RuntimeJavaType tw)
         {
             // the CLR maximum type name length is 1023 characters,
             // but we need to leave some room for the suffix that we
@@ -201,7 +201,7 @@ namespace IKVM.Runtime
             return mangledTypeName;
         }
 
-        internal sealed override TypeWrapper DefineClassImpl(Dictionary<string, TypeWrapper> types, TypeWrapper host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain protectionDomain)
+        internal sealed override RuntimeJavaType DefineClassImpl(Dictionary<string, RuntimeJavaType> types, RuntimeJavaType host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain protectionDomain)
         {
 #if IMPORTER
             AotTypeWrapper type = new AotTypeWrapper(f, (CompilerClassLoader)classLoader);
@@ -230,7 +230,7 @@ namespace IKVM.Runtime
                 // and loaded (not defined) a class with the same name, in that case
                 // we'll leak the the Reflection.Emit defined type. Also see the comment
                 // in ClassLoaderWrapper.RegisterInitiatingLoader().
-                TypeWrapper race;
+                RuntimeJavaType race;
                 types.TryGetValue(f.Name, out race);
                 if (race == null)
                 {
@@ -248,7 +248,7 @@ namespace IKVM.Runtime
 
 #if !IMPORTER && !FIRST_PASS
 
-        private static java.lang.Class TieClassAndWrapper(TypeWrapper type, ProtectionDomain protectionDomain)
+        private static java.lang.Class TieClassAndWrapper(RuntimeJavaType type, ProtectionDomain protectionDomain)
         {
             java.lang.Class clazz = new java.lang.Class(null);
             clazz.typeWrapper = type;
@@ -349,13 +349,13 @@ namespace IKVM.Runtime
 
         internal void FinishAll()
         {
-            Dictionary<TypeWrapper, TypeWrapper> done = new Dictionary<TypeWrapper, TypeWrapper>();
+            Dictionary<RuntimeJavaType, RuntimeJavaType> done = new Dictionary<RuntimeJavaType, RuntimeJavaType>();
             bool more = true;
             while (more)
             {
                 more = false;
-                List<TypeWrapper> l = new List<TypeWrapper>(dynamicTypes.Values);
-                foreach (TypeWrapper tw in l)
+                List<RuntimeJavaType> l = new List<RuntimeJavaType>(dynamicTypes.Values);
+                foreach (RuntimeJavaType tw in l)
                 {
                     if (tw != null && !done.ContainsKey(tw))
                     {

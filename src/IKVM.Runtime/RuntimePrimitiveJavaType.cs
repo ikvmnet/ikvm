@@ -38,18 +38,18 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    sealed class PrimitiveTypeWrapper : TypeWrapper
+    sealed class RuntimePrimitiveJavaType : RuntimeJavaType
     {
 
-        internal static readonly PrimitiveTypeWrapper BYTE = new PrimitiveTypeWrapper(Types.Byte, "B");
-        internal static readonly PrimitiveTypeWrapper CHAR = new PrimitiveTypeWrapper(Types.Char, "C");
-        internal static readonly PrimitiveTypeWrapper DOUBLE = new PrimitiveTypeWrapper(Types.Double, "D");
-        internal static readonly PrimitiveTypeWrapper FLOAT = new PrimitiveTypeWrapper(Types.Single, "F");
-        internal static readonly PrimitiveTypeWrapper INT = new PrimitiveTypeWrapper(Types.Int32, "I");
-        internal static readonly PrimitiveTypeWrapper LONG = new PrimitiveTypeWrapper(Types.Int64, "J");
-        internal static readonly PrimitiveTypeWrapper SHORT = new PrimitiveTypeWrapper(Types.Int16, "S");
-        internal static readonly PrimitiveTypeWrapper BOOLEAN = new PrimitiveTypeWrapper(Types.Boolean, "Z");
-        internal static readonly PrimitiveTypeWrapper VOID = new PrimitiveTypeWrapper(Types.Void, "V");
+        internal static readonly RuntimePrimitiveJavaType BYTE = new RuntimePrimitiveJavaType(Types.Byte, "B");
+        internal static readonly RuntimePrimitiveJavaType CHAR = new RuntimePrimitiveJavaType(Types.Char, "C");
+        internal static readonly RuntimePrimitiveJavaType DOUBLE = new RuntimePrimitiveJavaType(Types.Double, "D");
+        internal static readonly RuntimePrimitiveJavaType FLOAT = new RuntimePrimitiveJavaType(Types.Single, "F");
+        internal static readonly RuntimePrimitiveJavaType INT = new RuntimePrimitiveJavaType(Types.Int32, "I");
+        internal static readonly RuntimePrimitiveJavaType LONG = new RuntimePrimitiveJavaType(Types.Int64, "J");
+        internal static readonly RuntimePrimitiveJavaType SHORT = new RuntimePrimitiveJavaType(Types.Int16, "S");
+        internal static readonly RuntimePrimitiveJavaType BOOLEAN = new RuntimePrimitiveJavaType(Types.Boolean, "Z");
+        internal static readonly RuntimePrimitiveJavaType VOID = new RuntimePrimitiveJavaType(Types.Void, "V");
 
         readonly Type type;
         readonly string sigName;
@@ -59,14 +59,14 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <param name="sigName"></param>
-        private PrimitiveTypeWrapper(Type type, string sigName) :
+        private RuntimePrimitiveJavaType(Type type, string sigName) :
             base(TypeFlags.None, Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null)
         {
             this.type = type;
             this.sigName = sigName;
         }
 
-        internal override TypeWrapper BaseTypeWrapper => null;
+        internal override RuntimeJavaType BaseTypeWrapper => null;
 
         internal static bool IsPrimitiveType(Type type)
         {
@@ -87,7 +87,7 @@ namespace IKVM.Runtime
 
         internal override Type TypeAsTBD => type;
 
-        public override string ToString() => "PrimitiveTypeWrapper[" + sigName + "]";
+        public override string ToString() => "RuntimePrimitiveJavaType[" + sigName + "]";
 
 #if EMITTERS
 

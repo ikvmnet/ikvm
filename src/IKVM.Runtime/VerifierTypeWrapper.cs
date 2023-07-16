@@ -34,7 +34,7 @@ namespace IKVM.Runtime
 {
 
     // this is a container for the special verifier TypeWrappers
-    sealed class VerifierTypeWrapper : TypeWrapper
+    sealed class VerifierTypeWrapper : RuntimeJavaType
     {
 
         // the TypeWrapper constructor interns the name, so we have to pre-intern here to make sure we have the same string object
@@ -42,15 +42,15 @@ namespace IKVM.Runtime
         static readonly string This = string.Intern("this");
         static readonly string New = string.Intern("new");
         static readonly string Fault = string.Intern("<fault>");
-        internal static readonly TypeWrapper Invalid = null;
-        internal static readonly TypeWrapper Null = new VerifierTypeWrapper("null", 0, null, null);
-        internal static readonly TypeWrapper UninitializedThis = new VerifierTypeWrapper("uninitialized-this", 0, null, null);
-        internal static readonly TypeWrapper Unloadable = new UnloadableTypeWrapper("<verifier>");
-        internal static readonly TypeWrapper ExtendedFloat = new VerifierTypeWrapper("<extfloat>", 0, null, null);
-        internal static readonly TypeWrapper ExtendedDouble = new VerifierTypeWrapper("<extdouble>", 0, null, null);
+        internal static readonly RuntimeJavaType Invalid = null;
+        internal static readonly RuntimeJavaType Null = new VerifierTypeWrapper("null", 0, null, null);
+        internal static readonly RuntimeJavaType UninitializedThis = new VerifierTypeWrapper("uninitialized-this", 0, null, null);
+        internal static readonly RuntimeJavaType Unloadable = new UnloadableTypeWrapper("<verifier>");
+        internal static readonly RuntimeJavaType ExtendedFloat = new VerifierTypeWrapper("<extfloat>", 0, null, null);
+        internal static readonly RuntimeJavaType ExtendedDouble = new VerifierTypeWrapper("<extdouble>", 0, null, null);
 
         readonly int index;
-        readonly TypeWrapper underlyingType;
+        readonly RuntimeJavaType underlyingType;
         readonly MethodAnalyzer methodAnalyzer;
 
 #if EXPORTER
@@ -67,12 +67,12 @@ namespace IKVM.Runtime
             return GetType().Name + "[" + Name + "," + index + "," + underlyingType + "]";
         }
 
-        internal static TypeWrapper MakeNew(TypeWrapper type, int bytecodeIndex)
+        internal static RuntimeJavaType MakeNew(RuntimeJavaType type, int bytecodeIndex)
         {
             return new VerifierTypeWrapper(New, bytecodeIndex, type, null);
         }
 
-        internal static TypeWrapper MakeFaultBlockException(MethodAnalyzer ma, int handlerIndex)
+        internal static RuntimeJavaType MakeFaultBlockException(MethodAnalyzer ma, int handlerIndex)
         {
             return new VerifierTypeWrapper(Fault, handlerIndex, null, ma);
         }
@@ -82,37 +82,37 @@ namespace IKVM.Runtime
         // It exists to capture the verification rules for non-virtual base class method invocation in .NET 2.0,
         // which requires that the invocation is done on a "this" reference that was directly loaded onto the
         // stack (using ldarg_0).
-        internal static TypeWrapper MakeThis(TypeWrapper type)
+        internal static RuntimeJavaType MakeThis(RuntimeJavaType type)
         {
             return new VerifierTypeWrapper(This, 0, type, null);
         }
 
-        internal static bool IsNotPresentOnStack(TypeWrapper w)
+        internal static bool IsNotPresentOnStack(RuntimeJavaType w)
         {
             return IsNew(w) || IsFaultBlockException(w);
         }
 
-        internal static bool IsNew(TypeWrapper w)
+        internal static bool IsNew(RuntimeJavaType w)
         {
             return w != null && w.IsVerifierType && ReferenceEquals(w.Name, New);
         }
 
-        internal static bool IsFaultBlockException(TypeWrapper w)
+        internal static bool IsFaultBlockException(RuntimeJavaType w)
         {
             return w != null && w.IsVerifierType && ReferenceEquals(w.Name, Fault);
         }
 
-        internal static bool IsNullOrUnloadable(TypeWrapper w)
+        internal static bool IsNullOrUnloadable(RuntimeJavaType w)
         {
             return w == Null || w.IsUnloadable;
         }
 
-        internal static bool IsThis(TypeWrapper w)
+        internal static bool IsThis(RuntimeJavaType w)
         {
             return w != null && w.IsVerifierType && ReferenceEquals(w.Name, This);
         }
 
-        internal static void ClearFaultBlockException(TypeWrapper w)
+        internal static void ClearFaultBlockException(RuntimeJavaType w)
         {
             VerifierTypeWrapper vtw = (VerifierTypeWrapper)w;
             vtw.methodAnalyzer.ClearFaultBlockException(vtw.Index);
@@ -126,7 +126,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal TypeWrapper UnderlyingType
+        internal RuntimeJavaType UnderlyingType
         {
             get
             {
@@ -134,15 +134,15 @@ namespace IKVM.Runtime
             }
         }
 
-        private VerifierTypeWrapper(string name, int index, TypeWrapper underlyingType, MethodAnalyzer methodAnalyzer)
-            : base(TypeFlags.None, TypeWrapper.VerifierTypeModifiersHack, name)
+        private VerifierTypeWrapper(string name, int index, RuntimeJavaType underlyingType, MethodAnalyzer methodAnalyzer)
+            : base(TypeFlags.None, RuntimeJavaType.VerifierTypeModifiersHack, name)
         {
             this.index = index;
             this.underlyingType = underlyingType;
             this.methodAnalyzer = methodAnalyzer;
         }
 
-        internal override TypeWrapper BaseTypeWrapper
+        internal override RuntimeJavaType BaseTypeWrapper
         {
             get { return null; }
         }
@@ -165,7 +165,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override TypeWrapper[] Interfaces
+        internal override RuntimeJavaType[] Interfaces
         {
             get
             {
@@ -173,7 +173,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override TypeWrapper[] InnerClasses
+        internal override RuntimeJavaType[] InnerClasses
         {
             get
             {
@@ -181,7 +181,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override TypeWrapper DeclaringTypeWrapper
+        internal override RuntimeJavaType DeclaringTypeWrapper
         {
             get
             {

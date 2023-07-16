@@ -125,7 +125,7 @@ namespace IKVM.Runtime
             throw new NotImplementedException();
 #else
             Profiler.Count("DynamicMultianewarray");
-            TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
+            RuntimeJavaType wrapper = RuntimeJavaType.FromClass(clazz);
             object obj = multianewarray(wrapper.TypeAsArrayType.TypeHandle, lengths);
             if (wrapper.IsGhostArray)
             {
@@ -146,7 +146,7 @@ namespace IKVM.Runtime
             {
                 throw new global::java.lang.NegativeArraySizeException();
             }
-            TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
+            RuntimeJavaType wrapper = RuntimeJavaType.FromClass(clazz);
             Array obj = Array.CreateInstance(wrapper.TypeAsArrayType, length);
             if (wrapper.IsGhost || wrapper.IsGhostArray)
             {
@@ -190,7 +190,7 @@ namespace IKVM.Runtime
             throw new NotImplementedException();
 #else
             Profiler.Count("DynamicNewCheckOnly");
-            TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
+            RuntimeJavaType wrapper = RuntimeJavaType.FromClass(clazz);
             if (wrapper.IsAbstract)
             {
                 throw new global::java.lang.InstantiationError(wrapper.Name);
@@ -199,15 +199,15 @@ namespace IKVM.Runtime
 #endif
         }
 
-        private static TypeWrapper LoadTypeWrapper(string clazz, ikvm.@internal.CallerID callerId)
+        private static RuntimeJavaType LoadTypeWrapper(string clazz, ikvm.@internal.CallerID callerId)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             try
             {
-                TypeWrapper context = TypeWrapper.FromClass(callerId.getCallerClass());
-                TypeWrapper wrapper = ClassLoaderWrapper.FromCallerID(callerId).LoadClassByDottedName(clazz);
+                RuntimeJavaType context = RuntimeJavaType.FromClass(callerId.getCallerClass());
+                RuntimeJavaType wrapper = ClassLoaderWrapper.FromCallerID(callerId).LoadClassByDottedName(clazz);
                 global::java.lang.ClassLoader loader = callerId.getCallerClassLoader();
                 if (loader != null)
                 {
@@ -264,7 +264,7 @@ namespace IKVM.Runtime
 #else
             Debug.Assert(obj != null);
             Profiler.Count("DynamicInstanceOf");
-            TypeWrapper tw = TypeWrapper.FromClass(clazz);
+            RuntimeJavaType tw = RuntimeJavaType.FromClass(clazz);
             // we have to mimick the bytecode behavior, which allows these .NET-isms to show through
             if (tw.TypeAsBaseType == typeof(Array))
             {
@@ -301,7 +301,7 @@ namespace IKVM.Runtime
             try
             {
                 ClassLoaderWrapper loader = ClassLoaderWrapper.FromCallerID(callerID);
-                TypeWrapper[] args = loader.ArgTypeWrapperListFromSig(sig, LoadMode.LoadOrThrow);
+                RuntimeJavaType[] args = loader.ArgTypeWrapperListFromSig(sig, LoadMode.LoadOrThrow);
                 global::java.lang.Class[] ptypes = new global::java.lang.Class[args.Length];
                 for (int i = 0; i < ptypes.Length; i++)
                 {
@@ -404,7 +404,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             return null;
 #else
-            TypeWrapper tw = TypeWrapper.FromClass(global::ikvm.runtime.Util.getClassFromObject(obj));
+            RuntimeJavaType tw = RuntimeJavaType.FromClass(global::ikvm.runtime.Util.getClassFromObject(obj));
             MethodWrapper mw = tw.GetMethodWrapper(name, sig, true);
             if (mw == null || mw.IsStatic || !mw.IsPublic)
             {
@@ -1094,7 +1094,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             return null;
 #else
-            TypeWrapper exceptionTypeWrapper = TypeWrapper.FromClass(exceptionClass);
+            RuntimeJavaType exceptionTypeWrapper = RuntimeJavaType.FromClass(exceptionClass);
             mode &= ~MapFlags.NoRemapping;
             if (exceptionTypeWrapper.IsSubTypeOf(CoreClasses.cli.System.Exception.Wrapper))
             {

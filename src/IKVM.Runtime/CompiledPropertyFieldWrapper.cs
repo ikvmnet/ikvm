@@ -49,7 +49,7 @@ namespace IKVM.Runtime
         /// <param name="declaringType"></param>
         /// <param name="property"></param>
         /// <param name="modifiers"></param>
-        internal CompiledPropertyFieldWrapper(TypeWrapper declaringType, PropertyInfo property, ExModifiers modifiers) :
+        internal CompiledPropertyFieldWrapper(RuntimeJavaType declaringType, PropertyInfo property, ExModifiers modifiers) :
             base(declaringType, ClassLoaderWrapper.GetWrapperFromType(property.PropertyType), property.Name, ClassLoaderWrapper.GetWrapperFromType(property.PropertyType).SigName, modifiers, null)
         {
             this.property = property;

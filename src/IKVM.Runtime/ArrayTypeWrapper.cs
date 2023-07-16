@@ -41,12 +41,12 @@ using IKVM.Tools.Importer;
 
 namespace IKVM.Runtime
 {
-    sealed class ArrayTypeWrapper : TypeWrapper
+    sealed class ArrayTypeWrapper : RuntimeJavaType
     {
 
-        static volatile TypeWrapper[] interfaces;
+        static volatile RuntimeJavaType[] interfaces;
         static volatile MethodInfo clone;
-        readonly TypeWrapper ultimateElementTypeWrapper;
+        readonly RuntimeJavaType ultimateElementTypeWrapper;
         Type arrayType;
         bool finished;
 
@@ -55,14 +55,14 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="ultimateElementTypeWrapper"></param>
         /// <param name="name"></param>
-        internal ArrayTypeWrapper(TypeWrapper ultimateElementTypeWrapper, string name) :
+        internal ArrayTypeWrapper(RuntimeJavaType ultimateElementTypeWrapper, string name) :
             base(ultimateElementTypeWrapper.IsInternal ? TypeFlags.InternalAccess : TypeFlags.None, Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.Modifiers & Modifiers.Public), name)
         {
             Debug.Assert(!ultimateElementTypeWrapper.IsArray);
             this.ultimateElementTypeWrapper = ultimateElementTypeWrapper;
         }
 
-        internal override TypeWrapper BaseTypeWrapper
+        internal override RuntimeJavaType BaseTypeWrapper
         {
             get { return CoreClasses.java.lang.Object.Wrapper; }
         }
@@ -85,7 +85,7 @@ namespace IKVM.Runtime
 
         protected override void LazyPublishMembers()
         {
-            var mw = new SimpleCallMethodWrapper(this, "clone", "()Ljava.lang.Object;", CloneMethod, CoreClasses.java.lang.Object.Wrapper, TypeWrapper.EmptyArray, Modifiers.Public, MemberFlags.HideFromReflection, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
+            var mw = new SimpleCallMethodWrapper(this, "clone", "()Ljava.lang.Object;", CloneMethod, CoreClasses.java.lang.Object.Wrapper, RuntimeJavaType.EmptyArray, Modifiers.Public, MemberFlags.HideFromReflection, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
             mw.Link();
             SetMethods(new MethodWrapper[] { mw });
             SetFields(FieldWrapper.EmptyArray);
@@ -108,13 +108,13 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override TypeWrapper[] Interfaces
+        internal override RuntimeJavaType[] Interfaces
         {
             get
             {
                 if (interfaces == null)
                 {
-                    TypeWrapper[] tw = new TypeWrapper[2];
+                    RuntimeJavaType[] tw = new RuntimeJavaType[2];
                     tw[0] = CoreClasses.java.lang.Cloneable.Wrapper;
                     tw[1] = CoreClasses.java.io.Serializable.Wrapper;
                     interfaces = tw;
@@ -186,7 +186,7 @@ namespace IKVM.Runtime
             get { return ultimateElementTypeWrapper.IsFastClassLiteralSafe || ultimateElementTypeWrapper.IsPrimitive; }
         }
 
-        internal override TypeWrapper GetUltimateElementTypeWrapper()
+        internal override RuntimeJavaType GetUltimateElementTypeWrapper()
         {
             return ultimateElementTypeWrapper;
         }

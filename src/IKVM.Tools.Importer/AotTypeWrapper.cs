@@ -63,7 +63,7 @@ namespace IKVM.Tools.Importer
 
         protected override Type GetBaseTypeForDefineType()
         {
-            TypeWrapper baseTypeWrapper = BaseTypeWrapper;
+            RuntimeJavaType baseTypeWrapper = BaseTypeWrapper;
             if (this.IsPublic && this.IsAbstract && baseTypeWrapper.IsPublic && baseTypeWrapper.IsAbstract && classLoader.WorkaroundAbstractMethodWidening)
             {
                 // FXBUG
@@ -374,8 +374,8 @@ namespace IKVM.Tools.Importer
         {
             foreach (var prop in clazz.Properties)
             {
-                TypeWrapper typeWrapper = GetClassLoader().RetTypeWrapperFromSig(prop.Sig, LoadMode.Link);
-                TypeWrapper[] propargs = GetClassLoader().ArgTypeWrapperListFromSig(prop.Sig, LoadMode.Link);
+                var typeWrapper = GetClassLoader().RetTypeWrapperFromSig(prop.Sig, LoadMode.Link);
+                var propargs = GetClassLoader().ArgTypeWrapperListFromSig(prop.Sig, LoadMode.Link);
                 Type[] indexer = new Type[propargs.Length];
                 for (int i = 0; i < propargs.Length; i++)
                 {
@@ -554,7 +554,7 @@ namespace IKVM.Tools.Importer
         private void MapSignature(string sig, out Type returnType, out Type[] parameterTypes)
         {
             returnType = GetClassLoader().RetTypeWrapperFromSig(sig, LoadMode.Link).TypeAsSignatureType;
-            TypeWrapper[] parameterTypeWrappers = GetClassLoader().ArgTypeWrapperListFromSig(sig, LoadMode.Link);
+            var parameterTypeWrappers = GetClassLoader().ArgTypeWrapperListFromSig(sig, LoadMode.Link);
             parameterTypes = new Type[parameterTypeWrappers.Length];
             for (int i = 0; i < parameterTypeWrappers.Length; i++)
             {
@@ -730,7 +730,7 @@ namespace IKVM.Tools.Importer
                     {
                         foreach (Implements iface in clazz.Interfaces)
                         {
-                            TypeWrapper tw = GetClassLoader().LoadClassByDottedName(iface.Class);
+                            var tw = GetClassLoader().LoadClassByDottedName(iface.Class);
                             // NOTE since this interface won't be part of the list in the ImplementAttribute,
                             // it won't be visible from Java that the type implements this interface.
                             typeBuilder.AddInterfaceImplementation(tw.TypeAsBaseType);
@@ -781,13 +781,13 @@ namespace IKVM.Tools.Importer
                     GhostMethodWrapper gmw = methods[i] as GhostMethodWrapper;
                     if (gmw != null)
                     {
-                        TypeWrapper[] args = methods[i].GetParameters();
+                        var args = methods[i].GetParameters();
                         MethodBuilder stub = gmw.GetGhostMethod();
                         AddParameterMetadata(stub, methods[i]);
                         AttributeHelper.SetModifiers(stub, methods[i].Modifiers, methods[i].IsInternal);
                         CodeEmitter ilgen = CodeEmitter.Create(stub);
                         CodeEmitterLabel end = ilgen.DefineLabel();
-                        TypeWrapper[] implementers = classLoader.GetGhostImplementers(this);
+                        var implementers = classLoader.GetGhostImplementers(this);
                         ilgen.Emit(OpCodes.Ldarg_0);
                         ilgen.Emit(OpCodes.Ldfld, ghostRefField);
                         ilgen.Emit(OpCodes.Dup);
@@ -852,7 +852,7 @@ namespace IKVM.Tools.Importer
                     CodeEmitter ilgen;
                     CodeEmitterLocal local;
                     // add implicit conversions for all the ghost implementers
-                    TypeWrapper[] implementers = classLoader.GetGhostImplementers(this);
+                    var implementers = classLoader.GetGhostImplementers(this);
                     for (int i = 0; i < implementers.Length; i++)
                     {
                         mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, TypeAsSignatureType, new Type[] { implementers[i].TypeAsSignatureType });
@@ -1109,7 +1109,7 @@ namespace IKVM.Tools.Importer
             else if (IsGhostArray)
             {
                 ilgen.Emit(OpCodes.Dup);
-                TypeWrapper tw = this;
+                RuntimeJavaType tw = this;
                 int rank = 0;
                 while (tw.IsArray)
                 {
@@ -1172,7 +1172,7 @@ namespace IKVM.Tools.Importer
         {
             private IKVM.Tools.Importer.MapXml.InstructionList code;
 
-            internal ReplacedMethodWrapper(TypeWrapper tw, string name, string sig, IKVM.Tools.Importer.MapXml.InstructionList code)
+            internal ReplacedMethodWrapper(RuntimeJavaType tw, string name, string sig, IKVM.Tools.Importer.MapXml.InstructionList code)
                 : base(tw, name, sig, null, null, null, Modifiers.Public, MemberFlags.None)
             {
                 this.code = code;

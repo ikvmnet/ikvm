@@ -31,8 +31,8 @@ namespace IKVM.Runtime
         internal class ConstantPoolItemMI : ConstantPoolItemFMI
         {
 
-            TypeWrapper[] argTypeWrappers;
-            TypeWrapper retTypeWrapper;
+            RuntimeJavaType[] argTypeWrappers;
+            RuntimeJavaType retTypeWrapper;
             protected MethodWrapper method;
             protected MethodWrapper invokespecialMethod;
 
@@ -65,7 +65,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 base.Link(thisType, mode);
                 lock (this)
@@ -76,8 +76,8 @@ namespace IKVM.Runtime
                     }
                 }
                 ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-                TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSig(this.Signature, mode);
-                TypeWrapper ret = classLoader.RetTypeWrapperFromSig(this.Signature, mode);
+                RuntimeJavaType[] args = classLoader.ArgTypeWrapperListFromSig(this.Signature, mode);
+                RuntimeJavaType ret = classLoader.RetTypeWrapperFromSig(this.Signature, mode);
                 lock (this)
                 {
                     if (argTypeWrappers == null)
@@ -88,12 +88,12 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal TypeWrapper[] GetArgTypes()
+            internal RuntimeJavaType[] GetArgTypes()
             {
                 return argTypeWrappers;
             }
 
-            internal TypeWrapper GetRetType()
+            internal RuntimeJavaType GetRetType()
             {
                 return retTypeWrapper;
             }

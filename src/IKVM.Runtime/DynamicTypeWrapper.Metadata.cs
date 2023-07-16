@@ -31,7 +31,7 @@ namespace IKVM.Runtime
 {
 
 #if IMPORTER
-    abstract partial class DynamicTypeWrapper : TypeWrapper
+    abstract partial class DynamicTypeWrapper : RuntimeJavaType
 #else
 #pragma warning disable 628 // don't complain about protected members in sealed type
     sealed partial class DynamicTypeWrapper

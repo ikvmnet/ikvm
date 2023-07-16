@@ -1437,7 +1437,7 @@
         <!-- Here we are adding/replacing methods to existing classes -->
         <class name="java.lang.Class">
             <implements class="cli.System.Runtime.Serialization.ISerializable" />
-            <field name="typeWrapper" sig="Lcli.IKVM.Runtime.TypeWrapper;" modifiers="">
+            <field name="typeWrapper" sig="Lcli.IKVM.Runtime.RuntimeJavaType;" modifiers="">
                 <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
             </field>
         </class>

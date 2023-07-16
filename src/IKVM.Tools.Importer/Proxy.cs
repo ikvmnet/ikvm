@@ -37,17 +37,17 @@ namespace IKVM.Tools.Importer
     static class ProxyGenerator
 	{
 
-		private static readonly TypeWrapper proxyClass;
-		private static readonly TypeWrapper errorClass;
-		private static readonly TypeWrapper runtimeExceptionClass;
+		private static readonly RuntimeJavaType proxyClass;
+		private static readonly RuntimeJavaType errorClass;
+		private static readonly RuntimeJavaType runtimeExceptionClass;
 		private static readonly MethodWrapper undeclaredThrowableExceptionConstructor;
 		private static readonly FieldWrapper invocationHandlerField;
-		private static readonly TypeWrapper javaLangReflectMethod;
-		private static readonly TypeWrapper javaLangNoSuchMethodException;
+		private static readonly RuntimeJavaType javaLangReflectMethod;
+		private static readonly RuntimeJavaType javaLangNoSuchMethodException;
 		private static readonly MethodWrapper javaLangNoClassDefFoundErrorConstructor;
 		private static readonly MethodWrapper javaLangThrowable_getMessage;
 		private static readonly MethodWrapper javaLangClass_getMethod;
-		private static readonly TypeWrapper invocationHandlerClass;
+		private static readonly RuntimeJavaType invocationHandlerClass;
 		private static readonly MethodWrapper invokeMethod;
 		private static readonly MethodWrapper proxyConstructor;
 		private static readonly MethodWrapper hashCodeMethod;
@@ -84,7 +84,7 @@ namespace IKVM.Tools.Importer
 		internal static void Create(CompilerClassLoader loader, string proxy)
 		{
 			string[] interfaces = proxy.Split(',');
-			TypeWrapper[] wrappers = new TypeWrapper[interfaces.Length];
+			var wrappers = new RuntimeJavaType[interfaces.Length];
 			for (int i = 0; i < interfaces.Length; i++)
 			{
 				try
@@ -103,7 +103,7 @@ namespace IKVM.Tools.Importer
 			Create(loader, proxy, wrappers);
 		}
 
-		private static void Create(CompilerClassLoader loader, string proxy, TypeWrapper[] interfaces)
+		private static void Create(CompilerClassLoader loader, string proxy, RuntimeJavaType[] interfaces)
 		{
 			List<ProxyMethod> methods;
 			try
@@ -123,7 +123,7 @@ namespace IKVM.Tools.Importer
 			CreateNoFail(loader, interfaces, methods);
 		}
 
-		private static List<ProxyMethod> CheckAndCollect(CompilerClassLoader loader, TypeWrapper[] interfaces)
+		private static List<ProxyMethod> CheckAndCollect(CompilerClassLoader loader, RuntimeJavaType[] interfaces)
 		{
 			List<MethodWrapper> methods = new List<MethodWrapper>();
 
@@ -133,7 +133,7 @@ namespace IKVM.Tools.Importer
 			methods.Add(toStringMethod);
 
 			// Add the interfaces methods in order.
-			foreach (TypeWrapper tw in interfaces)
+			foreach (var tw in interfaces)
 			{
 				if (!tw.IsInterface)
 				{
@@ -158,11 +158,9 @@ namespace IKVM.Tools.Importer
 			// TODO verify restrictions
 
 			// Collect declared exceptions.
-			Dictionary<string, TypeWrapper[]> exceptions = new Dictionary<string, TypeWrapper[]>();
+			var exceptions = new Dictionary<string, RuntimeJavaType[]>();
 			foreach (MethodWrapper mw in methods)
-			{
 				Add(loader, exceptions, mw);
-			}
 
 			// Build the definitive proxy method list.
 			List<ProxyMethod> proxyMethods = new List<ProxyMethod>();
@@ -186,11 +184,11 @@ namespace IKVM.Tools.Importer
 			return false;
 		}
 
-		private static void Add(CompilerClassLoader loader, Dictionary<string, TypeWrapper[]> exceptions, MethodWrapper mw)
+		private static void Add(CompilerClassLoader loader, Dictionary<string, RuntimeJavaType[]> exceptions, MethodWrapper mw)
 		{
 			string signature = mw.Signature;
-			TypeWrapper[] newExceptionTypes = LoadTypes(loader, mw.GetDeclaredExceptions());
-			TypeWrapper[] curExceptionTypes;
+            RuntimeJavaType[] newExceptionTypes = LoadTypes(loader, mw.GetDeclaredExceptions());
+            RuntimeJavaType[] curExceptionTypes;
 			if (exceptions.TryGetValue(signature, out curExceptionTypes))
 			{
 				exceptions[signature] = Merge(newExceptionTypes, curExceptionTypes);
@@ -201,13 +199,13 @@ namespace IKVM.Tools.Importer
 			}
 		}
 
-		private static TypeWrapper[] Merge(TypeWrapper[] newExceptionTypes, TypeWrapper[] curExceptionTypes)
+		private static RuntimeJavaType[] Merge(RuntimeJavaType[] newExceptionTypes, RuntimeJavaType[] curExceptionTypes)
 		{
-			List<TypeWrapper> list = new List<TypeWrapper>();
-			foreach (TypeWrapper twNew in newExceptionTypes)
+			List<RuntimeJavaType> list = new List<RuntimeJavaType>();
+			foreach (RuntimeJavaType twNew in newExceptionTypes)
 			{
-				TypeWrapper match = null;
-				foreach (TypeWrapper twCur in curExceptionTypes)
+                RuntimeJavaType match = null;
+				foreach (RuntimeJavaType twCur in curExceptionTypes)
 				{
 					if (twNew.IsAssignableTo(twCur))
 					{
@@ -225,7 +223,7 @@ namespace IKVM.Tools.Importer
 			return list.ToArray();
 		}
 
-		private static void CreateNoFail(CompilerClassLoader loader, TypeWrapper[] interfaces, List<ProxyMethod> methods)
+		private static void CreateNoFail(CompilerClassLoader loader, RuntimeJavaType[] interfaces, List<ProxyMethod> methods)
 		{
 			bool ispublic = true;
 			Type[] interfaceTypes = new Type[interfaces.Length];
@@ -267,7 +265,7 @@ namespace IKVM.Tools.Importer
 		{
 			MethodBuilder mb = pm.mw.GetDefineMethodHelper().DefineMethod(loader.GetTypeWrapperFactory(), tb, pm.mw.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final);
 			List<string> exceptions = new List<string>();
-			foreach (TypeWrapper tw in pm.exceptions)
+			foreach (var tw in pm.exceptions)
 			{
 				exceptions.Add(tw.Name);
 			}
@@ -278,7 +276,7 @@ namespace IKVM.Tools.Importer
 			invocationHandlerField.EmitGet(ilgen);
 			ilgen.Emit(OpCodes.Ldarg_0);
 			ilgen.Emit(OpCodes.Ldsfld, pm.fb);
-			TypeWrapper[] parameters = pm.mw.GetParameters();
+			var parameters = pm.mw.GetParameters();
 			if (parameters.Length == 0)
 			{
 				ilgen.Emit(OpCodes.Ldnull);
@@ -304,9 +302,9 @@ namespace IKVM.Tools.Importer
 				}
 			}
 			invokeMethod.EmitCallvirt(ilgen);
-			TypeWrapper returnType = pm.mw.ReturnType;
+			var returnType = pm.mw.ReturnType;
 			CodeEmitterLocal returnValue = null;
-			if (returnType != PrimitiveTypeWrapper.VOID)
+			if (returnType != RuntimePrimitiveJavaType.VOID)
 			{
 				returnValue = ilgen.DeclareLocal(returnType.TypeAsSignatureType);
 				if (returnType.IsNonPrimitiveValueType)
@@ -338,7 +336,7 @@ namespace IKVM.Tools.Importer
 			ilgen.Emit(OpCodes.Ldloc, exception);
 			runtimeExceptionClass.EmitInstanceOf(ilgen);
 			ilgen.EmitBrtrue(rethrow);
-			foreach (TypeWrapper tw in pm.exceptions)
+			foreach (var tw in pm.exceptions)
 			{
 				ilgen.Emit(OpCodes.Ldloc, exception);
 				tw.EmitInstanceOf(ilgen);
@@ -372,7 +370,7 @@ namespace IKVM.Tools.Importer
 			{
 				method.mw.DeclaringType.EmitClassLiteral(ilgen);
 				ilgen.Emit(OpCodes.Ldstr, method.mw.Name);
-				TypeWrapper[] parameters = method.mw.GetParameters();
+				var parameters = method.mw.GetParameters();
 				ilgen.EmitLdc_I4(parameters.Length);
 				ilgen.Emit(OpCodes.Newarr, CoreClasses.java.lang.Class.Wrapper.TypeAsArrayType);
 				for (int i = 0; i < parameters.Length; i++)
@@ -404,17 +402,17 @@ namespace IKVM.Tools.Importer
 		private sealed class ProxyMethod
 		{
 			internal readonly MethodWrapper mw;
-			internal readonly TypeWrapper[] exceptions;
+			internal readonly RuntimeJavaType[] exceptions;
 			internal FieldBuilder fb;
 
-			internal ProxyMethod(MethodWrapper mw, TypeWrapper[] exceptions)
+			internal ProxyMethod(MethodWrapper mw, RuntimeJavaType[] exceptions)
 			{
 				this.mw = mw;
 				this.exceptions = exceptions;
 			}
 		}
 
-		private static IEnumerable<MethodWrapper> GetInterfaceMethods(TypeWrapper tw)
+		private static IEnumerable<MethodWrapper> GetInterfaceMethods(RuntimeJavaType tw)
 		{
 			Dictionary<string, MethodWrapper> methods = new Dictionary<string, MethodWrapper>();
 			foreach (MethodWrapper mw in tw.GetMethods())
@@ -424,7 +422,7 @@ namespace IKVM.Tools.Importer
 					methods.Add(mw.Name + mw.Signature, mw);
 				}
 			}
-			foreach (TypeWrapper iface in tw.Interfaces)
+			foreach (RuntimeJavaType iface in tw.Interfaces)
 			{
 				foreach (MethodWrapper mw in GetInterfaceMethods(iface))
 				{
@@ -437,13 +435,13 @@ namespace IKVM.Tools.Importer
 			return methods.Values;
 		}
 
-		private static TypeWrapper[] LoadTypes(ClassLoaderWrapper loader, string[] classes)
+		private static RuntimeJavaType[] LoadTypes(ClassLoaderWrapper loader, string[] classes)
 		{
 			if (classes == null || classes.Length == 0)
 			{
-				return TypeWrapper.EmptyArray;
+				return RuntimeJavaType.EmptyArray;
 			}
-			TypeWrapper[] tw = new TypeWrapper[classes.Length];
+            RuntimeJavaType[] tw = new RuntimeJavaType[classes.Length];
 			for (int i = 0; i < tw.Length; i++)
 			{
 				tw[i] = loader.LoadClassByDottedName(classes[i]);

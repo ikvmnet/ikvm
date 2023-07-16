@@ -30,20 +30,20 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Runtime
 {
 
-    sealed class StubTypeWrapper : TypeWrapper
+    sealed class StubTypeWrapper : RuntimeJavaType
     {
 
         private readonly bool remapped;
-        private readonly TypeWrapper baseWrapper;
+        private readonly RuntimeJavaType baseWrapper;
 
-        internal StubTypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper, bool remapped)
+        internal StubTypeWrapper(Modifiers modifiers, string name, RuntimeJavaType baseWrapper, bool remapped)
             : base(TypeFlags.None, modifiers, name)
         {
             this.remapped = remapped;
             this.baseWrapper = baseWrapper;
         }
 
-        internal override TypeWrapper BaseTypeWrapper
+        internal override RuntimeJavaType BaseTypeWrapper
         {
             get { return baseWrapper; }
         }

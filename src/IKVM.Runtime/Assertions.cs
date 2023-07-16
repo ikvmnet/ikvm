@@ -98,7 +98,7 @@ namespace IKVM.Runtime
 			sysAsserts = false;
 		}
 
-		internal static bool IsEnabled(TypeWrapper tw)
+		internal static bool IsEnabled(RuntimeJavaType tw)
 		{
 			string className = tw.Name;
 

@@ -76,7 +76,7 @@ namespace IKVM.Runtime
 #if !EXPORTER
         // NOTE this method returns null if the type could not be found
         // or if the type is not a Custom Attribute and we're not in the static compiler
-        internal static Annotation Load(TypeWrapper owner, object[] def)
+        internal static Annotation Load(RuntimeJavaType owner, object[] def)
         {
             Debug.Assert(def[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION));
             string annotationClass = (string)def[1];
@@ -92,7 +92,7 @@ namespace IKVM.Runtime
 #endif
             if (ClassFile.IsValidFieldSig(annotationClass))
             {
-                TypeWrapper tw = owner.GetClassLoader().RetTypeWrapperFromSig(annotationClass.Replace('/', '.'), LoadMode.Link);
+                RuntimeJavaType tw = owner.GetClassLoader().RetTypeWrapperFromSig(annotationClass.Replace('/', '.'), LoadMode.Link);
                 // Java allows inaccessible annotations to be used, so when the annotation isn't visible
                 // we fall back to using the DynamicAnnotationAttribute.
                 if (!tw.IsUnloadable && tw.IsAccessibleFrom(owner))
@@ -259,7 +259,7 @@ namespace IKVM.Runtime
                 string sig = (string)val[1];
                 if (sig.StartsWith("L"))
                 {
-                    TypeWrapper tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
+                    RuntimeJavaType tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
                     if (tw != null)
                     {
                         return new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";" };
@@ -270,7 +270,7 @@ namespace IKVM.Runtime
             else if (val[0].Equals(AnnotationDefaultAttribute.TAG_ENUM))
             {
                 string sig = (string)val[1];
-                TypeWrapper tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
+                RuntimeJavaType tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
                 if (tw != null)
                 {
                     return new object[] { AnnotationDefaultAttribute.TAG_ENUM, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";", val[2] };

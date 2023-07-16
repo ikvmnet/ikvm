@@ -46,7 +46,7 @@ namespace IKVM.Runtime
 {
 
 #if IMPORTER
-    abstract partial class DynamicTypeWrapper : TypeWrapper
+    abstract partial class DynamicTypeWrapper : RuntimeJavaType
 #else
 #pragma warning disable 628 // don't complain about protected members in sealed type
     sealed partial class DynamicTypeWrapper
@@ -56,7 +56,7 @@ namespace IKVM.Runtime
         internal sealed class FinishContext
         {
 
-            private readonly TypeWrapper host;
+            private readonly RuntimeJavaType host;
             private readonly ClassFile classFile;
             private readonly DynamicOrAotTypeWrapper wrapper;
             private readonly TypeBuilder typeBuilder;
@@ -78,7 +78,7 @@ namespace IKVM.Runtime
                 internal object value;
             }
 
-            internal FinishContext(TypeWrapper host, ClassFile classFile, DynamicOrAotTypeWrapper wrapper, TypeBuilder typeBuilder)
+            internal FinishContext(RuntimeJavaType host, ClassFile classFile, DynamicOrAotTypeWrapper wrapper, TypeBuilder typeBuilder)
             {
                 this.host = host;
                 this.classFile = classFile;
@@ -114,7 +114,7 @@ namespace IKVM.Runtime
                 return val;
             }
 
-            internal void EmitDynamicClassLiteral(CodeEmitter ilgen, TypeWrapper tw, bool dynamicCallerID)
+            internal void EmitDynamicClassLiteral(CodeEmitter ilgen, RuntimeJavaType tw, bool dynamicCallerID)
             {
                 Debug.Assert(tw.IsUnloadable);
                 if (dynamicClassLiteral == null)
@@ -178,7 +178,7 @@ namespace IKVM.Runtime
 
             private void CreateGetCallerID()
             {
-                TypeWrapper tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
+                RuntimeJavaType tw = CoreClasses.ikvm.@internal.CallerID.Wrapper;
                 FieldBuilder callerIDField = typeBuilder.DefineField("__<callerID>", tw.TypeAsSignatureType, FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.SpecialName);
                 MethodBuilder mb = DefineHelperMethod("__<GetCallerID>", tw.TypeAsSignatureType, Type.EmptyTypes);
                 callerIDMethod = mb;
@@ -220,7 +220,7 @@ namespace IKVM.Runtime
                 // if we're not abstract make sure we don't inherit any abstract methods
                 if (!wrapper.IsAbstract)
                 {
-                    TypeWrapper parent = wrapper.BaseTypeWrapper;
+                    RuntimeJavaType parent = wrapper.BaseTypeWrapper;
                     // if parent is not abstract, the .NET implementation will never have abstract methods (only
                     // stubs that throw AbstractMethodError)
                     // NOTE interfaces are supposed to be abstract, but the VM doesn't enforce this, so
@@ -323,7 +323,7 @@ namespace IKVM.Runtime
 #if IMPORTER
                         if (methods[i].GetParameters().Length > MethodHandleUtil.MaxArity && methods[i].RequiresNonVirtualDispatcher && wrapper.GetClassLoader().EmitNoRefEmitHelpers)
                         {
-                            wrapper.GetClassLoader().GetTypeWrapperFactory().DefineDelegate(methods[i].GetParameters().Length, methods[i].ReturnType == PrimitiveTypeWrapper.VOID);
+                            wrapper.GetClassLoader().GetTypeWrapperFactory().DefineDelegate(methods[i].GetParameters().Length, methods[i].ReturnType == RuntimePrimitiveJavaType.VOID);
                         }
 #endif
                         if (m.IsAbstract)
@@ -405,7 +405,7 @@ namespace IKVM.Runtime
                                         while (paramLength != 0 && (param[paramLength - 1].IsIn || param[paramLength - 1].ParameterType.IsByRef))
                                             paramLength--;
 
-                                        var match = new TypeWrapper[paramLength];
+                                        var match = new RuntimeJavaType[paramLength];
                                         for (int j = 0; j < paramLength; j++)
                                             match[j] = ClassLoaderWrapper.GetWrapperFromType(param[j].ParameterType);
 
@@ -588,7 +588,7 @@ namespace IKVM.Runtime
                 }
 
                 // add all interfaces that we implement (including the magic ones) and handle ghost conversions
-                ImplementInterfaces(wrapper.Interfaces, new List<TypeWrapper>());
+                ImplementInterfaces(wrapper.Interfaces, new List<RuntimeJavaType>());
 
                 // NOTE non-final fields aren't allowed in interfaces so we don't have to initialize constant fields
                 if (!classFile.IsInterface)
@@ -611,15 +611,15 @@ namespace IKVM.Runtime
                     // (e.g. interface that has an equals() method that should override System.Object.Equals())
                     // also deals with interface methods that aren't implemented (generate a stub that throws AbstractMethodError)
                     // and with methods that aren't public (generate a stub that throws IllegalAccessError)
-                    Dictionary<TypeWrapper, TypeWrapper> doneSet = new Dictionary<TypeWrapper, TypeWrapper>();
-                    TypeWrapper[] interfaces = wrapper.Interfaces;
+                    Dictionary<RuntimeJavaType, RuntimeJavaType> doneSet = new Dictionary<RuntimeJavaType, RuntimeJavaType>();
+                    RuntimeJavaType[] interfaces = wrapper.Interfaces;
                     for (int i = 0; i < interfaces.Length; i++)
                     {
                         ImplementInterfaceMethodStubs(doneSet, interfaces[i], false);
                     }
                     // if any of our base classes has an incomplete interface implementation we need to look through all
                     // the base class interfaces to see if we've got an implementation now
-                    TypeWrapper baseTypeWrapper = wrapper.BaseTypeWrapper;
+                    RuntimeJavaType baseTypeWrapper = wrapper.BaseTypeWrapper;
                     while (baseTypeWrapper.HasIncompleteInterfaceImplementation)
                     {
                         for (int i = 0; i < baseTypeWrapper.Interfaces.Length; i++)
@@ -873,12 +873,12 @@ namespace IKVM.Runtime
 
             private bool EmitInterlockedCompareAndSet(MethodWrapper method, string fieldName, CodeEmitter ilGenerator)
             {
-                if (method.ReturnType != PrimitiveTypeWrapper.BOOLEAN)
+                if (method.ReturnType != RuntimePrimitiveJavaType.BOOLEAN)
                 {
                     return false;
                 }
-                TypeWrapper[] parameters = method.GetParameters();
-                TypeWrapper target;
+                RuntimeJavaType[] parameters = method.GetParameters();
+                RuntimeJavaType target;
                 int firstValueIndex;
                 if (method.IsStatic)
                 {
@@ -902,7 +902,7 @@ namespace IKVM.Runtime
                 {
                     return false;
                 }
-                TypeWrapper fieldType = parameters[firstValueIndex];
+                RuntimeJavaType fieldType = parameters[firstValueIndex];
                 if (fieldType != parameters[firstValueIndex + 1])
                 {
                     return false;
@@ -911,7 +911,7 @@ namespace IKVM.Runtime
                 {
                     return false;
                 }
-                if (fieldType.IsPrimitive && fieldType != PrimitiveTypeWrapper.LONG && fieldType != PrimitiveTypeWrapper.INT)
+                if (fieldType.IsPrimitive && fieldType != RuntimePrimitiveJavaType.LONG && fieldType != RuntimePrimitiveJavaType.INT)
                 {
                     return false;
                 }
@@ -961,11 +961,11 @@ namespace IKVM.Runtime
                 ilGenerator.Emit(OpCodes.Ldflda, fi);
                 ilGenerator.EmitLdarg(2);
                 ilGenerator.EmitLdarg(1);
-                if (fieldType == PrimitiveTypeWrapper.LONG)
+                if (fieldType == RuntimePrimitiveJavaType.LONG)
                 {
                     ilGenerator.Emit(OpCodes.Call, InterlockedMethods.CompareExchangeInt64);
                 }
-                else if (fieldType == PrimitiveTypeWrapper.INT)
+                else if (fieldType == RuntimePrimitiveJavaType.INT)
                 {
                     ilGenerator.Emit(OpCodes.Call, InterlockedMethods.CompareExchangeInt32);
                 }
@@ -1129,7 +1129,7 @@ namespace IKVM.Runtime
                             }
                             MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), tbMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, null, true);
                             CodeEmitter ilgen = CodeEmitter.Create(mb);
-                            TypeWrapper[] parameters = mw.GetParameters();
+                            RuntimeJavaType[] parameters = mw.GetParameters();
                             for (int i = 0; i < parameters.Length; i++)
                             {
                                 ilgen.EmitLdarg(i);
@@ -1171,7 +1171,7 @@ namespace IKVM.Runtime
                     ilgen.Emit(OpCodes.Dup);
                     ilgen.EmitNullCheck();
                 }
-                TypeWrapper[] parameters = mw.GetParameters();
+                RuntimeJavaType[] parameters = mw.GetParameters();
                 for (int i = 0; i < parameters.Length; i++)
                 {
                     ilgen.EmitLdarg(i + 1);
@@ -1274,7 +1274,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            private void AddType1FieldAccessStubs(TypeWrapper tw)
+            private void AddType1FieldAccessStubs(RuntimeJavaType tw)
             {
                 do
                 {
@@ -1289,7 +1289,7 @@ namespace IKVM.Runtime
                             }
                         }
                     }
-                    foreach (TypeWrapper iface in tw.Interfaces)
+                    foreach (RuntimeJavaType iface in tw.Interfaces)
                     {
                         AddType1FieldAccessStubs(iface);
                     }
@@ -1387,7 +1387,7 @@ namespace IKVM.Runtime
 
             private void AddType1MethodAccessStubs(ref int id)
             {
-                for (TypeWrapper tw = wrapper.BaseTypeWrapper; tw != null && !tw.IsPublic; tw = tw.BaseTypeWrapper)
+                for (RuntimeJavaType tw = wrapper.BaseTypeWrapper; tw != null && !tw.IsPublic; tw = tw.BaseTypeWrapper)
                 {
                     foreach (MethodWrapper mw in tw.GetMethods())
                     {
@@ -1435,7 +1435,7 @@ namespace IKVM.Runtime
                 {
                     stubattribs |= MethodAttributes.Static;
                 }
-                TypeWrapper[] parameters = mw.GetParameters();
+                RuntimeJavaType[] parameters = mw.GetParameters();
                 Type[] realParameterTypes = new Type[parameters.Length];
                 Type[] parameterTypes = new Type[parameters.Length];
                 Type[][] modopt = new Type[parameters.Length][];
@@ -1502,7 +1502,7 @@ namespace IKVM.Runtime
 
             private bool ParametersAreAccessible(MethodWrapper mw)
             {
-                foreach (TypeWrapper tw in mw.GetParameters())
+                foreach (RuntimeJavaType tw in mw.GetParameters())
                 {
                     if (!tw.IsAccessibleFrom(wrapper))
                     {
@@ -1513,7 +1513,7 @@ namespace IKVM.Runtime
             }
 #endif // IMPORTER
 
-            private void ImplementInterfaceMethodStubs(Dictionary<TypeWrapper, TypeWrapper> doneSet, TypeWrapper interfaceTypeWrapper, bool baseClassInterface)
+            private void ImplementInterfaceMethodStubs(Dictionary<RuntimeJavaType, RuntimeJavaType> doneSet, RuntimeJavaType interfaceTypeWrapper, bool baseClassInterface)
             {
                 Debug.Assert(interfaceTypeWrapper.IsInterface);
 
@@ -1530,7 +1530,7 @@ namespace IKVM.Runtime
                         ImplementInterfaceMethodStubImpl(method, baseClassInterface);
                     }
                 }
-                TypeWrapper[] interfaces = interfaceTypeWrapper.Interfaces;
+                RuntimeJavaType[] interfaces = interfaceTypeWrapper.Interfaces;
                 for (int i = 0; i < interfaces.Length; i++)
                 {
                     ImplementInterfaceMethodStubs(doneSet, interfaces[i], baseClassInterface);
@@ -1546,7 +1546,7 @@ namespace IKVM.Runtime
                 // https://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=234167
                 string mangledName = ifmethod.DeclaringType.Name + "/" + ifmethod.Signature + ifmethod.Name;
                 MethodWrapper mce = null;
-                TypeWrapper lookup = wrapper;
+                RuntimeJavaType lookup = wrapper;
                 while (lookup != null)
                 {
                     mce = lookup.GetMethodWrapper(ifmethod.Name, ifmethod.Signature, true);
@@ -1567,8 +1567,8 @@ namespace IKVM.Runtime
                         {
                             error = true;
                         }
-                        TypeWrapper[] mceparams = mce.GetParameters();
-                        TypeWrapper[] ifparams = ifmethod.GetParameters();
+                        RuntimeJavaType[] mceparams = mce.GetParameters();
+                        RuntimeJavaType[] ifparams = ifmethod.GetParameters();
                         for (int i = 0; i < mceparams.Length; i++)
                         {
                             if (mceparams[i] != ifparams[i] && !mceparams[i].IsUnloadable && !ifparams[i].IsUnloadable)
@@ -1651,7 +1651,7 @@ namespace IKVM.Runtime
                     mod.SetCustomAttribute(cab);
                 }
 
-                internal static void Generate(DynamicTypeWrapper.FinishContext context, CodeEmitter ilGenerator, DynamicTypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args)
+                internal static void Generate(DynamicTypeWrapper.FinishContext context, CodeEmitter ilGenerator, DynamicTypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, RuntimeJavaType[] args)
                 {
                     TypeBuilder tb = mod.DefineType("__<jni>" + System.Threading.Interlocked.Increment(ref count), TypeAttributes.Public | TypeAttributes.Class);
                     int instance = m.IsStatic ? 0 : 1;
@@ -1707,7 +1707,7 @@ namespace IKVM.Runtime
                 private static readonly MethodInfo monitorEnter = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Enter", new Type[] { Types.Object });
                 private static readonly MethodInfo monitorExit = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Exit", new Type[] { Types.Object });
 
-                internal static void Generate(DynamicTypeWrapper.FinishContext context, CodeEmitter ilGenerator, DynamicTypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, TypeWrapper[] args, bool thruProxy)
+                internal static void Generate(DynamicTypeWrapper.FinishContext context, CodeEmitter ilGenerator, DynamicTypeWrapper wrapper, MethodWrapper mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, RuntimeJavaType[] args, bool thruProxy)
                 {
                     CodeEmitterLocal syncObject = null;
                     if (m.IsSynchronized && m.IsStatic)
@@ -1755,7 +1755,7 @@ namespace IKVM.Runtime
                     CodeEmitterLocal jnienv = ilGenerator.DeclareLocal(Types.IntPtr);
                     ilGenerator.Emit(OpCodes.Stloc, jnienv);
                     ilGenerator.BeginExceptionBlock();
-                    TypeWrapper retTypeWrapper = mw.ReturnType;
+                    RuntimeJavaType retTypeWrapper = mw.ReturnType;
                     if (retTypeWrapper.IsUnloadable || !retTypeWrapper.IsPrimitive)
                     {
                         // this one is for use after we return from "calli"
@@ -1812,7 +1812,7 @@ namespace IKVM.Runtime
                     }
                     ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
                     Type realRetType;
-                    if (retTypeWrapper == PrimitiveTypeWrapper.BOOLEAN)
+                    if (retTypeWrapper == RuntimePrimitiveJavaType.BOOLEAN)
                     {
                         realRetType = Types.Byte;
                     }
@@ -1826,7 +1826,7 @@ namespace IKVM.Runtime
                     }
                     ilGenerator.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.StdCall, realRetType, modargs);
                     CodeEmitterLocal retValue = null;
-                    if (retTypeWrapper != PrimitiveTypeWrapper.VOID)
+                    if (retTypeWrapper != RuntimePrimitiveJavaType.VOID)
                     {
                         if (retTypeWrapper.IsUnloadable)
                         {
@@ -1878,7 +1878,7 @@ namespace IKVM.Runtime
                         ilGenerator.EndExceptionBlock();
                     }
                     ilGenerator.MarkLabel(retLabel);
-                    if (retTypeWrapper != PrimitiveTypeWrapper.VOID)
+                    if (retTypeWrapper != RuntimePrimitiveJavaType.VOID)
                     {
                         ilGenerator.Emit(OpCodes.Ldloc, retValue);
                     }
@@ -1980,7 +1980,7 @@ namespace IKVM.Runtime
 
 #endif // IMPORTER
 
-            void ImplementInterfaces(TypeWrapper[] interfaces, List<TypeWrapper> interfaceList)
+            void ImplementInterfaces(RuntimeJavaType[] interfaces, List<RuntimeJavaType> interfaceList)
             {
                 foreach (var iface in interfaces)
                 {
@@ -2050,7 +2050,7 @@ namespace IKVM.Runtime
                         GenerateUnsupportedAbstractMethodStub(mb);
 
                 var h = new Dictionary<MethodBase, MethodBase>();
-                var tw = (TypeWrapper)wrapper;
+                var tw = (RuntimeJavaType)wrapper;
                 while (tw != null)
                 {
                     foreach (var iface in tw.Interfaces)
@@ -2137,7 +2137,7 @@ namespace IKVM.Runtime
 #endif // IMPORTER
             }
 
-            static bool IsCompatibleArgList(TypeWrapper[] caller, TypeWrapper[] callee)
+            static bool IsCompatibleArgList(RuntimeJavaType[] caller, RuntimeJavaType[] callee)
             {
                 if (caller.Length == callee.Length)
                 {
@@ -2284,7 +2284,7 @@ namespace IKVM.Runtime
 
                 if (!arfuMap.TryGetValue(field, out var cb))
                 {
-                    TypeWrapper arfuTypeWrapper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
+                    RuntimeJavaType arfuTypeWrapper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
                     TypeBuilder tb = typeBuilder.DefineNestedType(NestedTypeName.AtomicReferenceFieldUpdater + arfuMap.Count, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
                     AtomicReferenceFieldUpdaterEmitter.EmitImpl(tb, field.GetField());
                     cb = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, Type.EmptyTypes);

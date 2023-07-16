@@ -603,7 +603,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
             }
             try
             {
-                TypeWrapper wrapper = TypeWrapper.FromClass(componentType);
+                RuntimeJavaType wrapper = RuntimeJavaType.FromClass(componentType);
                 wrapper.Finish();
                 object obj = global::System.Array.CreateInstance(wrapper.TypeAsArrayType, length);
                 if (wrapper.IsGhost || wrapper.IsGhostArray)
@@ -640,7 +640,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
             }
             try
             {
-                TypeWrapper wrapper = TypeWrapper.FromClass(componentType).MakeArrayType(dimensions.Length);
+                RuntimeJavaType wrapper = RuntimeJavaType.FromClass(componentType).MakeArrayType(dimensions.Length);
                 wrapper.Finish();
                 object obj = IKVM.Runtime.ByteCodeHelper.multianewarray(wrapper.TypeAsArrayType.TypeHandle, dimensions);
                 if (wrapper.IsGhostArray)

@@ -53,7 +53,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal DefaultInterfaceMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo ifmethod, MethodInfo impl, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal DefaultInterfaceMethodWrapper(RuntimeJavaType declaringType, string name, string sig, MethodInfo ifmethod, MethodInfo impl, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, ifmethod, returnType, parameterTypes, modifiers, flags)
         {
             this.impl = impl;

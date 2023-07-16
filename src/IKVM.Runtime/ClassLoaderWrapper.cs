@@ -60,7 +60,7 @@ namespace IKVM.Runtime
     {
 
         private static readonly object wrapperLock = new object();
-        private static readonly Dictionary<Type, TypeWrapper> globalTypeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
+        private static readonly Dictionary<Type, RuntimeJavaType> globalTypeToTypeWrapper = new Dictionary<Type, RuntimeJavaType>();
 #if IMPORTER || EXPORTER
         private static ClassLoaderWrapper bootstrapClassLoader;
 #else
@@ -80,7 +80,7 @@ namespace IKVM.Runtime
 #if !EXPORTER
         private TypeWrapperFactory factory;
 #endif // !EXPORTER
-        private readonly Dictionary<string, TypeWrapper> types = new Dictionary<string, TypeWrapper>();
+        private readonly Dictionary<string, RuntimeJavaType> types = new Dictionary<string, RuntimeJavaType>();
         private readonly Dictionary<string, Thread> defineClassInProgress = new Dictionary<string, Thread>();
         private List<IntPtr> nativeLibraries;
         private readonly CodeGenOptions codegenoptions;
@@ -99,15 +99,15 @@ namespace IKVM.Runtime
 
         static ClassLoaderWrapper()
         {
-            globalTypeToTypeWrapper[PrimitiveTypeWrapper.BOOLEAN.TypeAsTBD] = PrimitiveTypeWrapper.BOOLEAN;
-            globalTypeToTypeWrapper[PrimitiveTypeWrapper.BYTE.TypeAsTBD] = PrimitiveTypeWrapper.BYTE;
-            globalTypeToTypeWrapper[PrimitiveTypeWrapper.CHAR.TypeAsTBD] = PrimitiveTypeWrapper.CHAR;
-            globalTypeToTypeWrapper[PrimitiveTypeWrapper.DOUBLE.TypeAsTBD] = PrimitiveTypeWrapper.DOUBLE;
-            globalTypeToTypeWrapper[PrimitiveTypeWrapper.FLOAT.TypeAsTBD] = PrimitiveTypeWrapper.FLOAT;
-            globalTypeToTypeWrapper[PrimitiveTypeWrapper.INT.TypeAsTBD] = PrimitiveTypeWrapper.INT;
-            globalTypeToTypeWrapper[PrimitiveTypeWrapper.LONG.TypeAsTBD] = PrimitiveTypeWrapper.LONG;
-            globalTypeToTypeWrapper[PrimitiveTypeWrapper.SHORT.TypeAsTBD] = PrimitiveTypeWrapper.SHORT;
-            globalTypeToTypeWrapper[PrimitiveTypeWrapper.VOID.TypeAsTBD] = PrimitiveTypeWrapper.VOID;
+            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.BOOLEAN.TypeAsTBD] = RuntimePrimitiveJavaType.BOOLEAN;
+            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.BYTE.TypeAsTBD] = RuntimePrimitiveJavaType.BYTE;
+            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.CHAR.TypeAsTBD] = RuntimePrimitiveJavaType.CHAR;
+            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.DOUBLE.TypeAsTBD] = RuntimePrimitiveJavaType.DOUBLE;
+            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.FLOAT.TypeAsTBD] = RuntimePrimitiveJavaType.FLOAT;
+            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.INT.TypeAsTBD] = RuntimePrimitiveJavaType.INT;
+            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.LONG.TypeAsTBD] = RuntimePrimitiveJavaType.LONG;
+            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.SHORT.TypeAsTBD] = RuntimePrimitiveJavaType.SHORT;
+            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.VOID.TypeAsTBD] = RuntimePrimitiveJavaType.VOID;
             LoadRemappedTypes();
         }
 
@@ -149,7 +149,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER || EXPORTER
 
-        internal void SetRemappedType(Type type, TypeWrapper tw)
+        internal void SetRemappedType(Type type, RuntimeJavaType tw)
         {
             lock (types)
                 types.Add(tw.Name, tw);
@@ -164,24 +164,24 @@ namespace IKVM.Runtime
 
         // return the TypeWrapper if it is already loaded, this exists for DynamicTypeWrapper.SetupGhosts
         // and implements ClassLoader.findLoadedClass()
-        internal TypeWrapper FindLoadedClass(string name)
+        internal RuntimeJavaType FindLoadedClass(string name)
         {
             if (name.Length > 1 && name[0] == '[')
                 return FindOrLoadArrayClass(name, LoadMode.Find);
 
-            TypeWrapper tw;
+            RuntimeJavaType tw;
             lock (types)
                 types.TryGetValue(name, out tw);
 
             return tw ?? FindLoadedClassLazy(name);
         }
 
-        protected virtual TypeWrapper FindLoadedClassLazy(string name)
+        protected virtual RuntimeJavaType FindLoadedClassLazy(string name)
         {
             return null;
         }
 
-        internal TypeWrapper RegisterInitiatingLoader(TypeWrapper tw)
+        internal RuntimeJavaType RegisterInitiatingLoader(RuntimeJavaType tw)
         {
             Debug.Assert(tw != null);
             Debug.Assert(!tw.IsUnloadable);
@@ -199,7 +199,7 @@ namespace IKVM.Runtime
             return tw;
         }
 
-        private TypeWrapper RegisterInitiatingLoaderCritical(TypeWrapper tw)
+        private RuntimeJavaType RegisterInitiatingLoaderCritical(RuntimeJavaType tw)
         {
             lock (types)
             {
@@ -380,7 +380,7 @@ namespace IKVM.Runtime
         }
 
 #if !EXPORTER
-        internal TypeWrapper DefineClass(ClassFile f, ProtectionDomain protectionDomain)
+        internal RuntimeJavaType DefineClass(ClassFile f, ProtectionDomain protectionDomain)
         {
 #if !IMPORTER
             var dotnetAssembly = f.IKVMAssemblyAttribute;
@@ -412,7 +412,7 @@ namespace IKVM.Runtime
             if (FindLoadedClassLazy(f.Name) != null)
                 throw new LinkageError("duplicate class definition: " + f.Name);
 
-            TypeWrapper def;
+            RuntimeJavaType def;
             try
             {
                 // critical code in the finally block to avoid Thread.Abort interrupting the thread
@@ -425,7 +425,7 @@ namespace IKVM.Runtime
             return def;
         }
 
-        TypeWrapper DefineClassCritical(ClassFile classFile, ProtectionDomain protectionDomain)
+        RuntimeJavaType DefineClassCritical(ClassFile classFile, ProtectionDomain protectionDomain)
         {
             lock (types)
             {
@@ -481,17 +481,17 @@ namespace IKVM.Runtime
 
 #endif // !EXPORTER
 
-        internal TypeWrapper LoadClassByDottedName(string name)
+        internal RuntimeJavaType LoadClassByDottedName(string name)
         {
             return LoadClass(name, LoadMode.LoadOrThrow);
         }
 
-        internal TypeWrapper LoadClassByDottedNameFast(string name)
+        internal RuntimeJavaType LoadClassByDottedNameFast(string name)
         {
             return LoadClass(name, LoadMode.LoadOrNull);
         }
 
-        internal TypeWrapper LoadClass(string name, LoadMode mode)
+        internal RuntimeJavaType LoadClass(string name, LoadMode mode)
         {
             Profiler.Enter("LoadClass");
 
@@ -538,9 +538,9 @@ namespace IKVM.Runtime
             }
         }
 
-        private TypeWrapper LoadRegisteredOrPendingClass(string name)
+        private RuntimeJavaType LoadRegisteredOrPendingClass(string name)
         {
-            TypeWrapper tw;
+            RuntimeJavaType tw;
             lock (types)
             {
                 if (types.TryGetValue(name, out tw) && tw == null)
@@ -566,7 +566,7 @@ namespace IKVM.Runtime
             return tw;
         }
 
-        private TypeWrapper FindOrLoadArrayClass(string name, LoadMode mode)
+        private RuntimeJavaType FindOrLoadArrayClass(string name, LoadMode mode)
         {
             int dims = 1;
             while (name[dims] == '[')
@@ -588,7 +588,7 @@ namespace IKVM.Runtime
                 string elemClass = name.Substring(dims + 1, name.Length - dims - 2);
                 // NOTE it's important that we're registered as the initiating loader
                 // for the element type here
-                TypeWrapper type = LoadClass(elemClass, mode | LoadMode.DontReturnUnloadable);
+                RuntimeJavaType type = LoadClass(elemClass, mode | LoadMode.DontReturnUnloadable);
                 if (type != null)
                 {
                     type = CreateArrayType(name, type, dims);
@@ -603,27 +603,27 @@ namespace IKVM.Runtime
             switch (name[dims])
             {
                 case 'B':
-                    return CreateArrayType(name, PrimitiveTypeWrapper.BYTE, dims);
+                    return CreateArrayType(name, RuntimePrimitiveJavaType.BYTE, dims);
                 case 'C':
-                    return CreateArrayType(name, PrimitiveTypeWrapper.CHAR, dims);
+                    return CreateArrayType(name, RuntimePrimitiveJavaType.CHAR, dims);
                 case 'D':
-                    return CreateArrayType(name, PrimitiveTypeWrapper.DOUBLE, dims);
+                    return CreateArrayType(name, RuntimePrimitiveJavaType.DOUBLE, dims);
                 case 'F':
-                    return CreateArrayType(name, PrimitiveTypeWrapper.FLOAT, dims);
+                    return CreateArrayType(name, RuntimePrimitiveJavaType.FLOAT, dims);
                 case 'I':
-                    return CreateArrayType(name, PrimitiveTypeWrapper.INT, dims);
+                    return CreateArrayType(name, RuntimePrimitiveJavaType.INT, dims);
                 case 'J':
-                    return CreateArrayType(name, PrimitiveTypeWrapper.LONG, dims);
+                    return CreateArrayType(name, RuntimePrimitiveJavaType.LONG, dims);
                 case 'S':
-                    return CreateArrayType(name, PrimitiveTypeWrapper.SHORT, dims);
+                    return CreateArrayType(name, RuntimePrimitiveJavaType.SHORT, dims);
                 case 'Z':
-                    return CreateArrayType(name, PrimitiveTypeWrapper.BOOLEAN, dims);
+                    return CreateArrayType(name, RuntimePrimitiveJavaType.BOOLEAN, dims);
                 default:
                     return null;
             }
         }
 
-        internal TypeWrapper FindOrLoadGenericClass(string name, LoadMode mode)
+        internal RuntimeJavaType FindOrLoadGenericClass(string name, LoadMode mode)
         {
             // we don't want to expose any failures to load any of the component types
             mode = (mode & LoadMode.MaskReturn) | LoadMode.ReturnNull;
@@ -719,7 +719,7 @@ namespace IKVM.Runtime
                 if (s.Length == dims)
                     return null;
 
-                TypeWrapper tw;
+                RuntimeJavaType tw;
                 switch (s[dims])
                 {
                     case 'L':
@@ -731,28 +731,28 @@ namespace IKVM.Runtime
                         tw.Finish();
                         break;
                     case 'Z':
-                        tw = PrimitiveTypeWrapper.BOOLEAN;
+                        tw = RuntimePrimitiveJavaType.BOOLEAN;
                         break;
                     case 'B':
-                        tw = PrimitiveTypeWrapper.BYTE;
+                        tw = RuntimePrimitiveJavaType.BYTE;
                         break;
                     case 'S':
-                        tw = PrimitiveTypeWrapper.SHORT;
+                        tw = RuntimePrimitiveJavaType.SHORT;
                         break;
                     case 'C':
-                        tw = PrimitiveTypeWrapper.CHAR;
+                        tw = RuntimePrimitiveJavaType.CHAR;
                         break;
                     case 'I':
-                        tw = PrimitiveTypeWrapper.INT;
+                        tw = RuntimePrimitiveJavaType.INT;
                         break;
                     case 'F':
-                        tw = PrimitiveTypeWrapper.FLOAT;
+                        tw = RuntimePrimitiveJavaType.FLOAT;
                         break;
                     case 'J':
-                        tw = PrimitiveTypeWrapper.LONG;
+                        tw = RuntimePrimitiveJavaType.LONG;
                         break;
                     case 'D':
-                        tw = PrimitiveTypeWrapper.DOUBLE;
+                        tw = RuntimePrimitiveJavaType.DOUBLE;
                         break;
                     default:
                         return null;
@@ -784,7 +784,7 @@ namespace IKVM.Runtime
             return wrapper;
         }
 
-        protected virtual TypeWrapper LoadClassImpl(string name, LoadMode mode)
+        protected virtual RuntimeJavaType LoadClassImpl(string name, LoadMode mode)
         {
             var tw = FindOrLoadGenericClass(name, mode);
             if (tw != null)
@@ -802,7 +802,7 @@ namespace IKVM.Runtime
                 if (c == null)
                     return null;
 
-                var type = TypeWrapper.FromClass(c);
+                var type = RuntimeJavaType.FromClass(c);
                 if (type.Name != name)
                     return null;
 
@@ -856,7 +856,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        private static TypeWrapper CreateArrayType(string name, TypeWrapper elementTypeWrapper, int dims)
+        private static RuntimeJavaType CreateArrayType(string name, RuntimeJavaType elementTypeWrapper, int dims)
         {
             Debug.Assert(new String('[', dims) + elementTypeWrapper.SigName == name);
             Debug.Assert(!elementTypeWrapper.IsUnloadable && !elementTypeWrapper.IsVerifierType && !elementTypeWrapper.IsArray);
@@ -882,7 +882,7 @@ namespace IKVM.Runtime
             {
                 return Type.EmptyTypes;
             }
-            TypeWrapper[] wrappers = ArgTypeWrapperListFromSig(sig, LoadMode.LoadOrThrow);
+            RuntimeJavaType[] wrappers = ArgTypeWrapperListFromSig(sig, LoadMode.LoadOrThrow);
             Type[] types = new Type[wrappers.Length];
             for (int i = 0; i < wrappers.Length; i++)
             {
@@ -892,22 +892,22 @@ namespace IKVM.Runtime
         }
 
         // NOTE: this will ignore anything following the sig marker (so that it can be used to decode method signatures)
-        private TypeWrapper SigDecoderWrapper(ref int index, string sig, LoadMode mode)
+        private RuntimeJavaType SigDecoderWrapper(ref int index, string sig, LoadMode mode)
         {
             switch (sig[index++])
             {
                 case 'B':
-                    return PrimitiveTypeWrapper.BYTE;
+                    return RuntimePrimitiveJavaType.BYTE;
                 case 'C':
-                    return PrimitiveTypeWrapper.CHAR;
+                    return RuntimePrimitiveJavaType.CHAR;
                 case 'D':
-                    return PrimitiveTypeWrapper.DOUBLE;
+                    return RuntimePrimitiveJavaType.DOUBLE;
                 case 'F':
-                    return PrimitiveTypeWrapper.FLOAT;
+                    return RuntimePrimitiveJavaType.FLOAT;
                 case 'I':
-                    return PrimitiveTypeWrapper.INT;
+                    return RuntimePrimitiveJavaType.INT;
                 case 'J':
-                    return PrimitiveTypeWrapper.LONG;
+                    return RuntimePrimitiveJavaType.LONG;
                 case 'L':
                     {
                         int pos = index;
@@ -915,11 +915,11 @@ namespace IKVM.Runtime
                         return LoadClass(sig.Substring(pos, index - pos - 1), mode);
                     }
                 case 'S':
-                    return PrimitiveTypeWrapper.SHORT;
+                    return RuntimePrimitiveJavaType.SHORT;
                 case 'Z':
-                    return PrimitiveTypeWrapper.BOOLEAN;
+                    return RuntimePrimitiveJavaType.BOOLEAN;
                 case 'V':
-                    return PrimitiveTypeWrapper.VOID;
+                    return RuntimePrimitiveJavaType.VOID;
                 case '[':
                     {
                         // TODO this can be optimized
@@ -955,25 +955,25 @@ namespace IKVM.Runtime
             }
         }
 
-        internal TypeWrapper FieldTypeWrapperFromSig(string sig, LoadMode mode)
+        internal RuntimeJavaType FieldTypeWrapperFromSig(string sig, LoadMode mode)
         {
             int index = 0;
             return SigDecoderWrapper(ref index, sig, mode);
         }
 
-        internal TypeWrapper RetTypeWrapperFromSig(string sig, LoadMode mode)
+        internal RuntimeJavaType RetTypeWrapperFromSig(string sig, LoadMode mode)
         {
             int index = sig.IndexOf(')') + 1;
             return SigDecoderWrapper(ref index, sig, mode);
         }
 
-        internal TypeWrapper[] ArgTypeWrapperListFromSig(string sig, LoadMode mode)
+        internal RuntimeJavaType[] ArgTypeWrapperListFromSig(string sig, LoadMode mode)
         {
             if (sig[1] == ')')
             {
-                return TypeWrapper.EmptyArray;
+                return RuntimeJavaType.EmptyArray;
             }
-            List<TypeWrapper> list = new List<TypeWrapper>();
+            List<RuntimeJavaType> list = new List<RuntimeJavaType>();
             for (int i = 1; sig[i] != ')';)
             {
                 list.Add(SigDecoderWrapper(ref i, sig, mode));
@@ -1028,7 +1028,7 @@ namespace IKVM.Runtime
         }
 #endif
 
-        internal static TypeWrapper GetWrapperFromType(Type type)
+        internal static RuntimeJavaType GetWrapperFromType(Type type)
         {
 #if IMPORTER
             if (type.__ContainsMissingType)
@@ -1038,11 +1038,11 @@ namespace IKVM.Runtime
 #endif
             //Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
 #if !IMPORTER
-            TypeWrapper.AssertFinished(type);
+            RuntimeJavaType.AssertFinished(type);
 #endif
             Debug.Assert(!type.IsPointer);
             Debug.Assert(!type.IsByRef);
-            TypeWrapper wrapper;
+            RuntimeJavaType wrapper;
             lock (globalTypeToTypeWrapper)
             {
                 globalTypeToTypeWrapper.TryGetValue(type, out wrapper);
@@ -1084,8 +1084,8 @@ namespace IKVM.Runtime
 #if !IMPORTER && !EXPORTER
                 if (AnonymousTypeWrapper.IsAnonymous(type))
                 {
-                    Dictionary<Type, TypeWrapper> typeToTypeWrapper = globalTypeToTypeWrapper;
-                    TypeWrapper tw = new AnonymousTypeWrapper(type);
+                    Dictionary<Type, RuntimeJavaType> typeToTypeWrapper = globalTypeToTypeWrapper;
+                    RuntimeJavaType tw = new AnonymousTypeWrapper(type);
                     lock (typeToTypeWrapper)
                     {
                         if (!typeToTypeWrapper.TryGetValue(type, out wrapper))
@@ -1122,7 +1122,7 @@ namespace IKVM.Runtime
             return wrapper;
         }
 
-        internal static ClassLoaderWrapper GetGenericClassLoader(TypeWrapper wrapper)
+        internal static ClassLoaderWrapper GetGenericClassLoader(RuntimeJavaType wrapper)
         {
             Type type = wrapper.TypeAsTBD;
             Debug.Assert(type.IsGenericType);
@@ -1262,13 +1262,13 @@ namespace IKVM.Runtime
                 return genericClassLoaders[id];
         }
 
-        internal void SetWrapperForType(Type type, TypeWrapper wrapper)
+        internal void SetWrapperForType(Type type, RuntimeJavaType wrapper)
         {
 #if !IMPORTER
-            TypeWrapper.AssertFinished(type);
+            RuntimeJavaType.AssertFinished(type);
 #endif
 
-            Dictionary<Type, TypeWrapper> dict = globalTypeToTypeWrapper;
+            Dictionary<Type, RuntimeJavaType> dict = globalTypeToTypeWrapper;
 
             lock (dict)
             {
@@ -1283,7 +1283,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static TypeWrapper LoadClassCritical(string name)
+        internal static RuntimeJavaType LoadClassCritical(string name)
         {
 #if IMPORTER
             var wrapper = GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
@@ -1354,7 +1354,7 @@ namespace IKVM.Runtime
         }
 #endif
 
-        internal virtual bool InternalsVisibleToImpl(TypeWrapper wrapper, TypeWrapper friend)
+        internal virtual bool InternalsVisibleToImpl(RuntimeJavaType wrapper, RuntimeJavaType friend)
         {
             Debug.Assert(wrapper.GetClassLoader() == this);
             return this == friend.GetClassLoader();
@@ -1381,7 +1381,7 @@ namespace IKVM.Runtime
         }
 #endif
 
-        internal void CheckPackageAccess(TypeWrapper tw, ProtectionDomain pd)
+        internal void CheckPackageAccess(RuntimeJavaType tw, ProtectionDomain pd)
         {
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
             if (javaClassLoader != null)

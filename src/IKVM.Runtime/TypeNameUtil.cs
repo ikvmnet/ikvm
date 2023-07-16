@@ -125,17 +125,17 @@ namespace IKVM.Runtime
             return sb.ToString();
         }
 
-        internal static string GetProxyNestedName(TypeWrapper[] interfaces)
+        internal static string GetProxyNestedName(RuntimeJavaType[] interfaces)
         {
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            foreach (TypeWrapper tw in interfaces)
+            foreach (RuntimeJavaType tw in interfaces)
             {
                 sb.Append(tw.Name.Length).Append('|').Append(tw.Name);
             }
             return TypeNameUtil.MangleNestedTypeName(sb.ToString());
         }
 
-        internal static string GetProxyName(TypeWrapper[] interfaces)
+        internal static string GetProxyName(RuntimeJavaType[] interfaces)
         {
             return ProxiesContainer + "+" + GetProxyNestedName(interfaces);
         }

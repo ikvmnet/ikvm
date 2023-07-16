@@ -64,7 +64,7 @@ namespace IKVM.Runtime
         /// <param name="constant"></param>
         /// <param name="flags"></param>
         /// <exception cref="InternalException"></exception>
-        internal ConstantFieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, object constant, MemberFlags flags) :
+        internal ConstantFieldWrapper(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, object constant, MemberFlags flags) :
             base(declaringType, fieldType, name, sig, modifiers, field, flags)
         {
             if (IsStatic == false)

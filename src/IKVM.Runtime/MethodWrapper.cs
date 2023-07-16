@@ -50,8 +50,8 @@ namespace IKVM.Runtime
         internal static readonly MethodWrapper[] EmptyArray = new MethodWrapper[0];
         MethodBase method;
         string[] declaredExceptions;
-        TypeWrapper returnTypeWrapper;
-        TypeWrapper[] parameterTypeWrappers;
+        RuntimeJavaType returnTypeWrapper;
+        RuntimeJavaType[] parameterTypeWrappers;
 
 #if EMITTERS
 
@@ -95,13 +95,13 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal MethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal MethodWrapper(RuntimeJavaType declaringType, string name, string sig, MethodBase method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, modifiers, flags)
         {
             Profiler.Count("MethodWrapper");
 
             this.method = method;
-            Debug.Assert(((returnType == null) == (parameterTypes == null)) || (returnType == PrimitiveTypeWrapper.VOID));
+            Debug.Assert(((returnType == null) == (parameterTypes == null)) || (returnType == RuntimePrimitiveJavaType.VOID));
             this.returnTypeWrapper = returnType;
             this.parameterTypeWrappers = parameterTypes;
             if (Intrinsics.IsIntrinsic(this))
@@ -120,7 +120,7 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    foreach (TypeWrapper tw in parameterTypeWrappers)
+                    foreach (RuntimeJavaType tw in parameterTypeWrappers)
                     {
                         if (!tw.IsPublic && !tw.IsUnloadable)
                         {
@@ -157,7 +157,7 @@ namespace IKVM.Runtime
             {
                 Link();
                 ClassLoaderWrapper loader = this.DeclaringType.GetClassLoader();
-                TypeWrapper[] argTypes = GetParameters();
+                RuntimeJavaType[] argTypes = GetParameters();
                 java.lang.Class[] parameterTypes = new java.lang.Class[argTypes.Length];
                 for (int i = 0; i < argTypes.Length; i++)
                 {
@@ -264,7 +264,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             return null;
 #else
-            return TypeWrapper.FromClass(executable.getDeclaringClass()).GetMethods()[executable._slot()];
+            return RuntimeJavaType.FromClass(executable.getDeclaringClass()).GetMethods()[executable._slot()];
 #endif
         }
 #endif // !IMPORTER && !EXPORTER
@@ -298,8 +298,8 @@ namespace IKVM.Runtime
                 }
             }
             ClassLoaderWrapper loader = this.DeclaringType.GetClassLoader();
-            TypeWrapper ret = loader.RetTypeWrapperFromSig(Signature, mode);
-            TypeWrapper[] parameters = loader.ArgTypeWrapperListFromSig(Signature, mode);
+            RuntimeJavaType ret = loader.RetTypeWrapperFromSig(Signature, mode);
+            RuntimeJavaType[] parameters = loader.ArgTypeWrapperListFromSig(Signature, mode);
             lock (this)
             {
                 try
@@ -310,7 +310,7 @@ namespace IKVM.Runtime
                 {
                     if (parameterTypeWrappers == null)
                     {
-                        Debug.Assert(returnTypeWrapper == null || returnTypeWrapper == PrimitiveTypeWrapper.VOID);
+                        Debug.Assert(returnTypeWrapper == null || returnTypeWrapper == RuntimePrimitiveJavaType.VOID);
                         returnTypeWrapper = ret;
                         parameterTypeWrappers = parameters;
                         UpdateNonPublicTypeInSignatureFlag();
@@ -349,7 +349,7 @@ namespace IKVM.Runtime
             Debug.Assert(parameterTypeWrappers != null && returnTypeWrapper != null, this.DeclaringType.Name + "::" + this.Name + this.Signature);
         }
 
-        internal TypeWrapper ReturnType
+        internal RuntimeJavaType ReturnType
         {
             get
             {
@@ -358,7 +358,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal TypeWrapper[] GetParameters()
+        internal RuntimeJavaType[] GetParameters()
         {
             AssertLinked();
             return parameterTypeWrappers;
@@ -381,7 +381,7 @@ namespace IKVM.Runtime
 
         internal Type[] GetParametersForDefineMethod()
         {
-            TypeWrapper[] wrappers = GetParameters();
+            RuntimeJavaType[] wrappers = GetParameters();
             int len = wrappers.Length;
             if (HasCallerID)
             {
@@ -446,15 +446,15 @@ namespace IKVM.Runtime
             var paramTypes = GetParameters();
             if (paramTypes.Length > MethodHandleUtil.MaxArity)
             {
-                var type = DeclaringType.TypeAsBaseType.Assembly.GetType(ReturnType == PrimitiveTypeWrapper.VOID ? "__<>NVIV`" + paramTypes.Length : "__<>NVI`" + (paramTypes.Length + 1));
+                var type = DeclaringType.TypeAsBaseType.Assembly.GetType(ReturnType == RuntimePrimitiveJavaType.VOID ? "__<>NVIV`" + paramTypes.Length : "__<>NVI`" + (paramTypes.Length + 1));
                 if (type == null)
-                    type = DeclaringType.GetClassLoader().GetTypeWrapperFactory().DefineDelegate(paramTypes.Length, ReturnType == PrimitiveTypeWrapper.VOID);
+                    type = DeclaringType.GetClassLoader().GetTypeWrapperFactory().DefineDelegate(paramTypes.Length, ReturnType == RuntimePrimitiveJavaType.VOID);
 
-                var types = new Type[paramTypes.Length + (ReturnType == PrimitiveTypeWrapper.VOID ? 0 : 1)];
+                var types = new Type[paramTypes.Length + (ReturnType == RuntimePrimitiveJavaType.VOID ? 0 : 1)];
                 for (int i = 0; i < paramTypes.Length; i++)
                     types[i] = paramTypes[i].TypeAsSignatureType;
 
-                if (ReturnType != PrimitiveTypeWrapper.VOID)
+                if (ReturnType != RuntimePrimitiveJavaType.VOID)
                     types[types.Length - 1] = ReturnType.TypeAsSignatureType;
 
                 return type.MakeGenericType(types);

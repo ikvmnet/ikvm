@@ -323,7 +323,7 @@ namespace IKVM.Runtime
                 return null;
             }
 
-            internal TypeWrapper DoLoad(string name)
+            internal RuntimeJavaType DoLoad(string name)
             {
                 for (int i = 0; i < modules.Length; i++)
                 {
@@ -365,7 +365,7 @@ namespace IKVM.Runtime
                     // for fake types, we load the declaring outer type (the real one) and
                     // let that generated the manufactured nested classes
                     // (note that for generic outer types, we need to duplicate this in ClassLoaderWrapper.LoadGenericClass)
-                    TypeWrapper outer = null;
+                    RuntimeJavaType outer = null;
                     if (name.EndsWith(DotNetTypeWrapper.DelegateInterfaceSuffix))
                     {
                         outer = DoLoad(name.Substring(0, name.Length - DotNetTypeWrapper.DelegateInterfaceSuffix.Length));
@@ -439,7 +439,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal TypeWrapper CreateWrapperForAssemblyType(Type type)
+            internal RuntimeJavaType CreateWrapperForAssemblyType(Type type)
             {
                 var name = GetTypeNameAndType(type, out bool isJavaType);
                 if (name == null)
@@ -620,7 +620,7 @@ namespace IKVM.Runtime
 
         internal Assembly MainAssembly => assemblyLoader.Assembly;
 
-        internal Assembly GetAssembly(TypeWrapper wrapper)
+        internal Assembly GetAssembly(RuntimeJavaType wrapper)
         {
             Debug.Assert(wrapper.GetClassLoader() == this);
 
@@ -653,7 +653,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal TypeWrapper DoLoad(string name)
+        internal RuntimeJavaType DoLoad(string name)
         {
             var tw = assemblyLoader.DoLoad(name);
             if (tw != null)
@@ -759,7 +759,7 @@ namespace IKVM.Runtime
         /// <param name="type"></param>
         /// <returns></returns>
         /// <exception cref="InternalException"></exception>
-        internal virtual TypeWrapper GetWrapperFromAssemblyType(Type type)
+        internal virtual RuntimeJavaType GetWrapperFromAssemblyType(Type type)
         {
             if (type.Name.EndsWith("[]"))
                 throw new InternalException();
@@ -797,7 +797,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        protected override TypeWrapper LoadClassImpl(string name, LoadMode mode)
+        protected override RuntimeJavaType LoadClassImpl(string name, LoadMode mode)
         {
             var tw = FindLoadedClass(name);
             if (tw != null)
@@ -835,7 +835,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        internal TypeWrapper LoadClass(string name)
+        internal RuntimeJavaType LoadClass(string name)
         {
             return FindLoadedClass(name)
                 ?? LoadBootstrapIfNonJavaAssembly(name)
@@ -843,7 +843,7 @@ namespace IKVM.Runtime
                 ?? FindOrLoadGenericClass(name, LoadMode.LoadOrNull);
         }
 
-        TypeWrapper LoadBootstrapIfNonJavaAssembly(string name)
+        RuntimeJavaType LoadBootstrapIfNonJavaAssembly(string name)
         {
             if (!assemblyLoader.HasJavaModule)
                 return GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
@@ -851,7 +851,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        TypeWrapper LoadDynamic(string name)
+        RuntimeJavaType LoadDynamic(string name)
         {
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
             var classFile = name.Replace('.', '/') + ".class";
@@ -867,7 +867,7 @@ namespace IKVM.Runtime
 
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
 
-        TypeWrapper DefineDynamic(string name, java.net.URL url)
+        RuntimeJavaType DefineDynamic(string name, java.net.URL url)
         {
             byte[] buf;
 
@@ -894,12 +894,12 @@ namespace IKVM.Runtime
                 if (tw != null)
                     return tw;
 
-                return TypeWrapper.FromClass(IKVM.Java.Externs.java.lang.ClassLoader.defineClass1(loader, name, buf, 0, buf.Length, GetProtectionDomain(), null));
+                return RuntimeJavaType.FromClass(IKVM.Java.Externs.java.lang.ClassLoader.defineClass1(loader, name, buf, 0, buf.Length, GetProtectionDomain(), null));
             }
         }
 #endif
 
-        TypeWrapper FindReferenced(string name)
+        RuntimeJavaType FindReferenced(string name)
         {
             for (int i = 0; i < delegates.Length; i++)
             {
@@ -1158,14 +1158,14 @@ namespace IKVM.Runtime
         }
 #endif
 
-        protected override TypeWrapper FindLoadedClassLazy(string name)
+        protected override RuntimeJavaType FindLoadedClassLazy(string name)
         {
             return DoLoad(name)
                 ?? FindReferenced(name)
                 ?? FindOrLoadGenericClass(name, LoadMode.Find);
         }
 
-        internal override bool InternalsVisibleToImpl(TypeWrapper wrapper, TypeWrapper friend)
+        internal override bool InternalsVisibleToImpl(RuntimeJavaType wrapper, RuntimeJavaType friend)
         {
             var other = friend.GetClassLoader();
             if (this == other)
@@ -1406,7 +1406,7 @@ namespace IKVM.Runtime
 
         }
 
-        internal override TypeWrapper GetWrapperFromAssemblyType(Type type)
+        internal override RuntimeJavaType GetWrapperFromAssemblyType(Type type)
         {
             // we have to special case the fake types here
             if (type.IsGenericType && !type.IsGenericTypeDefinition)

@@ -56,7 +56,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-        protected override TypeWrapper FindLoadedClassLazy(string name)
+        protected override RuntimeJavaType FindLoadedClassLazy(string name)
         {
             var tw1 = FindOrLoadGenericClass(name, LoadMode.Find);
             if (tw1 != null)

@@ -81,7 +81,7 @@ namespace IKVM.Runtime
             return Code[OpcodeIndex + offset].NormalizedOpCode == opcode && Code[OpcodeIndex + offset].Arg1 == arg;
         }
 
-        internal TypeWrapper GetStackTypeWrapper(int offset, int pos)
+        internal RuntimeJavaType GetStackTypeWrapper(int offset, int pos)
         {
             return ma.GetStackTypeWrapper(OpcodeIndex + offset, pos);
         }
@@ -96,7 +96,7 @@ namespace IKVM.Runtime
             return ClassFile.GetFieldref(Code[OpcodeIndex + offset].Arg1);
         }
 
-        internal TypeWrapper GetClassLiteral(int offset)
+        internal RuntimeJavaType GetClassLiteral(int offset)
         {
             return ClassFile.GetConstantPoolClassType(Code[OpcodeIndex + offset].Arg1);
         }

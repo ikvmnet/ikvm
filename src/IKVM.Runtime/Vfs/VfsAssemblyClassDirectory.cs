@@ -62,7 +62,7 @@ namespace IKVM.Runtime.Vfs
         /// </summary>
         /// <param name="className"></param>
         /// <returns></returns>
-        TypeWrapper TryLoadType(JavaTypeName className)
+        RuntimeJavaType TryLoadType(JavaTypeName className)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
@@ -90,7 +90,7 @@ namespace IKVM.Runtime.Vfs
         /// <exception cref="NotImplementedException"></exception>
         VfsEntry GetClassEntry(JavaTypeName className)
         {
-            return TryLoadType(className) is TypeWrapper tw && !tw.IsArray ? new VfsAssemblyClassFile(Context, tw) : null;
+            return TryLoadType(className) is RuntimeJavaType tw && !tw.IsArray ? new VfsAssemblyClassFile(Context, tw) : null;
         }
 
         /// <summary>

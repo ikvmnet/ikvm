@@ -50,7 +50,7 @@ namespace IKVM.Runtime
 #endif
         internal static readonly FieldWrapper[] EmptyArray = new FieldWrapper[0];
         FieldInfo field;
-        TypeWrapper fieldType;
+        RuntimeJavaType fieldType;
 
         /// <summary>
         /// Initializes a new instance.
@@ -62,7 +62,7 @@ namespace IKVM.Runtime
         /// <param name="modifiers"></param>
         /// <param name="field"></param>
         /// <param name="flags"></param>
-        internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, MemberFlags flags) :
+        internal FieldWrapper(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, MemberFlags flags) :
             base(declaringType, name, sig, modifiers, flags)
         {
             if (name == null)
@@ -98,7 +98,7 @@ namespace IKVM.Runtime
         /// <param name="sig"></param>
         /// <param name="modifiers"></param>
         /// <param name="field"></param>
-        internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, ExModifiers modifiers, FieldInfo field) :
+        internal FieldWrapper(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, ExModifiers modifiers, FieldInfo field) :
             this(declaringType, fieldType, name, sig, modifiers.Modifiers, field, (modifiers.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None))
         {
 
@@ -153,12 +153,12 @@ namespace IKVM.Runtime
             if (slot == -1)
             {
                 // it's a Field created by Unsafe.objectFieldOffset(Class,String) so we must resolve based on the name
-                foreach (var fw in TypeWrapper.FromClass(field.getDeclaringClass()).GetFields())
+                foreach (var fw in RuntimeJavaType.FromClass(field.getDeclaringClass()).GetFields())
                     if (fw.Name == field.getName())
                         return fw;
             }
 
-            return TypeWrapper.FromClass(field.getDeclaringClass()).GetFields()[slot];
+            return RuntimeJavaType.FromClass(field.getDeclaringClass()).GetFields()[slot];
 #endif
         }
 
@@ -216,7 +216,7 @@ namespace IKVM.Runtime
             return (FieldWrapper)FromCookieImpl(cookie);
         }
 
-        internal TypeWrapper FieldTypeWrapper
+        internal RuntimeJavaType FieldTypeWrapper
         {
             get
             {
@@ -424,15 +424,15 @@ namespace IKVM.Runtime
                 // a serialVersionUID field must be static and final to be recognized (see ObjectStreamClass.getDeclaredSUID())
                 return (Modifiers & (Modifiers.Static | Modifiers.Final)) == (Modifiers.Static | Modifiers.Final)
                     && Name == "serialVersionUID"
-                    && (FieldTypeWrapper == PrimitiveTypeWrapper.LONG
-                        || FieldTypeWrapper == PrimitiveTypeWrapper.INT
-                        || FieldTypeWrapper == PrimitiveTypeWrapper.CHAR
-                        || FieldTypeWrapper == PrimitiveTypeWrapper.SHORT
-                        || FieldTypeWrapper == PrimitiveTypeWrapper.BYTE);
+                    && (FieldTypeWrapper == RuntimePrimitiveJavaType.LONG
+                        || FieldTypeWrapper == RuntimePrimitiveJavaType.INT
+                        || FieldTypeWrapper == RuntimePrimitiveJavaType.CHAR
+                        || FieldTypeWrapper == RuntimePrimitiveJavaType.SHORT
+                        || FieldTypeWrapper == RuntimePrimitiveJavaType.BYTE);
             }
         }
 
-        internal static FieldWrapper Create(TypeWrapper declaringType, TypeWrapper fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers)
+        internal static FieldWrapper Create(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers)
         {
             // volatile long & double field accesses must be made atomic
             if ((modifiers.Modifiers & Modifiers.Volatile) != 0 && (sig == "J" || sig == "D"))

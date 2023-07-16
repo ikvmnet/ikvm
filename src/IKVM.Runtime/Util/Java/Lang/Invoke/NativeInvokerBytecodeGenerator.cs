@@ -305,11 +305,11 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             // [IKVM] handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
             if (cls != CoreClasses.cli.System.Object.Wrapper.ClassObject)
             {
-                TypeWrapper.FromClass(cls).EmitCheckcast(ilgen);
+                RuntimeJavaType.FromClass(cls).EmitCheckcast(ilgen);
             }
         }
 
-        private sealed class AnonymousClass : TypeWrapper
+        private sealed class AnonymousClass : RuntimeJavaType
         {
             internal static readonly Class Instance = new AnonymousClass().ClassObject;
 
@@ -328,7 +328,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                 get { throw new InvalidOperationException(); }
             }
 
-            internal override TypeWrapper BaseTypeWrapper
+            internal override RuntimeJavaType BaseTypeWrapper
             {
                 get { return CoreClasses.java.lang.Object.Wrapper; }
             }
@@ -562,13 +562,13 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                 if (IsMethodHandleLinkTo(member))
                 {
                     java.lang.invoke.MethodType mt = member.getMethodType();
-                    TypeWrapper[] args = new TypeWrapper[mt.parameterCount()];
+                    RuntimeJavaType[] args = new RuntimeJavaType[mt.parameterCount()];
                     for (int j = 0; j < args.Length; j++)
                     {
-                        args[j] = TypeWrapper.FromClass(mt.parameterType(j));
+                        args[j] = RuntimeJavaType.FromClass(mt.parameterType(j));
                         args[j].Finish();
                     }
-                    TypeWrapper ret = TypeWrapper.FromClass(mt.returnType());
+                    RuntimeJavaType ret = RuntimeJavaType.FromClass(mt.returnType());
                     ret.Finish();
                     Compiler.MethodHandleMethodWrapper.EmitLinkToCall(ilgen, args, ret);
                     ret.EmitConvSignatureTypeToStackType(ilgen);
@@ -672,7 +672,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             OpCode xas = OpCodes.Stelem_Ref;
             if (!arrayElementType.isPrimitive())
             {
-                TypeWrapper tw = TypeWrapper.FromClass(arrayElementType);
+                RuntimeJavaType tw = RuntimeJavaType.FromClass(arrayElementType);
                 if (tw.IsUnloadable || tw.IsGhost || tw.IsGhostArray || tw.IsNonPrimitiveValueType)
                 {
                     throw new BailoutException(Bailout.UnsupportedArrayType, tw);
@@ -684,7 +684,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                 byte tc = arrayTypeCode(Wrapper.forPrimitiveType(arrayElementType));
                 xas = arrayInsnOpcode(tc);
                 //mv.visitIntInsn(Opcodes.NEWARRAY, tc);
-                ilgen.Emit(OpCodes.Newarr, TypeWrapper.FromClass(arrayElementType).TypeAsArrayType);
+                ilgen.Emit(OpCodes.Newarr, RuntimeJavaType.FromClass(arrayElementType).TypeAsArrayType);
             }
             // store arguments
             for (int i = 0; i < name.arguments.Length; i++)
@@ -795,7 +795,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             CodeEmitterLocal returnValue = null;
             if (returnType != java.lang.Void.TYPE)
             {
-                returnValue = ilgen.DeclareLocal(TypeWrapper.FromClass(returnType).TypeAsLocalOrStackType);
+                returnValue = ilgen.DeclareLocal(RuntimeJavaType.FromClass(returnType).TypeAsLocalOrStackType);
                 ilgen.Emit(OpCodes.Stloc, returnValue);
             }
             ilgen.EmitLeave(L_done);
@@ -1071,13 +1071,13 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
         private void EmitInvokeBasic(global::java.lang.invoke.MethodType mt)
         {
-            TypeWrapper[] args = new TypeWrapper[mt.parameterCount()];
+            RuntimeJavaType[] args = new RuntimeJavaType[mt.parameterCount()];
             for (int i = 0; i < args.Length; i++)
             {
-                args[i] = TypeWrapper.FromClass(mt.parameterType(i));
+                args[i] = RuntimeJavaType.FromClass(mt.parameterType(i));
                 args[i].Finish();
             }
-            TypeWrapper ret = TypeWrapper.FromClass(mt.returnType());
+            RuntimeJavaType ret = RuntimeJavaType.FromClass(mt.returnType());
             ret.Finish();
             Compiler.MethodHandleMethodWrapper.EmitInvokeBasic(ilgen, args, ret, false);
         }
@@ -1122,7 +1122,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
         private static MethodWrapper GetMethodWrapper(java.lang.invoke.MemberName member)
         {
-            return TypeWrapper.FromClass(member.getDeclaringClass()).GetMethodWrapper(member.getName(), member.getSignature().Replace('/', '.'), true);
+            return RuntimeJavaType.FromClass(member.getDeclaringClass()).GetMethodWrapper(member.getName(), member.getSignature().Replace('/', '.'), true);
         }
 
         private static bool IsStaticallyInvocable(MethodWrapper mw)
@@ -1135,7 +1135,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             {
                 return false;
             }
-            foreach (TypeWrapper tw in mw.GetParameters())
+            foreach (RuntimeJavaType tw in mw.GetParameters())
             {
                 if (tw.IsUnloadable || tw.IsGhost || tw.IsNonPrimitiveValueType)
                 {
@@ -1147,7 +1147,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
         private static FieldWrapper GetFieldWrapper(java.lang.invoke.MemberName member)
         {
-            return TypeWrapper.FromClass(member.getDeclaringClass()).GetFieldWrapper(member.getName(), member.getSignature().Replace('/', '.'));
+            return RuntimeJavaType.FromClass(member.getDeclaringClass()).GetFieldWrapper(member.getName(), member.getSignature().Replace('/', '.'));
         }
 
         private static bool IsStaticallyInvocable(FieldWrapper fw)

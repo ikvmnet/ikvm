@@ -43,7 +43,7 @@ namespace IKVM.Runtime
         /// <param name="declaringType"></param>
         /// <param name="ifmethod"></param>
         /// <param name="modifiers"></param>
-        MirandaMethodWrapper(TypeWrapper declaringType, MethodWrapper ifmethod, Modifiers modifiers) :
+        MirandaMethodWrapper(RuntimeJavaType declaringType, MethodWrapper ifmethod, Modifiers modifiers) :
             base(declaringType, ifmethod.Name, ifmethod.Signature, null, null, null, modifiers, MemberFlags.HideFromReflection | MemberFlags.MirandaMethod)
         {
             this.ifmethod = ifmethod;
@@ -57,7 +57,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="declaringType"></param>
             /// <param name="ifmethod"></param>
-            internal AbstractMirandaMethodWrapper(TypeWrapper declaringType, MethodWrapper ifmethod) :
+            internal AbstractMirandaMethodWrapper(RuntimeJavaType declaringType, MethodWrapper ifmethod) :
                 base(declaringType, ifmethod, Modifiers.Public | Modifiers.Abstract)
             {
 
@@ -73,7 +73,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="declaringType"></param>
             /// <param name="ifmethod"></param>
-            internal DefaultMirandaMethodWrapper(TypeWrapper declaringType, MethodWrapper ifmethod) :
+            internal DefaultMirandaMethodWrapper(RuntimeJavaType declaringType, MethodWrapper ifmethod) :
                 base(declaringType, ifmethod, Modifiers.Public)
             {
 
@@ -92,7 +92,7 @@ namespace IKVM.Runtime
             /// <param name="declaringType"></param>
             /// <param name="ifmethod"></param>
             /// <param name="error"></param>
-            internal ErrorMirandaMethodWrapper(TypeWrapper declaringType, MethodWrapper ifmethod, string error) :
+            internal ErrorMirandaMethodWrapper(RuntimeJavaType declaringType, MethodWrapper ifmethod, string error) :
                 base(declaringType, ifmethod, Modifiers.Public)
             {
                 this.error = error;
@@ -111,7 +111,7 @@ namespace IKVM.Runtime
 
         }
 
-        internal static MirandaMethodWrapper Create(TypeWrapper declaringType, MethodWrapper ifmethod)
+        internal static MirandaMethodWrapper Create(RuntimeJavaType declaringType, MethodWrapper ifmethod)
         {
             DefaultMirandaMethodWrapper dmmw = ifmethod as DefaultMirandaMethodWrapper;
             if (dmmw != null)

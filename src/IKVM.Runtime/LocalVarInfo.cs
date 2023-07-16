@@ -88,7 +88,7 @@ namespace IKVM.Runtime
 							// we can only merge if the resulting type is valid (this protects against incorrect
 							// LVT data, but is also needed for constructors, where the uninitialized this is a different
 							// type from the initialized this)
-							TypeWrapper tw = InstructionState.FindCommonBaseType(v1.type, v2.type);
+							RuntimeJavaType tw = InstructionState.FindCommonBaseType(v1.type, v2.type);
 							if (tw != VerifierTypeWrapper.Invalid)
 							{
 								v1.isArg |= v2.isArg;
@@ -343,7 +343,7 @@ namespace IKVM.Runtime
 			FindLocalVarState[] state = new FindLocalVarState[method.Instructions.Length];
 			state[0].changed = true;
 			state[0].sites = new FindLocalVarStoreSite[method.MaxLocals];
-			TypeWrapper[] parameters = mw.GetParameters();
+			RuntimeJavaType[] parameters = mw.GetParameters();
 			int argpos = 0;
 			if (!mw.IsStatic)
 			{
@@ -421,7 +421,7 @@ namespace IKVM.Runtime
 							ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instructions[i].Arg1);
 							if (ReferenceEquals(cpi.Name, StringConstants.INIT))
 							{
-								TypeWrapper type = codeInfo.GetRawStackTypeWrapper(i, cpi.GetArgTypes().Length);
+								RuntimeJavaType type = codeInfo.GetRawStackTypeWrapper(i, cpi.GetArgTypes().Length);
 								// after we've invoked the constructor, the uninitialized references
 								// are now initialized
 								if (type == VerifierTypeWrapper.UninitializedThis
@@ -502,7 +502,7 @@ namespace IKVM.Runtime
 		{
 			Debug.Assert(IsLoadLocal(method.Instructions[instructionIndex].NormalizedOpCode));
 			LocalVar local = null;
-			TypeWrapper type = VerifierTypeWrapper.Null;
+			RuntimeJavaType type = VerifierTypeWrapper.Null;
 			int localIndex = method.Instructions[instructionIndex].NormalizedArg1;
 			bool isArg = false;
 			foreach (int store in storeSites.Keys)

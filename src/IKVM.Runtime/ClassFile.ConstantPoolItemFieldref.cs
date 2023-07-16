@@ -34,7 +34,7 @@ namespace IKVM.Runtime
         {
 
             FieldWrapper field;
-            TypeWrapper fieldTypeWrapper;
+            RuntimeJavaType fieldTypeWrapper;
 
             /// <summary>
             /// Initializes a new instance.
@@ -53,12 +53,12 @@ namespace IKVM.Runtime
                     throw new ClassFormatError("Invalid field name \"{0}\"", name);
             }
 
-            internal TypeWrapper GetFieldType()
+            internal RuntimeJavaType GetFieldType()
             {
                 return fieldTypeWrapper;
             }
 
-            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 base.Link(thisType, mode);
                 lock (this)
@@ -69,7 +69,7 @@ namespace IKVM.Runtime
                     }
                 }
                 FieldWrapper fw = null;
-                TypeWrapper wrapper = GetClassType();
+                RuntimeJavaType wrapper = GetClassType();
                 if (wrapper == null)
                 {
                     return;
@@ -83,7 +83,7 @@ namespace IKVM.Runtime
                     }
                 }
                 ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-                TypeWrapper fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
+                RuntimeJavaType fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
                 lock (this)
                 {
                     if (fieldTypeWrapper == null)

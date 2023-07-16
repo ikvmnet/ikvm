@@ -157,14 +157,14 @@ namespace IKVM.Tools.Importer.MapXml
             }
             else if (Class != null)
             {
-                TypeWrapper tw = context.ClassLoader.LoadClassByDottedNameFast(Class);
+                var tw = context.ClassLoader.LoadClassByDottedNameFast(Class);
                 if (tw == null)
                 {
                     return null;
                 }
                 else if (Method != null)
                 {
-                    MethodWrapper mw = tw.GetMethodWrapper(Method, Sig, false);
+                    var mw = tw.GetMethodWrapper(Method, Sig, false);
                     if (mw == null)
                     {
                         return null;
@@ -173,7 +173,7 @@ namespace IKVM.Tools.Importer.MapXml
                 }
                 else if (Field != null)
                 {
-                    FieldWrapper fw = tw.GetFieldWrapper(Field, Sig);
+                    var fw = tw.GetFieldWrapper(Field, Sig);
                     if (fw == null)
                     {
                         return null;

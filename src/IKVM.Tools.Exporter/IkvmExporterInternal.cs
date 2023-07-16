@@ -21,7 +21,7 @@ namespace IKVM.Tools.Exporter
 
         static ZipArchive zipFile;
         static Dictionary<string, string> done = new Dictionary<string, string>();
-        static Dictionary<string, TypeWrapper> todo = new Dictionary<string, TypeWrapper>();
+        static Dictionary<string, RuntimeJavaType> todo = new Dictionary<string, RuntimeJavaType>();
         static FileInfo file;
 
         /// <summary>
@@ -221,7 +221,7 @@ namespace IKVM.Tools.Exporter
             }
         }
 
-        static void WriteClass(IkvmExporterOptions options, TypeWrapper tw)
+        static void WriteClass(IkvmExporterOptions options, RuntimeJavaType tw)
         {
             var entry = zipFile.CreateEntry(tw.Name.Replace('.', '/') + ".class");
             entry.LastWriteTime = new DateTime(1980, 01, 01, 0, 0, 0, DateTimeKind.Utc);
@@ -250,7 +250,7 @@ namespace IKVM.Tools.Exporter
             {
                 if ((t.IsPublic || options.IncludeNonPublicTypes) && ExportNamespace(options.Namespaces, t) && !t.IsGenericTypeDefinition && !AttributeHelper.IsHideFromJava(t) && (!t.IsGenericType || !AttributeHelper.IsJavaModule(t.Module)))
                 {
-                    TypeWrapper c;
+                    RuntimeJavaType c;
                     if (ClassLoaderWrapper.IsRemappedType(t) || t.IsPrimitive || t == Types.Void)
                         c = DotNetTypeWrapper.GetWrapperFromDotNetType(t);
                     else
@@ -265,7 +265,7 @@ namespace IKVM.Tools.Exporter
             do
             {
                 keepGoing = false;
-                foreach (var c in new List<TypeWrapper>(todo.Values).OrderBy(i => i.Name))
+                foreach (var c in new List<RuntimeJavaType>(todo.Values).OrderBy(i => i.Name))
                 {
                     if (!done.ContainsKey(c.Name))
                     {
@@ -297,17 +297,17 @@ namespace IKVM.Tools.Exporter
             return rc;
         }
 
-        private static void AddToExportList(TypeWrapper c)
+        private static void AddToExportList(RuntimeJavaType c)
         {
             todo[c.Name] = c;
         }
 
-        private static bool IsNonVectorArray(TypeWrapper tw)
+        private static bool IsNonVectorArray(RuntimeJavaType tw)
         {
             return !tw.IsArray && tw.TypeAsBaseType.IsArray;
         }
 
-        private static void AddToExportListIfNeeded(TypeWrapper tw)
+        private static void AddToExportListIfNeeded(RuntimeJavaType tw)
         {
             while (tw.IsArray)
             {
@@ -329,28 +329,28 @@ namespace IKVM.Tools.Exporter
             }
         }
 
-        private static void AddToExportListIfNeeded(TypeWrapper[] types)
+        private static void AddToExportListIfNeeded(RuntimeJavaType[] types)
         {
-            foreach (TypeWrapper tw in types)
+            foreach (RuntimeJavaType tw in types)
             {
                 AddToExportListIfNeeded(tw);
             }
         }
 
-        private static void ProcessClass(TypeWrapper tw)
+        private static void ProcessClass(RuntimeJavaType tw)
         {
-            TypeWrapper superclass = tw.BaseTypeWrapper;
+            RuntimeJavaType superclass = tw.BaseTypeWrapper;
             if (superclass != null)
             {
                 AddToExportListIfNeeded(superclass);
             }
             AddToExportListIfNeeded(tw.Interfaces);
-            TypeWrapper outerClass = tw.DeclaringTypeWrapper;
+            RuntimeJavaType outerClass = tw.DeclaringTypeWrapper;
             if (outerClass != null)
             {
                 AddToExportList(outerClass);
             }
-            foreach (TypeWrapper innerClass in tw.InnerClasses)
+            foreach (RuntimeJavaType innerClass in tw.InnerClasses)
             {
                 if (innerClass.IsPublic)
                 {
