@@ -21,7 +21,7 @@
   jeroen@frijters.net
   
 */
-#if !IMPORTER
+#if IMPORTER == false
 using System;
 using System.Diagnostics;
 using System.Reflection;
@@ -36,13 +36,14 @@ namespace IKVM.Runtime
         internal static Type GetMemberWrapperDelegateType(global::java.lang.invoke.MethodType type)
         {
 #if FIRST_PASS
-		return null;
+		    throw new NotImplementedException();
 #else
             return GetDelegateTypeForInvokeExact(type.basicType());
 #endif
         }
 
-#if !FIRST_PASS
+#if FIRST_PASS == false
+
         private static Type CreateMethodHandleDelegateType(java.lang.invoke.MethodType type)
         {
             TypeWrapper[] args = new TypeWrapper[type.parameterCount()];
@@ -701,6 +702,6 @@ namespace IKVM.Runtime
 
     }
 
-#endif
-
 }
+
+#endif

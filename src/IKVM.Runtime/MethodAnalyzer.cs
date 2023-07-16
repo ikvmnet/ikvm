@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.ByteCode;
-using IKVM.Runtime;
 
 #if IMPORTER
 using IKVM.Tools.Importer;
