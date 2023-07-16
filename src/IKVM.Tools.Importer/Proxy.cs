@@ -432,14 +432,12 @@ namespace IKVM.Tools.Importer
         private static RuntimeJavaType[] LoadTypes(ClassLoaderWrapper loader, string[] classes)
         {
             if (classes == null || classes.Length == 0)
-            {
-                return RuntimeJavaType.EmptyArray;
-            }
-            RuntimeJavaType[] tw = new RuntimeJavaType[classes.Length];
+                return Array.Empty<RuntimeJavaType>();
+
+            var tw = new RuntimeJavaType[classes.Length];
             for (int i = 0; i < tw.Length; i++)
-            {
                 tw[i] = loader.LoadClassByDottedName(classes[i]);
-            }
+
             return tw;
         }
 

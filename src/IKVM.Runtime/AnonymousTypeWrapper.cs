@@ -110,7 +110,7 @@ namespace IKVM.Runtime
                 }
                 else if (mi.Name == "writeReplace")
                 {
-                    methods.Add(new TypicalMethodWrapper(this, "writeReplace", "()Ljava.lang.Object;", mi, CoreClasses.java.lang.Object.Wrapper, RuntimeJavaType.EmptyArray, Modifiers.Private | Modifiers.Final, MemberFlags.None));
+                    methods.Add(new TypicalMethodWrapper(this, "writeReplace", "()Ljava.lang.Object;", mi, CoreClasses.java.lang.Object.Wrapper, Array.Empty<RuntimeJavaType>(), Modifiers.Private | Modifiers.Final, MemberFlags.None));
                 }
             }
 

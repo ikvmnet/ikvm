@@ -1001,7 +1001,7 @@ namespace IKVM.Tools.Importer
                 }
                 else
                 {
-                    interfaceWrappers = RuntimeJavaType.EmptyArray;
+                    interfaceWrappers = Array.Empty<RuntimeJavaType>();
                 }
             }
 
@@ -2438,7 +2438,7 @@ namespace IKVM.Tools.Importer
 
         internal RuntimeJavaType[] GetGhostImplementers(RuntimeJavaType wrapper)
         {
-            return ghosts.TryGetValue(wrapper.Name, out var list) ? list.ToArray() : RuntimeJavaType.EmptyArray;
+            return ghosts.TryGetValue(wrapper.Name, out var list) ? list.ToArray() : Array.Empty<RuntimeJavaType>();
         }
 
         internal void FinishRemappedTypes()

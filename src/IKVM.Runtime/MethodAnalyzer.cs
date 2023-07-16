@@ -130,14 +130,13 @@ namespace IKVM.Runtime
                 thisType = null;
             }
             // mw can be null when we're invoked from IsSideEffectFreeStaticInitializer
-            RuntimeJavaType[] argTypeWrappers = mw == null ? RuntimeJavaType.EmptyArray : mw.GetParameters();
+            var argTypeWrappers = mw == null ? Array.Empty<RuntimeJavaType>() : mw.GetParameters();
             for (int i = 0; i < argTypeWrappers.Length; i++)
             {
-                RuntimeJavaType type = argTypeWrappers[i];
+                var type = argTypeWrappers[i];
                 if (type.IsIntOnStackPrimitive)
-                {
                     type = RuntimePrimitiveJavaType.INT;
-                }
+
                 state[0].SetLocalType(firstNonArgLocalIndex++, type, -1);
                 if (type.IsWidePrimitive)
                 {

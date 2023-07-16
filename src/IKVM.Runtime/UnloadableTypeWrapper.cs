@@ -110,7 +110,7 @@ namespace IKVM.Runtime
                 if (missingType != null)
                 {
                     StaticCompiler.IssueMissingTypeMessage(missingType);
-                    return RuntimeJavaType.EmptyArray;
+                    return Array.Empty<RuntimeJavaType>();
                 }
 #endif
 

@@ -970,14 +970,12 @@ namespace IKVM.Runtime
         internal RuntimeJavaType[] ArgTypeWrapperListFromSig(string sig, LoadMode mode)
         {
             if (sig[1] == ')')
-            {
-                return RuntimeJavaType.EmptyArray;
-            }
-            List<RuntimeJavaType> list = new List<RuntimeJavaType>();
+                return Array.Empty<RuntimeJavaType>();
+
+            var list = new List<RuntimeJavaType>();
             for (int i = 1; sig[i] != ')';)
-            {
                 list.Add(SigDecoderWrapper(ref i, sig, mode));
-            }
+
             return list.ToArray();
         }
 

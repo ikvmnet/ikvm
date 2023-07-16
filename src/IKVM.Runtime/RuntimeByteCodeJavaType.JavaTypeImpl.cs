@@ -1354,20 +1354,19 @@ namespace IKVM.Runtime
                 // it is possible that the loading of the referenced classes triggered a finish of us,
                 // if that happens, we just return
                 if (finishedType != null)
-                {
                     return finishedType;
-                }
+
                 if (finishInProgress)
-                {
                     throw new InvalidOperationException("Recursive finish attempt for " + wrapper.Name);
-                }
+
                 finishInProgress = true;
                 Tracer.Info(Tracer.Compiler, "Finishing: {0}", wrapper.Name);
                 Profiler.Enter("JavaTypeImpl.Finish.Core");
+
                 try
                 {
                     RuntimeJavaType declaringTypeWrapper = null;
-                    RuntimeJavaType[] innerClassesTypeWrappers = RuntimeJavaType.EmptyArray;
+                    var innerClassesTypeWrappers = Array.Empty<RuntimeJavaType>();
                     // if we're an inner class, we need to attach an InnerClass attribute
                     ClassFile.InnerClass[] innerclasses = classFile.InnerClasses;
                     if (innerclasses != null)
@@ -1391,30 +1390,27 @@ namespace IKVM.Runtime
                         innerClassesTypeWrappers = wrappers.ToArray();
 #if IMPORTER
                         // before we bake our type, we need to link any inner annotations to allow them to create their attribute type (as a nested type)
-                        foreach (RuntimeJavaType tw in innerClassesTypeWrappers)
+                        foreach (var tw in innerClassesTypeWrappers)
                         {
-                            RuntimeByteCodeJavaType dtw = tw as RuntimeByteCodeJavaType;
+                            var dtw = tw as RuntimeByteCodeJavaType;
                             if (dtw != null)
                             {
-                                JavaTypeImpl impl = dtw.impl as JavaTypeImpl;
+                                var impl = dtw.impl as JavaTypeImpl;
                                 if (impl != null)
-                                {
                                     if (impl.annotationBuilder != null)
-                                    {
                                         impl.annotationBuilder.Link();
-                                    }
-                                }
                             }
                         }
 #endif //IMPORTER
                     }
 #if IMPORTER
+
                     if (annotationBuilder != null)
                     {
-                        CustomAttributeBuilder cab = new CustomAttributeBuilder(JVM.LoadType(typeof(AnnotationAttributeAttribute)).GetConstructor(new Type[] { Types.String }),
-                            new object[] { UnicodeUtil.EscapeInvalidSurrogates(annotationBuilder.AttributeTypeName) });
+                        var cab = new CustomAttributeBuilder(JVM.LoadType(typeof(AnnotationAttributeAttribute)).GetConstructor(new Type[] { Types.String }), new object[] { UnicodeUtil.EscapeInvalidSurrogates(annotationBuilder.AttributeTypeName) });
                         typeBuilder.SetCustomAttribute(cab);
                     }
+
                     if (!wrapper.IsInterface && wrapper.IsMapUnsafeException)
                     {
                         // mark all exceptions that are unsafe for mapping with a custom attribute,
@@ -1424,8 +1420,8 @@ namespace IKVM.Runtime
                     }
 #endif
 
-                    FinishContext context = new FinishContext(host, classFile, wrapper, typeBuilder);
-                    Type type = context.FinishImpl();
+                    var context = new FinishContext(host, classFile, wrapper, typeBuilder);
+                    var type = context.FinishImpl();
 #if IMPORTER
                     if (annotationBuilder != null)
                     {
@@ -1440,7 +1436,7 @@ namespace IKVM.Runtime
                         privateInterfaceMethods.CreateType();
                     }
 #endif
-                    MethodInfo finishedClinitMethod = clinitMethod;
+                    var finishedClinitMethod = (MethodInfo)clinitMethod;
 #if !IMPORTER
                     if (finishedClinitMethod != null)
                     {
@@ -1465,12 +1461,12 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER
+
             private bool IsValidAnnotationElementType(string type)
             {
                 if (type[0] == '[')
-                {
                     type = type.Substring(1);
-                }
+
                 switch (type)
                 {
                     case "Z":
@@ -1485,36 +1481,37 @@ namespace IKVM.Runtime
                     case "Ljava.lang.Class;":
                         return true;
                 }
+
                 if (type.StartsWith("L") && type.EndsWith(";"))
                 {
                     try
                     {
-                        RuntimeJavaType tw = wrapper.GetClassLoader().LoadClassByDottedNameFast(type.Substring(1, type.Length - 2));
+                        var tw = wrapper.GetClassLoader().LoadClassByDottedNameFast(type.Substring(1, type.Length - 2));
                         if (tw != null)
                         {
                             if ((tw.Modifiers & Modifiers.Annotation) != 0)
-                            {
                                 return true;
-                            }
+
                             if ((tw.Modifiers & Modifiers.Enum) != 0)
                             {
-                                RuntimeJavaType enumType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast("java.lang.Enum");
+                                var enumType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast("java.lang.Enum");
                                 if (enumType != null && tw.IsSubTypeOf(enumType))
-                                {
                                     return true;
-                                }
                             }
                         }
                     }
                     catch
                     {
+
                     }
                 }
+
                 return false;
             }
 
             sealed class AnnotationBuilder : Annotation
             {
+
                 private JavaTypeImpl impl;
                 private TypeBuilder outer;
                 private TypeBuilder annotationTypeBuilder;
@@ -1555,17 +1552,17 @@ namespace IKVM.Runtime
                     // we only set annotationTypeBuilder if we're valid
                     annotationTypeBuilder = o.typeBuilder;
 
-                    RuntimeJavaType annotationAttributeBaseType = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
+                    var annotationAttributeBaseType = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
 
                     // make sure we don't clash with another class name
-                    CompilerClassLoader ccl = o.wrapper.classLoader;
+                    var ccl = o.wrapper.classLoader;
                     string name = UnicodeUtil.EscapeInvalidSurrogates(o.classFile.Name);
                     while (!ccl.ReserveName(name + "Attribute"))
                     {
                         name += "_";
                     }
 
-                    TypeAttributes typeAttributes = TypeAttributes.Class | TypeAttributes.Sealed;
+                    var typeAttributes = TypeAttributes.Class | TypeAttributes.Sealed;
                     if (o.enclosingClassWrapper != null)
                     {
                         if (o.wrapper.IsPublic)
@@ -1595,6 +1592,7 @@ namespace IKVM.Runtime
                         // In the Java world, the class appears as a non-public proxy class
                         AttributeHelper.SetModifiers(attributeTypeBuilder, Modifiers.Final, false);
                     }
+
                     // NOTE we "abuse" the InnerClassAttribute to add a custom attribute to name the class "$Proxy[Annotation]" in the Java world
                     int dotindex = o.classFile.Name.LastIndexOf('.') + 1;
                     AttributeHelper.SetInnerClass(attributeTypeBuilder, o.classFile.Name.Substring(0, dotindex) + "$Proxy" + o.classFile.Name.Substring(dotindex), Modifiers.Final);

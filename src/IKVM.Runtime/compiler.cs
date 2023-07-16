@@ -3653,7 +3653,7 @@ namespace IKVM.Runtime
                         break;
                     case ReferenceKind.GetStatic:
                         ret = cpi.GetFieldType();
-                        args = RuntimeJavaType.EmptyArray;
+                        args = Array.Empty<RuntimeJavaType>();
                         break;
                     case ReferenceKind.PutField:
                         ret = RuntimePrimitiveJavaType.VOID;

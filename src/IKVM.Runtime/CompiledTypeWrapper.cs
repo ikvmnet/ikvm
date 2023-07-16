@@ -222,7 +222,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="name"></param>
             /// <param name="type"></param>
-            internal CompiledGhostTypeWrapper(string name, Type type)                :
+            internal CompiledGhostTypeWrapper(string name, Type type) :
                 base(name, type)
             {
 
@@ -450,27 +450,25 @@ namespace IKVM.Runtime
             // attribute to list the implemented interfaces, because Java reflection only
             // reports the interfaces *directly* implemented by the type, not the inherited
             // interfaces. This is significant for serialVersionUID calculation (for example).
-            ImplementsAttribute attr = AttributeHelper.GetImplements(type);
+            var attr = AttributeHelper.GetImplements(type);
             if (attr == null)
             {
                 if (BaseTypeWrapper == CoreClasses.java.lang.Object.Wrapper)
-                {
                     return GetImplementedInterfacesAsTypeWrappers(type);
-                }
-                return RuntimeJavaType.EmptyArray;
+
+                return Array.Empty<RuntimeJavaType>();
             }
-            string[] interfaceNames = attr.Interfaces;
-            RuntimeJavaType[] interfaceWrappers = new RuntimeJavaType[interfaceNames.Length];
-            if (this.IsRemapped)
+
+            var interfaceNames = attr.Interfaces;
+            var interfaceWrappers = new RuntimeJavaType[interfaceNames.Length];
+            if (IsRemapped)
             {
                 for (int i = 0; i < interfaceWrappers.Length; i++)
-                {
                     interfaceWrappers[i] = ClassLoaderWrapper.LoadClassCritical(interfaceNames[i]);
-                }
             }
             else
             {
-                RuntimeJavaType[] typeWrappers = GetImplementedInterfacesAsTypeWrappers(type);
+                var typeWrappers = GetImplementedInterfacesAsTypeWrappers(type);
                 for (int i = 0; i < interfaceWrappers.Length; i++)
                 {
                     for (int j = 0; j < typeWrappers.Length; j++)
@@ -481,6 +479,7 @@ namespace IKVM.Runtime
                             break;
                         }
                     }
+
                     if (interfaceWrappers[i] == null)
                     {
 #if IMPORTER
@@ -491,6 +490,7 @@ namespace IKVM.Runtime
                     }
                 }
             }
+
             return interfaceWrappers;
         }
 
@@ -508,17 +508,15 @@ namespace IKVM.Runtime
 
         private static bool IsAnnotationAttribute(Type type)
         {
-            return type.Name.EndsWith("Attribute", StringComparison.Ordinal)
-                && type.IsClass
-                && type.BaseType.FullName == "ikvm.internal.AnnotationAttributeBase";
+            return type.Name.EndsWith("Attribute", StringComparison.Ordinal) && type.IsClass && type.BaseType.FullName == "ikvm.internal.AnnotationAttributeBase";
         }
 
         internal override RuntimeJavaType[] InnerClasses
         {
             get
             {
-                List<RuntimeJavaType> wrappers = new List<RuntimeJavaType>();
-                foreach (Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+                var wrappers = new List<RuntimeJavaType>();
+                foreach (var nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
                 {
                     if (IsAnnotationAttribute(nested))
                     {
@@ -542,6 +540,7 @@ namespace IKVM.Runtime
                 {
                     wrappers.Add(GetClassLoader().LoadClassByDottedName(s));
                 }
+
                 return wrappers.ToArray();
             }
         }

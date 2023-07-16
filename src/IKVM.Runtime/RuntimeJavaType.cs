@@ -53,7 +53,6 @@ namespace IKVM.Runtime
         internal const Modifiers UnloadableModifiersHack = Modifiers.Final | Modifiers.Interface | Modifiers.Private;
         internal const Modifiers VerifierTypeModifiersHack = Modifiers.Final | Modifiers.Interface;
 
-        internal static readonly RuntimeJavaType[] EmptyArray = new RuntimeJavaType[0];
         static readonly object flagsLock = new object();
 
         readonly string name; // java name (e.g. java.lang.Object)
@@ -113,7 +112,7 @@ namespace IKVM.Runtime
             else
             {
 #if IMPORTER
-				var classLiteralType = StaticCompiler.GetRuntimeType("IKVM.Runtime.ClassLiteral`1").MakeGenericType(type);
+                var classLiteralType = StaticCompiler.GetRuntimeType("IKVM.Runtime.ClassLiteral`1").MakeGenericType(type);
 #else
                 var classLiteralType = typeof(ClassLiteral<>).MakeGenericType(type);
 #endif
@@ -1187,25 +1186,17 @@ namespace IKVM.Runtime
         }
 #endif
 
-        internal virtual RuntimeJavaType[] Interfaces
-        {
-            get { return EmptyArray; }
-        }
+        internal virtual RuntimeJavaType[] Interfaces => Array.Empty<RuntimeJavaType>();
 
         // NOTE this property can only be called for finished types!
-        internal virtual RuntimeJavaType[] InnerClasses
-        {
-            get { return EmptyArray; }
-        }
+        internal virtual RuntimeJavaType[] InnerClasses => Array.Empty<RuntimeJavaType>();
 
         // NOTE this property can only be called for finished types!
-        internal virtual RuntimeJavaType DeclaringTypeWrapper
-        {
-            get { return null; }
-        }
+        internal virtual RuntimeJavaType DeclaringTypeWrapper => null;
 
         internal virtual void Finish()
         {
+
         }
 
         internal void LinkAll()
@@ -1249,6 +1240,7 @@ namespace IKVM.Runtime
 #endif
 
 #if !IMPORTER && !EXPORTER
+
         internal void RunClassInit()
         {
             Type t = IsRemapped ? TypeAsBaseType : TypeAsTBD;
@@ -1257,9 +1249,11 @@ namespace IKVM.Runtime
                 System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(t.TypeHandle);
             }
         }
+
 #endif
 
 #if EMITTERS
+
         internal void EmitUnbox(CodeEmitter ilgen)
         {
             Debug.Assert(this.IsNonPrimitiveValueType);
@@ -1538,21 +1532,9 @@ namespace IKVM.Runtime
         }
 #endif // !IMPORTER && !EXPORTER
 
-        internal virtual Annotation Annotation
-        {
-            get
-            {
-                return null;
-            }
-        }
+        internal virtual Annotation Annotation => null;
 
-        internal virtual Type EnumType
-        {
-            get
-            {
-                return null;
-            }
-        }
+        internal virtual Type EnumType => null;
 
         private static Type[] GetInterfaces(Type type)
         {
@@ -1569,9 +1551,10 @@ namespace IKVM.Runtime
         }
 
 #if IMPORTER || EXPORTER
+
         private static void AddInterfaces(List<Type> list, Type type)
         {
-            foreach (Type iface in type.__GetDeclaredInterfaces())
+            foreach (var iface in type.__GetDeclaredInterfaces())
             {
                 if (!list.Contains(iface))
                 {
@@ -1583,15 +1566,17 @@ namespace IKVM.Runtime
                 }
             }
         }
+
 #endif
 
         protected static RuntimeJavaType[] GetImplementedInterfacesAsTypeWrappers(Type type)
         {
-            Type[] interfaceTypes = GetInterfaces(type);
-            RuntimeJavaType[] interfaces = new RuntimeJavaType[interfaceTypes.Length];
+            var interfaceTypes = GetInterfaces(type);
+            var interfaces = new RuntimeJavaType[interfaceTypes.Length];
+
             for (int i = 0; i < interfaceTypes.Length; i++)
             {
-                Type decl = interfaceTypes[i].DeclaringType;
+                var decl = interfaceTypes[i].DeclaringType;
                 if (decl != null && AttributeHelper.IsGhostInterface(decl))
                 {
                     // we have to return the declaring type for ghost interfaces
@@ -1602,51 +1587,48 @@ namespace IKVM.Runtime
                     interfaces[i] = ClassLoaderWrapper.GetWrapperFromType(interfaceTypes[i]);
                 }
             }
+
             for (int i = 0; i < interfaceTypes.Length; i++)
             {
                 if (interfaces[i].IsRemapped)
                 {
                     // for remapped interfaces, we also return the original interface (Java types will ignore it, if it isn't listed in the ImplementsAttribute)
-                    RuntimeJavaType twRemapped = interfaces[i];
-                    RuntimeJavaType tw = DotNetTypeWrapper.GetWrapperFromDotNetType(interfaceTypes[i]);
+                    var twRemapped = interfaces[i];
+                    var tw = DotNetTypeWrapper.GetWrapperFromDotNetType(interfaceTypes[i]);
                     interfaces[i] = tw;
                     if (Array.IndexOf(interfaces, twRemapped) == -1)
-                    {
                         interfaces = ArrayUtil.Concat(interfaces, twRemapped);
-                    }
                 }
             }
+
             return interfaces;
         }
 
         internal RuntimeJavaType GetPublicBaseTypeWrapper()
         {
-            Debug.Assert(!this.IsPublic);
-            if (this.IsUnloadable || this.IsInterface)
-            {
+            Debug.Assert(!IsPublic);
+
+            if (IsUnloadable || IsInterface)
                 return CoreClasses.java.lang.Object.Wrapper;
-            }
-            for (RuntimeJavaType tw = this; ; tw = tw.BaseTypeWrapper)
-            {
+
+            for (var tw = this; ; tw = tw.BaseTypeWrapper)
                 if (tw.IsPublic)
-                {
                     return tw;
-                }
-            }
         }
 
 #if !EXPORTER
+
         // return the constructor used for automagic .NET serialization
         internal virtual MethodBase GetSerializationConstructor()
         {
-            return this.TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] {
-                        JVM.Import(typeof(System.Runtime.Serialization.SerializationInfo)), JVM.Import(typeof(System.Runtime.Serialization.StreamingContext)) }, null);
+            return TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { JVM.Import(typeof(System.Runtime.Serialization.SerializationInfo)), JVM.Import(typeof(System.Runtime.Serialization.StreamingContext)) }, null);
         }
 
         internal virtual MethodBase GetBaseSerializationConstructor()
         {
             return BaseTypeWrapper.GetSerializationConstructor();
         }
+
 #endif
 
 #if !IMPORTER && !EXPORTER

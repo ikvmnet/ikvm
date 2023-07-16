@@ -58,10 +58,10 @@ namespace IKVM.Runtime
             if (lmf.getInstance == null && !lmf.EmitImpl(context, classFile, cpi, bsm, ilgen))
             {
 #if IMPORTER
-				if (context.TypeWrapper.GetClassLoader().DisableDynamicBinding)
-				{
-					StaticCompiler.IssueMessage(Message.UnableToCreateLambdaFactory);
-				}
+                if (context.TypeWrapper.GetClassLoader().DisableDynamicBinding)
+                {
+                    StaticCompiler.IssueMessage(Message.UnableToCreateLambdaFactory);
+                }
 #endif
                 return false;
             }
@@ -77,7 +77,7 @@ namespace IKVM.Runtime
                 return false;
             }
             bool serializable = false;
-            RuntimeJavaType[] markers = RuntimeJavaType.EmptyArray;
+            var markers = Array.Empty<RuntimeJavaType>();
             ClassFile.ConstantPoolItemMethodType[] bridges = null;
             if (bsm.ArgumentCount > 3)
             {
