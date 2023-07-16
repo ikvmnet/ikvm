@@ -310,9 +310,8 @@ namespace IKVM.Tools.Exporter
         private static void AddToExportListIfNeeded(RuntimeJavaType tw)
         {
             while (tw.IsArray)
-            {
                 tw = tw.ElementTypeWrapper;
-            }
+
             if (tw.IsUnloadable && tw.Name.StartsWith("Missing/"))
             {
                 Console.Error.WriteLine("Error: unable to find assembly '{0}'", tw.Name.Substring(8));
@@ -331,33 +330,27 @@ namespace IKVM.Tools.Exporter
 
         private static void AddToExportListIfNeeded(RuntimeJavaType[] types)
         {
-            foreach (RuntimeJavaType tw in types)
-            {
+            foreach (var tw in types)
                 AddToExportListIfNeeded(tw);
-            }
         }
 
         private static void ProcessClass(RuntimeJavaType tw)
         {
             RuntimeJavaType superclass = tw.BaseTypeWrapper;
             if (superclass != null)
-            {
                 AddToExportListIfNeeded(superclass);
-            }
+
             AddToExportListIfNeeded(tw.Interfaces);
-            RuntimeJavaType outerClass = tw.DeclaringTypeWrapper;
+
+            var outerClass = tw.DeclaringTypeWrapper;
             if (outerClass != null)
-            {
                 AddToExportList(outerClass);
-            }
-            foreach (RuntimeJavaType innerClass in tw.InnerClasses)
-            {
+
+            foreach (var innerClass in tw.InnerClasses)
                 if (innerClass.IsPublic)
-                {
                     AddToExportList(innerClass);
-                }
-            }
-            foreach (MethodWrapper mw in tw.GetMethods())
+
+            foreach (var mw in tw.GetMethods())
             {
                 if (mw.IsPublic || mw.IsProtected)
                 {
@@ -366,7 +359,8 @@ namespace IKVM.Tools.Exporter
                     AddToExportListIfNeeded(mw.GetParameters());
                 }
             }
-            foreach (FieldWrapper fw in tw.GetFields())
+
+            foreach (var fw in tw.GetFields())
             {
                 if (fw.IsPublic || fw.IsProtected)
                 {
