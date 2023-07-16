@@ -134,7 +134,7 @@ namespace IKVM.Runtime
             foreach (FieldInfo fi in type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
                 RuntimeJavaType fieldType = CompiledTypeWrapper.GetFieldTypeWrapper(fi);
-                fields.Add(new SimpleFieldWrapper(this, fieldType, fi, fi.Name, fieldType.SigName, new ExModifiers(Modifiers.Private | Modifiers.Final, false)));
+                fields.Add(new RuntimeSimpleJavaField(this, fieldType, fi, fi.Name, fieldType.SigName, new ExModifiers(Modifiers.Private | Modifiers.Final, false)));
             }
             SetFields(fields.ToArray());
         }

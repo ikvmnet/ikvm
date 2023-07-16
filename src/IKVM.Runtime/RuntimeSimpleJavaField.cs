@@ -42,7 +42,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Field wrapper implementation for standard fields.
     /// </summary>
-    sealed class SimpleFieldWrapper : RuntimeJavaField
+    sealed class RuntimeSimpleJavaField : RuntimeJavaField
     {
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace IKVM.Runtime
         /// <param name="name"></param>
         /// <param name="sig"></param>
         /// <param name="modifiers"></param>
-        internal SimpleFieldWrapper(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers) :
+        internal RuntimeSimpleJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers) :
             base(declaringType, fieldType, name, sig, modifiers, fi)
         {
             Debug.Assert(!(fieldType == RuntimePrimitiveJavaType.DOUBLE || fieldType == RuntimePrimitiveJavaType.LONG) || !IsVolatile);
