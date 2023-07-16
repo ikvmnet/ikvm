@@ -22,21 +22,12 @@
   
 */
 
-
-#if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using IKVM.Tools.Importer;
-
-using Type = IKVM.Reflection.Type;
-#else
-#endif
-
 using Instruction = IKVM.Runtime.ClassFile.Method.Instruction;
 using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 
 namespace IKVM.Runtime
 {
+
     sealed class EmitIntrinsicContext
     {
 

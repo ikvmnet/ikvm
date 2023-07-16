@@ -35,7 +35,6 @@ using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
 using DynamicOrAotTypeWrapper = IKVM.Tools.Importer.AotTypeWrapper;
-using ProtectionDomain = System.Object;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -53,8 +52,10 @@ namespace IKVM.Runtime
     sealed partial class DynamicTypeWrapper
 #endif
     {
+
         internal sealed class FinishContext
         {
+
             private readonly TypeWrapper host;
             private readonly ClassFile classFile;
             private readonly DynamicOrAotTypeWrapper wrapper;

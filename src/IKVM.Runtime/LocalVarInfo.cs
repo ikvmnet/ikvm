@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -25,35 +25,15 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using IKVM.Runtime;
-
-#if IMPORTER
-using IKVM.Reflection.Emit;
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection.Emit;
-#endif
-
 using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 using ExceptionTableEntry = IKVM.Runtime.ClassFile.Method.ExceptionTableEntry;
 
 namespace IKVM.Runtime
 {
 
-	sealed class LocalVar
+    struct LocalVarInfo
 	{
-		internal bool isArg;
-		internal int local;
-		internal TypeWrapper type;
-		internal CodeEmitterLocal builder;
-		// used to emit debugging info, only available if ClassLoaderWrapper.EmitDebugInfo is true
-		internal string name;
-		internal int start_pc;
-		internal int end_pc;
-	}
 
-	struct LocalVarInfo
-	{
 		private readonly LocalVar[/*instructionIndex*/] localVars;
 		private readonly LocalVar[/*instructionIndex*/][/*localIndex*/] invokespecialLocalVars;
 		private readonly LocalVar[/*index*/] allLocalVars;

@@ -23,13 +23,13 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+
 using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 
 namespace IKVM.Runtime
 {
 
-	sealed class JsrInliner
+    sealed class JsrInliner
 	{
 
 		private ClassFile.Method.Instruction[] codeCopy;

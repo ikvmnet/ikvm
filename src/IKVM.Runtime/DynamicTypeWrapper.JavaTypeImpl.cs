@@ -34,7 +34,6 @@ using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
 using DynamicOrAotTypeWrapper = IKVM.Tools.Importer.AotTypeWrapper;
-using ProtectionDomain = System.Object;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -52,6 +51,7 @@ namespace IKVM.Runtime
     sealed partial class DynamicTypeWrapper
 #endif
     {
+
         private sealed class JavaTypeImpl : DynamicImpl
         {
             private readonly TypeWrapper host;

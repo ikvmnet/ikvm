@@ -26,15 +26,9 @@ using System;
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
-#endif
-
-#if IMPORTER
-using IKVM.Tools.Importer;
 #endif
 
 namespace IKVM.Runtime

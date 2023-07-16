@@ -1,0 +1,122 @@
+﻿/*
+  Copyright (C) 2002-2014 Jeroen Frijters
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+  Jeroen Frijters
+  jeroen@frijters.net
+  
+*/
+
+namespace IKVM.Runtime
+{
+
+    struct StackState
+    {
+
+        private InstructionState state;
+        private int sp;
+
+        internal StackState(InstructionState state)
+        {
+            this.state = state;
+            sp = state.GetStackHeight();
+        }
+
+        internal TypeWrapper PeekType()
+        {
+            if (sp == 0)
+            {
+                throw new VerifyError("Unable to pop operand off an empty stack");
+            }
+            TypeWrapper type = state.GetStackByIndex(sp - 1);
+            if (VerifierTypeWrapper.IsThis(type))
+            {
+                type = ((VerifierTypeWrapper)type).UnderlyingType;
+            }
+            return type;
+        }
+
+        internal TypeWrapper PopAnyType()
+        {
+            if (sp == 0)
+            {
+                throw new VerifyError("Unable to pop operand off an empty stack");
+            }
+            TypeWrapper type = state.GetStackByIndex(--sp);
+            if (VerifierTypeWrapper.IsThis(type))
+            {
+                type = ((VerifierTypeWrapper)type).UnderlyingType;
+            }
+            if (VerifierTypeWrapper.IsFaultBlockException(type))
+            {
+                VerifierTypeWrapper.ClearFaultBlockException(type);
+                type = CoreClasses.java.lang.Throwable.Wrapper;
+            }
+            return type;
+        }
+
+        internal TypeWrapper PopType(TypeWrapper baseType)
+        {
+            return InstructionState.PopTypeImpl(baseType, PopAnyType());
+        }
+
+        // NOTE this can *not* be used to pop double or long
+        internal TypeWrapper PopType()
+        {
+            return InstructionState.PopTypeImpl(PopAnyType());
+        }
+
+        internal void PopInt()
+        {
+            InstructionState.PopIntImpl(PopAnyType());
+        }
+
+        internal void PopFloat()
+        {
+            InstructionState.PopFloatImpl(PopAnyType());
+        }
+
+        internal void PopDouble()
+        {
+            InstructionState.PopDoubleImpl(PopAnyType());
+        }
+
+        internal void PopLong()
+        {
+            InstructionState.PopLongImpl(PopAnyType());
+        }
+
+        internal TypeWrapper PopArrayType()
+        {
+            return InstructionState.PopArrayTypeImpl(PopAnyType());
+        }
+
+        // either null or an initialized object reference
+        internal TypeWrapper PopObjectType()
+        {
+            return InstructionState.PopObjectTypeImpl(PopAnyType());
+        }
+
+        // null or an initialized object reference derived from baseType (or baseType)
+        internal TypeWrapper PopObjectType(TypeWrapper baseType)
+        {
+            return InstructionState.PopObjectTypeImpl(baseType, PopObjectType());
+        }
+    }
+
+}

@@ -23,17 +23,6 @@
 */
 using System;
 
-#if NETCOREAPP
-using System.Runtime.Loader;
-#endif
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using Type = IKVM.Reflection.Type;
-using ProtectionDomain = System.Object;
-#endif
-
 namespace IKVM.Runtime
 {
 

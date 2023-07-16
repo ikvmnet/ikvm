@@ -25,9 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using IKVM.Attributes;
 using IKVM.ByteCode;
-using IKVM.Runtime;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -1075,4 +1073,5 @@ namespace IKVM.Runtime
             return false;
         }
     }
+
 }

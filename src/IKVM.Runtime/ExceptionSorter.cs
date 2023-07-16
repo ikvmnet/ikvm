@@ -21,16 +21,43 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Generic;
+
+using ExceptionTableEntry = IKVM.Runtime.ClassFile.Method.ExceptionTableEntry;
 
 namespace IKVM.Runtime
 {
 
-    enum SimpleOpCode : byte
+    sealed class ExceptionSorter : IComparer<ExceptionTableEntry>
     {
 
-        Call,
-        Callvirt,
-        Newobj
+        public int Compare(ExceptionTableEntry e1, ExceptionTableEntry e2)
+        {
+            if (e1.startIndex < e2.startIndex)
+            {
+                return -1;
+            }
+            if (e1.startIndex == e2.startIndex)
+            {
+                if (e1.endIndex == e2.endIndex)
+                {
+                    if (e1.ordinal > e2.ordinal)
+                    {
+                        return -1;
+                    }
+                    if (e1.ordinal == e2.ordinal)
+                    {
+                        return 0;
+                    }
+                    return 1;
+                }
+                if (e1.endIndex > e2.endIndex)
+                {
+                    return -1;
+                }
+            }
+            return 1;
+        }
 
     }
 

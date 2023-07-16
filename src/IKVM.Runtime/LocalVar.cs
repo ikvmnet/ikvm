@@ -1,5 +1,5 @@
-﻿/*
-  Copyright (C) 2002-2014 Jeroen Frijters
+/*
+  Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,13 +25,18 @@
 namespace IKVM.Runtime
 {
 
-    enum SimpleOpCode : byte
-    {
+    sealed class LocalVar
+	{
 
-        Call,
-        Callvirt,
-        Newobj
+		internal bool isArg;
+		internal int local;
+		internal TypeWrapper type;
+		internal CodeEmitterLocal builder;
+		// used to emit debugging info, only available if ClassLoaderWrapper.EmitDebugInfo is true
+		internal string name;
+		internal int start_pc;
+		internal int end_pc;
 
-    }
+	}
 
 }
