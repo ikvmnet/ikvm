@@ -35,12 +35,9 @@ using Type = IKVM.Reflection.Type;
 using System.Reflection;
 #endif
 
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
-
 namespace IKVM.Runtime
 {
+
     sealed class ArrayTypeWrapper : RuntimeJavaType
     {
 

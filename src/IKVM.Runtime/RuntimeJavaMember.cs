@@ -37,10 +37,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
-
 namespace IKVM.Runtime
 {
 

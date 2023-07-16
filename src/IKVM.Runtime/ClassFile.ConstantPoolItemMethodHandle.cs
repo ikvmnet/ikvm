@@ -108,7 +108,7 @@ namespace IKVM.Runtime
                 get { return reader.ReferenceKind; }
             }
 
-            internal MemberWrapper Member
+            internal RuntimeJavaMember Member
             {
                 get { return cpi.GetMember(); }
             }

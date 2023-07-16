@@ -979,7 +979,7 @@ namespace IKVM.Runtime
                 && IsLambdaMetafactory(mh.Member);
         }
 
-        private static bool IsLambdaMetafactory(MemberWrapper mw)
+        private static bool IsLambdaMetafactory(RuntimeJavaMember mw)
         {
             return mw.Name == "metafactory"
                 && mw.Signature == "(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.invoke.MethodType;Ljava.lang.invoke.MethodHandle;Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.CallSite;"
@@ -1014,7 +1014,7 @@ namespace IKVM.Runtime
                 && argpos == bsm.ArgumentCount;
         }
 
-        private static bool IsLambdaAltMetafactory(MemberWrapper mw)
+        private static bool IsLambdaAltMetafactory(RuntimeJavaMember mw)
         {
             return mw.Name == "altMetafactory"
                 && mw.Signature == "(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;"

@@ -41,7 +41,7 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    abstract class MethodWrapper : MemberWrapper
+    abstract class MethodWrapper : RuntimeJavaMember
     {
 
 #if !IMPORTER && !FIRST_PASS && !EXPORTER

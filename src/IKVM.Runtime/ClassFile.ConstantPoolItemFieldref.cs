@@ -99,7 +99,7 @@ namespace IKVM.Runtime
                 return field;
             }
 
-            internal override MemberWrapper GetMember()
+            internal override RuntimeJavaMember GetMember()
             {
                 return field;
             }

@@ -133,7 +133,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static void EmitThrowNoSuchMethodErrorForGetter(CodeEmitter ilgen, RuntimeJavaType type, MemberWrapper member)
+        internal static void EmitThrowNoSuchMethodErrorForGetter(CodeEmitter ilgen, RuntimeJavaType type, RuntimeJavaMember member)
         {
 #if IMPORTER
             StaticCompiler.IssueMessage(Message.EmittedNoSuchMethodError, "<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature);
@@ -178,7 +178,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static void EmitThrowNoSuchMethodErrorForSetter(CodeEmitter ilgen, MemberWrapper member)
+        internal static void EmitThrowNoSuchMethodErrorForSetter(CodeEmitter ilgen, RuntimeJavaMember member)
         {
 #if IMPORTER
             StaticCompiler.IssueMessage(Message.EmittedNoSuchMethodError, "<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature);

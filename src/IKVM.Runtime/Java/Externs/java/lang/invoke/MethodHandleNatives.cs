@@ -141,7 +141,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 
 #if !FIRST_PASS
 
-        static void SetModifiers(global::java.lang.invoke.MemberName self, MemberWrapper mw)
+        static void SetModifiers(global::java.lang.invoke.MemberName self, RuntimeJavaMember mw)
         {
             self._flags(self._flags() | (int)mw.Modifiers);
         }

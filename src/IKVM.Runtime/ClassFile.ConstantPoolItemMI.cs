@@ -108,7 +108,7 @@ namespace IKVM.Runtime
                 return invokespecialMethod != null ? invokespecialMethod : method;
             }
 
-            internal override MemberWrapper GetMember()
+            internal override RuntimeJavaMember GetMember()
             {
                 return method;
             }

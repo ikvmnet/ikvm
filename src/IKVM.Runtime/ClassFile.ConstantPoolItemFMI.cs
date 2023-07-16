@@ -106,7 +106,7 @@ namespace IKVM.Runtime
                 return clazz.GetClassType();
             }
 
-            internal abstract MemberWrapper GetMember();
+            internal abstract RuntimeJavaMember GetMember();
         }
     }
 
