@@ -69,26 +69,6 @@ namespace IKVM.Runtime
                 Value = (IntPtr)GCHandle.Alloc(obj, GCHandleType.WeakTrackResurrection);
             }
 
-#if CLASSGC
-
-            /// <summary>
-            /// Finalizes the instance.
-            /// </summary>
-            [System.Security.SecuritySafeCritical]
-            ~HandleWrapper()
-            {
-                if (!Environment.HasShutdownStarted)
-                {
-                    var h = (GCHandle)Value;
-                    if (h.Target == null)
-                        h.Free();
-                    else
-                        GC.ReRegisterForFinalize(this);
-                }
-            }
-
-#endif
-
         }
 
         protected MemberWrapper(TypeWrapper declaringType, string name, string sig, Modifiers modifiers, MemberFlags flags)
@@ -161,14 +141,7 @@ namespace IKVM.Runtime
                 return true;
             }
 #endif
-#if CLASSGC
-            if (DeclaringType.IsDynamic)
-            {
-                // if we are dynamic, we can just become friends with the caller
-                DeclaringType.GetClassLoader().GetTypeWrapperFactory().AddInternalsVisibleTo(caller.TypeAsTBD.Assembly);
-                return true;
-            }
-#endif
+
             return DeclaringType.InternalsVisibleTo(caller);
         }
 

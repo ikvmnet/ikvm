@@ -422,9 +422,6 @@ namespace IKVM.Runtime
                     }
                 }
             }
-#if CLASSGC
-            var instance = new DynamicClassLoader(CreateModuleBuilder(), false);
-#endif
 
             return instance;
 #endif
