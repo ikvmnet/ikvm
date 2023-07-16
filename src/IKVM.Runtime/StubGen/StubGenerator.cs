@@ -632,7 +632,7 @@ namespace IKVM.StubGen
 
         private static void AddMetaAnnotations(ClassFileWriter writer, RuntimeJavaType tw)
         {
-            DotNetTypeWrapper.AttributeAnnotationTypeWrapperBase attributeAnnotation = tw as DotNetTypeWrapper.AttributeAnnotationTypeWrapperBase;
+            RuntimeManagedJavaType.AttributeAnnotationTypeWrapperBase attributeAnnotation = tw as RuntimeManagedJavaType.AttributeAnnotationTypeWrapperBase;
             if (attributeAnnotation != null)
             {
                 // TODO write the annotation directly, instead of going thru the object[] encoding
@@ -678,7 +678,7 @@ namespace IKVM.StubGen
                         AnnotationDefaultAttribute.TAG_ANNOTATION,
                         "Ljava/lang/annotation/Repeatable;",
                         "value",
-                        new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + (tw.Name + DotNetTypeWrapper.AttributeAnnotationMultipleSuffix).Replace('.', '/') + ";" }
+                        new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + (tw.Name + RuntimeManagedJavaType.AttributeAnnotationMultipleSuffix).Replace('.', '/') + ";" }
                     });
                 }
                 writer.AddAttribute(annot);
@@ -689,7 +689,7 @@ namespace IKVM.StubGen
         {
             foreach (RuntimeJavaType nested in tw.InnerClasses)
             {
-                if (nested.Name == tw.Name + DotNetTypeWrapper.AttributeAnnotationMultipleSuffix)
+                if (nested.Name == tw.Name + RuntimeManagedJavaType.AttributeAnnotationMultipleSuffix)
                 {
                     return true;
                 }

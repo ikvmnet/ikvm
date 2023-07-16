@@ -102,7 +102,7 @@ namespace IKVM.Runtime
             }
             Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
 #if IMPORTER
-            return new CompiledTypeWrapper.CompiledAnnotation(StaticCompiler.GetRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
+            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(StaticCompiler.GetRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
 #else
             return null;
 #endif

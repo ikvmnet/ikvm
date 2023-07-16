@@ -333,15 +333,15 @@ namespace IKVM.Runtime
                         if (type != null)
                         {
                             // check the name to make sure that the canonical name was used
-                            if (CompiledTypeWrapper.GetName(type) == name)
+                            if (RuntimeManagedByteCodeJavaType.GetName(type) == name)
                             {
-                                return CompiledTypeWrapper.newInstance(name, type);
+                                return RuntimeManagedByteCodeJavaType.newInstance(name, type);
                             }
                         }
                     }
                     else
                     {
-                        var type = GetType(modules[i], DotNetTypeWrapper.DemangleTypeName(name));
+                        var type = GetType(modules[i], RuntimeManagedJavaType.DemangleTypeName(name));
 
                         // type could be loaded from this assembly, but ended up forwarded to a different assembly
                         // this class loader isn't responsible for it
@@ -349,12 +349,12 @@ namespace IKVM.Runtime
                             return null;
 
                         // type was loaded successfully
-                        if (type != null && DotNetTypeWrapper.IsAllowedOutside(type))
+                        if (type != null && RuntimeManagedJavaType.IsAllowedOutside(type))
                         {
                             // check the name to make sure that the canonical name was used
-                            if (DotNetTypeWrapper.GetName(type) == name)
+                            if (RuntimeManagedJavaType.GetName(type) == name)
                             {
-                                return DotNetTypeWrapper.Create(type, name);
+                                return RuntimeManagedJavaType.Create(type, name);
                             }
                         }
                     }
@@ -366,25 +366,25 @@ namespace IKVM.Runtime
                     // let that generated the manufactured nested classes
                     // (note that for generic outer types, we need to duplicate this in ClassLoaderWrapper.LoadGenericClass)
                     RuntimeJavaType outer = null;
-                    if (name.EndsWith(DotNetTypeWrapper.DelegateInterfaceSuffix))
+                    if (name.EndsWith(RuntimeManagedJavaType.DelegateInterfaceSuffix))
                     {
-                        outer = DoLoad(name.Substring(0, name.Length - DotNetTypeWrapper.DelegateInterfaceSuffix.Length));
+                        outer = DoLoad(name.Substring(0, name.Length - RuntimeManagedJavaType.DelegateInterfaceSuffix.Length));
                     }
-                    else if (name.EndsWith(DotNetTypeWrapper.AttributeAnnotationSuffix))
+                    else if (name.EndsWith(RuntimeManagedJavaType.AttributeAnnotationSuffix))
                     {
-                        outer = DoLoad(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationSuffix.Length));
+                        outer = DoLoad(name.Substring(0, name.Length - RuntimeManagedJavaType.AttributeAnnotationSuffix.Length));
                     }
-                    else if (name.EndsWith(DotNetTypeWrapper.AttributeAnnotationReturnValueSuffix))
+                    else if (name.EndsWith(RuntimeManagedJavaType.AttributeAnnotationReturnValueSuffix))
                     {
-                        outer = DoLoad(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationReturnValueSuffix.Length));
+                        outer = DoLoad(name.Substring(0, name.Length - RuntimeManagedJavaType.AttributeAnnotationReturnValueSuffix.Length));
                     }
-                    else if (name.EndsWith(DotNetTypeWrapper.AttributeAnnotationMultipleSuffix))
+                    else if (name.EndsWith(RuntimeManagedJavaType.AttributeAnnotationMultipleSuffix))
                     {
-                        outer = DoLoad(name.Substring(0, name.Length - DotNetTypeWrapper.AttributeAnnotationMultipleSuffix.Length));
+                        outer = DoLoad(name.Substring(0, name.Length - RuntimeManagedJavaType.AttributeAnnotationMultipleSuffix.Length));
                     }
-                    else if (name.EndsWith(DotNetTypeWrapper.EnumEnumSuffix))
+                    else if (name.EndsWith(RuntimeManagedJavaType.EnumEnumSuffix))
                     {
-                        outer = DoLoad(name.Substring(0, name.Length - DotNetTypeWrapper.EnumEnumSuffix.Length));
+                        outer = DoLoad(name.Substring(0, name.Length - RuntimeManagedJavaType.EnumEnumSuffix.Length));
                     }
 
                     if (outer != null && outer.IsFakeTypeContainer)
@@ -425,17 +425,17 @@ namespace IKVM.Runtime
                     if (AttributeHelper.IsHideFromJava(type))
                         return null;
 
-                    return CompiledTypeWrapper.GetName(type);
+                    return RuntimeManagedByteCodeJavaType.GetName(type);
                 }
                 else
                 {
                     isJavaType = false;
 
                     // type is a .NET type, but not allowed visibilty to Java
-                    if (DotNetTypeWrapper.IsAllowedOutside(type) == false)
+                    if (RuntimeManagedJavaType.IsAllowedOutside(type) == false)
                         return null;
 
-                    return DotNetTypeWrapper.GetName(type);
+                    return RuntimeManagedJavaType.GetName(type);
                 }
             }
 
@@ -448,14 +448,14 @@ namespace IKVM.Runtime
                 if (isJavaType)
                 {
                     // since this type was compiled from Java source, we have to look for our attributes
-                    return CompiledTypeWrapper.newInstance(name, type);
+                    return RuntimeManagedByteCodeJavaType.newInstance(name, type);
                 }
                 else
                 {
                     // since this type was not compiled from Java source, we don't need to
                     // look for our attributes, but we do need to filter unrepresentable
                     // stuff (and transform some other stuff)
-                    return DotNetTypeWrapper.Create(type, name);
+                    return RuntimeManagedJavaType.Create(type, name);
                 }
             }
 

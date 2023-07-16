@@ -45,7 +45,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Represents a .NET property defined in Java with the <see cref="ikvm.lang.Property"/> annotation.
     /// </summary>
-    sealed class DynamicPropertyFieldWrapper : RuntimeJavaField
+    sealed class RuntimeByteCodePropertyJavaField : RuntimeJavaField
     {
 
         readonly RuntimeJavaMethod getter;
@@ -69,7 +69,12 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal DynamicPropertyFieldWrapper(RuntimeJavaType declaringType, ClassFile.Field fld) :
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="declaringType"></param>
+        /// <param name="fld"></param>
+        internal RuntimeByteCodePropertyJavaField(RuntimeJavaType declaringType, ClassFile.Field fld) :
             base(declaringType, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null)
         {
             getter = GetMethod(fld.PropertyGetter, "()" + fld.Signature, fld.IsStatic);

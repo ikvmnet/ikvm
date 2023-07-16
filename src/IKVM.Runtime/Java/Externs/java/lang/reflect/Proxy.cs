@@ -54,7 +54,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
 			{
 				return null;
 			}
-			RuntimeJavaType tw = CompiledTypeWrapper.newInstance(proxyName, type);
+			RuntimeJavaType tw = RuntimeManagedByteCodeJavaType.newInstance(proxyName, type);
 			RuntimeJavaType tw2 = acl.RegisterInitiatingLoader(tw);
 			if (tw != tw2)
 			{

@@ -264,7 +264,7 @@ namespace IKVM.Runtime
             {
                 throw new VerifyError("Delegate may not declare any fields");
             }
-            RuntimeJavaType iface = classLoader.LoadClassByDottedNameFast(f.Name + DotNetTypeWrapper.DelegateInterfaceSuffix);
+            var iface = classLoader.LoadClassByDottedNameFast(f.Name + RuntimeManagedJavaType.DelegateInterfaceSuffix);
             DelegateInnerClassCheck(iface != null);
             DelegateInnerClassCheck(iface.IsInterface);
             DelegateInnerClassCheck(iface.IsPublic);
@@ -927,6 +927,7 @@ namespace IKVM.Runtime
             Debug.Fail("Unreachable code");
             return null;
         }
+
         private Type GetBaseTypeForDefineType()
         {
             return BaseTypeWrapper.TypeAsBaseType;

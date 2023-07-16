@@ -630,9 +630,9 @@ namespace IKVM.Runtime
 
             // we need to handle delegate methods here (for generic delegates)
             // (note that other types with manufactured inner classes such as Attribute and Enum can't be generic)
-            if (name.EndsWith(DotNetTypeWrapper.DelegateInterfaceSuffix))
+            if (name.EndsWith(RuntimeManagedJavaType.DelegateInterfaceSuffix))
             {
-                var outer = FindOrLoadGenericClass(name.Substring(0, name.Length - DotNetTypeWrapper.DelegateInterfaceSuffix.Length), mode);
+                var outer = FindOrLoadGenericClass(name.Substring(0, name.Length - RuntimeManagedJavaType.DelegateInterfaceSuffix.Length), mode);
                 if (outer != null && outer.IsFakeTypeContainer)
                     foreach (var tw in outer.InnerClasses)
                         if (tw.Name == name)

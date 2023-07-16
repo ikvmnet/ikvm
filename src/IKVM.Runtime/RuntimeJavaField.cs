@@ -81,7 +81,7 @@ namespace IKVM.Runtime
                 && !DeclaringType.GetClassLoader().StrictFinalFieldSemantics
                 && DeclaringType.IsDynamic
                 && !(this is RuntimeConstantJavaField)
-                && !(this is DynamicPropertyFieldWrapper))
+                && !(this is RuntimeByteCodePropertyJavaField))
             {
                 SetType2FinalField();
             }

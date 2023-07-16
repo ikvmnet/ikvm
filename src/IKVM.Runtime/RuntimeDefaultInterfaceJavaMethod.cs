@@ -36,40 +36,60 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    sealed class AccessStubConstructorMethodWrapper : RuntimeSmartJavaMethod
+    sealed class RuntimeDefaultInterfaceJavaMethod : RuntimeSmartJavaMethod
     {
 
-        readonly ConstructorInfo stub;
+        MethodInfo impl;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringType"></param>
+        /// <param name="name"></param>
         /// <param name="sig"></param>
-        /// <param name="core"></param>
-        /// <param name="stub"></param>
+        /// <param name="ifmethod"></param>
+        /// <param name="impl"></param>
+        /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal AccessStubConstructorMethodWrapper(RuntimeJavaType declaringType, string sig, ConstructorInfo core, ConstructorInfo stub, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
-            base(declaringType, StringConstants.INIT, sig, core, RuntimePrimitiveJavaType.VOID, parameterTypes, modifiers, flags)
+        internal RuntimeDefaultInterfaceJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodInfo ifmethod, MethodInfo impl, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+            base(declaringType, name, sig, ifmethod, returnType, parameterTypes, modifiers, flags)
         {
-            this.stub = stub;
+            this.impl = impl;
+        }
+
+        internal static MethodInfo GetImpl(RuntimeJavaMethod mw)
+        {
+            var dimw = mw as RuntimeDefaultInterfaceJavaMethod;
+            if (dimw != null)
+                return dimw.impl;
+            else
+                return ((RuntimeGhostJavaMethod)mw).GetDefaultImpl();
+        }
+
+        internal static void SetImpl(RuntimeJavaMethod mw, MethodInfo impl)
+        {
+            var dimw = mw as RuntimeDefaultInterfaceJavaMethod;
+            if (dimw != null)
+                dimw.impl = impl;
+            else
+                ((RuntimeGhostJavaMethod)mw).SetDefaultImpl(impl);
         }
 
 #if EMITTERS
 
         protected override void CallImpl(CodeEmitter ilgen)
         {
-            ilgen.Emit(OpCodes.Call, stub);
+            ilgen.Emit(OpCodes.Call, impl);
         }
 
-        protected override void NewobjImpl(CodeEmitter ilgen)
+        protected override void CallvirtImpl(CodeEmitter ilgen)
         {
-            ilgen.Emit(OpCodes.Newobj, stub);
+            ilgen.Emit(OpCodes.Callvirt, GetMethod());
         }
 
-#endif 
+#endif
 
     }
 

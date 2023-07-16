@@ -38,7 +38,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Represents a .NET property defined in Java with the 'ikvm.lang.Property' annotation.
     /// </summary>
-    sealed class CompiledPropertyFieldWrapper : RuntimeJavaField
+    sealed class RuntimeManagedByteCodePropertyJavaField : RuntimeJavaField
     {
 
         readonly PropertyInfo property;
@@ -49,7 +49,7 @@ namespace IKVM.Runtime
         /// <param name="declaringType"></param>
         /// <param name="property"></param>
         /// <param name="modifiers"></param>
-        internal CompiledPropertyFieldWrapper(RuntimeJavaType declaringType, PropertyInfo property, ExModifiers modifiers) :
+        internal RuntimeManagedByteCodePropertyJavaField(RuntimeJavaType declaringType, PropertyInfo property, ExModifiers modifiers) :
             base(declaringType, ClassLoaderWrapper.GetWrapperFromType(property.PropertyType), property.Name, ClassLoaderWrapper.GetWrapperFromType(property.PropertyType).SigName, modifiers, null)
         {
             this.property = property;
@@ -66,7 +66,7 @@ namespace IKVM.Runtime
         {
             var getter = property.GetGetMethod(true);
             if (getter == null)
-                DynamicPropertyFieldWrapper.EmitThrowNoSuchMethodErrorForGetter(ilgen, FieldTypeWrapper, this);
+                RuntimeByteCodePropertyJavaField.EmitThrowNoSuchMethodErrorForGetter(ilgen, FieldTypeWrapper, this);
             else if (getter.IsStatic)
                 ilgen.Emit(OpCodes.Call, getter);
             else
@@ -88,7 +88,7 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    DynamicPropertyFieldWrapper.EmitThrowNoSuchMethodErrorForSetter(ilgen, this);
+                    RuntimeByteCodePropertyJavaField.EmitThrowNoSuchMethodErrorForSetter(ilgen, this);
                 }
             }
             else if (setter.IsStatic)

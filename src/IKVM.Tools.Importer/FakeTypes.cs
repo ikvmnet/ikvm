@@ -66,13 +66,13 @@ namespace IKVM.Tools.Importer
 
 		internal static void Create(ModuleBuilder modb, ClassLoaderWrapper loader)
 		{
-			var tb = modb.DefineType(DotNetTypeWrapper.GenericDelegateInterfaceTypeName, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
+			var tb = modb.DefineType(RuntimeManagedJavaType.GenericDelegateInterfaceTypeName, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
 			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(Types.MulticastDelegate);
 			genericDelegateInterfaceType = tb.CreateType();
 
-			genericAttributeAnnotationType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationTypeName);
-			genericAttributeAnnotationMultipleType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationMultipleTypeName);
-			genericAttributeAnnotationReturnValueType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationReturnValueTypeName);
+			genericAttributeAnnotationType = CreateAnnotationType(modb, RuntimeManagedJavaType.GenericAttributeAnnotationTypeName);
+			genericAttributeAnnotationMultipleType = CreateAnnotationType(modb, RuntimeManagedJavaType.GenericAttributeAnnotationMultipleTypeName);
+			genericAttributeAnnotationReturnValueType = CreateAnnotationType(modb, RuntimeManagedJavaType.GenericAttributeAnnotationReturnValueTypeName);
 			CreateEnumEnum(modb, loader);
 		}
 
@@ -94,7 +94,7 @@ namespace IKVM.Tools.Importer
 
 		private static void CreateEnumEnum(ModuleBuilder modb, ClassLoaderWrapper loader)
 		{
-			var tb = modb.DefineType(DotNetTypeWrapper.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public);
+			var tb = modb.DefineType(RuntimeManagedJavaType.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public);
 			var gtpb = tb.DefineGenericParameters("T")[0];
 			gtpb.SetBaseTypeConstraint(Types.Enum);
 			genericEnumEnumType = tb;
@@ -109,11 +109,11 @@ namespace IKVM.Tools.Importer
 
 		internal static void Load(Assembly assembly)
 		{
-			genericEnumEnumType = assembly.GetType(DotNetTypeWrapper.GenericEnumEnumTypeName);
-			genericDelegateInterfaceType = assembly.GetType(DotNetTypeWrapper.GenericDelegateInterfaceTypeName);
-			genericAttributeAnnotationType = assembly.GetType(DotNetTypeWrapper.GenericAttributeAnnotationTypeName);
-			genericAttributeAnnotationMultipleType = assembly.GetType(DotNetTypeWrapper.GenericAttributeAnnotationMultipleTypeName);
-			genericAttributeAnnotationReturnValueType = assembly.GetType(DotNetTypeWrapper.GenericAttributeAnnotationReturnValueTypeName);
+			genericEnumEnumType = assembly.GetType(RuntimeManagedJavaType.GenericEnumEnumTypeName);
+			genericDelegateInterfaceType = assembly.GetType(RuntimeManagedJavaType.GenericDelegateInterfaceTypeName);
+			genericAttributeAnnotationType = assembly.GetType(RuntimeManagedJavaType.GenericAttributeAnnotationTypeName);
+			genericAttributeAnnotationMultipleType = assembly.GetType(RuntimeManagedJavaType.GenericAttributeAnnotationMultipleTypeName);
+			genericAttributeAnnotationReturnValueType = assembly.GetType(RuntimeManagedJavaType.GenericAttributeAnnotationReturnValueTypeName);
 		}
 
 	}

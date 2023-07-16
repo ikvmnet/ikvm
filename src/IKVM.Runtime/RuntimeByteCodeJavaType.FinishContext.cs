@@ -45,12 +45,7 @@ using DynamicOrAotTypeWrapper = IKVM.Runtime.RuntimeByteCodeJavaType;
 namespace IKVM.Runtime
 {
 
-#if IMPORTER
-    abstract partial class RuntimeByteCodeJavaType : RuntimeJavaType
-#else
-#pragma warning disable 628 // don't complain about protected members in sealed type
-    sealed partial class RuntimeByteCodeJavaType
-#endif
+    partial class RuntimeByteCodeJavaType
     {
 
         internal sealed class FinishContext
@@ -508,7 +503,7 @@ namespace IKVM.Runtime
                         {
                             if (m.IsVirtual && classFile.IsInterface)
                             {
-                                mb = (MethodBuilder)DefaultInterfaceMethodWrapper.GetImpl(methods[i]);
+                                mb = (MethodBuilder)RuntimeDefaultInterfaceJavaMethod.GetImpl(methods[i]);
 #if IMPORTER
                                 CreateDefaultMethodInterop(ref tbDefaultMethods, mb, methods[i]);
 #endif
@@ -639,6 +634,7 @@ namespace IKVM.Runtime
                 }
 
 #if IMPORTER
+
                 // If we're an interface that has public/protected fields, we create an inner class
                 // to expose these fields to C# (which stubbornly refuses to see fields in interfaces).
                 AddInterfaceFieldsInterop(fields);
@@ -657,6 +653,7 @@ namespace IKVM.Runtime
                 }
 
                 AddConstantPoolAttributeIfNecessary(classFile, typeBuilder);
+
 #endif // IMPORTER
 
                 for (int i = 0; i < classFile.Methods.Length; i++)
@@ -705,7 +702,7 @@ namespace IKVM.Runtime
                             if (annotation != null)
                             {
                                 {
-                                    DynamicPropertyFieldWrapper prop = fields[i] as DynamicPropertyFieldWrapper;
+                                    RuntimeByteCodePropertyJavaField prop = fields[i] as RuntimeByteCodePropertyJavaField;
                                     if (prop != null)
                                     {
                                         annotation.Apply(wrapper.GetClassLoader(), prop.GetPropertyBuilder(), def);
@@ -1036,6 +1033,7 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER
+
             private void AddImplementsAttribute()
             {
                 var interfaces = wrapper.Interfaces;
@@ -1231,7 +1229,7 @@ namespace IKVM.Runtime
                 {
                     ilgen.EmitLdarg(j + 1);
                 }
-                ilgen.Emit(OpCodes.Call, DefaultInterfaceMethodWrapper.GetImpl(defaultMethod));
+                ilgen.Emit(OpCodes.Call, RuntimeDefaultInterfaceJavaMethod.GetImpl(defaultMethod));
                 ilgen.Emit(OpCodes.Ret);
                 ilgen.DoEmit();
             }
@@ -2046,7 +2044,7 @@ namespace IKVM.Runtime
             void AddUnsupportedAbstractMethods()
             {
                 foreach (var mb in wrapper.BaseTypeWrapper.TypeAsBaseType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
-                    if (DotNetTypeWrapper.IsUnsupportedAbstractMethod(mb))
+                    if (RuntimeManagedJavaType.IsUnsupportedAbstractMethod(mb))
                         GenerateUnsupportedAbstractMethodStub(mb);
 
                 var h = new Dictionary<MethodBase, MethodBase>();
@@ -2060,7 +2058,7 @@ namespace IKVM.Runtime
                             if (!h.ContainsKey(mb))
                             {
                                 h.Add(mb, mb);
-                                if (DotNetTypeWrapper.IsUnsupportedAbstractMethod(mb))
+                                if (RuntimeManagedJavaType.IsUnsupportedAbstractMethod(mb))
                                     GenerateUnsupportedAbstractMethodStub(mb);
                             }
                         }

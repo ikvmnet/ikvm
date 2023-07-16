@@ -24,7 +24,7 @@
         <Compile Include="..\IKVM.Runtime\ClassLoaderWrapper.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\GenericClassLoaderWrapper.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\CoreClasses.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\DotNetTypeWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeManagedJavaType.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\JavaException.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeJavaMember.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\profiler.cs" LinkBase="IKVM.Runtime" />
@@ -44,11 +44,11 @@
         <Compile Include="..\IKVM.Runtime\RuntimeJavaField.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\SimpleOpCode.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeGhostJavaMethod.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\AccessStubMethodWrapper.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\AccessStubConstructorMethodWrapper.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\TypicalMethodWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeAccessStubJavaMethod.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeConstructorAccessStubJavaMethod.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeTypicalJavaMethod.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\SimpleCallMethodWrapper.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\DefaultInterfaceMethodWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeDefaultInterfaceJavaMethod.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\ExModifiers.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\MethodParametersEntry.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\EnumHelper.cs" LinkBase="IKVM.Runtime" />
@@ -63,7 +63,7 @@
         <Compile Include="..\IKVM.Runtime\RuntimeArrayJavaType.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\VerifierTypeWrapper.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\UnloadableTypeWrapper.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\CompiledTypeWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeManagedByteCodeJavaType.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\NamePrefix.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\NestedTypeName.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\Accessors\**\*.cs" LinkBase="IKVM.Runtime\Accessors" />
@@ -72,8 +72,8 @@
         <Compile Include="..\IKVM.Runtime\RuntimeSimpleJavaField.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeConstantJavaField.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\VolatileLongDoubleFieldWrapper.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\CompiledAccessStubFieldWrapper.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\CompiledPropertyFieldWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeManagedByteCodeAccessStubJavaField.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeManagedByteCodePropertyJavaField.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\ByteCodeHelperMethods.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\ByteCodeHelper.cs" LinkBase="IKVM.Runtime" />
     </ItemGroup>

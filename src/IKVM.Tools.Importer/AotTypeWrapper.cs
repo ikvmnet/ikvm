@@ -814,7 +814,7 @@ namespace IKVM.Tools.Importer
                                 {
                                     ilgen.EmitLdarg(k + 1);
                                 }
-                                ilgen.Emit(OpCodes.Call, DefaultInterfaceMethodWrapper.GetImpl(methods[i]));
+                                ilgen.Emit(OpCodes.Call, RuntimeDefaultInterfaceJavaMethod.GetImpl(methods[i]));
                             }
                             else
                             {

@@ -47,9 +47,9 @@ namespace IKVM.Runtime
 {
 
     /// <summary>
-    /// Represents a runtime java type derived from a .NET assembly which was the result of the static compiler.
+    /// Represents a runtime Java type derived from a .NET assembly which was the result of the IKVM compiler.
     /// </summary>
-    class CompiledTypeWrapper : RuntimeJavaType
+    class RuntimeManagedByteCodeJavaType : RuntimeJavaType
     {
 
         readonly Type type;
@@ -60,7 +60,13 @@ namespace IKVM.Runtime
         volatile bool clinitMethodSet;
         Modifiers reflectiveModifiers;
 
-        internal static CompiledTypeWrapper newInstance(string name, Type type)
+        /// <summary>
+        /// Creates a new instance of the appropriate runtime type.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        internal static RuntimeManagedByteCodeJavaType newInstance(string name, Type type)
         {
             // TODO since ghost and remapped types can only exist in the core library assembly, we probably
             // should be able to remove the Type.IsDefined() tests in most cases
@@ -74,17 +80,23 @@ namespace IKVM.Runtime
             }
             else
             {
-                return new CompiledTypeWrapper(name, type);
+                return new RuntimeManagedByteCodeJavaType(name, type);
             }
         }
 
-        private sealed class CompiledRemappedTypeWrapper : CompiledTypeWrapper
+        private sealed class CompiledRemappedTypeWrapper : RuntimeManagedByteCodeJavaType
         {
 
             readonly Type remappedType;
 
-            internal CompiledRemappedTypeWrapper(string name, Type type)
-                : base(name, type)
+            /// <summary>
+            /// initializes a new instance.
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="type"></param>
+            /// <exception cref="InvalidOperationException"></exception>
+            internal CompiledRemappedTypeWrapper(string name, Type type) :
+                base(name, type)
             {
                 RemappedTypeAttribute attr = AttributeHelper.GetRemappedType(type);
                 if (attr == null)
@@ -94,87 +106,66 @@ namespace IKVM.Runtime
                 remappedType = attr.Type;
             }
 
-            internal override Type TypeAsTBD
-            {
-                get
-                {
-                    return remappedType;
-                }
-            }
+            internal override Type TypeAsTBD => remappedType;
 
-            internal override bool IsRemapped
-            {
-                get
-                {
-                    return true;
-                }
-            }
+            internal override bool IsRemapped => true;
 
             protected override void LazyPublishMethods()
             {
-                List<RuntimeJavaMethod> list = new List<RuntimeJavaMethod>();
                 const BindingFlags bindingFlags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
-                foreach (ConstructorInfo ctor in type.GetConstructors(bindingFlags))
-                {
+
+                var list = new List<RuntimeJavaMethod>();
+
+                foreach (var ctor in type.GetConstructors(bindingFlags))
                     AddMethod(list, ctor);
-                }
-                foreach (MethodInfo method in type.GetMethods(bindingFlags))
-                {
+
+                foreach (var method in type.GetMethods(bindingFlags))
                     AddMethod(list, method);
-                }
+
                 // if we're a remapped interface, we need to get the methods from the real interface
                 if (remappedType.IsInterface)
                 {
-                    Type nestedHelper = type.GetNestedType("__Helper", BindingFlags.Public | BindingFlags.Static);
-                    foreach (RemappedInterfaceMethodAttribute m in AttributeHelper.GetRemappedInterfaceMethods(type))
+                    var nestedHelper = type.GetNestedType("__Helper", BindingFlags.Public | BindingFlags.Static);
+                    foreach (var m in AttributeHelper.GetRemappedInterfaceMethods(type))
                     {
-                        MethodInfo method = remappedType.GetMethod(m.MappedTo);
-                        MethodInfo mbHelper = method;
-                        ExModifiers modifiers = AttributeHelper.GetModifiers(method, false);
-                        string name;
-                        string sig;
-                        RuntimeJavaType retType;
-                        RuntimeJavaType[] paramTypes;
-                        MemberFlags flags = MemberFlags.None;
-                        GetNameSigFromMethodBase(method, out name, out sig, out retType, out paramTypes, ref flags);
+                        var method = remappedType.GetMethod(m.MappedTo);
+                        var mbHelper = method;
+                        var modifiers = AttributeHelper.GetModifiers(method, false);
+                        var flags = MemberFlags.None;
+
+                        GetNameSigFromMethodBase(method, out var name, out var sig, out var retType, out var paramTypes, ref flags);
                         if (nestedHelper != null)
                         {
                             mbHelper = nestedHelper.GetMethod(m.Name);
                             if (mbHelper == null)
-                            {
                                 mbHelper = method;
-                            }
                         }
-                        RuntimeJavaMethod mw = new CompiledRemappedMethodWrapper(this, m.Name, sig, method, retType, paramTypes, modifiers, false, mbHelper, null);
+
+                        var mw = new CompiledRemappedMethodWrapper(this, m.Name, sig, method, retType, paramTypes, modifiers, false, mbHelper, null);
                         mw.SetDeclaredExceptions(m.Throws);
                         list.Add(mw);
                     }
                 }
+
                 SetMethods(list.ToArray());
             }
 
             private void AddMethod(List<RuntimeJavaMethod> list, MethodBase method)
             {
-                HideFromJavaFlags flags = AttributeHelper.GetHideFromJavaFlags(method);
-                if ((flags & HideFromJavaFlags.Code) == 0
-                    && (remappedType.IsSealed || !method.Name.StartsWith("instancehelper_"))
-                    && (!remappedType.IsSealed || method.IsStatic))
-                {
+                var flags = AttributeHelper.GetHideFromJavaFlags(method);
+                if ((flags & HideFromJavaFlags.Code) == 0 && (remappedType.IsSealed || !method.Name.StartsWith("instancehelper_")) && (!remappedType.IsSealed || method.IsStatic))
                     list.Add(CreateRemappedMethodWrapper(method, flags));
-                }
             }
 
             protected override void LazyPublishFields()
             {
-                List<RuntimeJavaField> list = new List<RuntimeJavaField>();
-                FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-                foreach (FieldInfo field in fields)
+                var list = new List<RuntimeJavaField>();
+                var fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+                foreach (var field in fields)
                 {
                     HideFromJavaFlags hideFromJavaFlags = AttributeHelper.GetHideFromJavaFlags(field);
                     if ((hideFromJavaFlags & HideFromJavaFlags.Code) == 0)
-                    {
                         list.Add(CreateFieldWrapper(field, hideFromJavaFlags));
-                    }
                 }
                 SetFields(list.ToArray());
             }
@@ -211,7 +202,7 @@ namespace IKVM.Runtime
             }
         }
 
-        sealed class CompiledGhostTypeWrapper : CompiledTypeWrapper
+        sealed class CompiledGhostTypeWrapper : RuntimeManagedByteCodeJavaType
         {
 
             volatile FieldInfo ghostRefField;
@@ -323,7 +314,7 @@ namespace IKVM.Runtime
                 else if (ClassLoaderWrapper.IsRemappedType(type.BaseType))
                 {
                     // if we directly extend System.Object or System.Exception, the base class must be cli.System.Object or cli.System.Exception
-                    return DotNetTypeWrapper.GetWrapperFromDotNetType(type.BaseType);
+                    return RuntimeManagedJavaType.GetWrapperFromDotNetType(type.BaseType);
                 }
 
                 RuntimeJavaType tw = null;
@@ -342,7 +333,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="exmod"></param>
         /// <param name="name"></param>
-        CompiledTypeWrapper(ExModifiers exmod, string name) :
+        RuntimeManagedByteCodeJavaType(ExModifiers exmod, string name) :
             base(exmod.IsInternal ? TypeFlags.InternalAccess : TypeFlags.None, exmod.Modifiers, name)
         {
 
@@ -353,7 +344,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="name"></param>
         /// <param name="type"></param>
-        CompiledTypeWrapper(string name, Type type) :
+        RuntimeManagedByteCodeJavaType(string name, Type type) :
             this(GetModifiers(type), name)
         {
             Debug.Assert(!(type is TypeBuilder));
@@ -662,7 +653,7 @@ namespace IKVM.Runtime
                 }
                 else if (type.IsPrimitive)
                 {
-                    type = DotNetTypeWrapper.GetWrapperFromDotNetType(type.TypeAsTBD);
+                    type = RuntimeManagedJavaType.GetWrapperFromDotNetType(type.TypeAsTBD);
                     if (sigtype != type.SigName)
                     {
                         throw new InvalidOperationException();
@@ -849,16 +840,28 @@ namespace IKVM.Runtime
 
         private sealed class DelegateConstructorMethodWrapper : RuntimeJavaMethod
         {
+
             private readonly ConstructorInfo constructor;
             private MethodInfo invoke;
 
-            private DelegateConstructorMethodWrapper(RuntimeJavaType tw, RuntimeJavaType iface, ExModifiers mods)
-                : base(tw, StringConstants.INIT, "(" + iface.SigName + ")V", null, RuntimePrimitiveJavaType.VOID, new RuntimeJavaType[] { iface }, mods.Modifiers, mods.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None)
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="tw"></param>
+            /// <param name="iface"></param>
+            /// <param name="mods"></param>
+            private DelegateConstructorMethodWrapper(RuntimeJavaType tw, RuntimeJavaType iface, ExModifiers mods) :
+                base(tw, StringConstants.INIT, "(" + iface.SigName + ")V", null, RuntimePrimitiveJavaType.VOID, new RuntimeJavaType[] { iface }, mods.Modifiers, mods.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None)
             {
             }
 
-            internal DelegateConstructorMethodWrapper(RuntimeJavaType tw, MethodBase method)
-                : this(tw, tw.GetClassLoader().LoadClassByDottedName(tw.Name + DotNetTypeWrapper.DelegateInterfaceSuffix), AttributeHelper.GetModifiers(method, false))
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="tw"></param>
+            /// <param name="method"></param>
+            internal DelegateConstructorMethodWrapper(RuntimeJavaType tw, MethodBase method) :
+                this(tw, tw.GetClassLoader().LoadClassByDottedName(tw.Name + RuntimeManagedJavaType.DelegateInterfaceSuffix), AttributeHelper.GetModifiers(method, false))
             {
                 constructor = (ConstructorInfo)method;
             }
@@ -953,7 +956,7 @@ namespace IKVM.Runtime
                         name = name.Substring(name.IndexOf('|', NamePrefix.AccessStub.Length) + 1);
                         flags |= MemberFlags.AccessStub;
                         MethodInfo nonvirt = type.GetMethod(NamePrefix.NonVirtual + id, BindingFlags.NonPublic | BindingFlags.DeclaredOnly | BindingFlags.Instance);
-                        methods.Add(new AccessStubMethodWrapper(this, name, sig, mi, mi, nonvirt ?? mi, retType, paramTypes, mods.Modifiers & ~Modifiers.Final, flags));
+                        methods.Add(new RuntimeAccessStubJavaMethod(this, name, sig, mi, mi, nonvirt ?? mi, retType, paramTypes, mods.Modifiers & ~Modifiers.Final, flags));
                         return;
                     }
                     MethodInfo impl;
@@ -978,11 +981,11 @@ namespace IKVM.Runtime
                     }
                     else if (IsInterface && method.IsAbstract && (mods.Modifiers & Modifiers.Abstract) == 0 && (impl = GetDefaultInterfaceMethodImpl(mi, sig)) != null)
                     {
-                        mw = new DefaultInterfaceMethodWrapper(this, name, sig, mi, impl, retType, paramTypes, mods.Modifiers, flags);
+                        mw = new RuntimeDefaultInterfaceJavaMethod(this, name, sig, mi, impl, retType, paramTypes, mods.Modifiers, flags);
                     }
                     else
                     {
-                        mw = new TypicalMethodWrapper(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags);
+                        mw = new RuntimeTypicalJavaMethod(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags);
                     }
                     if (mw.HasNonPublicTypeInSignature)
                     {
@@ -992,7 +995,7 @@ namespace IKVM.Runtime
                             MethodInfo stubNonVirt;
                             if (GetType2AccessStubs(name, sig, out stubVirt, out stubNonVirt))
                             {
-                                mw = new AccessStubMethodWrapper(this, name, sig, mi, stubVirt, stubNonVirt ?? stubVirt, retType, paramTypes, mw.Modifiers, flags);
+                                mw = new RuntimeAccessStubJavaMethod(this, name, sig, mi, stubVirt, stubNonVirt ?? stubVirt, retType, paramTypes, mw.Modifiers, flags);
                             }
                         }
                         else
@@ -1000,7 +1003,7 @@ namespace IKVM.Runtime
                             ConstructorInfo stub;
                             if (GetType2AccessStub(sig, out stub))
                             {
-                                mw = new AccessStubConstructorMethodWrapper(this, sig, (ConstructorInfo)method, stub, paramTypes, mw.Modifiers, flags);
+                                mw = new RuntimeConstructorAccessStubJavaMethod(this, sig, (ConstructorInfo)method, stub, paramTypes, mw.Modifiers, flags);
                             }
                         }
                     }
@@ -1106,7 +1109,7 @@ namespace IKVM.Runtime
                                 && name == properties[i].Name
                                 && MatchTypes(tw, GetPropertyTypeWrapper(properties[i])))
                             {
-                                fields.Add(new CompiledAccessStubFieldWrapper(this, properties[i], field, tw));
+                                fields.Add(new RuntimeManagedByteCodeAccessStubJavaField(this, properties[i], field, tw));
                                 properties[i] = null;
                                 break;
                             }
@@ -1150,14 +1153,14 @@ namespace IKVM.Runtime
                 // is it a type 1 access stub?
                 if ((hideFromJavaFlags & HideFromJavaFlags.Reflection) != 0)
                 {
-                    fields.Add(new CompiledAccessStubFieldWrapper(this, property, GetPropertyTypeWrapper(property)));
+                    fields.Add(new RuntimeManagedByteCodeAccessStubJavaField(this, property, GetPropertyTypeWrapper(property)));
                 }
                 else
                 {
                     // It must be an explicit property
                     // (defined in Java source by an @ikvm.lang.Property annotation)
-                    ModifiersAttribute mods = AttributeHelper.GetModifiersAttribute(property);
-                    fields.Add(new CompiledPropertyFieldWrapper(this, property, new ExModifiers(mods.Modifiers, mods.IsInternal)));
+                    var mods = AttributeHelper.GetModifiersAttribute(property);
+                    fields.Add(new RuntimeManagedByteCodePropertyJavaField(this, property, new ExModifiers(mods.Modifiers, mods.IsInternal)));
                 }
             }
         }
@@ -1305,7 +1308,7 @@ namespace IKVM.Runtime
                 }
                 else if (type == Types.Void || type.IsPrimitive || ClassLoaderWrapper.IsRemappedType(type))
                 {
-                    tw = DotNetTypeWrapper.GetWrapperFromDotNetType(type);
+                    tw = RuntimeManagedJavaType.GetWrapperFromDotNetType(type);
                 }
                 else if (type.DeclaringType != null && type.DeclaringType.FullName == UnloadableTypeWrapper.ContainerTypeName)
                 {
@@ -1538,7 +1541,7 @@ namespace IKVM.Runtime
             {
                 return field.GetCustomAttributes(false);
             }
-            CompiledPropertyFieldWrapper prop = fw as CompiledPropertyFieldWrapper;
+            RuntimeManagedByteCodePropertyJavaField prop = fw as RuntimeManagedByteCodePropertyJavaField;
             if (prop != null)
             {
                 return prop.GetProperty().GetCustomAttributes(false);

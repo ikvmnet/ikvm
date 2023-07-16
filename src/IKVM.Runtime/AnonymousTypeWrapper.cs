@@ -106,11 +106,11 @@ namespace IKVM.Runtime
                 else if (mi.IsPublic)
                 {
                     GetSig(mi, out var returnType, out var parameterTypes, out var signature);
-                    methods.Add(new TypicalMethodWrapper(this, mi.Name, signature, mi, returnType, parameterTypes, Modifiers.Public, MemberFlags.None));
+                    methods.Add(new RuntimeTypicalJavaMethod(this, mi.Name, signature, mi, returnType, parameterTypes, Modifiers.Public, MemberFlags.None));
                 }
                 else if (mi.Name == "writeReplace")
                 {
-                    methods.Add(new TypicalMethodWrapper(this, "writeReplace", "()Ljava.lang.Object;", mi, CoreClasses.java.lang.Object.Wrapper, Array.Empty<RuntimeJavaType>(), Modifiers.Private | Modifiers.Final, MemberFlags.None));
+                    methods.Add(new RuntimeTypicalJavaMethod(this, "writeReplace", "()Ljava.lang.Object;", mi, CoreClasses.java.lang.Object.Wrapper, Array.Empty<RuntimeJavaType>(), Modifiers.Private | Modifiers.Final, MemberFlags.None));
                 }
             }
 
@@ -119,7 +119,7 @@ namespace IKVM.Runtime
             var fields = new List<RuntimeJavaField>();
             foreach (var fi in type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
-                var fieldType = CompiledTypeWrapper.GetFieldTypeWrapper(fi);
+                var fieldType = RuntimeManagedByteCodeJavaType.GetFieldTypeWrapper(fi);
                 fields.Add(new RuntimeSimpleJavaField(this, fieldType, fi, fi.Name, fieldType.SigName, new ExModifiers(Modifiers.Private | Modifiers.Final, false)));
             }
 
@@ -128,13 +128,13 @@ namespace IKVM.Runtime
 
         void GetSig(MethodInfo mi, out RuntimeJavaType returnType, out RuntimeJavaType[] parameterTypes, out string signature)
         {
-            returnType = CompiledTypeWrapper.GetParameterTypeWrapper(mi.ReturnParameter);
+            returnType = RuntimeManagedByteCodeJavaType.GetParameterTypeWrapper(mi.ReturnParameter);
             var parameters = mi.GetParameters();
             parameterTypes = new RuntimeJavaType[parameters.Length];
             var sb = new System.Text.StringBuilder("(");
             for (int i = 0; i < parameters.Length; i++)
             {
-                parameterTypes[i] = CompiledTypeWrapper.GetParameterTypeWrapper(parameters[i]);
+                parameterTypes[i] = RuntimeManagedByteCodeJavaType.GetParameterTypeWrapper(parameters[i]);
                 sb.Append(parameterTypes[i].SigName);
             }
             sb.Append(')');

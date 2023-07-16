@@ -44,7 +44,7 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
-    sealed class DotNetTypeWrapper : RuntimeJavaType
+    sealed class RuntimeManagedJavaType : RuntimeJavaType
     {
 
         const string NamePrefix = "cli.";
@@ -161,7 +161,7 @@ namespace IKVM.Runtime
                         }
                         else
                         {
-                            s = DotNetTypeWrapper.GetName(t);
+                            s = RuntimeManagedJavaType.GetName(t);
                         }
                         // only do the mangling for non-generic types (because we don't want to convert
                         // the double underscores in two adjacent _$$$_ or _$$$$_ markers)
@@ -277,7 +277,7 @@ namespace IKVM.Runtime
             // since the reflection implementation lives inside this assembly, all internal members would
             // be accessible through Java reflection.
 #if !FIRST_PASS && !IMPORTER && !EXPORTER
-            if (type.Assembly == typeof(DotNetTypeWrapper).Assembly)
+            if (type.Assembly == typeof(RuntimeManagedJavaType).Assembly)
             {
                 return false;
             }
@@ -341,10 +341,17 @@ namespace IKVM.Runtime
 
         internal abstract class FakeTypeWrapper : RuntimeJavaType
         {
+
             private readonly RuntimeJavaType baseWrapper;
 
-            protected FakeTypeWrapper(Modifiers modifiers, string name, RuntimeJavaType baseWrapper)
-                : base(TypeFlags.None, modifiers, name)
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="modifiers"></param>
+            /// <param name="name"></param>
+            /// <param name="baseWrapper"></param>
+            protected FakeTypeWrapper(Modifiers modifiers, string name, RuntimeJavaType baseWrapper) :
+                base(TypeFlags.None, modifiers, name)
             {
                 this.baseWrapper = baseWrapper;
             }
@@ -1645,11 +1652,11 @@ namespace IKVM.Runtime
             }
             else
             {
-                return new DotNetTypeWrapper(type, name);
+                return new RuntimeManagedJavaType(type, name);
             }
         }
 
-        private DotNetTypeWrapper(Type type, string name)
+        private RuntimeManagedJavaType(Type type, string name)
             : base(TypeFlags.None, GetModifiers(type), name)
         {
             Debug.Assert(!(type.IsByRef), type.FullName);
@@ -1863,7 +1870,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="tw"></param>
             /// <param name="fieldType"></param>
-            internal EnumWrapMethodWrapper(DotNetTypeWrapper tw, RuntimeJavaType fieldType) :
+            internal EnumWrapMethodWrapper(RuntimeManagedJavaType tw, RuntimeJavaType fieldType) :
                 base(tw, "wrap", "(" + fieldType.SigName + ")" + tw.SigName, null, tw, new RuntimeJavaType[] { fieldType }, Modifiers.Static | Modifiers.Public, MemberFlags.None)
             {
 
@@ -1901,7 +1908,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="tw"></param>
             /// <param name="fieldType"></param>
-            internal EnumValueFieldWrapper(DotNetTypeWrapper tw, RuntimeJavaType fieldType) :
+            internal EnumValueFieldWrapper(RuntimeManagedJavaType tw, RuntimeJavaType fieldType) :
                 base(tw, fieldType, "Value", fieldType.SigName, new ExModifiers(Modifiers.Public | Modifiers.Final, false), null)
             {
                 underlyingType = EnumHelper.GetUnderlyingType(tw.type);
@@ -1950,7 +1957,7 @@ namespace IKVM.Runtime
             /// Initializes a new instance.
             /// </summary>
             /// <param name="tw"></param>
-            internal ValueTypeDefaultCtor(DotNetTypeWrapper tw) :
+            internal ValueTypeDefaultCtor(RuntimeManagedJavaType tw) :
                 base(tw, "<init>", "()V", null, RuntimePrimitiveJavaType.VOID, Array.Empty<RuntimeJavaType>(), Modifiers.Public, MemberFlags.None)
             {
 
@@ -1990,7 +1997,7 @@ namespace IKVM.Runtime
             /// Initializes a new instance.
             /// </summary>
             /// <param name="tw"></param>
-            internal FinalizeMethodWrapper(DotNetTypeWrapper tw) :
+            internal FinalizeMethodWrapper(RuntimeManagedJavaType tw) :
                 base(tw, "finalize", "()V", null, RuntimePrimitiveJavaType.VOID, Array.Empty<RuntimeJavaType>(), Modifiers.Protected | Modifiers.Final, MemberFlags.None)
             {
 
@@ -2018,7 +2025,7 @@ namespace IKVM.Runtime
             /// Initializes a new instance.
             /// </summary>
             /// <param name="tw"></param>
-            internal CloneMethodWrapper(DotNetTypeWrapper tw) :
+            internal CloneMethodWrapper(RuntimeManagedJavaType tw) :
                 base(tw, "clone", "()Ljava.lang.Object;", null, CoreClasses.java.lang.Object.Wrapper, Array.Empty<RuntimeJavaType>(), Modifiers.Protected | Modifiers.Final, MemberFlags.None)
             {
 
@@ -2334,7 +2341,7 @@ namespace IKVM.Runtime
 
             private readonly RuntimeJavaMethod m;
 
-            internal BaseFinalMethodWrapper(DotNetTypeWrapper tw, RuntimeJavaMethod m)
+            internal BaseFinalMethodWrapper(RuntimeManagedJavaType tw, RuntimeJavaMethod m)
                 : base(tw, m.Name, m.Signature, null, null, null, (m.Modifiers & ~Modifiers.Abstract) | Modifiers.Final, MemberFlags.None)
             {
                 this.m = m;
@@ -2683,7 +2690,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                return new TypicalMethodWrapper(this, name, sig, mb, retTypeWrapper, argTypeWrappers, mods, MemberFlags.None);
+                return new RuntimeTypicalJavaMethod(this, name, sig, mb, retTypeWrapper, argTypeWrappers, mods, MemberFlags.None);
             }
         }
 

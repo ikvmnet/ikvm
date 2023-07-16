@@ -252,7 +252,7 @@ namespace IKVM.Tools.Exporter
                 {
                     RuntimeJavaType c;
                     if (ClassLoaderWrapper.IsRemappedType(t) || t.IsPrimitive || t == Types.Void)
-                        c = DotNetTypeWrapper.GetWrapperFromDotNetType(t);
+                        c = RuntimeManagedJavaType.GetWrapperFromDotNetType(t);
                     else
                         c = ClassLoaderWrapper.GetWrapperFromType(t);
 

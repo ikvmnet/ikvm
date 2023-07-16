@@ -336,14 +336,14 @@ namespace IKVM.Runtime
             }
             if (ClassLoaderWrapper.IsRemappedType(type))
             {
-                return DotNetTypeWrapper.GetName(type);
+                return RuntimeManagedJavaType.GetName(type);
             }
             RuntimeJavaType tw = ClassLoaderWrapper.GetWrapperFromType(type);
             if (tw != null)
             {
                 if (tw.IsPrimitive)
                 {
-                    return DotNetTypeWrapper.GetName(type);
+                    return RuntimeManagedJavaType.GetName(type);
                 }
 #if !FIRST_PASS
                 if (tw.IsUnsafeAnonymous)

@@ -36,12 +36,7 @@ using System.Reflection;
 namespace IKVM.Runtime
 {
 
-#if IMPORTER
-    abstract partial class RuntimeByteCodeJavaType : RuntimeJavaType
-#else
-#pragma warning disable 628 // don't complain about protected members in sealed type
-    sealed partial class RuntimeByteCodeJavaType
-#endif
+    partial class RuntimeByteCodeJavaType
     {
 
         private abstract class DynamicImpl

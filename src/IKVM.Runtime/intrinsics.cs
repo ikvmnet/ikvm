@@ -196,7 +196,7 @@ namespace IKVM.Runtime
                 && (eic.Match(2, NormalizedByteCode.__if_acmpeq) || eic.Match(2, NormalizedByteCode.__if_acmpne)))
             {
                 RuntimeJavaType tw = eic.GetClassLiteral(1);
-                if (tw.IsGhost || tw.IsGhostArray || tw.IsUnloadable || (tw.IsRemapped && tw.IsFinal && tw is DotNetTypeWrapper))
+                if (tw.IsGhost || tw.IsGhostArray || tw.IsUnloadable || (tw.IsRemapped && tw.IsFinal && tw is RuntimeManagedJavaType))
                 {
                     return false;
                 }

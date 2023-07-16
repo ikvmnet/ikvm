@@ -36,7 +36,7 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    sealed class AccessStubMethodWrapper : RuntimeSmartJavaMethod
+    sealed class RuntimeAccessStubJavaMethod : RuntimeSmartJavaMethod
     {
 
         readonly MethodInfo stubVirtual;
@@ -55,7 +55,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal AccessStubMethodWrapper(RuntimeJavaType declaringType, string name, string sig, MethodInfo core, MethodInfo stubVirtual, MethodInfo stubNonVirtual, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeAccessStubJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodInfo core, MethodInfo stubVirtual, MethodInfo stubNonVirtual, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, core, returnType, parameterTypes, modifiers, flags)
         {
             this.stubVirtual = stubVirtual;

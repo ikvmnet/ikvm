@@ -44,15 +44,10 @@ using DynamicOrAotTypeWrapper = IKVM.Runtime.RuntimeByteCodeJavaType;
 namespace IKVM.Runtime
 {
 
-#if IMPORTER
-    abstract partial class RuntimeByteCodeJavaType : RuntimeJavaType
-#else
-#pragma warning disable 628 // don't complain about protected members in sealed type
-    sealed partial class RuntimeByteCodeJavaType
-#endif
+    partial class RuntimeByteCodeJavaType
     {
 
-        private sealed class JavaTypeImpl : DynamicImpl
+        private sealed partial class JavaTypeImpl : DynamicImpl
         {
 
             private readonly RuntimeJavaType host;
@@ -140,7 +135,7 @@ namespace IKVM.Runtime
                     else if (classFile.IsInterface && m.IsVirtual && !m.IsAbstract)
                     {
                         // note that a GhostMethodWrapper can also represent a default interface method
-                        methods[i] = new DefaultInterfaceMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
+                        methods[i] = new RuntimeDefaultInterfaceJavaMethod(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
                     }
                     else
                     {
@@ -153,7 +148,8 @@ namespace IKVM.Runtime
                                 flags |= MemberFlags.ExplicitOverride;
                             }
                         }
-                        methods[i] = new TypicalMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
+
+                        methods[i] = new RuntimeTypicalJavaMethod(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
                     }
                 }
                 if (hasclinit)
@@ -188,7 +184,7 @@ namespace IKVM.Runtime
                     }
                     else if (fld.IsProperty)
                     {
-                        fields[i] = new DynamicPropertyFieldWrapper(wrapper, fld);
+                        fields[i] = new RuntimeByteCodePropertyJavaField(wrapper, fld);
                     }
                     else
                     {
@@ -587,6 +583,7 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER
+
             private void AddInnerClassAttribute(bool isNestedType, bool isInnerClass, string mangledTypeName, Modifiers innerClassFlags)
             {
                 string name = classFile.Name;
@@ -603,7 +600,7 @@ namespace IKVM.Runtime
                     name = null;
                 }
 
-                if ((isInnerClass && CompiledTypeWrapper.PredictReflectiveModifiers(wrapper) != innerClassFlags) || name != null)
+                if ((isInnerClass && RuntimeManagedByteCodeJavaType.PredictReflectiveModifiers(wrapper) != innerClassFlags) || name != null)
                 {
                     // HACK we abuse the InnerClassAttribute to record to real name for non-inner classes as well
                     AttributeHelper.SetInnerClass(typeBuilder, name, isInnerClass ? innerClassFlags : wrapper.Modifiers);
@@ -662,42 +659,6 @@ namespace IKVM.Runtime
                 clinitMethod = typeBuilder.DefineMethod("__<clinit>", attribs, null, null);
                 clinitMethod.GetILGenerator().Emit(OpCodes.Ret);
                 clinitMethod.SetImplementationFlags(clinitMethod.GetMethodImplementationFlags());
-            }
-
-            sealed class DelegateConstructorMethodWrapper : RuntimeJavaMethod
-            {
-
-                MethodBuilder constructor;
-                MethodInfo invoke;
-
-                /// <summary>
-                /// Initializes a new instance.
-                /// </summary>
-                /// <param name="tw"></param>
-                /// <param name="m"></param>
-                internal DelegateConstructorMethodWrapper(RuntimeByteCodeJavaType tw, ClassFile.Method m) :
-                    base(tw, m.Name, m.Signature, null, null, null, m.Modifiers, MemberFlags.None)
-                {
-
-                }
-
-                internal void DoLink(TypeBuilder typeBuilder)
-                {
-                    var attribs = MethodAttributes.HideBySig | MethodAttributes.Public;
-                    constructor = ReflectUtil.DefineConstructor(typeBuilder, attribs, new Type[] { Types.Object, Types.IntPtr });
-                    constructor.SetImplementationFlags(MethodImplAttributes.Runtime);
-                    var mw = GetParameters()[0].GetMethods()[0];
-                    mw.Link();
-                    invoke = (MethodInfo)mw.GetMethod();
-                }
-
-                internal override void EmitNewobj(CodeEmitter ilgen)
-                {
-                    ilgen.Emit(OpCodes.Dup);
-                    ilgen.Emit(OpCodes.Ldvirtftn, invoke);
-                    ilgen.Emit(OpCodes.Newobj, constructor);
-                }
-
             }
 
             private static bool HasStructLayoutAttributeAnnotation(ClassFile c)
@@ -914,7 +875,7 @@ namespace IKVM.Runtime
                 private readonly Type delegateType;
 
                 internal DelegateInvokeStubMethodWrapper(RuntimeJavaType declaringType, Type delegateType, string sig)
-                    : base(declaringType, DotNetTypeWrapper.GetDelegateInvokeStubName(delegateType), sig, null, null, null, Modifiers.Public | Modifiers.Final, MemberFlags.HideFromReflection)
+                    : base(declaringType, RuntimeManagedJavaType.GetDelegateInvokeStubName(delegateType), sig, null, null, null, Modifiers.Public | Modifiers.Final, MemberFlags.HideFromReflection)
                 {
                     this.delegateType = delegateType;
                 }
@@ -1097,9 +1058,9 @@ namespace IKVM.Runtime
 
             internal override FieldInfo LinkField(RuntimeJavaField fw)
             {
-                if (fw is DynamicPropertyFieldWrapper)
+                if (fw is RuntimeByteCodePropertyJavaField)
                 {
-                    ((DynamicPropertyFieldWrapper)fw).DoLink(typeBuilder);
+                    ((RuntimeByteCodePropertyJavaField)fw).DoLink(typeBuilder);
                     return null;
                 }
                 int fieldIndex = GetFieldIndex(fw);
@@ -3004,13 +2965,13 @@ namespace IKVM.Runtime
                 {
                     if (wrapper.IsGhost)
                     {
-                        DefaultInterfaceMethodWrapper.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
+                        RuntimeDefaultInterfaceJavaMethod.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
                             typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.SpecialName,
                             null, false));
                     }
                     else
                     {
-                        DefaultInterfaceMethodWrapper.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
+                        RuntimeDefaultInterfaceJavaMethod.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
                             typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName,
                             typeBuilder, false));
                     }

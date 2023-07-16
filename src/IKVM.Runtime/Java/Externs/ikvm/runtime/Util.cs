@@ -48,7 +48,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
             var t = o.GetType();
             if (t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t) && !t.IsSealed)
-                return DotNetTypeWrapper.GetWrapperFromDotNetType(t);
+                return RuntimeManagedJavaType.GetWrapperFromDotNetType(t);
 
             for (; ; )
             {
@@ -67,7 +67,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
         {
             var t = Type.GetTypeFromHandle(handle);
             if (t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t) || t == typeof(void))
-                return DotNetTypeWrapper.GetWrapperFromDotNetType(t).ClassObject;
+                return RuntimeManagedJavaType.GetWrapperFromDotNetType(t).ClassObject;
 
             if (!IsVisibleAsClass(t))
                 return null;
@@ -83,7 +83,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
         {
             var t = Type.GetTypeFromHandle(handle);
             if (t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t) || t == typeof(void))
-                return DotNetTypeWrapper.GetWrapperFromDotNetType(t).MakeArrayType(rank).ClassObject;
+                return RuntimeManagedJavaType.GetWrapperFromDotNetType(t).MakeArrayType(rank).ClassObject;
 
             if (!IsVisibleAsClass(t))
                 return null;

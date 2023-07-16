@@ -3991,7 +3991,7 @@ namespace IKVM.Tools.Importer
             args[0] = AssemblyQualifiedName(actualType);
             args[1] = AssemblyQualifiedName(expectedType);
             string str = string.Format(msg, args);
-            if (actualType is UnloadableTypeWrapper && (expectedType is CompiledTypeWrapper || expectedType is DotNetTypeWrapper))
+            if (actualType is UnloadableTypeWrapper && (expectedType is RuntimeManagedByteCodeJavaType || expectedType is RuntimeManagedJavaType))
             {
                 str += string.Format("\n\t(Please add a reference to {0})", expectedType.TypeAsBaseType.Assembly.Location);
             }

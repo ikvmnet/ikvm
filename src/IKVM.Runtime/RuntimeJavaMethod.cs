@@ -111,7 +111,7 @@ namespace IKVM.Runtime
 
         void UpdateNonPublicTypeInSignatureFlag()
         {
-            if ((IsPublic || IsProtected) && (returnTypeWrapper != null && parameterTypeWrappers != null) && !(this is AccessStubMethodWrapper) && !(this is AccessStubConstructorMethodWrapper))
+            if ((IsPublic || IsProtected) && (returnTypeWrapper != null && parameterTypeWrappers != null) && !(this is RuntimeAccessStubJavaMethod) && !(this is RuntimeConstructorAccessStubJavaMethod))
             {
                 if (!returnTypeWrapper.IsPublic && !returnTypeWrapper.IsUnloadable)
                 {
