@@ -58,7 +58,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 			string fieldName = classFile.GetConstantPoolConstantString(code[i - 1].Arg1);
 			if (tclass == wrapper && !vclass.IsUnloadable && !vclass.IsPrimitive && !vclass.IsNonPrimitiveValueType)
 			{
-				FieldWrapper field = wrapper.GetFieldWrapper(fieldName, vclass.SigName);
+				RuntimeJavaField field = wrapper.GetFieldWrapper(fieldName, vclass.SigName);
 				if (field != null && !field.IsStatic && field.IsVolatile && field.DeclaringType == wrapper && field.FieldTypeWrapper == vclass)
 				{
 					// everything matches up, now call the actual emitter

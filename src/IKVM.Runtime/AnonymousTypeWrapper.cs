@@ -130,7 +130,7 @@ namespace IKVM.Runtime
                 }
             }
             SetMethods(methods.ToArray());
-            List<FieldWrapper> fields = new List<FieldWrapper>();
+            List<RuntimeJavaField> fields = new List<RuntimeJavaField>();
             foreach (FieldInfo fi in type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
                 RuntimeJavaType fieldType = CompiledTypeWrapper.GetFieldTypeWrapper(fi);

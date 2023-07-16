@@ -41,7 +41,7 @@ namespace IKVM.Tools.Importer
 		private static readonly RuntimeJavaType errorClass;
 		private static readonly RuntimeJavaType runtimeExceptionClass;
 		private static readonly MethodWrapper undeclaredThrowableExceptionConstructor;
-		private static readonly FieldWrapper invocationHandlerField;
+		private static readonly RuntimeJavaField invocationHandlerField;
 		private static readonly RuntimeJavaType javaLangReflectMethod;
 		private static readonly RuntimeJavaType javaLangNoSuchMethodException;
 		private static readonly MethodWrapper javaLangNoClassDefFoundErrorConstructor;

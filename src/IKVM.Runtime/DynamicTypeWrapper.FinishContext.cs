@@ -63,7 +63,7 @@ namespace IKVM.Runtime
             private List<TypeBuilder> nestedTypeBuilders;
             private MethodInfo callerIDMethod;
             private List<Item> items;
-            private Dictionary<FieldWrapper, MethodBuilder> arfuMap;
+            private Dictionary<RuntimeJavaField, MethodBuilder> arfuMap;
             private Dictionary<MethodKey, MethodInfo> invokespecialstubcache;
             private Dictionary<string, MethodInfo> dynamicClassLiteral;
 #if IMPORTER
@@ -205,7 +205,7 @@ namespace IKVM.Runtime
             internal Type FinishImpl()
             {
                 MethodWrapper[] methods = wrapper.GetMethods();
-                FieldWrapper[] fields = wrapper.GetFields();
+                RuntimeJavaField[] fields = wrapper.GetFields();
 #if IMPORTER
                 wrapper.FinishGhost(typeBuilder, methods);
 #endif // IMPORTER
@@ -915,8 +915,8 @@ namespace IKVM.Runtime
                 {
                     return false;
                 }
-                FieldWrapper casField = null;
-                foreach (FieldWrapper fw in target.GetFields())
+                RuntimeJavaField casField = null;
+                foreach (RuntimeJavaField fw in target.GetFields())
                 {
                     if (fw.Name == fieldName)
                     {
@@ -1079,7 +1079,7 @@ namespace IKVM.Runtime
                 return tb;
             }
 
-            private void AddInterfaceFieldsInterop(FieldWrapper[] fields)
+            private void AddInterfaceFieldsInterop(RuntimeJavaField[] fields)
             {
                 if (classFile.IsInterface && classFile.IsPublic && !wrapper.IsGhost && classFile.Fields.Length > 0 && wrapper.classLoader.WorkaroundInterfaceFields)
                 {
@@ -1280,7 +1280,7 @@ namespace IKVM.Runtime
                 {
                     if (!tw.IsPublic)
                     {
-                        foreach (FieldWrapper fw in tw.GetFields())
+                        foreach (RuntimeJavaField fw in tw.GetFields())
                         {
                             if ((fw.IsPublic || (fw.IsProtected && !wrapper.IsFinal))
                                 && wrapper.GetFieldWrapper(fw.Name, fw.Signature) == fw)
@@ -1299,7 +1299,7 @@ namespace IKVM.Runtime
 
             private void AddType2FieldAccessStubs()
             {
-                foreach (FieldWrapper fw in wrapper.GetFields())
+                foreach (RuntimeJavaField fw in wrapper.GetFields())
                 {
                     if (wrapper.NeedsType2AccessStub(fw))
                     {
@@ -1308,7 +1308,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            private void GenerateAccessStub(FieldWrapper fw, bool type1)
+            private void GenerateAccessStub(RuntimeJavaField fw, bool type1)
             {
                 if (fw is ConstantFieldWrapper)
                 {
@@ -2189,7 +2189,7 @@ namespace IKVM.Runtime
                 return typeCallerID;
             }
 
-            void EmitConstantValueInitialization(FieldWrapper[] fields, CodeEmitter ilGenerator)
+            void EmitConstantValueInitialization(RuntimeJavaField[] fields, CodeEmitter ilGenerator)
             {
                 ClassFile.Field[] flds = classFile.Fields;
                 for (int i = 0; i < flds.Length; i++)
@@ -2278,9 +2278,9 @@ namespace IKVM.Runtime
                 return cb;
             }
 
-            internal MethodBuilder GetAtomicReferenceFieldUpdater(FieldWrapper field)
+            internal MethodBuilder GetAtomicReferenceFieldUpdater(RuntimeJavaField field)
             {
-                arfuMap ??= new Dictionary<FieldWrapper, MethodBuilder>();
+                arfuMap ??= new Dictionary<RuntimeJavaField, MethodBuilder>();
 
                 if (!arfuMap.TryGetValue(field, out var cb))
                 {

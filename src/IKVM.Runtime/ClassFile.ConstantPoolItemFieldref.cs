@@ -33,7 +33,7 @@ namespace IKVM.Runtime
         internal sealed class ConstantPoolItemFieldref : ConstantPoolItemFMI
         {
 
-            FieldWrapper field;
+            RuntimeJavaField field;
             RuntimeJavaType fieldTypeWrapper;
 
             /// <summary>
@@ -68,7 +68,7 @@ namespace IKVM.Runtime
                         return;
                     }
                 }
-                FieldWrapper fw = null;
+                RuntimeJavaField fw = null;
                 RuntimeJavaType wrapper = GetClassType();
                 if (wrapper == null)
                 {
@@ -94,7 +94,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal FieldWrapper GetField()
+            internal RuntimeJavaField GetField()
             {
                 return field;
             }

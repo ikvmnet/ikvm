@@ -861,7 +861,7 @@ namespace IKVM.Runtime
             Debug.Assert(new String('[', dims) + elementTypeWrapper.SigName == name);
             Debug.Assert(!elementTypeWrapper.IsUnloadable && !elementTypeWrapper.IsVerifierType && !elementTypeWrapper.IsArray);
             Debug.Assert(dims >= 1);
-            return elementTypeWrapper.GetClassLoader().RegisterInitiatingLoader(new ArrayTypeWrapper(elementTypeWrapper, name));
+            return elementTypeWrapper.GetClassLoader().RegisterInitiatingLoader(new RuntimeArrayJavaType(elementTypeWrapper, name));
         }
 
 #if !IMPORTER && !EXPORTER

@@ -163,7 +163,7 @@ namespace IKVM.Runtime
 
             protected override void LazyPublishFields()
             {
-                List<FieldWrapper> list = new List<FieldWrapper>();
+                List<RuntimeJavaField> list = new List<RuntimeJavaField>();
                 FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
                 foreach (FieldInfo field in fields)
                 {
@@ -595,7 +595,7 @@ namespace IKVM.Runtime
                 modifiers |= Modifiers.Final;
             }
             // javac uses the this$0 field to store the outer instance reference for non-static inner classes
-            foreach (FieldWrapper fw in tw.GetFields())
+            foreach (RuntimeJavaField fw in tw.GetFields())
             {
                 if (fw.Name == "this$0")
                 {
@@ -1082,7 +1082,7 @@ namespace IKVM.Runtime
 
         protected override void LazyPublishFields()
         {
-            List<FieldWrapper> fields = new List<FieldWrapper>();
+            List<RuntimeJavaField> fields = new List<RuntimeJavaField>();
             const BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
             FieldInfo[] rawfields = type.GetFields(flags);
             Array.Sort(rawfields, SortFieldByToken);
@@ -1138,7 +1138,7 @@ namespace IKVM.Runtime
             return tw1 == tw2 || (tw1.IsUnloadable && tw2.IsUnloadable && tw1.Name == tw2.Name);
         }
 
-        private void AddPropertyFieldWrapper(List<FieldWrapper> fields, PropertyInfo property, FieldInfo field)
+        private void AddPropertyFieldWrapper(List<RuntimeJavaField> fields, PropertyInfo property, FieldInfo field)
         {
             // NOTE explictly defined properties (in map.xml) are decorated with HideFromJava,
             // so we don't need to worry about them here
@@ -1349,7 +1349,7 @@ namespace IKVM.Runtime
             return ClassLoaderWrapper.GetWrapperFromType(parameterType);
         }
 
-        private FieldWrapper CreateFieldWrapper(FieldInfo field, HideFromJavaFlags hideFromJavaFlags)
+        private RuntimeJavaField CreateFieldWrapper(FieldInfo field, HideFromJavaFlags hideFromJavaFlags)
         {
             ExModifiers modifiers = AttributeHelper.GetModifiers(field, false);
             RuntimeJavaType type = GetFieldTypeWrapper(field);
@@ -1375,7 +1375,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                return FieldWrapper.Create(this, type, field, name, type.SigName, modifiers);
+                return RuntimeJavaField.Create(this, type, field, name, type.SigName, modifiers);
             }
         }
 
@@ -1433,7 +1433,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override string GetGenericFieldSignature(FieldWrapper fw)
+        internal override string GetGenericFieldSignature(RuntimeJavaField fw)
         {
             FieldInfo fi = fw.GetField();
             if (fi != null)
@@ -1529,7 +1529,7 @@ namespace IKVM.Runtime
             return attribs;
         }
 
-        internal override object[] GetFieldAnnotations(FieldWrapper fw)
+        internal override object[] GetFieldAnnotations(RuntimeJavaField fw)
         {
             FieldInfo field = fw.GetField();
             if (field != null)
@@ -1675,7 +1675,7 @@ namespace IKVM.Runtime
             return mb == null ? null : AttributeHelper.GetRuntimeVisibleTypeAnnotations(mb);
         }
 
-        internal override byte[] GetFieldRawTypeAnnotations(FieldWrapper fw)
+        internal override byte[] GetFieldRawTypeAnnotations(RuntimeJavaField fw)
         {
             FieldInfo fi = fw.GetField();
             return fi == null ? null : AttributeHelper.GetRuntimeVisibleTypeAnnotations(fi);

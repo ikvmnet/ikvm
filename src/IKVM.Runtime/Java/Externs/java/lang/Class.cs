@@ -516,7 +516,7 @@ namespace IKVM.Java.Externs.java.lang
                 RuntimeJavaType wrapper = RuntimeJavaType.FromClass(thisClass);
                 // we need to finish the type otherwise all fields will not be in the field map yet
                 wrapper.Finish();
-                FieldWrapper[] fields = wrapper.GetFields();
+                RuntimeJavaField[] fields = wrapper.GetFields();
                 List<global::java.lang.reflect.Field> list = new List<global::java.lang.reflect.Field>();
                 for (int i = 0; i < fields.Length; i++)
                 {

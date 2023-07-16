@@ -42,7 +42,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Field wrapper implementation for standard fields.
     /// </summary>
-    sealed class SimpleFieldWrapper : FieldWrapper
+    sealed class SimpleFieldWrapper : RuntimeJavaField
     {
 
         /// <summary>

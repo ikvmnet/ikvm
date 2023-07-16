@@ -332,7 +332,7 @@ namespace IKVM.Runtime
 
             protected override void LazyPublishMembers()
             {
-                SetFields(FieldWrapper.EmptyArray);
+                SetFields(RuntimeJavaField.EmptyArray);
                 SetMethods(MethodWrapper.EmptyArray);
             }
         }
@@ -386,7 +386,7 @@ namespace IKVM.Runtime
                     if (parameterType.IsByRef)
                     {
                         flags |= MemberFlags.DelegateInvokeWithByRefParameter;
-                        parameterType = ArrayTypeWrapper.MakeArrayType(parameterType.GetElementType(), 1);
+                        parameterType = RuntimeArrayJavaType.MakeArrayType(parameterType.GetElementType(), 1);
                     }
                     argTypeWrappers[i] = ClassLoaderWrapper.GetWrapperFromType(parameterType);
                     sb.Append(argTypeWrappers[i].SigName);
@@ -395,7 +395,7 @@ namespace IKVM.Runtime
                 sb.Append(")").Append(returnType.SigName);
                 MethodWrapper invokeMethod = new DynamicOnlyMethodWrapper(this, "Invoke", sb.ToString(), returnType, argTypeWrappers, flags);
                 SetMethods(new MethodWrapper[] { invokeMethod });
-                SetFields(FieldWrapper.EmptyArray);
+                SetFields(RuntimeJavaField.EmptyArray);
             }
 
             internal override RuntimeJavaType DeclaringTypeWrapper
@@ -496,7 +496,7 @@ namespace IKVM.Runtime
             }
 #endif
 
-            sealed class EnumFieldWrapper : FieldWrapper
+            sealed class EnumFieldWrapper : RuntimeJavaField
             {
 
 #if !IMPORTER && !EXPORTER
@@ -574,7 +574,7 @@ namespace IKVM.Runtime
 
                 internal override object Invoke(object obj, object[] args)
                 {
-                    FieldWrapper[] values = this.DeclaringType.GetFields();
+                    RuntimeJavaField[] values = this.DeclaringType.GetFields();
                     object[] array = (object[])Array.CreateInstance(this.DeclaringType.TypeAsArrayType, values.Length);
                     for (int i = 0; i < values.Length; i++)
                     {
@@ -602,7 +602,7 @@ namespace IKVM.Runtime
 
                 internal override object Invoke(object obj, object[] args)
                 {
-                    FieldWrapper[] values = this.DeclaringType.GetFields();
+                    RuntimeJavaField[] values = this.DeclaringType.GetFields();
                     for (int i = 0; i < values.Length; i++)
                     {
                         if (values[i].Name.Equals(args[0]))
@@ -619,7 +619,7 @@ namespace IKVM.Runtime
 
             protected override void LazyPublishMembers()
             {
-                List<FieldWrapper> fields = new List<FieldWrapper>();
+                List<RuntimeJavaField> fields = new List<RuntimeJavaField>();
                 int ordinal = 0;
                 foreach (FieldInfo field in this.DeclaringTypeWrapper.TypeAsTBD.GetFields(BindingFlags.Static | BindingFlags.Public))
                 {
@@ -1042,7 +1042,7 @@ namespace IKVM.Runtime
                         tw = tw.MakeArrayType(1);
                     }
                     SetMethods(new MethodWrapper[] { new DynamicOnlyMethodWrapper(this, "value", "()" + tw.SigName, tw, RuntimeJavaType.EmptyArray, MemberFlags.None) });
-                    SetFields(FieldWrapper.EmptyArray);
+                    SetFields(RuntimeJavaField.EmptyArray);
                 }
 
                 internal override RuntimeJavaType DeclaringTypeWrapper
@@ -1178,7 +1178,7 @@ namespace IKVM.Runtime
                 {
                     RuntimeJavaType tw = declaringType.MakeArrayType(1);
                     SetMethods(new MethodWrapper[] { new DynamicOnlyMethodWrapper(this, "value", "()" + tw.SigName, tw, RuntimeJavaType.EmptyArray, MemberFlags.None) });
-                    SetFields(FieldWrapper.EmptyArray);
+                    SetFields(RuntimeJavaField.EmptyArray);
                 }
 
                 internal override RuntimeJavaType DeclaringTypeWrapper
@@ -1809,7 +1809,7 @@ namespace IKVM.Runtime
                     Type type = args[i];
                     if (type.IsByRef)
                     {
-                        type = ArrayTypeWrapper.MakeArrayType(type.GetElementType(), 1);
+                        type = RuntimeArrayJavaType.MakeArrayType(type.GetElementType(), 1);
                     }
                     locals[i] = ilgen.DeclareLocal(type);
                     ilgen.Emit(OpCodes.Stloc, locals[i]);
@@ -1851,7 +1851,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        internal sealed class EnumValueFieldWrapper : FieldWrapper
+        internal sealed class EnumValueFieldWrapper : RuntimeJavaField
         {
 
             readonly Type underlyingType;
@@ -2013,7 +2013,7 @@ namespace IKVM.Runtime
                 }
                 RuntimeJavaType fieldType = ClassLoaderWrapper.GetWrapperFromType(javaUnderlyingType);
                 FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
-                List<FieldWrapper> fieldsList = new List<FieldWrapper>();
+                List<RuntimeJavaField> fieldsList = new List<RuntimeJavaField>();
                 for (int i = 0; i < fields.Length; i++)
                 {
                     if (fields[i].FieldType == type)
@@ -2037,7 +2037,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                List<FieldWrapper> fieldsList = new List<FieldWrapper>();
+                List<RuntimeJavaField> fieldsList = new List<RuntimeJavaField>();
                 FieldInfo[] fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
                 for (int i = 0; i < fields.Length; i++)
                 {
@@ -2373,7 +2373,7 @@ namespace IKVM.Runtime
                 }
                 if (type.IsByRef)
                 {
-                    type = ArrayTypeWrapper.MakeArrayType(type.GetElementType(), 1);
+                    type = RuntimeArrayJavaType.MakeArrayType(type.GetElementType(), 1);
                     if (mb.IsAbstract)
                     {
                         // Since we cannot override methods with byref arguments, we don't report abstract
@@ -2559,7 +2559,7 @@ namespace IKVM.Runtime
             }
         }
 
-        private FieldWrapper CreateFieldWrapperDotNet(Modifiers modifiers, string name, Type fieldType, FieldInfo field)
+        private RuntimeJavaField CreateFieldWrapperDotNet(Modifiers modifiers, string name, Type fieldType, FieldInfo field)
         {
             RuntimeJavaType type = ClassLoaderWrapper.GetWrapperFromType(fieldType);
             if (field.IsLiteral)
@@ -2568,7 +2568,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                return FieldWrapper.Create(this, type, field, name, type.SigName, new ExModifiers(modifiers, false));
+                return RuntimeJavaField.Create(this, type, field, name, type.SigName, new ExModifiers(modifiers, false));
             }
         }
 
@@ -2719,7 +2719,7 @@ namespace IKVM.Runtime
             return type.GetCustomAttributes(false);
         }
 
-        internal override object[] GetFieldAnnotations(FieldWrapper fw)
+        internal override object[] GetFieldAnnotations(RuntimeJavaField fw)
         {
             FieldInfo fi = fw.GetField();
             if (fi == null)

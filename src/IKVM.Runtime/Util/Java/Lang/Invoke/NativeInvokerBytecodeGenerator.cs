@@ -615,7 +615,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             }
             else if (member.isField())
             {
-                FieldWrapper fw = GetFieldWrapper(member);
+                RuntimeJavaField fw = GetFieldWrapper(member);
                 if (!IsStaticallyInvocable(fw))
                 {
                     throw new BailoutException(Bailout.NotStaticallyInvocable, member);
@@ -1145,12 +1145,12 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             return true;
         }
 
-        private static FieldWrapper GetFieldWrapper(java.lang.invoke.MemberName member)
+        private static RuntimeJavaField GetFieldWrapper(java.lang.invoke.MemberName member)
         {
             return RuntimeJavaType.FromClass(member.getDeclaringClass()).GetFieldWrapper(member.getName(), member.getSignature().Replace('/', '.'));
         }
 
-        private static bool IsStaticallyInvocable(FieldWrapper fw)
+        private static bool IsStaticallyInvocable(RuntimeJavaField fw)
         {
             return fw != null
                 && !fw.FieldTypeWrapper.IsUnloadable

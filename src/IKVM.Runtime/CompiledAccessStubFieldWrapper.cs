@@ -36,7 +36,7 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    sealed class CompiledAccessStubFieldWrapper : FieldWrapper
+    sealed class CompiledAccessStubFieldWrapper : RuntimeJavaField
     {
 
         readonly MethodInfo getter;

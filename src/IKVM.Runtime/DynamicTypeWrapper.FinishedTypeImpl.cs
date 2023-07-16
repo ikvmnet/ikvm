@@ -126,7 +126,7 @@ namespace IKVM.Runtime
                 return mw.GetMethod();
             }
 
-            internal override FieldInfo LinkField(FieldWrapper fw)
+            internal override FieldInfo LinkField(RuntimeJavaField fw)
             {
                 // we should never be called, because all fields on a finished type are already linked
                 Debug.Assert(false);

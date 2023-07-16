@@ -638,9 +638,9 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        protected abstract void AddMapXmlFields(ref FieldWrapper[] fields);
+        protected abstract void AddMapXmlFields(ref RuntimeJavaField[] fields);
         protected abstract bool EmitMapXmlMethodPrologueAndOrBody(CodeEmitter ilgen, ClassFile f, ClassFile.Method m);
-        protected abstract void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, FieldWrapper[] fields, MethodWrapper[] methods);
+        protected abstract void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, MethodWrapper[] methods);
         protected abstract MethodBuilder DefineGhostMethod(TypeBuilder typeBuilder, string name, MethodAttributes attribs, MethodWrapper mw);
         protected abstract void FinishGhost(TypeBuilder typeBuilder, MethodWrapper[] methods);
         protected abstract void FinishGhostStep2();
@@ -696,7 +696,7 @@ namespace IKVM.Runtime
             return impl.LinkMethod(mw);
         }
 
-        internal override FieldInfo LinkField(FieldWrapper fw)
+        internal override FieldInfo LinkField(RuntimeJavaField fw)
         {
             fw.AssertLinked();
             return impl.LinkField(fw);
@@ -726,9 +726,9 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override string GetGenericFieldSignature(FieldWrapper fw)
+        internal override string GetGenericFieldSignature(RuntimeJavaField fw)
         {
-            FieldWrapper[] fields = GetFields();
+            RuntimeJavaField[] fields = GetFields();
             for (int i = 0; i < fields.Length; i++)
             {
                 if (fields[i] == fw)
@@ -889,9 +889,9 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override object[] GetFieldAnnotations(FieldWrapper fw)
+        internal override object[] GetFieldAnnotations(RuntimeJavaField fw)
         {
-            FieldWrapper[] fields = GetFields();
+            RuntimeJavaField[] fields = GetFields();
             for (int i = 0; i < fields.Length; i++)
             {
                 if (fields[i] == fw)
@@ -982,7 +982,7 @@ namespace IKVM.Runtime
             Debug.Assert(!tw.IsUnloadable);
             if (tw.IsArray)
             {
-                return ArrayTypeWrapper.MakeArrayType(GetModOptHelper(tw.GetUltimateElementTypeWrapper()), tw.ArrayRank);
+                return RuntimeArrayJavaType.MakeArrayType(GetModOptHelper(tw.GetUltimateElementTypeWrapper()), tw.ArrayRank);
             }
             else if (tw.IsGhost)
             {
@@ -995,7 +995,7 @@ namespace IKVM.Runtime
         }
 
 #if IMPORTER
-        private bool NeedsType2AccessStub(FieldWrapper fw)
+        private bool NeedsType2AccessStub(RuntimeJavaField fw)
         {
             Debug.Assert(this.IsPublic && fw.DeclaringType == this);
             return fw.IsType2FinalField
@@ -1033,7 +1033,7 @@ namespace IKVM.Runtime
             return impl.GetMethodRawTypeAnnotations(Array.IndexOf(GetMethods(), mw));
         }
 
-        internal override byte[] GetFieldRawTypeAnnotations(FieldWrapper fw)
+        internal override byte[] GetFieldRawTypeAnnotations(RuntimeJavaField fw)
         {
             Finish();
             return impl.GetFieldRawTypeAnnotations(Array.IndexOf(GetFields(), fw));

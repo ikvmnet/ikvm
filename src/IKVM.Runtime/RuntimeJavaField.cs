@@ -41,14 +41,14 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    abstract class FieldWrapper : RuntimeJavaMember
+    abstract class RuntimeJavaField : RuntimeJavaMember
     {
 
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
         volatile java.lang.reflect.Field reflectionField;
         sun.reflect.FieldAccessor jniAccessor;
 #endif
-        internal static readonly FieldWrapper[] EmptyArray = new FieldWrapper[0];
+        internal static readonly RuntimeJavaField[] EmptyArray = new RuntimeJavaField[0];
         FieldInfo field;
         RuntimeJavaType fieldType;
 
@@ -62,7 +62,7 @@ namespace IKVM.Runtime
         /// <param name="modifiers"></param>
         /// <param name="field"></param>
         /// <param name="flags"></param>
-        internal FieldWrapper(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, MemberFlags flags) :
+        internal RuntimeJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, MemberFlags flags) :
             base(declaringType, name, sig, modifiers, flags)
         {
             if (name == null)
@@ -98,7 +98,7 @@ namespace IKVM.Runtime
         /// <param name="sig"></param>
         /// <param name="modifiers"></param>
         /// <param name="field"></param>
-        internal FieldWrapper(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, ExModifiers modifiers, FieldInfo field) :
+        internal RuntimeJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, ExModifiers modifiers, FieldInfo field) :
             this(declaringType, fieldType, name, sig, modifiers.Modifiers, field, (modifiers.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None))
         {
 
@@ -140,11 +140,11 @@ namespace IKVM.Runtime
 #if !IMPORTER && !EXPORTER
 
         /// <summary>
-        /// Gets the <see cref="FieldWrapper"/> for the given <see cref="java.lang.reflect.Field"/>.
+        /// Gets the <see cref="RuntimeJavaField"/> for the given <see cref="java.lang.reflect.Field"/>.
         /// </summary>
         /// <param name="field"></param>
         /// <returns></returns>
-        internal static FieldWrapper FromField(java.lang.reflect.Field field)
+        internal static RuntimeJavaField FromField(java.lang.reflect.Field field)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -206,14 +206,14 @@ namespace IKVM.Runtime
 #endif
 
         /// <summary>
-        /// Resolves the <see cref="FieldWrapper"/> instance referenced by the specified cookie.
+        /// Resolves the <see cref="RuntimeJavaField"/> instance referenced by the specified cookie.
         /// </summary>
         /// <param name="cookie"></param>
         /// <returns></returns>
         [System.Security.SecurityCritical]
-        internal static FieldWrapper FromCookie(IntPtr cookie)
+        internal static RuntimeJavaField FromCookie(IntPtr cookie)
         {
-            return (FieldWrapper)FromCookieImpl(cookie);
+            return (RuntimeJavaField)FromCookieImpl(cookie);
         }
 
         internal RuntimeJavaType FieldTypeWrapper
@@ -432,7 +432,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static FieldWrapper Create(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers)
+        internal static RuntimeJavaField Create(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers)
         {
             // volatile long & double field accesses must be made atomic
             if ((modifiers.Modifiers & Modifiers.Volatile) != 0 && (sig == "J" || sig == "D"))

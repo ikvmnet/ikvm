@@ -2742,7 +2742,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                FieldWrapper field = cpi.GetField();
+                RuntimeJavaField field = cpi.GetField();
                 if (field == null)
                 {
                     SetHardError(wrapper.GetClassLoader(), ref instr, HardError.NoSuchFieldError, "{0}.{1}", cpi.Class, cpi.Name);

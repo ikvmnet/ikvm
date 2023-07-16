@@ -1789,7 +1789,7 @@ namespace IKVM.Tools.Importer
                 var c = classDef;
                 var tb = typeBuilder;
 
-                var fields = new List<FieldWrapper>();
+                var fields = new List<RuntimeJavaField>();
 
                 // TODO fields should be moved to the RemapperTypeWrapper constructor as well
                 if (c.Fields != null)
@@ -1835,7 +1835,7 @@ namespace IKVM.Tools.Importer
                             }
                             else
                             {
-                                fields.Add(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig, LoadMode.LoadOrThrow), fb, f.Name, f.Sig, new ExModifiers((Modifiers)f.Modifiers, false)));
+                                fields.Add(RuntimeJavaField.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig, LoadMode.LoadOrThrow), fb, f.Name, f.Sig, new ExModifiers((Modifiers)f.Modifiers, false)));
                             }
                         }
                     }
@@ -3710,7 +3710,7 @@ namespace IKVM.Tools.Importer
             return loader.LoadClassByDottedNameFast(name) ?? throw new FatalCompilerErrorException(Message.MapFileClassNotFound, name);
         }
 
-        internal static FieldWrapper GetFieldForMapXml(ClassLoaderWrapper loader, string clazz, string name, string sig)
+        internal static RuntimeJavaField GetFieldForMapXml(ClassLoaderWrapper loader, string clazz, string name, string sig)
         {
             var fw = GetClassForMapXml(loader, clazz).GetFieldWrapper(name, sig);
             if (fw == null)

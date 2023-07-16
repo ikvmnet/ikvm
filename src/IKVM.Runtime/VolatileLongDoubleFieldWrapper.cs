@@ -37,7 +37,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Field wrapper for a field of type 'volatile long' or 'volatile double'.
     /// </summary>
-    sealed class VolatileLongDoubleFieldWrapper : FieldWrapper
+    sealed class VolatileLongDoubleFieldWrapper : RuntimeJavaField
     {
 
         /// <summary>

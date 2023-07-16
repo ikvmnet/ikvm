@@ -40,7 +40,7 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    abstract class MemberWrapper
+    abstract class RuntimeJavaMember
     {
 
         readonly RuntimeJavaType declaringType;
@@ -60,14 +60,14 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="obj"></param>
             [System.Security.SecurityCritical]
-            internal HandleWrapper(MemberWrapper obj)
+            internal HandleWrapper(RuntimeJavaMember obj)
             {
                 Value = (IntPtr)GCHandle.Alloc(obj, GCHandleType.WeakTrackResurrection);
             }
 
         }
 
-        protected MemberWrapper(RuntimeJavaType declaringType, string name, string sig, Modifiers modifiers, MemberFlags flags)
+        protected RuntimeJavaMember(RuntimeJavaType declaringType, string name, string sig, Modifiers modifiers, MemberFlags flags)
         {
             Debug.Assert(declaringType != null);
             this.declaringType = declaringType;
@@ -89,9 +89,9 @@ namespace IKVM.Runtime
         }
 
         [System.Security.SecurityCritical]
-        internal static MemberWrapper FromCookieImpl(IntPtr cookie)
+        internal static RuntimeJavaMember FromCookieImpl(IntPtr cookie)
         {
-            return (MemberWrapper)GCHandle.FromIntPtr(cookie).Target;
+            return (RuntimeJavaMember)GCHandle.FromIntPtr(cookie).Target;
         }
 
         internal RuntimeJavaType DeclaringType => declaringType;

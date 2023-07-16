@@ -45,7 +45,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Represents a .NET property defined in Java with the <see cref="ikvm.lang.Property"/> annotation.
     /// </summary>
-    sealed class DynamicPropertyFieldWrapper : FieldWrapper
+    sealed class DynamicPropertyFieldWrapper : RuntimeJavaField
     {
 
         readonly MethodWrapper getter;

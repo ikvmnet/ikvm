@@ -936,7 +936,7 @@ namespace IKVM.Java.Externs.sun.reflect
         {
 
             protected static readonly ushort inflationThreshold = 15;
-            protected readonly FieldWrapper fw;
+            protected readonly RuntimeJavaField fw;
             protected readonly bool isFinal;
             protected ushort numInvocations;
 
@@ -954,7 +954,7 @@ namespace IKVM.Java.Externs.sun.reflect
             /// </summary>
             /// <param name="fw"></param>
             /// <param name="isFinal"></param>
-            FieldAccessorImplBase(FieldWrapper fw, bool isFinal)
+            FieldAccessorImplBase(RuntimeJavaField fw, bool isFinal)
             {
                 this.fw = fw;
                 this.isFinal = isFinal;
@@ -1119,7 +1119,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 protected Setter setter = initialSetter;
                 protected Getter getter = initialGetter;
 
-                internal FieldAccessor(FieldWrapper fw, bool isFinal)
+                internal FieldAccessor(RuntimeJavaField fw, bool isFinal)
                     : base(fw, isFinal)
                 {
                     if (!IsSlowPathCompatible(fw))
@@ -1129,7 +1129,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     }
                 }
 
-                private bool IsSlowPathCompatible(FieldWrapper fw)
+                private bool IsSlowPathCompatible(RuntimeJavaField fw)
                 {
 #if !NO_REF_EMIT
                     if (fw.IsVolatile && (fw.FieldTypeWrapper == RuntimePrimitiveJavaType.LONG || fw.FieldTypeWrapper == RuntimePrimitiveJavaType.DOUBLE))
@@ -1249,7 +1249,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
             private sealed class ByteField : FieldAccessor<byte>
             {
-                internal ByteField(FieldWrapper field, bool isFinal)
+                internal ByteField(RuntimeJavaField field, bool isFinal)
                     : base(field, isFinal)
                 {
                 }
@@ -1325,7 +1325,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
             private sealed class BooleanField : FieldAccessor<bool>
             {
-                internal BooleanField(FieldWrapper field, bool isFinal)
+                internal BooleanField(RuntimeJavaField field, bool isFinal)
                     : base(field, isFinal)
                 {
                 }
@@ -1376,7 +1376,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
             private sealed class CharField : FieldAccessor<char>
             {
-                internal CharField(FieldWrapper field, bool isFinal)
+                internal CharField(RuntimeJavaField field, bool isFinal)
                     : base(field, isFinal)
                 {
                 }
@@ -1446,7 +1446,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
             private sealed class ShortField : FieldAccessor<short>
             {
-                internal ShortField(FieldWrapper field, bool isFinal)
+                internal ShortField(RuntimeJavaField field, bool isFinal)
                     : base(field, isFinal)
                 {
                 }
@@ -1522,7 +1522,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
             private sealed class IntField : FieldAccessor<int>
             {
-                internal IntField(FieldWrapper field, bool isFinal)
+                internal IntField(RuntimeJavaField field, bool isFinal)
                     : base(field, isFinal)
                 {
                 }
@@ -1606,7 +1606,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
             private sealed class FloatField : FieldAccessor<float>
             {
-                internal FloatField(FieldWrapper field, bool isFinal)
+                internal FloatField(RuntimeJavaField field, bool isFinal)
                     : base(field, isFinal)
                 {
                 }
@@ -1692,7 +1692,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
             private sealed class LongField : FieldAccessor<long>
             {
-                internal LongField(FieldWrapper field, bool isFinal)
+                internal LongField(RuntimeJavaField field, bool isFinal)
                     : base(field, isFinal)
                 {
                 }
@@ -1777,7 +1777,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
             private sealed class DoubleField : FieldAccessor<double>
             {
-                internal DoubleField(FieldWrapper field, bool isFinal)
+                internal DoubleField(RuntimeJavaField field, bool isFinal)
                     : base(field, isFinal)
                 {
                 }
@@ -1864,7 +1864,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
             private sealed class ObjectField : FieldAccessor<object>
             {
-                internal ObjectField(FieldWrapper field, bool isFinal)
+                internal ObjectField(RuntimeJavaField field, bool isFinal)
                     : base(field, isFinal)
                 {
                 }
@@ -1908,7 +1908,7 @@ namespace IKVM.Java.Externs.sun.reflect
             }
 
 #if !NO_REF_EMIT
-            private Delegate GenerateFastGetter(Type delegateType, Type fieldType, FieldWrapper fw)
+            private Delegate GenerateFastGetter(Type delegateType, Type fieldType, RuntimeJavaField fw)
             {
                 RuntimeJavaType fieldTypeWrapper;
                 try
@@ -1954,7 +1954,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 return dm.CreateDelegate(delegateType, this);
             }
 
-            private Delegate GenerateFastSetter(Type delegateType, Type fieldType, FieldWrapper fw)
+            private Delegate GenerateFastSetter(Type delegateType, Type fieldType, RuntimeJavaField fw)
             {
                 RuntimeJavaType fieldTypeWrapper;
                 try
@@ -2023,7 +2023,7 @@ namespace IKVM.Java.Externs.sun.reflect
             }
 #endif // !NO_REF_EMIT
 
-            internal static FieldAccessorImplBase Create(FieldWrapper field, bool isFinal)
+            internal static FieldAccessorImplBase Create(RuntimeJavaField field, bool isFinal)
             {
                 RuntimeJavaType type = field.FieldTypeWrapper;
                 if (type.IsPrimitive)
@@ -2079,12 +2079,12 @@ namespace IKVM.Java.Externs.sun.reflect
             int modifiers = field.getModifiers();
             bool isStatic = global::java.lang.reflect.Modifier.isStatic(modifiers);
             bool isFinal = global::java.lang.reflect.Modifier.isFinal(modifiers);
-            return FieldAccessorImplBase.Create(FieldWrapper.FromField(field), isFinal && (!overrideAccessCheck || isStatic));
+            return FieldAccessorImplBase.Create(RuntimeJavaField.FromField(field), isFinal && (!overrideAccessCheck || isStatic));
 #endif
         }
 
 #if !FIRST_PASS
-        internal static global::sun.reflect.FieldAccessor NewFieldAccessorJNI(FieldWrapper field)
+        internal static global::sun.reflect.FieldAccessor NewFieldAccessorJNI(RuntimeJavaField field)
         {
             return FieldAccessorImplBase.Create(field, false);
         }

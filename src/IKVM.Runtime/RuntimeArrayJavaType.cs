@@ -38,7 +38,7 @@ using System.Reflection;
 namespace IKVM.Runtime
 {
 
-    sealed class ArrayTypeWrapper : RuntimeJavaType
+    sealed class RuntimeArrayJavaType : RuntimeJavaType
     {
 
         static volatile RuntimeJavaType[] interfaces;
@@ -52,7 +52,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="ultimateElementTypeWrapper"></param>
         /// <param name="name"></param>
-        internal ArrayTypeWrapper(RuntimeJavaType ultimateElementTypeWrapper, string name) :
+        internal RuntimeArrayJavaType(RuntimeJavaType ultimateElementTypeWrapper, string name) :
             base(ultimateElementTypeWrapper.IsInternal ? TypeFlags.InternalAccess : TypeFlags.None, Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.Modifiers & Modifiers.Public), name)
         {
             Debug.Assert(!ultimateElementTypeWrapper.IsArray);
@@ -85,7 +85,7 @@ namespace IKVM.Runtime
             var mw = new SimpleCallMethodWrapper(this, "clone", "()Ljava.lang.Object;", CloneMethod, CoreClasses.java.lang.Object.Wrapper, RuntimeJavaType.EmptyArray, Modifiers.Public, MemberFlags.HideFromReflection, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
             mw.Link();
             SetMethods(new MethodWrapper[] { mw });
-            SetFields(FieldWrapper.EmptyArray);
+            SetFields(RuntimeJavaField.EmptyArray);
         }
 
         internal override Modifiers ReflectiveModifiers

@@ -38,7 +38,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Represents a .NET property defined in Java with the 'ikvm.lang.Property' annotation.
     /// </summary>
-    sealed class CompiledPropertyFieldWrapper : FieldWrapper
+    sealed class CompiledPropertyFieldWrapper : RuntimeJavaField
     {
 
         readonly PropertyInfo property;

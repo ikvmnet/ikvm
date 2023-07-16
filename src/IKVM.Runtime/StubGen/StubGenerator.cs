@@ -221,7 +221,7 @@ namespace IKVM.StubGen
                 }
             }
             bool hasSerialVersionUID = false;
-            foreach (FieldWrapper fw in tw.GetFields())
+            foreach (RuntimeJavaField fw in tw.GetFields())
             {
                 if (!fw.IsHideFromReflection)
                 {

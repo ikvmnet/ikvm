@@ -42,7 +42,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Wraps a const field.
     /// </summary>
-    sealed class ConstantFieldWrapper : FieldWrapper
+    sealed class ConstantFieldWrapper : RuntimeJavaField
     {
 
         // NOTE this field wrapper can represent a .NET enum, but in that case "constant" contains the raw constant value (i.e. the boxed underlying primitive value, not a boxed enum)

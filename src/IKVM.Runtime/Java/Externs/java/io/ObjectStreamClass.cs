@@ -215,7 +215,7 @@ namespace IKVM.Java.Externs.java.io
                 RuntimeJavaType tw = null;
                 foreach (global::java.io.ObjectStreamField field in fields)
                 {
-                    FieldWrapper fw = GetFieldWrapper(field);
+                    RuntimeJavaField fw = GetFieldWrapper(field);
                     if (fw != null)
                     {
                         if (tw == null)
@@ -267,7 +267,7 @@ namespace IKVM.Java.Externs.java.io
 
                     foreach (global::java.io.ObjectStreamField field in fields)
                     {
-                        FieldWrapper fw = GetFieldWrapper(field);
+                        RuntimeJavaField fw = GetFieldWrapper(field);
                         if (fw == null)
                         {
                             continue;
@@ -405,10 +405,10 @@ namespace IKVM.Java.Externs.java.io
                 }
             }
 
-            private static FieldWrapper GetFieldWrapper(global::java.io.ObjectStreamField field)
+            private static RuntimeJavaField GetFieldWrapper(global::java.io.ObjectStreamField field)
             {
                 global::java.lang.reflect.Field f = field.getField();
-                return f == null ? null : FieldWrapper.FromField(f);
+                return f == null ? null : RuntimeJavaField.FromField(f);
             }
 
             public override global::java.io.ObjectStreamField[] getFields()

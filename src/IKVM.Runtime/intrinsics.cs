@@ -920,7 +920,7 @@ namespace IKVM.Runtime
                     if (eic.Match(i, NormalizedByteCode.__aload, 0)
                         && eic.Match(i + 1, NormalizedByteCode.__getstatic))
                     {
-                        FieldWrapper fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
+                        RuntimeJavaField fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
                         if (fw != null && !fw.IsStatic && fw.DeclaringType == eic.Caller.DeclaringType)
                         {
                             CodeEmitterLocal delta = eic.Emitter.AllocTempLocal(Types.Int32);
@@ -1029,7 +1029,7 @@ namespace IKVM.Runtime
             }
         }
 
-        static FieldWrapper GetUnsafeField(EmitIntrinsicContext eic, ClassFile.ConstantPoolItemFieldref field)
+        static RuntimeJavaField GetUnsafeField(EmitIntrinsicContext eic, ClassFile.ConstantPoolItemFieldref field)
         {
             if (eic.Caller.DeclaringType.GetClassLoader() != CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
             {
@@ -1082,7 +1082,7 @@ namespace IKVM.Runtime
                                         if (eic.ClassFile.GetConstantPoolClassType(method.Instructions[i - 4].Arg1) == eic.Caller.DeclaringType)
                                         {
                                             var fieldName = eic.ClassFile.GetConstantPoolConstantString(method.Instructions[i - 3].Arg1);
-                                            FieldWrapper fw = null;
+                                            RuntimeJavaField fw = null;
                                             foreach (var fw1 in eic.Caller.DeclaringType.GetFields())
                                             {
                                                 if (fw1.Name == fieldName)
@@ -1114,7 +1114,7 @@ namespace IKVM.Runtime
                                             eic.ClassFile.GetConstantPoolClassType(method.Instructions[j - 1].Arg1) == eic.Caller.DeclaringType)
                                         {
                                             var fieldName = eic.ClassFile.GetConstantPoolConstantString(method.Instructions[i - 3].Arg1);
-                                            FieldWrapper fw = null;
+                                            RuntimeJavaField fw = null;
                                             foreach (var fw1 in eic.Caller.DeclaringType.GetFields())
                                             {
                                                 if (fw1.Name == fieldName)

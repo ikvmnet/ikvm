@@ -65,7 +65,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
             }
             else if ((field = refObj as global::java.lang.reflect.Field) != null)
             {
-                FieldWrapper fw = FieldWrapper.FromField(field);
+                RuntimeJavaField fw = RuntimeJavaField.FromField(field);
                 self._clazz(fw.DeclaringType.ClassObject);
                 int flags = (int)fw.Modifiers | global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_FIELD;
                 flags |= (fw.IsStatic ? global::java.lang.invoke.MethodHandleNatives.Constants.REF_getStatic : global::java.lang.invoke.MethodHandleNatives.Constants.REF_getField) << global::java.lang.invoke.MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
@@ -282,7 +282,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 
         private static void ResolveField(global::java.lang.invoke.MemberName self)
         {
-            FieldWrapper fw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
+            RuntimeJavaField fw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
             if (fw == null)
             {
                 throw new global::java.lang.NoSuchFieldError(self.getName());

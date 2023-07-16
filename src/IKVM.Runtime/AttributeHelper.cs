@@ -296,7 +296,7 @@ namespace IKVM.Runtime
                     fieldValues = new object[attr.Fields.Length];
                     for (int i = 0; i < namedFields.Length; i++)
                     {
-                        FieldWrapper fw = t.GetFieldWrapper(attr.Fields[i].Name, attr.Fields[i].Sig);
+                        RuntimeJavaField fw = t.GetFieldWrapper(attr.Fields[i].Name, attr.Fields[i].Sig);
                         fw.Link();
                         namedFields[i] = fw.GetField();
                         fieldValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSig(attr.Fields[i].Sig, LoadMode.Link), attr.Fields[i].Value);

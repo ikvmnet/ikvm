@@ -146,7 +146,7 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var f = FieldWrapper.FromCookie((IntPtr)offset);
+            var f = RuntimeJavaField.FromCookie((IntPtr)offset);
             if (o is RuntimeJavaType w)
             {
                 if (w != f.DeclaringType)
@@ -172,7 +172,7 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var f = FieldWrapper.FromCookie((IntPtr)offset);
+            var f = RuntimeJavaField.FromCookie((IntPtr)offset);
             if (o is RuntimeJavaType w)
             {
                 if (w != f.DeclaringType)
@@ -1493,7 +1493,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static object staticFieldBase(object self, global::java.lang.reflect.Field f)
         {
-            var w = FieldWrapper.FromField(f);
+            var w = RuntimeJavaField.FromField(f);
             if (w.IsStatic == false)
                 throw new global::java.lang.IllegalArgumentException();
 
@@ -1508,7 +1508,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static long staticFieldOffset(object self, global::java.lang.reflect.Field f)
         {
-            var w = FieldWrapper.FromField(f);
+            var w = RuntimeJavaField.FromField(f);
             if (w.IsStatic == false)
                 throw new global::java.lang.IllegalArgumentException();
 
@@ -1523,7 +1523,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static long objectFieldOffset(object self, global::java.lang.reflect.Field f)
         {
-            var w = FieldWrapper.FromField(f);
+            var w = RuntimeJavaField.FromField(f);
             if (w.IsStatic)
                 throw new global::java.lang.IllegalArgumentException();
 
@@ -1758,7 +1758,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                var f = FieldWrapper.FromCookie((IntPtr)offset);
+                var f = RuntimeJavaField.FromCookie((IntPtr)offset);
                 if (o is RuntimeJavaType w)
                 {
                     if (w != f.DeclaringType)
@@ -1791,7 +1791,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                var f = FieldWrapper.FromCookie((IntPtr)offset);
+                var f = RuntimeJavaField.FromCookie((IntPtr)offset);
                 if (o is RuntimeJavaType w)
                 {
                     if (w != f.DeclaringType)
@@ -2415,7 +2415,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                return FieldWrapper.FromCookie((IntPtr)offset).UnsafeCompareAndSwap(o, expected, value);
+                return RuntimeJavaField.FromCookie((IntPtr)offset).UnsafeCompareAndSwap(o, expected, value);
             }
             catch (Exception e)
             {

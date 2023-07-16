@@ -60,7 +60,7 @@ namespace IKVM.Runtime
             private TypeBuilder typeBuilder;
             private MethodWrapper[] methods;
             private MethodWrapper[][] baseMethods;
-            private FieldWrapper[] fields;
+            private RuntimeJavaField[] fields;
             private FinishedTypeImpl finishedType;
             private bool finishInProgress;
             private MethodBuilder clinitMethod;
@@ -173,7 +173,7 @@ namespace IKVM.Runtime
                 }
                 wrapper.SetMethods(methods);
 
-                fields = new FieldWrapper[classFile.Fields.Length];
+                fields = new RuntimeJavaField[classFile.Fields.Length];
                 for (int i = 0; i < fields.Length; i++)
                 {
                     ClassFile.Field fld = classFile.Fields[i];
@@ -191,7 +191,7 @@ namespace IKVM.Runtime
                     }
                     else
                     {
-                        fields[i] = FieldWrapper.Create(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal));
+                        fields[i] = RuntimeJavaField.Create(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal));
                     }
                 }
 #if IMPORTER
@@ -569,7 +569,7 @@ namespace IKVM.Runtime
                     {
                         // when we have a StructLayoutAttribute, field order is significant,
                         // so we link all fields here to make sure they are created in class file order.
-                        foreach (FieldWrapper fw in fields)
+                        foreach (RuntimeJavaField fw in fields)
                         {
                             fw.Link();
                         }
@@ -944,7 +944,7 @@ namespace IKVM.Runtime
                         if (parameters[i].ParameterType.IsByRef)
                         {
                             Type elemType = parameters[i].ParameterType.GetElementType();
-                            CodeEmitterLocal local = ilgen.DeclareLocal(ArrayTypeWrapper.MakeArrayType(elemType, 1));
+                            CodeEmitterLocal local = ilgen.DeclareLocal(RuntimeArrayJavaType.MakeArrayType(elemType, 1));
                             byrefs[i] = local;
                             ilgen.Emit(OpCodes.Ldc_I4_1);
                             ilgen.Emit(OpCodes.Newarr, elemType);
@@ -1082,7 +1082,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            private int GetFieldIndex(FieldWrapper fw)
+            private int GetFieldIndex(RuntimeJavaField fw)
             {
                 for (int i = 0; i < fields.Length; i++)
                 {
@@ -1094,7 +1094,7 @@ namespace IKVM.Runtime
                 throw new InvalidOperationException();
             }
 
-            internal override FieldInfo LinkField(FieldWrapper fw)
+            internal override FieldInfo LinkField(RuntimeJavaField fw)
             {
                 if (fw is DynamicPropertyFieldWrapper)
                 {
@@ -1718,7 +1718,7 @@ namespace IKVM.Runtime
                         }
                         if (isArray)
                         {
-                            argType = ArrayTypeWrapper.MakeArrayType(argType, 1);
+                            argType = RuntimeArrayJavaType.MakeArrayType(argType, 1);
                         }
                         return argType;
                     }

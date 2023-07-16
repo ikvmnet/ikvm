@@ -273,7 +273,7 @@ namespace IKVM.Tools.Importer
         /// Applies fields from the map XML.
         /// </summary>
         /// <param name="fields"></param>
-        protected override void AddMapXmlFields(ref FieldWrapper[] fields)
+        protected override void AddMapXmlFields(ref RuntimeJavaField[] fields)
         {
             var mapxml = classLoader.GetMapXmlClasses();
             if (mapxml != null && mapxml.TryGetValue(Name, out var clazz) && clazz.Fields != null)
@@ -292,7 +292,7 @@ namespace IKVM.Tools.Importer
                     }
 
                     if (found == false)
-                        fields = ArrayUtil.Concat(fields, FieldWrapper.Create(this, null, null, field.Name, field.Sig, new ExModifiers((Modifiers)field.Modifiers, false)));
+                        fields = ArrayUtil.Concat(fields, RuntimeJavaField.Create(this, null, null, field.Name, field.Sig, new ExModifiers((Modifiers)field.Modifiers, false)));
                 }
             }
         }
@@ -562,7 +562,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        protected override void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, FieldWrapper[] fields, MethodWrapper[] methods)
+        protected override void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, MethodWrapper[] methods)
         {
             Dictionary<string, IKVM.Tools.Importer.MapXml.Class> mapxml = classLoader.GetMapXmlClasses();
             if (mapxml != null)
@@ -584,7 +584,7 @@ namespace IKVM.Tools.Importer
                         {
                             if (field.Attributes != null)
                             {
-                                foreach (FieldWrapper fw in fields)
+                                foreach (RuntimeJavaField fw in fields)
                                 {
                                     if (fw.Name == field.Name && fw.Signature == field.Sig)
                                     {
@@ -1118,7 +1118,7 @@ namespace IKVM.Tools.Importer
                 }
                 ilgen.EmitLdc_I4(rank);
                 ilgen.Emit(OpCodes.Call, ghostCastArrayMethod);
-                ilgen.Emit(OpCodes.Castclass, ArrayTypeWrapper.MakeArrayType(Types.Object, rank));
+                ilgen.Emit(OpCodes.Castclass, RuntimeArrayJavaType.MakeArrayType(Types.Object, rank));
             }
             else
             {

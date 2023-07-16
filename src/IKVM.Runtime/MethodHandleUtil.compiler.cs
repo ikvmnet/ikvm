@@ -93,7 +93,7 @@ namespace IKVM.Runtime
                 {
                     tw = tw.ElementTypeWrapper;
                 }
-                return ArrayTypeWrapper.MakeArrayType(tw.TypeAsSignatureType, dims);
+                return RuntimeArrayJavaType.MakeArrayType(tw.TypeAsSignatureType, dims);
             }
             else
             {

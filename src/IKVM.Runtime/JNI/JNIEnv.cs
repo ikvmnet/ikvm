@@ -501,7 +501,7 @@ namespace IKVM.Runtime.JNI
 
         internal static jfieldID FromReflectedField(JNIEnv* pEnv, jobject field)
         {
-            return FieldWrapper.FromField((java.lang.reflect.Field)pEnv->UnwrapRef(field)).Cookie;
+            return RuntimeJavaField.FromField((java.lang.reflect.Field)pEnv->UnwrapRef(field)).Cookie;
         }
 
         internal static jobject ToReflectedMethod(JNIEnv* pEnv, jclass clazz_ignored, jmethodID method, jboolean isStatic)
@@ -524,7 +524,7 @@ namespace IKVM.Runtime.JNI
 
         internal static jobject ToReflectedField(JNIEnv* pEnv, jclass clazz_ignored, jfieldID field, jboolean isStatic)
         {
-            return pEnv->MakeLocalRef(FieldWrapper.FromCookie(field).ToField(true));
+            return pEnv->MakeLocalRef(RuntimeJavaField.FromCookie(field).ToField(true));
         }
 
         private static void SetPendingException(JNIEnv* pEnv, Exception x)
@@ -1171,7 +1171,7 @@ namespace IKVM.Runtime.JNI
             InvokeHelper(pEnv, obj, methodID, args, true);
         }
 
-        static FieldWrapper GetFieldImpl(RuntimeJavaType tw, string name, string sig)
+        static RuntimeJavaField GetFieldImpl(RuntimeJavaType tw, string name, string sig)
         {
             for (; ; )
             {
@@ -1223,9 +1223,9 @@ namespace IKVM.Runtime.JNI
             return FindFieldID(pEnv, clazz, name, sig, false);
         }
 
-        static FieldWrapper GetFieldWrapper(jfieldID cookie)
+        static RuntimeJavaField GetFieldWrapper(jfieldID cookie)
         {
-            return FieldWrapper.FromCookie(cookie);
+            return RuntimeJavaField.FromCookie(cookie);
         }
 
         internal static jobject GetObjectField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)

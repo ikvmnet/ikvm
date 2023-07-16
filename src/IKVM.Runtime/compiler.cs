@@ -1129,7 +1129,7 @@ namespace IKVM.Runtime
                     case NormalizedByteCode.__getfield:
                         {
                             ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
-                            FieldWrapper field = cpi.GetField();
+                            RuntimeJavaField field = cpi.GetField();
                             if (ma.GetStackTypeWrapper(i, 0).IsUnloadable)
                             {
                                 if (field.IsProtected)
@@ -1152,7 +1152,7 @@ namespace IKVM.Runtime
                             var cpi = classFile.GetFieldref(instr.Arg1);
                             if (cpi.GetClassType() != clazz)
                                 nonleaf = true; // we may trigger a static initializer, which is equivalent to a call
-                            FieldWrapper field = cpi.GetField();
+                            RuntimeJavaField field = cpi.GetField();
                             RuntimeJavaType tw = field.FieldTypeWrapper;
                             tw.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
                             if (strictfp)
@@ -1169,7 +1169,7 @@ namespace IKVM.Runtime
                     case NormalizedByteCode.__putfield:
                         {
                             ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
-                            FieldWrapper field = cpi.GetField();
+                            RuntimeJavaField field = cpi.GetField();
                             RuntimeJavaType tw = field.FieldTypeWrapper;
                             if (ma.GetStackTypeWrapper(i, 1).IsUnloadable)
                             {
@@ -1551,7 +1551,7 @@ namespace IKVM.Runtime
                             break;
                         }
                     case NormalizedByteCode.__clone_array:
-                        ilGenerator.Emit(OpCodes.Callvirt, ArrayTypeWrapper.CloneMethod);
+                        ilGenerator.Emit(OpCodes.Callvirt, RuntimeArrayJavaType.CloneMethod);
                         break;
                     case NormalizedByteCode.__return:
                     case NormalizedByteCode.__areturn:
@@ -1757,7 +1757,7 @@ namespace IKVM.Runtime
                                 {
                                     tw = tw.ElementTypeWrapper;
                                 }
-                                ilGenerator.Emit(OpCodes.Ldtoken, ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, wrapper.ArrayRank));
+                                ilGenerator.Emit(OpCodes.Ldtoken, RuntimeArrayJavaType.MakeArrayType(tw.TypeAsTBD, wrapper.ArrayRank));
                                 ilGenerator.Emit(OpCodes.Ldloc, localArray);
                                 ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.multianewarray_ghost);
                                 ilGenerator.Emit(OpCodes.Castclass, wrapper.TypeAsArrayType);
@@ -1798,7 +1798,7 @@ namespace IKVM.Runtime
                                 {
                                     tw = tw.ElementTypeWrapper;
                                 }
-                                ilGenerator.Emit(OpCodes.Ldtoken, ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, wrapper.ArrayRank + 1));
+                                ilGenerator.Emit(OpCodes.Ldtoken, RuntimeArrayJavaType.MakeArrayType(tw.TypeAsTBD, wrapper.ArrayRank + 1));
                                 ilGenerator.Emit(OpCodes.Call, ByteCodeHelperMethods.anewarray_ghost.MakeGenericMethod(wrapper.TypeAsArrayType));
                             }
                             else

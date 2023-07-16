@@ -53,7 +53,7 @@ namespace IKVM.Runtime
             internal abstract Modifiers ReflectiveModifiers { get; }
             internal abstract DynamicImpl Finish();
             internal abstract MethodBase LinkMethod(MethodWrapper mw);
-            internal abstract FieldInfo LinkField(FieldWrapper fw);
+            internal abstract FieldInfo LinkField(RuntimeJavaField fw);
             internal abstract void EmitRunClassConstructor(CodeEmitter ilgen);
             internal abstract string GetGenericSignature();
             internal abstract string[] GetEnclosingMethod();

@@ -60,7 +60,7 @@ namespace IKVM.Runtime
         readonly Modifiers modifiers;
         TypeFlags flags;
         MethodWrapper[] methods;
-        FieldWrapper[] fields;
+        RuntimeJavaField[] fields;
 #if !IMPORTER && !EXPORTER
         java.lang.Class classObject;
 #endif
@@ -135,7 +135,7 @@ namespace IKVM.Runtime
                 while (tw.IsArray)
                     tw = tw.ElementTypeWrapper;
 
-                return ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, rank);
+                return RuntimeArrayJavaType.MakeArrayType(tw.TypeAsTBD, rank);
             }
             else
             {
@@ -686,12 +686,12 @@ namespace IKVM.Runtime
         internal abstract ClassLoaderWrapper GetClassLoader();
 
         /// <summary>
-        /// Searches for the <see cref="FieldWrapper"/> with the specified name and signature.
+        /// Searches for the <see cref="RuntimeJavaField"/> with the specified name and signature.
         /// </summary>
         /// <param name="fieldName"></param>
         /// <param name="fieldSig"></param>
         /// <returns></returns>
-        internal FieldWrapper GetFieldWrapper(string fieldName, string fieldSig)
+        internal RuntimeJavaField GetFieldWrapper(string fieldName, string fieldSig)
         {
             foreach (var fw in GetFields())
                 if (fw.Name == fieldName && fw.Signature == fieldSig)
@@ -714,7 +714,7 @@ namespace IKVM.Runtime
         protected virtual void LazyPublishMembers()
         {
             methods ??= MethodWrapper.EmptyArray;
-            fields ??= FieldWrapper.EmptyArray;
+            fields ??= RuntimeJavaField.EmptyArray;
         }
 
         protected virtual void LazyPublishMethods()
@@ -755,7 +755,7 @@ namespace IKVM.Runtime
         /// Gets the set of fields declared by this type.
         /// </summary>
         /// <returns></returns>
-        internal FieldWrapper[] GetFields()
+        internal RuntimeJavaField[] GetFields()
         {
             if (fields == null)
             {
@@ -765,7 +765,7 @@ namespace IKVM.Runtime
                     {
 #if IMPORTER
                         if (IsUnloadable || !CheckMissingBaseTypes(TypeAsBaseType))
-                            return fields = FieldWrapper.EmptyArray;
+                            return fields = RuntimeJavaField.EmptyArray;
 #endif
 
                         LazyPublishFields();
@@ -848,7 +848,7 @@ namespace IKVM.Runtime
             this.methods = methods;
         }
 
-        internal void SetFields(FieldWrapper[] fields)
+        internal void SetFields(RuntimeJavaField[] fields)
         {
             Debug.Assert(fields != null);
             System.Threading.Thread.MemoryBarrier();
@@ -947,7 +947,7 @@ namespace IKVM.Runtime
                 }
                 if (IsGhostArray)
                 {
-                    return ArrayTypeWrapper.MakeArrayType(Types.Object, ArrayRank);
+                    return RuntimeArrayJavaType.MakeArrayType(Types.Object, ArrayRank);
                 }
                 return TypeAsTBD;
             }
@@ -984,7 +984,7 @@ namespace IKVM.Runtime
                 }
                 if (IsGhostArray)
                 {
-                    return ArrayTypeWrapper.MakeArrayType(Types.Object, ArrayRank);
+                    return RuntimeArrayJavaType.MakeArrayType(Types.Object, ArrayRank);
                 }
                 return TypeAsTBD;
             }
@@ -1001,7 +1001,7 @@ namespace IKVM.Runtime
                 }
                 if (IsGhostArray)
                 {
-                    return ArrayTypeWrapper.MakeArrayType(Types.Object, ArrayRank);
+                    return RuntimeArrayJavaType.MakeArrayType(Types.Object, ArrayRank);
                 }
                 return TypeAsTBD;
             }
@@ -1225,7 +1225,7 @@ namespace IKVM.Runtime
                 {
                     mw.Link();
                 }
-                foreach (FieldWrapper fw in GetFields())
+                foreach (RuntimeJavaField fw in GetFields())
                 {
                     fw.Link();
                 }
@@ -1357,7 +1357,7 @@ namespace IKVM.Runtime
                 }
                 ilgen.EmitLdc_I4(rank);
                 ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("CastArray"));
-                ilgen.Emit(OpCodes.Castclass, ArrayTypeWrapper.MakeArrayType(Types.Object, rank));
+                ilgen.Emit(OpCodes.Castclass, RuntimeArrayJavaType.MakeArrayType(Types.Object, rank));
             }
             else
             {
@@ -1456,7 +1456,7 @@ namespace IKVM.Runtime
         }
 
         // NOTE don't call this method, call FieldWrapper.Link instead
-        internal virtual FieldInfo LinkField(FieldWrapper fw)
+        internal virtual FieldInfo LinkField(RuntimeJavaField fw)
         {
             return fw.GetField();
         }
@@ -1477,7 +1477,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal virtual string GetGenericFieldSignature(FieldWrapper fw)
+        internal virtual string GetGenericFieldSignature(RuntimeJavaField fw)
         {
             return null;
         }
@@ -1508,7 +1508,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal virtual object[] GetFieldAnnotations(FieldWrapper fw)
+        internal virtual object[] GetFieldAnnotations(RuntimeJavaField fw)
         {
             return null;
         }
@@ -1685,7 +1685,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal virtual byte[] GetFieldRawTypeAnnotations(FieldWrapper fw)
+        internal virtual byte[] GetFieldRawTypeAnnotations(RuntimeJavaField fw)
         {
             return null;
         }
