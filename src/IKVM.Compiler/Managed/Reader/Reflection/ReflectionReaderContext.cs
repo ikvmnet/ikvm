@@ -20,8 +20,8 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         readonly IReflectionAssemblyResolver resolver;
         readonly ConcurrentDictionary<string, Assembly?> assemblyNameCache = new();
         readonly ConcurrentDictionary<Assembly, ManagedAssembly> assemblyCache = new();
-        readonly ConcurrentDictionary<Type, ManagedType> typeCache = new();
-        readonly ConcurrentDictionary<Type, ManagedExportedType> exportedTypeCache = new();
+        readonly ConcurrentDictionary<System.Type, ManagedType> typeCache = new();
+        readonly ConcurrentDictionary<System.Type, ManagedExportedType> exportedTypeCache = new();
 
         /// <summary>
         /// Initializes a new instance.
@@ -156,7 +156,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// </summary>
         /// <param name="refType"></param>
         /// <returns></returns>
-        ManagedType? ResolveType(Type refType)
+        ManagedType? ResolveType(System.Type refType)
         {
             // assembly of type takes priority over passed assembly.
             var refAssembly = ResolveAssembly(refType.Assembly);
@@ -172,7 +172,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// <param name="assembly"></param>
         /// <param name="refType"></param>
         /// <returns></returns>
-        ManagedType CreateType(ManagedAssembly assembly, Type refType)
+        ManagedType CreateType(ManagedAssembly assembly, System.Type refType)
         {
             return new ManagedType(assembly, refType, refType.FullName, refType.Attributes);
         }
@@ -212,7 +212,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// <param name="assembly"></param>
         /// <param name="refTypes"></param>
         /// <returns></returns>
-        IEnumerable<ManagedType> ResolveTypes(ManagedAssembly assembly, Type[] refTypes)
+        IEnumerable<ManagedType> ResolveTypes(ManagedAssembly assembly, System.Type[] refTypes)
         {
             for (int i = 0; i < refTypes.Length; i++)
                 yield return ResolveType(refTypes[i]) ?? throw new ManagedException("Could not resolve type.");
@@ -224,7 +224,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// <param name="assembly"></param>
         /// <param name="refTypes"></param>
         /// <returns></returns>
-        IEnumerable<ManagedExportedType> ResolveExportedTypes(ManagedAssembly assembly, Type[] refTypes)
+        IEnumerable<ManagedExportedType> ResolveExportedTypes(ManagedAssembly assembly, System.Type[] refTypes)
         {
             for (int i = 0; i < refTypes.Length; i++)
                 yield return ResolveExportedType(assembly, refTypes[i]);
@@ -255,7 +255,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// <param name="assembly"></param>
         /// <param name="refType"></param>
         /// <returns></returns>
-        ManagedExportedType ResolveExportedType(ManagedAssembly assembly, Type refType)
+        ManagedExportedType ResolveExportedType(ManagedAssembly assembly, System.Type refType)
         {
             return exportedTypeCache.GetOrAdd(refType, _ => CreateExportedType(assembly, _));
         }
@@ -266,7 +266,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// <param name="assembly"></param>
         /// <param name="refType"></param>
         /// <returns></returns>
-        ManagedExportedType CreateExportedType(ManagedAssembly assembly, Type refType)
+        ManagedExportedType CreateExportedType(ManagedAssembly assembly, System.Type refType)
         {
             var result = new ManagedExportedType();
             result.Name = refType.FullName ?? throw new ManagedException("Missing type name.");
@@ -281,7 +281,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// <returns></returns>
         IEnumerable<ManagedType> ResolveNestedTypes(ManagedType type)
         {
-            var refType = (Type)type.Handle;
+            var refType = (System.Type)type.Handle;
             if (refType == null)
                 throw new ManagedException($"Invalid type, missing handle.");
 
@@ -297,7 +297,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// <returns></returns>
         ManagedType? ResolveNestedType(ManagedType type, string typeName)
         {
-            var refType = (Type)type.Handle;
+            var refType = (System.Type)type.Handle;
             if (refType == null)
                 throw new ManagedException($"Invalid type, missing handle.");
 
@@ -313,7 +313,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// </summary>
         /// <param name="refType"></param>
         /// <returns></returns>
-        ManagedSignature ResolveSignature(Type refType)
+        ManagedSignature ResolveSignature(System.Type refType)
         {
 #if NETFRAMEWORK
             if (refType.IsArray && refType.GetArrayRank() == 1 && refType == refType.GetElementType().MakeArrayType())
@@ -338,7 +338,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// </summary>
         /// <param name="refType"></param>
         /// <returns></returns>
-        ManagedSignature ResolveGenericSignature(Type refType)
+        ManagedSignature ResolveGenericSignature(System.Type refType)
         {
             var argRefTypes = refType.GetGenericArguments();
             var argSigs = new FixedValueList4<ManagedSignature>(argRefTypes.Length);
@@ -400,7 +400,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// <param name="result"></param>
         void LoadType(ManagedType type, out ManagedTypeData result)
         {
-            var refType = (Type)type.Handle;
+            var refType = (System.Type)type.Handle;
 
             result = new ManagedTypeData();
             result.DeclaringType = refType.DeclaringType != null ? ResolveType(refType.DeclaringType) : null;
@@ -447,7 +447,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// <param name="refParameterList"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        void LoadTypeGenericParameters(ManagedType type, Type[] refParameterList, out FixedValueList1<ManagedGenericParameterData> result)
+        void LoadTypeGenericParameters(ManagedType type, System.Type[] refParameterList, out FixedValueList1<ManagedGenericParameterData> result)
         {
             result = new FixedValueList1<ManagedGenericParameterData>(refParameterList.Length);
 
@@ -462,7 +462,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// <param name="refParameter"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        void LoadTypeGenericParameter(ManagedType type, Type refParameter, out ManagedGenericParameterData result)
+        void LoadTypeGenericParameter(ManagedType type, System.Type refParameter, out ManagedGenericParameterData result)
         {
             result = new ManagedGenericParameterData();
             result.Name = refParameter.Name;
@@ -476,7 +476,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// <param name="refConstraintList"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        void LoadTypeGenericParameterConstraints(ManagedType type, Type[] refConstraintList, out FixedValueList1<ManagedGenericParameterConstraintData> result)
+        void LoadTypeGenericParameterConstraints(ManagedType type, System.Type[] refConstraintList, out FixedValueList1<ManagedGenericParameterConstraintData> result)
         {
             result = new FixedValueList1<ManagedGenericParameterConstraintData>(refConstraintList.Length);
 
@@ -491,7 +491,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// <param name="refConstraint"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        void LoadTypeGenericParameterConstraint(ManagedType type, Type refConstraint, out ManagedGenericParameterConstraintData result)
+        void LoadTypeGenericParameterConstraint(ManagedType type, System.Type refConstraint, out ManagedGenericParameterConstraintData result)
         {
             result = new ManagedGenericParameterConstraintData();
             result.Type = ResolveSignature(refConstraint);
@@ -503,7 +503,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// </summary>
         /// <param name="refInterfaceList"></param>
         /// <returns></returns>
-        void LoadTypeInterfaces(ManagedType type, Type[] refInterfaceList, out FixedValueList2<ManagedInterfaceData> result)
+        void LoadTypeInterfaces(ManagedType type, System.Type[] refInterfaceList, out FixedValueList2<ManagedInterfaceData> result)
         {
             result = new FixedValueList2<ManagedInterfaceData>(refInterfaceList.Length);
 
@@ -516,7 +516,7 @@ namespace IKVM.Compiler.Managed.Reader.Reflection
         /// </summary>
         /// <param name="refInterface"></param>
         /// <returns></returns>
-        void LoadTypeInterface(ManagedType type, Type refInterface, out ManagedInterfaceData result)
+        void LoadTypeInterface(ManagedType type, System.Type refInterface, out ManagedInterfaceData result)
         {
             result = new ManagedInterfaceData();
             result.Type = ResolveSignature(refInterface);

@@ -14,15 +14,15 @@ namespace IKVM.ByteCode.Syntax
         const char ObjectTypeSpec = 'L';
         const char ObjectTypeTerm = ';';
 
-        public static JavaTypeSignature Boolean = Parse("Z");
-        public static JavaTypeSignature Byte = Parse("B");
-        public static JavaTypeSignature Char = Parse("C");
-        public static JavaTypeSignature Short = Parse("S");
-        public static JavaTypeSignature Int = Parse("I");
-        public static JavaTypeSignature Long = Parse("J");
-        public static JavaTypeSignature Float = Parse("F");
-        public static JavaTypeSignature Double = Parse("D");
-        public static JavaTypeSignature Void = Parse("V");
+        public static readonly JavaTypeSignature Boolean = Parse("Z");
+        public static readonly JavaTypeSignature Byte = Parse("B");
+        public static readonly JavaTypeSignature Char = Parse("C");
+        public static readonly JavaTypeSignature Short = Parse("S");
+        public static readonly JavaTypeSignature Int = Parse("I");
+        public static readonly JavaTypeSignature Long = Parse("J");
+        public static readonly JavaTypeSignature Float = Parse("F");
+        public static readonly JavaTypeSignature Double = Parse("D");
+        public static readonly JavaTypeSignature Void = Parse("V");
 
         public static implicit operator JavaTypeSignature(JavaClassName name) => Parse(name.Value);
 

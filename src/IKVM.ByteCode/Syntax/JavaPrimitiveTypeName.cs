@@ -12,6 +12,7 @@
         Long,
         Float,
         Double,
+        Void,
 
     }
 

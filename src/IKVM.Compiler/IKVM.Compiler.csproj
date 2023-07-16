@@ -74,4 +74,8 @@
         </Compile>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Emit\" />
+    </ItemGroup>
+
 </Project>

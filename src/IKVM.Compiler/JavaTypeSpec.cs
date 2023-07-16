@@ -1,6 +1,7 @@
 ﻿using System;
 
 using IKVM.ByteCode.Syntax;
+using IKVM.Compiler.Type;
 
 namespace IKVM.Compiler
 {
@@ -8,7 +9,7 @@ namespace IKVM.Compiler
     /// <summary>
     /// Describes a Java type specification.
     /// </summary>
-    public sealed class JavaTypeSpec
+    internal sealed class JavaTypeSpec
     {
 
         public static JavaTypeSpec Void = new JavaTypeSpec();
@@ -22,7 +23,7 @@ namespace IKVM.Compiler
         public static JavaTypeSpec Double = new JavaTypeSpec(JavaPrimitiveTypeName.Double);
 
         readonly JavaPrimitiveTypeName? primitiveTypeName;
-        readonly JavaClassInfo? classInfo;
+        readonly JavaType? clazz;
         readonly int arrayRank = 0;
 
         JavaTypeSignature? signature;
@@ -43,9 +44,9 @@ namespace IKVM.Compiler
         /// </summary>
         /// <param name="classInfo"></param>
         /// <param name="arrayRank"></param>
-        internal JavaTypeSpec(JavaClassInfo classInfo, int arrayRank = 0)
+        internal JavaTypeSpec(JavaType classInfo, int arrayRank = 0)
         {
-            this.classInfo = classInfo;
+            this.clazz = classInfo;
             this.arrayRank = arrayRank;
         }
 
@@ -70,8 +71,8 @@ namespace IKVM.Compiler
         {
             if (primitiveTypeName != null)
                 return new string('[', arrayRank) + GetPrimitiveSignature();
-            else if (classInfo != null)
-                return new string('[', arrayRank) + classInfo.Name;
+            else if (clazz != null)
+                return new string('[', arrayRank) + clazz.Name;
             else
                 return JavaTypeSignature.Void;
         }
@@ -97,7 +98,7 @@ namespace IKVM.Compiler
         /// <summary>
         /// Returns <c>true</c> if the type represents void.
         /// </summary>
-        public bool IsVoid => primitiveTypeName == null && classInfo == null;
+        public bool IsVoid => primitiveTypeName == null && clazz == null;
 
         /// <summary>
         /// Returns <c>true</c> if the type specification is a primitive java type.
@@ -122,12 +123,12 @@ namespace IKVM.Compiler
         /// <summary>
         /// Gets whether the type specification represents a class.
         /// </summary>
-        public bool IsClass => classInfo != null;
+        public bool IsClass => clazz != null;
 
         /// <summary>
         /// Gets the class refered to by the type specification.
         /// </summary>
-        public JavaClassInfo ClassInfo => classInfo ?? throw new NotSupportedException();
+        public JavaType Class => clazz ?? throw new NotSupportedException();
 
         /// <summary>
         /// Returns <c>true</c> if this Java class represents an array.
