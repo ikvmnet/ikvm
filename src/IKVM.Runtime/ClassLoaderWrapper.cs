@@ -84,10 +84,6 @@ namespace IKVM.Runtime
         private readonly Dictionary<string, Thread> defineClassInProgress = new Dictionary<string, Thread>();
         private List<IntPtr> nativeLibraries;
         private readonly CodeGenOptions codegenoptions;
-#if CLASSGC
-        private Dictionary<Type, TypeWrapper> typeToTypeWrapper;
-        private static ConditionalWeakTable<Assembly, ClassLoaderWrapper> dynamicAssemblies;
-#endif
         private static readonly Dictionary<Type, string> remappedTypes = new Dictionary<Type, string>();
 
 #if IMPORTER || EXPORTER
@@ -474,17 +470,7 @@ namespace IKVM.Runtime
                     {
                         if (factory == null)
                         {
-#if CLASSGC
-                            if (dynamicAssemblies == null)
-                                Interlocked.CompareExchange(ref dynamicAssemblies, new ConditionalWeakTable<Assembly, ClassLoaderWrapper>(), null);
-
-                            typeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
-                            DynamicClassLoader instance = DynamicClassLoader.Get(this);
-                            dynamicAssemblies.Add(instance.ModuleBuilder.Assembly.ManifestModule.Assembly, this);
-                            factory = instance;
-#else
                             factory = DynamicClassLoader.Get(this);
-#endif
                         }
                     }
                 }
@@ -1041,15 +1027,6 @@ namespace IKVM.Runtime
             }
         }
 #endif
-
-#if CLASSGC
-        internal static ClassLoaderWrapper GetClassLoaderForDynamicJavaAssembly(Assembly asm)
-        {
-            ClassLoaderWrapper loader;
-            dynamicAssemblies.TryGetValue(asm, out loader);
-            return loader;
-        }
-#endif // CLASSGC
 
         internal static TypeWrapper GetWrapperFromType(Type type)
         {

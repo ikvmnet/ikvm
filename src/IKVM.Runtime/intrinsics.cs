@@ -431,13 +431,6 @@ namespace IKVM.Runtime
             // (which is the case when we're in <clinit> and there aren't any branches that lead to the current position)
             if (eic.Caller.IsClassInitializer == false)
                 return false;
-#if CLASSGC
-			if (JVM.classUnloading)
-			{
-				// RunAndCollect assemblies do not support ThreadStaticAttribute
-				return false;
-			}
-#endif
             for (int i = 0; i <= eic.OpcodeIndex; i++)
                 if ((eic.Flags[i] & InstructionFlags.BranchTarget) != 0)
                     return false;

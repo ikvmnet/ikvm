@@ -35,6 +35,7 @@ using System.Reflection.Emit;
 
 namespace IKVM.Runtime
 {
+
     sealed class TypicalMethodWrapper : SmartMethodWrapper
     {
 

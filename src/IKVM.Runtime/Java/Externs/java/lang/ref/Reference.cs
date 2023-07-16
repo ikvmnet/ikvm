@@ -32,11 +32,7 @@ namespace IKVM.Java.Externs.java.lang.@ref
 
         public static bool noclassgc()
         {
-#if CLASSGC
-            return !JVM.classUnloading;
-#else
             return true;
-#endif
         }
 
     }

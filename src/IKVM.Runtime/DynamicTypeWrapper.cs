@@ -737,12 +737,6 @@ namespace IKVM.Runtime
                     }
                 }
             }
-#elif CLASSGC
-            // TODO PInvoke is not supported in RunAndCollect assemblies,
-            if (JVM.classUnloading)
-            {
-                return false;
-            }
 #endif
             if (m.Annotations != null)
             {

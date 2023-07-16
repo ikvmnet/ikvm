@@ -60,7 +60,7 @@ namespace IKVM.Runtime
         static AssemblyBuilder jniProxyAssemblyBuilder;
 #endif
 
-#if IMPORTER || CLASSGC
+#if IMPORTER
         readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
 #else
         static readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
@@ -77,12 +77,8 @@ namespace IKVM.Runtime
         TypeBuilder unloadableContainer;
         Type[] delegates;
 
-#if !IMPORTER && !CLASSGC
+#if !IMPORTER
         static DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder(), false);
-#endif
-
-#if CLASSGC
-        List<string> friends = new List<string>();
 #endif
 
         /// <summary>
@@ -95,11 +91,9 @@ namespace IKVM.Runtime
             // TODO AppDomain.TypeResolve requires ControlAppDomain permission, but if we don't have that,
             // we should handle that by disabling dynamic class loading
             AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
-#if !CLASSGC
             // Ref.Emit doesn't like the "<Module>" name for types
             // (since it already defines a pseudo-type named <Module> for global methods and fields)
             dynamicTypes.Add("<Module>", null);
-#endif // !CLASSGC
 #endif // !IMPORTER
         }
 
@@ -113,41 +107,18 @@ namespace IKVM.Runtime
             this.moduleBuilder = moduleBuilder;
             this.hasInternalAccess = hasInternalAccess;
 
-#if IMPORTER || CLASSGC
+#if IMPORTER
             // Ref.Emit doesn't like the "<Module>" name for types
             // (since it already defines a pseudo-type named <Module> for global methods and fields)
             dynamicTypes.Add("<Module>", null);
 #endif
         }
 
-#if CLASSGC
-        internal override void AddInternalsVisibleTo(Assembly friend)
-        {
-            string name = friend.GetName().Name;
-            lock (friends)
-            {
-                if (!friends.Contains(name))
-                {
-                    friends.Add(name);
-                    AttributeHelper.SetInternalsVisibleToAttribute((AssemblyBuilder)moduleBuilder.Assembly, name);
-                }
-            }
-        }
-#endif
-
 #if !IMPORTER
+
         static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
         {
-#if CLASSGC
-            var loader = ClassLoaderWrapper.GetClassLoaderForDynamicJavaAssembly(args.RequestingAssembly);
-            if (loader == null)
-                return null;
-
-            var instance = (DynamicClassLoader)loader.GetTypeWrapperFactory();
-            return Resolve(instance.dynamicTypes, args.Name);
-#else
             return Resolve(dynamicTypes, args.Name);
-#endif
         }
 
         static Assembly Resolve(Dictionary<string, TypeWrapper> dict, string name)
@@ -175,6 +146,7 @@ namespace IKVM.Runtime
             // have been used already, we cannot remove the keys.
             return type.TypeAsTBD.Assembly;
         }
+
 #endif
 
         internal override bool ReserveName(string name)
@@ -275,21 +247,20 @@ namespace IKVM.Runtime
         }
 
 #if !IMPORTER && !FIRST_PASS
+
         private static java.lang.Class TieClassAndWrapper(TypeWrapper type, ProtectionDomain protectionDomain)
         {
             java.lang.Class clazz = new java.lang.Class(null);
-#if __MonoCS__
-			TypeWrapper.SetTypeWrapperHack(clazz, type);
-#else
             clazz.typeWrapper = type;
-#endif
             clazz.pd = protectionDomain;
             type.SetClassObject(clazz);
             return clazz;
         }
+
 #endif
 
 #if IMPORTER
+
         internal TypeBuilder DefineProxy(string name, TypeAttributes typeAttributes, Type parent, Type[] interfaces)
         {
             if (proxiesContainer == null)
@@ -303,6 +274,7 @@ namespace IKVM.Runtime
             proxies.Add(tb);
             return tb;
         }
+
 #endif
 
         internal override Type DefineUnloadable(string name)
@@ -529,11 +501,6 @@ namespace IKVM.Runtime
             name.Version = new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond);
             List<CustomAttributeBuilder> attribs = new List<CustomAttributeBuilder>();
             AssemblyBuilderAccess access = AssemblyBuilderAccess.Run;
-
-#if CLASSGC
-            if (JVM.classUnloading && AppDomain.CurrentDomain.IsFullyTrusted)
-                access = AssemblyBuilderAccess.RunAndCollect;
-#endif
 
 #if NETFRAMEWORK
             if (!AppDomain.CurrentDomain.IsFullyTrusted)

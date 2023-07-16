@@ -1338,24 +1338,6 @@ namespace IKVM.Runtime
         internal T fixedArg;
         internal T varArg;
 
-#if CLASSGC
-
-		private WeakReference weakRef;
-
-		internal global::java.lang.invoke.MethodType Type
-		{
-			get { return weakRef == null ? null : (global::java.lang.invoke.MethodType)weakRef.Target; }
-		}
-
-		internal bool TrySetType(global::java.lang.invoke.MethodType newType)
-		{
-			if (weakRef == null)
-			{
-				return Interlocked.CompareExchange(ref weakRef, new WeakReference(newType), null) == null;
-			}
-			return Type == newType;
-		}
-#else
         private global::java.lang.invoke.MethodType type;
 
         internal global::java.lang.invoke.MethodType Type
@@ -1368,8 +1350,6 @@ namespace IKVM.Runtime
             Interlocked.CompareExchange(ref type, newType, null);
             return type == newType;
         }
-
-#endif
 
     }
 
