@@ -22,9 +22,14 @@
   
 */
 
-enum ByteCodeModeWide : byte
+namespace IKVM.Runtime
 {
-	Unused,
-	Local_2,
-	Local_2_Immediate_2
+
+    enum ByteCodeModeWide : byte
+    {
+        Unused,
+        Local_2,
+        Local_2_Immediate_2
+    }
+
 }

@@ -23,8 +23,6 @@
 */
 using System.Diagnostics;
 
-using IKVM.Runtime;
-
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -41,7 +39,7 @@ using System.Threading;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     /// <summary>

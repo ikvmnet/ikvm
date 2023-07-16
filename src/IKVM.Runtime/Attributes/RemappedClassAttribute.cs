@@ -38,10 +38,12 @@ namespace IKVM.Attributes
 		private Type remappedType;
 
 #if EXPORTER
+
 		public RemappedClassAttribute(string name, System.Type remappedType)
 		{
 
 		}
+
 #endif
 
 		public RemappedClassAttribute(string name, Type remappedType)
@@ -50,22 +52,10 @@ namespace IKVM.Attributes
 			this.remappedType = remappedType;
 		}
 
-		public string Name
-		{
-			get
-			{
-				return name;
-			}
-		}
+        public string Name => name;
 
-		public Type RemappedType
-		{
-			get
-			{
-				return remappedType;
-			}
-		}
+        public Type RemappedType => remappedType;
 
-	}
+    }
 
 }

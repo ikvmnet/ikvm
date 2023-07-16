@@ -41,7 +41,7 @@ using System.Reflection.Emit;
 using ProtectionDomain = java.security.ProtectionDomain;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
 #if !EXPORTER

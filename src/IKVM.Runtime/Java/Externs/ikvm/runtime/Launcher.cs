@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.ikvm.runtime
 {
@@ -32,7 +32,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
             // statically compiled entry points need to be explicitly added to the classpath
             // this is sort of a hack and should be removed with a better class loader hierarchy
             if (main != null && main.Assembly.IsDynamic == false)
-                ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(IKVM.Internal.AssemblyClassLoader.FromAssembly(main.Assembly));
+                ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(IKVM.Runtime.AssemblyClassLoader.FromAssembly(main.Assembly));
 
             // copy properties to a CLR type
             var p = new Dictionary<string, string>();

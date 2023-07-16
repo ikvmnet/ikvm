@@ -22,7 +22,6 @@
   
 */
 using System.Collections.Generic;
-using System.Linq;
 
 using IKVM.Attributes;
 using IKVM.ByteCode.Reading;
@@ -31,7 +30,7 @@ using IKVM.ByteCode.Reading;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile

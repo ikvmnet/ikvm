@@ -29,28 +29,29 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
-	public sealed class RemappedTypeAttribute : Attribute
-	{
-		private Type type;
+    public sealed class RemappedTypeAttribute : Attribute
+    {
+
+        private Type type;
 
 #if EXPORTER
+
 		public RemappedTypeAttribute(System.Type type)
 		{
+			
 		}
+
 #endif
 
-		public RemappedTypeAttribute(Type type)
-		{
-			this.type = type;
-		}
+        public RemappedTypeAttribute(Type type)
+        {
+            this.type = type;
+        }
 
-		public Type Type
-		{
-			get
-			{
-				return type;
-			}
-		}
-	}
+        public Type Type => type;
+
+    }
+
 }

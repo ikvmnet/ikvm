@@ -23,17 +23,15 @@
 */
 using System;
 
-using IKVM.Internal;
-
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
+using IKVM.Runtime;
 
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Module, AllowMultiple = true)]
 	public sealed class PackageListAttribute : Attribute
 	{
+
 		internal string jar;
 		internal string[] packages;
 
@@ -43,9 +41,8 @@ namespace IKVM.Attributes
 			this.packages = UnicodeUtil.UnescapeInvalidSurrogates(packages);
 		}
 
-		public string[] GetPackages()
-		{
-			return packages;
-		}
-	}
+        public string[] GetPackages() => packages;
+
+    }
+
 }

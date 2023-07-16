@@ -23,15 +23,13 @@
 */
 using System;
 
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
-
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Delegate | AttributeTargets.Enum | AttributeTargets.Interface | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Parameter, AllowMultiple = false)]
 	public sealed class DynamicAnnotationAttribute : Attribute
 	{
+
 		private readonly object[] definition;
 
 		public DynamicAnnotationAttribute(object[] definition)
@@ -43,5 +41,7 @@ namespace IKVM.Attributes
 		{
 			get { return definition; }
 		}
+
 	}
+
 }

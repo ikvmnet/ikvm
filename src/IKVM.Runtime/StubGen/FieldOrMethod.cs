@@ -27,8 +27,10 @@ using IKVM.Attributes;
 
 namespace IKVM.StubGen
 {
+
     sealed class FieldOrMethod : IAttributeOwner
 	{
+
 		private Modifiers access_flags;
 		private ushort name_index;
 		private ushort descriptor_index;
@@ -57,5 +59,7 @@ namespace IKVM.StubGen
 				attribs[i].Write(bes);
 			}
 		}
+
 	}
+
 }

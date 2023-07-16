@@ -27,7 +27,6 @@ using System.Diagnostics;
 
 using IKVM.ByteCode.Reading;
 using IKVM.Attributes;
-using IKVM.Runtime;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -41,10 +40,10 @@ using ProtectionDomain = System.Object;
 using System.Reflection;
 using System.Reflection.Emit;
 
-using DynamicOrAotTypeWrapper = IKVM.Internal.DynamicTypeWrapper;
+using DynamicOrAotTypeWrapper = IKVM.Runtime.DynamicTypeWrapper;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
 #if IMPORTER

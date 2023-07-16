@@ -22,7 +22,7 @@
   
 */
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile
@@ -118,7 +118,7 @@ namespace IKVM.Internal
                 internal void Read(ushort pc, BigEndianBinaryReader br, ClassFile classFile)
                 {
                     this.pc = pc;
-                    var bc = (global::ByteCode)br.ReadByte();
+                    var bc = (ByteCode)br.ReadByte();
                     switch (ByteCodeMetaData.GetMode(bc))
                     {
                         case ByteCodeMode.Simple:
@@ -213,7 +213,7 @@ namespace IKVM.Internal
                                 break;
                             }
                         case ByteCodeMode.WidePrefix:
-                            bc = (global::ByteCode)br.ReadByte();
+                            bc = (ByteCode)br.ReadByte();
                             // NOTE the PC of a wide instruction is actually the PC of the
                             // wide prefix, not the following instruction (vmspec 4.9.2)
                             switch (ByteCodeMetaData.GetWideMode(bc))

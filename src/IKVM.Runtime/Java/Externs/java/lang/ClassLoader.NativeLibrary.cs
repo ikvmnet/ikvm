@@ -28,7 +28,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Threading;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.JNI;
 
 namespace IKVM.Java.Externs.java.lang

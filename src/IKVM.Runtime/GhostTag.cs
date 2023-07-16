@@ -26,7 +26,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 
 using IKVM.Attributes;
-using IKVM.Internal;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;

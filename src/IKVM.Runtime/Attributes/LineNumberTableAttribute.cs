@@ -23,15 +23,13 @@
 */
 using System;
 
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
-
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor)]
 	public sealed class LineNumberTableAttribute : Attribute
 	{
+
 		private byte[] table;
 
 		public LineNumberTableAttribute(ushort lineno)
@@ -249,5 +247,7 @@ namespace IKVM.Attributes
 			}
 			return line;
 		}
+
 	}
+
 }

@@ -23,8 +23,9 @@
 */
 using IKVM.Attributes;
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
+
     struct ExModifiers
     {
 

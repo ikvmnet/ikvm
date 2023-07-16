@@ -35,7 +35,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed class GhostMethodWrapper : SmartMethodWrapper

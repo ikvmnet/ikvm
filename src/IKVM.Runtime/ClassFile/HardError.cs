@@ -22,7 +22,7 @@
   
 */
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     enum HardError : short

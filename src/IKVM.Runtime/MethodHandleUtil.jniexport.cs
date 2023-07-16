@@ -27,7 +27,6 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
 
-using IKVM.Internal;
 using IKVM.Runtime;
 
 static partial class MethodHandleUtil

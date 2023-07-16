@@ -24,8 +24,10 @@
 
 namespace IKVM.StubGen
 {
+
     sealed class ConstantPoolItemUtf8 : ConstantPoolItem
 	{
+
 		private string str;
 
 		public ConstantPoolItemUtf8(string str)
@@ -52,5 +54,7 @@ namespace IKVM.StubGen
 			bes.WriteByte((byte)Constant.Utf8);
 			bes.WriteUtf8(str);
 		}
+
 	}
+
 }

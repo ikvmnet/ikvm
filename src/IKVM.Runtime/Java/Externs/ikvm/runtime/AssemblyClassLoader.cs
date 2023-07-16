@@ -24,11 +24,11 @@
 using System;
 using System.Reflection;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 
-using AssemblyClassLoader_ = IKVM.Internal.AssemblyClassLoader;
+using AssemblyClassLoader_ = IKVM.Runtime.AssemblyClassLoader;
 
 namespace IKVM.Java.Externs.ikvm.runtime
 {

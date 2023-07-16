@@ -25,8 +25,8 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+
 using System.Linq;
-using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -42,7 +42,7 @@ using System.Reflection.Emit;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     abstract class MethodWrapper : MemberWrapper

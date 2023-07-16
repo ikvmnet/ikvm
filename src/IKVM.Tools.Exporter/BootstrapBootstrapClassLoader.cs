@@ -24,7 +24,6 @@
 using System;
 
 using IKVM.Attributes;
-using IKVM.Internal;
 using IKVM.Runtime;
 
 sealed class BootstrapBootstrapClassLoader : ClassLoaderWrapper

@@ -29,7 +29,7 @@ using IKVM.Reflection.Emit;
 using System.Reflection.Emit;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed class CodeEmitterLabel

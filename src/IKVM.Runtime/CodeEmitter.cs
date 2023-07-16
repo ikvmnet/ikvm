@@ -39,7 +39,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed class CodeEmitter
@@ -2878,7 +2878,7 @@ namespace IKVM.Internal
 			foreach(System.Diagnostics.StackFrame frame in labels.Values)
 			{
 				string name = frame.GetFileName() + ":" + frame.GetFileLineNumber();
-				IKVM.Internal.JVM.CriticalFailure("Label failure: " + name, null);
+				IKVM.Runtime.JVM.CriticalFailure("Label failure: " + name, null);
 			}
 #endif
         }

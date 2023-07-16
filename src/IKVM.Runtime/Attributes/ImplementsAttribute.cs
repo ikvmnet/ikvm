@@ -23,17 +23,15 @@
 */
 using System;
 
-using IKVM.Internal;
-
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
+using IKVM.Runtime;
 
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
 	public sealed class ImplementsAttribute : Attribute
 	{
+
 		private string[] interfaces;
 
 		// NOTE this is not CLS compliant, so maybe we should have a couple of overloads
@@ -42,12 +40,8 @@ namespace IKVM.Attributes
 			this.interfaces = UnicodeUtil.UnescapeInvalidSurrogates(interfaces);
 		}
 
-		public string[] Interfaces
-		{
-			get
-			{
-				return interfaces;
-			}
-		}
-	}
+        public string[] Interfaces => interfaces;
+
+    }
+
 }

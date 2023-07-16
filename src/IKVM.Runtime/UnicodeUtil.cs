@@ -23,22 +23,12 @@
 */
 using System;
 
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-#endif
-
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
-
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
+
     static class UnicodeUtil
     {
+
         // We use part of the Supplementary Private Use Area-B to encode
         // invalid surrogates. If we encounter either of these two
         // markers, we always encode the surrogate (single or pair)

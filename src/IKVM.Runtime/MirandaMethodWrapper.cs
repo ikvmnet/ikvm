@@ -36,8 +36,9 @@ using System.Reflection.Emit;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
+
     abstract class MirandaMethodWrapper : SmartMethodWrapper
     {
 

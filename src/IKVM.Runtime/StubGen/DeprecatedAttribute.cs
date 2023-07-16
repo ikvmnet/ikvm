@@ -24,8 +24,10 @@
 
 namespace IKVM.StubGen
 {
+
     sealed class DeprecatedAttribute : ClassFileAttribute
 	{
+
 		internal DeprecatedAttribute(ClassFileWriter classFile)
 			: base(classFile.AddUtf8("Deprecated"))
 		{
@@ -36,5 +38,7 @@ namespace IKVM.StubGen
 			base.Write(bes);
 			bes.WriteUInt32(0);
 		}
+
 	}
+
 }

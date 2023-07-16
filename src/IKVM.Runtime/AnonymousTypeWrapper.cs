@@ -39,7 +39,7 @@ using System.Reflection;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
 #if !IMPORTER && !EXPORTER

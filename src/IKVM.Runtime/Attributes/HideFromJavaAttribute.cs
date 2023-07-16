@@ -23,10 +23,6 @@
 */
 using System;
 
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
-
 namespace IKVM.Attributes
 {
 

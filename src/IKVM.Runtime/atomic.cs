@@ -23,22 +23,24 @@
 */
 
 using System;
-using IKVM.Internal;
+
 using IKVM.Runtime;
 
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
+using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 
 static class AtomicReferenceFieldUpdaterEmitter
 {
+
 	internal static bool Emit(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, CodeEmitter ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code, InstructionFlags[] flags)
 	{
 		if (i >= 3

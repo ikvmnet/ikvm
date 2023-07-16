@@ -27,9 +27,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Xml.Linq;
 
-using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Runtime;
 
 using Type = IKVM.Reflection.Type;
 

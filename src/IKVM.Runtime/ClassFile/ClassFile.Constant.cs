@@ -22,11 +22,12 @@
   
 */
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile
     {
+
         internal enum Constant
         {
             Utf8 = 1,
@@ -44,6 +45,7 @@ namespace IKVM.Internal
             MethodType = 16,
             InvokeDynamic = 18,
         }
+
     }
 
 }

@@ -22,9 +22,9 @@
   
 */
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
-	internal static class CoreClasses
+    internal static class CoreClasses
 	{
 
 		internal static class cli

@@ -23,19 +23,23 @@
 */
 using System;
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile
     {
+
         internal abstract class ConstantPoolItem
         {
+
             internal virtual void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
+
             }
 
             internal virtual void Link(TypeWrapper thisType, LoadMode mode)
             {
+
             }
 
             internal virtual ConstantType GetConstantType()
@@ -45,6 +49,7 @@ namespace IKVM.Internal
 
             internal virtual void MarkLinkRequired()
             {
+
             }
 
             // this is used for sun.reflect.ConstantPool
@@ -53,7 +58,9 @@ namespace IKVM.Internal
             {
                 return null;
             }
+
         }
+
     }
 
 }

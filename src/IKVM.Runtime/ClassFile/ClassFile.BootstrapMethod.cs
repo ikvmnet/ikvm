@@ -22,13 +22,14 @@
   
 */
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile
     {
         internal struct BootstrapMethod
         {
+
             private ushort bsm_index;
             private ushort[] args;
 
@@ -52,7 +53,9 @@ namespace IKVM.Internal
             {
                 return args[index];
             }
+
         }
+
     }
 
 }

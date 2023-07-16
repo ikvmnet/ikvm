@@ -27,9 +27,6 @@ using System.Diagnostics;
 using IKVM.Attributes;
 
 using System.Threading;
-using System.CodeDom;
-using System.Linq;
-using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -41,7 +38,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     abstract class FieldWrapper : MemberWrapper

@@ -53,7 +53,7 @@ using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     class ClassLoaderWrapper

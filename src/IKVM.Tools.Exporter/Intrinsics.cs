@@ -21,7 +21,7 @@
   jeroen@frijters.net
   
 */
-using IKVM.Internal;
+using IKVM.Runtime;
 
 static class Intrinsics
 {
@@ -32,3 +32,4 @@ static class Intrinsics
     }
 
 }
+

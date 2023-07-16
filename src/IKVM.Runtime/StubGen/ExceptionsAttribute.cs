@@ -25,8 +25,10 @@ using System.Collections.Generic;
 
 namespace IKVM.StubGen
 {
+
     sealed class ExceptionsAttribute : ClassFileAttribute
 	{
+
 		private ClassFileWriter classFile;
 		private List<ushort> classes = new List<ushort>();
 
@@ -51,5 +53,7 @@ namespace IKVM.StubGen
 				bes.WriteUInt16(idx);
 			}
 		}
+
 	}
+
 }

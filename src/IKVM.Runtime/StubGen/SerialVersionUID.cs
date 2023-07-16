@@ -26,13 +26,14 @@ using System.Linq;
 using System.Security.Cryptography;
 
 using IKVM.Attributes;
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.StubGen
 {
 
     static class SerialVersionUID
     {
+
 
         readonly static SHA1 sha1 = SHA1.Create();
 

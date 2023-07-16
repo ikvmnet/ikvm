@@ -30,7 +30,7 @@ using IKVM.Attributes;
 using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile
@@ -639,23 +639,23 @@ namespace IKVM.Internal
             {
                 switch (reader)
                 {
-                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Boolean:
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Boolean:
                         return classFile.GetConstantPoolConstantInteger(r.Value.Index) != 0;
-                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Byte:
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Byte:
                         return (byte)classFile.GetConstantPoolConstantInteger(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Char:
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Char:
                         return (char)classFile.GetConstantPoolConstantInteger(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Short:
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Short:
                         return (short)classFile.GetConstantPoolConstantInteger(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Integer:
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Integer:
                         return classFile.GetConstantPoolConstantInteger(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Float:
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Float:
                         return classFile.GetConstantPoolConstantFloat(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Long:
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Long:
                         return classFile.GetConstantPoolConstantLong(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Double:
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Double:
                         return classFile.GetConstantPoolConstantDouble(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.String:
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.String:
                         return classFile.GetConstantPoolUtf8String(utf8_cp, r.Value.Index);
                     case ElementValueEnumConstantReader r:
                         return new object[] {

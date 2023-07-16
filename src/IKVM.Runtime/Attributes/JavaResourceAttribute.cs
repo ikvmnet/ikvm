@@ -23,16 +23,13 @@
 */
 using System;
 
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
-
 namespace IKVM.Attributes
 {
 
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
 	public sealed class JavaResourceAttribute : Attribute
 	{
+
 		private readonly string javaName;
 		private readonly string resourceName;
 
@@ -42,14 +39,10 @@ namespace IKVM.Attributes
 			this.resourceName = resourceName;
 		}
 
-		public string JavaName
-		{
-			get { return javaName; }
-		}
+        public string JavaName => javaName;
 
-		public string ResourceName
-		{
-			get { return resourceName; }
-		}
-	}
+        public string ResourceName => resourceName;
+
+    }
+
 }

@@ -26,7 +26,7 @@ using System.Reflection;
 #if !NO_REF_EMIT
 using System.Reflection.Emit;
 #endif
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.io

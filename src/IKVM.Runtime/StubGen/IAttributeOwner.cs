@@ -24,8 +24,12 @@
 
 namespace IKVM.StubGen
 {
+
     interface IAttributeOwner
 	{
+
 		void AddAttribute(ClassFileAttribute attrib);
+
 	}
+
 }

@@ -23,12 +23,17 @@
 */
 using System;
 
-[Flags]
-enum ByteCodeFlags : byte
+namespace IKVM.Runtime
 {
 
-    None = 0,
-    FixedArg = 1,
-    CannotThrow = 2
+    [Flags]
+    enum ByteCodeFlags : byte
+    {
+
+        None = 0,
+        FixedArg = 1,
+        CannotThrow = 2
+
+    }
 
 }

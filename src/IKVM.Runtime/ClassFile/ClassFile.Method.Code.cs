@@ -26,7 +26,7 @@ using System.Collections.Generic;
 
 using IKVM.ByteCode.Reading;
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile

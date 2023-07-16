@@ -23,7 +23,7 @@
 */
 using IKVM.Attributes;
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile

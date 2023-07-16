@@ -23,15 +23,13 @@
 */
 using System;
 
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
-
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor)]
 	public sealed class MethodParametersAttribute : Attribute
 	{
+
 		private readonly Modifiers[] modifiers;
 
 		public MethodParametersAttribute(Modifiers[] modifiers)
@@ -39,14 +37,10 @@ namespace IKVM.Attributes
 			this.modifiers = modifiers;
 		}
 
-		public Modifiers[] Modifiers
-		{
-			get { return modifiers; }
-		}
+        public Modifiers[] Modifiers => modifiers;
 
-		public bool IsMalformed
-		{
-			get { return modifiers == null; }
-		}
-	}
+        public bool IsMalformed => modifiers == null;
+
+    }
+
 }

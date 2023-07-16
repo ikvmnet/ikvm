@@ -23,7 +23,7 @@
 */
 using System;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
 using Type = IKVM.Reflection.Type;
@@ -31,9 +31,11 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method)]
 	public sealed class ThrowsAttribute : Attribute
 	{
+
 		internal string[] classes;
 		internal Type[] types;
 
@@ -53,14 +55,10 @@ namespace IKVM.Attributes
 			this.types = types;
 		}
 
-		// dotted Java class names (e.g. java.lang.Throwable)
-		[Obsolete]
-		public string[] Classes
-		{
-			get
-			{
-				return classes;
-			}
-		}
-	}
+        // dotted Java class names (e.g. java.lang.Throwable)
+        [Obsolete]
+        public string[] Classes => classes;
+
+    }
+
 }

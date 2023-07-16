@@ -24,8 +24,10 @@
 
 namespace IKVM.StubGen
 {
+
     sealed class AnnotationDefaultClassFileAttribute : ClassFileAttribute
 	{
+
 		private ClassFileWriter classFile;
 		private byte[] buf;
 
@@ -45,5 +47,7 @@ namespace IKVM.StubGen
 				bes.WriteByte(b);
 			}
 		}
+
 	}
+
 }

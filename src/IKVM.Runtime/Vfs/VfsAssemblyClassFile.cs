@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 
 namespace IKVM.Runtime.Vfs

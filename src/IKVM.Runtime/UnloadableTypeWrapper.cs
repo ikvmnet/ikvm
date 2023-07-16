@@ -35,7 +35,7 @@ using Type = IKVM.Reflection.Type;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
     sealed class UnloadableTypeWrapper : TypeWrapper
     {

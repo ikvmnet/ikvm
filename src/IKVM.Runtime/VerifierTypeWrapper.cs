@@ -35,8 +35,9 @@ using Type = IKVM.Reflection.Type;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
+
     // this is a container for the special verifier TypeWrappers
     sealed class VerifierTypeWrapper : TypeWrapper
     {

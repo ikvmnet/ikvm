@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 
 using IKVM.Attributes;
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Ikvm.Internal;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Accessors.Java.Lang.Reflect;

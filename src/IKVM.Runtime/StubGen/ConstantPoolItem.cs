@@ -24,8 +24,11 @@
 
 namespace IKVM.StubGen
 {
+
     abstract class ConstantPoolItem
-	{
-		public abstract void Write(BigEndianStream bes);
-	}
+    {
+
+        public abstract void Write(BigEndianStream bes);
+    }
+
 }

@@ -24,8 +24,6 @@
 using System;
 using System.Diagnostics;
 
-using IKVM.Runtime;
-
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -38,7 +36,7 @@ using Type = IKVM.Reflection.Type;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
     static class EnumHelper
     {

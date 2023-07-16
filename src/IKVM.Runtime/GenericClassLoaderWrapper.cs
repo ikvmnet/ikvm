@@ -34,7 +34,7 @@ using Type = IKVM.Reflection.Type;
 using ProtectionDomain = System.Object;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed class GenericClassLoaderWrapper : ClassLoaderWrapper

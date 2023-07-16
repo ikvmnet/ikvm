@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.Attributes;
-using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -42,7 +41,7 @@ using System.Reflection.Emit;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed class DotNetTypeWrapper : TypeWrapper

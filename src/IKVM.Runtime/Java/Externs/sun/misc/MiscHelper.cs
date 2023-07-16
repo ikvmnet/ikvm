@@ -24,7 +24,7 @@
 */
 using System.Reflection;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.sun.misc
 {

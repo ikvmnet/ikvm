@@ -23,7 +23,7 @@
 */
 using System;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
 using Type = IKVM.Reflection.Type;
@@ -31,9 +31,11 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
 	public sealed class EnclosingMethodAttribute : Attribute
 	{
+
 		private string className;
 		private string methodName;
 		private string methodSig;
@@ -48,34 +50,17 @@ namespace IKVM.Attributes
 		internal EnclosingMethodAttribute SetClassName(Type type)
 		{
 			if (className == null)
-			{
-				className = IKVM.Internal.ClassLoaderWrapper.GetWrapperFromType(type.DeclaringType).Name;
-			}
+				className = IKVM.Runtime.ClassLoaderWrapper.GetWrapperFromType(type.DeclaringType).Name;
+
 			return this;
 		}
 
-		public string ClassName
-		{
-			get
-			{
-				return className;
-			}
-		}
+        public string ClassName => className;
 
-		public string MethodName
-		{
-			get
-			{
-				return methodName;
-			}
-		}
+        public string MethodName => methodName;
 
-		public string MethodSignature
-		{
-			get
-			{
-				return methodSig;
-			}
-		}
-	}
+        public string MethodSignature => methodSig;
+
+    }
+
 }

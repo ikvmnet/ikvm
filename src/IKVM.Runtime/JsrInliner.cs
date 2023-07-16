@@ -24,12 +24,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
+using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
+
 	sealed class JsrInliner
 	{
+
 		private ClassFile.Method.Instruction[] codeCopy;
 		private int codeLength;
 		private InstructionFlags[] flags;

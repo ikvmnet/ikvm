@@ -26,17 +26,20 @@ using System;
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+
 using Type = IKVM.Reflection.Type;
 using ProtectionDomain = System.Object;
 #else
 #endif
 
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
+
     [Flags]
     enum CodeGenOptions
     {
+
         None = 0,
         Debug = 1,
         NoStackTraceInfo = 2,
@@ -47,5 +50,7 @@ namespace IKVM.Internal
         DisableDynamicBinding = 64,
         NoRefEmitHelpers = 128,
         RemoveUnusedFields = 256,
+
     }
+
 }

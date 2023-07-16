@@ -31,7 +31,7 @@ using Type = IKVM.Reflection.Type;
 using System.Reflection.Emit;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed class CodeEmitterLocal

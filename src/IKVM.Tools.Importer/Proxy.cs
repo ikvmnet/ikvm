@@ -25,7 +25,6 @@ using System;
 using System.Collections.Generic;
 
 using IKVM.Attributes;
-using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -35,7 +34,7 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Tools.Importer
 {
 
-	static class ProxyGenerator
+    static class ProxyGenerator
 	{
 
 		private static readonly TypeWrapper proxyClass;

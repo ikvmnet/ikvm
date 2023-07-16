@@ -21,16 +21,16 @@
   jeroen@frijters.net
   
 */
-using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Runtime;
 
 using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer
 {
 
-	static class FakeTypes
+    static class FakeTypes
 	{
 
 		private static Type genericEnumEnumType;

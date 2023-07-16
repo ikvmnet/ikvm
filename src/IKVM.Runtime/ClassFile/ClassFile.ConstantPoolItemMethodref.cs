@@ -25,7 +25,7 @@ using IKVM.Attributes;
 using IKVM.ByteCode.Reading;
 using IKVM.Runtime;
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile

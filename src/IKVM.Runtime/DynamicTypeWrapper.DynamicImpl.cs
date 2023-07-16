@@ -37,7 +37,7 @@ using ProtectionDomain = System.Object;
 using System.Reflection;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
 #if IMPORTER

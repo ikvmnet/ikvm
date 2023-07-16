@@ -23,7 +23,6 @@
 */
 
 using System.Xml.Linq;
-using System.Xml.Serialization;
 
 using IKVM.Reflection.Emit;
 

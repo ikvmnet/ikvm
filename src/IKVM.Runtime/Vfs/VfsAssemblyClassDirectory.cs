@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Syntax;
 
 namespace IKVM.Runtime.Vfs

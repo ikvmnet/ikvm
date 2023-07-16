@@ -24,7 +24,7 @@
 
 using IKVM.ByteCode;
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     struct MethodParametersEntry

@@ -29,7 +29,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 using IKVM.ByteCode.Reading;
-using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
