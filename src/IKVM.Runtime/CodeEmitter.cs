@@ -21,18 +21,16 @@
   jeroen@frijters.net
   
 */
-#define CHECK_INVARIANTS
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Diagnostics.SymbolStore;
 using System.Diagnostics;
 
-using IKVM.Runtime;
-
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
@@ -51,6 +49,7 @@ namespace IKVM.Runtime
         static readonly MethodInfo monitorExit = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Exit", BindingFlags.Public | BindingFlags.Static, null, new Type[] { Types.Object }, null);
         static readonly bool experimentalOptimizations = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_OPTIMIZATIONS") != null;
         static MethodInfo memoryBarrier;
+
         ILGenerator ilgen_real;
 #if !IMPORTER
         bool inFinally;
@@ -67,6 +66,9 @@ namespace IKVM.Runtime
 		Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
 #endif
 
+        /// <summary>
+        /// Initializes the static instance.
+        /// </summary>
         static CodeEmitter()
         {
             if (experimentalOptimizations)
@@ -77,6 +79,7 @@ namespace IKVM.Runtime
 
         enum CodeType : short
         {
+
             Unreachable,
             OpCode,
             BeginScope,
@@ -96,6 +99,7 @@ namespace IKVM.Runtime
             ClearStack,
             MonitorEnter,
             MonitorExit,
+
         }
 
         enum CodeTypeFlags : short
@@ -2041,15 +2045,14 @@ namespace IKVM.Runtime
             }
         }
 
-        [Conditional("CHECK_INVARIANTS")]
-        private void CheckInvariants()
+        void CheckInvariants()
         {
             CheckInvariantBranchInOrOutOfBlocks();
             CheckInvariantOpCodeUsage();
             CheckInvariantLocalVariables();
         }
 
-        private void CheckInvariantBranchInOrOutOfBlocks()
+        void CheckInvariantBranchInOrOutOfBlocks()
         {
             /*
 			 * We maintain an invariant that a branch (other than an explicit leave)
@@ -2907,6 +2910,7 @@ namespace IKVM.Runtime
         {
             EmitPseudoOpCode(CodeType.MonitorExit, null);
         }
+
     }
 
 }
