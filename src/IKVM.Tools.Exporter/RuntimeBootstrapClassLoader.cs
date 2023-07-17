@@ -26,25 +26,28 @@ using System;
 using IKVM.Attributes;
 using IKVM.Runtime;
 
-sealed class BootstrapBootstrapClassLoader : RuntimeClassLoader
+sealed class RuntimeBootstrapClassLoader : RuntimeClassLoader
 {
 
-    internal BootstrapBootstrapClassLoader() :
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    internal RuntimeBootstrapClassLoader() :
         base(CodeGenOptions.None, null)
     {
-        var javaLangObject = new StubTypeWrapper(Modifiers.Public, "java.lang.Object", null, true);
+        var javaLangObject = new RuntimeStubJavaType(Modifiers.Public, "java.lang.Object", null, true);
         SetRemappedType(JVM.Import(typeof(object)), javaLangObject);
-        SetRemappedType(JVM.Import(typeof(string)), new StubTypeWrapper(Modifiers.Public | Modifiers.Final, "java.lang.String", javaLangObject, true));
-        SetRemappedType(JVM.Import(typeof(Exception)), new StubTypeWrapper(Modifiers.Public, "java.lang.Throwable", javaLangObject, true));
-        SetRemappedType(JVM.Import(typeof(IComparable)), new StubTypeWrapper(Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.Comparable", null, true));
-        var tw = new StubTypeWrapper(Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.AutoCloseable", null, true);
+        SetRemappedType(JVM.Import(typeof(string)), new RuntimeStubJavaType(Modifiers.Public | Modifiers.Final, "java.lang.String", javaLangObject, true));
+        SetRemappedType(JVM.Import(typeof(Exception)), new RuntimeStubJavaType(Modifiers.Public, "java.lang.Throwable", javaLangObject, true));
+        SetRemappedType(JVM.Import(typeof(IComparable)), new RuntimeStubJavaType(Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.Comparable", null, true));
+        var tw = new RuntimeStubJavaType(Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.AutoCloseable", null, true);
         tw.SetMethods(new RuntimeJavaMethod[] { new RuntimeSimpleCallJavaMethod(tw, "close", "()V", JVM.Import(typeof(IDisposable)).GetMethod("Dispose"), RuntimePrimitiveJavaType.VOID, Array.Empty<RuntimeJavaType>(), Modifiers.Public | Modifiers.Abstract, MemberFlags.None, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt) });
         SetRemappedType(JVM.Import(typeof(IDisposable)), tw);
 
-        RegisterInitiatingLoader(new StubTypeWrapper(Modifiers.Public, "java.lang.Enum", javaLangObject, false));
-        RegisterInitiatingLoader(new StubTypeWrapper(Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.annotation.Annotation", null, false));
-        RegisterInitiatingLoader(new StubTypeWrapper(Modifiers.Public | Modifiers.Final, "java.lang.Class", javaLangObject, false));
-        RegisterInitiatingLoader(new StubTypeWrapper(Modifiers.Public | Modifiers.Abstract, "java.lang.invoke.MethodHandle", javaLangObject, false));
+        RegisterInitiatingLoader(new RuntimeStubJavaType(Modifiers.Public, "java.lang.Enum", javaLangObject, false));
+        RegisterInitiatingLoader(new RuntimeStubJavaType(Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.annotation.Annotation", null, false));
+        RegisterInitiatingLoader(new RuntimeStubJavaType(Modifiers.Public | Modifiers.Final, "java.lang.Class", javaLangObject, false));
+        RegisterInitiatingLoader(new RuntimeStubJavaType(Modifiers.Public | Modifiers.Abstract, "java.lang.invoke.MethodHandle", javaLangObject, false));
     }
 
 }

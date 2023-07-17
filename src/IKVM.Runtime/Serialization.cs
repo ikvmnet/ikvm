@@ -116,7 +116,7 @@ namespace IKVM.Runtime
                         AddGetObjectData(typeBuilder);
 #if IMPORTER
 						// because the base type can be a __WorkaroundBaseClass__, we may need to replace the constructor
-						baseCtor = ((AotTypeWrapper)wrapper).ReplaceMethodWrapper(baseCtor);
+						baseCtor = ((RuntimeImportByteCodeJavaType)wrapper).ReplaceMethodWrapper(baseCtor);
 #endif
                         baseCtor.Link();
                         serializationCtor = AddConstructor(typeBuilder, baseCtor, null, true);

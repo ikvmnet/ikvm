@@ -33,12 +33,12 @@ using IKVM.Reflection.Emit;
 using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
-using DynamicOrAotTypeWrapper = IKVM.Tools.Importer.AotTypeWrapper;
+using RuntimeDynamicOrImportJavaType = IKVM.Tools.Importer.RuntimeImportByteCodeJavaType;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
 
-using DynamicOrAotTypeWrapper = IKVM.Runtime.RuntimeByteCodeJavaType;
+using RuntimeDynamicOrImportJavaType = IKVM.Runtime.RuntimeByteCodeJavaType;
 #endif
 
 namespace IKVM.Runtime
@@ -50,24 +50,24 @@ namespace IKVM.Runtime
         private sealed partial class JavaTypeImpl : DynamicImpl
         {
 
-            private readonly RuntimeJavaType host;
-            private readonly ClassFile classFile;
-            private readonly DynamicOrAotTypeWrapper wrapper;
-            private TypeBuilder typeBuilder;
-            private RuntimeJavaMethod[] methods;
-            private RuntimeJavaMethod[][] baseMethods;
-            private RuntimeJavaField[] fields;
-            private FinishedTypeImpl finishedType;
-            private bool finishInProgress;
-            private MethodBuilder clinitMethod;
-            private MethodBuilder finalizeMethod;
-            private int recursionCount;
+            readonly RuntimeJavaType host;
+            readonly ClassFile classFile;
+            readonly RuntimeDynamicOrImportJavaType wrapper;
+            TypeBuilder typeBuilder;
+            RuntimeJavaMethod[] methods;
+            RuntimeJavaMethod[][] baseMethods;
+            RuntimeJavaField[] fields;
+            FinishedTypeImpl finishedType;
+            bool finishInProgress;
+            MethodBuilder clinitMethod;
+            MethodBuilder finalizeMethod;
+            int recursionCount;
 #if IMPORTER
-            private RuntimeByteCodeJavaType enclosingClassWrapper;
-            private AnnotationBuilder annotationBuilder;
-            private TypeBuilder enumBuilder;
-            private TypeBuilder privateInterfaceMethods;
-            private Dictionary<string, RuntimeJavaType> nestedTypeNames;	// only keys are used, values are always null
+            RuntimeByteCodeJavaType enclosingClassWrapper;
+            AnnotationBuilder annotationBuilder;
+            TypeBuilder enumBuilder;
+            TypeBuilder privateInterfaceMethods;
+            Dictionary<string, RuntimeJavaType> nestedTypeNames;	// only keys are used, values are always null
 #endif
 
             internal JavaTypeImpl(RuntimeJavaType host, ClassFile f, RuntimeByteCodeJavaType wrapper)
@@ -75,19 +75,19 @@ namespace IKVM.Runtime
                 Tracer.Info(Tracer.Compiler, "constructing JavaTypeImpl for " + f.Name);
                 this.host = host;
                 this.classFile = f;
-                this.wrapper = (DynamicOrAotTypeWrapper)wrapper;
+                this.wrapper = (RuntimeDynamicOrImportJavaType)wrapper;
             }
 
             internal void CreateStep1()
             {
                 // process all methods (needs to be done first, because property fields depend on being able to lookup the accessor methods)
-                bool hasclinit = wrapper.BaseTypeWrapper == null ? false : wrapper.BaseTypeWrapper.HasStaticInitializer;
+                var hasclinit = wrapper.BaseTypeWrapper == null ? false : wrapper.BaseTypeWrapper.HasStaticInitializer;
                 methods = new RuntimeJavaMethod[classFile.Methods.Length];
                 baseMethods = new RuntimeJavaMethod[classFile.Methods.Length][];
                 for (int i = 0; i < methods.Length; i++)
                 {
-                    MemberFlags flags = MemberFlags.None;
-                    ClassFile.Method m = classFile.Methods[i];
+                    var flags = MemberFlags.None;
+                    var m = classFile.Methods[i];
                     if (m.IsClassInitializer)
                     {
 #if IMPORTER
@@ -173,7 +173,7 @@ namespace IKVM.Runtime
                 fields = new RuntimeJavaField[classFile.Fields.Length];
                 for (int i = 0; i < fields.Length; i++)
                 {
-                    ClassFile.Field fld = classFile.Fields[i];
+                    var fld = classFile.Fields[i];
                     if (fld.IsStaticFinalConstant)
                     {
                         RuntimeJavaType fieldType = null;
@@ -198,7 +198,8 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER
-            private bool SupportsCallerID(ClassFile.Method method)
+
+            bool SupportsCallerID(ClassFile.Method method)
             {
                 if ((classFile.Name == "sun.reflect.Reflection" && method.Name == "getCallerClass")
                     || (classFile.Name == "java.lang.SecurityManager" && method.Name == "checkMemberAccess"))
@@ -234,7 +235,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            private static bool HasInterfaceMethod(RuntimeJavaType tw, string name, string signature)
+            static bool HasInterfaceMethod(RuntimeJavaType tw, string name, string signature)
             {
                 for (; tw != null; tw = tw.BaseTypeWrapper)
                 {
@@ -267,9 +268,9 @@ namespace IKVM.Runtime
                 }
 #endif
                 // this method is not allowed to throw exceptions (if it does, the runtime will abort)
-                bool hasclinit = wrapper.HasStaticInitializer;
-                string mangledTypeName = wrapper.classLoader.GetTypeWrapperFactory().AllocMangledName(wrapper);
-                ClassFile f = classFile;
+                var hasclinit = wrapper.HasStaticInitializer;
+                var mangledTypeName = wrapper.classLoader.GetTypeWrapperFactory().AllocMangledName(wrapper);
+                var f = classFile;
                 try
                 {
                     TypeAttributes typeAttribs = 0;
@@ -293,7 +294,7 @@ namespace IKVM.Runtime
                     // we only compile inner classes as nested types in the static compiler, because it has a higher cost
                     // and doesn't buy us anything in dynamic mode (and if fact, due to an FXBUG it would make handling
                     // the TypeResolve event very hard)
-                    ClassFile.InnerClass outerClass = getOuterClass();
+                    var outerClass = getOuterClass();
                     if (outerClass.outerClass != 0)
                     {
                         enclosingClassName = classFile.GetConstantPoolClass(outerClass.outerClass);
@@ -1930,19 +1931,22 @@ namespace IKVM.Runtime
                 }
             }
 
-            // this finds all methods that the specified name/sig is going to be overriding
+            /// <summary>
+            /// Finds all methods that the specified name/sig is going to be overriding
+            /// </summary>
+            /// <param name="m"></param>
+            /// <param name="explicitOverride"></param>
+            /// <returns></returns>
             private RuntimeJavaMethod[] FindBaseMethods(ClassFile.Method m, out bool explicitOverride)
             {
                 Debug.Assert(!classFile.IsInterface);
                 Debug.Assert(m.Name != "<init>");
 
                 // starting with Java 7 the algorithm changed
-                return classFile.MajorVersion >= 51
-                    ? FindBaseMethods7(m.Name, m.Signature, m.IsFinal && !m.IsPublic && !m.IsProtected, out explicitOverride)
-                    : FindBaseMethodsLegacy(m.Name, m.Signature, out explicitOverride);
+                return classFile.MajorVersion >= 51 ? FindBaseMethods7(m.Name, m.Signature, m.IsFinal && !m.IsPublic && !m.IsProtected, out explicitOverride) : FindBaseMethodsLegacy(m.Name, m.Signature, out explicitOverride);
             }
 
-            private RuntimeJavaMethod[] FindBaseMethods7(string name, string sig, bool packageFinal, out bool explicitOverride)
+            RuntimeJavaMethod[] FindBaseMethods7(string name, string sig, bool packageFinal, out bool explicitOverride)
             {
                 // NOTE this implements the (completely broken) OpenJDK 7 b147 HotSpot behavior,
                 // not the algorithm specified in section 5.4.5 of the JavaSE7 JVM spec
@@ -1951,28 +1955,24 @@ namespace IKVM.Runtime
                 // this code has not been updated to reflect these changes (we're still at JDK 8 GA level)
                 explicitOverride = false;
                 RuntimeJavaMethod topPublicOrProtectedMethod = null;
-                RuntimeJavaType tw = wrapper.BaseTypeWrapper;
+                var tw = wrapper.BaseTypeWrapper;
                 while (tw != null)
                 {
-                    RuntimeJavaMethod baseMethod = tw.GetMethodWrapper(name, sig, true);
+                    var baseMethod = tw.GetMethodWrapper(name, sig, true);
                     if (baseMethod == null)
-                    {
                         break;
-                    }
                     else if (baseMethod.IsAccessStub)
                     {
                         // ignore
                     }
                     else if (!baseMethod.IsStatic && (baseMethod.IsPublic || baseMethod.IsProtected))
-                    {
                         topPublicOrProtectedMethod = baseMethod;
-                    }
                     tw = baseMethod.DeclaringType.BaseTypeWrapper;
                 }
                 tw = wrapper.BaseTypeWrapper;
                 while (tw != null)
                 {
-                    RuntimeJavaMethod baseMethod = tw.GetMethodWrapper(name, sig, true);
+                    var baseMethod = tw.GetMethodWrapper(name, sig, true);
                     if (baseMethod == null)
                     {
                         break;
@@ -2007,18 +2007,18 @@ namespace IKVM.Runtime
                     {
                         if (explicitOverride)
                         {
-                            List<RuntimeJavaMethod> list = new List<RuntimeJavaMethod>();
+                            var list = new List<RuntimeJavaMethod>();
                             list.Add(baseMethod);
                             // we might still have to override package methods from another package if the vtable streams are interleaved with ours
                             tw = wrapper.BaseTypeWrapper;
                             while (tw != null)
                             {
-                                RuntimeJavaMethod baseMethod2 = tw.GetMethodWrapper(name, sig, true);
+                                var baseMethod2 = tw.GetMethodWrapper(name, sig, true);
                                 if (baseMethod2 == null || baseMethod2 == baseMethod)
                                 {
                                     break;
                                 }
-                                RuntimeJavaMethod baseMethod3 = GetPackageBaseMethod(baseMethod.DeclaringType.BaseTypeWrapper, name, sig, baseMethod2.DeclaringType);
+                                var baseMethod3 = GetPackageBaseMethod(baseMethod.DeclaringType.BaseTypeWrapper, name, sig, baseMethod2.DeclaringType);
                                 if (baseMethod3 != null)
                                 {
                                     if (baseMethod2.IsFinal)
@@ -2026,7 +2026,7 @@ namespace IKVM.Runtime
                                         baseMethod2 = baseMethod3;
                                     }
                                     bool found = false;
-                                    foreach (RuntimeJavaMethod mw in list)
+                                    foreach (var mw in list)
                                     {
                                         if (mw.DeclaringType.IsPackageAccessibleFrom(baseMethod2.DeclaringType))
                                         {
@@ -2111,18 +2111,18 @@ namespace IKVM.Runtime
                 return null;
             }
 
-            private bool IsAccessibleInternal(RuntimeJavaMethod mw)
+            bool IsAccessibleInternal(RuntimeJavaMethod mw)
             {
                 return mw.IsInternal && mw.DeclaringType.InternalsVisibleTo(wrapper);
             }
 
-            private static MethodBase LinkAndGetMethod(RuntimeJavaMethod mw)
+            static MethodBase LinkAndGetMethod(RuntimeJavaMethod mw)
             {
                 mw.Link();
                 return mw.GetMethod();
             }
 
-            private static bool TryGetClassFileVersion(RuntimeJavaType tw, ref int majorVersion)
+            static bool TryGetClassFileVersion(RuntimeJavaType tw, ref int majorVersion)
             {
                 RuntimeByteCodeJavaType dtw = tw as RuntimeByteCodeJavaType;
                 if (dtw != null)
@@ -2137,31 +2137,30 @@ namespace IKVM.Runtime
                 return false;
             }
 
-            private static RuntimeJavaMethod GetPackageBaseMethod(RuntimeJavaType tw, string name, string sig, RuntimeJavaType package)
+            static RuntimeJavaMethod GetPackageBaseMethod(RuntimeJavaType tw, string name, string sig, RuntimeJavaType package)
             {
                 while (tw != null)
                 {
-                    RuntimeJavaMethod mw = tw.GetMethodWrapper(name, sig, true);
+                    var mw = tw.GetMethodWrapper(name, sig, true);
                     if (mw == null)
-                    {
                         break;
-                    }
+
                     if (mw.DeclaringType.IsPackageAccessibleFrom(package))
-                    {
                         return mw.IsFinal ? null : mw;
-                    }
+
                     tw = mw.DeclaringType.BaseTypeWrapper;
                 }
+
                 return null;
             }
 
-            private RuntimeJavaMethod[] FindBaseMethodsLegacy(string name, string sig, out bool explicitOverride)
+            RuntimeJavaMethod[] FindBaseMethodsLegacy(string name, string sig, out bool explicitOverride)
             {
                 explicitOverride = false;
-                RuntimeJavaType tw = wrapper.BaseTypeWrapper;
+                var tw = wrapper.BaseTypeWrapper;
                 while (tw != null)
                 {
-                    RuntimeJavaMethod baseMethod = tw.GetMethodWrapper(name, sig, true);
+                    var baseMethod = tw.GetMethodWrapper(name, sig, true);
                     if (baseMethod == null)
                     {
                         return null;
@@ -2170,12 +2169,11 @@ namespace IKVM.Runtime
                     {
                         // ignore
                     }
+
                     // here are the complex rules for determining whether this method overrides the method we found
                     // RULE 1: final methods may not be overridden
                     // (note that we intentionally not check IsStatic here!)
-                    else if (baseMethod.IsFinal
-                        && !baseMethod.IsPrivate
-                        && (baseMethod.IsPublic || baseMethod.IsProtected || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
+                    else if (baseMethod.IsFinal && !baseMethod.IsPrivate && (baseMethod.IsPublic || baseMethod.IsProtected || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
                     {
                         throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overridden in " + wrapper.Name);
                     }
@@ -2233,8 +2231,7 @@ namespace IKVM.Runtime
                     else if (!baseMethod.IsPrivate)
                     {
                         // RULE 4: package methods can only be overridden in the same package
-                        if (baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)
-                            || (baseMethod.IsInternal && baseMethod.DeclaringType.InternalsVisibleTo(wrapper)))
+                        if (baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper) || (baseMethod.IsInternal && baseMethod.DeclaringType.InternalsVisibleTo(wrapper)))
                         {
                             return new RuntimeJavaMethod[] { baseMethod };
                         }
@@ -2246,43 +2243,42 @@ namespace IKVM.Runtime
                     }
                     tw = baseMethod.DeclaringType.BaseTypeWrapper;
                 }
+
                 return null;
             }
 
-            private static MethodInfo GetBaseFinalizeMethod(RuntimeJavaType wrapper)
+            static MethodInfo GetBaseFinalizeMethod(RuntimeJavaType wrapper)
             {
                 for (; ; )
                 {
                     // HACK we get called during method linking (which is probably a bad idea) and
                     // it is possible for the base type not to be finished yet, so we look at the
                     // private state of the unfinished base types to find the finalize method.
-                    RuntimeByteCodeJavaType dtw = wrapper as RuntimeByteCodeJavaType;
+                    var dtw = wrapper as RuntimeByteCodeJavaType;
                     if (dtw == null)
-                    {
                         break;
-                    }
-                    RuntimeJavaMethod mw = dtw.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, false);
+
+                    var mw = dtw.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, false);
                     if (mw != null)
-                    {
                         mw.Link();
-                    }
-                    MethodInfo finalizeImpl = dtw.impl.GetFinalizeMethod();
+
+                    var finalizeImpl = dtw.impl.GetFinalizeMethod();
                     if (finalizeImpl != null)
-                    {
                         return finalizeImpl;
-                    }
+
                     wrapper = wrapper.BaseTypeWrapper;
                 }
+
                 if (wrapper == CoreClasses.java.lang.Object.Wrapper || wrapper == CoreClasses.java.lang.Throwable.Wrapper)
                 {
                     return Types.Object.GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Instance);
                 }
-                Type type = wrapper.TypeAsBaseType;
-                MethodInfo baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+
+                var type = wrapper.TypeAsBaseType;
+                var baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
                 if (baseFinalize != null)
-                {
                     return baseFinalize;
-                }
+
                 while (type != null)
                 {
                     foreach (MethodInfo m in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
@@ -2302,20 +2298,16 @@ namespace IKVM.Runtime
                 return null;
             }
 
-            private MethodAttributes GetPropertyAccess(RuntimeJavaMethod mw)
+            MethodAttributes GetPropertyAccess(RuntimeJavaMethod mw)
             {
-                string sig = mw.ReturnType.SigName;
+                var sig = mw.ReturnType.SigName;
                 if (sig == "V")
-                {
                     sig = mw.GetParameters()[0].SigName;
-                }
+
                 int access = -1;
-                foreach (ClassFile.Field field in classFile.Fields)
+                foreach (var field in classFile.Fields)
                 {
-                    if (field.IsProperty
-                        && field.IsStatic == mw.IsStatic
-                        && field.Signature == sig
-                        && (field.PropertyGetter == mw.Name || field.PropertySetter == mw.Name))
+                    if (field.IsProperty && field.IsStatic == mw.IsStatic && field.Signature == sig && (field.PropertyGetter == mw.Name || field.PropertySetter == mw.Name))
                     {
                         int nacc;
                         if (field.IsPublic)
@@ -2340,6 +2332,7 @@ namespace IKVM.Runtime
                         }
                     }
                 }
+
                 switch (access)
                 {
                     case 0:
@@ -2358,11 +2351,12 @@ namespace IKVM.Runtime
             internal override MethodBase LinkMethod(RuntimeJavaMethod mw)
             {
                 Debug.Assert(mw != null);
-                if (mw is DelegateConstructorMethodWrapper)
+                if (mw is DelegateConstructorMethodWrapper dcmw)
                 {
-                    ((DelegateConstructorMethodWrapper)mw).DoLink(typeBuilder);
+                    dcmw.DoLink(typeBuilder);
                     return null;
                 }
+
                 if (mw is DelegateInvokeStubMethodWrapper)
                 {
                     return ((DelegateInvokeStubMethodWrapper)mw).DoLink(typeBuilder);

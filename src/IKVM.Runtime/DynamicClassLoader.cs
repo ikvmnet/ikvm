@@ -204,7 +204,7 @@ namespace IKVM.Runtime
         internal sealed override RuntimeJavaType DefineClassImpl(Dictionary<string, RuntimeJavaType> types, RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain protectionDomain)
         {
 #if IMPORTER
-            AotTypeWrapper type = new AotTypeWrapper(f, (CompilerClassLoader)classLoader);
+            var type = new RuntimeImportByteCodeJavaType(f, (CompilerClassLoader)classLoader);
             type.CreateStep1();
             types[f.Name] = type;
             return type;
@@ -212,7 +212,7 @@ namespace IKVM.Runtime
             return null;
 #else
             // this step can throw a retargettable exception, if the class is incorrect
-            RuntimeByteCodeJavaType type = new RuntimeByteCodeJavaType(host, f, classLoader, protectionDomain);
+            var type = new RuntimeByteCodeJavaType(host, f, classLoader, protectionDomain);
             // This step actually creates the TypeBuilder. It is not allowed to throw any exceptions,
             // if an exception does occur, it is due to a programming error in the IKVM or CLR runtime
             // and will cause a CriticalFailure and exit the process.

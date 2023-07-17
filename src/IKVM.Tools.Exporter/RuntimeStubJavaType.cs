@@ -30,13 +30,23 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Runtime
 {
 
-    sealed class StubTypeWrapper : RuntimeJavaType
+    /// <summary>
+    /// Defines a runtime java type with no implementation.
+    /// </summary>
+    sealed class RuntimeStubJavaType : RuntimeJavaType
     {
 
         private readonly bool remapped;
         private readonly RuntimeJavaType baseWrapper;
 
-        internal StubTypeWrapper(Modifiers modifiers, string name, RuntimeJavaType baseWrapper, bool remapped)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="modifiers"></param>
+        /// <param name="name"></param>
+        /// <param name="baseWrapper"></param>
+        /// <param name="remapped"></param>
+        internal RuntimeStubJavaType(Modifiers modifiers, string name, RuntimeJavaType baseWrapper, bool remapped)
             : base(TypeFlags.None, modifiers, name)
         {
             this.remapped = remapped;
@@ -62,6 +72,7 @@ namespace IKVM.Runtime
         {
             get { return remapped; }
         }
+
     }
 
 }

@@ -31,7 +31,7 @@ using IKVM.Reflection.Emit;
 using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
-using DynamicOrAotTypeWrapper = IKVM.Tools.Importer.AotTypeWrapper;
+using RuntimeDynamicOrImportJavaType = IKVM.Tools.Importer.RuntimeImportByteCodeJavaType;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -45,9 +45,11 @@ namespace IKVM.Runtime
 
         private sealed partial class JavaTypeImpl
         {
+
             private sealed class DelegateInvokeStubMethodWrapper : RuntimeJavaMethod
             {
-                private readonly Type delegateType;
+
+                readonly Type delegateType;
 
                 internal DelegateInvokeStubMethodWrapper(RuntimeJavaType declaringType, Type delegateType, string sig)
                     : base(declaringType, RuntimeManagedJavaType.GetDelegateInvokeStubName(delegateType), sig, null, null, null, Modifiers.Public | Modifiers.Final, MemberFlags.HideFromReflection)

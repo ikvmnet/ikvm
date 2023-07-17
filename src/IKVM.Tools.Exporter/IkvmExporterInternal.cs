@@ -98,7 +98,7 @@ namespace IKVM.Tools.Exporter
                 if (options.Boostrap)
                 {
                     StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(typeof(IkvmExporterTool).Assembly.Location);
-                    RuntimeClassLoader.SetBootstrapClassLoader(new BootstrapBootstrapClassLoader());
+                    RuntimeClassLoader.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader());
                 }
                 else
                 {
@@ -318,7 +318,7 @@ namespace IKVM.Tools.Exporter
                 Environment.Exit(1);
                 return;
             }
-            if (tw is StubTypeWrapper)
+            if (tw is RuntimeStubJavaType)
             {
                 // skip
             }

@@ -37,26 +37,26 @@ namespace IKVM.Tools.Importer
     static class ProxyGenerator
     {
 
-        private static readonly RuntimeJavaType proxyClass;
-        private static readonly RuntimeJavaType errorClass;
-        private static readonly RuntimeJavaType runtimeExceptionClass;
-        private static readonly RuntimeJavaMethod undeclaredThrowableExceptionConstructor;
-        private static readonly RuntimeJavaField invocationHandlerField;
-        private static readonly RuntimeJavaType javaLangReflectMethod;
-        private static readonly RuntimeJavaType javaLangNoSuchMethodException;
-        private static readonly RuntimeJavaMethod javaLangNoClassDefFoundErrorConstructor;
-        private static readonly RuntimeJavaMethod javaLangThrowable_getMessage;
-        private static readonly RuntimeJavaMethod javaLangClass_getMethod;
-        private static readonly RuntimeJavaType invocationHandlerClass;
-        private static readonly RuntimeJavaMethod invokeMethod;
-        private static readonly RuntimeJavaMethod proxyConstructor;
-        private static readonly RuntimeJavaMethod hashCodeMethod;
-        private static readonly RuntimeJavaMethod equalsMethod;
-        private static readonly RuntimeJavaMethod toStringMethod;
+        static readonly RuntimeJavaType proxyClass;
+        static readonly RuntimeJavaType errorClass;
+        static readonly RuntimeJavaType runtimeExceptionClass;
+        static readonly RuntimeJavaMethod undeclaredThrowableExceptionConstructor;
+        static readonly RuntimeJavaField invocationHandlerField;
+        static readonly RuntimeJavaType javaLangReflectMethod;
+        static readonly RuntimeJavaType javaLangNoSuchMethodException;
+        static readonly RuntimeJavaMethod javaLangNoClassDefFoundErrorConstructor;
+        static readonly RuntimeJavaMethod javaLangThrowable_getMessage;
+        static readonly RuntimeJavaMethod javaLangClass_getMethod;
+        static readonly RuntimeJavaType invocationHandlerClass;
+        static readonly RuntimeJavaMethod invokeMethod;
+        static readonly RuntimeJavaMethod proxyConstructor;
+        static readonly RuntimeJavaMethod hashCodeMethod;
+        static readonly RuntimeJavaMethod equalsMethod;
+        static readonly RuntimeJavaMethod toStringMethod;
 
         static ProxyGenerator()
         {
-            RuntimeClassLoader bootClassLoader = RuntimeClassLoader.GetBootstrapClassLoader();
+            var bootClassLoader = RuntimeClassLoader.GetBootstrapClassLoader();
             proxyClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.Proxy");
             errorClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.Error");
             runtimeExceptionClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.RuntimeException");
@@ -83,7 +83,7 @@ namespace IKVM.Tools.Importer
 
         internal static void Create(CompilerClassLoader loader, string proxy)
         {
-            string[] interfaces = proxy.Split(',');
+            var interfaces = proxy.Split(',');
             var wrappers = new RuntimeJavaType[interfaces.Length];
             for (int i = 0; i < interfaces.Length; i++)
             {
@@ -93,13 +93,16 @@ namespace IKVM.Tools.Importer
                 }
                 catch (RetargetableJavaException)
                 {
+
                 }
+
                 if (wrappers[i] == null)
                 {
                     StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, "unable to load interface " + interfaces[i]);
                     return;
                 }
             }
+
             Create(loader, proxy, wrappers);
         }
 
@@ -120,6 +123,7 @@ namespace IKVM.Tools.Importer
                 StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, x.Message);
                 return;
             }
+
             CreateNoFail(loader, interfaces, methods);
         }
 
@@ -199,61 +203,53 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private static RuntimeJavaType[] Merge(RuntimeJavaType[] newExceptionTypes, RuntimeJavaType[] curExceptionTypes)
+        static RuntimeJavaType[] Merge(RuntimeJavaType[] newExceptionTypes, RuntimeJavaType[] curExceptionTypes)
         {
-            List<RuntimeJavaType> list = new List<RuntimeJavaType>();
-            foreach (RuntimeJavaType twNew in newExceptionTypes)
+            var list = new List<RuntimeJavaType>();
+            foreach (var twNew in newExceptionTypes)
             {
                 RuntimeJavaType match = null;
-                foreach (RuntimeJavaType twCur in curExceptionTypes)
-                {
+                foreach (var twCur in curExceptionTypes)
                     if (twNew.IsAssignableTo(twCur))
-                    {
                         if (match == null || twCur.IsAssignableTo(match))
-                        {
                             match = twCur;
-                        }
-                    }
-                }
+
                 if (match != null && !list.Contains(match))
-                {
                     list.Add(match);
-                }
             }
+
             return list.ToArray();
         }
 
-        private static void CreateNoFail(CompilerClassLoader loader, RuntimeJavaType[] interfaces, List<ProxyMethod> methods)
+        static void CreateNoFail(CompilerClassLoader loader, RuntimeJavaType[] interfaces, List<ProxyMethod> methods)
         {
-            bool ispublic = true;
-            Type[] interfaceTypes = new Type[interfaces.Length];
+            var ispublic = true;
+            var interfaceTypes = new Type[interfaces.Length];
             for (int i = 0; i < interfaceTypes.Length; i++)
             {
                 ispublic &= interfaces[i].IsPublic;
                 interfaceTypes[i] = interfaces[i].TypeAsBaseType;
             }
-            TypeAttributes attr = TypeAttributes.Class | TypeAttributes.Sealed;
+            var attr = TypeAttributes.Class | TypeAttributes.Sealed;
             attr |= ispublic ? TypeAttributes.NestedPublic : TypeAttributes.NestedAssembly;
-            DynamicClassLoader factory = (DynamicClassLoader)loader.GetTypeWrapperFactory();
-            TypeBuilder tb = factory.DefineProxy(TypeNameUtil.GetProxyNestedName(interfaces), attr, proxyClass.TypeAsBaseType, interfaceTypes);
+            var factory = (DynamicClassLoader)loader.GetTypeWrapperFactory();
+            var tb = factory.DefineProxy(TypeNameUtil.GetProxyNestedName(interfaces), attr, proxyClass.TypeAsBaseType, interfaceTypes);
             AttributeHelper.SetImplementsAttribute(tb, interfaces);
             // we apply an InnerClass attribute to avoid the CompiledTypeWrapper heuristics for figuring out the modifiers
             AttributeHelper.SetInnerClass(tb, null, ispublic ? Modifiers.Public | Modifiers.Final : Modifiers.Final);
             CreateConstructor(tb);
             for (int i = 0; i < methods.Count; i++)
-            {
                 methods[i].fb = tb.DefineField("m" + i, javaLangReflectMethod.TypeAsSignatureType, FieldAttributes.Private | FieldAttributes.Static);
-            }
-            foreach (ProxyMethod method in methods)
-            {
+
+            foreach (var method in methods)
                 CreateMethod(loader, tb, method);
-            }
+
             CreateStaticInitializer(tb, methods, loader);
         }
 
-        private static void CreateConstructor(TypeBuilder tb)
+        static void CreateConstructor(TypeBuilder tb)
         {
-            CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Public, new Type[] { invocationHandlerClass.TypeAsSignatureType }));
+            var ilgen = CodeEmitter.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Public, new Type[] { invocationHandlerClass.TypeAsSignatureType }));
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ldarg_1);
             proxyConstructor.EmitCall(ilgen);
@@ -263,14 +259,13 @@ namespace IKVM.Tools.Importer
 
         private static void CreateMethod(CompilerClassLoader loader, TypeBuilder tb, ProxyMethod pm)
         {
-            MethodBuilder mb = pm.mw.GetDefineMethodHelper().DefineMethod(loader.GetTypeWrapperFactory(), tb, pm.mw.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final);
-            List<string> exceptions = new List<string>();
+            var mb = pm.mw.GetDefineMethodHelper().DefineMethod(loader.GetTypeWrapperFactory(), tb, pm.mw.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final);
+            var exceptions = new List<string>();
             foreach (var tw in pm.exceptions)
-            {
                 exceptions.Add(tw.Name);
-            }
+
             AttributeHelper.SetThrowsAttribute(mb, exceptions.ToArray());
-            CodeEmitter ilgen = CodeEmitter.Create(mb);
+            var ilgen = CodeEmitter.Create(mb);
             ilgen.BeginExceptionBlock();
             ilgen.Emit(OpCodes.Ldarg_0);
             invocationHandlerField.EmitGet(ilgen);
@@ -357,11 +352,11 @@ namespace IKVM.Tools.Importer
             ilgen.DoEmit();
         }
 
-        private static void CreateStaticInitializer(TypeBuilder tb, List<ProxyMethod> methods, CompilerClassLoader loader)
+        static void CreateStaticInitializer(TypeBuilder tb, List<ProxyMethod> methods, CompilerClassLoader loader)
         {
-            CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb, loader));
-            CodeEmitterLocal callerID = ilgen.DeclareLocal(CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType);
-            TypeBuilder tbCallerID = RuntimeByteCodeJavaType.FinishContext.EmitCreateCallerID(tb, ilgen);
+            var ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb, loader));
+            var callerID = ilgen.DeclareLocal(CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType);
+            var tbCallerID = RuntimeByteCodeJavaType.FinishContext.EmitCreateCallerID(tb, ilgen);
             ilgen.Emit(OpCodes.Stloc, callerID);
             // HACK we shouldn't create the nested type here (the outer type must be created first)
             tbCallerID.CreateType();
@@ -399,7 +394,7 @@ namespace IKVM.Tools.Importer
             ilgen.DoEmit();
         }
 
-        private sealed class ProxyMethod
+        sealed class ProxyMethod
         {
 
             internal readonly RuntimeJavaMethod mw;
@@ -414,7 +409,7 @@ namespace IKVM.Tools.Importer
 
         }
 
-        private static IEnumerable<RuntimeJavaMethod> GetInterfaceMethods(RuntimeJavaType tw)
+        static IEnumerable<RuntimeJavaMethod> GetInterfaceMethods(RuntimeJavaType tw)
         {
             var methods = new Dictionary<string, RuntimeJavaMethod>();
             foreach (var mw in tw.GetMethods())
@@ -429,7 +424,7 @@ namespace IKVM.Tools.Importer
             return methods.Values;
         }
 
-        private static RuntimeJavaType[] LoadTypes(RuntimeClassLoader loader, string[] classes)
+        static RuntimeJavaType[] LoadTypes(RuntimeClassLoader loader, string[] classes)
         {
             if (classes == null || classes.Length == 0)
                 return Array.Empty<RuntimeJavaType>();
@@ -441,7 +436,7 @@ namespace IKVM.Tools.Importer
             return tw;
         }
 
-        private sealed class ProxyException : Exception
+        sealed class ProxyException : Exception
         {
 
             internal ProxyException(string msg) :
