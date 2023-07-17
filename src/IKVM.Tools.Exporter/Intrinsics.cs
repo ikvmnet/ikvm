@@ -26,7 +26,7 @@ using IKVM.Runtime;
 static class Intrinsics
 {
 
-    internal static bool IsIntrinsic(MethodWrapper methodWrapper)
+    internal static bool IsIntrinsic(RuntimeJavaMethod methodWrapper)
     {
         return false;
     }

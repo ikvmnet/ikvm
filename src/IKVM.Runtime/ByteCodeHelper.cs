@@ -105,7 +105,7 @@ namespace IKVM.Runtime
                 rank++;
                 type = type.GetElementType();
             }
-            object obj = multianewarray(ArrayTypeWrapper.MakeArrayType(typeof(object), rank).TypeHandle, lengths);
+            object obj = multianewarray(RuntimeArrayJavaType.MakeArrayType(typeof(object), rank).TypeHandle, lengths);
             GhostTag.SetTag(obj, typeHandle);
             return obj;
         }
@@ -125,7 +125,7 @@ namespace IKVM.Runtime
             throw new NotImplementedException();
 #else
             Profiler.Count("DynamicMultianewarray");
-            TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
+            RuntimeJavaType wrapper = RuntimeJavaType.FromClass(clazz);
             object obj = multianewarray(wrapper.TypeAsArrayType.TypeHandle, lengths);
             if (wrapper.IsGhostArray)
             {
@@ -146,7 +146,7 @@ namespace IKVM.Runtime
             {
                 throw new global::java.lang.NegativeArraySizeException();
             }
-            TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
+            RuntimeJavaType wrapper = RuntimeJavaType.FromClass(clazz);
             Array obj = Array.CreateInstance(wrapper.TypeAsArrayType, length);
             if (wrapper.IsGhost || wrapper.IsGhostArray)
             {
@@ -190,7 +190,7 @@ namespace IKVM.Runtime
             throw new NotImplementedException();
 #else
             Profiler.Count("DynamicNewCheckOnly");
-            TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
+            RuntimeJavaType wrapper = RuntimeJavaType.FromClass(clazz);
             if (wrapper.IsAbstract)
             {
                 throw new global::java.lang.InstantiationError(wrapper.Name);
@@ -199,15 +199,15 @@ namespace IKVM.Runtime
 #endif
         }
 
-        private static TypeWrapper LoadTypeWrapper(string clazz, ikvm.@internal.CallerID callerId)
+        private static RuntimeJavaType LoadTypeWrapper(string clazz, ikvm.@internal.CallerID callerId)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             try
             {
-                TypeWrapper context = TypeWrapper.FromClass(callerId.getCallerClass());
-                TypeWrapper wrapper = ClassLoaderWrapper.FromCallerID(callerId).LoadClassByDottedName(clazz);
+                RuntimeJavaType context = RuntimeJavaType.FromClass(callerId.getCallerClass());
+                RuntimeJavaType wrapper = RuntimeClassLoader.FromCallerID(callerId).LoadClassByDottedName(clazz);
                 global::java.lang.ClassLoader loader = callerId.getCallerClassLoader();
                 if (loader != null)
                 {
@@ -264,7 +264,7 @@ namespace IKVM.Runtime
 #else
             Debug.Assert(obj != null);
             Profiler.Count("DynamicInstanceOf");
-            TypeWrapper tw = TypeWrapper.FromClass(clazz);
+            RuntimeJavaType tw = RuntimeJavaType.FromClass(clazz);
             // we have to mimick the bytecode behavior, which allows these .NET-isms to show through
             if (tw.TypeAsBaseType == typeof(Array))
             {
@@ -300,8 +300,8 @@ namespace IKVM.Runtime
 #else
             try
             {
-                ClassLoaderWrapper loader = ClassLoaderWrapper.FromCallerID(callerID);
-                TypeWrapper[] args = loader.ArgTypeWrapperListFromSig(sig, LoadMode.LoadOrThrow);
+                RuntimeClassLoader loader = RuntimeClassLoader.FromCallerID(callerID);
+                RuntimeJavaType[] args = loader.ArgTypeWrapperListFromSig(sig, LoadMode.LoadOrThrow);
                 global::java.lang.Class[] ptypes = new global::java.lang.Class[args.Length];
                 for (int i = 0; i < ptypes.Length; i++)
                 {
@@ -341,7 +341,7 @@ namespace IKVM.Runtime
                     case ReferenceKind.PutStatic:
                     case ReferenceKind.GetField:
                     case ReferenceKind.PutField:
-                        global::java.lang.Class type = ClassLoaderWrapper.FromCallerID(callerID).FieldTypeWrapperFromSig(sig, LoadMode.LoadOrThrow).ClassObject;
+                        global::java.lang.Class type = RuntimeClassLoader.FromCallerID(callerID).FieldTypeWrapperFromSig(sig, LoadMode.LoadOrThrow).ClassObject;
                         return global::java.lang.invoke.MethodHandleNatives.linkMethodHandleConstant(callerID.getCallerClass(), kind, refc, name, type);
                     default:
                         global::java.lang.invoke.MethodType mt = null;
@@ -404,8 +404,8 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             return null;
 #else
-            TypeWrapper tw = TypeWrapper.FromClass(global::ikvm.runtime.Util.getClassFromObject(obj));
-            MethodWrapper mw = tw.GetMethodWrapper(name, sig, true);
+            RuntimeJavaType tw = RuntimeJavaType.FromClass(global::ikvm.runtime.Util.getClassFromObject(obj));
+            RuntimeJavaMethod mw = tw.GetMethodWrapper(name, sig, true);
             if (mw == null || mw.IsStatic || !mw.IsPublic)
             {
 #if NO_REF_EMIT
@@ -434,7 +434,7 @@ namespace IKVM.Runtime
                 System.Reflection.Emit.DynamicMethod dm = new System.Reflection.Emit.DynamicMethod("Invoke", invoke.ReturnType, parameterTypes);
                 CodeEmitter ilgen = CodeEmitter.Create(dm);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, tw.Name + ".Invoke" + sig);
-                ClassLoaderWrapper.GetBootstrapClassLoader()
+                RuntimeClassLoader.GetBootstrapClassLoader()
                     .LoadClassByDottedName(mw == null || mw.IsStatic ? "global::java.lang.AbstractMethodError" : "global::java.lang.IllegalAccessError")
                     .GetMethodWrapper("<init>", "(Lglobal::java.lang.String;)V", false)
                     .EmitNewobj(ilgen);
@@ -627,7 +627,7 @@ namespace IKVM.Runtime
 
         private static bool IsPrimitiveArrayType(Type type)
         {
-            return type.IsArray && ClassLoaderWrapper.GetWrapperFromType(type.GetElementType()).IsPrimitive;
+            return type.IsArray && RuntimeClassLoader.GetWrapperFromType(type.GetElementType()).IsPrimitive;
         }
 
         [DebuggerStepThroughAttribute]
@@ -1045,7 +1045,7 @@ namespace IKVM.Runtime
                 throw new ArgumentOutOfRangeException();
 
             // check for InitializeModule method present on classloader
-            var classLoader = AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
+            var classLoader = RuntimeAssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
             if (classLoader != null)
             {
                 var init = (Action<Module>)Delegate.CreateDelegate(typeof(Action<Module>), classLoader, "InitializeModule", false, false);
@@ -1094,7 +1094,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             return null;
 #else
-            TypeWrapper exceptionTypeWrapper = TypeWrapper.FromClass(exceptionClass);
+            RuntimeJavaType exceptionTypeWrapper = RuntimeJavaType.FromClass(exceptionClass);
             mode &= ~MapFlags.NoRemapping;
             if (exceptionTypeWrapper.IsSubTypeOf(CoreClasses.cli.System.Exception.Wrapper))
             {

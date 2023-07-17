@@ -3,7 +3,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 
 using IKVM.Runtime;
-using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 
 namespace IKVM.Java.Externs.java.io

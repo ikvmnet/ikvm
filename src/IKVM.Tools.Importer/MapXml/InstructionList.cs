@@ -65,7 +65,7 @@ namespace IKVM.Tools.Importer.MapXml
                     Instructions[i].Generate(context, ilgen);
         }
 
-        internal void Emit(ClassLoaderWrapper loader, CodeEmitter ilgen)
+        internal void Emit(RuntimeClassLoader loader, CodeEmitter ilgen)
         {
             Generate(new CodeGenContext(loader), ilgen);
         }

@@ -35,8 +35,8 @@ namespace IKVM.Runtime
             readonly ushort signature_index;
 
             string descriptor;
-            TypeWrapper[] argTypeWrappers;
-            TypeWrapper retTypeWrapper;
+            RuntimeJavaType[] argTypeWrappers;
+            RuntimeJavaType retTypeWrapper;
 
             /// <summary>
             /// Initializes a new instance.
@@ -56,7 +56,7 @@ namespace IKVM.Runtime
                 this.descriptor = string.Intern(descriptor.Replace('/', '.'));
             }
 
-            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 lock (this)
                 {
@@ -85,12 +85,12 @@ namespace IKVM.Runtime
                 get { return descriptor; }
             }
 
-            internal TypeWrapper[] GetArgTypes()
+            internal RuntimeJavaType[] GetArgTypes()
             {
                 return argTypeWrappers;
             }
 
-            internal TypeWrapper GetRetType()
+            internal RuntimeJavaType GetRetType()
             {
                 return retTypeWrapper;
             }

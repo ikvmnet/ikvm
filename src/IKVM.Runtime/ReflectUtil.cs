@@ -124,7 +124,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static MethodBuilder DefineTypeInitializer(TypeBuilder typeBuilder, ClassLoaderWrapper loader)
+        internal static MethodBuilder DefineTypeInitializer(TypeBuilder typeBuilder, RuntimeClassLoader loader)
         {
             MethodAttributes attr = MethodAttributes.Static | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName;
             if (typeBuilder.IsInterface && loader.WorkaroundInterfacePrivateMethods)

@@ -46,13 +46,13 @@ namespace IKVM.Runtime
 
         private static Type CreateMethodHandleDelegateType(java.lang.invoke.MethodType type)
         {
-            TypeWrapper[] args = new TypeWrapper[type.parameterCount()];
+            RuntimeJavaType[] args = new RuntimeJavaType[type.parameterCount()];
             for (int i = 0; i < args.Length; i++)
             {
-                args[i] = TypeWrapper.FromClass(type.parameterType(i));
+                args[i] = RuntimeJavaType.FromClass(type.parameterType(i));
                 args[i].Finish();
             }
-            TypeWrapper ret = TypeWrapper.FromClass(type.returnType());
+            RuntimeJavaType ret = RuntimeJavaType.FromClass(type.returnType());
             ret.Finish();
             return CreateMethodHandleDelegateType(args, ret);
         }
@@ -90,20 +90,20 @@ namespace IKVM.Runtime
                 System.Collections.Generic.List<java.lang.Class> list = new System.Collections.Generic.List<java.lang.Class>();
                 for (int i = 0; i < pi.Length - 1; i++)
                 {
-                    list.Add(ClassLoaderWrapper.GetWrapperFromType(pi[i].ParameterType).ClassObject);
+                    list.Add(RuntimeClassLoader.GetWrapperFromType(pi[i].ParameterType).ClassObject);
                 }
                 Type[] args = pi[pi.Length - 1].ParameterType.GetGenericArguments();
                 while (IsPackedArgsContainer(args[args.Length - 1]))
                 {
                     for (int i = 0; i < args.Length - 1; i++)
                     {
-                        list.Add(ClassLoaderWrapper.GetWrapperFromType(args[i]).ClassObject);
+                        list.Add(RuntimeClassLoader.GetWrapperFromType(args[i]).ClassObject);
                     }
                     args = args[args.Length - 1].GetGenericArguments();
                 }
                 for (int i = 0; i < args.Length; i++)
                 {
-                    list.Add(ClassLoaderWrapper.GetWrapperFromType(args[i]).ClassObject);
+                    list.Add(RuntimeClassLoader.GetWrapperFromType(args[i]).ClassObject);
                 }
                 types = list.ToArray();
             }
@@ -112,10 +112,10 @@ namespace IKVM.Runtime
                 types = new java.lang.Class[pi.Length];
                 for (int i = 0; i < types.Length; i++)
                 {
-                    types[i] = ClassLoaderWrapper.GetWrapperFromType(pi[i].ParameterType).ClassObject;
+                    types[i] = RuntimeClassLoader.GetWrapperFromType(pi[i].ParameterType).ClassObject;
                 }
             }
-            return java.lang.invoke.MethodType.methodType(ClassLoaderWrapper.GetWrapperFromType(mi.ReturnType).ClassObject, types);
+            return java.lang.invoke.MethodType.methodType(RuntimeClassLoader.GetWrapperFromType(mi.ReturnType).ClassObject, types);
         }
 
         internal sealed class DynamicMethodBuilder
@@ -226,7 +226,7 @@ namespace IKVM.Runtime
                 for (int i = 0; i < type.parameterCount(); i++)
                 {
                     dm.Ldarg(i);
-                    TypeWrapper tw = TypeWrapper.FromClass(type.parameterType(i));
+                    RuntimeJavaType tw = RuntimeJavaType.FromClass(type.parameterType(i));
                     if (tw.IsNonPrimitiveValueType)
                     {
                         tw.EmitBox(dm.ilgen);
@@ -235,13 +235,13 @@ namespace IKVM.Runtime
                     {
                         tw.EmitConvSignatureTypeToStackType(dm.ilgen);
                     }
-                    else if (tw == PrimitiveTypeWrapper.BYTE)
+                    else if (tw == RuntimePrimitiveJavaType.BYTE)
                     {
                         dm.ilgen.Emit(OpCodes.Conv_I1);
                     }
                 }
                 dm.CallDelegate(targetDelegateType);
-                TypeWrapper retType = TypeWrapper.FromClass(type.returnType());
+                RuntimeJavaType retType = RuntimeJavaType.FromClass(type.returnType());
                 if (retType.IsNonPrimitiveValueType)
                 {
                     retType.EmitUnbox(dm.ilgen);
@@ -310,7 +310,7 @@ namespace IKVM.Runtime
                 return dm.CreateDelegate();
             }
 
-            internal static Delegate CreateDynamicOnly(MethodWrapper mw, java.lang.invoke.MethodType type)
+            internal static Delegate CreateDynamicOnly(RuntimeJavaMethod mw, java.lang.invoke.MethodType type)
             {
                 FinishTypes(type);
                 DynamicMethodBuilder dm = new DynamicMethodBuilder("CustomInvoke:" + mw.Name, type, null, mw, null, null, true);
@@ -325,16 +325,16 @@ namespace IKVM.Runtime
                     dm.Ldarg(0);
                     dm.BoxArgs(1);
                 }
-                dm.Callvirt(typeof(MethodWrapper).GetMethod("Invoke", BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.Callvirt(typeof(RuntimeJavaMethod).GetMethod("Invoke", BindingFlags.Instance | BindingFlags.NonPublic));
                 dm.UnboxReturnValue();
                 dm.Ret();
                 return dm.CreateDelegate();
             }
 
-            internal static Delegate CreateMemberName(MethodWrapper mw, global::java.lang.invoke.MethodType type, bool doDispatch)
+            internal static Delegate CreateMemberName(RuntimeJavaMethod mw, global::java.lang.invoke.MethodType type, bool doDispatch)
             {
                 FinishTypes(type);
-                TypeWrapper tw = mw.DeclaringType;
+                RuntimeJavaType tw = mw.DeclaringType;
                 Type owner = tw.TypeAsBaseType;
 #if NET_4_0
 			if (!doDispatch && !mw.IsStatic)
@@ -374,7 +374,7 @@ namespace IKVM.Runtime
                     else
                     {
                         dm.Ldarg(i);
-                        TypeWrapper argType = TypeWrapper.FromClass(type.parameterType(i));
+                        RuntimeJavaType argType = RuntimeJavaType.FromClass(type.parameterType(i));
                         if (!argType.IsPrimitive)
                         {
                             if (argType.IsUnloadable)
@@ -420,7 +420,7 @@ namespace IKVM.Runtime
                 {
                     dm.Call(mw);
                 }
-                TypeWrapper retType = TypeWrapper.FromClass(type.returnType());
+                RuntimeJavaType retType = RuntimeJavaType.FromClass(type.returnType());
                 if (retType.IsUnloadable)
                 {
                 }
@@ -432,7 +432,7 @@ namespace IKVM.Runtime
                 {
                     dm.BoxGhost(retType);
                 }
-                else if (retType == PrimitiveTypeWrapper.BYTE)
+                else if (retType == RuntimePrimitiveJavaType.BYTE)
                 {
                     dm.CastByte();
                 }
@@ -450,12 +450,12 @@ namespace IKVM.Runtime
                 ilgen.Emit(OpCodes.Callvirt, method);
             }
 
-            internal void Call(MethodWrapper mw)
+            internal void Call(RuntimeJavaMethod mw)
             {
                 mw.EmitCall(ilgen);
             }
 
-            internal void Callvirt(MethodWrapper mw)
+            internal void Callvirt(RuntimeJavaMethod mw)
             {
                 mw.EmitCallvirt(ilgen);
             }
@@ -465,7 +465,7 @@ namespace IKVM.Runtime
                 EmitCallDelegateInvokeMethod(ilgen, delegateType);
             }
 
-            internal void LoadFirstArgAddress(TypeWrapper tw)
+            internal void LoadFirstArgAddress(RuntimeJavaType tw)
             {
                 ilgen.EmitLdarg(0);
                 if (tw.IsGhost)
@@ -527,7 +527,7 @@ namespace IKVM.Runtime
                     ilgen.Emit(OpCodes.Dup);
                     ilgen.EmitLdc_I4(i - start);
                     Ldarg(i);
-                    TypeWrapper tw = TypeWrapper.FromClass(type.parameterType(i));
+                    RuntimeJavaType tw = RuntimeJavaType.FromClass(type.parameterType(i));
                     if (tw.IsPrimitive)
                     {
                         ilgen.Emit(OpCodes.Box, tw.TypeAsSignatureType);
@@ -538,8 +538,8 @@ namespace IKVM.Runtime
 
             internal void UnboxReturnValue()
             {
-                TypeWrapper tw = TypeWrapper.FromClass(type.returnType());
-                if (tw == PrimitiveTypeWrapper.VOID)
+                RuntimeJavaType tw = RuntimeJavaType.FromClass(type.returnType());
+                if (tw == RuntimePrimitiveJavaType.VOID)
                 {
                     ilgen.Emit(OpCodes.Pop);
                 }
@@ -555,27 +555,27 @@ namespace IKVM.Runtime
                 ilgen.Emit(OpCodes.Ldnull);
             }
 
-            internal void Unbox(TypeWrapper tw)
+            internal void Unbox(RuntimeJavaType tw)
             {
                 tw.EmitUnbox(ilgen);
             }
 
-            internal void Box(TypeWrapper tw)
+            internal void Box(RuntimeJavaType tw)
             {
                 tw.EmitBox(ilgen);
             }
 
-            internal void UnboxGhost(TypeWrapper tw)
+            internal void UnboxGhost(RuntimeJavaType tw)
             {
                 tw.EmitConvStackTypeToSignatureType(ilgen, null);
             }
 
-            internal void BoxGhost(TypeWrapper tw)
+            internal void BoxGhost(RuntimeJavaType tw)
             {
                 tw.EmitConvSignatureTypeToStackType(ilgen);
             }
 
-            internal void EmitCheckcast(TypeWrapper tw)
+            internal void EmitCheckcast(RuntimeJavaType tw)
             {
                 tw.EmitCheckcast(ilgen);
             }
@@ -605,10 +605,10 @@ namespace IKVM.Runtime
             {
                 // FXBUG(?) DynamicILGenerator doesn't like SymbolType (e.g. an array of a TypeBuilder)
                 // so we have to finish the signature types
-                TypeWrapper.FromClass(type.returnType()).Finish();
+                RuntimeJavaType.FromClass(type.returnType()).Finish();
                 for (int i = 0; i < type.parameterCount(); i++)
                 {
-                    TypeWrapper.FromClass(type.parameterType(i)).Finish();
+                    RuntimeJavaType.FromClass(type.parameterType(i)).Finish();
                 }
             }
         }

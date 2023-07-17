@@ -39,7 +39,7 @@ namespace IKVM.Runtime
             readonly ClassConstantReader reader;
 
             string name;
-            TypeWrapper typeWrapper;
+            RuntimeJavaType typeWrapper;
 
             /// <summary>
             /// Initializes a new instance.
@@ -56,7 +56,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="name"></param>
             /// <param name="typeWrapper"></param>
-            internal ConstantPoolItemClass(string name, TypeWrapper typeWrapper)
+            internal ConstantPoolItemClass(string name, RuntimeJavaType typeWrapper)
             {
                 this.name = name;
                 this.typeWrapper = typeWrapper;
@@ -151,20 +151,20 @@ namespace IKVM.Runtime
             {
                 if (typeWrapper == null)
                 {
-                    typeWrapper = VerifierTypeWrapper.Null;
+                    typeWrapper = RuntimeVerifierJavaType.Null;
                 }
             }
 
-            internal void LinkSelf(TypeWrapper thisType)
+            internal void LinkSelf(RuntimeJavaType thisType)
             {
                 this.typeWrapper = thisType;
             }
 
-            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
-                if (typeWrapper == VerifierTypeWrapper.Null)
+                if (typeWrapper == RuntimeVerifierJavaType.Null)
                 {
-                    TypeWrapper tw = thisType.GetClassLoader().LoadClass(name, mode | LoadMode.WarnClassNotFound);
+                    RuntimeJavaType tw = thisType.GetClassLoader().LoadClass(name, mode | LoadMode.WarnClassNotFound);
 #if !IMPORTER && !FIRST_PASS
                     if (!tw.IsUnloadable)
                     {
@@ -174,7 +174,7 @@ namespace IKVM.Runtime
                         }
                         catch (java.lang.SecurityException)
                         {
-                            tw = new UnloadableTypeWrapper(name);
+                            tw = new RuntimeUnloadableJavaType(name);
                         }
                     }
 #endif
@@ -190,7 +190,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal TypeWrapper GetClassType()
+            internal RuntimeJavaType GetClassType()
             {
                 return typeWrapper;
             }

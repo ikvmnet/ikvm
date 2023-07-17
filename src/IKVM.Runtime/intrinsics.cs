@@ -60,7 +60,7 @@ namespace IKVM.Runtime
                 this.methodSignature = string.Intern(methodSignature);
             }
 
-            internal IntrinsicKey(MethodWrapper mw)
+            internal IntrinsicKey(RuntimeJavaMethod mw)
             {
                 this.className = mw.DeclaringType.Name;
                 this.methodName = mw.Name;
@@ -134,16 +134,16 @@ namespace IKVM.Runtime
         /// <param name="eic"></param>
         /// <param name="tw"></param>
         /// <returns></returns>
-        static void EmitArrayIndexScale(EmitIntrinsicContext eic, TypeWrapper tw)
+        static void EmitArrayIndexScale(EmitIntrinsicContext eic, RuntimeJavaType tw)
         {
             var et = tw.ElementTypeWrapper;
-            if (et == PrimitiveTypeWrapper.BYTE || et == PrimitiveTypeWrapper.BOOLEAN)
+            if (et == RuntimePrimitiveJavaType.BYTE || et == RuntimePrimitiveJavaType.BOOLEAN)
                 eic.Emitter.EmitLdc_I4(1);
-            else if (et == PrimitiveTypeWrapper.CHAR || et == PrimitiveTypeWrapper.SHORT)
+            else if (et == RuntimePrimitiveJavaType.CHAR || et == RuntimePrimitiveJavaType.SHORT)
                 eic.Emitter.EmitLdc_I4(2);
-            else if (et == PrimitiveTypeWrapper.INT || et == PrimitiveTypeWrapper.FLOAT)
+            else if (et == RuntimePrimitiveJavaType.INT || et == RuntimePrimitiveJavaType.FLOAT)
                 eic.Emitter.EmitLdc_I4(4);
-            else if (et == PrimitiveTypeWrapper.LONG || et == PrimitiveTypeWrapper.DOUBLE)
+            else if (et == RuntimePrimitiveJavaType.LONG || et == RuntimePrimitiveJavaType.DOUBLE)
                 eic.Emitter.EmitLdc_I4(8);
             else if (et.IsPrimitive == false && et.IsNonPrimitiveValueType)
                 eic.Emitter.Emit(OpCodes.Sizeof, et.TypeAsArrayType);
@@ -153,7 +153,7 @@ namespace IKVM.Runtime
                 eic.Emitter.EmitLdc_I4(1);
         }
 
-        internal static bool IsIntrinsic(MethodWrapper mw)
+        internal static bool IsIntrinsic(RuntimeJavaMethod mw)
         {
             return intrinsics.ContainsKey(new IntrinsicKey(mw)) && mw.DeclaringType.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader();
         }
@@ -195,8 +195,8 @@ namespace IKVM.Runtime
                 && eic.Match(1, NormalizedByteCode.__ldc) && eic.GetConstantType(1) == ClassFile.ConstantType.Class
                 && (eic.Match(2, NormalizedByteCode.__if_acmpeq) || eic.Match(2, NormalizedByteCode.__if_acmpne)))
             {
-                TypeWrapper tw = eic.GetClassLiteral(1);
-                if (tw.IsGhost || tw.IsGhostArray || tw.IsUnloadable || (tw.IsRemapped && tw.IsFinal && tw is DotNetTypeWrapper))
+                RuntimeJavaType tw = eic.GetClassLiteral(1);
+                if (tw.IsGhost || tw.IsGhostArray || tw.IsUnloadable || (tw.IsRemapped && tw.IsFinal && tw is RuntimeManagedJavaType))
                 {
                     return false;
                 }
@@ -214,7 +214,7 @@ namespace IKVM.Runtime
             if (eic.MatchRange(-1, 2)
                 && eic.Match(-1, NormalizedByteCode.__ldc))
             {
-                TypeWrapper classLiteral = eic.GetClassLiteral(-1);
+                RuntimeJavaType classLiteral = eic.GetClassLiteral(-1);
                 if (!classLiteral.IsUnloadable && classLiteral.GetClassLoader().RemoveAsserts)
                 {
                     eic.Emitter.Emit(OpCodes.Pop);
@@ -225,7 +225,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-        private static bool IsSafeForGetClassOptimization(TypeWrapper tw)
+        private static bool IsSafeForGetClassOptimization(RuntimeJavaType tw)
         {
             // because of ghost arrays, we don't optimize if both types are either java.lang.Object or an array
             return tw != CoreClasses.java.lang.Object.Wrapper && !tw.IsArray;
@@ -335,7 +335,7 @@ namespace IKVM.Runtime
                     arg++;
                 }
                 eic.Emitter.EmitLdarg(arg);
-                MethodWrapper mw;
+                RuntimeJavaMethod mw;
                 if (MatchInvokeStatic(eic, 1, "java.lang.ClassLoader", "getClassLoader", "(Ljava.lang.Class;)Ljava.lang.ClassLoader;"))
                 {
                     eic.PatchOpCode(1, NormalizedByteCode.__nop);
@@ -349,10 +349,10 @@ namespace IKVM.Runtime
                 mw.EmitCallvirt(eic.Emitter);
                 return true;
             }
-            else if (DynamicTypeWrapper.RequiresDynamicReflectionCallerClass(eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature))
+            else if (RuntimeByteCodeJavaType.RequiresDynamicReflectionCallerClass(eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature))
             {
                 // since the non-intrinsic version of Reflection.getCallerClass() always throws an exception, we have to redirect to the dynamic version
-                MethodWrapper getCallerClass = ClassLoaderWrapper.LoadClassCritical("sun.reflect.Reflection").GetMethodWrapper("getCallerClass", "(I)Ljava.lang.Class;", false);
+                var getCallerClass = RuntimeClassLoader.LoadClassCritical("sun.reflect.Reflection").GetMethodWrapper("getCallerClass", "(I)Ljava.lang.Class;", false);
                 getCallerClass.Link();
                 eic.Emitter.EmitLdc_I4(2);
                 getCallerClass.EmitCall(eic.Emitter);
@@ -462,11 +462,11 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
-        /// Returns true if the given <see cref="TypeWrapper"/> specifies an array type suitable for an unsafe operation.
+        /// Returns true if the given <see cref="RuntimeJavaType"/> specifies an array type suitable for an unsafe operation.
         /// </summary>
         /// <param name="tw"></param>
         /// <returns></returns>
-        internal static bool IsSupportedArrayTypeForUnsafeOperation(TypeWrapper tw)
+        internal static bool IsSupportedArrayTypeForUnsafeOperation(RuntimeJavaType tw)
         {
             return tw.IsArray && !tw.IsGhostArray && !tw.ElementTypeWrapper.IsPrimitive && !tw.ElementTypeWrapper.IsNonPrimitiveValueType;
         }
@@ -741,7 +741,7 @@ namespace IKVM.Runtime
             // 1 Object (expect)
             // 0 Object (update)
             var twUnsafe = eic.GetStackTypeWrapper(0, 4);
-            if (twUnsafe == VerifierTypeWrapper.Null)
+            if (twUnsafe == RuntimeVerifierJavaType.Null)
                 return false;
 
             for (int i = 0; ; i--)
@@ -847,7 +847,7 @@ namespace IKVM.Runtime
             // 0 int (update)
 
             var twUnsafe = eic.GetStackTypeWrapper(0, 4);
-            if (twUnsafe == VerifierTypeWrapper.Null)
+            if (twUnsafe == RuntimeVerifierJavaType.Null)
                 return false;
 
             for (int i = 0; ; i--)
@@ -901,8 +901,8 @@ namespace IKVM.Runtime
             // 2 Object (obj)
             // 1 long (offset)
             // 0 int (delta)
-            TypeWrapper twUnsafe = eic.GetStackTypeWrapper(0, 3);
-            if (twUnsafe == VerifierTypeWrapper.Null)
+            RuntimeJavaType twUnsafe = eic.GetStackTypeWrapper(0, 3);
+            if (twUnsafe == RuntimeVerifierJavaType.Null)
             {
                 return false;
             }
@@ -920,7 +920,7 @@ namespace IKVM.Runtime
                     if (eic.Match(i, NormalizedByteCode.__aload, 0)
                         && eic.Match(i + 1, NormalizedByteCode.__getstatic))
                     {
-                        FieldWrapper fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
+                        RuntimeJavaField fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
                         if (fw != null && !fw.IsStatic && fw.DeclaringType == eic.Caller.DeclaringType)
                         {
                             CodeEmitterLocal delta = eic.Emitter.AllocTempLocal(Types.Int32);
@@ -959,7 +959,7 @@ namespace IKVM.Runtime
             // 0 long (update)
 
             var twUnsafe = eic.GetStackTypeWrapper(0, 4);
-            if (twUnsafe == VerifierTypeWrapper.Null)
+            if (twUnsafe == RuntimeVerifierJavaType.Null)
                 return false;
 
             for (int i = 0; ; i--)
@@ -1029,7 +1029,7 @@ namespace IKVM.Runtime
             }
         }
 
-        static FieldWrapper GetUnsafeField(EmitIntrinsicContext eic, ClassFile.ConstantPoolItemFieldref field)
+        static RuntimeJavaField GetUnsafeField(EmitIntrinsicContext eic, ClassFile.ConstantPoolItemFieldref field)
         {
             if (eic.Caller.DeclaringType.GetClassLoader() != CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
             {
@@ -1082,7 +1082,7 @@ namespace IKVM.Runtime
                                         if (eic.ClassFile.GetConstantPoolClassType(method.Instructions[i - 4].Arg1) == eic.Caller.DeclaringType)
                                         {
                                             var fieldName = eic.ClassFile.GetConstantPoolConstantString(method.Instructions[i - 3].Arg1);
-                                            FieldWrapper fw = null;
+                                            RuntimeJavaField fw = null;
                                             foreach (var fw1 in eic.Caller.DeclaringType.GetFields())
                                             {
                                                 if (fw1.Name == fieldName)
@@ -1114,7 +1114,7 @@ namespace IKVM.Runtime
                                             eic.ClassFile.GetConstantPoolClassType(method.Instructions[j - 1].Arg1) == eic.Caller.DeclaringType)
                                         {
                                             var fieldName = eic.ClassFile.GetConstantPoolConstantString(method.Instructions[i - 3].Arg1);
-                                            FieldWrapper fw = null;
+                                            RuntimeJavaField fw = null;
                                             foreach (var fw1 in eic.Caller.DeclaringType.GetFields())
                                             {
                                                 if (fw1.Name == fieldName)

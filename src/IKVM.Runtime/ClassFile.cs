@@ -519,7 +519,7 @@ namespace IKVM.Runtime
                                 string name;
                                 if ((clazz = constantPoolPatches[i] as java.lang.Class) != null)
                                 {
-                                    TypeWrapper tw = TypeWrapper.FromClass(clazz);
+                                    RuntimeJavaType tw = RuntimeJavaType.FromClass(clazz);
                                     constantpool[i] = new ConstantPoolItemClass(tw.Name, tw);
                                 }
                                 else if ((name = constantPoolPatches[i] as string) != null)
@@ -851,7 +851,7 @@ namespace IKVM.Runtime
 
         internal int MajorVersion => reader.Version.Major;
 
-        internal void Link(TypeWrapper thisType, LoadMode mode)
+        internal void Link(RuntimeJavaType thisType, LoadMode mode)
         {
             // this is not just an optimization, it's required for anonymous classes to be able to refer to themselves
             ((ConstantPoolItemClass)constantpool[reader.Record.ThisClassIndex]).LinkSelf(thisType);
@@ -934,7 +934,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-        internal TypeWrapper GetConstantPoolClassType(int index)
+        internal RuntimeJavaType GetConstantPoolClassType(int index)
         {
             return ((ConstantPoolItemClass)constantpool[index]).GetClassType();
         }

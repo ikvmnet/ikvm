@@ -29,7 +29,7 @@ using IKVM.Reflection.Emit;
 using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
-using DynamicOrAotTypeWrapper = IKVM.Tools.Importer.AotTypeWrapper;
+using DynamicOrAotTypeWrapper = IKVM.Tools.Importer.RuntimeImportByteCodeJavaType;
 using ProtectionDomain = System.Object;
 #else
 using System.Reflection;
@@ -42,9 +42,9 @@ namespace IKVM.Runtime
     sealed class DefineMethodHelper
     {
 
-        private readonly MethodWrapper mw;
+        private readonly RuntimeJavaMethod mw;
 
-        internal DefineMethodHelper(MethodWrapper mw)
+        internal DefineMethodHelper(RuntimeJavaMethod mw)
         {
             this.mw = mw;
         }
@@ -54,21 +54,21 @@ namespace IKVM.Runtime
             get { return mw.GetParameters().Length + (mw.HasCallerID ? 1 : 0); }
         }
 
-        internal MethodBuilder DefineMethod(DynamicTypeWrapper context, TypeBuilder tb, string name, MethodAttributes attribs)
+        internal MethodBuilder DefineMethod(RuntimeByteCodeJavaType context, TypeBuilder tb, string name, MethodAttributes attribs)
         {
             return DefineMethod(context.GetClassLoader().GetTypeWrapperFactory(), tb, name, attribs, null, false);
         }
 
-        internal MethodBuilder DefineMethod(TypeWrapperFactory context, TypeBuilder tb, string name, MethodAttributes attribs)
+        internal MethodBuilder DefineMethod(RuntimeJavaTypeFactory context, TypeBuilder tb, string name, MethodAttributes attribs)
         {
             return DefineMethod(context, tb, name, attribs, null, false);
         }
 
-        internal MethodBuilder DefineMethod(TypeWrapperFactory context, TypeBuilder tb, string name, MethodAttributes attribs, Type firstParameter, bool mustBePublic)
+        internal MethodBuilder DefineMethod(RuntimeJavaTypeFactory context, TypeBuilder tb, string name, MethodAttributes attribs, Type firstParameter, bool mustBePublic)
         {
             // we add optional modifiers to make the signature unique
             int firstParam = firstParameter == null ? 0 : 1;
-            TypeWrapper[] parameters = mw.GetParameters();
+            RuntimeJavaType[] parameters = mw.GetParameters();
             Type[] parameterTypes = new Type[parameters.Length + (mw.HasCallerID ? 1 : 0) + firstParam];
             Type[][] modopt = new Type[parameterTypes.Length][];
             if (firstParameter != null)
@@ -81,7 +81,7 @@ namespace IKVM.Runtime
                 parameterTypes[i + firstParam] = mustBePublic
                     ? parameters[i].TypeAsPublicSignatureType
                     : parameters[i].TypeAsSignatureType;
-                modopt[i + firstParam] = DynamicTypeWrapper.GetModOpt(context, parameters[i], mustBePublic);
+                modopt[i + firstParam] = RuntimeByteCodeJavaType.GetModOpt(context, parameters[i], mustBePublic);
             }
             if (mw.HasCallerID)
             {
@@ -90,16 +90,16 @@ namespace IKVM.Runtime
             Type returnType = mustBePublic
                 ? mw.ReturnType.TypeAsPublicSignatureType
                 : mw.ReturnType.TypeAsSignatureType;
-            Type[] modoptReturnType = DynamicTypeWrapper.GetModOpt(context, mw.ReturnType, mustBePublic);
+            Type[] modoptReturnType = RuntimeByteCodeJavaType.GetModOpt(context, mw.ReturnType, mustBePublic);
             return tb.DefineMethod(name, attribs, CallingConventions.Standard, returnType, null, modoptReturnType, parameterTypes, null, modopt);
         }
 
-        internal MethodBuilder DefineConstructor(DynamicTypeWrapper context, TypeBuilder tb, MethodAttributes attribs)
+        internal MethodBuilder DefineConstructor(RuntimeByteCodeJavaType context, TypeBuilder tb, MethodAttributes attribs)
         {
             return DefineConstructor(context.GetClassLoader().GetTypeWrapperFactory(), tb, attribs);
         }
 
-        internal MethodBuilder DefineConstructor(TypeWrapperFactory context, TypeBuilder tb, MethodAttributes attribs)
+        internal MethodBuilder DefineConstructor(RuntimeJavaTypeFactory context, TypeBuilder tb, MethodAttributes attribs)
         {
             return DefineMethod(context, tb, ConstructorInfo.ConstructorName, attribs | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
         }

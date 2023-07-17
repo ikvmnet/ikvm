@@ -38,7 +38,7 @@ namespace IKVM.Runtime
 		private readonly LocalVar[/*instructionIndex*/][/*localIndex*/] invokespecialLocalVars;
 		private readonly LocalVar[/*index*/] allLocalVars;
 
-		internal LocalVarInfo(CodeInfo ma, ClassFile classFile, ClassFile.Method method, UntangledExceptionTable exceptions, MethodWrapper mw, ClassLoaderWrapper classLoader)
+		internal LocalVarInfo(CodeInfo ma, ClassFile classFile, ClassFile.Method method, UntangledExceptionTable exceptions, RuntimeJavaMethod mw, RuntimeClassLoader classLoader)
 		{
 			Dictionary<int, string>[] localStoreReaders = FindLocalVariables(ma, mw, classFile, method);
 
@@ -88,8 +88,8 @@ namespace IKVM.Runtime
 							// we can only merge if the resulting type is valid (this protects against incorrect
 							// LVT data, but is also needed for constructors, where the uninitialized this is a different
 							// type from the initialized this)
-							TypeWrapper tw = InstructionState.FindCommonBaseType(v1.type, v2.type);
-							if (tw != VerifierTypeWrapper.Invalid)
+							RuntimeJavaType tw = InstructionState.FindCommonBaseType(v1.type, v2.type);
+							if (tw != RuntimeVerifierJavaType.Invalid)
 							{
 								v1.isArg |= v2.isArg;
 								v1.type = tw;
@@ -338,12 +338,12 @@ namespace IKVM.Runtime
 			}
 		}
 
-		private static Dictionary<int, string>[] FindLocalVariables(CodeInfo codeInfo, MethodWrapper mw, ClassFile classFile, ClassFile.Method method)
+		private static Dictionary<int, string>[] FindLocalVariables(CodeInfo codeInfo, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method)
 		{
 			FindLocalVarState[] state = new FindLocalVarState[method.Instructions.Length];
 			state[0].changed = true;
 			state[0].sites = new FindLocalVarStoreSite[method.MaxLocals];
-			TypeWrapper[] parameters = mw.GetParameters();
+			RuntimeJavaType[] parameters = mw.GetParameters();
 			int argpos = 0;
 			if (!mw.IsStatic)
 			{
@@ -389,7 +389,7 @@ namespace IKVM.Runtime
 						}
 
 						if (IsLoadLocal(instructions[i].NormalizedOpCode)
-							&& (instructions[i].NormalizedOpCode != NormalizedByteCode.__aload || !VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(i + 1, 0))))
+							&& (instructions[i].NormalizedOpCode != NormalizedByteCode.__aload || !RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(i + 1, 0))))
 						{
 							if (localStoreReaders[i] == null)
 							{
@@ -402,7 +402,7 @@ namespace IKVM.Runtime
 						}
 
 						if (IsStoreLocal(instructions[i].NormalizedOpCode)
-							&& (instructions[i].NormalizedOpCode != NormalizedByteCode.__astore || !VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(i, 0))))
+							&& (instructions[i].NormalizedOpCode != NormalizedByteCode.__astore || !RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(i, 0))))
 						{
 							curr.Store(i, instructions[i].NormalizedArg1);
 							// if this is a store at the end of an exception block,
@@ -421,11 +421,11 @@ namespace IKVM.Runtime
 							ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(instructions[i].Arg1);
 							if (ReferenceEquals(cpi.Name, StringConstants.INIT))
 							{
-								TypeWrapper type = codeInfo.GetRawStackTypeWrapper(i, cpi.GetArgTypes().Length);
+								RuntimeJavaType type = codeInfo.GetRawStackTypeWrapper(i, cpi.GetArgTypes().Length);
 								// after we've invoked the constructor, the uninitialized references
 								// are now initialized
-								if (type == VerifierTypeWrapper.UninitializedThis
-									|| VerifierTypeWrapper.IsNew(type))
+								if (type == RuntimeVerifierJavaType.UninitializedThis
+									|| RuntimeVerifierJavaType.IsNew(type))
 								{
 									for (int j = 0; j < maxLocals; j++)
 									{
@@ -457,8 +457,8 @@ namespace IKVM.Runtime
 							{
 								if (instructions[j].NormalizedOpCode == NormalizedByteCode.__athrow
 									&& codeInfo.HasState(j)
-									&& VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(j, 0))
-									&& ((VerifierTypeWrapper)codeInfo.GetRawStackTypeWrapper(j, 0)).Index == handler)
+									&& RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(j, 0))
+									&& ((RuntimeVerifierJavaType)codeInfo.GetRawStackTypeWrapper(j, 0)).Index == handler)
 								{
 									curr.Merge(handlerState[j]);
 								}
@@ -502,7 +502,7 @@ namespace IKVM.Runtime
 		{
 			Debug.Assert(IsLoadLocal(method.Instructions[instructionIndex].NormalizedOpCode));
 			LocalVar local = null;
-			TypeWrapper type = VerifierTypeWrapper.Null;
+			RuntimeJavaType type = RuntimeVerifierJavaType.Null;
 			int localIndex = method.Instructions[instructionIndex].NormalizedArg1;
 			bool isArg = false;
 			foreach (int store in storeSites.Keys)
@@ -531,7 +531,7 @@ namespace IKVM.Runtime
 					}
 				}
 				// we can't have an invalid type, because that would have failed verification earlier
-				Debug.Assert(type != VerifierTypeWrapper.Invalid);
+				Debug.Assert(type != RuntimeVerifierJavaType.Invalid);
 
 				LocalVar l;
 				if (localByStoreSite.TryGetValue(MakeKey(store, localIndex), out l))
@@ -559,9 +559,9 @@ namespace IKVM.Runtime
 			{
 				local = new LocalVar();
 				local.local = localIndex;
-				if (VerifierTypeWrapper.IsThis(type))
+				if (RuntimeVerifierJavaType.IsThis(type))
 				{
-					local.type = ((VerifierTypeWrapper)type).UnderlyingType;
+					local.type = ((RuntimeVerifierJavaType)type).UnderlyingType;
 				}
 				else
 				{
@@ -578,7 +578,7 @@ namespace IKVM.Runtime
 			{
 				local.isArg |= isArg;
 				local.type = InstructionState.FindCommonBaseType(local.type, type);
-				Debug.Assert(local.type != VerifierTypeWrapper.Invalid);
+				Debug.Assert(local.type != RuntimeVerifierJavaType.Invalid);
 			}
 			foreach (int store in storeSites.Keys)
 			{
@@ -619,7 +619,7 @@ namespace IKVM.Runtime
 			}
 			l1.isArg |= l2.isArg;
 			l1.type = InstructionState.FindCommonBaseType(l1.type, l2.type);
-			Debug.Assert(l1.type != VerifierTypeWrapper.Invalid);
+			Debug.Assert(l1.type != RuntimeVerifierJavaType.Invalid);
 			return l1;
 		}
 	}

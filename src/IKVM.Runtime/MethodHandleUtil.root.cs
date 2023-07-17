@@ -104,7 +104,7 @@ namespace IKVM.Runtime
             return type.IsGenericType && type.GetGenericTypeDefinition() == typeofMHA;
         }
 
-        internal static Type CreateMethodHandleDelegateType(TypeWrapper[] args, TypeWrapper ret)
+        internal static Type CreateMethodHandleDelegateType(RuntimeJavaType[] args, RuntimeJavaType ret)
         {
             Type[] typeArgs = new Type[args.Length];
             for (int i = 0; i < args.Length; i++)
@@ -114,7 +114,7 @@ namespace IKVM.Runtime
             return CreateDelegateType(typeArgs, ret.TypeAsSignatureType);
         }
 
-        internal static Type CreateMemberWrapperDelegateType(TypeWrapper[] args, TypeWrapper ret)
+        internal static Type CreateMemberWrapperDelegateType(RuntimeJavaType[] args, RuntimeJavaType ret)
         {
             Type[] typeArgs = new Type[args.Length];
             for (int i = 0; i < args.Length; i++)
@@ -171,17 +171,17 @@ namespace IKVM.Runtime
             return outArray;
         }
 
-        internal static Type AsBasicType(TypeWrapper tw)
+        internal static Type AsBasicType(RuntimeJavaType tw)
         {
-            if (tw == PrimitiveTypeWrapper.BOOLEAN || tw == PrimitiveTypeWrapper.BYTE || tw == PrimitiveTypeWrapper.CHAR || tw == PrimitiveTypeWrapper.SHORT || tw == PrimitiveTypeWrapper.INT)
+            if (tw == RuntimePrimitiveJavaType.BOOLEAN || tw == RuntimePrimitiveJavaType.BYTE || tw == RuntimePrimitiveJavaType.CHAR || tw == RuntimePrimitiveJavaType.SHORT || tw == RuntimePrimitiveJavaType.INT)
                 return Types.Int32;
-            else if (tw == PrimitiveTypeWrapper.LONG || tw == PrimitiveTypeWrapper.FLOAT || tw == PrimitiveTypeWrapper.DOUBLE || tw == PrimitiveTypeWrapper.VOID)
+            else if (tw == RuntimePrimitiveJavaType.LONG || tw == RuntimePrimitiveJavaType.FLOAT || tw == RuntimePrimitiveJavaType.DOUBLE || tw == RuntimePrimitiveJavaType.VOID)
                 return tw.TypeAsSignatureType;
             else
                 return Types.Object;
         }
 
-        internal static bool HasOnlyBasicTypes(TypeWrapper[] args, TypeWrapper ret)
+        internal static bool HasOnlyBasicTypes(RuntimeJavaType[] args, RuntimeJavaType ret)
         {
             foreach (var tw in args)
                 if (!IsBasicType(tw))
@@ -190,17 +190,17 @@ namespace IKVM.Runtime
             return IsBasicType(ret);
         }
 
-        static bool IsBasicType(TypeWrapper tw)
+        static bool IsBasicType(RuntimeJavaType tw)
         {
-            return tw == PrimitiveTypeWrapper.INT
-                || tw == PrimitiveTypeWrapper.LONG
-                || tw == PrimitiveTypeWrapper.FLOAT
-                || tw == PrimitiveTypeWrapper.DOUBLE
-                || tw == PrimitiveTypeWrapper.VOID
+            return tw == RuntimePrimitiveJavaType.INT
+                || tw == RuntimePrimitiveJavaType.LONG
+                || tw == RuntimePrimitiveJavaType.FLOAT
+                || tw == RuntimePrimitiveJavaType.DOUBLE
+                || tw == RuntimePrimitiveJavaType.VOID
                 || tw == CoreClasses.java.lang.Object.Wrapper;
         }
 
-        internal static int SlotCount(TypeWrapper[] parameters)
+        internal static int SlotCount(RuntimeJavaType[] parameters)
         {
             int count = 0;
             for (int i = 0; i < parameters.Length; i++)

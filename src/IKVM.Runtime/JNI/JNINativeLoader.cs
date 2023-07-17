@@ -59,7 +59,7 @@ namespace IKVM.Runtime.JNI
         /// <param name="filename"></param>
         /// <param name="loader"></param>
         /// <returns></returns>
-        public static long LoadLibrary(string filename, ClassLoaderWrapper loader)
+        public static long LoadLibrary(string filename, RuntimeClassLoader loader)
         {
             Tracer.Info(Tracer.Jni, "loadLibrary: {0}, class loader: {1}", filename, loader);
 
@@ -153,7 +153,7 @@ namespace IKVM.Runtime.JNI
         /// </summary>
         /// <param name="handle"></param>
         /// <param name="loader"></param>
-        public static void UnloadLibrary(long handle, ClassLoaderWrapper loader)
+        public static void UnloadLibrary(long handle, RuntimeClassLoader loader)
         {
             var p = (nint)handle;
 

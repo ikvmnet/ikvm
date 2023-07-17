@@ -42,10 +42,10 @@ namespace IKVM.Runtime
 
             }
 
-            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 base.Link(thisType, mode);
-                TypeWrapper wrapper = GetClassType();
+                RuntimeJavaType wrapper = GetClassType();
                 if (wrapper != null)
                 {
                     if (!wrapper.IsUnloadable)

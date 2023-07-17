@@ -37,7 +37,7 @@ namespace IKVM.Runtime
 
             }
 
-            internal virtual void Link(TypeWrapper thisType, LoadMode mode)
+            internal virtual void Link(RuntimeJavaType thisType, LoadMode mode)
             {
 
             }

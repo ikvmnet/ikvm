@@ -117,7 +117,7 @@ namespace IKVM.Runtime.JNI
             const int LOCAL_REF_MASK = (LOCAL_REF_MAX_BUCKET_SIZE - 1);
 
             internal readonly JNIEnv* pJNIEnv;
-            internal ClassLoaderWrapper classLoader;
+            internal RuntimeClassLoader classLoader;
             internal ikvm.@internal.CallerID callerID;
 
             object[][] localRefs;
@@ -421,7 +421,7 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         internal static int GetMethodArgs(JNIEnv* pEnv, nint method, byte* sig)
         {
-            var args = MethodWrapper.FromCookie(method).GetParameters();
+            var args = RuntimeJavaMethod.FromCookie(method).GetParameters();
             for (var i = 0; i < args.Length; i++)
                 sig[i] = args[i].IsPrimitive ? (byte)args[i].SigName[0] : (byte)'L';
 
@@ -451,15 +451,15 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        static ClassLoaderWrapper FindNativeMethodClassLoader(JNIEnv* pEnv)
+        static RuntimeClassLoader FindNativeMethodClassLoader(JNIEnv* pEnv)
         {
             var env = pEnv->GetManagedJNIEnv();
             if (env.callerID != null)
-                return ClassLoaderWrapper.FromCallerID(env.callerID);
+                return RuntimeClassLoader.FromCallerID(env.callerID);
             else if (env.classLoader != null)
                 return env.classLoader;
             else
-                return ClassLoaderWrapper.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
+                return RuntimeClassLoader.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
         }
 
         internal static jclass FindClass(JNIEnv* pEnv, byte* name)
@@ -496,35 +496,35 @@ namespace IKVM.Runtime.JNI
 
         internal static jmethodID FromReflectedMethod(JNIEnv* pEnv, jobject method)
         {
-            return MethodWrapper.FromExecutable((java.lang.reflect.Executable)pEnv->UnwrapRef(method)).Cookie;
+            return RuntimeJavaMethod.FromExecutable((java.lang.reflect.Executable)pEnv->UnwrapRef(method)).Cookie;
         }
 
         internal static jfieldID FromReflectedField(JNIEnv* pEnv, jobject field)
         {
-            return FieldWrapper.FromField((java.lang.reflect.Field)pEnv->UnwrapRef(field)).Cookie;
+            return RuntimeJavaField.FromField((java.lang.reflect.Field)pEnv->UnwrapRef(field)).Cookie;
         }
 
         internal static jobject ToReflectedMethod(JNIEnv* pEnv, jclass clazz_ignored, jmethodID method, jboolean isStatic)
         {
-            return pEnv->MakeLocalRef(MethodWrapper.FromCookie(method).ToMethodOrConstructor(true));
+            return pEnv->MakeLocalRef(RuntimeJavaMethod.FromCookie(method).ToMethodOrConstructor(true));
         }
 
         internal static jclass GetSuperclass(JNIEnv* pEnv, jclass sub)
         {
-            TypeWrapper wrapper = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(sub)).BaseTypeWrapper;
+            RuntimeJavaType wrapper = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(sub)).BaseTypeWrapper;
             return pEnv->MakeLocalRef(wrapper == null ? null : wrapper.ClassObject);
         }
 
         internal static jboolean IsAssignableFrom(JNIEnv* pEnv, jclass sub, jclass super)
         {
-            TypeWrapper w1 = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(sub));
-            TypeWrapper w2 = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(super));
+            RuntimeJavaType w1 = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(sub));
+            RuntimeJavaType w2 = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(super));
             return w1.IsAssignableTo(w2) ? JNI_TRUE : JNI_FALSE;
         }
 
         internal static jobject ToReflectedField(JNIEnv* pEnv, jclass clazz_ignored, jfieldID field, jboolean isStatic)
         {
-            return pEnv->MakeLocalRef(FieldWrapper.FromCookie(field).ToField(true));
+            return pEnv->MakeLocalRef(RuntimeJavaField.FromCookie(field).ToField(true));
         }
 
         private static void SetPendingException(JNIEnv* pEnv, Exception x)
@@ -546,7 +546,7 @@ namespace IKVM.Runtime.JNI
         internal static jint ThrowNew(JNIEnv* pEnv, jclass clazz, byte* msg)
         {
             var env = pEnv->GetManagedJNIEnv();
-            var wrapper = TypeWrapper.FromClass((java.lang.Class)UnwrapRef(env, clazz));
+            var wrapper = RuntimeJavaType.FromClass((java.lang.Class)UnwrapRef(env, clazz));
             var mw = wrapper.GetMethodWrapper("<init>", msg == null ? "()V" : "(Ljava.lang.String;)V", false);
             if (mw != null)
             {
@@ -723,10 +723,10 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         internal static jobject AllocObject(JNIEnv* pEnv, jclass clazz)
         {
-            return AllocObjectImpl(pEnv, TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz)));
+            return AllocObjectImpl(pEnv, RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz)));
         }
 
-        static jobject AllocObjectImpl(JNIEnv* pEnv, TypeWrapper wrapper)
+        static jobject AllocObjectImpl(JNIEnv* pEnv, RuntimeJavaType wrapper)
         {
             try
             {
@@ -766,7 +766,7 @@ namespace IKVM.Runtime.JNI
             var obj = UnwrapRef(env, objHandle);
 
             // resolve the method being invoked on the object
-            var mw = MethodWrapper.FromCookie(methodID);
+            var mw = RuntimeJavaMethod.FromCookie(methodID);
             mw.Link();
             mw.ResolveMethod();
 
@@ -776,21 +776,21 @@ namespace IKVM.Runtime.JNI
             for (int i = 0; i < argTypes.Length; i++)
             {
                 var type = argTypes[i];
-                if (type == PrimitiveTypeWrapper.BOOLEAN)
+                if (type == RuntimePrimitiveJavaType.BOOLEAN)
                     args[i] = pArgs[i].z != JNI_FALSE;
-                else if (type == PrimitiveTypeWrapper.BYTE)
+                else if (type == RuntimePrimitiveJavaType.BYTE)
                     args[i] = (byte)pArgs[i].b;
-                else if (type == PrimitiveTypeWrapper.CHAR)
+                else if (type == RuntimePrimitiveJavaType.CHAR)
                     args[i] = (char)pArgs[i].c;
-                else if (type == PrimitiveTypeWrapper.SHORT)
+                else if (type == RuntimePrimitiveJavaType.SHORT)
                     args[i] = pArgs[i].s;
-                else if (type == PrimitiveTypeWrapper.INT)
+                else if (type == RuntimePrimitiveJavaType.INT)
                     args[i] = pArgs[i].i;
-                else if (type == PrimitiveTypeWrapper.LONG)
+                else if (type == RuntimePrimitiveJavaType.LONG)
                     args[i] = pArgs[i].j;
-                else if (type == PrimitiveTypeWrapper.FLOAT)
+                else if (type == RuntimePrimitiveJavaType.FLOAT)
                     args[i] = pArgs[i].f;
-                else if (type == PrimitiveTypeWrapper.DOUBLE)
+                else if (type == RuntimePrimitiveJavaType.DOUBLE)
                     args[i] = pArgs[i].d;
                 else
                     args[i] = argTypes[i].GhostWrap(UnwrapRef(env, pArgs[i].l));
@@ -847,7 +847,7 @@ namespace IKVM.Runtime.JNI
         /// <param name="argarray"></param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException"></exception>
-        static object InvokeNonVirtual(ManagedJNIEnv env, MethodWrapper mw, object obj, object[] argarray)
+        static object InvokeNonVirtual(ManagedJNIEnv env, RuntimeJavaMethod mw, object obj, object[] argarray)
         {
             if (mw.HasCallerID || mw.IsDynamicOnly)
                 throw new NotSupportedException();
@@ -868,7 +868,7 @@ namespace IKVM.Runtime.JNI
 
         public static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
         {
-            var wrapper = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
+            var wrapper = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
             if (wrapper.IsAbstract == false && wrapper.TypeAsBaseType.IsAbstract)
                 return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false)); // static newinstance helper method
 
@@ -897,12 +897,12 @@ namespace IKVM.Runtime.JNI
             // NOTE if clazz is an interface, this is still the right thing to do
             // (i.e. if the object implements the interface, we return true)
             var objClass = IKVM.Java.Externs.ikvm.runtime.Util.getClassFromObject(pEnv->UnwrapRef(obj));
-            var w1 = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
-            var w2 = TypeWrapper.FromClass(objClass);
+            var w1 = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
+            var w2 = RuntimeJavaType.FromClass(objClass);
             return w2.IsAssignableTo(w1) ? JNI_TRUE : JNI_FALSE;
         }
 
-        static MethodWrapper GetMethodImpl(TypeWrapper tw, string name, string sig)
+        static RuntimeJavaMethod GetMethodImpl(RuntimeJavaType tw, string name, string sig)
         {
             for (; ; )
             {
@@ -916,23 +916,23 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        static void AppendInterfaces(List<TypeWrapper> list, IList<TypeWrapper> add)
+        static void AppendInterfaces(List<RuntimeJavaType> list, IList<RuntimeJavaType> add)
         {
             foreach (var iface in add)
                 if (list.Contains(iface) == false)
                     list.Add(iface);
         }
 
-        static List<TypeWrapper> TransitiveInterfaces(TypeWrapper tw)
+        static List<RuntimeJavaType> TransitiveInterfaces(RuntimeJavaType tw)
         {
-            var list = new List<TypeWrapper>();
+            var list = new List<RuntimeJavaType>();
 
             // append interfaces from base type
             if (tw.BaseTypeWrapper != null)
                 AppendInterfaces(list, TransitiveInterfaces(tw.BaseTypeWrapper));
 
             // append transitive interfaces of current type
-            foreach (TypeWrapper iface in tw.Interfaces)
+            foreach (RuntimeJavaType iface in tw.Interfaces)
                 AppendInterfaces(list, TransitiveInterfaces(iface));
 
             // append interfaces of current type
@@ -941,7 +941,7 @@ namespace IKVM.Runtime.JNI
             return list;
         }
 
-        static MethodWrapper GetInterfaceMethodImpl(TypeWrapper tw, string name, string sig)
+        static RuntimeJavaMethod GetInterfaceMethodImpl(RuntimeJavaType tw, string name, string sig)
         {
             foreach (var iface in TransitiveInterfaces(tw))
             {
@@ -957,14 +957,14 @@ namespace IKVM.Runtime.JNI
         {
             try
             {
-                var tw = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
+                var tw = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
                 tw.Finish();
 
                 // if name == NULL, the JDK returns the constructor
                 var methodname = (IntPtr)name == IntPtr.Zero ? "<init>" : DecodeMUTF8Argument(name, nameof(name));
                 var methodsig = DecodeMUTF8Argument(sig, nameof(sig));
 
-                MethodWrapper mw = null;
+                RuntimeJavaMethod mw = null;
 
                 // don't allow dotted names!
                 if (methodsig.IndexOf('.') < 0)
@@ -1171,7 +1171,7 @@ namespace IKVM.Runtime.JNI
             InvokeHelper(pEnv, obj, methodID, args, true);
         }
 
-        static FieldWrapper GetFieldImpl(TypeWrapper tw, string name, string sig)
+        static RuntimeJavaField GetFieldImpl(RuntimeJavaType tw, string name, string sig)
         {
             for (; ; )
             {
@@ -1192,7 +1192,7 @@ namespace IKVM.Runtime.JNI
                 var n = DecodeMUTF8Argument(name, nameof(name));
                 var s = DecodeMUTF8Argument(sig, nameof(sig));
 
-                var tw = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
+                var tw = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
                 tw.Finish();
 
                 // don't allow dotted names!
@@ -1223,9 +1223,9 @@ namespace IKVM.Runtime.JNI
             return FindFieldID(pEnv, clazz, name, sig, false);
         }
 
-        static FieldWrapper GetFieldWrapper(jfieldID cookie)
+        static RuntimeJavaField GetFieldWrapper(jfieldID cookie)
         {
-            return FieldWrapper.FromCookie(cookie);
+            return RuntimeJavaField.FromCookie(cookie);
         }
 
         internal static jobject GetObjectField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
@@ -1704,7 +1704,7 @@ namespace IKVM.Runtime.JNI
             try
             {
                 // we want to support (non-primitive) value types so we can't cast to object[]
-                Array array = Array.CreateInstance(TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz)).TypeAsArrayType, len);
+                Array array = Array.CreateInstance(RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz)).TypeAsArrayType, len);
                 object o = pEnv->UnwrapRef(init);
                 if (o != null)
                 {
@@ -2302,7 +2302,7 @@ namespace IKVM.Runtime.JNI
         {
             try
             {
-                TypeWrapper wrapper = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
+                RuntimeJavaType wrapper = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
                 wrapper.Finish();
                 for (int i = 0; i < nMethods; i++)
                 {
@@ -2342,7 +2342,7 @@ namespace IKVM.Runtime.JNI
         {
             try
             {
-                TypeWrapper wrapper = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
+                RuntimeJavaType wrapper = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
                 wrapper.Finish();
                 // TODO this won't work when we're putting the JNI methods in jniproxy.dll
                 foreach (FieldInfo fi in wrapper.TypeAsTBD.GetFields(BindingFlags.Static | BindingFlags.NonPublic))

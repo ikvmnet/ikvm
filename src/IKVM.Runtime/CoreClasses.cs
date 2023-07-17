@@ -38,7 +38,7 @@ namespace IKVM.Runtime
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static Object() { }
-					internal static readonly TypeWrapper Wrapper = DotNetTypeWrapper.GetWrapperFromDotNetType(Types.Object);
+					internal static readonly RuntimeJavaType Wrapper = RuntimeManagedJavaType.GetWrapperFromDotNetType(Types.Object);
 				}
 
 				internal static class Exception
@@ -46,7 +46,7 @@ namespace IKVM.Runtime
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static Exception() { }
-					internal static readonly TypeWrapper Wrapper = DotNetTypeWrapper.GetWrapperFromDotNetType(Types.Exception);
+					internal static readonly RuntimeJavaType Wrapper = RuntimeManagedJavaType.GetWrapperFromDotNetType(Types.Exception);
 				}
 
 			}
@@ -64,7 +64,7 @@ namespace IKVM.Runtime
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static CallerID() { }
-					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.CallerID");
+					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoader.LoadClassCritical("ikvm.internal.CallerID");
 				}
 
 			}
@@ -80,7 +80,7 @@ namespace IKVM.Runtime
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static Serializable() { }
-					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.io.Serializable");
+					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoader.LoadClassCritical("java.io.Serializable");
 				}
 			}
 
@@ -91,7 +91,7 @@ namespace IKVM.Runtime
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static Object() {}
-					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Object");
+					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoader.LoadClassCritical("java.lang.Object");
 				}
 
 				internal static class String
@@ -99,7 +99,7 @@ namespace IKVM.Runtime
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static String() {}
-					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.String");
+					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoader.LoadClassCritical("java.lang.String");
 				}
 
 				internal static class Class
@@ -107,7 +107,7 @@ namespace IKVM.Runtime
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static Class() {}
-					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Class");
+					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoader.LoadClassCritical("java.lang.Class");
 				}
 
 				internal static class Cloneable
@@ -115,7 +115,7 @@ namespace IKVM.Runtime
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static Cloneable() {}
-					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Cloneable");
+					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoader.LoadClassCritical("java.lang.Cloneable");
 				}
 
 				internal static class Throwable
@@ -123,7 +123,7 @@ namespace IKVM.Runtime
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static Throwable() {}
-					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Throwable");
+					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoader.LoadClassCritical("java.lang.Throwable");
 				}
 
 				internal static class invoke
@@ -133,7 +133,7 @@ namespace IKVM.Runtime
 						// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 						// (we don't want the classes to be loaded prematurely, because they might not be available then)
 						static MethodHandle() { }
-						internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.MethodHandle");
+						internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoader.LoadClassCritical("java.lang.invoke.MethodHandle");
 					}
 
 					internal static class MethodType
@@ -141,7 +141,7 @@ namespace IKVM.Runtime
 						// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 						// (we don't want the classes to be loaded prematurely, because they might not be available then)
 						static MethodType() { }
-						internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.MethodType");
+						internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoader.LoadClassCritical("java.lang.invoke.MethodType");
 					}
 				}
 			}

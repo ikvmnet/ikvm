@@ -1117,7 +1117,7 @@ namespace IKVM.Tools.Importer
                 {
                     foreach (Assembly asm in target.references)
                     {
-                        AssemblyClassLoader.PreloadExportedAssemblies(asm);
+                        RuntimeAssemblyClassLoader.PreloadExportedAssemblies(asm);
                     }
                 }
             }

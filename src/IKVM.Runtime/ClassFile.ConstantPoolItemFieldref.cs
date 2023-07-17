@@ -33,8 +33,8 @@ namespace IKVM.Runtime
         internal sealed class ConstantPoolItemFieldref : ConstantPoolItemFMI
         {
 
-            FieldWrapper field;
-            TypeWrapper fieldTypeWrapper;
+            RuntimeJavaField field;
+            RuntimeJavaType fieldTypeWrapper;
 
             /// <summary>
             /// Initializes a new instance.
@@ -53,12 +53,12 @@ namespace IKVM.Runtime
                     throw new ClassFormatError("Invalid field name \"{0}\"", name);
             }
 
-            internal TypeWrapper GetFieldType()
+            internal RuntimeJavaType GetFieldType()
             {
                 return fieldTypeWrapper;
             }
 
-            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 base.Link(thisType, mode);
                 lock (this)
@@ -68,8 +68,8 @@ namespace IKVM.Runtime
                         return;
                     }
                 }
-                FieldWrapper fw = null;
-                TypeWrapper wrapper = GetClassType();
+                RuntimeJavaField fw = null;
+                RuntimeJavaType wrapper = GetClassType();
                 if (wrapper == null)
                 {
                     return;
@@ -82,8 +82,8 @@ namespace IKVM.Runtime
                         fw.Link(mode);
                     }
                 }
-                ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-                TypeWrapper fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
+                RuntimeClassLoader classLoader = thisType.GetClassLoader();
+                RuntimeJavaType fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
                 lock (this)
                 {
                     if (fieldTypeWrapper == null)
@@ -94,12 +94,12 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal FieldWrapper GetField()
+            internal RuntimeJavaField GetField()
             {
                 return field;
             }
 
-            internal override MemberWrapper GetMember()
+            internal override RuntimeJavaMember GetMember()
             {
                 return field;
             }

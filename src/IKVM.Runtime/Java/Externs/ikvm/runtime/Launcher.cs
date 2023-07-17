@@ -32,7 +32,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
             // statically compiled entry points need to be explicitly added to the classpath
             // this is sort of a hack and should be removed with a better class loader hierarchy
             if (main != null && main.Assembly.IsDynamic == false)
-                ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(IKVM.Runtime.AssemblyClassLoader.FromAssembly(main.Assembly));
+                RuntimeClassLoader.GetBootstrapClassLoader().AddDelegate(IKVM.Runtime.RuntimeAssemblyClassLoader.FromAssembly(main.Assembly));
 
             // copy properties to a CLR type
             var p = new Dictionary<string, string>();

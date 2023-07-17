@@ -36,8 +36,8 @@ namespace IKVM.Runtime
 
             string name;
             string descriptor;
-            TypeWrapper[] argTypeWrappers;
-            TypeWrapper retTypeWrapper;
+            RuntimeJavaType[] argTypeWrappers;
+            RuntimeJavaType retTypeWrapper;
 
             /// <summary>
             /// Initializes a new instance.
@@ -60,7 +60,7 @@ namespace IKVM.Runtime
                 descriptor = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.descriptorIndex).Replace('/', '.'));
             }
 
-            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 lock (this)
                 {
@@ -84,12 +84,12 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal TypeWrapper[] GetArgTypes()
+            internal RuntimeJavaType[] GetArgTypes()
             {
                 return argTypeWrappers;
             }
 
-            internal TypeWrapper GetRetType()
+            internal RuntimeJavaType GetRetType()
             {
                 return retTypeWrapper;
             }

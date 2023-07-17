@@ -45,27 +45,27 @@ namespace IKVM.Runtime
             return state[index].GetStackHeight();
         }
 
-        internal TypeWrapper GetStackTypeWrapper(int index, int pos)
+        internal RuntimeJavaType GetStackTypeWrapper(int index, int pos)
         {
-            TypeWrapper type = state[index].GetStackSlot(pos);
-            if (VerifierTypeWrapper.IsThis(type))
+            RuntimeJavaType type = state[index].GetStackSlot(pos);
+            if (RuntimeVerifierJavaType.IsThis(type))
             {
-                type = ((VerifierTypeWrapper)type).UnderlyingType;
+                type = ((RuntimeVerifierJavaType)type).UnderlyingType;
             }
             return type;
         }
 
-        internal TypeWrapper GetRawStackTypeWrapper(int index, int pos)
+        internal RuntimeJavaType GetRawStackTypeWrapper(int index, int pos)
         {
             return state[index].GetStackSlot(pos);
         }
 
         internal bool IsStackTypeExtendedDouble(int index, int pos)
         {
-            return state[index].GetStackSlotEx(pos) == VerifierTypeWrapper.ExtendedDouble;
+            return state[index].GetStackSlotEx(pos) == RuntimeVerifierJavaType.ExtendedDouble;
         }
 
-        internal TypeWrapper GetLocalTypeWrapper(int index, int local)
+        internal RuntimeJavaType GetLocalTypeWrapper(int index, int local)
         {
             return state[index].GetLocalTypeEx(local);
         }

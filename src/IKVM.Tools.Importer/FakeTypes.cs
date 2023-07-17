@@ -31,89 +31,91 @@ namespace IKVM.Tools.Importer
 {
 
     static class FakeTypes
-	{
+    {
 
-		private static Type genericEnumEnumType;
-		private static Type genericDelegateInterfaceType;
-		private static Type genericAttributeAnnotationType;
-		private static Type genericAttributeAnnotationMultipleType;
-		private static Type genericAttributeAnnotationReturnValueType;
+        static Type genericEnumEnumType;
+        static Type genericDelegateInterfaceType;
+        static Type genericAttributeAnnotationType;
+        static Type genericAttributeAnnotationMultipleType;
+        static Type genericAttributeAnnotationReturnValueType;
 
-		internal static Type GetEnumType(Type enumType)
-		{
-			return genericEnumEnumType.MakeGenericType(enumType);
-		}
+        internal static Type GetEnumType(Type enumType)
+        {
+            return genericEnumEnumType.MakeGenericType(enumType);
+        }
 
-		internal static Type GetDelegateType(Type delegateType)
-		{
-			return genericDelegateInterfaceType.MakeGenericType(delegateType);
-		}
+        internal static Type GetDelegateType(Type delegateType)
+        {
+            return genericDelegateInterfaceType.MakeGenericType(delegateType);
+        }
 
-		internal static Type GetAttributeType(Type attributeType)
-		{
-			return genericAttributeAnnotationType.MakeGenericType(attributeType);
-		}
+        internal static Type GetAttributeType(Type attributeType)
+        {
+            return genericAttributeAnnotationType.MakeGenericType(attributeType);
+        }
 
-		internal static Type GetAttributeMultipleType(Type attributeType)
-		{
-			return genericAttributeAnnotationMultipleType.MakeGenericType(attributeType);
-		}
+        internal static Type GetAttributeMultipleType(Type attributeType)
+        {
+            return genericAttributeAnnotationMultipleType.MakeGenericType(attributeType);
+        }
 
-		internal static Type GetAttributeReturnValueType(Type attributeType)
-		{
-			return genericAttributeAnnotationReturnValueType.MakeGenericType(attributeType);
-		}
+        internal static Type GetAttributeReturnValueType(Type attributeType)
+        {
+            return genericAttributeAnnotationReturnValueType.MakeGenericType(attributeType);
+        }
 
-		internal static void Create(ModuleBuilder modb, ClassLoaderWrapper loader)
-		{
-			TypeBuilder tb = modb.DefineType(DotNetTypeWrapper.GenericDelegateInterfaceTypeName, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
-			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(Types.MulticastDelegate);
-			genericDelegateInterfaceType = tb.CreateType();
+        internal static void Create(ModuleBuilder modb, RuntimeClassLoader loader)
+        {
+            var tb = modb.DefineType(RuntimeManagedJavaType.GenericDelegateInterfaceTypeName, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
+            tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(Types.MulticastDelegate);
+            genericDelegateInterfaceType = tb.CreateType();
 
-			genericAttributeAnnotationType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationTypeName);
-			genericAttributeAnnotationMultipleType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationMultipleTypeName);
-			genericAttributeAnnotationReturnValueType = CreateAnnotationType(modb, DotNetTypeWrapper.GenericAttributeAnnotationReturnValueTypeName);
-			CreateEnumEnum(modb, loader);
-		}
+            genericAttributeAnnotationType = CreateAnnotationType(modb, RuntimeManagedJavaType.GenericAttributeAnnotationTypeName);
+            genericAttributeAnnotationMultipleType = CreateAnnotationType(modb, RuntimeManagedJavaType.GenericAttributeAnnotationMultipleTypeName);
+            genericAttributeAnnotationReturnValueType = CreateAnnotationType(modb, RuntimeManagedJavaType.GenericAttributeAnnotationReturnValueTypeName);
+            CreateEnumEnum(modb, loader);
+        }
 
-		internal static void Finish(ClassLoaderWrapper loader)
-		{
-			TypeBuilder tb = (TypeBuilder)genericEnumEnumType;
-			TypeWrapper enumTypeWrapper = loader.LoadClassByDottedName("java.lang.Enum");
-			enumTypeWrapper.Finish();
-			tb.SetParent(enumTypeWrapper.TypeAsBaseType);
-			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Private, new Type[] { Types.String, Types.Int32 }));
-			ilgen.Emit(OpCodes.Ldarg_0);
-			ilgen.Emit(OpCodes.Ldarg_1);
-			ilgen.Emit(OpCodes.Ldarg_2);
-			enumTypeWrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;I)V", false).EmitCall(ilgen);
-			ilgen.Emit(OpCodes.Ret);
-			ilgen.DoEmit();
-			genericEnumEnumType = tb.CreateType();
-		}
+        internal static void Finish(RuntimeClassLoader loader)
+        {
+            var tb = (TypeBuilder)genericEnumEnumType;
+            var enumTypeWrapper = loader.LoadClassByDottedName("java.lang.Enum");
+            enumTypeWrapper.Finish();
+            tb.SetParent(enumTypeWrapper.TypeAsBaseType);
+            var ilgen = CodeEmitter.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Private, new Type[] { Types.String, Types.Int32 }));
+            ilgen.Emit(OpCodes.Ldarg_0);
+            ilgen.Emit(OpCodes.Ldarg_1);
+            ilgen.Emit(OpCodes.Ldarg_2);
+            enumTypeWrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;I)V", false).EmitCall(ilgen);
+            ilgen.Emit(OpCodes.Ret);
+            ilgen.DoEmit();
+            genericEnumEnumType = tb.CreateType();
+        }
 
-		private static void CreateEnumEnum(ModuleBuilder modb, ClassLoaderWrapper loader)
-		{
-			TypeBuilder tb = modb.DefineType(DotNetTypeWrapper.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public);
-			GenericTypeParameterBuilder gtpb = tb.DefineGenericParameters("T")[0];
-			gtpb.SetBaseTypeConstraint(Types.Enum);
-			genericEnumEnumType = tb;
-		}
+        private static void CreateEnumEnum(ModuleBuilder modb, RuntimeClassLoader loader)
+        {
+            var tb = modb.DefineType(RuntimeManagedJavaType.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public);
+            var gtpb = tb.DefineGenericParameters("T")[0];
+            gtpb.SetBaseTypeConstraint(Types.Enum);
+            genericEnumEnumType = tb;
+        }
 
-		private static Type CreateAnnotationType(ModuleBuilder modb, string name)
-		{
-			TypeBuilder tb = modb.DefineType(name, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
-			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(Types.Attribute);
-			return tb.CreateType();
-		}
+        private static Type CreateAnnotationType(ModuleBuilder modb, string name)
+        {
+            var tb = modb.DefineType(name, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
+            tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(Types.Attribute);
+            return tb.CreateType();
+        }
 
-		internal static void Load(Assembly assembly)
-		{
-			genericEnumEnumType = assembly.GetType(DotNetTypeWrapper.GenericEnumEnumTypeName);
-			genericDelegateInterfaceType = assembly.GetType(DotNetTypeWrapper.GenericDelegateInterfaceTypeName);
-			genericAttributeAnnotationType = assembly.GetType(DotNetTypeWrapper.GenericAttributeAnnotationTypeName);
-			genericAttributeAnnotationMultipleType = assembly.GetType(DotNetTypeWrapper.GenericAttributeAnnotationMultipleTypeName);
-			genericAttributeAnnotationReturnValueType = assembly.GetType(DotNetTypeWrapper.GenericAttributeAnnotationReturnValueTypeName);
-		}
-	}
+        internal static void Load(Assembly assembly)
+        {
+            genericEnumEnumType = assembly.GetType(RuntimeManagedJavaType.GenericEnumEnumTypeName);
+            genericDelegateInterfaceType = assembly.GetType(RuntimeManagedJavaType.GenericDelegateInterfaceTypeName);
+            genericAttributeAnnotationType = assembly.GetType(RuntimeManagedJavaType.GenericAttributeAnnotationTypeName);
+            genericAttributeAnnotationMultipleType = assembly.GetType(RuntimeManagedJavaType.GenericAttributeAnnotationMultipleTypeName);
+            genericAttributeAnnotationReturnValueType = assembly.GetType(RuntimeManagedJavaType.GenericAttributeAnnotationReturnValueTypeName);
+        }
+
+    }
+
 }

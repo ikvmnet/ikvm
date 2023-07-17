@@ -36,15 +36,15 @@ namespace IKVM.Runtime.JNI
         JNIEnv.ManagedJNIEnv env;
         JNIEnv.ManagedJNIEnv.FrameState prevFrameState;
 
-        internal ClassLoaderWrapper Enter(ClassLoaderWrapper loader)
+        internal RuntimeClassLoader Enter(RuntimeClassLoader loader)
         {
             Enter((ikvm.@internal.CallerID)null);
-            ClassLoaderWrapper prev = env.classLoader;
+            RuntimeClassLoader prev = env.classLoader;
             env.classLoader = loader;
             return prev;
         }
 
-        internal void Leave(ClassLoaderWrapper prev)
+        internal void Leave(RuntimeClassLoader prev)
         {
             env.classLoader = prev;
             Leave();
@@ -72,7 +72,7 @@ namespace IKVM.Runtime.JNI
 
         public static IntPtr GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
         {
-            ClassLoaderWrapper loader = ClassLoaderWrapper.FromCallerID(callerID);
+            RuntimeClassLoader loader = RuntimeClassLoader.FromCallerID(callerID);
             int sp = 0;
             for (int i = 1; sig[i] != ')'; i++)
             {

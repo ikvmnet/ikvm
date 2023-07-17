@@ -35,428 +35,418 @@ namespace IKVM.Tools.Importer
 {
 
     static class ProxyGenerator
-	{
+    {
 
-		private static readonly TypeWrapper proxyClass;
-		private static readonly TypeWrapper errorClass;
-		private static readonly TypeWrapper runtimeExceptionClass;
-		private static readonly MethodWrapper undeclaredThrowableExceptionConstructor;
-		private static readonly FieldWrapper invocationHandlerField;
-		private static readonly TypeWrapper javaLangReflectMethod;
-		private static readonly TypeWrapper javaLangNoSuchMethodException;
-		private static readonly MethodWrapper javaLangNoClassDefFoundErrorConstructor;
-		private static readonly MethodWrapper javaLangThrowable_getMessage;
-		private static readonly MethodWrapper javaLangClass_getMethod;
-		private static readonly TypeWrapper invocationHandlerClass;
-		private static readonly MethodWrapper invokeMethod;
-		private static readonly MethodWrapper proxyConstructor;
-		private static readonly MethodWrapper hashCodeMethod;
-		private static readonly MethodWrapper equalsMethod;
-		private static readonly MethodWrapper toStringMethod;
+        static readonly RuntimeJavaType proxyClass;
+        static readonly RuntimeJavaType errorClass;
+        static readonly RuntimeJavaType runtimeExceptionClass;
+        static readonly RuntimeJavaMethod undeclaredThrowableExceptionConstructor;
+        static readonly RuntimeJavaField invocationHandlerField;
+        static readonly RuntimeJavaType javaLangReflectMethod;
+        static readonly RuntimeJavaType javaLangNoSuchMethodException;
+        static readonly RuntimeJavaMethod javaLangNoClassDefFoundErrorConstructor;
+        static readonly RuntimeJavaMethod javaLangThrowable_getMessage;
+        static readonly RuntimeJavaMethod javaLangClass_getMethod;
+        static readonly RuntimeJavaType invocationHandlerClass;
+        static readonly RuntimeJavaMethod invokeMethod;
+        static readonly RuntimeJavaMethod proxyConstructor;
+        static readonly RuntimeJavaMethod hashCodeMethod;
+        static readonly RuntimeJavaMethod equalsMethod;
+        static readonly RuntimeJavaMethod toStringMethod;
 
-		static ProxyGenerator()
-		{
-			ClassLoaderWrapper bootClassLoader = ClassLoaderWrapper.GetBootstrapClassLoader();
-			proxyClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.Proxy");
-			errorClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.Error");
-			runtimeExceptionClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.RuntimeException");
-			undeclaredThrowableExceptionConstructor = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.UndeclaredThrowableException").GetMethodWrapper("<init>", "(Ljava.lang.Throwable;)V", false);
-			undeclaredThrowableExceptionConstructor.Link();
-			invocationHandlerField = proxyClass.GetFieldWrapper("h", "Ljava.lang.reflect.InvocationHandler;");
-			invocationHandlerField.Link();
-			javaLangReflectMethod = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.Method");
-			javaLangNoSuchMethodException = bootClassLoader.LoadClassByDottedNameFast("java.lang.NoSuchMethodException");
-			javaLangNoClassDefFoundErrorConstructor = bootClassLoader.LoadClassByDottedNameFast("java.lang.NoClassDefFoundError").GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
-			javaLangNoClassDefFoundErrorConstructor.Link();
-			javaLangThrowable_getMessage = bootClassLoader.LoadClassByDottedNameFast("java.lang.Throwable").GetMethodWrapper("getMessage", "()Ljava.lang.String;", false);
-			javaLangThrowable_getMessage.Link();
-			javaLangClass_getMethod = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("getMethod", "(Ljava.lang.String;[Ljava.lang.Class;)Ljava.lang.reflect.Method;", false);
-			javaLangClass_getMethod.Link();
-			invocationHandlerClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.InvocationHandler");
-			invokeMethod = invocationHandlerClass.GetMethodWrapper("invoke", "(Ljava.lang.Object;Ljava.lang.reflect.Method;[Ljava.lang.Object;)Ljava.lang.Object;", false);
-			proxyConstructor = proxyClass.GetMethodWrapper("<init>", "(Ljava.lang.reflect.InvocationHandler;)V", false);
-			proxyConstructor.Link();
-			hashCodeMethod = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper("hashCode", "()I", false);
-			equalsMethod = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper("equals", "(Ljava.lang.Object;)Z", false);
-			toStringMethod = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper("toString", "()Ljava.lang.String;", false);
-		}
+        static ProxyGenerator()
+        {
+            var bootClassLoader = RuntimeClassLoader.GetBootstrapClassLoader();
+            proxyClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.Proxy");
+            errorClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.Error");
+            runtimeExceptionClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.RuntimeException");
+            undeclaredThrowableExceptionConstructor = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.UndeclaredThrowableException").GetMethodWrapper("<init>", "(Ljava.lang.Throwable;)V", false);
+            undeclaredThrowableExceptionConstructor.Link();
+            invocationHandlerField = proxyClass.GetFieldWrapper("h", "Ljava.lang.reflect.InvocationHandler;");
+            invocationHandlerField.Link();
+            javaLangReflectMethod = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.Method");
+            javaLangNoSuchMethodException = bootClassLoader.LoadClassByDottedNameFast("java.lang.NoSuchMethodException");
+            javaLangNoClassDefFoundErrorConstructor = bootClassLoader.LoadClassByDottedNameFast("java.lang.NoClassDefFoundError").GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
+            javaLangNoClassDefFoundErrorConstructor.Link();
+            javaLangThrowable_getMessage = bootClassLoader.LoadClassByDottedNameFast("java.lang.Throwable").GetMethodWrapper("getMessage", "()Ljava.lang.String;", false);
+            javaLangThrowable_getMessage.Link();
+            javaLangClass_getMethod = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("getMethod", "(Ljava.lang.String;[Ljava.lang.Class;)Ljava.lang.reflect.Method;", false);
+            javaLangClass_getMethod.Link();
+            invocationHandlerClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.InvocationHandler");
+            invokeMethod = invocationHandlerClass.GetMethodWrapper("invoke", "(Ljava.lang.Object;Ljava.lang.reflect.Method;[Ljava.lang.Object;)Ljava.lang.Object;", false);
+            proxyConstructor = proxyClass.GetMethodWrapper("<init>", "(Ljava.lang.reflect.InvocationHandler;)V", false);
+            proxyConstructor.Link();
+            hashCodeMethod = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper("hashCode", "()I", false);
+            equalsMethod = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper("equals", "(Ljava.lang.Object;)Z", false);
+            toStringMethod = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper("toString", "()Ljava.lang.String;", false);
+        }
 
-		internal static void Create(CompilerClassLoader loader, string proxy)
-		{
-			string[] interfaces = proxy.Split(',');
-			TypeWrapper[] wrappers = new TypeWrapper[interfaces.Length];
-			for (int i = 0; i < interfaces.Length; i++)
-			{
-				try
-				{
-					wrappers[i] = loader.LoadClassByDottedNameFast(interfaces[i]);
-				}
-				catch (RetargetableJavaException)
-				{
-				}
-				if (wrappers[i] == null)
-				{
-					StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, "unable to load interface " + interfaces[i]);
-					return;
-				}
-			}
-			Create(loader, proxy, wrappers);
-		}
+        internal static void Create(CompilerClassLoader loader, string proxy)
+        {
+            var interfaces = proxy.Split(',');
+            var wrappers = new RuntimeJavaType[interfaces.Length];
+            for (int i = 0; i < interfaces.Length; i++)
+            {
+                try
+                {
+                    wrappers[i] = loader.LoadClassByDottedNameFast(interfaces[i]);
+                }
+                catch (RetargetableJavaException)
+                {
 
-		private static void Create(CompilerClassLoader loader, string proxy, TypeWrapper[] interfaces)
-		{
-			List<ProxyMethod> methods;
-			try
-			{
-				methods = CheckAndCollect(loader, interfaces);
-			}
-			catch (RetargetableJavaException x)
-			{
-				StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, x.Message);
-				return;
-			}
-			catch (ProxyException x)
-			{
-				StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, x.Message);
-				return;
-			}
-			CreateNoFail(loader, interfaces, methods);
-		}
+                }
 
-		private static List<ProxyMethod> CheckAndCollect(CompilerClassLoader loader, TypeWrapper[] interfaces)
-		{
-			List<MethodWrapper> methods = new List<MethodWrapper>();
+                if (wrappers[i] == null)
+                {
+                    StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, "unable to load interface " + interfaces[i]);
+                    return;
+                }
+            }
 
-			// The java.lang.Object methods precede any interface methods.
-			methods.Add(equalsMethod);
-			methods.Add(hashCodeMethod);
-			methods.Add(toStringMethod);
+            Create(loader, proxy, wrappers);
+        }
 
-			// Add the interfaces methods in order.
-			foreach (TypeWrapper tw in interfaces)
-			{
-				if (!tw.IsInterface)
-				{
-					throw new ProxyException(tw.Name + " is not an interface");
-				}
-				if (tw.IsRemapped)
-				{
-					// TODO handle java.lang.Comparable
-					throw new ProxyException(tw.Name + " is a remapped interface (not currently supported)");
-				}
-				foreach (MethodWrapper mw in GetInterfaceMethods(tw))
-				{
-					// Check for duplicates
-					if (!MethodExists(methods, mw))
-					{
-						mw.Link();
-						methods.Add(mw);
-					}
-				}
-			}
+        private static void Create(CompilerClassLoader loader, string proxy, RuntimeJavaType[] interfaces)
+        {
+            List<ProxyMethod> methods;
+            try
+            {
+                methods = CheckAndCollect(loader, interfaces);
+            }
+            catch (RetargetableJavaException x)
+            {
+                StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, x.Message);
+                return;
+            }
+            catch (ProxyException x)
+            {
+                StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, x.Message);
+                return;
+            }
 
-			// TODO verify restrictions
+            CreateNoFail(loader, interfaces, methods);
+        }
 
-			// Collect declared exceptions.
-			Dictionary<string, TypeWrapper[]> exceptions = new Dictionary<string, TypeWrapper[]>();
-			foreach (MethodWrapper mw in methods)
-			{
-				Add(loader, exceptions, mw);
-			}
+        private static List<ProxyMethod> CheckAndCollect(CompilerClassLoader loader, RuntimeJavaType[] interfaces)
+        {
+            var methods = new List<RuntimeJavaMethod>();
 
-			// Build the definitive proxy method list.
-			List<ProxyMethod> proxyMethods = new List<ProxyMethod>();
-			foreach (MethodWrapper mw in methods)
-			{
-				proxyMethods.Add(new ProxyMethod(mw, exceptions[mw.Signature]));
-			}
-			return proxyMethods;
-		}
+            // The java.lang.Object methods precede any interface methods.
+            methods.Add(equalsMethod);
+            methods.Add(hashCodeMethod);
+            methods.Add(toStringMethod);
 
-		private static bool MethodExists(List<MethodWrapper> methods, MethodWrapper mw)
-		{
-			foreach (MethodWrapper mw1 in methods)
-			{
-				// TODO what do we do with differing return types?
-				if (mw1.Name == mw.Name && mw1.Signature == mw.Signature)
-				{
-					return true;
-				}
-			}
-			return false;
-		}
+            // Add the interfaces methods in order.
+            foreach (var tw in interfaces)
+            {
+                if (!tw.IsInterface)
+                {
+                    throw new ProxyException(tw.Name + " is not an interface");
+                }
+                if (tw.IsRemapped)
+                {
+                    // TODO handle java.lang.Comparable
+                    throw new ProxyException(tw.Name + " is a remapped interface (not currently supported)");
+                }
+                foreach (var mw in GetInterfaceMethods(tw))
+                {
+                    // Check for duplicates
+                    if (!MethodExists(methods, mw))
+                    {
+                        mw.Link();
+                        methods.Add(mw);
+                    }
+                }
+            }
 
-		private static void Add(CompilerClassLoader loader, Dictionary<string, TypeWrapper[]> exceptions, MethodWrapper mw)
-		{
-			string signature = mw.Signature;
-			TypeWrapper[] newExceptionTypes = LoadTypes(loader, mw.GetDeclaredExceptions());
-			TypeWrapper[] curExceptionTypes;
-			if (exceptions.TryGetValue(signature, out curExceptionTypes))
-			{
-				exceptions[signature] = Merge(newExceptionTypes, curExceptionTypes);
-			}
-			else
-			{
-				exceptions.Add(signature, newExceptionTypes);
-			}
-		}
+            // TODO verify restrictions
 
-		private static TypeWrapper[] Merge(TypeWrapper[] newExceptionTypes, TypeWrapper[] curExceptionTypes)
-		{
-			List<TypeWrapper> list = new List<TypeWrapper>();
-			foreach (TypeWrapper twNew in newExceptionTypes)
-			{
-				TypeWrapper match = null;
-				foreach (TypeWrapper twCur in curExceptionTypes)
-				{
-					if (twNew.IsAssignableTo(twCur))
-					{
-						if (match == null || twCur.IsAssignableTo(match))
-						{
-							match = twCur;
-						}
-					}
-				}
-				if (match != null && !list.Contains(match))
-				{
-					list.Add(match);
-				}
-			}
-			return list.ToArray();
-		}
+            // Collect declared exceptions.
+            var exceptions = new Dictionary<string, RuntimeJavaType[]>();
+            foreach (var mw in methods)
+                Add(loader, exceptions, mw);
 
-		private static void CreateNoFail(CompilerClassLoader loader, TypeWrapper[] interfaces, List<ProxyMethod> methods)
-		{
-			bool ispublic = true;
-			Type[] interfaceTypes = new Type[interfaces.Length];
-			for (int i = 0; i < interfaceTypes.Length; i++)
-			{
-				ispublic &= interfaces[i].IsPublic;
-				interfaceTypes[i] = interfaces[i].TypeAsBaseType;
-			}
-			TypeAttributes attr = TypeAttributes.Class | TypeAttributes.Sealed;
-			attr |= ispublic ? TypeAttributes.NestedPublic : TypeAttributes.NestedAssembly;
-			DynamicClassLoader factory = (DynamicClassLoader)loader.GetTypeWrapperFactory();
-			TypeBuilder tb = factory.DefineProxy(TypeNameUtil.GetProxyNestedName(interfaces), attr, proxyClass.TypeAsBaseType, interfaceTypes);
-			AttributeHelper.SetImplementsAttribute(tb, interfaces);
-			// we apply an InnerClass attribute to avoid the CompiledTypeWrapper heuristics for figuring out the modifiers
-			AttributeHelper.SetInnerClass(tb, null, ispublic ? Modifiers.Public | Modifiers.Final : Modifiers.Final);
-			CreateConstructor(tb);
-			for (int i = 0; i < methods.Count; i++)
-			{
-				methods[i].fb = tb.DefineField("m" + i, javaLangReflectMethod.TypeAsSignatureType, FieldAttributes.Private | FieldAttributes.Static);
-			}
-			foreach (ProxyMethod method in methods)
-			{
-				CreateMethod(loader, tb, method);
-			}
-			CreateStaticInitializer(tb, methods, loader);
-		}
+            // Build the definitive proxy method list.
+            List<ProxyMethod> proxyMethods = new List<ProxyMethod>();
+            foreach (var mw in methods)
+            {
+                proxyMethods.Add(new ProxyMethod(mw, exceptions[mw.Signature]));
+            }
+            return proxyMethods;
+        }
 
-		private static void CreateConstructor(TypeBuilder tb)
-		{
-			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Public, new Type[] { invocationHandlerClass.TypeAsSignatureType }));
-			ilgen.Emit(OpCodes.Ldarg_0);
-			ilgen.Emit(OpCodes.Ldarg_1);
-			proxyConstructor.EmitCall(ilgen);
-			ilgen.Emit(OpCodes.Ret);
-			ilgen.DoEmit();
-		}
+        private static bool MethodExists(List<RuntimeJavaMethod> methods, RuntimeJavaMethod mw)
+        {
+            foreach (var mw1 in methods)
+            {
+                // TODO what do we do with differing return types?
+                if (mw1.Name == mw.Name && mw1.Signature == mw.Signature)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
-		private static void CreateMethod(CompilerClassLoader loader, TypeBuilder tb, ProxyMethod pm)
-		{
-			MethodBuilder mb = pm.mw.GetDefineMethodHelper().DefineMethod(loader.GetTypeWrapperFactory(), tb, pm.mw.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final);
-			List<string> exceptions = new List<string>();
-			foreach (TypeWrapper tw in pm.exceptions)
-			{
-				exceptions.Add(tw.Name);
-			}
-			AttributeHelper.SetThrowsAttribute(mb, exceptions.ToArray());
-			CodeEmitter ilgen = CodeEmitter.Create(mb);
-			ilgen.BeginExceptionBlock();
-			ilgen.Emit(OpCodes.Ldarg_0);
-			invocationHandlerField.EmitGet(ilgen);
-			ilgen.Emit(OpCodes.Ldarg_0);
-			ilgen.Emit(OpCodes.Ldsfld, pm.fb);
-			TypeWrapper[] parameters = pm.mw.GetParameters();
-			if (parameters.Length == 0)
-			{
-				ilgen.Emit(OpCodes.Ldnull);
-			}
-			else
-			{
-				ilgen.EmitLdc_I4(parameters.Length);
-				ilgen.Emit(OpCodes.Newarr, Types.Object);
-				for (int i = 0; i < parameters.Length; i++)
-				{
-					ilgen.Emit(OpCodes.Dup);
-					ilgen.EmitLdc_I4(i);
-					ilgen.EmitLdarg(i);
-					if (parameters[i].IsNonPrimitiveValueType)
-					{
-						parameters[i].EmitBox(ilgen);
-					}
-					else if (parameters[i].IsPrimitive)
-					{
-						Boxer.EmitBox(ilgen, parameters[i]);
-					}
-					ilgen.Emit(OpCodes.Stelem_Ref);
-				}
-			}
-			invokeMethod.EmitCallvirt(ilgen);
-			TypeWrapper returnType = pm.mw.ReturnType;
-			CodeEmitterLocal returnValue = null;
-			if (returnType != PrimitiveTypeWrapper.VOID)
-			{
-				returnValue = ilgen.DeclareLocal(returnType.TypeAsSignatureType);
-				if (returnType.IsNonPrimitiveValueType)
-				{
-					returnType.EmitUnbox(ilgen);
-				}
-				else if (returnType.IsPrimitive)
-				{
-					Boxer.EmitUnbox(ilgen, returnType, true);
-				}
-				else if (returnType != CoreClasses.java.lang.Object.Wrapper)
-				{
-					ilgen.EmitCastclass(returnType.TypeAsSignatureType);
-				}
-				ilgen.Emit(OpCodes.Stloc, returnValue);
-			}
-			CodeEmitterLabel returnLabel = ilgen.DefineLabel();
-			ilgen.EmitLeave(returnLabel);
-			// TODO consider using a filter here (but we would need to add filter support to CodeEmitter)
-			ilgen.BeginCatchBlock(Types.Exception);
-			ilgen.EmitLdc_I4(0);
-			ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
-			CodeEmitterLocal exception = ilgen.DeclareLocal(Types.Exception);
-			ilgen.Emit(OpCodes.Stloc, exception);
-			CodeEmitterLabel rethrow = ilgen.DefineLabel();
-			ilgen.Emit(OpCodes.Ldloc, exception);
-			errorClass.EmitInstanceOf(ilgen);
-			ilgen.EmitBrtrue(rethrow);
-			ilgen.Emit(OpCodes.Ldloc, exception);
-			runtimeExceptionClass.EmitInstanceOf(ilgen);
-			ilgen.EmitBrtrue(rethrow);
-			foreach (TypeWrapper tw in pm.exceptions)
-			{
-				ilgen.Emit(OpCodes.Ldloc, exception);
-				tw.EmitInstanceOf(ilgen);
-				ilgen.EmitBrtrue(rethrow);
-			}
-			ilgen.Emit(OpCodes.Ldloc, exception);
-			undeclaredThrowableExceptionConstructor.EmitNewobj(ilgen);
-			ilgen.Emit(OpCodes.Throw);
-			ilgen.MarkLabel(rethrow);
-			ilgen.Emit(OpCodes.Rethrow);
-			ilgen.EndExceptionBlock();
-			ilgen.MarkLabel(returnLabel);
-			if (returnValue != null)
-			{
-				ilgen.Emit(OpCodes.Ldloc, returnValue);
-			}
-			ilgen.Emit(OpCodes.Ret);
-			ilgen.DoEmit();
-		}
+        private static void Add(CompilerClassLoader loader, Dictionary<string, RuntimeJavaType[]> exceptions, RuntimeJavaMethod mw)
+        {
+            string signature = mw.Signature;
+            RuntimeJavaType[] newExceptionTypes = LoadTypes(loader, mw.GetDeclaredExceptions());
+            RuntimeJavaType[] curExceptionTypes;
+            if (exceptions.TryGetValue(signature, out curExceptionTypes))
+            {
+                exceptions[signature] = Merge(newExceptionTypes, curExceptionTypes);
+            }
+            else
+            {
+                exceptions.Add(signature, newExceptionTypes);
+            }
+        }
 
-		private static void CreateStaticInitializer(TypeBuilder tb, List<ProxyMethod> methods, CompilerClassLoader loader)
-		{
-			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb, loader));
-			CodeEmitterLocal callerID = ilgen.DeclareLocal(CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType);
-			TypeBuilder tbCallerID = DynamicTypeWrapper.FinishContext.EmitCreateCallerID(tb, ilgen);
-			ilgen.Emit(OpCodes.Stloc, callerID);
-			// HACK we shouldn't create the nested type here (the outer type must be created first)
-			tbCallerID.CreateType();
-			ilgen.BeginExceptionBlock();
-			foreach (ProxyMethod method in methods)
-			{
-				method.mw.DeclaringType.EmitClassLiteral(ilgen);
-				ilgen.Emit(OpCodes.Ldstr, method.mw.Name);
-				TypeWrapper[] parameters = method.mw.GetParameters();
-				ilgen.EmitLdc_I4(parameters.Length);
-				ilgen.Emit(OpCodes.Newarr, CoreClasses.java.lang.Class.Wrapper.TypeAsArrayType);
-				for (int i = 0; i < parameters.Length; i++)
-				{
-					ilgen.Emit(OpCodes.Dup);
-					ilgen.EmitLdc_I4(i);
-					parameters[i].EmitClassLiteral(ilgen);
-					ilgen.Emit(OpCodes.Stelem_Ref);
-				}
-				if (javaLangClass_getMethod.HasCallerID)
-				{
-					ilgen.Emit(OpCodes.Ldloc, callerID);
-				}
-				javaLangClass_getMethod.EmitCallvirt(ilgen);
-				ilgen.Emit(OpCodes.Stsfld, method.fb);
-			}
-			CodeEmitterLabel label = ilgen.DefineLabel();
-			ilgen.EmitLeave(label);
-			ilgen.BeginCatchBlock(javaLangNoSuchMethodException.TypeAsExceptionType);
-			javaLangThrowable_getMessage.EmitCallvirt(ilgen);
-			javaLangNoClassDefFoundErrorConstructor.EmitNewobj(ilgen);
-			ilgen.Emit(OpCodes.Throw);
-			ilgen.EndExceptionBlock();
-			ilgen.MarkLabel(label);
-			ilgen.Emit(OpCodes.Ret);
-			ilgen.DoEmit();
-		}
+        static RuntimeJavaType[] Merge(RuntimeJavaType[] newExceptionTypes, RuntimeJavaType[] curExceptionTypes)
+        {
+            var list = new List<RuntimeJavaType>();
+            foreach (var twNew in newExceptionTypes)
+            {
+                RuntimeJavaType match = null;
+                foreach (var twCur in curExceptionTypes)
+                    if (twNew.IsAssignableTo(twCur))
+                        if (match == null || twCur.IsAssignableTo(match))
+                            match = twCur;
 
-		private sealed class ProxyMethod
-		{
-			internal readonly MethodWrapper mw;
-			internal readonly TypeWrapper[] exceptions;
-			internal FieldBuilder fb;
+                if (match != null && !list.Contains(match))
+                    list.Add(match);
+            }
 
-			internal ProxyMethod(MethodWrapper mw, TypeWrapper[] exceptions)
-			{
-				this.mw = mw;
-				this.exceptions = exceptions;
-			}
-		}
+            return list.ToArray();
+        }
 
-		private static IEnumerable<MethodWrapper> GetInterfaceMethods(TypeWrapper tw)
-		{
-			Dictionary<string, MethodWrapper> methods = new Dictionary<string, MethodWrapper>();
-			foreach (MethodWrapper mw in tw.GetMethods())
-			{
-				if (mw.IsVirtual)
-				{
-					methods.Add(mw.Name + mw.Signature, mw);
-				}
-			}
-			foreach (TypeWrapper iface in tw.Interfaces)
-			{
-				foreach (MethodWrapper mw in GetInterfaceMethods(iface))
-				{
-					if (!methods.ContainsKey(mw.Name + mw.Signature))
-					{
-						methods.Add(mw.Name + mw.Signature, mw);
-					}
-				}
-			}
-			return methods.Values;
-		}
+        static void CreateNoFail(CompilerClassLoader loader, RuntimeJavaType[] interfaces, List<ProxyMethod> methods)
+        {
+            var ispublic = true;
+            var interfaceTypes = new Type[interfaces.Length];
+            for (int i = 0; i < interfaceTypes.Length; i++)
+            {
+                ispublic &= interfaces[i].IsPublic;
+                interfaceTypes[i] = interfaces[i].TypeAsBaseType;
+            }
+            var attr = TypeAttributes.Class | TypeAttributes.Sealed;
+            attr |= ispublic ? TypeAttributes.NestedPublic : TypeAttributes.NestedAssembly;
+            var factory = (DynamicClassLoader)loader.GetTypeWrapperFactory();
+            var tb = factory.DefineProxy(TypeNameUtil.GetProxyNestedName(interfaces), attr, proxyClass.TypeAsBaseType, interfaceTypes);
+            AttributeHelper.SetImplementsAttribute(tb, interfaces);
+            // we apply an InnerClass attribute to avoid the CompiledTypeWrapper heuristics for figuring out the modifiers
+            AttributeHelper.SetInnerClass(tb, null, ispublic ? Modifiers.Public | Modifiers.Final : Modifiers.Final);
+            CreateConstructor(tb);
+            for (int i = 0; i < methods.Count; i++)
+                methods[i].fb = tb.DefineField("m" + i, javaLangReflectMethod.TypeAsSignatureType, FieldAttributes.Private | FieldAttributes.Static);
 
-		private static TypeWrapper[] LoadTypes(ClassLoaderWrapper loader, string[] classes)
-		{
-			if (classes == null || classes.Length == 0)
-			{
-				return TypeWrapper.EmptyArray;
-			}
-			TypeWrapper[] tw = new TypeWrapper[classes.Length];
-			for (int i = 0; i < tw.Length; i++)
-			{
-				tw[i] = loader.LoadClassByDottedName(classes[i]);
-			}
-			return tw;
-		}
+            foreach (var method in methods)
+                CreateMethod(loader, tb, method);
 
-		private sealed class ProxyException : Exception
-		{
-			internal ProxyException(string msg)
-				: base(msg)
-			{
-			}
-		}
-	}
+            CreateStaticInitializer(tb, methods, loader);
+        }
+
+        static void CreateConstructor(TypeBuilder tb)
+        {
+            var ilgen = CodeEmitter.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Public, new Type[] { invocationHandlerClass.TypeAsSignatureType }));
+            ilgen.Emit(OpCodes.Ldarg_0);
+            ilgen.Emit(OpCodes.Ldarg_1);
+            proxyConstructor.EmitCall(ilgen);
+            ilgen.Emit(OpCodes.Ret);
+            ilgen.DoEmit();
+        }
+
+        private static void CreateMethod(CompilerClassLoader loader, TypeBuilder tb, ProxyMethod pm)
+        {
+            var mb = pm.mw.GetDefineMethodHelper().DefineMethod(loader.GetTypeWrapperFactory(), tb, pm.mw.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final);
+            var exceptions = new List<string>();
+            foreach (var tw in pm.exceptions)
+                exceptions.Add(tw.Name);
+
+            AttributeHelper.SetThrowsAttribute(mb, exceptions.ToArray());
+            var ilgen = CodeEmitter.Create(mb);
+            ilgen.BeginExceptionBlock();
+            ilgen.Emit(OpCodes.Ldarg_0);
+            invocationHandlerField.EmitGet(ilgen);
+            ilgen.Emit(OpCodes.Ldarg_0);
+            ilgen.Emit(OpCodes.Ldsfld, pm.fb);
+            var parameters = pm.mw.GetParameters();
+            if (parameters.Length == 0)
+            {
+                ilgen.Emit(OpCodes.Ldnull);
+            }
+            else
+            {
+                ilgen.EmitLdc_I4(parameters.Length);
+                ilgen.Emit(OpCodes.Newarr, Types.Object);
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    ilgen.Emit(OpCodes.Dup);
+                    ilgen.EmitLdc_I4(i);
+                    ilgen.EmitLdarg(i);
+                    if (parameters[i].IsNonPrimitiveValueType)
+                    {
+                        parameters[i].EmitBox(ilgen);
+                    }
+                    else if (parameters[i].IsPrimitive)
+                    {
+                        Boxer.EmitBox(ilgen, parameters[i]);
+                    }
+                    ilgen.Emit(OpCodes.Stelem_Ref);
+                }
+            }
+            invokeMethod.EmitCallvirt(ilgen);
+            var returnType = pm.mw.ReturnType;
+            CodeEmitterLocal returnValue = null;
+            if (returnType != RuntimePrimitiveJavaType.VOID)
+            {
+                returnValue = ilgen.DeclareLocal(returnType.TypeAsSignatureType);
+                if (returnType.IsNonPrimitiveValueType)
+                {
+                    returnType.EmitUnbox(ilgen);
+                }
+                else if (returnType.IsPrimitive)
+                {
+                    Boxer.EmitUnbox(ilgen, returnType, true);
+                }
+                else if (returnType != CoreClasses.java.lang.Object.Wrapper)
+                {
+                    ilgen.EmitCastclass(returnType.TypeAsSignatureType);
+                }
+                ilgen.Emit(OpCodes.Stloc, returnValue);
+            }
+            CodeEmitterLabel returnLabel = ilgen.DefineLabel();
+            ilgen.EmitLeave(returnLabel);
+            // TODO consider using a filter here (but we would need to add filter support to CodeEmitter)
+            ilgen.BeginCatchBlock(Types.Exception);
+            ilgen.EmitLdc_I4(0);
+            ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(Types.Exception));
+            CodeEmitterLocal exception = ilgen.DeclareLocal(Types.Exception);
+            ilgen.Emit(OpCodes.Stloc, exception);
+            CodeEmitterLabel rethrow = ilgen.DefineLabel();
+            ilgen.Emit(OpCodes.Ldloc, exception);
+            errorClass.EmitInstanceOf(ilgen);
+            ilgen.EmitBrtrue(rethrow);
+            ilgen.Emit(OpCodes.Ldloc, exception);
+            runtimeExceptionClass.EmitInstanceOf(ilgen);
+            ilgen.EmitBrtrue(rethrow);
+            foreach (var tw in pm.exceptions)
+            {
+                ilgen.Emit(OpCodes.Ldloc, exception);
+                tw.EmitInstanceOf(ilgen);
+                ilgen.EmitBrtrue(rethrow);
+            }
+            ilgen.Emit(OpCodes.Ldloc, exception);
+            undeclaredThrowableExceptionConstructor.EmitNewobj(ilgen);
+            ilgen.Emit(OpCodes.Throw);
+            ilgen.MarkLabel(rethrow);
+            ilgen.Emit(OpCodes.Rethrow);
+            ilgen.EndExceptionBlock();
+            ilgen.MarkLabel(returnLabel);
+            if (returnValue != null)
+            {
+                ilgen.Emit(OpCodes.Ldloc, returnValue);
+            }
+            ilgen.Emit(OpCodes.Ret);
+            ilgen.DoEmit();
+        }
+
+        static void CreateStaticInitializer(TypeBuilder tb, List<ProxyMethod> methods, CompilerClassLoader loader)
+        {
+            var ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb, loader));
+            var callerID = ilgen.DeclareLocal(CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType);
+            var tbCallerID = RuntimeByteCodeJavaType.FinishContext.EmitCreateCallerID(tb, ilgen);
+            ilgen.Emit(OpCodes.Stloc, callerID);
+            // HACK we shouldn't create the nested type here (the outer type must be created first)
+            tbCallerID.CreateType();
+            ilgen.BeginExceptionBlock();
+            foreach (ProxyMethod method in methods)
+            {
+                method.mw.DeclaringType.EmitClassLiteral(ilgen);
+                ilgen.Emit(OpCodes.Ldstr, method.mw.Name);
+                var parameters = method.mw.GetParameters();
+                ilgen.EmitLdc_I4(parameters.Length);
+                ilgen.Emit(OpCodes.Newarr, CoreClasses.java.lang.Class.Wrapper.TypeAsArrayType);
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    ilgen.Emit(OpCodes.Dup);
+                    ilgen.EmitLdc_I4(i);
+                    parameters[i].EmitClassLiteral(ilgen);
+                    ilgen.Emit(OpCodes.Stelem_Ref);
+                }
+                if (javaLangClass_getMethod.HasCallerID)
+                {
+                    ilgen.Emit(OpCodes.Ldloc, callerID);
+                }
+                javaLangClass_getMethod.EmitCallvirt(ilgen);
+                ilgen.Emit(OpCodes.Stsfld, method.fb);
+            }
+            CodeEmitterLabel label = ilgen.DefineLabel();
+            ilgen.EmitLeave(label);
+            ilgen.BeginCatchBlock(javaLangNoSuchMethodException.TypeAsExceptionType);
+            javaLangThrowable_getMessage.EmitCallvirt(ilgen);
+            javaLangNoClassDefFoundErrorConstructor.EmitNewobj(ilgen);
+            ilgen.Emit(OpCodes.Throw);
+            ilgen.EndExceptionBlock();
+            ilgen.MarkLabel(label);
+            ilgen.Emit(OpCodes.Ret);
+            ilgen.DoEmit();
+        }
+
+        sealed class ProxyMethod
+        {
+
+            internal readonly RuntimeJavaMethod mw;
+            internal readonly RuntimeJavaType[] exceptions;
+            internal FieldBuilder fb;
+
+            internal ProxyMethod(RuntimeJavaMethod mw, RuntimeJavaType[] exceptions)
+            {
+                this.mw = mw;
+                this.exceptions = exceptions;
+            }
+
+        }
+
+        static IEnumerable<RuntimeJavaMethod> GetInterfaceMethods(RuntimeJavaType tw)
+        {
+            var methods = new Dictionary<string, RuntimeJavaMethod>();
+            foreach (var mw in tw.GetMethods())
+                if (mw.IsVirtual)
+                    methods.Add(mw.Name + mw.Signature, mw);
+
+            foreach (var iface in tw.Interfaces)
+                foreach (var mw in GetInterfaceMethods(iface))
+                    if (!methods.ContainsKey(mw.Name + mw.Signature))
+                        methods.Add(mw.Name + mw.Signature, mw);
+
+            return methods.Values;
+        }
+
+        static RuntimeJavaType[] LoadTypes(RuntimeClassLoader loader, string[] classes)
+        {
+            if (classes == null || classes.Length == 0)
+                return Array.Empty<RuntimeJavaType>();
+
+            var tw = new RuntimeJavaType[classes.Length];
+            for (int i = 0; i < tw.Length; i++)
+                tw[i] = loader.LoadClassByDottedName(classes[i]);
+
+            return tw;
+        }
+
+        sealed class ProxyException : Exception
+        {
+
+            internal ProxyException(string msg) :
+                base(msg)
+            {
+
+            }
+
+        }
+
+    }
+
 }

@@ -32,14 +32,14 @@ namespace IKVM.Tools.Importer.MapXml
     sealed class CodeGenContext
     {
 
-        readonly ClassLoaderWrapper classLoader;
+        readonly RuntimeClassLoader classLoader;
         readonly Dictionary<string, object> h = new Dictionary<string, object>();
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="classLoader"></param>
-        internal CodeGenContext(ClassLoaderWrapper classLoader)
+        internal CodeGenContext(RuntimeClassLoader classLoader)
         {
             this.classLoader = classLoader;
         }
@@ -50,7 +50,7 @@ namespace IKVM.Tools.Importer.MapXml
             set { h[key] = value; }
         }
 
-        internal ClassLoaderWrapper ClassLoader => classLoader;
+        internal RuntimeClassLoader ClassLoader => classLoader;
 
     }
 

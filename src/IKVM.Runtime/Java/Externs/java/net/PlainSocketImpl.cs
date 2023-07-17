@@ -8,7 +8,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 
 using IKVM.Runtime;
-using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Util.Java.Net;
 

@@ -38,7 +38,7 @@ namespace IKVM.Runtime
 		private readonly ClassFile.Method m;
 		private readonly JsrMethodAnalyzer ma;
 
-		internal static void InlineJsrs(ClassLoaderWrapper classLoader, MethodWrapper mw, ClassFile classFile, ClassFile.Method m)
+		internal static void InlineJsrs(RuntimeClassLoader classLoader, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method m)
 		{
 			JsrInliner inliner;
 			do
@@ -338,7 +338,7 @@ namespace IKVM.Runtime
 			private List<int>[] callsites;
 			private List<int>[] returnsites;
 
-			internal JsrMethodAnalyzer(MethodWrapper mw, ClassFile classFile, ClassFile.Method method, ClassLoaderWrapper classLoader, InstructionFlags[] flags)
+			internal JsrMethodAnalyzer(RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method, RuntimeClassLoader classLoader, InstructionFlags[] flags)
 			{
 				if (method.VerifyError != null)
 				{
@@ -385,10 +385,10 @@ namespace IKVM.Runtime
 				{
 					thisType = null;
 				}
-				TypeWrapper[] argTypeWrappers = mw.GetParameters();
+				RuntimeJavaType[] argTypeWrappers = mw.GetParameters();
 				for (int i = 0; i < argTypeWrappers.Length; i++)
 				{
-					TypeWrapper tw = argTypeWrappers[i];
+					RuntimeJavaType tw = argTypeWrappers[i];
 					SimpleType type;
 					if (tw.IsWidePrimitive)
 					{

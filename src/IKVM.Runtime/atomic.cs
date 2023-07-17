@@ -41,7 +41,7 @@ using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 static class AtomicReferenceFieldUpdaterEmitter
 {
 
-	internal static bool Emit(DynamicTypeWrapper.FinishContext context, TypeWrapper wrapper, CodeEmitter ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code, InstructionFlags[] flags)
+	internal static bool Emit(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaType wrapper, CodeEmitter ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code, InstructionFlags[] flags)
 	{
 		if (i >= 3
 			&& (flags[i - 0] & InstructionFlags.BranchTarget) == 0
@@ -53,12 +53,12 @@ static class AtomicReferenceFieldUpdaterEmitter
 			&& code[i - 3].NormalizedOpCode == NormalizedByteCode.__ldc)
 		{
 			// we now have a structural match, now we need to make sure that the argument values are what we expect
-			TypeWrapper tclass = classFile.GetConstantPoolClassType(code[i - 3].Arg1);
-			TypeWrapper vclass = classFile.GetConstantPoolClassType(code[i - 2].Arg1);
+			RuntimeJavaType tclass = classFile.GetConstantPoolClassType(code[i - 3].Arg1);
+			RuntimeJavaType vclass = classFile.GetConstantPoolClassType(code[i - 2].Arg1);
 			string fieldName = classFile.GetConstantPoolConstantString(code[i - 1].Arg1);
 			if (tclass == wrapper && !vclass.IsUnloadable && !vclass.IsPrimitive && !vclass.IsNonPrimitiveValueType)
 			{
-				FieldWrapper field = wrapper.GetFieldWrapper(fieldName, vclass.SigName);
+				RuntimeJavaField field = wrapper.GetFieldWrapper(fieldName, vclass.SigName);
 				if (field != null && !field.IsStatic && field.IsVolatile && field.DeclaringType == wrapper && field.FieldTypeWrapper == vclass)
 				{
 					// everything matches up, now call the actual emitter

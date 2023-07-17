@@ -31,10 +31,10 @@ namespace IKVM.Runtime
         internal class ConstantPoolItemMI : ConstantPoolItemFMI
         {
 
-            TypeWrapper[] argTypeWrappers;
-            TypeWrapper retTypeWrapper;
-            protected MethodWrapper method;
-            protected MethodWrapper invokespecialMethod;
+            RuntimeJavaType[] argTypeWrappers;
+            RuntimeJavaType retTypeWrapper;
+            protected RuntimeJavaMethod method;
+            protected RuntimeJavaMethod invokespecialMethod;
 
             /// <summary>
             /// Initializes a new instance.
@@ -65,7 +65,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 base.Link(thisType, mode);
                 lock (this)
@@ -75,9 +75,9 @@ namespace IKVM.Runtime
                         return;
                     }
                 }
-                ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-                TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSig(this.Signature, mode);
-                TypeWrapper ret = classLoader.RetTypeWrapperFromSig(this.Signature, mode);
+                RuntimeClassLoader classLoader = thisType.GetClassLoader();
+                RuntimeJavaType[] args = classLoader.ArgTypeWrapperListFromSig(this.Signature, mode);
+                RuntimeJavaType ret = classLoader.RetTypeWrapperFromSig(this.Signature, mode);
                 lock (this)
                 {
                     if (argTypeWrappers == null)
@@ -88,27 +88,27 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal TypeWrapper[] GetArgTypes()
+            internal RuntimeJavaType[] GetArgTypes()
             {
                 return argTypeWrappers;
             }
 
-            internal TypeWrapper GetRetType()
+            internal RuntimeJavaType GetRetType()
             {
                 return retTypeWrapper;
             }
 
-            internal MethodWrapper GetMethod()
+            internal RuntimeJavaMethod GetMethod()
             {
                 return method;
             }
 
-            internal MethodWrapper GetMethodForInvokespecial()
+            internal RuntimeJavaMethod GetMethodForInvokespecial()
             {
                 return invokespecialMethod != null ? invokespecialMethod : method;
             }
 
-            internal override MemberWrapper GetMember()
+            internal override RuntimeJavaMember GetMember()
             {
                 return method;
             }

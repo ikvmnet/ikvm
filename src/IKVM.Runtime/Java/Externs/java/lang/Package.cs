@@ -26,7 +26,6 @@ using System.IO;
 using System.Threading;
 
 using IKVM.Runtime;
-using IKVM.Runtime;
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.java.lang
@@ -46,7 +45,7 @@ namespace IKVM.Java.Externs.java.lang
             {
                 var dict = new Dictionary<string, string>();
                 var path = Path.Combine(VfsTable.Default.GetAssemblyResourcesPath(JVM.BaseAssembly), "resources.jar");
-                foreach (var pkgs in ClassLoaderWrapper.GetBootstrapClassLoader().GetPackageInfo())
+                foreach (var pkgs in RuntimeClassLoader.GetBootstrapClassLoader().GetPackageInfo())
                     foreach (var pkg in pkgs.Value)
                         dict[pkg.Replace('.', '/') + "/"] = path;
 

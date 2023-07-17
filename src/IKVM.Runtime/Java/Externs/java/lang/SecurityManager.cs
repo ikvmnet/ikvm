@@ -58,7 +58,7 @@ namespace IKVM.Java.Externs.java.lang
                 if (type == typeof(global::java.lang.SecurityManager))
                     continue;
 
-                stack.Add(ClassLoaderWrapper.GetWrapperFromType(type).ClassObject);
+                stack.Add(RuntimeClassLoader.GetWrapperFromType(type).ClassObject);
             }
 
             return stack.ToArray();
@@ -69,7 +69,7 @@ namespace IKVM.Java.Externs.java.lang
         {
             var currentClass = currentLoadedClass0(thisSecurityManager);
             if (currentClass != null)
-                return TypeWrapper.FromClass(currentClass).GetClassLoader().GetJavaClassLoader();
+                return RuntimeJavaType.FromClass(currentClass).GetClassLoader().GetJavaClassLoader();
 
             return null;
         }

@@ -42,7 +42,7 @@ namespace IKVM.StubGen
     static class StubGenerator
     {
 
-        internal static void WriteClass(Stream stream, TypeWrapper tw, bool includeNonPublicTypes, bool includeNonPublicInterfaces, bool includeNonPublicMembers, bool includeParameterNames, bool includeSerialVersionUID)
+        internal static void WriteClass(Stream stream, RuntimeJavaType tw, bool includeNonPublicTypes, bool includeNonPublicInterfaces, bool includeNonPublicMembers, bool includeParameterNames, bool includeSerialVersionUID)
         {
             string name = tw.Name.Replace('.', '/');
             string super = null;
@@ -167,7 +167,7 @@ namespace IKVM.StubGen
                             {
                                 foreach (Type ex in throws.types)
                                 {
-                                    attrib.Add(ClassLoaderWrapper.GetWrapperFromType(ex).Name.Replace('.', '/'));
+                                    attrib.Add(RuntimeClassLoader.GetWrapperFromType(ex).Name.Replace('.', '/'));
                                 }
                             }
                             m.AddAttribute(attrib);
@@ -221,7 +221,7 @@ namespace IKVM.StubGen
                 }
             }
             bool hasSerialVersionUID = false;
-            foreach (FieldWrapper fw in tw.GetFields())
+            foreach (RuntimeJavaField fw in tw.GetFields())
             {
                 if (!fw.IsHideFromReflection)
                 {
@@ -332,7 +332,7 @@ namespace IKVM.StubGen
 #endif
         }
 
-        private static void AddTypeAnnotations(ClassFileWriter writer, IAttributeOwner target, TypeWrapper tw, byte[] typeAnnotations)
+        private static void AddTypeAnnotations(ClassFileWriter writer, IAttributeOwner target, RuntimeJavaType tw, byte[] typeAnnotations)
         {
 #if !FIRST_PASS && !EXPORTER
 			if (typeAnnotations != null)
@@ -523,12 +523,12 @@ namespace IKVM.StubGen
 			if (arg.ArgumentType.IsEnum)
 			{
 				// if GetWrapperFromType returns null, we've got an ikvmc synthesized .NET enum nested inside a Java enum
-				TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(arg.ArgumentType) ?? ClassLoaderWrapper.GetWrapperFromType(arg.ArgumentType.DeclaringType);
+				RuntimeJavaType tw = RuntimeClassLoader.GetWrapperFromType(arg.ArgumentType) ?? RuntimeClassLoader.GetWrapperFromType(arg.ArgumentType.DeclaringType);
 				return new object[] { AnnotationDefaultAttribute.TAG_ENUM, EncodeTypeName(tw), Enum.GetName(arg.ArgumentType, arg.Value) };
 			}
 			else if (arg.Value is Type)
 			{
-				return new object[] { AnnotationDefaultAttribute.TAG_CLASS, EncodeTypeName(ClassLoaderWrapper.GetWrapperFromType((Type)arg.Value)) };
+				return new object[] { AnnotationDefaultAttribute.TAG_CLASS, EncodeTypeName(RuntimeClassLoader.GetWrapperFromType((Type)arg.Value)) };
 			}
 			else if (arg.ArgumentType.IsArray)
 			{
@@ -547,7 +547,7 @@ namespace IKVM.StubGen
 			}
 		}
 
-		private static string EncodeTypeName(TypeWrapper tw)
+		private static string EncodeTypeName(RuntimeJavaType tw)
 		{
 			return tw.SigName.Replace('.', '/');
 		}
@@ -596,21 +596,21 @@ namespace IKVM.StubGen
 #endif
         }
 
-        private static string GetAssemblyName(TypeWrapper tw)
+        private static string GetAssemblyName(RuntimeJavaType tw)
         {
-            ClassLoaderWrapper loader = tw.GetClassLoader();
-            AssemblyClassLoader acl = loader as AssemblyClassLoader;
+            RuntimeClassLoader loader = tw.GetClassLoader();
+            RuntimeAssemblyClassLoader acl = loader as RuntimeAssemblyClassLoader;
             if (acl != null)
             {
                 return acl.GetAssembly(tw).FullName;
             }
             else
             {
-                return ((GenericClassLoaderWrapper)loader).GetName();
+                return ((RuntimeGenericClassLoader)loader).GetName();
             }
         }
 
-        private static bool IsSerializable(TypeWrapper tw)
+        private static bool IsSerializable(RuntimeJavaType tw)
         {
             if (tw.Name == "java.io.Serializable")
             {
@@ -618,7 +618,7 @@ namespace IKVM.StubGen
             }
             while (tw != null)
             {
-                foreach (TypeWrapper iface in tw.Interfaces)
+                foreach (RuntimeJavaType iface in tw.Interfaces)
                 {
                     if (IsSerializable(iface))
                     {
@@ -630,9 +630,9 @@ namespace IKVM.StubGen
             return false;
         }
 
-        private static void AddMetaAnnotations(ClassFileWriter writer, TypeWrapper tw)
+        private static void AddMetaAnnotations(ClassFileWriter writer, RuntimeJavaType tw)
         {
-            DotNetTypeWrapper.AttributeAnnotationTypeWrapperBase attributeAnnotation = tw as DotNetTypeWrapper.AttributeAnnotationTypeWrapperBase;
+            RuntimeManagedJavaType.AttributeAnnotationTypeWrapperBase attributeAnnotation = tw as RuntimeManagedJavaType.AttributeAnnotationTypeWrapperBase;
             if (attributeAnnotation != null)
             {
                 // TODO write the annotation directly, instead of going thru the object[] encoding
@@ -678,18 +678,18 @@ namespace IKVM.StubGen
                         AnnotationDefaultAttribute.TAG_ANNOTATION,
                         "Ljava/lang/annotation/Repeatable;",
                         "value",
-                        new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + (tw.Name + DotNetTypeWrapper.AttributeAnnotationMultipleSuffix).Replace('.', '/') + ";" }
+                        new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + (tw.Name + RuntimeManagedJavaType.AttributeAnnotationMultipleSuffix).Replace('.', '/') + ";" }
                     });
                 }
                 writer.AddAttribute(annot);
             }
         }
 
-        private static bool IsRepeatableAnnotation(TypeWrapper tw)
+        private static bool IsRepeatableAnnotation(RuntimeJavaType tw)
         {
-            foreach (TypeWrapper nested in tw.InnerClasses)
+            foreach (RuntimeJavaType nested in tw.InnerClasses)
             {
-                if (nested.Name == tw.Name + DotNetTypeWrapper.AttributeAnnotationMultipleSuffix)
+                if (nested.Name == tw.Name + RuntimeManagedJavaType.AttributeAnnotationMultipleSuffix)
                 {
                     return true;
                 }
@@ -697,46 +697,46 @@ namespace IKVM.StubGen
             return false;
         }
 
-        private static byte[] GetAnnotationDefault(ClassFileWriter classFile, TypeWrapper type)
+        private static byte[] GetAnnotationDefault(ClassFileWriter classFile, RuntimeJavaType type)
         {
             MemoryStream mem = new MemoryStream();
             BigEndianStream bes = new BigEndianStream(mem);
-            if (type == PrimitiveTypeWrapper.BOOLEAN)
+            if (type == RuntimePrimitiveJavaType.BOOLEAN)
             {
                 bes.WriteByte((byte)'Z');
                 bes.WriteUInt16(classFile.AddInt(0));
             }
-            else if (type == PrimitiveTypeWrapper.BYTE)
+            else if (type == RuntimePrimitiveJavaType.BYTE)
             {
                 bes.WriteByte((byte)'B');
                 bes.WriteUInt16(classFile.AddInt(0));
             }
-            else if (type == PrimitiveTypeWrapper.CHAR)
+            else if (type == RuntimePrimitiveJavaType.CHAR)
             {
                 bes.WriteByte((byte)'C');
                 bes.WriteUInt16(classFile.AddInt(0));
             }
-            else if (type == PrimitiveTypeWrapper.SHORT)
+            else if (type == RuntimePrimitiveJavaType.SHORT)
             {
                 bes.WriteByte((byte)'S');
                 bes.WriteUInt16(classFile.AddInt(0));
             }
-            else if (type == PrimitiveTypeWrapper.INT)
+            else if (type == RuntimePrimitiveJavaType.INT)
             {
                 bes.WriteByte((byte)'I');
                 bes.WriteUInt16(classFile.AddInt(0));
             }
-            else if (type == PrimitiveTypeWrapper.FLOAT)
+            else if (type == RuntimePrimitiveJavaType.FLOAT)
             {
                 bes.WriteByte((byte)'F');
                 bes.WriteUInt16(classFile.AddFloat(0));
             }
-            else if (type == PrimitiveTypeWrapper.LONG)
+            else if (type == RuntimePrimitiveJavaType.LONG)
             {
                 bes.WriteByte((byte)'J');
                 bes.WriteUInt16(classFile.AddLong(0));
             }
-            else if (type == PrimitiveTypeWrapper.DOUBLE)
+            else if (type == RuntimePrimitiveJavaType.DOUBLE)
             {
                 bes.WriteByte((byte)'D');
                 bes.WriteUInt16(classFile.AddDouble(0));

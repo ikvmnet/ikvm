@@ -128,7 +128,7 @@ namespace IKVM.Java.Externs.java.lang
                 throw new NotImplementedException();
 #else
                 var lib = (global::java.lang.ClassLoader.NativeLibrary)self;
-                lib.handle = isBuiltin ? 0 : JNINativeLoader.LoadLibrary(name, TypeWrapper.FromClass(global::java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
+                lib.handle = isBuiltin ? 0 : JNINativeLoader.LoadLibrary(name, RuntimeJavaType.FromClass(global::java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
                 lib.loaded = true;
 #endif
             }
@@ -162,7 +162,7 @@ namespace IKVM.Java.Externs.java.lang
                     var lib = (global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary;
                     var handle = Interlocked.Exchange(ref lib.handle, 0);
                     if (handle != 0)
-                        JNINativeLoader.UnloadLibrary(handle, TypeWrapper.FromClass(global::java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
+                        JNINativeLoader.UnloadLibrary(handle, RuntimeJavaType.FromClass(global::java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
                 }
 #endif
             }

@@ -72,7 +72,7 @@ namespace IKVM.Runtime
                 clazz.MarkLinkRequired();
             }
 
-            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 clazz.Link(thisType, mode);
             }
@@ -101,12 +101,12 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal TypeWrapper GetClassType()
+            internal RuntimeJavaType GetClassType()
             {
                 return clazz.GetClassType();
             }
 
-            internal abstract MemberWrapper GetMember();
+            internal abstract RuntimeJavaMember GetMember();
         }
     }
 
