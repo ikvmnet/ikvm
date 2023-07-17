@@ -24,8 +24,10 @@
 
 namespace IKVM.StubGen
 {
+
     sealed class ConstantValueAttribute : ClassFileAttribute
 	{
+
 		private ushort constant_index;
 
 		public ConstantValueAttribute(ushort name_index, ushort constant_index)
@@ -40,5 +42,7 @@ namespace IKVM.StubGen
 			bes.WriteUInt32(2);
 			bes.WriteUInt16(constant_index);
 		}
+
 	}
+
 }

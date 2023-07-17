@@ -24,11 +24,10 @@
 
 using System;
 using System.Xml.Linq;
-using System.Xml.Serialization;
 
-using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Runtime;
 
 using Type = IKVM.Reflection.Type;
 

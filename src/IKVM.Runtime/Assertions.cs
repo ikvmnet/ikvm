@@ -24,7 +24,7 @@
 using System;
 using System.Globalization;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Runtime
 {

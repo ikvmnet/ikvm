@@ -22,24 +22,12 @@
   
 */
 using System.Collections.Generic;
-
-using IKVM.Runtime;
-using IKVM.ByteCode.Reading;
-using IKVM.ByteCode.Parsing;
-
 using System.Linq;
 
-#if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using IKVM.Tools.Importer;
+using IKVM.ByteCode.Parsing;
+using IKVM.ByteCode.Reading;
 
-using Type = IKVM.Reflection.Type;
-using DynamicOrAotTypeWrapper = IKVM.Tools.Importer.AotTypeWrapper;
-using ProtectionDomain = System.Object;
-#endif
-
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
 #if IMPORTER
@@ -49,6 +37,7 @@ namespace IKVM.Internal
     sealed partial class DynamicTypeWrapper
 #endif
     {
+
         sealed class Metadata
         {
 

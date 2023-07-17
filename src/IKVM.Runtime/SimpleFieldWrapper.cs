@@ -23,25 +23,20 @@
 */
 using System.Diagnostics;
 
-using IKVM.Runtime;
-
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
-
 #endif
 
 #if IMPORTER
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     /// <summary>

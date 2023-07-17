@@ -29,7 +29,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using IKVM.ByteCode.Text;
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Runtime.JNI
 {

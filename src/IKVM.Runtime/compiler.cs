@@ -27,7 +27,6 @@ using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
 
 using IKVM.Attributes;
-using IKVM.Internal;
 using IKVM.ByteCode;
 
 #if IMPORTER
@@ -41,10 +40,10 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
-using LocalVariableTableEntry = IKVM.Internal.ClassFile.Method.LocalVariableTableEntry;
-using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
-using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
+using ExceptionTableEntry = IKVM.Runtime.ClassFile.Method.ExceptionTableEntry;
+using LocalVariableTableEntry = IKVM.Runtime.ClassFile.Method.LocalVariableTableEntry;
+using Instruction = IKVM.Runtime.ClassFile.Method.Instruction;
+using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 
 namespace IKVM.Runtime
 {

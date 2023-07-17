@@ -25,7 +25,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime;
 using IKVM.Runtime.Vfs;
 

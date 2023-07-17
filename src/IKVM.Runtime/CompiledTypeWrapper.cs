@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.Attributes;
-using IKVM.Runtime;
 using IKVM.Runtime.Syntax;
 using IKVM.ByteCode;
 
@@ -44,7 +43,7 @@ using System.Reflection.Emit;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     class CompiledTypeWrapper : TypeWrapper

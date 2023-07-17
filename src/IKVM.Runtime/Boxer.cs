@@ -23,8 +23,9 @@
 */
 using System;
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
+
     static class Boxer
     {
 

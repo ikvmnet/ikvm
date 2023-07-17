@@ -26,15 +26,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 
 using IKVM.Attributes;
-using IKVM.Internal;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-#endif
 
 namespace IKVM.Runtime
 {
@@ -103,6 +94,7 @@ namespace IKVM.Runtime
             throw new global::java.lang.ClassCastException(sb.ToString());
 #endif
         }
+
     }
 
 }

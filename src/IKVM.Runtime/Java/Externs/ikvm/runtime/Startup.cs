@@ -1,6 +1,6 @@
 using System.Reflection;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.ikvm.runtime
 {
@@ -13,7 +13,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
         public static void addBootClassPathAssembly(Assembly asm)
         {
-            ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(IKVM.Internal.AssemblyClassLoader.FromAssembly(asm));
+            ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(IKVM.Runtime.AssemblyClassLoader.FromAssembly(asm));
         }
 
     }

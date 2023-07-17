@@ -24,8 +24,10 @@
 
 namespace IKVM.StubGen
 {
+
     sealed class MethodParametersAttribute : ClassFileAttribute
 	{
+
 		private readonly ClassFileWriter classFile;
 		private readonly ushort[] names;
 		private readonly ushort[] flags;
@@ -55,5 +57,7 @@ namespace IKVM.StubGen
 				bes.WriteUInt16(flags[i]);
 			}
 		}
+
 	}
+
 }

@@ -47,7 +47,7 @@ using System.Reflection;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     internal class AssemblyClassLoader : ClassLoaderWrapper

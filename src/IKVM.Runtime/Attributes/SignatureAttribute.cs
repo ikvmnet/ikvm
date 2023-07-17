@@ -23,13 +23,15 @@
 */
 using System;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Method | AttributeTargets.Field)]
 	public sealed class SignatureAttribute : Attribute
 	{
+
 		private string signature;
 
 		public SignatureAttribute(string signature)
@@ -37,12 +39,8 @@ namespace IKVM.Attributes
 			this.signature = UnicodeUtil.UnescapeInvalidSurrogates(signature);
 		}
 
-		public string Signature
-		{
-			get
-			{
-				return signature;
-			}
-		}
-	}
+        public string Signature => signature;
+
+    }
+
 }

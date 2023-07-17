@@ -24,39 +24,44 @@
 using System;
 
 using IKVM.Attributes;
-using IKVM.Internal;
 
 using Type = IKVM.Reflection.Type;
 
-sealed class StubTypeWrapper : TypeWrapper
+namespace IKVM.Runtime
 {
-    private readonly bool remapped;
-    private readonly TypeWrapper baseWrapper;
 
-    internal StubTypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper, bool remapped)
-        : base(TypeFlags.None, modifiers, name)
+    sealed class StubTypeWrapper : TypeWrapper
     {
-        this.remapped = remapped;
-        this.baseWrapper = baseWrapper;
+
+        private readonly bool remapped;
+        private readonly TypeWrapper baseWrapper;
+
+        internal StubTypeWrapper(Modifiers modifiers, string name, TypeWrapper baseWrapper, bool remapped)
+            : base(TypeFlags.None, modifiers, name)
+        {
+            this.remapped = remapped;
+            this.baseWrapper = baseWrapper;
+        }
+
+        internal override TypeWrapper BaseTypeWrapper
+        {
+            get { return baseWrapper; }
+        }
+
+        internal override ClassLoaderWrapper GetClassLoader()
+        {
+            return ClassLoaderWrapper.GetBootstrapClassLoader();
+        }
+
+        internal override Type TypeAsTBD
+        {
+            get { throw new NotSupportedException(); }
+        }
+
+        internal override bool IsRemapped
+        {
+            get { return remapped; }
+        }
     }
 
-    internal override TypeWrapper BaseTypeWrapper
-    {
-        get { return baseWrapper; }
-    }
-
-    internal override ClassLoaderWrapper GetClassLoader()
-    {
-        return ClassLoaderWrapper.GetBootstrapClassLoader();
-    }
-
-    internal override Type TypeAsTBD
-    {
-        get { throw new NotSupportedException(); }
-    }
-
-    internal override bool IsRemapped
-    {
-        get { return remapped; }
-    }
 }

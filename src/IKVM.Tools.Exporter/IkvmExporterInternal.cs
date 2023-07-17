@@ -4,7 +4,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 
-using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Runtime;
 using IKVM.Tools.Importer;
@@ -31,8 +30,8 @@ namespace IKVM.Tools.Exporter
         /// <param name="options"></param>
         public static int Execute(IkvmExporterOptions options)
         {
-            IKVM.Internal.Tracer.EnableTraceConsoleListener();
-            IKVM.Internal.Tracer.EnableTraceForDebug();
+            IKVM.Runtime.Tracer.EnableTraceConsoleListener();
+            IKVM.Runtime.Tracer.EnableTraceForDebug();
 
             var references = new List<string>();
             if (options.References != null)

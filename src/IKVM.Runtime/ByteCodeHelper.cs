@@ -29,7 +29,6 @@ using System.Runtime.CompilerServices;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
-using IKVM.Internal;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;

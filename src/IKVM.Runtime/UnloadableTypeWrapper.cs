@@ -35,8 +35,9 @@ using Type = IKVM.Reflection.Type;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
+
     sealed class UnloadableTypeWrapper : TypeWrapper
     {
 
@@ -66,10 +67,7 @@ namespace IKVM.Internal
             this.customModifier = customModifier;
         }
 
-        internal override TypeWrapper BaseTypeWrapper
-        {
-            get { return null; }
-        }
+        internal override TypeWrapper BaseTypeWrapper => null;
 
         internal override ClassLoaderWrapper GetClassLoader()
         {
@@ -102,13 +100,7 @@ namespace IKVM.Internal
             throw new InvalidOperationException("LazyPublishMembers called on UnloadableTypeWrapper: " + Name);
         }
 
-        internal override Type TypeAsTBD
-        {
-            get
-            {
-                throw new InvalidOperationException("get_Type called on UnloadableTypeWrapper: " + Name);
-            }
-        }
+        internal override Type TypeAsTBD => throw new InvalidOperationException("get_Type called on UnloadableTypeWrapper: " + Name);
 
         internal override TypeWrapper[] Interfaces
         {
@@ -126,36 +118,18 @@ namespace IKVM.Internal
             }
         }
 
-        internal override TypeWrapper[] InnerClasses
-        {
-            get
-            {
-                throw new InvalidOperationException("get_InnerClasses called on UnloadableTypeWrapper: " + Name);
-            }
-        }
+        internal override TypeWrapper[] InnerClasses => throw new InvalidOperationException("get_InnerClasses called on UnloadableTypeWrapper: " + Name);
 
-        internal override TypeWrapper DeclaringTypeWrapper
-        {
-            get
-            {
-                throw new InvalidOperationException("get_DeclaringTypeWrapper called on UnloadableTypeWrapper: " + Name);
-            }
-        }
+        internal override TypeWrapper DeclaringTypeWrapper => throw new InvalidOperationException("get_DeclaringTypeWrapper called on UnloadableTypeWrapper: " + Name);
 
         internal override void Finish()
         {
             throw new InvalidOperationException("Finish called on UnloadableTypeWrapper: " + Name);
         }
 
-        internal Type MissingType
-        {
-            get { return missingType; }
-        }
+        internal Type MissingType => missingType;
 
-        internal Type CustomModifier
-        {
-            get { return customModifier; }
-        }
+        internal Type CustomModifier => customModifier;
 
         internal void SetCustomModifier(Type type)
         {

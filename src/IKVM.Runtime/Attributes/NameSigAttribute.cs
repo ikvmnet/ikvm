@@ -23,17 +23,15 @@
 */
 using System;
 
-using IKVM.Internal;
-
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
+using IKVM.Runtime;
 
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Field)]
 	public sealed class NameSigAttribute : Attribute
 	{
+
 		private string name;
 		private string sig;
 
@@ -43,20 +41,10 @@ namespace IKVM.Attributes
 			this.sig = UnicodeUtil.UnescapeInvalidSurrogates(sig);
 		}
 
-		public string Name
-		{
-			get
-			{
-				return name;
-			}
-		}
+        public string Name => name;
 
-		public string Sig
-		{
-			get
-			{
-				return sig;
-			}
-		}
-	}
+        public string Sig => sig;
+
+    }
+
 }

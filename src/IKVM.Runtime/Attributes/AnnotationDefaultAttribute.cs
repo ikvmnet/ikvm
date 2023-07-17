@@ -23,17 +23,15 @@
 */
 using System;
 
-using IKVM.Internal;
-
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
+using IKVM.Runtime;
 
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Method)]
     public sealed class AnnotationDefaultAttribute : Attribute
     {
+
         public const byte TAG_ENUM = (byte)'e';
         public const byte TAG_CLASS = (byte)'c';
         public const byte TAG_ANNOTATION = (byte)'@';

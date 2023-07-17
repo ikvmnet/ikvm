@@ -48,7 +48,7 @@ using System.Reflection.Emit;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     static class AttributeHelper

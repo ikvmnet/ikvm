@@ -25,9 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using IKVM.Attributes;
 using IKVM.ByteCode;
-using IKVM.Runtime;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -41,7 +39,7 @@ using System.Reflection.Emit;
 
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed class LambdaMetafactory
@@ -1075,4 +1073,5 @@ namespace IKVM.Internal
             return false;
         }
     }
+
 }

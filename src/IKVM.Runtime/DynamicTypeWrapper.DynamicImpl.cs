@@ -27,17 +27,13 @@ using IKVM.Attributes;
 
 #if IMPORTER
 using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
-using DynamicOrAotTypeWrapper = IKVM.Tools.Importer.AotTypeWrapper;
-using ProtectionDomain = System.Object;
 #else
 using System.Reflection;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
 #if IMPORTER
@@ -47,8 +43,10 @@ namespace IKVM.Internal
     sealed partial class DynamicTypeWrapper
 #endif
     {
+
         private abstract class DynamicImpl
         {
+
             internal abstract Type Type { get; }
             internal abstract TypeWrapper[] InnerClasses { get; }
             internal abstract TypeWrapper DeclaringTypeWrapper { get; }
@@ -73,7 +71,9 @@ namespace IKVM.Internal
             internal abstract byte[] GetMethodRawTypeAnnotations(int index);
             internal abstract byte[] GetFieldRawTypeAnnotations(int index);
             internal abstract TypeWrapper Host { get; }
+
         }
+
     }
 
 }

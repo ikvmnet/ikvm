@@ -24,7 +24,6 @@
 using System;
 
 using IKVM.Attributes;
-using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -36,11 +35,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
-
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed class PrimitiveTypeWrapper : TypeWrapper

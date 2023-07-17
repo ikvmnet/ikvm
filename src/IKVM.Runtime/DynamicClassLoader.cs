@@ -27,8 +27,6 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 
-using IKVM.Runtime;
-
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -43,7 +41,7 @@ using System.Reflection.Emit;
 using ProtectionDomain = java.security.ProtectionDomain;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     /// <summary>

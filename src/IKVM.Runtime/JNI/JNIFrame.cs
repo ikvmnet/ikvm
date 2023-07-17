@@ -25,7 +25,7 @@ using System;
 using System.Diagnostics;
 using System.Text;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Runtime.JNI
 {

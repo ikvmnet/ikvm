@@ -28,7 +28,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 
 using IKVM.Attributes;
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.sun.reflect

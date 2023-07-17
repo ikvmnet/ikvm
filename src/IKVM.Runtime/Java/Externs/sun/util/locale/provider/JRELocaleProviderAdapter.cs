@@ -28,7 +28,7 @@ static class JRELocaleProviderAdapter
 	// the Java implementation is redirected via map.xml
 	internal static bool isNonENLangSupported()
 	{
-		return IKVM.Internal.ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast("sun.text.resources.nl.FormatData_nl") != null;
+		return IKVM.Runtime.ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast("sun.text.resources.nl.FormatData_nl") != null;
 	}
 
 }

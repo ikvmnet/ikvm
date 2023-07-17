@@ -2,7 +2,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 

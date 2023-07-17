@@ -26,7 +26,6 @@ using System.IO;
 using System.Collections.Generic;
 
 using IKVM.Attributes;
-using IKVM.Internal;
 using IKVM.Runtime;
 
 #if EXPORTER

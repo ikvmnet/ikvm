@@ -23,7 +23,7 @@
 */
 using System;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.lang.reflect
 {

@@ -25,7 +25,7 @@ using System;
 using System.Reflection.Emit;
 
 using IKVM.Attributes;
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime;
 
 

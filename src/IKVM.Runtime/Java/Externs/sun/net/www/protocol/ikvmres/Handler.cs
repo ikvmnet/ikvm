@@ -24,7 +24,7 @@
 using System.IO;
 using System.Reflection;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime;
 
 #if NETCOREAPP

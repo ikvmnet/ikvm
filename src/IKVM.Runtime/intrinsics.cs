@@ -25,8 +25,6 @@
 using System;
 using System.Collections.Generic;
 
-using IKVM.Runtime;
-
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -38,105 +36,17 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
-using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
+using Instruction = IKVM.Runtime.ClassFile.Method.Instruction;
+using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
-
-    sealed class EmitIntrinsicContext
-    {
-
-        internal readonly MethodWrapper Method;
-        internal readonly DynamicTypeWrapper.FinishContext Context;
-        internal readonly CodeEmitter Emitter;
-        readonly CodeInfo ma;
-        internal readonly int OpcodeIndex;
-        internal readonly MethodWrapper Caller;
-        internal readonly ClassFile ClassFile;
-        internal readonly Instruction[] Code;
-        internal readonly InstructionFlags[] Flags;
-        internal bool NonLeaf = true;
-
-        internal EmitIntrinsicContext(MethodWrapper method, DynamicTypeWrapper.FinishContext context, CodeEmitter ilgen, CodeInfo ma, int opcodeIndex, MethodWrapper caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
-        {
-            this.Method = method;
-            this.Context = context;
-            this.Emitter = ilgen;
-            this.ma = ma;
-            this.OpcodeIndex = opcodeIndex;
-            this.Caller = caller;
-            this.ClassFile = classFile;
-            this.Code = code;
-            this.Flags = flags;
-        }
-
-        internal bool MatchRange(int offset, int length)
-        {
-            if (OpcodeIndex + offset < 0)
-                return false;
-
-            if (OpcodeIndex + offset + length > Code.Length)
-                return false;
-
-            // we check for branches *into* the range, the start of the range may be a branch target
-            for (int i = OpcodeIndex + offset + 1, end = OpcodeIndex + offset + length; i < end; i++)
-                if ((Flags[i] & InstructionFlags.BranchTarget) != 0)
-                    return false;
-
-            return true;
-        }
-
-        internal bool Match(int offset, NormalizedByteCode opcode)
-        {
-            return Code[OpcodeIndex + offset].NormalizedOpCode == opcode;
-        }
-
-        internal bool Match(int offset, NormalizedByteCode opcode, int arg)
-        {
-            return Code[OpcodeIndex + offset].NormalizedOpCode == opcode && Code[OpcodeIndex + offset].Arg1 == arg;
-        }
-
-        internal TypeWrapper GetStackTypeWrapper(int offset, int pos)
-        {
-            return ma.GetStackTypeWrapper(OpcodeIndex + offset, pos);
-        }
-
-        internal ClassFile.ConstantPoolItemMI GetMethodref(int offset)
-        {
-            return ClassFile.GetMethodref(Code[OpcodeIndex + offset].Arg1);
-        }
-
-        internal ClassFile.ConstantPoolItemFieldref GetFieldref(int offset)
-        {
-            return ClassFile.GetFieldref(Code[OpcodeIndex + offset].Arg1);
-        }
-
-        internal TypeWrapper GetClassLiteral(int offset)
-        {
-            return ClassFile.GetConstantPoolClassType(Code[OpcodeIndex + offset].Arg1);
-        }
-
-        internal string GetStringLiteral(int offset)
-        {
-            return ClassFile.GetConstantPoolConstantString(Code[OpcodeIndex + offset].Arg1);
-        }
-
-        internal ClassFile.ConstantType GetConstantType(int offset)
-        {
-            return ClassFile.GetConstantPoolConstantType(Code[OpcodeIndex + offset].Arg1);
-        }
-
-        internal void PatchOpCode(int offset, NormalizedByteCode opc)
-        {
-            Code[OpcodeIndex + offset].PatchOpCode(opc);
-        }
-
-    }
 
     static class Intrinsics
     {
+
         private delegate bool Emitter(EmitIntrinsicContext eic);
+
         private struct IntrinsicKey : IEquatable<IntrinsicKey>
         {
             private readonly string className;

@@ -22,21 +22,11 @@
   
 */
 using System.Diagnostics;
-
-#if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using IKVM.Tools.Importer;
-
-using Type = IKVM.Reflection.Type;
-using DynamicOrAotTypeWrapper = IKVM.Tools.Importer.AotTypeWrapper;
-using ProtectionDomain = System.Object;
-#else
 using System.Reflection;
-#endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
+
 #if !IMPORTER
 
     sealed class DynamicCallerIDProvider

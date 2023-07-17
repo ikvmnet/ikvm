@@ -22,8 +22,9 @@
   
 */
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
+
     static class NamePrefix
     {
 

@@ -26,7 +26,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Runtime.JNI
 {

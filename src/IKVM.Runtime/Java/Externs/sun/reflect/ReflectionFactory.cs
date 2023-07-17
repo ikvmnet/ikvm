@@ -31,7 +31,7 @@ using System.Reflection.Emit;
 using System.Runtime.Serialization;
 using System.Security;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Java.Lang;

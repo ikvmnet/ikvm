@@ -24,26 +24,21 @@
 using System;
 using System.Diagnostics;
 
-using IKVM.Runtime;
-
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
-#else
 #endif
 
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
-
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
+
     static class EnumHelper
     {
+
         internal static Type GetUnderlyingType(Type enumType)
         {
+
 #if IMPORTER || EXPORTER
             return enumType.GetEnumUnderlyingType();
 #else
@@ -52,6 +47,7 @@ namespace IKVM.Internal
         }
 
 #if IMPORTER
+
         internal static object Parse(Type type, string value)
         {
             object retval = null;
@@ -147,6 +143,7 @@ namespace IKVM.Internal
                 throw new InvalidOperationException();
             }
         }
+
     }
 
 }

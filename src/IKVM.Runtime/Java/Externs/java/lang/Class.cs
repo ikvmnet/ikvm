@@ -24,7 +24,7 @@
 using System;
 using System.Collections.Generic;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 

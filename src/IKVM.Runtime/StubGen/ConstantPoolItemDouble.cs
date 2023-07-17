@@ -25,8 +25,10 @@ using System;
 
 namespace IKVM.StubGen
 {
+
     sealed class ConstantPoolItemDouble : ConstantPoolItem
 	{
+
 		private double v;
 
 		public ConstantPoolItemDouble(double v)
@@ -54,5 +56,7 @@ namespace IKVM.StubGen
 			bes.WriteByte((byte)Constant.Double);
 			bes.WriteDouble(v);
 		}
+
 	}
+
 }

@@ -27,7 +27,6 @@ using System.Diagnostics;
 
 using IKVM.ByteCode.Reading;
 using IKVM.Attributes;
-using IKVM.Runtime;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -36,15 +35,14 @@ using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
 using DynamicOrAotTypeWrapper = IKVM.Tools.Importer.AotTypeWrapper;
-using ProtectionDomain = System.Object;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
 
-using DynamicOrAotTypeWrapper = IKVM.Internal.DynamicTypeWrapper;
+using DynamicOrAotTypeWrapper = IKVM.Runtime.DynamicTypeWrapper;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
 #if IMPORTER
@@ -54,8 +52,10 @@ namespace IKVM.Internal
     sealed partial class DynamicTypeWrapper
 #endif
     {
+
         internal sealed class FinishContext
         {
+
             private readonly TypeWrapper host;
             private readonly ClassFile classFile;
             private readonly DynamicOrAotTypeWrapper wrapper;
