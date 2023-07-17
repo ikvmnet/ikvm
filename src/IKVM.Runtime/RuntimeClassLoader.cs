@@ -203,7 +203,7 @@ namespace IKVM.Runtime
             return tw;
         }
 
-        private RuntimeJavaType RegisterInitiatingLoaderCritical(RuntimeJavaType tw)
+        RuntimeJavaType RegisterInitiatingLoaderCritical(RuntimeJavaType tw)
         {
             lock (types)
             {
