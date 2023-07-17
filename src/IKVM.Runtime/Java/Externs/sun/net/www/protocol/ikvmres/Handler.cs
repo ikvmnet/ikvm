@@ -25,7 +25,6 @@ using System.IO;
 using System.Reflection;
 
 using IKVM.Runtime;
-using IKVM.Runtime;
 
 #if NETCOREAPP
 using System.Runtime.Loader;

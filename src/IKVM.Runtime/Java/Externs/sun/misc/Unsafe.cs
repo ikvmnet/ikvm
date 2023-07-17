@@ -10,7 +10,6 @@ using System.Threading;
 
 using IKVM.ByteCode.Reading;
 using IKVM.Runtime;
-using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.sun.misc
 {

@@ -736,7 +736,7 @@ namespace IKVM.Runtime
                     }
                     else if (method.IsSpecialName && method.Name.StartsWith(NamePrefix.PrivateInterfaceInstanceMethod, StringComparison.Ordinal))
                     {
-                        mw = new PrivateInterfaceMethodWrapper(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags);
+                        mw = new RuntimePrivateInterfaceJavaMethod(this, name, sig, method, retType, paramTypes, mods.Modifiers, flags);
                     }
                     else if (IsInterface && method.IsAbstract && (mods.Modifiers & Modifiers.Abstract) == 0 && (impl = GetDefaultInterfaceMethodImpl(mi, sig)) != null)
                     {

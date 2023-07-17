@@ -130,7 +130,7 @@ namespace IKVM.Runtime
                     {
                         // we can't use callvirt to call interface private instance methods (because we have to compile them as static methods,
                         // since the CLR doesn't support interface instance methods), so need a special MethodWrapper
-                        methods[i] = new PrivateInterfaceMethodWrapper(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
+                        methods[i] = new RuntimePrivateInterfaceJavaMethod(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
                     }
                     else if (classFile.IsInterface && m.IsVirtual && !m.IsAbstract)
                     {

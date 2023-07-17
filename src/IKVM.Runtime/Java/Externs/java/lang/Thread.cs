@@ -28,7 +28,6 @@ using System.Diagnostics;
 using System.Threading;
 
 using IKVM.Runtime;
-using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Util.Java.Security;
 

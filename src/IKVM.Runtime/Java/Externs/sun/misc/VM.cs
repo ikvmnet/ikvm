@@ -26,7 +26,6 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Runtime;
-using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.sun.misc
 {
