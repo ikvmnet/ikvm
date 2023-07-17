@@ -51,17 +51,22 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
+    /// <summary>
+    /// Runtime support for a class loader.
+    /// </summary>
     class RuntimeClassLoader
     {
 
-        private static readonly object wrapperLock = new object();
-        private static readonly Dictionary<Type, RuntimeJavaType> globalTypeToTypeWrapper = new Dictionary<Type, RuntimeJavaType>();
+        static readonly object wrapperLock = new object();
+        static readonly Dictionary<Type, RuntimeJavaType> globalTypeToTypeWrapper = new Dictionary<Type, RuntimeJavaType>();
+        static readonly Dictionary<Type, string> remappedTypes = new Dictionary<Type, string>();
+        static List<RuntimeGenericClassLoader> genericClassLoaders;
+
 #if IMPORTER || EXPORTER
-        private static RuntimeClassLoader bootstrapClassLoader;
+        static RuntimeClassLoader bootstrapClassLoader;
 #else
-        private static RuntimeAssemblyClassLoader bootstrapClassLoader;
+        static RuntimeAssemblyClassLoader bootstrapClassLoader;
 #endif
-        private static List<GenericClassLoaderWrapper> genericClassLoaders;
 
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
 
@@ -79,7 +84,6 @@ namespace IKVM.Runtime
         readonly Dictionary<string, Thread> defineClassInProgress = new Dictionary<string, Thread>();
         List<IntPtr> nativeLibraries;
         readonly CodeGenOptions codegenoptions;
-        static readonly Dictionary<Type, string> remappedTypes = new Dictionary<Type, string>();
 
 #if IMPORTER || EXPORTER
 
@@ -1155,18 +1159,17 @@ namespace IKVM.Runtime
         {
             lock (wrapperLock)
             {
-                if (genericClassLoaders == null)
-                    genericClassLoaders = new List<GenericClassLoaderWrapper>();
+                genericClassLoaders ??= new List<RuntimeGenericClassLoader>();
 
-                foreach (GenericClassLoaderWrapper loader in genericClassLoaders)
+                foreach (RuntimeGenericClassLoader loader in genericClassLoaders)
                     if (loader.Matches(key))
                         return loader;
 
 #if IMPORTER || EXPORTER || FIRST_PASS
-                var newLoader = new GenericClassLoaderWrapper(key, null);
+                var newLoader = new RuntimeGenericClassLoader(key, null);
 #else
                 var javaClassLoader = new ikvm.runtime.GenericClassLoader();
-                var newLoader = new GenericClassLoaderWrapper(key, javaClassLoader);
+                var newLoader = new RuntimeGenericClassLoader(key, javaClassLoader);
                 SetWrapperForClassLoader(javaClassLoader, newLoader);
 #endif
                 genericClassLoaders.Add(newLoader);
@@ -1179,7 +1182,7 @@ namespace IKVM.Runtime
         protected internal static void SetWrapperForClassLoader(java.lang.ClassLoader javaClassLoader, RuntimeClassLoader wrapper)
         {
 #if FIRST_PASS
-            typeof(java.lang.ClassLoader).GetField("wrapper", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(javaClassLoader, wrapper);
+            throw new NotImplementedException();
 #else
             javaClassLoader.wrapper = wrapper;
 #endif
@@ -1251,7 +1254,7 @@ namespace IKVM.Runtime
         internal static int GetGenericClassLoaderId(RuntimeClassLoader wrapper)
         {
             lock (wrapperLock)
-                return genericClassLoaders.IndexOf(wrapper as GenericClassLoaderWrapper);
+                return genericClassLoaders.IndexOf(wrapper as RuntimeGenericClassLoader);
         }
 
         internal static RuntimeClassLoader GetGenericClassLoaderById(int id)
@@ -1266,9 +1269,7 @@ namespace IKVM.Runtime
             RuntimeJavaType.AssertFinished(type);
 #endif
 
-            Dictionary<Type, RuntimeJavaType> dict = globalTypeToTypeWrapper;
-
-            lock (dict)
+            lock (globalTypeToTypeWrapper)
             {
                 try
                 {
@@ -1276,7 +1277,7 @@ namespace IKVM.Runtime
                 }
                 finally
                 {
-                    dict.Add(type, wrapper);
+                    globalTypeToTypeWrapper.Add(type, wrapper);
                 }
             }
         }

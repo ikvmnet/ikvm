@@ -22,7 +22,7 @@
         <Compile Include="..\IKVM.Runtime\RuntimeAssemblyClassLoader.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\Attributes\**\*.cs" LinkBase="IKVM.Runtime\Attributes" />
         <Compile Include="..\IKVM.Runtime\RuntimeClassLoader.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\GenericClassLoaderWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeGenericClassLoader.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\CoreClasses.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeManagedJavaType.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\JavaException.cs" LinkBase="IKVM.Runtime" />

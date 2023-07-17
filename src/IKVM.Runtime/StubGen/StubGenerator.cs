@@ -606,7 +606,7 @@ namespace IKVM.StubGen
             }
             else
             {
-                return ((GenericClassLoaderWrapper)loader).GetName();
+                return ((RuntimeGenericClassLoader)loader).GetName();
             }
         }
 

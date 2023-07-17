@@ -26,7 +26,7 @@ using System;
 namespace IKVM.Runtime
 {
 
-    sealed class GenericClassLoaderWrapper : RuntimeClassLoader
+    sealed class RuntimeGenericClassLoader : RuntimeClassLoader
     {
 
         readonly RuntimeClassLoader[] delegates;
@@ -36,7 +36,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="delegates"></param>
         /// <param name="javaClassLoader"></param>
-        internal GenericClassLoaderWrapper(RuntimeClassLoader[] delegates, object javaClassLoader) :
+        internal RuntimeGenericClassLoader(RuntimeClassLoader[] delegates, object javaClassLoader) :
             base(CodeGenOptions.None, javaClassLoader)
         {
             this.delegates = delegates;
@@ -80,7 +80,7 @@ namespace IKVM.Runtime
             foreach (var loader in delegates)
             {
                 sb.Append('[');
-                var gcl = loader as GenericClassLoaderWrapper;
+                var gcl = loader as RuntimeGenericClassLoader;
                 if (gcl != null)
                     sb.Append(gcl.GetName());
                 else
@@ -108,7 +108,7 @@ namespace IKVM.Runtime
                 if (tw != null && !tw.IsArray && !tw.IsDynamic)
                 {
                     var loader = tw.GetClassLoader();
-                    if (loader is GenericClassLoaderWrapper)
+                    if (loader is RuntimeGenericClassLoader)
                         v.add(new java.net.URL("ikvmres", "gen", RuntimeClassLoader.GetGenericClassLoaderId(loader), "/" + name));
                     else if (loader is RuntimeAssemblyClassLoader)
                         foreach (java.net.URL url in ((RuntimeAssemblyClassLoader)loader).FindResources(name))

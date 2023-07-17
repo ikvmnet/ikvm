@@ -49,6 +49,9 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
+    /// <summary>
+    /// Runtime support for the virtual class loader that appears to load .NET assemblies.
+    /// </summary>
     internal class RuntimeAssemblyClassLoader : RuntimeClassLoader
     {
 
