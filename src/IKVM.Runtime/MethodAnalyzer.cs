@@ -53,7 +53,7 @@ namespace IKVM.Runtime
         private readonly RuntimeJavaMethod mw;
         private readonly ClassFile classFile;
         private readonly ClassFile.Method method;
-        private readonly ClassLoaderWrapper classLoader;
+        private readonly RuntimeClassLoader classLoader;
         private readonly RuntimeJavaType thisType;
         private readonly InstructionState[] state;
         private List<string> errorMessages;
@@ -70,10 +70,10 @@ namespace IKVM.Runtime
             FloatArrayType = RuntimePrimitiveJavaType.FLOAT.MakeArrayType(1);
             DoubleArrayType = RuntimePrimitiveJavaType.DOUBLE.MakeArrayType(1);
             LongArrayType = RuntimePrimitiveJavaType.LONG.MakeArrayType(1);
-            java_lang_ThreadDeath = ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadDeath");
+            java_lang_ThreadDeath = RuntimeClassLoader.LoadClassCritical("java.lang.ThreadDeath");
         }
 
-        internal MethodAnalyzer(RuntimeJavaType host, RuntimeJavaType wrapper, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method, ClassLoaderWrapper classLoader)
+        internal MethodAnalyzer(RuntimeJavaType host, RuntimeJavaType wrapper, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method, RuntimeClassLoader classLoader)
         {
             if (method.VerifyError != null)
             {
@@ -113,11 +113,11 @@ namespace IKVM.Runtime
             int firstNonArgLocalIndex = 0;
             if (!method.IsStatic)
             {
-                thisType = VerifierTypeWrapper.MakeThis(wrapper);
+                thisType = RuntimeVerifierJavaType.MakeThis(wrapper);
                 // this reference. If we're a constructor, the this reference is uninitialized.
                 if (method.IsConstructor)
                 {
-                    state[0].SetLocalType(firstNonArgLocalIndex++, VerifierTypeWrapper.UninitializedThis, -1);
+                    state[0].SetLocalType(firstNonArgLocalIndex++, RuntimeVerifierJavaType.UninitializedThis, -1);
                     state[0].SetUnitializedThis(true);
                 }
                 else
@@ -221,7 +221,7 @@ namespace IKVM.Runtime
                                 case NormalizedByteCode.__aload:
                                     {
                                         RuntimeJavaType type = s.GetLocalType(instr.NormalizedArg1);
-                                        if (type == VerifierTypeWrapper.Invalid || type.IsPrimitive)
+                                        if (type == RuntimeVerifierJavaType.Invalid || type.IsPrimitive)
                                         {
                                             throw new VerifyError("Object reference expected");
                                         }
@@ -230,7 +230,7 @@ namespace IKVM.Runtime
                                     }
                                 case NormalizedByteCode.__astore:
                                     {
-                                        if (VerifierTypeWrapper.IsFaultBlockException(s.PeekType()))
+                                        if (RuntimeVerifierJavaType.IsFaultBlockException(s.PeekType()))
                                         {
                                             s.SetLocalType(instr.NormalizedArg1, s.PopFaultBlockException(), i);
                                             break;
@@ -245,21 +245,21 @@ namespace IKVM.Runtime
                                         break;
                                     }
                                 case NormalizedByteCode.__aconst_null:
-                                    s.PushType(VerifierTypeWrapper.Null);
+                                    s.PushType(RuntimeVerifierJavaType.Null);
                                     break;
                                 case NormalizedByteCode.__aaload:
                                     {
                                         s.PopInt();
                                         RuntimeJavaType type = s.PopArrayType();
-                                        if (type == VerifierTypeWrapper.Null)
+                                        if (type == RuntimeVerifierJavaType.Null)
                                         {
                                             // if the array is null, we have use null as the element type, because
                                             // otherwise the rest of the code will not verify correctly
-                                            s.PushType(VerifierTypeWrapper.Null);
+                                            s.PushType(RuntimeVerifierJavaType.Null);
                                         }
                                         else if (type.IsUnloadable)
                                         {
-                                            s.PushType(VerifierTypeWrapper.Unloadable);
+                                            s.PushType(RuntimeVerifierJavaType.Unloadable);
                                         }
                                         else
                                         {
@@ -282,7 +282,7 @@ namespace IKVM.Runtime
                                     {
                                         s.PopInt();
                                         RuntimeJavaType type = s.PopArrayType();
-                                        if (!VerifierTypeWrapper.IsNullOrUnloadable(type) &&
+                                        if (!RuntimeVerifierJavaType.IsNullOrUnloadable(type) &&
                                             type != ByteArrayType &&
                                             type != BooleanArrayType)
                                         {
@@ -296,7 +296,7 @@ namespace IKVM.Runtime
                                         s.PopInt();
                                         s.PopInt();
                                         RuntimeJavaType type = s.PopArrayType();
-                                        if (!VerifierTypeWrapper.IsNullOrUnloadable(type) &&
+                                        if (!RuntimeVerifierJavaType.IsNullOrUnloadable(type) &&
                                             type != ByteArrayType &&
                                             type != BooleanArrayType)
                                         {
@@ -467,7 +467,7 @@ namespace IKVM.Runtime
                                                 break;
                                             case 'L':
                                             case '[':
-                                                if (s.PopAnyType() != VerifierTypeWrapper.Null)
+                                                if (s.PopAnyType() != RuntimeVerifierJavaType.Null)
                                                 {
                                                     throw new VerifyError();
                                                 }
@@ -500,7 +500,7 @@ namespace IKVM.Runtime
                                 case NormalizedByteCode.__dynamic_putfield:
                                     s.PopType(GetFieldref(instr.Arg1).GetFieldType());
                                     // putfield is allowed to access the uninitialized this
-                                    if (s.PeekType() == VerifierTypeWrapper.UninitializedThis
+                                    if (s.PeekType() == RuntimeVerifierJavaType.UninitializedThis
                                         && wrapper.IsAssignableTo(GetFieldref(instr.Arg1).GetClassType()))
                                     {
                                         s.PopType();
@@ -590,7 +590,7 @@ namespace IKVM.Runtime
                                             {
                                                 // after we've invoked the constructor, the uninitialized references
                                                 // are now initialized
-                                                if (type == VerifierTypeWrapper.UninitializedThis)
+                                                if (type == RuntimeVerifierJavaType.UninitializedThis)
                                                 {
                                                     if (s.GetLocalTypeEx(0) == type)
                                                     {
@@ -599,9 +599,9 @@ namespace IKVM.Runtime
                                                     s.MarkInitialized(type, wrapper, i);
                                                     s.SetUnitializedThis(false);
                                                 }
-                                                else if (VerifierTypeWrapper.IsNew(type))
+                                                else if (RuntimeVerifierJavaType.IsNew(type))
                                                 {
-                                                    s.MarkInitialized(type, ((VerifierTypeWrapper)type).UnderlyingType, i);
+                                                    s.MarkInitialized(type, ((RuntimeVerifierJavaType)type).UnderlyingType, i);
                                                 }
                                                 else
                                                 {
@@ -753,7 +753,7 @@ namespace IKVM.Runtime
                                             {
                                                 throw new VerifyError("Illegal use of array type");
                                             }
-                                            type = VerifierTypeWrapper.MakeNew(type, i);
+                                            type = RuntimeVerifierJavaType.MakeNew(type, i);
                                             newTypes[i] = type;
                                         }
                                         s.PushType(type);
@@ -783,7 +783,7 @@ namespace IKVM.Runtime
                                         RuntimeJavaType type = GetConstantPoolClassType(instr.Arg1);
                                         if (type.IsUnloadable)
                                         {
-                                            s.PushType(new UnloadableTypeWrapper("[" + type.SigName));
+                                            s.PushType(new RuntimeUnloadableJavaType("[" + type.SigName));
                                         }
                                         else
                                         {
@@ -841,7 +841,7 @@ namespace IKVM.Runtime
                                 case NormalizedByteCode.__dup2:
                                     {
                                         RuntimeJavaType t = s.PopAnyType();
-                                        if (t.IsWidePrimitive || t == VerifierTypeWrapper.ExtendedDouble)
+                                        if (t.IsWidePrimitive || t == RuntimeVerifierJavaType.ExtendedDouble)
                                         {
                                             s.PushType(t);
                                             s.PushType(t);
@@ -868,7 +868,7 @@ namespace IKVM.Runtime
                                 case NormalizedByteCode.__dup2_x1:
                                     {
                                         RuntimeJavaType value1 = s.PopAnyType();
-                                        if (value1.IsWidePrimitive || value1 == VerifierTypeWrapper.ExtendedDouble)
+                                        if (value1.IsWidePrimitive || value1 == RuntimeVerifierJavaType.ExtendedDouble)
                                         {
                                             RuntimeJavaType value2 = s.PopType();
                                             s.PushType(value1);
@@ -891,7 +891,7 @@ namespace IKVM.Runtime
                                     {
                                         RuntimeJavaType value1 = s.PopType();
                                         RuntimeJavaType value2 = s.PopAnyType();
-                                        if (value2.IsWidePrimitive || value2 == VerifierTypeWrapper.ExtendedDouble)
+                                        if (value2.IsWidePrimitive || value2 == RuntimeVerifierJavaType.ExtendedDouble)
                                         {
                                             s.PushType(value1);
                                             s.PushType(value2);
@@ -910,10 +910,10 @@ namespace IKVM.Runtime
                                 case NormalizedByteCode.__dup2_x2:
                                     {
                                         RuntimeJavaType value1 = s.PopAnyType();
-                                        if (value1.IsWidePrimitive || value1 == VerifierTypeWrapper.ExtendedDouble)
+                                        if (value1.IsWidePrimitive || value1 == RuntimeVerifierJavaType.ExtendedDouble)
                                         {
                                             RuntimeJavaType value2 = s.PopAnyType();
-                                            if (value2.IsWidePrimitive || value2 == VerifierTypeWrapper.ExtendedDouble)
+                                            if (value2.IsWidePrimitive || value2 == RuntimeVerifierJavaType.ExtendedDouble)
                                             {
                                                 // Form 4
                                                 s.PushType(value1);
@@ -934,7 +934,7 @@ namespace IKVM.Runtime
                                         {
                                             RuntimeJavaType value2 = s.PopType();
                                             RuntimeJavaType value3 = s.PopAnyType();
-                                            if (value3.IsWidePrimitive || value3 == VerifierTypeWrapper.ExtendedDouble)
+                                            if (value3.IsWidePrimitive || value3 == RuntimeVerifierJavaType.ExtendedDouble)
                                             {
                                                 // Form 3
                                                 s.PushType(value2);
@@ -963,7 +963,7 @@ namespace IKVM.Runtime
                                 case NormalizedByteCode.__pop2:
                                     {
                                         RuntimeJavaType type = s.PopAnyType();
-                                        if (!type.IsWidePrimitive && type != VerifierTypeWrapper.ExtendedDouble)
+                                        if (!type.IsWidePrimitive && type != RuntimeVerifierJavaType.ExtendedDouble)
                                         {
                                             s.PopType();
                                         }
@@ -1086,7 +1086,7 @@ namespace IKVM.Runtime
                                     s.GetLocalInt(instr.Arg1);
                                     break;
                                 case NormalizedByteCode.__athrow:
-                                    if (VerifierTypeWrapper.IsFaultBlockException(s.PeekType()))
+                                    if (RuntimeVerifierJavaType.IsFaultBlockException(s.PeekType()))
                                     {
                                         s.PopFaultBlockException();
                                     }
@@ -1246,7 +1246,7 @@ namespace IKVM.Runtime
                 RuntimeJavaType tw;
                 if (!faultTypes.TryGetValue(idx, out tw))
                 {
-                    tw = VerifierTypeWrapper.MakeFaultBlockException(this, idx);
+                    tw = RuntimeVerifierJavaType.MakeFaultBlockException(this, idx);
                     faultTypes.Add(idx, tw);
                 }
                 ex.PushType(tw);
@@ -1362,10 +1362,10 @@ namespace IKVM.Runtime
                 if (ReferenceEquals(cpi.Name, StringConstants.INIT))
                 {
                     RuntimeJavaType type = stack.PopType();
-                    isnew = VerifierTypeWrapper.IsNew(type);
-                    if ((isnew && ((VerifierTypeWrapper)type).UnderlyingType != cpi.GetClassType()) ||
-                        (type == VerifierTypeWrapper.UninitializedThis && cpi.GetClassType() != wrapper.BaseTypeWrapper && cpi.GetClassType() != wrapper) ||
-                        (!isnew && type != VerifierTypeWrapper.UninitializedThis))
+                    isnew = RuntimeVerifierJavaType.IsNew(type);
+                    if ((isnew && ((RuntimeVerifierJavaType)type).UnderlyingType != cpi.GetClassType()) ||
+                        (type == RuntimeVerifierJavaType.UninitializedThis && cpi.GetClassType() != wrapper.BaseTypeWrapper && cpi.GetClassType() != wrapper) ||
+                        (!isnew && type != RuntimeVerifierJavaType.UninitializedThis))
                     {
                         // TODO oddly enough, Java fails verification for the class without
                         // even running the constructor, so maybe constructors are always
@@ -1381,7 +1381,7 @@ namespace IKVM.Runtime
                     {
                         RuntimeJavaType refType = stack.PopObjectType();
                         RuntimeJavaType targetType = cpi.GetClassType();
-                        if (!VerifierTypeWrapper.IsNullOrUnloadable(refType) &&
+                        if (!RuntimeVerifierJavaType.IsNullOrUnloadable(refType) &&
                             !targetType.IsUnloadable &&
                             !refType.IsAssignableTo(targetType))
                         {
@@ -1390,7 +1390,7 @@ namespace IKVM.Runtime
                         // for invokespecial we also need to make sure we're calling ourself or a base class
                         if (invoke == NormalizedByteCode.__invokespecial)
                         {
-                            if (VerifierTypeWrapper.IsNullOrUnloadable(refType))
+                            if (RuntimeVerifierJavaType.IsNullOrUnloadable(refType))
                             {
                                 // ok
                             }
@@ -1431,7 +1431,7 @@ namespace IKVM.Runtime
                         // we want an IncompatibleClassChangeError at runtime
                         RuntimeJavaType refType = stack.PopObjectType();
                         RuntimeJavaType targetType = cpi.GetClassType();
-                        if (!VerifierTypeWrapper.IsNullOrUnloadable(refType)
+                        if (!RuntimeVerifierJavaType.IsNullOrUnloadable(refType)
                             && !targetType.IsUnloadable
                             && !refType.IsAssignableTo(targetType)
                             && !targetType.IsInterface)
@@ -1454,7 +1454,7 @@ namespace IKVM.Runtime
             }
         }
 
-        private static void OptimizationPass(CodeInfo codeInfo, ClassFile classFile, ClassFile.Method method, UntangledExceptionTable exceptions, RuntimeJavaType wrapper, ClassLoaderWrapper classLoader)
+        private static void OptimizationPass(CodeInfo codeInfo, ClassFile classFile, ClassFile.Method method, UntangledExceptionTable exceptions, RuntimeJavaType wrapper, RuntimeClassLoader classLoader)
         {
             // Optimization pass
             if (classLoader.RemoveAsserts)
@@ -1757,7 +1757,7 @@ namespace IKVM.Runtime
                             if (exceptions[j].startIndex <= i && i < exceptions[j].endIndex)
                             {
                                 int idx = exceptions[j].handlerIndex;
-                                if (!skipFaultBlocks || !VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(idx, 0)))
+                                if (!skipFaultBlocks || !RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(idx, 0)))
                                 {
                                     flags[idx] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
                                 }
@@ -2109,7 +2109,7 @@ namespace IKVM.Runtime
                     Debug.Assert(exceptions[i].startIndex >= current.startIndex && exceptions[i].endIndex <= current.endIndex);
                     if (exceptions[i].catch_type == 0
                         && codeInfo.HasState(exceptions[i].handlerIndex)
-                        && VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
+                        && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
                     {
                         InstructionFlags[] flags = MethodAnalyzer.ComputePartialReachability(codeInfo, method.Instructions, exceptions, exceptions[i].handlerIndex, true);
                         for (int j = 0; j < code.Length; j++)
@@ -2133,7 +2133,7 @@ namespace IKVM.Runtime
                                                 goto not_fault_block;
                                             }
                                         }
-                                        if (VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(j, 0))
+                                        if (RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(j, 0))
                                             && codeInfo.GetRawStackTypeWrapper(j, 0) != codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0))
                                         {
                                             goto not_fault_block;
@@ -2153,7 +2153,7 @@ namespace IKVM.Runtime
                                     continue;
                                 }
                             not_fault_block:
-                                VerifierTypeWrapper.ClearFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0));
+                                RuntimeVerifierJavaType.ClearFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0));
                                 done = false;
                                 changed = true;
                                 break;
@@ -2175,7 +2175,7 @@ namespace IKVM.Runtime
             {
                 if (exceptions[i].catch_type == 0
                     && codeInfo.HasState(exceptions[i].handlerIndex)
-                    && VerifierTypeWrapper.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
+                    && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
                 {
                     int exit;
                     if (IsSynchronizedBlockHandler(code, exceptions[i].handlerIndex)
@@ -2417,14 +2417,14 @@ namespace IKVM.Runtime
 
         private void ConditionalPatchNoClassDefFoundError(ref ClassFile.Method.Instruction instruction, RuntimeJavaType tw)
         {
-            ClassLoaderWrapper loader = wrapper.GetClassLoader();
+            RuntimeClassLoader loader = wrapper.GetClassLoader();
             if (loader.DisableDynamicBinding)
             {
                 SetHardError(loader, ref instruction, HardError.NoClassDefFoundError, "{0}", tw.Name);
             }
         }
 
-        private void SetHardError(ClassLoaderWrapper classLoader, ref ClassFile.Method.Instruction instruction, HardError hardError, string message, params object[] args)
+        private void SetHardError(RuntimeClassLoader classLoader, ref ClassFile.Method.Instruction instruction, HardError hardError, string message, params object[] args)
         {
             string text = string.Format(message, args);
 #if IMPORTER
@@ -2505,7 +2505,7 @@ namespace IKVM.Runtime
                 if (ReferenceEquals(cpi.Name, StringConstants.INIT))
                 {
                     RuntimeJavaType type = stack.PopType();
-                    isnew = VerifierTypeWrapper.IsNew(type);
+                    isnew = RuntimeVerifierJavaType.IsNew(type);
                 }
             }
 
@@ -2647,7 +2647,7 @@ namespace IKVM.Runtime
                     isStatic = false;
                     write = true;
                     // putfield is allowed to access the unintialized this
-                    if (stack.PeekType() == VerifierTypeWrapper.UninitializedThis
+                    if (stack.PeekType() == RuntimeVerifierJavaType.UninitializedThis
                         && wrapper.IsAssignableTo(GetFieldref(instr.Arg1).GetClassType()))
                     {
                         thisType = wrapper;
@@ -2686,7 +2686,7 @@ namespace IKVM.Runtime
                                 break;
                             case 'L':
                             case '[':
-                                if (stack.PopAnyType() != VerifierTypeWrapper.Null)
+                                if (stack.PopAnyType() != RuntimeVerifierJavaType.Null)
                                 {
                                     throw new VerifyError();
                                 }
@@ -2778,15 +2778,15 @@ namespace IKVM.Runtime
         // TODO this method should have a better name
         private RuntimeJavaType SigTypeToClassName(RuntimeJavaType type, RuntimeJavaType nullType, RuntimeJavaType wrapper)
         {
-            if (type == VerifierTypeWrapper.UninitializedThis)
+            if (type == RuntimeVerifierJavaType.UninitializedThis)
             {
                 return wrapper;
             }
-            else if (VerifierTypeWrapper.IsNew(type))
+            else if (RuntimeVerifierJavaType.IsNew(type))
             {
-                return ((VerifierTypeWrapper)type).UnderlyingType;
+                return ((RuntimeVerifierJavaType)type).UnderlyingType;
             }
-            else if (type == VerifierTypeWrapper.Null)
+            else if (type == RuntimeVerifierJavaType.Null)
             {
                 return nullType;
             }

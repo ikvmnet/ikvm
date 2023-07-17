@@ -90,20 +90,20 @@ namespace IKVM.Runtime
                 System.Collections.Generic.List<java.lang.Class> list = new System.Collections.Generic.List<java.lang.Class>();
                 for (int i = 0; i < pi.Length - 1; i++)
                 {
-                    list.Add(ClassLoaderWrapper.GetWrapperFromType(pi[i].ParameterType).ClassObject);
+                    list.Add(RuntimeClassLoader.GetWrapperFromType(pi[i].ParameterType).ClassObject);
                 }
                 Type[] args = pi[pi.Length - 1].ParameterType.GetGenericArguments();
                 while (IsPackedArgsContainer(args[args.Length - 1]))
                 {
                     for (int i = 0; i < args.Length - 1; i++)
                     {
-                        list.Add(ClassLoaderWrapper.GetWrapperFromType(args[i]).ClassObject);
+                        list.Add(RuntimeClassLoader.GetWrapperFromType(args[i]).ClassObject);
                     }
                     args = args[args.Length - 1].GetGenericArguments();
                 }
                 for (int i = 0; i < args.Length; i++)
                 {
-                    list.Add(ClassLoaderWrapper.GetWrapperFromType(args[i]).ClassObject);
+                    list.Add(RuntimeClassLoader.GetWrapperFromType(args[i]).ClassObject);
                 }
                 types = list.ToArray();
             }
@@ -112,10 +112,10 @@ namespace IKVM.Runtime
                 types = new java.lang.Class[pi.Length];
                 for (int i = 0; i < types.Length; i++)
                 {
-                    types[i] = ClassLoaderWrapper.GetWrapperFromType(pi[i].ParameterType).ClassObject;
+                    types[i] = RuntimeClassLoader.GetWrapperFromType(pi[i].ParameterType).ClassObject;
                 }
             }
-            return java.lang.invoke.MethodType.methodType(ClassLoaderWrapper.GetWrapperFromType(mi.ReturnType).ClassObject, types);
+            return java.lang.invoke.MethodType.methodType(RuntimeClassLoader.GetWrapperFromType(mi.ReturnType).ClassObject, types);
         }
 
         internal sealed class DynamicMethodBuilder

@@ -56,7 +56,7 @@ namespace IKVM.Tools.Importer
 
         static ProxyGenerator()
         {
-            ClassLoaderWrapper bootClassLoader = ClassLoaderWrapper.GetBootstrapClassLoader();
+            RuntimeClassLoader bootClassLoader = RuntimeClassLoader.GetBootstrapClassLoader();
             proxyClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.Proxy");
             errorClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.Error");
             runtimeExceptionClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.RuntimeException");
@@ -429,7 +429,7 @@ namespace IKVM.Tools.Importer
             return methods.Values;
         }
 
-        private static RuntimeJavaType[] LoadTypes(ClassLoaderWrapper loader, string[] classes)
+        private static RuntimeJavaType[] LoadTypes(RuntimeClassLoader loader, string[] classes)
         {
             if (classes == null || classes.Length == 0)
                 return Array.Empty<RuntimeJavaType>();

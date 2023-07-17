@@ -155,7 +155,7 @@ namespace IKVM.Runtime
             if (method == null)
             {
                 Link();
-                ClassLoaderWrapper loader = this.DeclaringType.GetClassLoader();
+                RuntimeClassLoader loader = this.DeclaringType.GetClassLoader();
                 RuntimeJavaType[] argTypes = GetParameters();
                 java.lang.Class[] parameterTypes = new java.lang.Class[argTypes.Length];
                 for (int i = 0; i < argTypes.Length; i++)
@@ -296,7 +296,7 @@ namespace IKVM.Runtime
                     return;
                 }
             }
-            ClassLoaderWrapper loader = this.DeclaringType.GetClassLoader();
+            RuntimeClassLoader loader = this.DeclaringType.GetClassLoader();
             RuntimeJavaType ret = loader.RetTypeWrapperFromSig(Signature, mode);
             RuntimeJavaType[] parameters = loader.ArgTypeWrapperListFromSig(Signature, mode);
             lock (this)

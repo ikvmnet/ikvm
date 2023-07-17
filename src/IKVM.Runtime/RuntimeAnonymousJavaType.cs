@@ -35,7 +35,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Represents an intrinsified anonymous class. Currently only used by LambdaMetafactory.
     /// </summary>
-    sealed class AnonymousTypeWrapper : RuntimeJavaType
+    sealed class RuntimeAnonymousJavaType : RuntimeJavaType
     {
 
         readonly Type type;
@@ -44,7 +44,7 @@ namespace IKVM.Runtime
         /// Initializes a new instance.
         /// </summary>
         /// <param name="type"></param>
-        internal AnonymousTypeWrapper(Type type) :
+        internal RuntimeAnonymousJavaType(Type type) :
             base(TypeFlags.Anonymous, Modifiers.Final | Modifiers.Synthetic, GetName(type))
         {
             this.type = type;
@@ -52,19 +52,17 @@ namespace IKVM.Runtime
 
         internal static bool IsAnonymous(Type type)
         {
-            return type.IsSpecialName
-                && type.Name.StartsWith(NestedTypeName.IntrinsifiedAnonymousClass, StringComparison.Ordinal)
-                && AttributeHelper.IsJavaModule(type.Module);
+            return type.IsSpecialName && type.Name.StartsWith(NestedTypeName.IntrinsifiedAnonymousClass, StringComparison.Ordinal) && AttributeHelper.IsJavaModule(type.Module);
         }
 
         private static string GetName(Type type)
         {
-            return ClassLoaderWrapper.GetWrapperFromType(type.DeclaringType).Name + type.Name.Replace(NestedTypeName.IntrinsifiedAnonymousClass, "$$Lambda$");
+            return RuntimeClassLoader.GetWrapperFromType(type.DeclaringType).Name + type.Name.Replace(NestedTypeName.IntrinsifiedAnonymousClass, "$$Lambda$");
         }
 
-        internal override ClassLoaderWrapper GetClassLoader()
+        internal override RuntimeClassLoader GetClassLoader()
         {
-            return ClassLoaderWrapper.GetWrapperFromType(type.DeclaringType).GetClassLoader();
+            return RuntimeClassLoader.GetWrapperFromType(type.DeclaringType).GetClassLoader();
         }
 
         internal override Type TypeAsTBD

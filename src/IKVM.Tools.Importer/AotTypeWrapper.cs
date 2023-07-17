@@ -165,12 +165,12 @@ namespace IKVM.Tools.Importer
         private sealed class ConstructorForwarder : RuntimeJavaMethod
         {
 
-            private readonly TypeWrapperFactory context;
+            private readonly RuntimeJavaTypeFactory context;
             private readonly TypeBuilder typeBuilder;
             private readonly RuntimeJavaMethod ctor;
             private MethodBuilder constructorBuilder;
 
-            internal ConstructorForwarder(TypeWrapperFactory context, TypeBuilder typeBuilder, RuntimeJavaMethod ctor) :
+            internal ConstructorForwarder(RuntimeJavaTypeFactory context, TypeBuilder typeBuilder, RuntimeJavaMethod ctor) :
                 base(ctor.DeclaringType, ctor.Name, ctor.Signature, null, null, null, ctor.Modifiers, MemberFlags.None)
             {
                 this.context = context;

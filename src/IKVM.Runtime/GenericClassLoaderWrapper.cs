@@ -26,23 +26,23 @@ using System;
 namespace IKVM.Runtime
 {
 
-    sealed class GenericClassLoaderWrapper : ClassLoaderWrapper
+    sealed class GenericClassLoaderWrapper : RuntimeClassLoader
     {
 
-        readonly ClassLoaderWrapper[] delegates;
+        readonly RuntimeClassLoader[] delegates;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="delegates"></param>
         /// <param name="javaClassLoader"></param>
-        internal GenericClassLoaderWrapper(ClassLoaderWrapper[] delegates, object javaClassLoader) :
+        internal GenericClassLoaderWrapper(RuntimeClassLoader[] delegates, object javaClassLoader) :
             base(CodeGenOptions.None, javaClassLoader)
         {
             this.delegates = delegates;
         }
 
-        internal bool Matches(ClassLoaderWrapper[] key)
+        internal bool Matches(RuntimeClassLoader[] key)
         {
             if (key.Length == delegates.Length)
             {
@@ -84,7 +84,7 @@ namespace IKVM.Runtime
                 if (gcl != null)
                     sb.Append(gcl.GetName());
                 else
-                    sb.Append(((AssemblyClassLoader)loader).MainAssembly.FullName);
+                    sb.Append(((RuntimeAssemblyClassLoader)loader).MainAssembly.FullName);
                 sb.Append(']');
             }
             sb.Append(']');
@@ -109,9 +109,9 @@ namespace IKVM.Runtime
                 {
                     var loader = tw.GetClassLoader();
                     if (loader is GenericClassLoaderWrapper)
-                        v.add(new java.net.URL("ikvmres", "gen", ClassLoaderWrapper.GetGenericClassLoaderId(loader), "/" + name));
-                    else if (loader is AssemblyClassLoader)
-                        foreach (java.net.URL url in ((AssemblyClassLoader)loader).FindResources(name))
+                        v.add(new java.net.URL("ikvmres", "gen", RuntimeClassLoader.GetGenericClassLoaderId(loader), "/" + name));
+                    else if (loader is RuntimeAssemblyClassLoader)
+                        foreach (java.net.URL url in ((RuntimeAssemblyClassLoader)loader).FindResources(name))
                             v.add(url);
                 }
             }
@@ -127,7 +127,7 @@ namespace IKVM.Runtime
             {
                 var tw = FindLoadedClass(name.Substring(0, name.Length - 6).Replace('/', '.'));
                 if (tw != null && tw.GetClassLoader() == this && !tw.IsArray && !tw.IsDynamic)
-                    return new java.net.URL("ikvmres", "gen", ClassLoaderWrapper.GetGenericClassLoaderId(this), "/" + name);
+                    return new java.net.URL("ikvmres", "gen", RuntimeClassLoader.GetGenericClassLoaderId(this), "/" + name);
             }
 #endif
             return null;

@@ -38,7 +38,7 @@ namespace IKVM.Runtime
 		private readonly ClassFile.Method m;
 		private readonly JsrMethodAnalyzer ma;
 
-		internal static void InlineJsrs(ClassLoaderWrapper classLoader, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method m)
+		internal static void InlineJsrs(RuntimeClassLoader classLoader, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method m)
 		{
 			JsrInliner inliner;
 			do
@@ -338,7 +338,7 @@ namespace IKVM.Runtime
 			private List<int>[] callsites;
 			private List<int>[] returnsites;
 
-			internal JsrMethodAnalyzer(RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method, ClassLoaderWrapper classLoader, InstructionFlags[] flags)
+			internal JsrMethodAnalyzer(RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method, RuntimeClassLoader classLoader, InstructionFlags[] flags)
 			{
 				if (method.VerifyError != null)
 				{

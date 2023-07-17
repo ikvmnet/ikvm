@@ -83,7 +83,7 @@ namespace IKVM.Runtime
 
         internal override string SigName => sigName;
 
-        internal override ClassLoaderWrapper GetClassLoader() => ClassLoaderWrapper.GetBootstrapClassLoader();
+        internal override RuntimeClassLoader GetClassLoader() => RuntimeClassLoader.GetBootstrapClassLoader();
 
         internal override Type TypeAsTBD => type;
 

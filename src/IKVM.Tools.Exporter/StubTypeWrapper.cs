@@ -48,9 +48,9 @@ namespace IKVM.Runtime
             get { return baseWrapper; }
         }
 
-        internal override ClassLoaderWrapper GetClassLoader()
+        internal override RuntimeClassLoader GetClassLoader()
         {
-            return ClassLoaderWrapper.GetBootstrapClassLoader();
+            return RuntimeClassLoader.GetBootstrapClassLoader();
         }
 
         internal override Type TypeAsTBD

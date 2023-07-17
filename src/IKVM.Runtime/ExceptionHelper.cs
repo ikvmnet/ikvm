@@ -334,11 +334,11 @@ namespace IKVM.Runtime
             {
                 return "<Module>";
             }
-            if (ClassLoaderWrapper.IsRemappedType(type))
+            if (RuntimeClassLoader.IsRemappedType(type))
             {
                 return RuntimeManagedJavaType.GetName(type);
             }
-            RuntimeJavaType tw = ClassLoaderWrapper.GetWrapperFromType(type);
+            RuntimeJavaType tw = RuntimeClassLoader.GetWrapperFromType(type);
             if (tw != null)
             {
                 if (tw.IsPrimitive)
@@ -364,11 +364,11 @@ namespace IKVM.Runtime
                 MethodBase mb = frame.GetMethod();
                 if (mb != null && mb.DeclaringType != null)
                 {
-                    if (ClassLoaderWrapper.IsRemappedType(mb.DeclaringType))
+                    if (RuntimeClassLoader.IsRemappedType(mb.DeclaringType))
                     {
                         return -1;
                     }
-                    RuntimeJavaType tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
+                    RuntimeJavaType tw = RuntimeClassLoader.GetWrapperFromType(mb.DeclaringType);
                     if (tw != null)
                     {
                         return tw.GetSourceLineNumber(mb, ilOffset);
@@ -383,11 +383,11 @@ namespace IKVM.Runtime
             MethodBase mb = frame.GetMethod();
             if (mb != null && mb.DeclaringType != null)
             {
-                if (ClassLoaderWrapper.IsRemappedType(mb.DeclaringType))
+                if (RuntimeClassLoader.IsRemappedType(mb.DeclaringType))
                 {
                     return null;
                 }
-                RuntimeJavaType tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
+                RuntimeJavaType tw = RuntimeClassLoader.GetWrapperFromType(mb.DeclaringType);
                 if (tw != null)
                 {
                     return tw.GetSourceFileName();

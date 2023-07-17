@@ -178,7 +178,7 @@ namespace IKVM.Runtime
                     {
                         RuntimeJavaType fieldType = null;
 #if !IMPORTER
-                        fieldType = ClassLoaderWrapper.GetBootstrapClassLoader().FieldTypeWrapperFromSig(fld.Signature, LoadMode.LoadOrThrow);
+                        fieldType = RuntimeClassLoader.GetBootstrapClassLoader().FieldTypeWrapperFromSig(fld.Signature, LoadMode.LoadOrThrow);
 #endif
                         fields[i] = new RuntimeConstantJavaField(wrapper, fieldType, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue, MemberFlags.None);
                     }
@@ -870,103 +870,6 @@ namespace IKVM.Runtime
                 }
             }
 
-            private sealed class DelegateInvokeStubMethodWrapper : RuntimeJavaMethod
-            {
-                private readonly Type delegateType;
-
-                internal DelegateInvokeStubMethodWrapper(RuntimeJavaType declaringType, Type delegateType, string sig)
-                    : base(declaringType, RuntimeManagedJavaType.GetDelegateInvokeStubName(delegateType), sig, null, null, null, Modifiers.Public | Modifiers.Final, MemberFlags.HideFromReflection)
-                {
-                    this.delegateType = delegateType;
-                }
-
-                internal MethodInfo DoLink(TypeBuilder tb)
-                {
-                    RuntimeJavaMethod mw = this.DeclaringType.GetMethodWrapper("Invoke", this.Signature, true);
-
-                    MethodInfo invoke = delegateType.GetMethod("Invoke");
-                    ParameterInfo[] parameters = invoke.GetParameters();
-                    Type[] parameterTypes = new Type[parameters.Length];
-                    for (int i = 0; i < parameterTypes.Length; i++)
-                    {
-                        parameterTypes[i] = parameters[i].ParameterType;
-                    }
-                    MethodBuilder mb = tb.DefineMethod(this.Name, MethodAttributes.Public, invoke.ReturnType, parameterTypes);
-                    AttributeHelper.HideFromReflection(mb);
-                    CodeEmitter ilgen = CodeEmitter.Create(mb);
-                    if (mw == null || mw.IsStatic || !mw.IsPublic)
-                    {
-                        ilgen.EmitThrow(mw == null || mw.IsStatic ? "java.lang.AbstractMethodError" : "java.lang.IllegalAccessError", DeclaringType.Name + ".Invoke" + Signature);
-                        ilgen.DoEmit();
-                        return mb;
-                    }
-                    CodeEmitterLocal[] byrefs = new CodeEmitterLocal[parameters.Length];
-                    for (int i = 0; i < parameters.Length; i++)
-                    {
-                        if (parameters[i].ParameterType.IsByRef)
-                        {
-                            Type elemType = parameters[i].ParameterType.GetElementType();
-                            CodeEmitterLocal local = ilgen.DeclareLocal(RuntimeArrayJavaType.MakeArrayType(elemType, 1));
-                            byrefs[i] = local;
-                            ilgen.Emit(OpCodes.Ldc_I4_1);
-                            ilgen.Emit(OpCodes.Newarr, elemType);
-                            ilgen.Emit(OpCodes.Stloc, local);
-                            ilgen.Emit(OpCodes.Ldloc, local);
-                            ilgen.Emit(OpCodes.Ldc_I4_0);
-                            ilgen.EmitLdarg(i + 1);
-                            ilgen.Emit(OpCodes.Ldobj, elemType);
-                            ilgen.Emit(OpCodes.Stelem, elemType);
-                        }
-                    }
-                    ilgen.BeginExceptionBlock();
-                    ilgen.Emit(OpCodes.Ldarg_0);
-                    for (int i = 0; i < parameters.Length; i++)
-                    {
-                        if (byrefs[i] != null)
-                        {
-                            ilgen.Emit(OpCodes.Ldloc, byrefs[i]);
-                        }
-                        else
-                        {
-                            ilgen.EmitLdarg(i + 1);
-                        }
-                    }
-                    mw.Link();
-                    mw.EmitCallvirt(ilgen);
-                    CodeEmitterLocal returnValue = null;
-                    if (mw.ReturnType != RuntimePrimitiveJavaType.VOID)
-                    {
-                        returnValue = ilgen.DeclareLocal(mw.ReturnType.TypeAsSignatureType);
-                        ilgen.Emit(OpCodes.Stloc, returnValue);
-                    }
-                    CodeEmitterLabel exit = ilgen.DefineLabel();
-                    ilgen.EmitLeave(exit);
-                    ilgen.BeginFinallyBlock();
-                    for (int i = 0; i < parameters.Length; i++)
-                    {
-                        if (byrefs[i] != null)
-                        {
-                            Type elemType = byrefs[i].LocalType.GetElementType();
-                            ilgen.EmitLdarg(i + 1);
-                            ilgen.Emit(OpCodes.Ldloc, byrefs[i]);
-                            ilgen.Emit(OpCodes.Ldc_I4_0);
-                            ilgen.Emit(OpCodes.Ldelem, elemType);
-                            ilgen.Emit(OpCodes.Stobj, elemType);
-                        }
-                    }
-                    ilgen.Emit(OpCodes.Endfinally);
-                    ilgen.EndExceptionBlock();
-                    ilgen.MarkLabel(exit);
-                    if (returnValue != null)
-                    {
-                        ilgen.Emit(OpCodes.Ldloc, returnValue);
-                    }
-                    ilgen.Emit(OpCodes.Ret);
-                    ilgen.DoEmit();
-                    return mb;
-                }
-            }
-
 #if IMPORTER
             private static bool CheckInnerOuterNames(string inner, string outer)
             {
@@ -1006,7 +909,7 @@ namespace IKVM.Runtime
                         // unloadable types can never cause a loader constraint violation
                         if (mw.ReturnType.IsUnloadable && baseMethod.ReturnType.IsUnloadable)
                         {
-                            ((UnloadableTypeWrapper)mw.ReturnType).SetCustomModifier(((UnloadableTypeWrapper)baseMethod.ReturnType).CustomModifier);
+                            ((RuntimeUnloadableJavaType)mw.ReturnType).SetCustomModifier(((RuntimeUnloadableJavaType)baseMethod.ReturnType).CustomModifier);
                         }
                     }
                     else
@@ -1029,7 +932,7 @@ namespace IKVM.Runtime
                             // unloadable types can never cause a loader constraint violation
                             if (here[i].IsUnloadable && there[i].IsUnloadable)
                             {
-                                ((UnloadableTypeWrapper)here[i]).SetCustomModifier(((UnloadableTypeWrapper)there[i]).CustomModifier);
+                                ((RuntimeUnloadableJavaType)here[i]).SetCustomModifier(((RuntimeUnloadableJavaType)there[i]).CustomModifier);
                             }
                         }
                         else
@@ -1455,7 +1358,7 @@ namespace IKVM.Runtime
 
                             if ((tw.Modifiers & Modifiers.Enum) != 0)
                             {
-                                var enumType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast("java.lang.Enum");
+                                var enumType = RuntimeClassLoader.GetBootstrapClassLoader().LoadClassByDottedNameFast("java.lang.Enum");
                                 if (enumType != null && tw.IsSubTypeOf(enumType))
                                     return true;
                             }
@@ -1513,7 +1416,7 @@ namespace IKVM.Runtime
                     // we only set annotationTypeBuilder if we're valid
                     annotationTypeBuilder = o.typeBuilder;
 
-                    var annotationAttributeBaseType = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
+                    var annotationAttributeBaseType = RuntimeClassLoader.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
 
                     // make sure we don't clash with another class name
                     var ccl = o.wrapper.classLoader;
@@ -1732,7 +1635,7 @@ namespace IKVM.Runtime
                         // not a valid annotation type
                         return;
                     }
-                    RuntimeJavaType annotationAttributeBaseType = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
+                    RuntimeJavaType annotationAttributeBaseType = RuntimeClassLoader.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
                     annotationAttributeBaseType.Finish();
 
                     int requiredArgCount = 0;
@@ -1928,7 +1831,7 @@ namespace IKVM.Runtime
                     attributeTypeBuilder.CreateType();
                 }
 
-                private CustomAttributeBuilder MakeCustomAttributeBuilder(ClassLoaderWrapper loader, object annotation)
+                private CustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
                 {
                     Link();
                     ConstructorInfo ctor = defineConstructor != null
@@ -1937,32 +1840,32 @@ namespace IKVM.Runtime
                     return new CustomAttributeBuilder(ctor, new object[] { AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation)) });
                 }
 
-                internal override void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation)
                 {
                     tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation)
                 {
                     mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, FieldBuilder fb, object annotation)
                 {
                     fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, ParameterBuilder pb, object annotation)
                 {
                     pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation)
                 {
                     ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, PropertyBuilder pb, object annotation)
                 {
                     pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
@@ -3121,7 +3024,9 @@ namespace IKVM.Runtime
             {
                 get { return host; }
             }
+
         }
+
     }
 
 }

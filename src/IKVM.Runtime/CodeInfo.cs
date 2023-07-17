@@ -48,9 +48,9 @@ namespace IKVM.Runtime
         internal RuntimeJavaType GetStackTypeWrapper(int index, int pos)
         {
             RuntimeJavaType type = state[index].GetStackSlot(pos);
-            if (VerifierTypeWrapper.IsThis(type))
+            if (RuntimeVerifierJavaType.IsThis(type))
             {
-                type = ((VerifierTypeWrapper)type).UnderlyingType;
+                type = ((RuntimeVerifierJavaType)type).UnderlyingType;
             }
             return type;
         }
@@ -62,7 +62,7 @@ namespace IKVM.Runtime
 
         internal bool IsStackTypeExtendedDouble(int index, int pos)
         {
-            return state[index].GetStackSlotEx(pos) == VerifierTypeWrapper.ExtendedDouble;
+            return state[index].GetStackSlotEx(pos) == RuntimeVerifierJavaType.ExtendedDouble;
         }
 
         internal RuntimeJavaType GetLocalTypeWrapper(int index, int local)

@@ -32,7 +32,7 @@ using System.Reflection;
 namespace IKVM.Runtime
 {
 
-    sealed class SimpleCallMethodWrapper : RuntimeJavaMethod
+    sealed class RuntimeSimpleCallJavaMethod : RuntimeJavaMethod
     {
 
         readonly SimpleOpCode call;
@@ -51,7 +51,7 @@ namespace IKVM.Runtime
         /// <param name="flags"></param>
         /// <param name="call"></param>
         /// <param name="callvirt"></param>
-        internal SimpleCallMethodWrapper(RuntimeJavaType declaringType, string name, string sig, MethodInfo method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags, SimpleOpCode call, SimpleOpCode callvirt) :
+        internal RuntimeSimpleCallJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodInfo method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags, SimpleOpCode call, SimpleOpCode callvirt) :
             base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
         {
             this.call = call;

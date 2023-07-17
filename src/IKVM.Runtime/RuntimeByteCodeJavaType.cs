@@ -61,7 +61,7 @@ namespace IKVM.Runtime
 #if IMPORTER
         protected readonly CompilerClassLoader classLoader;
 #else
-        protected readonly ClassLoaderWrapper classLoader;
+        protected readonly RuntimeClassLoader classLoader;
 #endif
         volatile DynamicImpl impl;
         readonly RuntimeJavaType baseTypeWrapper;
@@ -72,11 +72,11 @@ namespace IKVM.Runtime
 #endif
         MethodBase automagicSerializationCtor;
 
-        RuntimeJavaType LoadTypeWrapper(ClassLoaderWrapper classLoader, ProtectionDomain pd, ClassFile.ConstantPoolItemClass clazz)
+        RuntimeJavaType LoadTypeWrapper(RuntimeClassLoader classLoader, ProtectionDomain pd, ClassFile.ConstantPoolItemClass clazz)
         {
             // check for patched constant pool items
             var tw = clazz.GetClassType();
-            if (tw == null || tw == VerifierTypeWrapper.Null)
+            if (tw == null || tw == RuntimeVerifierJavaType.Null)
                 tw = classLoader.LoadClassByDottedNameFast(clazz.Name);
             if (tw == null)
                 throw new NoClassDefFoundError(clazz.Name);
@@ -91,7 +91,7 @@ namespace IKVM.Runtime
 #if IMPORTER
             do
             {
-                UnloadableTypeWrapper missing = tw as UnloadableTypeWrapper;
+                RuntimeUnloadableJavaType missing = tw as RuntimeUnloadableJavaType;
                 if (missing != null)
                 {
                     Type mt = ReflectUtil.GetMissingType(missing.MissingType);
@@ -116,7 +116,7 @@ namespace IKVM.Runtime
 #if IMPORTER
         internal RuntimeByteCodeJavaType(RuntimeJavaType host, ClassFile f, CompilerClassLoader classLoader, ProtectionDomain pd)
 #else
-        internal RuntimeByteCodeJavaType(RuntimeJavaType host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain pd)
+        internal RuntimeByteCodeJavaType(RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain pd)
 #endif
             : base(f.IsInternal ? TypeFlags.InternalAccess : host != null ? TypeFlags.Anonymous : TypeFlags.None, f.Modifiers, f.Name)
         {
@@ -315,7 +315,7 @@ namespace IKVM.Runtime
             get { return baseTypeWrapper; }
         }
 
-        internal override ClassLoaderWrapper GetClassLoader()
+        internal override RuntimeClassLoader GetClassLoader()
         {
             return classLoader;
         }
@@ -404,7 +404,7 @@ namespace IKVM.Runtime
             if (tw1 == tw2)
                 return true;
             else if (tw1.IsUnloadable && tw2.IsUnloadable)
-                return ((UnloadableTypeWrapper)tw1).CustomModifier == ((UnloadableTypeWrapper)tw2).CustomModifier;
+                return ((RuntimeUnloadableJavaType)tw1).CustomModifier == ((RuntimeUnloadableJavaType)tw2).CustomModifier;
             else
                 return false;
         }
@@ -959,14 +959,14 @@ namespace IKVM.Runtime
             return GetModOpt(GetClassLoader().GetTypeWrapperFactory(), tw, mustBePublic);
         }
 
-        internal static Type[] GetModOpt(TypeWrapperFactory context, RuntimeJavaType tw, bool mustBePublic)
+        internal static Type[] GetModOpt(RuntimeJavaTypeFactory context, RuntimeJavaType tw, bool mustBePublic)
         {
             Type[] modopt = Type.EmptyTypes;
             if (tw.IsUnloadable)
             {
-                if (((UnloadableTypeWrapper)tw).MissingType == null)
+                if (((RuntimeUnloadableJavaType)tw).MissingType == null)
                 {
-                    modopt = new Type[] { ((UnloadableTypeWrapper)tw).GetCustomModifier(context) };
+                    modopt = new Type[] { ((RuntimeUnloadableJavaType)tw).GetCustomModifier(context) };
                 }
             }
             else

@@ -110,7 +110,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        private static object ParseValue(ClassLoaderWrapper loader, RuntimeJavaType tw, string val)
+        private static object ParseValue(RuntimeClassLoader loader, RuntimeJavaType tw, string val)
         {
             if (tw == CoreClasses.java.lang.String.Wrapper)
             {
@@ -171,37 +171,37 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static void SetCustomAttribute(ClassLoaderWrapper loader, TypeBuilder tb, IKVM.Tools.Importer.MapXml.Attribute attr)
+        internal static void SetCustomAttribute(RuntimeClassLoader loader, TypeBuilder tb, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             tb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
-        internal static void SetCustomAttribute(ClassLoaderWrapper loader, FieldBuilder fb, IKVM.Tools.Importer.MapXml.Attribute attr)
+        internal static void SetCustomAttribute(RuntimeClassLoader loader, FieldBuilder fb, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             fb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
-        internal static void SetCustomAttribute(ClassLoaderWrapper loader, ParameterBuilder pb, IKVM.Tools.Importer.MapXml.Attribute attr)
+        internal static void SetCustomAttribute(RuntimeClassLoader loader, ParameterBuilder pb, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             pb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
-        internal static void SetCustomAttribute(ClassLoaderWrapper loader, MethodBuilder mb, IKVM.Tools.Importer.MapXml.Attribute attr)
+        internal static void SetCustomAttribute(RuntimeClassLoader loader, MethodBuilder mb, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             mb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
-        internal static void SetCustomAttribute(ClassLoaderWrapper loader, PropertyBuilder pb, IKVM.Tools.Importer.MapXml.Attribute attr)
+        internal static void SetCustomAttribute(RuntimeClassLoader loader, PropertyBuilder pb, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             pb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
-        internal static void SetCustomAttribute(ClassLoaderWrapper loader, AssemblyBuilder ab, IKVM.Tools.Importer.MapXml.Attribute attr)
+        internal static void SetCustomAttribute(RuntimeClassLoader loader, AssemblyBuilder ab, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             ab.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
-        private static void GetAttributeArgsAndTypes(ClassLoaderWrapper loader, IKVM.Tools.Importer.MapXml.Attribute attr, out Type[] argTypes, out object[] args)
+        private static void GetAttributeArgsAndTypes(RuntimeClassLoader loader, IKVM.Tools.Importer.MapXml.Attribute attr, out Type[] argTypes, out object[] args)
         {
             // TODO add error handling
             RuntimeJavaType[] twargs = loader.ArgTypeWrapperListFromSig(attr.Sig, LoadMode.Link);
@@ -231,7 +231,7 @@ namespace IKVM.Runtime
             }
         }
 
-        static CustomAttributeBuilder CreateCustomAttribute(ClassLoaderWrapper loader, IKVM.Tools.Importer.MapXml.Attribute attr)
+        static CustomAttributeBuilder CreateCustomAttribute(RuntimeClassLoader loader, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             // TODO add error handling
             Type[] argTypes;

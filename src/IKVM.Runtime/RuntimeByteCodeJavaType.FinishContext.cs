@@ -402,7 +402,7 @@ namespace IKVM.Runtime
 
                                         var match = new RuntimeJavaType[paramLength];
                                         for (int j = 0; j < paramLength; j++)
-                                            match[j] = ClassLoaderWrapper.GetWrapperFromType(param[j].ParameterType);
+                                            match[j] = RuntimeClassLoader.GetWrapperFromType(param[j].ParameterType);
 
                                         if (m.Name == method.Name && IsCompatibleArgList(nargs, match))
                                         {
@@ -424,7 +424,7 @@ namespace IKVM.Runtime
                                     for (int j = nargs.Length; j < param.Length; j++)
                                     {
                                         var paramType = param[j].ParameterType;
-                                        var fieldTypeWrapper = ClassLoaderWrapper.GetWrapperFromType(paramType.IsByRef ? paramType.GetElementType() : paramType);
+                                        var fieldTypeWrapper = RuntimeClassLoader.GetWrapperFromType(paramType.IsByRef ? paramType.GetElementType() : paramType);
                                         var field = wrapper.GetFieldWrapper(param[j].Name, fieldTypeWrapper.SigName);
                                         if (field == null)
                                         {
@@ -740,8 +740,8 @@ namespace IKVM.Runtime
                     type = typeBuilder.CreateType();
                     if (nestedTypeBuilders != null)
                     {
-                        ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater").Finish();
-                        ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicThreadLocal").Finish();
+                        RuntimeClassLoader.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater").Finish();
+                        RuntimeClassLoader.LoadClassCritical("ikvm.internal.IntrinsicThreadLocal").Finish();
                         foreach (TypeBuilder tb in nestedTypeBuilders)
                         {
                             tb.CreateType();
@@ -1997,9 +1997,9 @@ namespace IKVM.Runtime
                             // look for "magic" interfaces that imply a .NET interface
                             if (iface.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
                             {
-                                if (iface.Name == "java.lang.Iterable" && !wrapper.ImplementsInterface(ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(System.Collections.IEnumerable)))))
+                                if (iface.Name == "java.lang.Iterable" && !wrapper.ImplementsInterface(RuntimeClassLoader.GetWrapperFromType(JVM.Import(typeof(System.Collections.IEnumerable)))))
                                 {
-                                    var enumeratorType = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast("ikvm.lang.IterableEnumerator");
+                                    var enumeratorType = RuntimeClassLoader.GetBootstrapClassLoader().LoadClassByDottedNameFast("ikvm.lang.IterableEnumerator");
                                     if (enumeratorType != null)
                                     {
                                         typeBuilder.AddInterfaceImplementation(JVM.Import(typeof(System.Collections.IEnumerable)));
@@ -2246,7 +2246,7 @@ namespace IKVM.Runtime
 
             internal MethodBuilder DefineThreadLocalType()
             {
-                var threadLocal = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicThreadLocal");
+                var threadLocal = RuntimeClassLoader.LoadClassCritical("ikvm.internal.IntrinsicThreadLocal");
                 int id = nestedTypeBuilders == null ? 0 : nestedTypeBuilders.Count;
                 var tb = typeBuilder.DefineNestedType(NestedTypeName.ThreadLocal + id, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, threadLocal.TypeAsBaseType);
                 var fb = tb.DefineField("field", Types.Object, FieldAttributes.Private | FieldAttributes.Static);
@@ -2282,7 +2282,7 @@ namespace IKVM.Runtime
 
                 if (!arfuMap.TryGetValue(field, out var cb))
                 {
-                    RuntimeJavaType arfuTypeWrapper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
+                    RuntimeJavaType arfuTypeWrapper = RuntimeClassLoader.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
                     TypeBuilder tb = typeBuilder.DefineNestedType(NestedTypeName.AtomicReferenceFieldUpdater + arfuMap.Count, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
                     AtomicReferenceFieldUpdaterEmitter.EmitImpl(tb, field.GetField());
                     cb = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, Type.EmptyTypes);

@@ -73,7 +73,7 @@ namespace IKVM.Java.Externs.java.lang
 
                 var type = Type.GetType(name);
                 if (type != null)
-                    tw = ClassLoaderWrapper.GetWrapperFromType(type);
+                    tw = RuntimeClassLoader.GetWrapperFromType(type);
 
                 if (tw == null)
                 {
@@ -85,7 +85,7 @@ namespace IKVM.Java.Externs.java.lang
             {
                 try
                 {
-                    tw = ClassLoaderWrapper.GetClassLoaderWrapper(loader).LoadClassByDottedName(name);
+                    tw = RuntimeClassLoader.GetClassLoaderWrapper(loader).LoadClassByDottedName(name);
                 }
                 catch (ClassNotFoundException x)
                 {
@@ -395,14 +395,14 @@ namespace IKVM.Java.Externs.java.lang
             {
                 // The protection domain for statically compiled code is created lazily (not at global::java.lang.Class creation time),
                 // to work around boot strap issues.
-                var acl = wrapper.GetClassLoader() as AssemblyClassLoader;
+                var acl = wrapper.GetClassLoader() as RuntimeAssemblyClassLoader;
                 if (acl != null)
                     pd = acl.GetProtectionDomain();
-                else if (wrapper is AnonymousTypeWrapper)
+                else if (wrapper is RuntimeAnonymousJavaType)
                 {
                     // dynamically compiled intrinsified lamdba anonymous types end up here and should get their
                     // protection domain from the host class
-                    pd = ClassLoaderWrapper.GetWrapperFromType(wrapper.TypeAsTBD.DeclaringType).ClassObject.pd;
+                    pd = RuntimeClassLoader.GetWrapperFromType(wrapper.TypeAsTBD.DeclaringType).ClassObject.pd;
                 }
             }
             return pd;
@@ -440,7 +440,7 @@ namespace IKVM.Java.Externs.java.lang
             return tw.GetGenericSignature();
         }
 
-        internal static object AnnotationsToMap(ClassLoaderWrapper loader, object[] objAnn)
+        internal static object AnnotationsToMap(RuntimeClassLoader loader, object[] objAnn)
         {
 #if FIRST_PASS
             return null;

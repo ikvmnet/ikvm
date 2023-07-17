@@ -435,7 +435,7 @@ namespace IKVM.Runtime
         {
             // volatile long & double field accesses must be made atomic
             if ((modifiers.Modifiers & Modifiers.Volatile) != 0 && (sig == "J" || sig == "D"))
-                return new VolatileLongDoubleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
+                return new RuntimeVolatileLongDoubleJavaField(declaringType, fieldType, fi, name, sig, modifiers);
 
             return new RuntimeSimpleJavaField(declaringType, fieldType, fi, name, sig, modifiers);
         }

@@ -49,7 +49,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        internal static Annotation LoadAssemblyCustomAttribute(ClassLoaderWrapper loader, object[] def)
+        internal static Annotation LoadAssemblyCustomAttribute(RuntimeClassLoader loader, object[] def)
         {
             if (def.Length == 0)
                 throw new ArgumentException("LoadAssemblyCustomAttribute did not receive any definitions.");
@@ -120,7 +120,7 @@ namespace IKVM.Runtime
             return EnumHelper.GetPrimitiveValue(EnumHelper.GetUnderlyingType(enumType), 0);
         }
 
-        protected static object ConvertValue(ClassLoaderWrapper loader, Type targetType, object obj)
+        protected static object ConvertValue(RuntimeClassLoader loader, Type targetType, object obj)
         {
             if (targetType.IsEnum)
             {
@@ -222,7 +222,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-        protected static object QualifyClassNames(ClassLoaderWrapper loader, object annotation)
+        protected static object QualifyClassNames(RuntimeClassLoader loader, object annotation)
         {
             bool copy = false;
             object[] def = (object[])annotation;
@@ -248,7 +248,7 @@ namespace IKVM.Runtime
             return def;
         }
 
-        private static object[] ValueQualifyClassNames(ClassLoaderWrapper loader, object[] val)
+        private static object[] ValueQualifyClassNames(RuntimeClassLoader loader, object[] val)
         {
             if (val[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION))
             {
@@ -311,14 +311,14 @@ namespace IKVM.Runtime
             }
         }
 
-        internal abstract void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation);
-        internal abstract void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation);
-        internal abstract void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation);
-        internal abstract void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation);
-        internal abstract void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation);
-        internal abstract void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, FieldBuilder fb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, ParameterBuilder pb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, PropertyBuilder pb, object annotation);
 
-        internal virtual void ApplyReturnValue(ClassLoaderWrapper loader, MethodBuilder mb, ref ParameterBuilder pb, object annotation)
+        internal virtual void ApplyReturnValue(RuntimeClassLoader loader, MethodBuilder mb, ref ParameterBuilder pb, object annotation)
         {
 
         }

@@ -125,7 +125,7 @@ namespace IKVM.Java.Externs.sun.reflect
             throw new global::java.lang.IllegalArgumentException();
         }
 
-        static object[] ConvertArgs(ClassLoaderWrapper loader, RuntimeJavaType[] argumentTypes, object[] args)
+        static object[] ConvertArgs(RuntimeClassLoader loader, RuntimeJavaType[] argumentTypes, object[] args)
         {
             var nargs = new object[args == null ? 0 : args.Length];
             if (nargs.Length != argumentTypes.Length)

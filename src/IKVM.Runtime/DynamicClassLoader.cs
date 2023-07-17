@@ -47,7 +47,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Provides access to dynamically emitted Java types.
     /// </summary>
-    sealed class DynamicClassLoader : TypeWrapperFactory
+    sealed class DynamicClassLoader : RuntimeJavaTypeFactory
     {
 
 #if NETFRAMEWORK
@@ -201,7 +201,7 @@ namespace IKVM.Runtime
             return mangledTypeName;
         }
 
-        internal sealed override RuntimeJavaType DefineClassImpl(Dictionary<string, RuntimeJavaType> types, RuntimeJavaType host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain protectionDomain)
+        internal sealed override RuntimeJavaType DefineClassImpl(Dictionary<string, RuntimeJavaType> types, RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain protectionDomain)
         {
 #if IMPORTER
             AotTypeWrapper type = new AotTypeWrapper(f, (CompilerClassLoader)classLoader);
@@ -292,7 +292,7 @@ namespace IKVM.Runtime
                 }
                 if (unloadableContainer == null)
                 {
-                    unloadableContainer = moduleBuilder.DefineType(UnloadableTypeWrapper.ContainerTypeName, TypeAttributes.Interface | TypeAttributes.Abstract);
+                    unloadableContainer = moduleBuilder.DefineType(RuntimeUnloadableJavaType.ContainerTypeName, TypeAttributes.Interface | TypeAttributes.Abstract);
                     AttributeHelper.HideFromJava(unloadableContainer);
                 }
                 type = unloadableContainer.DefineNestedType(TypeNameUtil.MangleNestedTypeName(name), TypeAttributes.NestedPrivate | TypeAttributes.Interface | TypeAttributes.Abstract);
@@ -401,12 +401,12 @@ namespace IKVM.Runtime
         internal sealed override ModuleBuilder ModuleBuilder => moduleBuilder;
 
         [System.Security.SecuritySafeCritical]
-        internal static DynamicClassLoader Get(ClassLoaderWrapper loader)
+        internal static DynamicClassLoader Get(RuntimeClassLoader loader)
         {
 #if IMPORTER
             return new DynamicClassLoader(((CompilerClassLoader)loader).CreateModuleBuilder(), false);
 #else
-            var acl = loader as AssemblyClassLoader;
+            var acl = loader as RuntimeAssemblyClassLoader;
             if (acl != null)
             {
                 var name = acl.MainAssembly.GetName().Name + DynamicAssemblySuffixAndPublicKey;

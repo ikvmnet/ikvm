@@ -352,7 +352,7 @@ namespace IKVM.Runtime
             else if (RuntimeByteCodeJavaType.RequiresDynamicReflectionCallerClass(eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature))
             {
                 // since the non-intrinsic version of Reflection.getCallerClass() always throws an exception, we have to redirect to the dynamic version
-                var getCallerClass = ClassLoaderWrapper.LoadClassCritical("sun.reflect.Reflection").GetMethodWrapper("getCallerClass", "(I)Ljava.lang.Class;", false);
+                var getCallerClass = RuntimeClassLoader.LoadClassCritical("sun.reflect.Reflection").GetMethodWrapper("getCallerClass", "(I)Ljava.lang.Class;", false);
                 getCallerClass.Link();
                 eic.Emitter.EmitLdc_I4(2);
                 getCallerClass.EmitCall(eic.Emitter);
@@ -741,7 +741,7 @@ namespace IKVM.Runtime
             // 1 Object (expect)
             // 0 Object (update)
             var twUnsafe = eic.GetStackTypeWrapper(0, 4);
-            if (twUnsafe == VerifierTypeWrapper.Null)
+            if (twUnsafe == RuntimeVerifierJavaType.Null)
                 return false;
 
             for (int i = 0; ; i--)
@@ -847,7 +847,7 @@ namespace IKVM.Runtime
             // 0 int (update)
 
             var twUnsafe = eic.GetStackTypeWrapper(0, 4);
-            if (twUnsafe == VerifierTypeWrapper.Null)
+            if (twUnsafe == RuntimeVerifierJavaType.Null)
                 return false;
 
             for (int i = 0; ; i--)
@@ -902,7 +902,7 @@ namespace IKVM.Runtime
             // 1 long (offset)
             // 0 int (delta)
             RuntimeJavaType twUnsafe = eic.GetStackTypeWrapper(0, 3);
-            if (twUnsafe == VerifierTypeWrapper.Null)
+            if (twUnsafe == RuntimeVerifierJavaType.Null)
             {
                 return false;
             }
@@ -959,7 +959,7 @@ namespace IKVM.Runtime
             // 0 long (update)
 
             var twUnsafe = eic.GetStackTypeWrapper(0, 4);
-            if (twUnsafe == VerifierTypeWrapper.Null)
+            if (twUnsafe == RuntimeVerifierJavaType.Null)
                 return false;
 
             for (int i = 0; ; i--)

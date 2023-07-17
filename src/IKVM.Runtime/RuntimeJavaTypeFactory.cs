@@ -43,12 +43,12 @@ namespace IKVM.Runtime
 
 #if !EXPORTER
 
-    abstract class TypeWrapperFactory
+    abstract class RuntimeJavaTypeFactory
     {
 
         internal abstract ModuleBuilder ModuleBuilder { get; }
 
-        internal abstract RuntimeJavaType DefineClassImpl(Dictionary<string, RuntimeJavaType> types, RuntimeJavaType host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain protectionDomain);
+        internal abstract RuntimeJavaType DefineClassImpl(Dictionary<string, RuntimeJavaType> types, RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain protectionDomain);
 
         internal abstract bool ReserveName(string name);
 

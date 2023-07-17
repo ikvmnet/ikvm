@@ -207,7 +207,9 @@ namespace IKVM.Runtime
             {
                 get { return host; }
             }
+
         }
+
     }
 
 }

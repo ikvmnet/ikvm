@@ -317,10 +317,10 @@ namespace IKVM.Runtime
                     return FromClass(clazz);
                 }
 
-                if (type == typeof(void) || type.IsPrimitive || ClassLoaderWrapper.IsRemappedType(type))
+                if (type == typeof(void) || type.IsPrimitive || RuntimeClassLoader.IsRemappedType(type))
                     tw = RuntimeManagedJavaType.GetWrapperFromDotNetType(type);
                 else
-                    tw = ClassLoaderWrapper.GetWrapperFromType(type);
+                    tw = RuntimeClassLoader.GetWrapperFromType(type);
 
                 clazz.typeWrapper = tw;
             }
@@ -339,7 +339,7 @@ namespace IKVM.Runtime
         // For UnloadableTypeWrapper it tries to load the type through the specified loader
         // and if that fails it throw a NoClassDefFoundError (not a java.lang.NoClassDefFoundError),
         // for all other types this is a no-op.
-        internal virtual RuntimeJavaType EnsureLoadable(ClassLoaderWrapper loader)
+        internal virtual RuntimeJavaType EnsureLoadable(RuntimeClassLoader loader)
         {
             return this;
         }
@@ -516,7 +516,7 @@ namespace IKVM.Runtime
         {
             get
             {
-                return this != VerifierTypeWrapper.Null && !IsPrimitive && !IsGhost && TypeAsTBD.IsValueType;
+                return this != RuntimeVerifierJavaType.Null && !IsPrimitive && !IsGhost && TypeAsTBD.IsValueType;
             }
         }
 
@@ -682,7 +682,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal abstract ClassLoaderWrapper GetClassLoader();
+        internal abstract RuntimeClassLoader GetClassLoader();
 
         /// <summary>
         /// Searches for the <see cref="RuntimeJavaField"/> with the specified name and signature.
@@ -942,7 +942,7 @@ namespace IKVM.Runtime
             {
                 if (IsUnloadable)
                 {
-                    return ((UnloadableTypeWrapper)this).MissingType ?? Types.Object;
+                    return ((RuntimeUnloadableJavaType)this).MissingType ?? Types.Object;
                 }
                 if (IsGhostArray)
                 {
@@ -1028,11 +1028,11 @@ namespace IKVM.Runtime
             get
             {
                 Debug.Assert(!this.IsUnloadable);
-                Debug.Assert(this == VerifierTypeWrapper.Null || this.IsArray);
+                Debug.Assert(this == RuntimeVerifierJavaType.Null || this.IsArray);
 
-                if (this == VerifierTypeWrapper.Null)
+                if (this == RuntimeVerifierJavaType.Null)
                 {
-                    return VerifierTypeWrapper.Null;
+                    return RuntimeVerifierJavaType.Null;
                 }
 
                 // TODO consider caching the element type
@@ -1141,7 +1141,7 @@ namespace IKVM.Runtime
             {
                 return false;
             }
-            if (this == VerifierTypeWrapper.Null)
+            if (this == RuntimeVerifierJavaType.Null)
             {
                 return true;
             }
@@ -1580,11 +1580,11 @@ namespace IKVM.Runtime
                 if (decl != null && AttributeHelper.IsGhostInterface(decl))
                 {
                     // we have to return the declaring type for ghost interfaces
-                    interfaces[i] = ClassLoaderWrapper.GetWrapperFromType(decl);
+                    interfaces[i] = RuntimeClassLoader.GetWrapperFromType(decl);
                 }
                 else
                 {
-                    interfaces[i] = ClassLoaderWrapper.GetWrapperFromType(interfaceTypes[i]);
+                    interfaces[i] = RuntimeClassLoader.GetWrapperFromType(interfaceTypes[i]);
                 }
             }
 

@@ -59,12 +59,12 @@ namespace IKVM.Runtime
             return DefineMethod(context.GetClassLoader().GetTypeWrapperFactory(), tb, name, attribs, null, false);
         }
 
-        internal MethodBuilder DefineMethod(TypeWrapperFactory context, TypeBuilder tb, string name, MethodAttributes attribs)
+        internal MethodBuilder DefineMethod(RuntimeJavaTypeFactory context, TypeBuilder tb, string name, MethodAttributes attribs)
         {
             return DefineMethod(context, tb, name, attribs, null, false);
         }
 
-        internal MethodBuilder DefineMethod(TypeWrapperFactory context, TypeBuilder tb, string name, MethodAttributes attribs, Type firstParameter, bool mustBePublic)
+        internal MethodBuilder DefineMethod(RuntimeJavaTypeFactory context, TypeBuilder tb, string name, MethodAttributes attribs, Type firstParameter, bool mustBePublic)
         {
             // we add optional modifiers to make the signature unique
             int firstParam = firstParameter == null ? 0 : 1;
@@ -99,7 +99,7 @@ namespace IKVM.Runtime
             return DefineConstructor(context.GetClassLoader().GetTypeWrapperFactory(), tb, attribs);
         }
 
-        internal MethodBuilder DefineConstructor(TypeWrapperFactory context, TypeBuilder tb, MethodAttributes attribs)
+        internal MethodBuilder DefineConstructor(RuntimeJavaTypeFactory context, TypeBuilder tb, MethodAttributes attribs)
         {
             return DefineMethod(context, tb, ConstructorInfo.ConstructorName, attribs | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
         }

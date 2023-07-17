@@ -64,7 +64,7 @@ namespace IKVM.Runtime
             get { return CoreClasses.java.lang.Object.Wrapper; }
         }
 
-        internal override ClassLoaderWrapper GetClassLoader()
+        internal override RuntimeClassLoader GetClassLoader()
         {
             return ultimateElementTypeWrapper.GetClassLoader();
         }
@@ -82,7 +82,7 @@ namespace IKVM.Runtime
 
         protected override void LazyPublishMembers()
         {
-            var mw = new SimpleCallMethodWrapper(this, "clone", "()Ljava.lang.Object;", CloneMethod, CoreClasses.java.lang.Object.Wrapper, Array.Empty<RuntimeJavaType>(), Modifiers.Public, MemberFlags.HideFromReflection, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
+            var mw = new RuntimeSimpleCallJavaMethod(this, "clone", "()Ljava.lang.Object;", CloneMethod, CoreClasses.java.lang.Object.Wrapper, Array.Empty<RuntimeJavaType>(), Modifiers.Public, MemberFlags.HideFromReflection, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
             mw.Link();
             SetMethods(new RuntimeJavaMethod[] { mw });
             SetFields(Array.Empty<RuntimeJavaField>());

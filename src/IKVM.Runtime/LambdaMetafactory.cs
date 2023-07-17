@@ -331,21 +331,21 @@ namespace IKVM.Runtime
             switch (primitive.SigName[0])
             {
                 case 'Z':
-                    return ClassLoaderWrapper.LoadClassCritical("java.lang.Boolean");
+                    return RuntimeClassLoader.LoadClassCritical("java.lang.Boolean");
                 case 'B':
-                    return ClassLoaderWrapper.LoadClassCritical("java.lang.Byte");
+                    return RuntimeClassLoader.LoadClassCritical("java.lang.Byte");
                 case 'S':
-                    return ClassLoaderWrapper.LoadClassCritical("java.lang.Short");
+                    return RuntimeClassLoader.LoadClassCritical("java.lang.Short");
                 case 'C':
-                    return ClassLoaderWrapper.LoadClassCritical("java.lang.Character");
+                    return RuntimeClassLoader.LoadClassCritical("java.lang.Character");
                 case 'I':
-                    return ClassLoaderWrapper.LoadClassCritical("java.lang.Integer");
+                    return RuntimeClassLoader.LoadClassCritical("java.lang.Integer");
                 case 'J':
-                    return ClassLoaderWrapper.LoadClassCritical("java.lang.Long");
+                    return RuntimeClassLoader.LoadClassCritical("java.lang.Long");
                 case 'F':
-                    return ClassLoaderWrapper.LoadClassCritical("java.lang.Float");
+                    return RuntimeClassLoader.LoadClassCritical("java.lang.Float");
                 case 'D':
-                    return ClassLoaderWrapper.LoadClassCritical("java.lang.Double");
+                    return RuntimeClassLoader.LoadClassCritical("java.lang.Double");
                 default:
                     throw new InvalidOperationException();
             }
@@ -501,7 +501,7 @@ namespace IKVM.Runtime
                     }
                     ilgen.Emit(OpCodes.Stelem, Types.Object);
                 }
-                RuntimeJavaMethod ctorSerializedLambda = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.SerializedLambda").GetMethodWrapper(StringConstants.INIT,
+                RuntimeJavaMethod ctorSerializedLambda = RuntimeClassLoader.LoadClassCritical("java.lang.invoke.SerializedLambda").GetMethodWrapper(StringConstants.INIT,
                     "(Ljava.lang.Class;Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;ILjava.lang.String;Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;[Ljava.lang.Object;)V", false);
                 ctorSerializedLambda.Link();
                 ctorSerializedLambda.EmitNewobj(ilgen);
@@ -726,7 +726,7 @@ namespace IKVM.Runtime
 
         private static void EmitUnboxNumber(CodeEmitter ilgen, string methodName, string methodSig)
         {
-            RuntimeJavaType tw = ClassLoaderWrapper.LoadClassCritical("java.lang.Number");
+            RuntimeJavaType tw = RuntimeClassLoader.LoadClassCritical("java.lang.Number");
             tw.EmitCheckcast(ilgen);
             RuntimeJavaMethod mw = tw.GetMethodWrapper(methodName, methodSig, false);
             mw.Link();
@@ -737,7 +737,7 @@ namespace IKVM.Runtime
         {
             // we use special name to hide these from Java reflection
             const MethodAttributes attr = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName;
-            TypeWrapperFactory factory = context.TypeWrapper.GetClassLoader().GetTypeWrapperFactory();
+            RuntimeJavaTypeFactory factory = context.TypeWrapper.GetClassLoader().GetTypeWrapperFactory();
             foreach (RuntimeJavaMethod mw in methodList)
             {
                 if (!mw.IsAbstract)

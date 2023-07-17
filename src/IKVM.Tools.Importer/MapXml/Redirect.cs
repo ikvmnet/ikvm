@@ -71,7 +71,7 @@ namespace IKVM.Tools.Importer.MapXml
 
         public string Type { get; set; }
 
-        internal void Emit(ClassLoaderWrapper loader, CodeEmitter ilgen)
+        internal void Emit(RuntimeClassLoader loader, CodeEmitter ilgen)
         {
             if (Type != "static" || Class == null || Name == null || Sig == null)
                 throw new NotImplementedException();

@@ -34,7 +34,7 @@ namespace IKVM.Runtime
 {
 
     // this is a container for the special verifier TypeWrappers
-    sealed class VerifierTypeWrapper : RuntimeJavaType
+    sealed class RuntimeVerifierJavaType : RuntimeJavaType
     {
 
         // the TypeWrapper constructor interns the name, so we have to pre-intern here to make sure we have the same string object
@@ -43,11 +43,11 @@ namespace IKVM.Runtime
         static readonly string New = string.Intern("new");
         static readonly string Fault = string.Intern("<fault>");
         internal static readonly RuntimeJavaType Invalid = null;
-        internal static readonly RuntimeJavaType Null = new VerifierTypeWrapper("null", 0, null, null);
-        internal static readonly RuntimeJavaType UninitializedThis = new VerifierTypeWrapper("uninitialized-this", 0, null, null);
-        internal static readonly RuntimeJavaType Unloadable = new UnloadableTypeWrapper("<verifier>");
-        internal static readonly RuntimeJavaType ExtendedFloat = new VerifierTypeWrapper("<extfloat>", 0, null, null);
-        internal static readonly RuntimeJavaType ExtendedDouble = new VerifierTypeWrapper("<extdouble>", 0, null, null);
+        internal static readonly RuntimeJavaType Null = new RuntimeVerifierJavaType("null", 0, null, null);
+        internal static readonly RuntimeJavaType UninitializedThis = new RuntimeVerifierJavaType("uninitialized-this", 0, null, null);
+        internal static readonly RuntimeJavaType Unloadable = new RuntimeUnloadableJavaType("<verifier>");
+        internal static readonly RuntimeJavaType ExtendedFloat = new RuntimeVerifierJavaType("<extfloat>", 0, null, null);
+        internal static readonly RuntimeJavaType ExtendedDouble = new RuntimeVerifierJavaType("<extdouble>", 0, null, null);
 
         readonly int index;
         readonly RuntimeJavaType underlyingType;
@@ -69,12 +69,12 @@ namespace IKVM.Runtime
 
         internal static RuntimeJavaType MakeNew(RuntimeJavaType type, int bytecodeIndex)
         {
-            return new VerifierTypeWrapper(New, bytecodeIndex, type, null);
+            return new RuntimeVerifierJavaType(New, bytecodeIndex, type, null);
         }
 
         internal static RuntimeJavaType MakeFaultBlockException(MethodAnalyzer ma, int handlerIndex)
         {
-            return new VerifierTypeWrapper(Fault, handlerIndex, null, ma);
+            return new RuntimeVerifierJavaType(Fault, handlerIndex, null, ma);
         }
 
         // NOTE the "this" type is special, it can only exist in local[0] and on the stack
@@ -84,7 +84,7 @@ namespace IKVM.Runtime
         // stack (using ldarg_0).
         internal static RuntimeJavaType MakeThis(RuntimeJavaType type)
         {
-            return new VerifierTypeWrapper(This, 0, type, null);
+            return new RuntimeVerifierJavaType(This, 0, type, null);
         }
 
         internal static bool IsNotPresentOnStack(RuntimeJavaType w)
@@ -114,7 +114,7 @@ namespace IKVM.Runtime
 
         internal static void ClearFaultBlockException(RuntimeJavaType w)
         {
-            VerifierTypeWrapper vtw = (VerifierTypeWrapper)w;
+            RuntimeVerifierJavaType vtw = (RuntimeVerifierJavaType)w;
             vtw.methodAnalyzer.ClearFaultBlockException(vtw.Index);
         }
 
@@ -134,7 +134,7 @@ namespace IKVM.Runtime
             }
         }
 
-        private VerifierTypeWrapper(string name, int index, RuntimeJavaType underlyingType, MethodAnalyzer methodAnalyzer)
+        private RuntimeVerifierJavaType(string name, int index, RuntimeJavaType underlyingType, MethodAnalyzer methodAnalyzer)
             : base(TypeFlags.None, RuntimeJavaType.VerifierTypeModifiersHack, name)
         {
             this.index = index;
@@ -147,7 +147,7 @@ namespace IKVM.Runtime
             get { return null; }
         }
 
-        internal override ClassLoaderWrapper GetClassLoader()
+        internal override RuntimeClassLoader GetClassLoader()
         {
             return null;
         }

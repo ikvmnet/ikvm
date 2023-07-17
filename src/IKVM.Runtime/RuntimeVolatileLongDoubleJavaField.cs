@@ -37,7 +37,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Field wrapper for a field of type 'volatile long' or 'volatile double'.
     /// </summary>
-    sealed class VolatileLongDoubleFieldWrapper : RuntimeJavaField
+    sealed class RuntimeVolatileLongDoubleJavaField : RuntimeJavaField
     {
 
         /// <summary>
@@ -49,13 +49,13 @@ namespace IKVM.Runtime
         /// <param name="name"></param>
         /// <param name="sig"></param>
         /// <param name="modifiers"></param>
-        internal VolatileLongDoubleFieldWrapper(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers) :
+        internal RuntimeVolatileLongDoubleJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers) :
             base(declaringType, fieldType, name, sig, modifiers, fi)
         {
             if (sig != "J" && sig != "D")
-                throw new ArgumentException($"{nameof(VolatileLongDoubleFieldWrapper)} expects long or double signature.", nameof(sig));
+                throw new ArgumentException($"{nameof(RuntimeVolatileLongDoubleJavaField)} expects long or double signature.", nameof(sig));
             if (IsVolatile == false)
-                throw new InternalException($"{nameof(VolatileLongDoubleFieldWrapper)} requires volatile type.");
+                throw new InternalException($"{nameof(RuntimeVolatileLongDoubleJavaField)} requires volatile type.");
         }
 
 #if EMITTERS
@@ -86,7 +86,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                throw new InternalException($"{nameof(VolatileLongDoubleFieldWrapper)} expects long or double.");
+                throw new InternalException($"{nameof(RuntimeVolatileLongDoubleJavaField)} expects long or double.");
             }
         }
 
@@ -121,7 +121,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                throw new InternalException($"{nameof(VolatileLongDoubleFieldWrapper)} expects long or double.");
+                throw new InternalException($"{nameof(RuntimeVolatileLongDoubleJavaField)} expects long or double.");
             }
         }
 
@@ -151,7 +151,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                throw new InternalException($"{nameof(VolatileLongDoubleFieldWrapper)} expects long or double.");
+                throw new InternalException($"{nameof(RuntimeVolatileLongDoubleJavaField)} expects long or double.");
             }
         }
 
@@ -186,7 +186,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                throw new InternalException($"{nameof(VolatileLongDoubleFieldWrapper)} expects long or double.");
+                throw new InternalException($"{nameof(RuntimeVolatileLongDoubleJavaField)} expects long or double.");
             }
         }
 
@@ -224,7 +224,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                throw new InternalException($"{nameof(VolatileLongDoubleFieldWrapper)} expects long or double.");
+                throw new InternalException($"{nameof(RuntimeVolatileLongDoubleJavaField)} expects long or double.");
             }
         }
 

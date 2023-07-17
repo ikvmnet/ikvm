@@ -117,7 +117,7 @@ namespace IKVM.Runtime.JNI
             const int LOCAL_REF_MASK = (LOCAL_REF_MAX_BUCKET_SIZE - 1);
 
             internal readonly JNIEnv* pJNIEnv;
-            internal ClassLoaderWrapper classLoader;
+            internal RuntimeClassLoader classLoader;
             internal ikvm.@internal.CallerID callerID;
 
             object[][] localRefs;
@@ -451,15 +451,15 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        static ClassLoaderWrapper FindNativeMethodClassLoader(JNIEnv* pEnv)
+        static RuntimeClassLoader FindNativeMethodClassLoader(JNIEnv* pEnv)
         {
             var env = pEnv->GetManagedJNIEnv();
             if (env.callerID != null)
-                return ClassLoaderWrapper.FromCallerID(env.callerID);
+                return RuntimeClassLoader.FromCallerID(env.callerID);
             else if (env.classLoader != null)
                 return env.classLoader;
             else
-                return ClassLoaderWrapper.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
+                return RuntimeClassLoader.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
         }
 
         internal static jclass FindClass(JNIEnv* pEnv, byte* name)

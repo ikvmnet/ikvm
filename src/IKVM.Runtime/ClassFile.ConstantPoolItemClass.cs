@@ -151,7 +151,7 @@ namespace IKVM.Runtime
             {
                 if (typeWrapper == null)
                 {
-                    typeWrapper = VerifierTypeWrapper.Null;
+                    typeWrapper = RuntimeVerifierJavaType.Null;
                 }
             }
 
@@ -162,7 +162,7 @@ namespace IKVM.Runtime
 
             internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
-                if (typeWrapper == VerifierTypeWrapper.Null)
+                if (typeWrapper == RuntimeVerifierJavaType.Null)
                 {
                     RuntimeJavaType tw = thisType.GetClassLoader().LoadClass(name, mode | LoadMode.WarnClassNotFound);
 #if !IMPORTER && !FIRST_PASS
@@ -174,7 +174,7 @@ namespace IKVM.Runtime
                         }
                         catch (java.lang.SecurityException)
                         {
-                            tw = new UnloadableTypeWrapper(name);
+                            tw = new RuntimeUnloadableJavaType(name);
                         }
                     }
 #endif

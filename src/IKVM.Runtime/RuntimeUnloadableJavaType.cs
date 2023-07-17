@@ -38,10 +38,11 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
-    sealed class UnloadableTypeWrapper : RuntimeJavaType
+    sealed class RuntimeUnloadableJavaType : RuntimeJavaType
     {
 
         internal const string ContainerTypeName = "__<Unloadable>";
+
         readonly Type missingType;
         Type customModifier;
 
@@ -49,19 +50,19 @@ namespace IKVM.Runtime
         /// Initializes a new instance.
         /// </summary>
         /// <param name="name"></param>
-        internal UnloadableTypeWrapper(string name) :
+        internal RuntimeUnloadableJavaType(string name) :
             base(TypeFlags.None, RuntimeJavaType.UnloadableModifiersHack, name)
         {
 
         }
 
-        internal UnloadableTypeWrapper(Type missingType) :
+        internal RuntimeUnloadableJavaType(Type missingType) :
             this(missingType.FullName) // TODO demangle and re-mangle appropriately
         {
             this.missingType = missingType;
         }
 
-        internal UnloadableTypeWrapper(string name, Type customModifier) :
+        internal RuntimeUnloadableJavaType(string name, Type customModifier) :
             this(name)
         {
             this.customModifier = customModifier;
@@ -69,12 +70,12 @@ namespace IKVM.Runtime
 
         internal override RuntimeJavaType BaseTypeWrapper => null;
 
-        internal override ClassLoaderWrapper GetClassLoader()
+        internal override RuntimeClassLoader GetClassLoader()
         {
             return null;
         }
 
-        internal override RuntimeJavaType EnsureLoadable(ClassLoaderWrapper loader)
+        internal override RuntimeJavaType EnsureLoadable(RuntimeClassLoader loader)
         {
             var tw = loader.LoadClassByDottedNameFast(this.Name);
             if (tw == null)
@@ -138,7 +139,7 @@ namespace IKVM.Runtime
 
 #if EMITTERS
 
-        internal Type GetCustomModifier(TypeWrapperFactory context)
+        internal Type GetCustomModifier(RuntimeJavaTypeFactory context)
         {
             // we don't need to lock, because we're only supposed to be called while holding the finish lock
             return customModifier ?? (customModifier = context.DefineUnloadable(this.Name));

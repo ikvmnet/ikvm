@@ -64,7 +64,7 @@ namespace IKVM.Tools.Importer
 			return genericAttributeAnnotationReturnValueType.MakeGenericType(attributeType);
 		}
 
-		internal static void Create(ModuleBuilder modb, ClassLoaderWrapper loader)
+		internal static void Create(ModuleBuilder modb, RuntimeClassLoader loader)
 		{
 			var tb = modb.DefineType(RuntimeManagedJavaType.GenericDelegateInterfaceTypeName, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
 			tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(Types.MulticastDelegate);
@@ -76,7 +76,7 @@ namespace IKVM.Tools.Importer
 			CreateEnumEnum(modb, loader);
 		}
 
-		internal static void Finish(ClassLoaderWrapper loader)
+		internal static void Finish(RuntimeClassLoader loader)
 		{
 			var tb = (TypeBuilder)genericEnumEnumType;
 			var enumTypeWrapper = loader.LoadClassByDottedName("java.lang.Enum");
@@ -92,7 +92,7 @@ namespace IKVM.Tools.Importer
 			genericEnumEnumType = tb.CreateType();
 		}
 
-		private static void CreateEnumEnum(ModuleBuilder modb, ClassLoaderWrapper loader)
+		private static void CreateEnumEnum(ModuleBuilder modb, RuntimeClassLoader loader)
 		{
 			var tb = modb.DefineType(RuntimeManagedJavaType.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public);
 			var gtpb = tb.DefineGenericParameters("T")[0];
