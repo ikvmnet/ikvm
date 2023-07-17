@@ -31,7 +31,7 @@ namespace IKVM.Runtime.JNI.Memory
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return Win32ExecutableVirtualMemory.Allocate(size);
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                return UnixExecutableVirtualMemory.Allocate(size);
+                return PosixExecutableVirtualMemory.Allocate(size);
             else
                 throw new PlatformNotSupportedException();
         }
