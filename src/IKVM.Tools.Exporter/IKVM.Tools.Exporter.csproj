@@ -74,6 +74,10 @@
         <Compile Include="..\IKVM.Runtime\RuntimeVolatileLongDoubleJavaField.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeManagedByteCodeAccessStubJavaField.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeManagedByteCodePropertyJavaField.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeManagedByteCodeJavaType.GhostJavaType.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeManagedByteCodeJavaType.RemappedJavaMethod.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeManagedByteCodeJavaType.RemappedJavaType.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeManagedByteCodeJavaType.DelegateConstructorJavaMethod.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\ByteCodeHelperMethods.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\ByteCodeHelper.cs" LinkBase="IKVM.Runtime" />
     </ItemGroup>
