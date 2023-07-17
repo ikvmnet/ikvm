@@ -25,7 +25,6 @@ using System;
 using System.Collections.Generic;
 
 using IKVM.Runtime;
-using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 
 namespace IKVM.Java.Externs.java.lang
@@ -212,8 +211,9 @@ namespace IKVM.Java.Externs.java.lang
 #else
             if (otherClass == null)
                 throw new global::java.lang.NullPointerException();
-#endif
+
             return RuntimeJavaType.FromClass(otherClass).IsAssignableTo(RuntimeJavaType.FromClass(self));
+#endif
         }
 
         /// <summary>

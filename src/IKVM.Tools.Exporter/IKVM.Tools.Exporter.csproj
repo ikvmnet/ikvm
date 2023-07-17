@@ -78,6 +78,7 @@
         <Compile Include="..\IKVM.Runtime\RuntimeManagedByteCodeJavaType.RemappedJavaMethod.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeManagedByteCodeJavaType.RemappedJavaType.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeManagedByteCodeJavaType.DelegateConstructorJavaMethod.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimePrivateInterfaceJavaMethod.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\ByteCodeHelperMethods.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\ByteCodeHelper.cs" LinkBase="IKVM.Runtime" />
     </ItemGroup>

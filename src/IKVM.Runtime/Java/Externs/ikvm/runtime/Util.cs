@@ -22,12 +22,9 @@
   
 */
 using System;
-using System.Reflection.Emit;
 
 using IKVM.Attributes;
 using IKVM.Runtime;
-using IKVM.Runtime;
-
 
 namespace IKVM.Java.Externs.ikvm.runtime
 {

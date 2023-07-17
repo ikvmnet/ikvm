@@ -114,19 +114,19 @@ namespace IKVM.Runtime
                     // we'll simply disallow such access across assemblies (unless the appropriate InternalsVisibleToAttribute exists).
                     && (!(HasNonPublicTypeInSignature || IsType2FinalField) || InPracticeInternalsVisibleTo(caller));
             }
+
             return false;
         }
 
-        private bool IsPublicOrProtectedMemberAccessible(RuntimeJavaType caller, RuntimeJavaType instance)
+         bool IsPublicOrProtectedMemberAccessible(RuntimeJavaType caller, RuntimeJavaType instance)
         {
             if (IsPublic || (IsProtected && caller.IsSubTypeOf(DeclaringType) && (IsStatic || instance.IsUnloadable || instance.IsSubTypeOf(caller))))
-            {
                 return DeclaringType.IsPublic || InPracticeInternalsVisibleTo(caller);
-            }
+
             return false;
         }
 
-        private bool InPracticeInternalsVisibleTo(RuntimeJavaType caller)
+         bool InPracticeInternalsVisibleTo(RuntimeJavaType caller)
         {
 #if !IMPORTER
             if (DeclaringType.TypeAsTBD.Assembly.Equals(caller.TypeAsTBD.Assembly))
@@ -141,37 +141,13 @@ namespace IKVM.Runtime
             return DeclaringType.InternalsVisibleTo(caller);
         }
 
-        internal bool IsHideFromReflection
-        {
-            get
-            {
-                return (flags & MemberFlags.HideFromReflection) != 0;
-            }
-        }
+        internal bool IsHideFromReflection => (flags & MemberFlags.HideFromReflection) != 0;
 
-        internal bool IsExplicitOverride
-        {
-            get
-            {
-                return (flags & MemberFlags.ExplicitOverride) != 0;
-            }
-        }
+        internal bool IsExplicitOverride => (flags & MemberFlags.ExplicitOverride) != 0;
 
-        internal bool IsMirandaMethod
-        {
-            get
-            {
-                return (flags & MemberFlags.MirandaMethod) != 0;
-            }
-        }
+        internal bool IsMirandaMethod => (flags & MemberFlags.MirandaMethod) != 0;
 
-        internal bool IsAccessStub
-        {
-            get
-            {
-                return (flags & MemberFlags.AccessStub) != 0;
-            }
-        }
+        internal bool IsAccessStub => (flags & MemberFlags.AccessStub) != 0;
 
         internal bool IsPropertyAccessor
         {
@@ -193,13 +169,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal bool IsIntrinsic
-        {
-            get
-            {
-                return (flags & MemberFlags.Intrinsic) != 0;
-            }
-        }
+        internal bool IsIntrinsic => (flags & MemberFlags.Intrinsic) != 0;
 
         protected void SetIntrinsicFlag()
         {
@@ -211,128 +181,34 @@ namespace IKVM.Runtime
             flags |= MemberFlags.NonPublicTypeInSignature;
         }
 
-        internal bool HasNonPublicTypeInSignature
-        {
-            get { return (flags & MemberFlags.NonPublicTypeInSignature) != 0; }
-        }
+        internal bool HasNonPublicTypeInSignature => (flags & MemberFlags.NonPublicTypeInSignature) != 0;
 
         protected void SetType2FinalField()
         {
             flags |= MemberFlags.Type2FinalField;
         }
 
-        internal bool IsType2FinalField
-        {
-            get { return (flags & MemberFlags.Type2FinalField) != 0; }
-        }
+        internal bool IsType2FinalField => (flags & MemberFlags.Type2FinalField) != 0;
 
-        internal bool HasCallerID
-        {
-            get
-            {
-                return (flags & MemberFlags.CallerID) != 0;
-            }
-        }
+        internal bool HasCallerID => (flags & MemberFlags.CallerID) != 0;
 
-        internal bool IsDelegateInvokeWithByRefParameter
-        {
-            get { return (flags & MemberFlags.DelegateInvokeWithByRefParameter) != 0; }
-        }
+        internal bool IsDelegateInvokeWithByRefParameter => (flags & MemberFlags.DelegateInvokeWithByRefParameter) != 0;
 
-        internal bool IsNoOp
-        {
-            get { return (flags & MemberFlags.NoOp) != 0; }
-        }
+        internal bool IsNoOp => (flags & MemberFlags.NoOp) != 0;
 
-        internal Modifiers Modifiers
-        {
-            get
-            {
-                return modifiers;
-            }
-        }
+        internal Modifiers Modifiers => modifiers;
 
-        internal bool IsStatic
-        {
-            get
-            {
-                return (modifiers & Modifiers.Static) != 0;
-            }
-        }
+        internal bool IsStatic => (modifiers & Modifiers.Static) != 0;
 
-        internal bool IsInternal
-        {
-            get
-            {
-                return (flags & MemberFlags.InternalAccess) != 0;
-            }
-        }
+        internal bool IsInternal => (flags & MemberFlags.InternalAccess) != 0;
 
-        internal bool IsPublic
-        {
-            get
-            {
-                return (modifiers & Modifiers.Public) != 0;
-            }
-        }
+        internal bool IsPublic => (modifiers & Modifiers.Public) != 0;
 
-        internal bool IsPrivate
-        {
-            get
-            {
-                return (modifiers & Modifiers.Private) != 0;
-            }
-        }
+        internal bool IsPrivate => (modifiers & Modifiers.Private) != 0;
 
-        internal bool IsProtected
-        {
-            get
-            {
-                return (modifiers & Modifiers.Protected) != 0;
-            }
-        }
+        internal bool IsProtected => (modifiers & Modifiers.Protected) != 0;
 
-        internal bool IsFinal
-        {
-            get
-            {
-                return (modifiers & Modifiers.Final) != 0;
-            }
-        }
-    }
-
-    sealed class PrivateInterfaceMethodWrapper : RuntimeSmartJavaMethod
-    {
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="declaringType"></param>
-        /// <param name="name"></param>
-        /// <param name="sig"></param>
-        /// <param name="method"></param>
-        /// <param name="returnType"></param>
-        /// <param name="parameterTypes"></param>
-        /// <param name="modifiers"></param>
-        /// <param name="flags"></param>
-        internal PrivateInterfaceMethodWrapper(RuntimeJavaType declaringType, string name, string sig, MethodBase method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
-            base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
-        {
-
-        }
-
-#if EMITTERS
-
-        protected override void CallImpl(CodeEmitter ilgen)
-        {
-            ilgen.Emit(OpCodes.Call, GetMethod());
-        }
-
-        protected override void CallvirtImpl(CodeEmitter ilgen)
-        {
-            ilgen.Emit(OpCodes.Call, GetMethod());
-        }
-
-#endif
+        internal bool IsFinal => (modifiers & Modifiers.Final) != 0;
 
     }
 

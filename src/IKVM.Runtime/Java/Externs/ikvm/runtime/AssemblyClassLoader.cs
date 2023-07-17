@@ -25,7 +25,6 @@ using System;
 using System.Reflection;
 
 using IKVM.Runtime;
-using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 
 using AssemblyClassLoader_ = IKVM.Runtime.RuntimeAssemblyClassLoader;

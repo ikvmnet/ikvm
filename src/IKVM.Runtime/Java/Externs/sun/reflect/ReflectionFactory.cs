@@ -22,8 +22,6 @@
   
 */
 using System;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 #if !NO_REF_EMIT
 using System.Reflection.Emit;
@@ -32,10 +30,7 @@ using System.Runtime.Serialization;
 using System.Security;
 
 using IKVM.Runtime;
-using IKVM.Runtime;
-using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Java.Lang;
-using IKVM.Runtime.Extensions;
 using IKVM.Runtime.Util.Java.Security;
 
 namespace IKVM.Java.Externs.sun.reflect
