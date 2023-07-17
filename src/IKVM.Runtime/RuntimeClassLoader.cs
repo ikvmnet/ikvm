@@ -245,61 +245,19 @@ namespace IKVM.Runtime
             }
         }
 
-        internal bool StrictFinalFieldSemantics
-        {
-            get
-            {
-                return (codegenoptions & CodeGenOptions.StrictFinalFieldSemantics) != 0;
-            }
-        }
+        internal bool StrictFinalFieldSemantics => (codegenoptions & CodeGenOptions.StrictFinalFieldSemantics) != 0;
 
-        internal bool NoJNI
-        {
-            get
-            {
-                return (codegenoptions & CodeGenOptions.NoJNI) != 0;
-            }
-        }
+        internal bool NoJNI => (codegenoptions & CodeGenOptions.NoJNI) != 0;
 
-        internal bool RemoveAsserts
-        {
-            get
-            {
-                return (codegenoptions & CodeGenOptions.RemoveAsserts) != 0;
-            }
-        }
+        internal bool RemoveAsserts => (codegenoptions & CodeGenOptions.RemoveAsserts) != 0;
 
-        internal bool NoAutomagicSerialization
-        {
-            get
-            {
-                return (codegenoptions & CodeGenOptions.NoAutomagicSerialization) != 0;
-            }
-        }
+        internal bool NoAutomagicSerialization => (codegenoptions & CodeGenOptions.NoAutomagicSerialization) != 0;
 
-        internal bool DisableDynamicBinding
-        {
-            get
-            {
-                return (codegenoptions & CodeGenOptions.DisableDynamicBinding) != 0;
-            }
-        }
+        internal bool DisableDynamicBinding => (codegenoptions & CodeGenOptions.DisableDynamicBinding) != 0;
 
-        internal bool EmitNoRefEmitHelpers
-        {
-            get
-            {
-                return (codegenoptions & CodeGenOptions.NoRefEmitHelpers) != 0;
-            }
-        }
+        internal bool EmitNoRefEmitHelpers => (codegenoptions & CodeGenOptions.NoRefEmitHelpers) != 0;
 
-        internal bool RemoveUnusedFields
-        {
-            get
-            {
-                return (codegenoptions & CodeGenOptions.RemoveUnusedFields) != 0;
-            }
-        }
+        internal bool RemoveUnusedFields => (codegenoptions & CodeGenOptions.RemoveUnusedFields) != 0;
 
         internal bool WorkaroundAbstractMethodWidening
         {
