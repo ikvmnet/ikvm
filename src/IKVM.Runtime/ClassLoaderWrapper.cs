@@ -84,10 +84,6 @@ namespace IKVM.Runtime
         private readonly Dictionary<string, Thread> defineClassInProgress = new Dictionary<string, Thread>();
         private List<IntPtr> nativeLibraries;
         private readonly CodeGenOptions codegenoptions;
-#if CLASSGC
-        private Dictionary<Type, TypeWrapper> typeToTypeWrapper;
-        private static ConditionalWeakTable<Assembly, ClassLoaderWrapper> dynamicAssemblies;
-#endif
         private static readonly Dictionary<Type, string> remappedTypes = new Dictionary<Type, string>();
 
 #if IMPORTER || EXPORTER
@@ -474,17 +470,7 @@ namespace IKVM.Runtime
                     {
                         if (factory == null)
                         {
-#if CLASSGC
-                            if (dynamicAssemblies == null)
-                                Interlocked.CompareExchange(ref dynamicAssemblies, new ConditionalWeakTable<Assembly, ClassLoaderWrapper>(), null);
-
-                            typeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
-                            DynamicClassLoader instance = DynamicClassLoader.Get(this);
-                            dynamicAssemblies.Add(instance.ModuleBuilder.Assembly.ManifestModule.Assembly, this);
-                            factory = instance;
-#else
                             factory = DynamicClassLoader.Get(this);
-#endif
                         }
                     }
                 }
@@ -1042,15 +1028,6 @@ namespace IKVM.Runtime
         }
 #endif
 
-#if CLASSGC
-        internal static ClassLoaderWrapper GetClassLoaderForDynamicJavaAssembly(Assembly asm)
-        {
-            ClassLoaderWrapper loader;
-            dynamicAssemblies.TryGetValue(asm, out loader);
-            return loader;
-        }
-#endif // CLASSGC
-
         internal static TypeWrapper GetWrapperFromType(Type type)
         {
 #if IMPORTER
@@ -1104,31 +1081,10 @@ namespace IKVM.Runtime
             else
             {
                 Assembly asm = type.Assembly;
-#if CLASSGC
-                ClassLoaderWrapper loader = null;
-                if (dynamicAssemblies != null && dynamicAssemblies.TryGetValue(asm, out loader))
-                {
-                    lock (loader.typeToTypeWrapper)
-                    {
-                        TypeWrapper tw;
-                        if (loader.typeToTypeWrapper.TryGetValue(type, out tw))
-                        {
-                            return tw;
-                        }
-                        // it must be an anonymous type then
-                        Debug.Assert(AnonymousTypeWrapper.IsAnonymous(type));
-                    }
-                }
-#endif
 #if !IMPORTER && !EXPORTER
                 if (AnonymousTypeWrapper.IsAnonymous(type))
                 {
-                    Dictionary<Type, TypeWrapper> typeToTypeWrapper;
-#if CLASSGC
-                    typeToTypeWrapper = loader != null ? loader.typeToTypeWrapper : globalTypeToTypeWrapper;
-#else
-                    typeToTypeWrapper = globalTypeToTypeWrapper;
-#endif
+                    Dictionary<Type, TypeWrapper> typeToTypeWrapper = globalTypeToTypeWrapper;
                     TypeWrapper tw = new AnonymousTypeWrapper(type);
                     lock (typeToTypeWrapper)
                     {
@@ -1150,14 +1106,7 @@ namespace IKVM.Runtime
                 // was "loaded" by an assembly classloader
                 wrapper = AssemblyClassLoader.FromAssembly(asm).GetWrapperFromAssemblyType(type);
             }
-#if CLASSGC
-            if (type.Assembly.IsDynamic)
-            {
-                // don't cache types in dynamic assemblies, because they might live in a RunAndCollect assembly
-                // TODO we also shouldn't cache generic type instances that have a GCable type parameter
-                return wrapper;
-            }
-#endif
+
             lock (globalTypeToTypeWrapper)
             {
                 try
@@ -1169,6 +1118,7 @@ namespace IKVM.Runtime
                     globalTypeToTypeWrapper[type] = wrapper;
                 }
             }
+
             return wrapper;
         }
 
@@ -1318,11 +1268,7 @@ namespace IKVM.Runtime
             TypeWrapper.AssertFinished(type);
 #endif
 
-#if CLASSGC
-            Dictionary<Type, TypeWrapper> dict = typeToTypeWrapper ?? globalTypeToTypeWrapper;
-#else
             Dictionary<Type, TypeWrapper> dict = globalTypeToTypeWrapper;
-#endif
 
             lock (dict)
             {

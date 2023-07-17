@@ -403,14 +403,6 @@ namespace IKVM.Runtime
                         continue;
                     }
 
-                    if (ArgEquals(arg, "-Xnoclassgc"))
-                    {
-#if CLASSGC
-                        JVM.classUnloading = false;
-#endif
-                        continue;
-                    }
-
                     if (ArgEquals(arg, "-Xverify"))
                     {
                         JVM.relaxedVerification = false;

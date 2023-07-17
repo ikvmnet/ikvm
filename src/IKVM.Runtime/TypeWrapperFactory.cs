@@ -60,11 +60,6 @@ namespace IKVM.Runtime
 
         internal abstract bool HasInternalAccess { get; }
 
-#if CLASSGC
-
-        internal abstract void AddInternalsVisibleTo(Assembly friend);
-
-#endif
     }
 
 #endif

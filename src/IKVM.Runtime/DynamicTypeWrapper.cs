@@ -33,13 +33,11 @@ using IKVM.Reflection.Emit;
 using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
-using DynamicOrAotTypeWrapper = IKVM.Tools.Importer.AotTypeWrapper;
 using ProtectionDomain = System.Object;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
 
-using DynamicOrAotTypeWrapper = IKVM.Runtime.DynamicTypeWrapper;
 using ProtectionDomain = java.security.ProtectionDomain;
 #endif
 
@@ -168,20 +166,7 @@ namespace IKVM.Runtime
                 {
                     VerifyDelegate(f);
                 }
-#if CLASSGC
-                if (JVM.classUnloading && BaseTypeWrapper.TypeAsBaseType == typeof(ContextBoundObject))
-                {
-                    throw new VerifyError("Extending ContextBoundObject is not supported in dynamic mode with class GC enabled.");
-                }
-#endif
             }
-
-#if CLASSGC
-            if (JVM.classUnloading)
-            {
-                VerifyRunAndCollect(f);
-            }
-#endif
 
             ClassFile.ConstantPoolItemClass[] interfaces = f.Interfaces;
             this.interfaces = new TypeWrapper[interfaces.Length];
@@ -201,52 +186,6 @@ namespace IKVM.Runtime
 
             impl = new JavaTypeImpl(host, f, this);
         }
-
-#if CLASSGC
-        private static void VerifyRunAndCollect(ClassFile f)
-        {
-            if (f.Annotations != null)
-            {
-                foreach (object[] ann in f.Annotations)
-                {
-                    if (ann[1].Equals("Lcli/System/Runtime/InteropServices/ComImportAttribute$Annotation;"))
-                    {
-                        throw new VerifyError("ComImportAttribute is not supported in dynamic mode with class GC enabled.");
-                    }
-                }
-            }
-            foreach (ClassFile.Field field in f.Fields)
-            {
-                if (field.Annotations != null)
-                {
-                    foreach (object[] ann in field.Annotations)
-                    {
-                        if (ann[1].Equals("Lcli/System/ThreadStaticAttribute$Annotation;"))
-                        {
-                            throw new VerifyError("ThreadStaticAttribute is not supported in dynamic mode with class GC enabled.");
-                        }
-                        if (ann[1].Equals("Lcli/System/ContextStaticAttribute$Annotation;"))
-                        {
-                            throw new VerifyError("ContextStaticAttribute is not supported in dynamic mode with class GC enabled.");
-                        }
-                    }
-                }
-            }
-            foreach (ClassFile.Method method in f.Methods)
-            {
-                if (method.Annotations != null)
-                {
-                    foreach (object[] ann in method.Annotations)
-                    {
-                        if (ann[1].Equals("Lcli/System/Runtime/InteropServices/DllImportAttribute$Annotation;"))
-                        {
-                            throw new VerifyError("DllImportAttribute is not supported in dynamic mode with class GC enabled.");
-                        }
-                    }
-                }
-            }
-        }
-#endif
 
         private void VerifyDelegate(ClassFile f)
         {
@@ -736,12 +675,6 @@ namespace IKVM.Runtime
                         }
                     }
                 }
-            }
-#elif CLASSGC
-            // TODO PInvoke is not supported in RunAndCollect assemblies,
-            if (JVM.classUnloading)
-            {
-                return false;
             }
 #endif
             if (m.Annotations != null)
