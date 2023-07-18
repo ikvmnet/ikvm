@@ -81,6 +81,7 @@
         <Compile Include="..\IKVM.Runtime\RuntimePrivateInterfaceJavaMethod.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\ByteCodeHelperMethods.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\ByteCodeHelper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeManagedJavaType.*.cs" LinkBase="IKVM.Runtime" />
     </ItemGroup>
 
     <ItemGroup>

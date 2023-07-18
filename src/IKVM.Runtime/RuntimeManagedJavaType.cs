@@ -44,7 +44,7 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
-    sealed class RuntimeManagedJavaType : RuntimeJavaType
+    sealed partial class RuntimeManagedJavaType : RuntimeJavaType
     {
 
         const string NamePrefix = "cli.";
@@ -67,7 +67,7 @@ namespace IKVM.Runtime
         RuntimeJavaType outerClass;
         volatile RuntimeJavaType[] interfaces;
 
-        private static Modifiers GetModifiers(Type type)
+        static Modifiers GetModifiers(Type type)
         {
             Modifiers modifiers = 0;
             if (type.IsPublic)
@@ -682,7 +682,7 @@ namespace IKVM.Runtime
 
         }
 
-        sealed class AttributeAnnotationJavaType : AttributeAnnotationJavaTypeBase
+        sealed partial class AttributeAnnotationJavaType : AttributeAnnotationJavaTypeBase
         {
 
             readonly Type fakeType;
@@ -1015,282 +1015,6 @@ namespace IKVM.Runtime
             internal override RuntimeJavaType DeclaringTypeWrapper => RuntimeClassLoader.GetWrapperFromType(attributeType);
 
             internal override Type TypeAsTBD => fakeType;
-
-            sealed class ReturnValueAnnotationJavaType : AttributeAnnotationJavaTypeBase
-            {
-
-                readonly Type fakeType;
-                readonly AttributeAnnotationJavaType declaringType;
-
-                /// <summary>
-                /// Initializes a new instance.
-                /// </summary>
-                /// <param name="declaringType"></param>
-                internal ReturnValueAnnotationJavaType(AttributeAnnotationJavaType declaringType) :
-                    base(declaringType.Name + AttributeAnnotationReturnValueSuffix)
-                {
-#if IMPORTER || EXPORTER
-                    this.fakeType = FakeTypes.GetAttributeReturnValueType(declaringType.attributeType);
-#elif !FIRST_PASS
-                    this.fakeType = typeof(ikvm.@internal.AttributeAnnotationReturnValue<>).MakeGenericType(declaringType.attributeType);
-#endif
-                    this.declaringType = declaringType;
-                }
-
-                protected override void LazyPublishMembers()
-                {
-                    RuntimeJavaType tw = declaringType;
-                    if (declaringType.GetAttributeUsage().AllowMultiple)
-                    {
-                        tw = tw.MakeArrayType(1);
-                    }
-                    SetMethods(new RuntimeJavaMethod[] { new DynamicOnlyJavaMethod(this, "value", "()" + tw.SigName, tw, Array.Empty<RuntimeJavaType>(), MemberFlags.None) });
-                    SetFields(Array.Empty<RuntimeJavaField>());
-                }
-
-                internal override RuntimeJavaType DeclaringTypeWrapper
-                {
-                    get
-                    {
-                        return declaringType;
-                    }
-                }
-
-                internal override Type TypeAsTBD
-                {
-                    get
-                    {
-                        return fakeType;
-                    }
-                }
-
-#if !IMPORTER && !FIRST_PASS && !EXPORTER
-                internal override object[] GetDeclaredAnnotations()
-                {
-                    java.util.HashMap targetMap = new java.util.HashMap();
-                    targetMap.put("value", new java.lang.annotation.ElementType[] { java.lang.annotation.ElementType.METHOD });
-                    java.util.HashMap retentionMap = new java.util.HashMap();
-                    retentionMap.put("value", java.lang.annotation.RetentionPolicy.RUNTIME);
-                    return new object[] {
-                        java.lang.reflect.Proxy.newProxyInstance(null, new java.lang.Class[] { typeof(java.lang.annotation.Target) }, new sun.reflect.annotation.AnnotationInvocationHandler(typeof(java.lang.annotation.Target), targetMap)),
-                        java.lang.reflect.Proxy.newProxyInstance(null, new java.lang.Class[] { typeof(java.lang.annotation.Retention) }, new sun.reflect.annotation.AnnotationInvocationHandler(typeof(java.lang.annotation.Retention), retentionMap))
-                    };
-                }
-#endif
-
-                sealed class ReturnValueAnnotation : Annotation
-                {
-
-                    readonly AttributeAnnotationJavaType type;
-
-                    /// <summary>
-                    /// Initializes a new instance.
-                    /// </summary>
-                    /// <param name="type"></param>
-                    internal ReturnValueAnnotation(AttributeAnnotationJavaType type)
-                    {
-                        this.type = type;
-                    }
-
-                    internal override void ApplyReturnValue(RuntimeClassLoader loader, MethodBuilder mb, ref ParameterBuilder pb, object annotation)
-                    {
-                        // TODO make sure the descriptor is correct
-                        Annotation ann = type.Annotation;
-                        object[] arr = (object[])annotation;
-                        for (int i = 2; i < arr.Length; i += 2)
-                        {
-                            if ("value".Equals(arr[i]))
-                            {
-                                if (pb == null)
-                                {
-                                    pb = mb.DefineParameter(0, ParameterAttributes.None, null);
-                                }
-                                object[] value = (object[])arr[i + 1];
-                                if (value[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION))
-                                {
-                                    ann.Apply(loader, pb, value);
-                                }
-                                else
-                                {
-                                    for (int j = 1; j < value.Length; j++)
-                                    {
-                                        ann.Apply(loader, pb, value[j]);
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    }
-
-                    internal override void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation)
-                    {
-                    }
-
-                    internal override void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation)
-                    {
-                    }
-
-                    internal override void Apply(RuntimeClassLoader loader, FieldBuilder fb, object annotation)
-                    {
-                    }
-
-                    internal override void Apply(RuntimeClassLoader loader, ParameterBuilder pb, object annotation)
-                    {
-                    }
-
-                    internal override void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation)
-                    {
-                    }
-
-                    internal override void Apply(RuntimeClassLoader loader, PropertyBuilder pb, object annotation)
-                    {
-                    }
-
-                    internal override bool IsCustomAttribute
-                    {
-                        get { return type.Annotation.IsCustomAttribute; }
-                    }
-                }
-
-                internal override Annotation Annotation => new ReturnValueAnnotation(declaringType);
-
-                internal override AttributeTargets AttributeTargets => AttributeTargets.ReturnValue;
-
-            }
-
-            sealed class MultipleAnnotationJavaType : AttributeAnnotationJavaTypeBase
-            {
-
-                readonly Type fakeType;
-                readonly AttributeAnnotationJavaType declaringType;
-
-                internal MultipleAnnotationJavaType(AttributeAnnotationJavaType declaringType)
-                    : base(declaringType.Name + AttributeAnnotationMultipleSuffix)
-                {
-#if IMPORTER || EXPORTER
-                    this.fakeType = FakeTypes.GetAttributeMultipleType(declaringType.attributeType);
-#elif !FIRST_PASS
-                    this.fakeType = typeof(ikvm.@internal.AttributeAnnotationMultiple<>).MakeGenericType(declaringType.attributeType);
-#endif
-                    this.declaringType = declaringType;
-                }
-
-                protected override void LazyPublishMembers()
-                {
-                    RuntimeJavaType tw = declaringType.MakeArrayType(1);
-                    SetMethods(new RuntimeJavaMethod[] { new DynamicOnlyJavaMethod(this, "value", "()" + tw.SigName, tw, Array.Empty<RuntimeJavaType>(), MemberFlags.None) });
-                    SetFields(Array.Empty<RuntimeJavaField>());
-                }
-
-                internal override RuntimeJavaType DeclaringTypeWrapper => declaringType;
-
-                internal override Type TypeAsTBD => fakeType;
-
-#if !IMPORTER && !EXPORTER
-                internal override object[] GetDeclaredAnnotations()
-                {
-                    return declaringType.GetDeclaredAnnotations();
-                }
-#endif
-
-                sealed class MultipleAnnotation : Annotation
-                {
-
-                    readonly AttributeAnnotationJavaType type;
-
-                    /// <summary>
-                    /// Initializes a new instance.
-                    /// </summary>
-                    /// <param name="type"></param>
-                    internal MultipleAnnotation(AttributeAnnotationJavaType type)
-                    {
-                        this.type = type;
-                    }
-
-                    static object[] UnwrapArray(object annotation)
-                    {
-                        // TODO make sure the descriptor is correct
-                        object[] arr = (object[])annotation;
-                        for (int i = 2; i < arr.Length; i += 2)
-                        {
-                            if ("value".Equals(arr[i]))
-                            {
-                                object[] value = (object[])arr[i + 1];
-                                object[] rc = new object[value.Length - 1];
-                                Array.Copy(value, 1, rc, 0, rc.Length);
-                                return rc;
-                            }
-                        }
-
-                        return new object[0];
-                    }
-
-                    internal override void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation)
-                    {
-                        Annotation annot = type.Annotation;
-                        foreach (object ann in UnwrapArray(annotation))
-                        {
-                            annot.Apply(loader, mb, ann);
-                        }
-                    }
-
-                    internal override void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation)
-                    {
-                        Annotation annot = type.Annotation;
-                        foreach (object ann in UnwrapArray(annotation))
-                        {
-                            annot.Apply(loader, ab, ann);
-                        }
-                    }
-
-                    internal override void Apply(RuntimeClassLoader loader, FieldBuilder fb, object annotation)
-                    {
-                        Annotation annot = type.Annotation;
-                        foreach (object ann in UnwrapArray(annotation))
-                        {
-                            annot.Apply(loader, fb, ann);
-                        }
-                    }
-
-                    internal override void Apply(RuntimeClassLoader loader, ParameterBuilder pb, object annotation)
-                    {
-                        Annotation annot = type.Annotation;
-                        foreach (object ann in UnwrapArray(annotation))
-                        {
-                            annot.Apply(loader, pb, ann);
-                        }
-                    }
-
-                    internal override void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation)
-                    {
-                        Annotation annot = type.Annotation;
-                        foreach (object ann in UnwrapArray(annotation))
-                        {
-                            annot.Apply(loader, tb, ann);
-                        }
-                    }
-
-                    internal override void Apply(RuntimeClassLoader loader, PropertyBuilder pb, object annotation)
-                    {
-                        Annotation annot = type.Annotation;
-                        foreach (object ann in UnwrapArray(annotation))
-                        {
-                            annot.Apply(loader, pb, ann);
-                        }
-                    }
-
-                    internal override bool IsCustomAttribute
-                    {
-                        get { return type.Annotation.IsCustomAttribute; }
-                    }
-
-                }
-
-                internal override Annotation Annotation => new MultipleAnnotation(declaringType);
-
-                internal override AttributeTargets AttributeTargets => declaringType.AttributeTargets;
-
-            }
 
             internal override RuntimeJavaType[] InnerClasses => innerClasses ??= GetInnerClasses();
 
