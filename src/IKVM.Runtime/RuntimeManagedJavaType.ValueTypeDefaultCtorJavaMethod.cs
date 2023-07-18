@@ -25,6 +25,12 @@ using System;
 
 using IKVM.Attributes;
 
+#if IMPORTER
+using IKVM.Reflection.Emit;
+#else
+using System.Reflection.Emit;
+#endif
+
 namespace IKVM.Runtime
 {
 
@@ -48,7 +54,7 @@ namespace IKVM.Runtime
 
             internal override void EmitNewobj(CodeEmitter ilgen)
             {
-                CodeEmitterLocal local = ilgen.DeclareLocal(DeclaringType.TypeAsTBD);
+                var local = ilgen.DeclareLocal(DeclaringType.TypeAsTBD);
                 ilgen.Emit(OpCodes.Ldloc, local);
                 ilgen.Emit(OpCodes.Box, DeclaringType.TypeAsTBD);
             }
