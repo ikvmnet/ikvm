@@ -1392,36 +1392,6 @@ namespace IKVM.Runtime
             }
         }
 
-        private sealed class BaseFinalJavaMethod : RuntimeJavaMethod
-        {
-
-            private readonly RuntimeJavaMethod m;
-
-            internal BaseFinalJavaMethod(RuntimeManagedJavaType tw, RuntimeJavaMethod m)
-                : base(tw, m.Name, m.Signature, null, null, null, (m.Modifiers & ~Modifiers.Abstract) | Modifiers.Final, MemberFlags.None)
-            {
-                this.m = m;
-            }
-
-            protected override void DoLinkMethod()
-            {
-            }
-
-#if EMITTERS
-            internal override void EmitCall(CodeEmitter ilgen)
-            {
-                // we direct EmitCall to EmitCallvirt, because we always want to end up at the instancehelper method
-                // (EmitCall would go to our alter ego .NET type and that wouldn't be legal)
-                m.EmitCallvirt(ilgen);
-            }
-
-            internal override void EmitCallvirt(CodeEmitter ilgen)
-            {
-                m.EmitCallvirt(ilgen);
-            }
-#endif // EMITTERS
-        }
-
         internal static bool IsUnsupportedAbstractMethod(MethodBase mb)
         {
             if (mb.IsAbstract)
