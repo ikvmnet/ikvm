@@ -33,6 +33,9 @@ namespace IKVM.Runtime
 
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
 
+        /// <summary>
+        /// Implements a 'writeReplace' method for Java serialization, which serializes a .NET exceptions as a 'com.sun.xml.@internal.ws.developer.ServerSideException'.
+        /// </summary>
         sealed class ExceptionWriteReplaceJavaMethod : RuntimeJavaMethod
         {
 
@@ -51,7 +54,7 @@ namespace IKVM.Runtime
             internal override object Invoke(object obj, object[] args)
             {
                 var x = (Exception)obj;
-                com.sun.xml.@internal.ws.developer.ServerSideException sse = new com.sun.xml.@internal.ws.developer.ServerSideException(ikvm.extensions.ExtensionMethods.getClass(x).getName(), x.Message);
+                var sse = new com.sun.xml.@internal.ws.developer.ServerSideException(ikvm.extensions.ExtensionMethods.getClass(x).getName(), x.Message);
                 sse.initCause(x.InnerException);
                 sse.setStackTrace(ikvm.extensions.ExtensionMethods.getStackTrace(x));
                 return sse;

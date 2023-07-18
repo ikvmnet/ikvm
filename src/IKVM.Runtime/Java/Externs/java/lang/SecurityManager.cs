@@ -35,10 +35,6 @@ namespace IKVM.Java.Externs.java.lang
     static class SecurityManager
     {
 
-        // this field is set by code in the JNI assembly itself,
-        // to prevent having to load the JNI assembly when it isn't used.
-        internal static volatile Assembly jniAssembly;
-
         public static global::java.lang.Class[] getClassContext(object thisSecurityManager)
         {
 #if FIRST_PASS

@@ -44,6 +44,9 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
+    /// <summary>
+    /// Implements a <see cref="RuntimeJavaType"/> that exposes existing managed .NET types not the result of static compilation.
+    /// </summary>
     sealed partial class RuntimeManagedJavaType : RuntimeJavaType
     {
 
@@ -61,11 +64,12 @@ namespace IKVM.Runtime
         internal const string GenericAttributeAnnotationMultipleTypeName = "ikvm.internal.AttributeAnnotationMultiple`1";
 
         static readonly Dictionary<Type, RuntimeJavaType> types = new Dictionary<Type, RuntimeJavaType>();
+
         readonly Type type;
         RuntimeJavaType baseTypeWrapper;
-        volatile RuntimeJavaType[] innerClasses;
+        RuntimeJavaType[] innerClasses;
         RuntimeJavaType outerClass;
-        volatile RuntimeJavaType[] interfaces;
+        RuntimeJavaType[] interfaces;
 
         static Modifiers GetModifiers(Type type)
         {
@@ -126,14 +130,15 @@ namespace IKVM.Runtime
 
             if (type.IsGenericType && !type.ContainsGenericParameters)
             {
-                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                var sb = new System.Text.StringBuilder();
                 sb.Append(MangleTypeName(type.GetGenericTypeDefinition().FullName));
                 sb.Append("_$$$_");
                 string sep = "";
                 foreach (Type t1 in type.GetGenericArguments())
                 {
-                    Type t = t1;
+                    var t = t1;
                     sb.Append(sep);
+
                     // NOTE we can't use ClassLoaderWrapper.GetWrapperFromType() here to get t's name,
                     // because we might be resolving a generic type that refers to a type that is in
                     // the process of being constructed.
@@ -147,6 +152,7 @@ namespace IKVM.Runtime
                         t = t.GetElementType();
                         sb.Append('A');
                     }
+
                     if (RuntimePrimitiveJavaType.IsPrimitiveType(t))
                     {
                         sb.Append(RuntimeClassLoader.GetWrapperFromType(t).SigName);
@@ -162,6 +168,7 @@ namespace IKVM.Runtime
                         {
                             s = RuntimeManagedJavaType.GetName(t);
                         }
+
                         // only do the mangling for non-generic types (because we don't want to convert
                         // the double underscores in two adjacent _$$$_ or _$$$$_ markers)
                         if (s.IndexOf("_$$$_") == -1)
@@ -169,18 +176,19 @@ namespace IKVM.Runtime
                             s = s.Replace("__", "$$005F$$005F");
                             s = s.Replace(".", "__");
                         }
+
                         sb.Append('L').Append(s);
                     }
+
                     sep = "_$$_";
                 }
+
                 sb.Append("_$$$$_");
                 return sb.ToString();
             }
 
             if (AttributeHelper.IsNoPackagePrefix(type) && name.IndexOf('$') == -1)
-            {
                 return name.Replace('+', '$');
-            }
 
             return MangleTypeName(name);
         }
@@ -188,18 +196,17 @@ namespace IKVM.Runtime
         static string MangleTypeName(string name)
         {
             var sb = new System.Text.StringBuilder(NamePrefix, NamePrefix.Length + name.Length);
-            bool escape = false;
-            bool nested = false;
+            var escape = false;
+            var nested = false;
             for (int i = 0; i < name.Length; i++)
             {
-                char c = name[i];
+                var c = name[i];
                 if (c == '+' && !escape && (sb.Length == 0 || sb[sb.Length - 1] != '$'))
                 {
                     nested = true;
                     sb.Append('$');
                 }
-                else if ("_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".IndexOf(c) != -1
-                    || (c == '.' && !escape && !nested))
+                else if ("_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".IndexOf(c) != -1 || (c == '.' && !escape && !nested))
                 {
                     sb.Append(c);
                 }
@@ -245,9 +252,8 @@ namespace IKVM.Runtime
                     {
                         i++;
                         if (i + 5 > name.Length)
-                        {
                             return name;
-                        }
+
                         int digit0 = "0123456789ABCDEF".IndexOf(name[++i]);
                         int digit1 = "0123456789ABCDEF".IndexOf(name[++i]);
                         int digit2 = "0123456789ABCDEF".IndexOf(name[++i]);
@@ -276,8 +282,6 @@ namespace IKVM.Runtime
             // be accessible through Java reflection.
 #if !FIRST_PASS && !IMPORTER && !EXPORTER
             if (type.Assembly == typeof(RuntimeManagedJavaType).Assembly)
-                return false;
-            if (type.Assembly == IKVM.Java.Externs.java.lang.SecurityManager.jniAssembly)
                 return false;
 #endif
 
@@ -487,9 +491,7 @@ namespace IKVM.Runtime
                             {
                                 var baseMethod = BaseTypeWrapper.GetMethodWrapper(name, sig, true);
                                 if (baseMethod != null && baseMethod.IsFinal && !baseMethod.IsStatic && !baseMethod.IsPrivate)
-                                {
                                     continue;
-                                }
                             }
 
                             var mw = CreateMethodWrapper(name, sig, args, ret, methods[i], false);
@@ -548,7 +550,8 @@ namespace IKVM.Runtime
                 // methods, which don't really exist).
                 if (RuntimeClassLoader.IsRemappedType(type) && !type.IsSealed && !type.IsInterface)
                 {
-                    var baseTypeWrapper = this.BaseTypeWrapper;
+                    var baseTypeWrapper = BaseTypeWrapper;
+
                     while (baseTypeWrapper != null)
                     {
                         foreach (var m in baseTypeWrapper.GetMethods())
@@ -581,6 +584,7 @@ namespace IKVM.Runtime
                                 }
                             }
                         }
+
                         baseTypeWrapper = baseTypeWrapper.BaseTypeWrapper;
                     }
                 }
@@ -593,17 +597,13 @@ namespace IKVM.Runtime
                     methodsList.Add("writeReplace()Ljava.lang.Object;", new ExceptionWriteReplaceJavaMethod(this));
                 }
 
-#endif // !IMPORTER && !EXPORTER && !FIRST_PASS
+#endif
 
                 var methodArray = new RuntimeJavaMethod[methodsList.Count];
                 methodsList.Values.CopyTo(methodArray, 0);
                 SetMethods(methodArray);
             }
         }
-
-#if !IMPORTER && !EXPORTER && !FIRST_PASS
-
-#endif // !IMPORTER && !EXPORTER && !FIRST_PASS
 
         void InterfaceMethodStubHelper(Dictionary<string, RuntimeJavaMethod> methodsList, MethodBase method, string name, string sig, RuntimeJavaType[] args, RuntimeJavaType ret)
         {
@@ -629,19 +629,15 @@ namespace IKVM.Runtime
         {
             if (mb.IsAbstract)
             {
-                MethodInfo mi = (MethodInfo)mb;
+                var mi = (MethodInfo)mb;
                 if (mi.ReturnType.IsByRef || IsPointerType(mi.ReturnType) || mb.IsGenericMethodDefinition)
-                {
                     return true;
-                }
-                foreach (ParameterInfo p in mi.GetParameters())
-                {
+
+                foreach (var p in mi.GetParameters())
                     if (p.ParameterType.IsByRef || IsPointerType(p.ParameterType))
-                    {
                         return true;
-                    }
-                }
             }
+
             return false;
         }
 
@@ -672,6 +668,7 @@ namespace IKVM.Runtime
                 ret = null;
                 return false;
             }
+
             var sb = new System.Text.StringBuilder();
             sb.Append('(');
             var parameters = mb.GetParameters();
@@ -872,9 +869,7 @@ namespace IKVM.Runtime
                 args[i] = parameters[i].ParameterType;
                 if (parameters[i].ParameterType.IsByRef)
                 {
-                    if (byrefs == null)
-                        byrefs = new bool[args.Length];
-
+                    byrefs ??= new bool[args.Length];
                     byrefs[i] = true;
                     hasByRefArgs = true;
                 }
