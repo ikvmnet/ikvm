@@ -25,52 +25,24 @@ using System;
 
 using IKVM.Attributes;
 
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#endif
-
 namespace IKVM.Runtime
 {
 
     sealed partial class RuntimeManagedJavaType
     {
 
-        sealed class EnumWrapJavaMethod : RuntimeJavaMethod
+        sealed class MulticastDelegateCtorJavaMethod : RuntimeJavaMethod
         {
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="declaringType"></param>
-            /// <param name="fieldType"></param>
-            internal EnumWrapJavaMethod(RuntimeManagedJavaType declaringType, RuntimeJavaType fieldType) :
-                base(declaringType, "wrap", "(" + fieldType.SigName + ")" + declaringType.SigName, null, declaringType, new RuntimeJavaType[] { fieldType }, Modifiers.Static | Modifiers.Public, MemberFlags.None)
+            internal MulticastDelegateCtorJavaMethod(RuntimeJavaType declaringType) :
+                base(declaringType, "<init>", "()V", null, RuntimePrimitiveJavaType.VOID, Array.Empty<RuntimeJavaType>(), Modifiers.Protected, MemberFlags.None)
             {
 
             }
-
-#if EMITTERS
-
-            internal override void EmitCall(CodeEmitter ilgen)
-            {
-                // We don't actually need to do anything here!
-                // The compiler will insert a boxing operation after calling us and that will
-                // result in our argument being boxed (since that's still sitting on the stack).
-            }
-
-#endif
-
-#if !IMPORTER && !EXPORTER && !FIRST_PASS
-
-            internal override object Invoke(object obj, object[] args)
-            {
-                return Enum.ToObject(DeclaringType.TypeAsTBD, args[0]);
-            }
-
-#endif
 
         }
 

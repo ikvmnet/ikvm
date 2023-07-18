@@ -25,54 +25,41 @@ using System;
 
 using IKVM.Attributes;
 
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#endif
-
 namespace IKVM.Runtime
 {
 
     sealed partial class RuntimeManagedJavaType
     {
 
-        sealed class EnumWrapJavaMethod : RuntimeJavaMethod
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
+
+        sealed class ExceptionWriteReplaceJavaMethod : RuntimeJavaMethod
         {
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="declaringType"></param>
-            /// <param name="fieldType"></param>
-            internal EnumWrapJavaMethod(RuntimeManagedJavaType declaringType, RuntimeJavaType fieldType) :
-                base(declaringType, "wrap", "(" + fieldType.SigName + ")" + declaringType.SigName, null, declaringType, new RuntimeJavaType[] { fieldType }, Modifiers.Static | Modifiers.Public, MemberFlags.None)
+            internal ExceptionWriteReplaceJavaMethod(RuntimeJavaType declaringType) :
+                base(declaringType, "writeReplace", "()Ljava.lang.Object;", null, CoreClasses.java.lang.Object.Wrapper, Array.Empty<RuntimeJavaType>(), Modifiers.Private, MemberFlags.None)
             {
 
             }
 
-#if EMITTERS
-
-            internal override void EmitCall(CodeEmitter ilgen)
-            {
-                // We don't actually need to do anything here!
-                // The compiler will insert a boxing operation after calling us and that will
-                // result in our argument being boxed (since that's still sitting on the stack).
-            }
-
-#endif
-
-#if !IMPORTER && !EXPORTER && !FIRST_PASS
+            internal override bool IsDynamicOnly => true;
 
             internal override object Invoke(object obj, object[] args)
             {
-                return Enum.ToObject(DeclaringType.TypeAsTBD, args[0]);
+                var x = (Exception)obj;
+                com.sun.xml.@internal.ws.developer.ServerSideException sse = new com.sun.xml.@internal.ws.developer.ServerSideException(ikvm.extensions.ExtensionMethods.getClass(x).getName(), x.Message);
+                sse.initCause(x.InnerException);
+                sse.setStackTrace(ikvm.extensions.ExtensionMethods.getStackTrace(x));
+                return sse;
             }
 
-#endif
-
         }
+
+#endif
 
     }
 
