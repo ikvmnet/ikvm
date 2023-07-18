@@ -632,7 +632,7 @@ namespace IKVM.StubGen
 
         private static void AddMetaAnnotations(ClassFileWriter writer, RuntimeJavaType tw)
         {
-            RuntimeManagedJavaType.AttributeAnnotationTypeWrapperBase attributeAnnotation = tw as RuntimeManagedJavaType.AttributeAnnotationTypeWrapperBase;
+            RuntimeManagedJavaType.AttributeAnnotationJavaTypeBase attributeAnnotation = tw as RuntimeManagedJavaType.AttributeAnnotationJavaTypeBase;
             if (attributeAnnotation != null)
             {
                 // TODO write the annotation directly, instead of going thru the object[] encoding
