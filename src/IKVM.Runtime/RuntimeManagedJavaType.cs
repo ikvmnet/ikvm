@@ -37,12 +37,70 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
-
 namespace IKVM.Runtime
 {
+
+    /// <summary>
+    /// Manages instances of <see cref="RuntimeManagedJavaType"/>.
+    /// </summary>
+    static class RuntimeManagedJavaTypeFactory
+    {
+
+        static readonly Dictionary<Type, RuntimeJavaType> types = new Dictionary<Type, RuntimeJavaType>();
+
+        /// <summary>
+        /// Gets the <see cref="RuntimeJavaType"/> associated with the specified managed type, or creates one on demand.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static RuntimeJavaType GetWrapperFromDotNetType(Type type)
+        {
+            RuntimeJavaType tw;
+            lock (types)
+                types.TryGetValue(type, out tw);
+
+            if (tw == null)
+            {
+                tw = RuntimeAssemblyClassLoaderFactory.FromAssembly(type.Assembly).GetWrapperFromAssemblyType(type);
+                lock (types)
+                    types[type] = tw;
+            }
+
+            return tw;
+        }
+
+        /// <summary>
+        /// gets the <see cref="RuntimeJavaType"/> associated with the base type of the specified type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static RuntimeJavaType GetBaseTypeWrapper(Type type)
+        {
+            if (type.IsInterface)
+            {
+                return null;
+            }
+            else if (RuntimeClassLoaderFactory.IsRemappedType(type))
+            {
+                // Remapped types extend their alter ego
+                // (e.g. cli.System.Object must appear to be derived from java.lang.Object)
+                // except when they're sealed, of course.
+                if (type.IsSealed)
+                    return CoreClasses.java.lang.Object.Wrapper;
+
+                return RuntimeClassLoaderFactory.GetWrapperFromType(type);
+            }
+            else if (RuntimeClassLoaderFactory.IsRemappedType(type.BaseType))
+            {
+                return GetWrapperFromDotNetType(type.BaseType);
+            }
+            else
+            {
+                return RuntimeClassLoaderFactory.GetWrapperFromType(type.BaseType);
+            }
+        }
+
+    }
 
     /// <summary>
     /// Implements a <see cref="RuntimeJavaType"/> that exposes existing managed .NET types not the result of static compilation.
@@ -62,8 +120,6 @@ namespace IKVM.Runtime
         internal const string GenericAttributeAnnotationTypeName = "ikvm.internal.AttributeAnnotation`1";
         internal const string GenericAttributeAnnotationReturnValueTypeName = "ikvm.internal.AttributeAnnotationReturnValue`1";
         internal const string GenericAttributeAnnotationMultipleTypeName = "ikvm.internal.AttributeAnnotationMultiple`1";
-
-        static readonly Dictionary<Type, RuntimeJavaType> types = new Dictionary<Type, RuntimeJavaType>();
 
         readonly Type type;
         RuntimeJavaType baseTypeWrapper;
@@ -288,48 +344,6 @@ namespace IKVM.Runtime
             return true;
         }
 
-        internal static RuntimeJavaType GetWrapperFromDotNetType(Type type)
-        {
-            RuntimeJavaType tw;
-            lock (types)
-                types.TryGetValue(type, out tw);
-
-            if (tw == null)
-            {
-                tw = RuntimeAssemblyClassLoaderFactory.FromAssembly(type.Assembly).GetWrapperFromAssemblyType(type);
-                lock (types)
-                    types[type] = tw;
-            }
-
-            return tw;
-        }
-
-        static RuntimeJavaType GetBaseTypeWrapper(Type type)
-        {
-            if (type.IsInterface)
-            {
-                return null;
-            }
-            else if (RuntimeClassLoaderFactory.IsRemappedType(type))
-            {
-                // Remapped types extend their alter ego
-                // (e.g. cli.System.Object must appear to be derived from java.lang.Object)
-                // except when they're sealed, of course.
-                if (type.IsSealed)
-                    return CoreClasses.java.lang.Object.Wrapper;
-
-                return RuntimeClassLoaderFactory.GetWrapperFromType(type);
-            }
-            else if (RuntimeClassLoaderFactory.IsRemappedType(type.BaseType))
-            {
-                return GetWrapperFromDotNetType(type.BaseType);
-            }
-            else
-            {
-                return RuntimeClassLoaderFactory.GetWrapperFromType(type.BaseType);
-            }
-        }
-
         internal static RuntimeJavaType Create(Type type, string name)
         {
             if (type.ContainsGenericParameters)
@@ -359,7 +373,7 @@ namespace IKVM.Runtime
             this.type = type;
         }
 
-        internal override RuntimeJavaType BaseTypeWrapper => baseTypeWrapper ??= GetBaseTypeWrapper(type);
+        internal override RuntimeJavaType BaseTypeWrapper => baseTypeWrapper ??= RuntimeManagedJavaTypeFactory.GetBaseTypeWrapper(type);
 
         internal override RuntimeClassLoader GetClassLoader() => type.IsGenericType ? RuntimeClassLoaderFactory.GetGenericClassLoader(this) : RuntimeAssemblyClassLoaderFactory.FromAssembly(type.Assembly);
 
@@ -814,7 +828,7 @@ namespace IKVM.Runtime
                 {
                     var outer = type.DeclaringType;
                     if (outer != null && !type.IsGenericType)
-                        outerClass = GetWrapperFromDotNetType(outer);
+                        outerClass = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(outer);
                 }
 
                 return outerClass;

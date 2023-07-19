@@ -139,7 +139,7 @@ namespace IKVM.Runtime
                 else if (RuntimeClassLoaderFactory.IsRemappedType(type.BaseType))
                 {
                     // if we directly extend System.Object or System.Exception, the base class must be cli.System.Object or cli.System.Exception
-                    return RuntimeManagedJavaType.GetWrapperFromDotNetType(type.BaseType);
+                    return RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(type.BaseType);
                 }
 
                 RuntimeJavaType tw = null;
@@ -478,7 +478,7 @@ namespace IKVM.Runtime
                 }
                 else if (type.IsPrimitive)
                 {
-                    type = RuntimeManagedJavaType.GetWrapperFromDotNetType(type.TypeAsTBD);
+                    type = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(type.TypeAsTBD);
                     if (sigtype != type.SigName)
                     {
                         throw new InvalidOperationException();
@@ -942,7 +942,7 @@ namespace IKVM.Runtime
                 }
                 else if (type == Types.Void || type.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(type))
                 {
-                    tw = RuntimeManagedJavaType.GetWrapperFromDotNetType(type);
+                    tw = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(type);
                 }
                 else if (type.DeclaringType != null && type.DeclaringType.FullName == RuntimeUnloadableJavaType.ContainerTypeName)
                 {

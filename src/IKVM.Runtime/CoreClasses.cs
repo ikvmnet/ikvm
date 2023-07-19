@@ -38,7 +38,7 @@ namespace IKVM.Runtime
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static Object() { }
-					internal static readonly RuntimeJavaType Wrapper = RuntimeManagedJavaType.GetWrapperFromDotNetType(Types.Object);
+					internal static readonly RuntimeJavaType Wrapper = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(Types.Object);
 				}
 
 				internal static class Exception
@@ -46,7 +46,7 @@ namespace IKVM.Runtime
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
 					// (we don't want the classes to be loaded prematurely, because they might not be available then)
 					static Exception() { }
-					internal static readonly RuntimeJavaType Wrapper = RuntimeManagedJavaType.GetWrapperFromDotNetType(Types.Exception);
+					internal static readonly RuntimeJavaType Wrapper = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(Types.Exception);
 				}
 
 			}

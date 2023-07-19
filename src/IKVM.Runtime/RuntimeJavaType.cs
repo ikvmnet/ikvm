@@ -318,7 +318,7 @@ namespace IKVM.Runtime
                 }
 
                 if (type == typeof(void) || type.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(type))
-                    tw = RuntimeManagedJavaType.GetWrapperFromDotNetType(type);
+                    tw = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(type);
                 else
                     tw = RuntimeClassLoaderFactory.GetWrapperFromType(type);
 
@@ -1594,7 +1594,7 @@ namespace IKVM.Runtime
                 {
                     // for remapped interfaces, we also return the original interface (Java types will ignore it, if it isn't listed in the ImplementsAttribute)
                     var twRemapped = interfaces[i];
-                    var tw = RuntimeManagedJavaType.GetWrapperFromDotNetType(interfaceTypes[i]);
+                    var tw = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(interfaceTypes[i]);
                     interfaces[i] = tw;
                     if (Array.IndexOf(interfaces, twRemapped) == -1)
                         interfaces = ArrayUtil.Concat(interfaces, twRemapped);
