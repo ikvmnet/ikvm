@@ -130,7 +130,7 @@ namespace IKVM.Runtime
 				} while (len > 0);
 			}
 
-			return tw.GetClassLoader() == RuntimeClassLoader.GetBootstrapClassLoader() ? sysAsserts : userAsserts;
+			return tw.GetClassLoader() == RuntimeClassLoaderFactory.GetBootstrapClassLoader() ? sysAsserts : userAsserts;
 		}
 
 		private static int Count(OptionNode n)

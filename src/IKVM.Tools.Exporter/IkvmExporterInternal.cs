@@ -98,7 +98,7 @@ namespace IKVM.Tools.Exporter
                 if (options.Boostrap)
                 {
                     StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(typeof(IkvmExporterTool).Assembly.Location);
-                    RuntimeClassLoader.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader());
+                    RuntimeClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader());
                 }
                 else
                 {
@@ -251,10 +251,10 @@ namespace IKVM.Tools.Exporter
                 if ((t.IsPublic || options.IncludeNonPublicTypes) && ExportNamespace(options.Namespaces, t) && !t.IsGenericTypeDefinition && !AttributeHelper.IsHideFromJava(t) && (!t.IsGenericType || !AttributeHelper.IsJavaModule(t.Module)))
                 {
                     RuntimeJavaType c;
-                    if (RuntimeClassLoader.IsRemappedType(t) || t.IsPrimitive || t == Types.Void)
+                    if (RuntimeClassLoaderFactory.IsRemappedType(t) || t.IsPrimitive || t == Types.Void)
                         c = RuntimeManagedJavaType.GetWrapperFromDotNetType(t);
                     else
-                        c = RuntimeClassLoader.GetWrapperFromType(t);
+                        c = RuntimeClassLoaderFactory.GetWrapperFromType(t);
 
                     if (c != null)
                         AddToExportList(c);

@@ -33,17 +33,17 @@ namespace IKVM.Java.Externs.ikvm.@internal
 
         public static global::java.lang.Class GetClass(object obj)
         {
-            return RuntimeClassLoader.GetWrapperFromType(obj.GetType().DeclaringType).ClassObject;
+            return RuntimeClassLoaderFactory.GetWrapperFromType(obj.GetType().DeclaringType).ClassObject;
         }
 
         public static global::java.lang.ClassLoader GetClassLoader(object obj)
         {
-            return RuntimeClassLoader.GetWrapperFromType(obj.GetType().DeclaringType).GetClassLoader().GetJavaClassLoader();
+            return RuntimeClassLoaderFactory.GetWrapperFromType(obj.GetType().DeclaringType).GetClassLoader().GetJavaClassLoader();
         }
 
         public static global::java.lang.ClassLoader GetAssemblyClassLoader(Assembly asm)
         {
-            return RuntimeAssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
+            return RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
         }
 
     }

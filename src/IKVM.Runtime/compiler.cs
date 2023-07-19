@@ -131,9 +131,9 @@ namespace IKVM.Runtime
                 unmapExceptionMethod = CoreClasses.java.lang.Throwable.Wrapper.TypeAsBaseType.GetMethod("__<unmap>", new Type[] { Types.Exception });
                 fixateExceptionMethod = CoreClasses.java.lang.Throwable.Wrapper.TypeAsBaseType.GetMethod("__<fixate>", new Type[] { Types.Exception });
             }
-            getClassFromTypeHandle = RuntimeClassLoader.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;)Ljava.lang.Class;", false);
+            getClassFromTypeHandle = RuntimeClassLoaderFactory.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;)Ljava.lang.Class;", false);
             getClassFromTypeHandle.Link();
-            getClassFromTypeHandle2 = RuntimeClassLoader.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;I)Ljava.lang.Class;", false);
+            getClassFromTypeHandle2 = RuntimeClassLoaderFactory.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;I)Ljava.lang.Class;", false);
             getClassFromTypeHandle2.Link();
         }
 
@@ -2529,31 +2529,31 @@ namespace IKVM.Runtime
                             switch (instr.HardError)
                             {
                                 case HardError.AbstractMethodError:
-                                    exceptionType = RuntimeClassLoader.LoadClassCritical("java.lang.AbstractMethodError");
+                                    exceptionType = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.AbstractMethodError");
                                     break;
                                 case HardError.IllegalAccessError:
-                                    exceptionType = RuntimeClassLoader.LoadClassCritical("java.lang.IllegalAccessError");
+                                    exceptionType = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.IllegalAccessError");
                                     break;
                                 case HardError.IncompatibleClassChangeError:
-                                    exceptionType = RuntimeClassLoader.LoadClassCritical("java.lang.IncompatibleClassChangeError");
+                                    exceptionType = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.IncompatibleClassChangeError");
                                     break;
                                 case HardError.InstantiationError:
-                                    exceptionType = RuntimeClassLoader.LoadClassCritical("java.lang.InstantiationError");
+                                    exceptionType = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.InstantiationError");
                                     break;
                                 case HardError.LinkageError:
-                                    exceptionType = RuntimeClassLoader.LoadClassCritical("java.lang.LinkageError");
+                                    exceptionType = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.LinkageError");
                                     break;
                                 case HardError.NoClassDefFoundError:
-                                    exceptionType = RuntimeClassLoader.LoadClassCritical("java.lang.NoClassDefFoundError");
+                                    exceptionType = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.NoClassDefFoundError");
                                     break;
                                 case HardError.NoSuchFieldError:
-                                    exceptionType = RuntimeClassLoader.LoadClassCritical("java.lang.NoSuchFieldError");
+                                    exceptionType = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.NoSuchFieldError");
                                     break;
                                 case HardError.NoSuchMethodError:
-                                    exceptionType = RuntimeClassLoader.LoadClassCritical("java.lang.NoSuchMethodError");
+                                    exceptionType = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.NoSuchMethodError");
                                     break;
                                 case HardError.IllegalAccessException:
-                                    exceptionType = RuntimeClassLoader.LoadClassCritical("java.lang.IllegalAccessException");
+                                    exceptionType = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.IllegalAccessException");
                                     wrapIncompatibleClassChangeError = true;
                                     break;
                                 default:
@@ -2561,7 +2561,7 @@ namespace IKVM.Runtime
                             }
                             if (wrapIncompatibleClassChangeError)
                             {
-                                RuntimeClassLoader.LoadClassCritical("java.lang.IncompatibleClassChangeError").GetMethodWrapper("<init>", "()V", false).EmitNewobj(ilGenerator);
+                                RuntimeClassLoaderFactory.LoadClassCritical("java.lang.IncompatibleClassChangeError").GetMethodWrapper("<init>", "()V", false).EmitNewobj(ilGenerator);
                             }
                             string message = harderrors[instr.HardErrorMessageId];
                             Tracer.Error(Tracer.Compiler, "{0}: {1}\n\tat {2}.{3}{4}", exceptionType.Name, message, classFile.Name, m.Name, m.Signature);
@@ -2727,12 +2727,12 @@ namespace IKVM.Runtime
             {
 #if IMPORTER
                 typeofOpenIndyCallSite = StaticCompiler.GetRuntimeType("IKVM.Runtime.IndyCallSite`1");
-                typeofCallSite = RuntimeClassLoader.LoadClassCritical("java.lang.invoke.CallSite").TypeAsSignatureType;
+                typeofCallSite = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.invoke.CallSite").TypeAsSignatureType;
 #elif !FIRST_PASS
 				typeofOpenIndyCallSite = typeof(IKVM.Runtime.IndyCallSite<>);
 				typeofCallSite = typeof(java.lang.invoke.CallSite);
 #endif
-                methodLookup = RuntimeClassLoader.LoadClassCritical("java.lang.invoke.MethodHandles").GetMethodWrapper("lookup", "()Ljava.lang.invoke.MethodHandles$Lookup;", false);
+                methodLookup = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandles").GetMethodWrapper("lookup", "()Ljava.lang.invoke.MethodHandles$Lookup;", false);
                 methodLookup.Link();
             }
 
@@ -3011,22 +3011,22 @@ namespace IKVM.Runtime
                 if (tw == RuntimePrimitiveJavaType.INT)
                 {
                     unbox = "intValue";
-                    return RuntimeClassLoader.LoadClassCritical("java.lang.Integer");
+                    return RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Integer");
                 }
                 else if (tw == RuntimePrimitiveJavaType.LONG)
                 {
                     unbox = "longValue";
-                    return RuntimeClassLoader.LoadClassCritical("java.lang.Long");
+                    return RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Long");
                 }
                 else if (tw == RuntimePrimitiveJavaType.FLOAT)
                 {
                     unbox = "floatValue";
-                    return RuntimeClassLoader.LoadClassCritical("java.lang.Float");
+                    return RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Float");
                 }
                 else if (tw == RuntimePrimitiveJavaType.DOUBLE)
                 {
                     unbox = "doubleValue";
-                    return RuntimeClassLoader.LoadClassCritical("java.lang.Double");
+                    return RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Double");
                 }
                 else
                 {

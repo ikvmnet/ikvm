@@ -13,7 +13,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
         public static void addBootClassPathAssembly(Assembly asm)
         {
-            RuntimeClassLoader.GetBootstrapClassLoader().AddDelegate(IKVM.Runtime.RuntimeAssemblyClassLoader.FromAssembly(asm));
+            RuntimeClassLoaderFactory.GetBootstrapClassLoader().AddDelegate(RuntimeAssemblyClassLoaderFactory.FromAssembly(asm));
         }
 
     }

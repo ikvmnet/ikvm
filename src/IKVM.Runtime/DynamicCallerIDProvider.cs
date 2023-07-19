@@ -53,7 +53,7 @@ namespace IKVM.Runtime
                 {
                     continue;
                 }
-                RuntimeJavaType caller = RuntimeClassLoader.GetWrapperFromType(method.DeclaringType);
+                RuntimeJavaType caller = RuntimeClassLoaderFactory.GetWrapperFromType(method.DeclaringType);
                 return CreateCallerID(caller.Host ?? caller);
             }
         }

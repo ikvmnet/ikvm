@@ -167,7 +167,7 @@ namespace IKVM.StubGen
                             {
                                 foreach (Type ex in throws.types)
                                 {
-                                    attrib.Add(RuntimeClassLoader.GetWrapperFromType(ex).Name.Replace('.', '/'));
+                                    attrib.Add(RuntimeClassLoaderFactory.GetWrapperFromType(ex).Name.Replace('.', '/'));
                                 }
                             }
                             m.AddAttribute(attrib);
@@ -523,12 +523,12 @@ namespace IKVM.StubGen
 			if (arg.ArgumentType.IsEnum)
 			{
 				// if GetWrapperFromType returns null, we've got an ikvmc synthesized .NET enum nested inside a Java enum
-				RuntimeJavaType tw = RuntimeClassLoader.GetWrapperFromType(arg.ArgumentType) ?? RuntimeClassLoader.GetWrapperFromType(arg.ArgumentType.DeclaringType);
+				RuntimeJavaType tw = RuntimeClassLoaderFactory.GetWrapperFromType(arg.ArgumentType) ?? RuntimeClassLoaderFactory.GetWrapperFromType(arg.ArgumentType.DeclaringType);
 				return new object[] { AnnotationDefaultAttribute.TAG_ENUM, EncodeTypeName(tw), Enum.GetName(arg.ArgumentType, arg.Value) };
 			}
 			else if (arg.Value is Type)
 			{
-				return new object[] { AnnotationDefaultAttribute.TAG_CLASS, EncodeTypeName(RuntimeClassLoader.GetWrapperFromType((Type)arg.Value)) };
+				return new object[] { AnnotationDefaultAttribute.TAG_CLASS, EncodeTypeName(RuntimeClassLoaderFactory.GetWrapperFromType((Type)arg.Value)) };
 			}
 			else if (arg.ArgumentType.IsArray)
 			{

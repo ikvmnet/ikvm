@@ -317,10 +317,10 @@ namespace IKVM.Runtime
                     return FromClass(clazz);
                 }
 
-                if (type == typeof(void) || type.IsPrimitive || RuntimeClassLoader.IsRemappedType(type))
+                if (type == typeof(void) || type.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(type))
                     tw = RuntimeManagedJavaType.GetWrapperFromDotNetType(type);
                 else
-                    tw = RuntimeClassLoader.GetWrapperFromType(type);
+                    tw = RuntimeClassLoaderFactory.GetWrapperFromType(type);
 
                 clazz.typeWrapper = tw;
             }
@@ -1580,11 +1580,11 @@ namespace IKVM.Runtime
                 if (decl != null && AttributeHelper.IsGhostInterface(decl))
                 {
                     // we have to return the declaring type for ghost interfaces
-                    interfaces[i] = RuntimeClassLoader.GetWrapperFromType(decl);
+                    interfaces[i] = RuntimeClassLoaderFactory.GetWrapperFromType(decl);
                 }
                 else
                 {
-                    interfaces[i] = RuntimeClassLoader.GetWrapperFromType(interfaceTypes[i]);
+                    interfaces[i] = RuntimeClassLoaderFactory.GetWrapperFromType(interfaceTypes[i]);
                 }
             }
 

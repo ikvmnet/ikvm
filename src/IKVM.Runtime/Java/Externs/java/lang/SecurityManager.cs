@@ -25,7 +25,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
 
 using IKVM.Runtime;
 
@@ -54,7 +53,7 @@ namespace IKVM.Java.Externs.java.lang
                 if (type == typeof(global::java.lang.SecurityManager))
                     continue;
 
-                stack.Add(RuntimeClassLoader.GetWrapperFromType(type).ClassObject);
+                stack.Add(RuntimeClassLoaderFactory.GetWrapperFromType(type).ClassObject);
             }
 
             return stack.ToArray();

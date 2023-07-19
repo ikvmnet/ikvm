@@ -352,7 +352,7 @@ namespace IKVM.Runtime
             else if (RuntimeByteCodeJavaType.RequiresDynamicReflectionCallerClass(eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature))
             {
                 // since the non-intrinsic version of Reflection.getCallerClass() always throws an exception, we have to redirect to the dynamic version
-                var getCallerClass = RuntimeClassLoader.LoadClassCritical("sun.reflect.Reflection").GetMethodWrapper("getCallerClass", "(I)Ljava.lang.Class;", false);
+                var getCallerClass = RuntimeClassLoaderFactory.LoadClassCritical("sun.reflect.Reflection").GetMethodWrapper("getCallerClass", "(I)Ljava.lang.Class;", false);
                 getCallerClass.Link();
                 eic.Emitter.EmitLdc_I4(2);
                 getCallerClass.EmitCall(eic.Emitter);

@@ -70,7 +70,7 @@ namespace IKVM.Runtime
             FloatArrayType = RuntimePrimitiveJavaType.FLOAT.MakeArrayType(1);
             DoubleArrayType = RuntimePrimitiveJavaType.DOUBLE.MakeArrayType(1);
             LongArrayType = RuntimePrimitiveJavaType.LONG.MakeArrayType(1);
-            java_lang_ThreadDeath = RuntimeClassLoader.LoadClassCritical("java.lang.ThreadDeath");
+            java_lang_ThreadDeath = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.ThreadDeath");
         }
 
         internal MethodAnalyzer(RuntimeJavaType host, RuntimeJavaType wrapper, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method, RuntimeClassLoader classLoader)

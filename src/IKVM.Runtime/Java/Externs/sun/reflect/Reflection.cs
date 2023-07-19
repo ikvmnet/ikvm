@@ -114,7 +114,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     continue;
 
                 if (--realFramesToSkip == 0)
-                    return RuntimeClassLoader.GetWrapperFromType(method.DeclaringType).ClassObject;
+                    return RuntimeClassLoaderFactory.GetWrapperFromType(method.DeclaringType).ClassObject;
             }
 #endif
         }

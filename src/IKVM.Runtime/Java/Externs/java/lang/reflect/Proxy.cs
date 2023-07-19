@@ -38,7 +38,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
 
 		public static global::java.lang.Class getPrecompiledProxy(global::java.lang.ClassLoader classLoader, string proxyName, global::java.lang.Class[] interfaces)
 		{
-			RuntimeAssemblyClassLoader acl = RuntimeClassLoader.GetClassLoaderWrapper(classLoader) as RuntimeAssemblyClassLoader;
+			RuntimeAssemblyClassLoader acl = RuntimeClassLoaderFactory.GetClassLoaderWrapper(classLoader) as RuntimeAssemblyClassLoader;
 			if (acl == null)
 			{
 				return null;

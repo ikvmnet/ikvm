@@ -57,12 +57,12 @@ namespace IKVM.Runtime
 
         private static string GetName(Type type)
         {
-            return RuntimeClassLoader.GetWrapperFromType(type.DeclaringType).Name + type.Name.Replace(NestedTypeName.IntrinsifiedAnonymousClass, "$$Lambda$");
+            return RuntimeClassLoaderFactory.GetWrapperFromType(type.DeclaringType).Name + type.Name.Replace(NestedTypeName.IntrinsifiedAnonymousClass, "$$Lambda$");
         }
 
         internal override RuntimeClassLoader GetClassLoader()
         {
-            return RuntimeClassLoader.GetWrapperFromType(type.DeclaringType).GetClassLoader();
+            return RuntimeClassLoaderFactory.GetWrapperFromType(type.DeclaringType).GetClassLoader();
         }
 
         internal override Type TypeAsTBD

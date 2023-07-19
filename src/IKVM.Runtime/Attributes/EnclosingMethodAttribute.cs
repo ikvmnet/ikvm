@@ -50,7 +50,7 @@ namespace IKVM.Attributes
 		internal EnclosingMethodAttribute SetClassName(Type type)
 		{
 			if (className == null)
-				className = IKVM.Runtime.RuntimeClassLoader.GetWrapperFromType(type.DeclaringType).Name;
+				className = IKVM.Runtime.RuntimeClassLoaderFactory.GetWrapperFromType(type.DeclaringType).Name;
 
 			return this;
 		}

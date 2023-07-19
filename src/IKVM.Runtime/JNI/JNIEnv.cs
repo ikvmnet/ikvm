@@ -459,7 +459,7 @@ namespace IKVM.Runtime.JNI
             else if (env.classLoader != null)
                 return env.classLoader;
             else
-                return RuntimeClassLoader.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
+                return RuntimeClassLoaderFactory.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
         }
 
         internal static jclass FindClass(JNIEnv* pEnv, byte* name)

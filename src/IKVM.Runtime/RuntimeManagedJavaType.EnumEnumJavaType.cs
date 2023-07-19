@@ -57,7 +57,7 @@ namespace IKVM.Runtime
             /// <param name="name"></param>
             /// <param name="enumType"></param>
             internal EnumEnumJavaType(string name, Type enumType) :
-                base(Modifiers.Public | Modifiers.Enum | Modifiers.Final, name, RuntimeClassLoader.LoadClassCritical("java.lang.Enum"))
+                base(Modifiers.Public | Modifiers.Enum | Modifiers.Final, name, RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Enum"))
             {
 #if IMPORTER || EXPORTER
                 this.fakeType = FakeTypes.GetEnumType(enumType);
@@ -185,7 +185,7 @@ namespace IKVM.Runtime
                 base.LazyPublishMembers();
             }
 
-            internal override RuntimeJavaType DeclaringTypeWrapper => RuntimeClassLoader.GetWrapperFromType(fakeType.GetGenericArguments()[0]);
+            internal override RuntimeJavaType DeclaringTypeWrapper => RuntimeClassLoaderFactory.GetWrapperFromType(fakeType.GetGenericArguments()[0]);
 
             internal override RuntimeClassLoader GetClassLoader()
             {

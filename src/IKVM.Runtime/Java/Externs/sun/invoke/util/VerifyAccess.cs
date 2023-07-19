@@ -34,7 +34,7 @@ namespace IKVM.Java.Externs.sun.invoke.util
         public static global::java.lang.ClassLoader Class_getClassLoader(global::java.lang.Class clazz)
         {
             RuntimeJavaType tw = RuntimeJavaType.FromClass(clazz);
-            if (RuntimeClassLoader.GetBootstrapClassLoader().LoadClassByDottedNameFast(tw.Name) == tw)
+            if (RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedNameFast(tw.Name) == tw)
             {
                 // if a class is visible from the bootstrap class loader, we have to return null to allow the visibility check to succeed
                 return null;

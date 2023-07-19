@@ -56,7 +56,7 @@ namespace IKVM.Tools.Importer
 
         static ProxyGenerator()
         {
-            var bootClassLoader = RuntimeClassLoader.GetBootstrapClassLoader();
+            var bootClassLoader = RuntimeClassLoaderFactory.GetBootstrapClassLoader();
             proxyClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.Proxy");
             errorClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.Error");
             runtimeExceptionClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.RuntimeException");

@@ -33,7 +33,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 
 using IKVM.Attributes;
-using IKVM.Runtime;
 
 using java.lang.invoke;
 
@@ -320,7 +319,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
             internal override RuntimeClassLoader GetClassLoader()
             {
-                return RuntimeClassLoader.GetBootstrapClassLoader();
+                return RuntimeClassLoaderFactory.GetBootstrapClassLoader();
             }
 
             internal override Type TypeAsTBD

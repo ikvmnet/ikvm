@@ -99,7 +99,7 @@ namespace IKVM.Runtime
 			return null;
 #else
             var v = new java.util.Vector();
-            foreach (var url in GetBootstrapClassLoader().GetResources(name))
+            foreach (var url in RuntimeClassLoaderFactory.GetBootstrapClassLoader().GetResources(name))
                 v.add(url);
 
             if (name.EndsWith(".class", StringComparison.Ordinal) && name.IndexOf('.') == name.Length - 6)
@@ -109,7 +109,7 @@ namespace IKVM.Runtime
                 {
                     var loader = tw.GetClassLoader();
                     if (loader is RuntimeGenericClassLoader)
-                        v.add(new java.net.URL("ikvmres", "gen", RuntimeClassLoader.GetGenericClassLoaderId(loader), "/" + name));
+                        v.add(new java.net.URL("ikvmres", "gen", RuntimeClassLoaderFactory.GetGenericClassLoaderId(loader), "/" + name));
                     else if (loader is RuntimeAssemblyClassLoader)
                         foreach (java.net.URL url in ((RuntimeAssemblyClassLoader)loader).FindResources(name))
                             v.add(url);
@@ -127,7 +127,7 @@ namespace IKVM.Runtime
             {
                 var tw = FindLoadedClass(name.Substring(0, name.Length - 6).Replace('/', '.'));
                 if (tw != null && tw.GetClassLoader() == this && !tw.IsArray && !tw.IsDynamic)
-                    return new java.net.URL("ikvmres", "gen", RuntimeClassLoader.GetGenericClassLoaderId(this), "/" + name);
+                    return new java.net.URL("ikvmres", "gen", RuntimeClassLoaderFactory.GetGenericClassLoaderId(this), "/" + name);
             }
 #endif
             return null;

@@ -434,7 +434,7 @@ namespace IKVM.Runtime
                 System.Reflection.Emit.DynamicMethod dm = new System.Reflection.Emit.DynamicMethod("Invoke", invoke.ReturnType, parameterTypes);
                 CodeEmitter ilgen = CodeEmitter.Create(dm);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, tw.Name + ".Invoke" + sig);
-                RuntimeClassLoader.GetBootstrapClassLoader()
+                RuntimeClassLoaderFactory.GetBootstrapClassLoader()
                     .LoadClassByDottedName(mw == null || mw.IsStatic ? "global::java.lang.AbstractMethodError" : "global::java.lang.IllegalAccessError")
                     .GetMethodWrapper("<init>", "(Lglobal::java.lang.String;)V", false)
                     .EmitNewobj(ilgen);
@@ -627,7 +627,7 @@ namespace IKVM.Runtime
 
         private static bool IsPrimitiveArrayType(Type type)
         {
-            return type.IsArray && RuntimeClassLoader.GetWrapperFromType(type.GetElementType()).IsPrimitive;
+            return type.IsArray && RuntimeClassLoaderFactory.GetWrapperFromType(type.GetElementType()).IsPrimitive;
         }
 
         [DebuggerStepThroughAttribute]
@@ -1045,7 +1045,7 @@ namespace IKVM.Runtime
                 throw new ArgumentOutOfRangeException();
 
             // check for InitializeModule method present on classloader
-            var classLoader = RuntimeAssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
+            var classLoader = RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
             if (classLoader != null)
             {
                 var init = (Action<Module>)Delegate.CreateDelegate(typeof(Action<Module>), classLoader, "InitializeModule", false, false);

@@ -76,7 +76,7 @@ namespace IKVM.Runtime
 
             internal override RuntimeClassLoader GetClassLoader()
             {
-                return RuntimeAssemblyClassLoader.FromAssembly(type.Assembly);
+                return RuntimeAssemblyClassLoaderFactory.FromAssembly(type.Assembly);
             }
 
             protected override void LazyPublishMembers()

@@ -2420,7 +2420,7 @@ namespace IKVM.Tools.Importer
             }
 
             // we manually add the array ghost interfaces
-            var array = RuntimeClassLoader.GetWrapperFromType(Types.Array);
+            var array = RuntimeClassLoaderFactory.GetWrapperFromType(Types.Array);
             AddGhost("java.io.Serializable", array);
             AddGhost("java.lang.Cloneable", array);
         }
@@ -2763,7 +2763,7 @@ namespace IKVM.Tools.Importer
             RuntimeAssemblyClassLoader[] referencedAssemblies = new RuntimeAssemblyClassLoader[references.Count];
             for (int i = 0; i < references.Count; i++)
             {
-                RuntimeAssemblyClassLoader acl = RuntimeAssemblyClassLoader.FromAssembly(references[i]);
+                RuntimeAssemblyClassLoader acl = RuntimeAssemblyClassLoaderFactory.FromAssembly(references[i]);
                 if (Array.IndexOf(referencedAssemblies, acl) != -1)
                 {
                     StaticCompiler.IssueMessage(options, Message.DuplicateAssemblyReference, acl.MainAssembly.FullName);
@@ -2812,7 +2812,7 @@ namespace IKVM.Tools.Importer
                 if (loader.CheckCompilingCoreAssembly())
                 {
                     compilingCoreAssembly = true;
-                    RuntimeClassLoader.SetBootstrapClassLoader(loader);
+                    RuntimeClassLoaderFactory.SetBootstrapClassLoader(loader);
                 }
             }
 
@@ -2846,13 +2846,13 @@ namespace IKVM.Tools.Importer
                 }
 
                 // we need to scan again for remapped types, now that we've loaded the core library
-                RuntimeClassLoader.LoadRemappedTypes();
+                RuntimeClassLoaderFactory.LoadRemappedTypes();
             }
 
             if (!compilingCoreAssembly)
             {
                 allReferencesAreStrongNamed &= IsSigned(JVM.BaseAssembly);
-                loader.AddReference(RuntimeAssemblyClassLoader.FromAssembly(JVM.BaseAssembly));
+                loader.AddReference(RuntimeAssemblyClassLoaderFactory.FromAssembly(JVM.BaseAssembly));
             }
 
             if ((options.keyPair != null || options.publicKey != null) && !allReferencesAreStrongNamed)
@@ -3054,7 +3054,7 @@ namespace IKVM.Tools.Importer
                 if (classLoaderType.IsAbstract)
                     throw new FatalCompilerErrorException(Message.ClassLoaderIsAbstract);
 
-                if (classLoaderType.IsAssignableTo(RuntimeClassLoader.LoadClassCritical("java.lang.ClassLoader")) == false)
+                if (classLoaderType.IsAssignableTo(RuntimeClassLoaderFactory.LoadClassCritical("java.lang.ClassLoader")) == false)
                     throw new FatalCompilerErrorException(Message.ClassLoaderNotClassLoader);
 
                 var classLoaderInitMethod = classLoaderType.GetMethodWrapper("<init>", "(Lcli.System.Reflection.Assembly;)V", false);

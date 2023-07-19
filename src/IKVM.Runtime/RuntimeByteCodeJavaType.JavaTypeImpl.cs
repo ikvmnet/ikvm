@@ -178,7 +178,7 @@ namespace IKVM.Runtime
                     {
                         RuntimeJavaType fieldType = null;
 #if !IMPORTER
-                        fieldType = RuntimeClassLoader.GetBootstrapClassLoader().FieldTypeWrapperFromSig(fld.Signature, LoadMode.LoadOrThrow);
+                        fieldType = RuntimeClassLoaderFactory.GetBootstrapClassLoader().FieldTypeWrapperFromSig(fld.Signature, LoadMode.LoadOrThrow);
 #endif
                         fields[i] = new RuntimeConstantJavaField(wrapper, fieldType, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue, MemberFlags.None);
                     }
@@ -1359,7 +1359,7 @@ namespace IKVM.Runtime
 
                             if ((tw.Modifiers & Modifiers.Enum) != 0)
                             {
-                                var enumType = RuntimeClassLoader.GetBootstrapClassLoader().LoadClassByDottedNameFast("java.lang.Enum");
+                                var enumType = RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedNameFast("java.lang.Enum");
                                 if (enumType != null && tw.IsSubTypeOf(enumType))
                                     return true;
                             }
@@ -1417,7 +1417,7 @@ namespace IKVM.Runtime
                     // we only set annotationTypeBuilder if we're valid
                     annotationTypeBuilder = o.typeBuilder;
 
-                    var annotationAttributeBaseType = RuntimeClassLoader.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
+                    var annotationAttributeBaseType = RuntimeClassLoaderFactory.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
 
                     // make sure we don't clash with another class name
                     var ccl = o.wrapper.classLoader;
@@ -1636,7 +1636,7 @@ namespace IKVM.Runtime
                         // not a valid annotation type
                         return;
                     }
-                    RuntimeJavaType annotationAttributeBaseType = RuntimeClassLoader.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
+                    RuntimeJavaType annotationAttributeBaseType = RuntimeClassLoaderFactory.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
                     annotationAttributeBaseType.Finish();
 
                     int requiredArgCount = 0;

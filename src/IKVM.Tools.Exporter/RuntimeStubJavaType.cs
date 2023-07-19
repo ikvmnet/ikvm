@@ -60,7 +60,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeClassLoader GetClassLoader()
         {
-            return RuntimeClassLoader.GetBootstrapClassLoader();
+            return RuntimeClassLoaderFactory.GetBootstrapClassLoader();
         }
 
         internal override Type TypeAsTBD

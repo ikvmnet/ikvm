@@ -56,7 +56,7 @@ namespace IKVM.Runtime
 
         static Boxer()
         {
-            RuntimeClassLoader bootClassLoader = RuntimeClassLoader.GetBootstrapClassLoader();
+            RuntimeClassLoader bootClassLoader = RuntimeClassLoaderFactory.GetBootstrapClassLoader();
             javaLangByte = bootClassLoader.LoadClassByDottedNameFast("java.lang.Byte");
             byteValue = javaLangByte.GetMethodWrapper("byteValue", "()B", false);
             byteValue.Link();

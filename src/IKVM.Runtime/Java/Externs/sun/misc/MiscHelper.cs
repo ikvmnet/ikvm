@@ -36,7 +36,7 @@ namespace IKVM.Java.Externs.sun.misc
 		{
 			if (extcl == null || asm.IsDefined(typeof(IKVM.Attributes.CustomAssemblyClassLoaderAttribute), false))
 			{
-				return RuntimeAssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
+				return RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
 			}
 			return null;
 		}

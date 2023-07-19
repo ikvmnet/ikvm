@@ -44,9 +44,9 @@ namespace IKVM.Runtime
 
         static readonly CustomAttributeBuilder serializableAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SerializableAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
         static readonly CustomAttributeBuilder securityCriticalAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SecurityCriticalAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
-        static readonly RuntimeJavaType iserializable = RuntimeClassLoader.GetWrapperFromType(JVM.Import(typeof(ISerializable)));
-        static readonly RuntimeJavaType iobjectreference = RuntimeClassLoader.GetWrapperFromType(JVM.Import(typeof(IObjectReference)));
-        static readonly RuntimeJavaType externalizable = RuntimeClassLoader.LoadClassCritical("java.io.Externalizable");
+        static readonly RuntimeJavaType iserializable = RuntimeClassLoaderFactory.GetWrapperFromType(JVM.Import(typeof(ISerializable)));
+        static readonly RuntimeJavaType iobjectreference = RuntimeClassLoaderFactory.GetWrapperFromType(JVM.Import(typeof(IObjectReference)));
+        static readonly RuntimeJavaType externalizable = RuntimeClassLoaderFactory.LoadClassCritical("java.io.Externalizable");
 
         internal static bool IsISerializable(RuntimeJavaType wrapper)
         {
@@ -159,7 +159,7 @@ namespace IKVM.Runtime
             CodeEmitter ilgen = CodeEmitter.Create(getObjectData);
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ldarg_1);
-            RuntimeJavaType serializationHelper = RuntimeClassLoader.LoadClassCritical("ikvm.internal.Serialization");
+            RuntimeJavaType serializationHelper = RuntimeClassLoaderFactory.LoadClassCritical("ikvm.internal.Serialization");
             RuntimeJavaMethod mw = serializationHelper.GetMethodWrapper("writeObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
             mw.Link();
             mw.EmitCall(ilgen);
@@ -187,7 +187,7 @@ namespace IKVM.Runtime
             {
                 ilgen.Emit(OpCodes.Ldarg_0);
                 ilgen.Emit(OpCodes.Ldarg_1);
-                RuntimeJavaType serializationHelper = RuntimeClassLoader.LoadClassCritical("ikvm.internal.Serialization");
+                RuntimeJavaType serializationHelper = RuntimeClassLoaderFactory.LoadClassCritical("ikvm.internal.Serialization");
                 RuntimeJavaMethod mw = serializationHelper.GetMethodWrapper("readObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
                 mw.Link();
                 mw.EmitCall(ilgen);

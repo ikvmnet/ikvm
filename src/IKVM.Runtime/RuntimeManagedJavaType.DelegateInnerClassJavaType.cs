@@ -71,18 +71,18 @@ namespace IKVM.Runtime
                         flags |= MemberFlags.DelegateInvokeWithByRefParameter;
                         parameterType = RuntimeArrayJavaType.MakeArrayType(parameterType.GetElementType(), 1);
                     }
-                    argTypeWrappers[i] = RuntimeClassLoader.GetWrapperFromType(parameterType);
+                    argTypeWrappers[i] = RuntimeClassLoaderFactory.GetWrapperFromType(parameterType);
                     sb.Append(argTypeWrappers[i].SigName);
                 }
 
-                var returnType = RuntimeClassLoader.GetWrapperFromType(invoke.ReturnType);
+                var returnType = RuntimeClassLoaderFactory.GetWrapperFromType(invoke.ReturnType);
                 sb.Append(")").Append(returnType.SigName);
                 var invokeMethod = new DynamicOnlyJavaMethod(this, "Invoke", sb.ToString(), returnType, argTypeWrappers, flags);
                 SetMethods(new RuntimeJavaMethod[] { invokeMethod });
                 SetFields(Array.Empty<RuntimeJavaField>());
             }
 
-            internal override RuntimeJavaType DeclaringTypeWrapper => RuntimeClassLoader.GetWrapperFromType(fakeType.GetGenericArguments()[0]);
+            internal override RuntimeJavaType DeclaringTypeWrapper => RuntimeClassLoaderFactory.GetWrapperFromType(fakeType.GetGenericArguments()[0]);
 
             internal override RuntimeClassLoader GetClassLoader()
             {

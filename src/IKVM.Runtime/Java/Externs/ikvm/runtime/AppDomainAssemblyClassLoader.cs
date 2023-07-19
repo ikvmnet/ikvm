@@ -39,7 +39,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
         /// <returns></returns>
         static object LoadClassFromAssembly(Assembly assembly, string className)
         {
-            return assembly.IsDynamic == false ? (IKVM.Runtime.RuntimeAssemblyClassLoader.FromAssembly(assembly).DoLoad(className)?.ClassObject) : null;
+            return assembly.IsDynamic == false ? (IKVM.Runtime.RuntimeAssemblyClassLoaderFactory.FromAssembly(assembly).DoLoad(className)?.ClassObject) : null;
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
                 if (asm.IsDynamic)
                     continue;
 
-                var acl = IKVM.Runtime.RuntimeAssemblyClassLoader.FromAssembly(asm);
+                var acl = IKVM.Runtime.RuntimeAssemblyClassLoaderFactory.FromAssembly(asm);
                 if (done.Add(acl))
                     foreach (var url in acl.FindResources(name))
                         yield return url;

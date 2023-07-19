@@ -77,7 +77,7 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
 
         public static object LoadClassFromAssembly(Assembly asm, string className)
         {
-            RuntimeJavaType tw = RuntimeAssemblyClassLoader.FromAssembly(asm).LoadClassByDottedNameFast(className);
+            RuntimeJavaType tw = RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).LoadClassByDottedNameFast(className);
             if (tw != null)
             {
                 return tw.ClassObject;
@@ -96,7 +96,7 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
 
         public static global::java.lang.ClassLoader GetGenericClassLoaderById(int id)
         {
-            return RuntimeClassLoader.GetGenericClassLoaderById(id).GetJavaClassLoader();
+            return RuntimeClassLoaderFactory.GetGenericClassLoaderById(id).GetJavaClassLoader();
         }
 
     }
