@@ -82,7 +82,7 @@ namespace IKVM.Tools.Importer.MapXml
                     if (Type != null)
                         typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
                     else
-                        typeWrapper = context.ClassLoader.LoadClassByDottedName(Class);
+                        typeWrapper = context.ClassLoader.LoadClassByName(Class);
                 }
 
                 lb = ilgen.DeclareLocal(typeType != null ? typeType : typeWrapper.TypeAsTBD);

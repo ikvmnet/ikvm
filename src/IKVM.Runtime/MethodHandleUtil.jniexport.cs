@@ -90,20 +90,20 @@ namespace IKVM.Runtime
                 System.Collections.Generic.List<java.lang.Class> list = new System.Collections.Generic.List<java.lang.Class>();
                 for (int i = 0; i < pi.Length - 1; i++)
                 {
-                    list.Add(RuntimeClassLoaderFactory.GetWrapperFromType(pi[i].ParameterType).ClassObject);
+                    list.Add(RuntimeClassLoaderFactory.GetJavaTypeFromType(pi[i].ParameterType).ClassObject);
                 }
                 Type[] args = pi[pi.Length - 1].ParameterType.GetGenericArguments();
                 while (IsPackedArgsContainer(args[args.Length - 1]))
                 {
                     for (int i = 0; i < args.Length - 1; i++)
                     {
-                        list.Add(RuntimeClassLoaderFactory.GetWrapperFromType(args[i]).ClassObject);
+                        list.Add(RuntimeClassLoaderFactory.GetJavaTypeFromType(args[i]).ClassObject);
                     }
                     args = args[args.Length - 1].GetGenericArguments();
                 }
                 for (int i = 0; i < args.Length; i++)
                 {
-                    list.Add(RuntimeClassLoaderFactory.GetWrapperFromType(args[i]).ClassObject);
+                    list.Add(RuntimeClassLoaderFactory.GetJavaTypeFromType(args[i]).ClassObject);
                 }
                 types = list.ToArray();
             }
@@ -112,10 +112,10 @@ namespace IKVM.Runtime
                 types = new java.lang.Class[pi.Length];
                 for (int i = 0; i < types.Length; i++)
                 {
-                    types[i] = RuntimeClassLoaderFactory.GetWrapperFromType(pi[i].ParameterType).ClassObject;
+                    types[i] = RuntimeClassLoaderFactory.GetJavaTypeFromType(pi[i].ParameterType).ClassObject;
                 }
             }
-            return java.lang.invoke.MethodType.methodType(RuntimeClassLoaderFactory.GetWrapperFromType(mi.ReturnType).ClassObject, types);
+            return java.lang.invoke.MethodType.methodType(RuntimeClassLoaderFactory.GetJavaTypeFromType(mi.ReturnType).ClassObject, types);
         }
 
         internal sealed class DynamicMethodBuilder

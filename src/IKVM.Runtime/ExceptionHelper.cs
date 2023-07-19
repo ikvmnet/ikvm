@@ -338,7 +338,7 @@ namespace IKVM.Runtime
             {
                 return RuntimeManagedJavaType.GetName(type);
             }
-            RuntimeJavaType tw = RuntimeClassLoaderFactory.GetWrapperFromType(type);
+            RuntimeJavaType tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
             if (tw != null)
             {
                 if (tw.IsPrimitive)
@@ -368,7 +368,7 @@ namespace IKVM.Runtime
                     {
                         return -1;
                     }
-                    RuntimeJavaType tw = RuntimeClassLoaderFactory.GetWrapperFromType(mb.DeclaringType);
+                    RuntimeJavaType tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
                     if (tw != null)
                     {
                         return tw.GetSourceLineNumber(mb, ilOffset);
@@ -387,7 +387,7 @@ namespace IKVM.Runtime
                 {
                     return null;
                 }
-                RuntimeJavaType tw = RuntimeClassLoaderFactory.GetWrapperFromType(mb.DeclaringType);
+                RuntimeJavaType tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
                 if (tw != null)
                 {
                     return tw.GetSourceFileName();

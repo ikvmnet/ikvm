@@ -77,7 +77,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeJavaType EnsureLoadable(RuntimeClassLoader loader)
         {
-            var tw = loader.LoadClassByDottedNameFast(this.Name);
+            var tw = loader.TryLoadClassByName(this.Name);
             if (tw == null)
                 throw new NoClassDefFoundError(this.Name);
 

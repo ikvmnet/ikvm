@@ -42,6 +42,8 @@ using System.Reflection;
 using ProtectionDomain = java.security.ProtectionDomain;
 
 using IKVM.Runtime.Accessors.Java.Lang;
+
+using System.Text;
 #endif
 
 #if IMPORTER
@@ -50,376 +52,6 @@ using IKVM.Tools.Importer;
 
 namespace IKVM.Runtime
 {
-
-    /// <summary>
-    /// Manages instances of <see cref="RuntimeClassLoader"/>.
-    /// </summary>
-    static class RuntimeClassLoaderFactory
-    {
-
-        static readonly object wrapperLock = new object();
-        internal static readonly Dictionary<Type, RuntimeJavaType> globalTypeToTypeWrapper = new Dictionary<Type, RuntimeJavaType>();
-        internal static readonly Dictionary<Type, string> remappedTypes = new Dictionary<Type, string>();
-        static List<RuntimeGenericClassLoader> genericClassLoaders;
-
-#if IMPORTER || EXPORTER
-        internal static RuntimeClassLoader bootstrapClassLoader;
-#else
-        internal static RuntimeAssemblyClassLoader bootstrapClassLoader;
-#endif
-
-        /// <summary>
-        /// Initializes the static instance.
-        /// </summary>
-        static RuntimeClassLoaderFactory()
-        {
-            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.BOOLEAN.TypeAsTBD] = RuntimePrimitiveJavaType.BOOLEAN;
-            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.BYTE.TypeAsTBD] = RuntimePrimitiveJavaType.BYTE;
-            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.CHAR.TypeAsTBD] = RuntimePrimitiveJavaType.CHAR;
-            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.DOUBLE.TypeAsTBD] = RuntimePrimitiveJavaType.DOUBLE;
-            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.FLOAT.TypeAsTBD] = RuntimePrimitiveJavaType.FLOAT;
-            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.INT.TypeAsTBD] = RuntimePrimitiveJavaType.INT;
-            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.LONG.TypeAsTBD] = RuntimePrimitiveJavaType.LONG;
-            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.SHORT.TypeAsTBD] = RuntimePrimitiveJavaType.SHORT;
-            globalTypeToTypeWrapper[RuntimePrimitiveJavaType.VOID.TypeAsTBD] = RuntimePrimitiveJavaType.VOID;
-            LoadRemappedTypes();
-        }
-
-#if IMPORTER || EXPORTER
-
-        // HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
-        // when we're compiling the core class libraries and by ikvmstub with the -bootstrap option
-        internal static void SetBootstrapClassLoader(RuntimeClassLoader bootstrapClassLoader)
-        {
-            Debug.Assert(RuntimeClassLoaderFactory.bootstrapClassLoader == null);
-
-            RuntimeClassLoaderFactory.bootstrapClassLoader = bootstrapClassLoader;
-        }
-
-#endif
-
-        internal static void LoadRemappedTypes()
-        {
-            // if we're compiling the core, coreAssembly will be null
-            var coreAssembly = JVM.BaseAssembly;
-            if (coreAssembly != null && remappedTypes.Count == 0)
-            {
-                var remapped = AttributeHelper.GetRemappedClasses(coreAssembly);
-                if (remapped.Length > 0)
-                {
-                    foreach (var r in remapped)
-                        remappedTypes.Add(r.RemappedType, r.Name);
-                }
-                else
-                {
-#if IMPORTER
-                    throw new FatalCompilerErrorException(Message.CoreClassesMissing);
-#else
-                    throw new InternalException("Failed to find core classes in core library.");
-#endif
-                }
-            }
-        }
-
-        internal static bool IsRemappedType(Type type)
-        {
-            return remappedTypes.ContainsKey(type);
-        }
-
-
-#if IMPORTER || EXPORTER
-        internal static RuntimeClassLoader GetBootstrapClassLoader()
-#else
-        internal static RuntimeAssemblyClassLoader GetBootstrapClassLoader()
-#endif
-        {
-            lock (wrapperLock)
-            {
-                if (bootstrapClassLoader == null)
-                    bootstrapClassLoader = new BootstrapClassLoader();
-
-                return bootstrapClassLoader;
-            }
-        }
-
-#if !IMPORTER && !EXPORTER
-
-        internal static RuntimeClassLoader GetClassLoaderWrapper(java.lang.ClassLoader javaClassLoader)
-        {
-            if (javaClassLoader == null)
-                return GetBootstrapClassLoader();
-
-            lock (wrapperLock)
-            {
-#if FIRST_PASS
-                RuntimeClassLoader wrapper = null;
-#else
-                RuntimeClassLoader wrapper = javaClassLoader.wrapper;
-#endif
-
-                if (wrapper == null)
-                {
-                    var opt = CodeGenOptions.None;
-                    if (JVM.EmitSymbols)
-                        opt |= CodeGenOptions.Debug;
-#if NETFRAMEWORK
-                    if (!AppDomain.CurrentDomain.IsFullyTrusted)
-                        opt |= CodeGenOptions.NoAutomagicSerialization;
-#endif
-                    wrapper = new RuntimeClassLoader(opt, javaClassLoader);
-                    SetWrapperForClassLoader(javaClassLoader, wrapper);
-                }
-                return wrapper;
-            }
-        }
-#endif
-
-        internal static RuntimeJavaType GetWrapperFromType(Type type)
-        {
-#if IMPORTER
-            if (type.__ContainsMissingType)
-            {
-                return new RuntimeUnloadableJavaType(type);
-            }
-#endif
-            //Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
-#if !IMPORTER
-            RuntimeJavaType.AssertFinished(type);
-#endif
-            Debug.Assert(!type.IsPointer);
-            Debug.Assert(!type.IsByRef);
-            RuntimeJavaType wrapper;
-            lock (globalTypeToTypeWrapper)
-            {
-                globalTypeToTypeWrapper.TryGetValue(type, out wrapper);
-            }
-
-            if (wrapper != null)
-            {
-                return wrapper;
-            }
-
-#if EXPORTER
-            if (type.__IsMissing || type.__ContainsMissingType)
-            {
-                wrapper = new RuntimeUnloadableJavaType("Missing/" + type.Assembly.FullName);
-                globalTypeToTypeWrapper.Add(type, wrapper);
-                return wrapper;
-            }
-#endif
-
-            string remapped;
-            if (remappedTypes.TryGetValue(type, out remapped))
-            {
-                wrapper = LoadClassCritical(remapped);
-            }
-            else if (ReflectUtil.IsVector(type))
-            {
-                // it might be an array of a dynamically compiled Java type
-                int rank = 1;
-                Type elem = type.GetElementType();
-                while (ReflectUtil.IsVector(elem))
-                {
-                    rank++;
-                    elem = elem.GetElementType();
-                }
-                wrapper = GetWrapperFromType(elem).MakeArrayType(rank);
-            }
-            else
-            {
-                Assembly asm = type.Assembly;
-#if !IMPORTER && !EXPORTER
-                if (RuntimeAnonymousJavaType.IsAnonymous(type))
-                {
-                    Dictionary<Type, RuntimeJavaType> typeToTypeWrapper = globalTypeToTypeWrapper;
-                    RuntimeJavaType tw = new RuntimeAnonymousJavaType(type);
-                    lock (typeToTypeWrapper)
-                    {
-                        if (!typeToTypeWrapper.TryGetValue(type, out wrapper))
-                        {
-                            typeToTypeWrapper.Add(type, wrapper = tw);
-                        }
-                    }
-                    return wrapper;
-                }
-                if (ReflectUtil.IsReflectionOnly(type))
-                {
-                    // historically we've always returned null for types that don't have a corresponding TypeWrapper (or java.lang.Class)
-                    return null;
-                }
-#endif
-                // if the wrapper doesn't already exist, that must mean that the type
-                // is a .NET type (or a pre-compiled Java class), which means that it
-                // was "loaded" by an assembly classloader
-                wrapper = RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).GetWrapperFromAssemblyType(type);
-            }
-
-            lock (globalTypeToTypeWrapper)
-            {
-                try
-                {
-                    // critical code in the finally block to avoid Thread.Abort interrupting the thread
-                }
-                finally
-                {
-                    globalTypeToTypeWrapper[type] = wrapper;
-                }
-            }
-
-            return wrapper;
-        }
-
-        internal static RuntimeClassLoader GetGenericClassLoader(RuntimeJavaType wrapper)
-        {
-            Type type = wrapper.TypeAsTBD;
-            Debug.Assert(type.IsGenericType);
-            Debug.Assert(!type.ContainsGenericParameters);
-
-            List<RuntimeClassLoader> list = new List<RuntimeClassLoader>();
-            list.Add(RuntimeAssemblyClassLoaderFactory.FromAssembly(type.Assembly));
-            foreach (Type arg in type.GetGenericArguments())
-            {
-                RuntimeClassLoader loader = GetWrapperFromType(arg).GetClassLoader();
-                if (!list.Contains(loader) && loader != bootstrapClassLoader)
-                {
-                    list.Add(loader);
-                }
-            }
-            RuntimeClassLoader[] key = list.ToArray();
-            RuntimeClassLoader matchingLoader = GetGenericClassLoaderByKey(key);
-            matchingLoader.RegisterInitiatingLoader(wrapper);
-            return matchingLoader;
-        }
-
-        internal static RuntimeJavaType LoadClassCritical(string name)
-        {
-#if IMPORTER
-            var wrapper = GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
-            if (wrapper == null)
-                throw new FatalCompilerErrorException(Message.CriticalClassNotFound, name);
-
-            return wrapper;
-#else
-            try
-            {
-                return GetBootstrapClassLoader().LoadClassByDottedName(name);
-            }
-            catch (Exception e)
-            {
-                throw new InternalException("Loading of critical class failed.", e);
-            }
-#endif
-        }
-
-        static RuntimeClassLoader GetGenericClassLoaderByKey(RuntimeClassLoader[] key)
-        {
-            lock (wrapperLock)
-            {
-                genericClassLoaders ??= new List<RuntimeGenericClassLoader>();
-
-                foreach (RuntimeGenericClassLoader loader in genericClassLoaders)
-                    if (loader.Matches(key))
-                        return loader;
-
-#if IMPORTER || EXPORTER || FIRST_PASS
-                var newLoader = new RuntimeGenericClassLoader(key, null);
-#else
-                var javaClassLoader = new ikvm.runtime.GenericClassLoader();
-                var newLoader = new RuntimeGenericClassLoader(key, javaClassLoader);
-                SetWrapperForClassLoader(javaClassLoader, newLoader);
-#endif
-                genericClassLoaders.Add(newLoader);
-                return newLoader;
-            }
-        }
-
-#if !IMPORTER && !EXPORTER
-
-        public static void SetWrapperForClassLoader(java.lang.ClassLoader javaClassLoader, RuntimeClassLoader wrapper)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            javaClassLoader.wrapper = wrapper;
-#endif
-        }
-
-#endif
-
-#if !IMPORTER && !EXPORTER
-
-        internal static RuntimeClassLoader GetGenericClassLoaderByName(string name)
-        {
-            Debug.Assert(name.StartsWith("[[") && name.EndsWith("]]"));
-
-            var stack = new Stack<List<RuntimeClassLoader>>();
-            List<RuntimeClassLoader> list = null;
-
-            for (int i = 0; i < name.Length; i++)
-            {
-                if (name[i] == '[')
-                {
-                    if (name[i + 1] == '[')
-                    {
-                        stack.Push(list);
-                        list = new List<RuntimeClassLoader>();
-                        if (name[i + 2] == '[')
-                        {
-                            i++;
-                        }
-                    }
-                    else
-                    {
-                        int start = i + 1;
-                        i = name.IndexOf(']', i);
-                        list.Add(RuntimeClassLoaderFactory.GetAssemblyClassLoaderByName(name.Substring(start, i - start)));
-                    }
-                }
-                else if (name[i] == ']')
-                {
-                    var loader = GetGenericClassLoaderByKey(list.ToArray());
-                    list = stack.Pop();
-                    if (list == null)
-                        return loader;
-
-                    list.Add(loader);
-                }
-                else
-                {
-                    throw new InvalidOperationException();
-                }
-            }
-
-            throw new InvalidOperationException();
-        }
-
-        internal static RuntimeClassLoader GetAssemblyClassLoaderByName(string name)
-        {
-            if (name.StartsWith("[["))
-                return GetGenericClassLoaderByName(name);
-
-#if NETFRAMEWORK
-            return RuntimeAssemblyClassLoaderFactory.FromAssembly(Assembly.Load(name));
-#else
-            return RuntimeAssemblyClassLoaderFactory.FromAssembly(AssemblyLoadContext.GetLoadContext(typeof(RuntimeClassLoader).Assembly).LoadFromAssemblyName(new AssemblyName(name)));
-#endif
-        }
-
-#endif
-
-        internal static int GetGenericClassLoaderId(RuntimeClassLoader wrapper)
-        {
-            lock (wrapperLock)
-                return genericClassLoaders.IndexOf(wrapper as RuntimeGenericClassLoader);
-        }
-
-        internal static RuntimeClassLoader GetGenericClassLoaderById(int id)
-        {
-            lock (wrapperLock)
-                return genericClassLoaders[id];
-        }
-
-    }
 
     /// <summary>
     /// Runtime support for a class loader.
@@ -662,7 +294,7 @@ namespace IKVM.Runtime
                     throw new NoClassDefFoundError($"{f.Name} ({x.Message})");
                 }
 
-                var tw = loader.LoadClassByDottedNameFast(f.Name);
+                var tw = loader.TryLoadClassByName(f.Name);
                 if (tw == null)
                     throw new NoClassDefFoundError($"{f.Name} (type not found in {dotnetAssembly})");
 
@@ -744,12 +376,12 @@ namespace IKVM.Runtime
 
 #endif // !EXPORTER
 
-        internal RuntimeJavaType LoadClassByDottedName(string name)
+        internal RuntimeJavaType LoadClassByName(string name)
         {
             return LoadClass(name, LoadMode.LoadOrThrow);
         }
 
-        internal RuntimeJavaType LoadClassByDottedNameFast(string name)
+        internal RuntimeJavaType TryLoadClassByName(string name)
         {
             return LoadClass(name, LoadMode.LoadOrNull);
         }
@@ -760,17 +392,17 @@ namespace IKVM.Runtime
 
             try
             {
-                var tw = LoadRegisteredOrPendingClass(name);
-                if (tw != null)
-                    return tw;
+                var javaType = LoadRegisteredOrPendingClass(name);
+                if (javaType != null)
+                    return javaType;
 
                 if (name.Length > 1 && name[0] == '[')
-                    tw = FindOrLoadArrayClass(name, mode);
+                    javaType = FindOrLoadArrayClass(name, mode);
                 else
-                    tw = LoadClassImpl(name, mode);
+                    javaType = LoadClassImpl(name, mode);
 
-                if (tw != null)
-                    return RegisterInitiatingLoader(tw);
+                if (javaType != null)
+                    return RegisterInitiatingLoader(javaType);
 
 #if IMPORTER
 
@@ -801,89 +433,79 @@ namespace IKVM.Runtime
             }
         }
 
-        private RuntimeJavaType LoadRegisteredOrPendingClass(string name)
+        RuntimeJavaType LoadRegisteredOrPendingClass(string name)
         {
-            RuntimeJavaType tw;
+            RuntimeJavaType javaType;
+
             lock (types)
             {
-                if (types.TryGetValue(name, out tw) && tw == null)
+                if (types.TryGetValue(name, out javaType) && javaType == null)
                 {
-                    Thread defineThread;
-                    if (defineClassInProgress.TryGetValue(name, out defineThread))
+                    if (defineClassInProgress.TryGetValue(name, out var defineThread))
                     {
                         if (Thread.CurrentThread == defineThread)
-                        {
                             throw new ClassCircularityError(name);
-                        }
-                        // the requested class is currently being defined by another thread,
-                        // so we have to wait on that
+
+                        // the requested class is currently being defined by another thread, so we have to wait on that
                         while (defineClassInProgress.ContainsKey(name))
-                        {
                             Monitor.Wait(types);
-                        }
+
                         // the defineClass may have failed, so we need to use TryGetValue
-                        types.TryGetValue(name, out tw);
+                        types.TryGetValue(name, out javaType);
                     }
                 }
             }
-            return tw;
+
+            return javaType;
         }
 
-        private RuntimeJavaType FindOrLoadArrayClass(string name, LoadMode mode)
+        /// <summary>
+        /// Returns the <see cref="RuntimeJavaType"/> for the given array class name.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="mode"></param>
+        /// <returns></returns>
+        RuntimeJavaType FindOrLoadArrayClass(string name, LoadMode mode)
         {
-            int dims = 1;
-            while (name[dims] == '[')
+            // calculate number of dimensions of type name
+            int pos = 1;
+            while (name[pos] == '[')
+                if (++pos == name.Length)
+                    return null; // malformed class name
+
+            // type signature is an Object
+            if (name[pos] == 'L')
             {
-                dims++;
-                if (dims == name.Length)
-                {
-                    // malformed class name
-                    return null;
-                }
-            }
-            if (name[dims] == 'L')
-            {
-                if (!name.EndsWith(";") || name.Length <= dims + 2 || name[dims + 1] == '[')
-                {
-                    // malformed class name
-                    return null;
-                }
-                string elemClass = name.Substring(dims + 1, name.Length - dims - 2);
-                // NOTE it's important that we're registered as the initiating loader
-                // for the element type here
-                RuntimeJavaType type = LoadClass(elemClass, mode | LoadMode.DontReturnUnloadable);
+                // must end with ';', and not contain improper array characters
+                if (name.EndsWith(";") == false || name.Length <= pos + 2 || name[pos + 1] == '[')
+                    return null; // malformed class name
+
+                var elemClass = name.Substring(pos + 1, name.Length - pos - 2);
+
+                // it's important that we're registered as the initiating loader for the element type here
+                var type = LoadClass(elemClass, mode | LoadMode.DontReturnUnloadable);
                 if (type != null)
-                {
-                    type = CreateArrayType(name, type, dims);
-                }
+                    type = CreateArrayType(name, type, pos);
+
                 return type;
             }
-            if (name.Length != dims + 1)
+
+            if (name.Length != pos + 1)
+                return null; // malformed class name
+
+            // array of primitive type
+            return name[pos] switch
             {
-                // malformed class name
-                return null;
-            }
-            switch (name[dims])
-            {
-                case 'B':
-                    return CreateArrayType(name, RuntimePrimitiveJavaType.BYTE, dims);
-                case 'C':
-                    return CreateArrayType(name, RuntimePrimitiveJavaType.CHAR, dims);
-                case 'D':
-                    return CreateArrayType(name, RuntimePrimitiveJavaType.DOUBLE, dims);
-                case 'F':
-                    return CreateArrayType(name, RuntimePrimitiveJavaType.FLOAT, dims);
-                case 'I':
-                    return CreateArrayType(name, RuntimePrimitiveJavaType.INT, dims);
-                case 'J':
-                    return CreateArrayType(name, RuntimePrimitiveJavaType.LONG, dims);
-                case 'S':
-                    return CreateArrayType(name, RuntimePrimitiveJavaType.SHORT, dims);
-                case 'Z':
-                    return CreateArrayType(name, RuntimePrimitiveJavaType.BOOLEAN, dims);
-                default:
-                    return null;
-            }
+                'B' => CreateArrayType(name, RuntimePrimitiveJavaType.BYTE, pos),
+                'C' => CreateArrayType(name, RuntimePrimitiveJavaType.CHAR, pos),
+                'D' => CreateArrayType(name, RuntimePrimitiveJavaType.DOUBLE, pos),
+                'F' => CreateArrayType(name, RuntimePrimitiveJavaType.FLOAT, pos),
+                'I' => CreateArrayType(name, RuntimePrimitiveJavaType.INT, pos),
+                'J' => CreateArrayType(name, RuntimePrimitiveJavaType.LONG, pos),
+                'S' => CreateArrayType(name, RuntimePrimitiveJavaType.SHORT, pos),
+                'Z' => CreateArrayType(name, RuntimePrimitiveJavaType.BOOLEAN, pos),
+                _ => null,
+            };
         }
 
         internal RuntimeJavaType FindOrLoadGenericClass(string name, LoadMode mode)
@@ -897,9 +519,9 @@ namespace IKVM.Runtime
             {
                 var outer = FindOrLoadGenericClass(name.Substring(0, name.Length - RuntimeManagedJavaType.DelegateInterfaceSuffix.Length), mode);
                 if (outer != null && outer.IsFakeTypeContainer)
-                    foreach (var tw in outer.InnerClasses)
-                        if (tw.Name == name)
-                            return tw;
+                    foreach (var javaType in outer.InnerClasses)
+                        if (javaType.Name == name)
+                            return javaType;
             }
 
             // generic class name grammar:
@@ -1037,7 +659,7 @@ namespace IKVM.Runtime
                 return null;
             }
 
-            var wrapper = RuntimeClassLoaderFactory.GetWrapperFromType(type);
+            var wrapper = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
             if (wrapper != null && wrapper.Name != name)
             {
                 // the name specified was not in canonical form
@@ -1049,9 +671,9 @@ namespace IKVM.Runtime
 
         protected virtual RuntimeJavaType LoadClassImpl(string name, LoadMode mode)
         {
-            var tw = FindOrLoadGenericClass(name, mode);
-            if (tw != null)
-                return tw;
+            var javaType = FindOrLoadGenericClass(name, mode);
+            if (javaType != null)
+                return javaType;
 
 #if !FIRST_PASS && !IMPORTER && !EXPORTER
 
@@ -1059,12 +681,16 @@ namespace IKVM.Runtime
                 return null;
 
             Profiler.Enter("ClassLoader.loadClass");
+
             try
             {
+                // invoke 'loadClass' on the associated Java class loader instance
+                // this can cause a call to defineClass
                 var c = (java.lang.Class)ClassLoaderAccessor.InvokeLoadClassInternal(GetJavaClassLoader(), name);
                 if (c == null)
                     return null;
 
+                // map resulting reflective instance back into Java type
                 var type = RuntimeJavaType.FromClass(c);
                 if (type.Name != name)
                     return null;
@@ -1078,7 +704,7 @@ namespace IKVM.Runtime
 
                 return null;
             }
-            catch (java.lang.ThreadDeath)
+            catch (global::java.lang.ThreadDeath)
             {
                 throw;
             }
@@ -1119,45 +745,73 @@ namespace IKVM.Runtime
 #endif
         }
 
-        private static RuntimeJavaType CreateArrayType(string name, RuntimeJavaType elementTypeWrapper, int dims)
+        /// <summary>
+        /// Creates a new <see cref="RuntimeJavaType"/> representing an array type with the specified number of dimensions.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="elementJavaType"></param>
+        /// <param name="dimensions"></param>
+        /// <returns></returns>
+        static RuntimeJavaType CreateArrayType(string name, RuntimeJavaType elementJavaType, int dimensions)
         {
-            Debug.Assert(new String('[', dims) + elementTypeWrapper.SigName == name);
-            Debug.Assert(!elementTypeWrapper.IsUnloadable && !elementTypeWrapper.IsVerifierType && !elementTypeWrapper.IsArray);
-            Debug.Assert(dims >= 1);
-            return elementTypeWrapper.GetClassLoader().RegisterInitiatingLoader(new RuntimeArrayJavaType(elementTypeWrapper, name));
+            Debug.Assert(new string('[', dimensions) + elementJavaType.SigName == name);
+            Debug.Assert(!elementJavaType.IsUnloadable && !elementJavaType.IsVerifierType && !elementJavaType.IsArray);
+            Debug.Assert(dimensions >= 1);
+
+            return elementJavaType.GetClassLoader().RegisterInitiatingLoader(new RuntimeArrayJavaType(elementJavaType, name));
         }
 
 #if !IMPORTER && !EXPORTER
+
+        /// <summary>
+        /// Gets the real underlying Java class loader instance associated with this runtime class loader.
+        /// </summary>
+        /// <returns></returns>
         internal virtual java.lang.ClassLoader GetJavaClassLoader()
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             return javaClassLoader;
 #endif
         }
 #endif
 
-        // NOTE this exposes potentially unfinished types
-        internal Type[] ArgTypeListFromSig(string sig)
+        /// <summary>
+        /// Takes a Java type signature and returns an array of types representing the types of the signature arguments.
+        /// </summary>
+        /// <remarks>
+        /// This exposes potentially unfinished types
+        /// </remarks>.
+        /// <param name="signature"></param>
+        /// <returns></returns>
+        internal Type[] ArgTypeListFromSig(string signature)
         {
-            if (sig[1] == ')')
-            {
+            if (signature[1] == ')')
                 return Type.EmptyTypes;
-            }
-            RuntimeJavaType[] wrappers = ArgTypeWrapperListFromSig(sig, LoadMode.LoadOrThrow);
-            Type[] types = new Type[wrappers.Length];
-            for (int i = 0; i < wrappers.Length; i++)
-            {
-                types[i] = wrappers[i].TypeAsSignatureType;
-            }
+
+            var javaTypes = ArgJavaTypeListFromSig(signature, LoadMode.LoadOrThrow);
+            var types = new Type[javaTypes.Length];
+            for (int i = 0; i < javaTypes.Length; i++)
+                types[i] = javaTypes[i].TypeAsSignatureType;
+
             return types;
         }
 
-        // NOTE: this will ignore anything following the sig marker (so that it can be used to decode method signatures)
-        private RuntimeJavaType SigDecoderWrapper(ref int index, string sig, LoadMode mode)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// This will ignore anything following the sig marker (so that it can be used to decode method signatures).
+        /// </remarks>
+        /// <param name="index"></param>
+        /// <param name="signature"></param>
+        /// <param name="mode"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        RuntimeJavaType SigDecoderWrapper(ref int index, string signature, LoadMode mode)
         {
-            switch (sig[index++])
+            switch (signature[index++])
             {
                 case 'B':
                     return RuntimePrimitiveJavaType.BYTE;
@@ -1174,8 +828,8 @@ namespace IKVM.Runtime
                 case 'L':
                     {
                         int pos = index;
-                        index = sig.IndexOf(';', index) + 1;
-                        return LoadClass(sig.Substring(pos, index - pos - 1), mode);
+                        index = signature.IndexOf(';', index) + 1;
+                        return LoadClass(signature.Substring(pos, index - pos - 1), mode);
                     }
                 case 'S':
                     return RuntimePrimitiveJavaType.SHORT;
@@ -1186,19 +840,22 @@ namespace IKVM.Runtime
                 case '[':
                     {
                         // TODO this can be optimized
-                        string array = "[";
-                        while (sig[index] == '[')
+                        // should be able to navigate over the original sig and pass spans
+
+                        var array = "[";
+                        while (signature[index] == '[')
                         {
                             index++;
                             array += "[";
                         }
-                        switch (sig[index])
+
+                        switch (signature[index])
                         {
                             case 'L':
                                 {
-                                    int pos = index;
-                                    index = sig.IndexOf(';', index) + 1;
-                                    return LoadClass(array + sig.Substring(pos, index - pos), mode);
+                                    var pos = index;
+                                    index = signature.IndexOf(';', index) + 1;
+                                    return LoadClass(array + signature.Substring(pos, index - pos), mode);
                                 }
                             case 'B':
                             case 'C':
@@ -1208,13 +865,13 @@ namespace IKVM.Runtime
                             case 'J':
                             case 'S':
                             case 'Z':
-                                return LoadClass(array + sig[index++], mode);
+                                return LoadClass(array + signature[index++], mode);
                             default:
-                                throw new InvalidOperationException(sig.Substring(index));
+                                throw new InvalidOperationException(signature.Substring(index));
                         }
                     }
                 default:
-                    throw new InvalidOperationException(sig.Substring(index));
+                    throw new InvalidOperationException(signature.Substring(index));
             }
         }
 
@@ -1230,7 +887,7 @@ namespace IKVM.Runtime
             return SigDecoderWrapper(ref index, sig, mode);
         }
 
-        internal RuntimeJavaType[] ArgTypeWrapperListFromSig(string sig, LoadMode mode)
+        internal RuntimeJavaType[] ArgJavaTypeListFromSig(string sig, LoadMode mode)
         {
             if (sig[1] == ')')
                 return Array.Empty<RuntimeJavaType>();
@@ -1250,25 +907,6 @@ namespace IKVM.Runtime
         }
 
 #endif
-
-        internal void SetWrapperForType(Type type, RuntimeJavaType wrapper)
-        {
-#if !IMPORTER
-            RuntimeJavaType.AssertFinished(type);
-#endif
-
-            lock (RuntimeClassLoaderFactory.globalTypeToTypeWrapper)
-            {
-                try
-                {
-                    // critical code in the finally block to avoid Thread.Abort interrupting the thread
-                }
-                finally
-                {
-                    RuntimeClassLoaderFactory.globalTypeToTypeWrapper.Add(type, wrapper);
-                }
-            }
-        }
 
         internal void RegisterNativeLibrary(IntPtr p)
         {
@@ -1318,7 +956,7 @@ namespace IKVM.Runtime
             {
                 return "null";
             }
-            return string.Format("{0}@{1:X}", RuntimeClassLoaderFactory.GetWrapperFromType(javaClassLoader.GetType()).Name, javaClassLoader.GetHashCode());
+            return string.Format("{0}@{1:X}", RuntimeClassLoaderFactory.GetJavaTypeFromType(javaClassLoader.GetType()).Name, javaClassLoader.GetHashCode());
         }
 
 #endif

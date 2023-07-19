@@ -259,7 +259,7 @@ namespace IKVM.Runtime
                 string sig = (string)val[1];
                 if (sig.StartsWith("L"))
                 {
-                    RuntimeJavaType tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
+                    RuntimeJavaType tw = loader.TryLoadClassByName(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
                     if (tw != null)
                     {
                         return new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";" };
@@ -270,7 +270,7 @@ namespace IKVM.Runtime
             else if (val[0].Equals(AnnotationDefaultAttribute.TAG_ENUM))
             {
                 string sig = (string)val[1];
-                RuntimeJavaType tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
+                RuntimeJavaType tw = loader.TryLoadClassByName(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
                 if (tw != null)
                 {
                     return new object[] { AnnotationDefaultAttribute.TAG_ENUM, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";", val[2] };

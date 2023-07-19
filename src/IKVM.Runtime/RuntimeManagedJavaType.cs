@@ -26,6 +26,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -39,68 +41,6 @@ using System.Reflection.Emit;
 
 namespace IKVM.Runtime
 {
-
-    /// <summary>
-    /// Manages instances of <see cref="RuntimeManagedJavaType"/>.
-    /// </summary>
-    static class RuntimeManagedJavaTypeFactory
-    {
-
-        static readonly Dictionary<Type, RuntimeJavaType> types = new Dictionary<Type, RuntimeJavaType>();
-
-        /// <summary>
-        /// Gets the <see cref="RuntimeJavaType"/> associated with the specified managed type, or creates one on demand.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public static RuntimeJavaType GetWrapperFromDotNetType(Type type)
-        {
-            RuntimeJavaType tw;
-            lock (types)
-                types.TryGetValue(type, out tw);
-
-            if (tw == null)
-            {
-                tw = RuntimeAssemblyClassLoaderFactory.FromAssembly(type.Assembly).GetWrapperFromAssemblyType(type);
-                lock (types)
-                    types[type] = tw;
-            }
-
-            return tw;
-        }
-
-        /// <summary>
-        /// gets the <see cref="RuntimeJavaType"/> associated with the base type of the specified type.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public static RuntimeJavaType GetBaseTypeWrapper(Type type)
-        {
-            if (type.IsInterface)
-            {
-                return null;
-            }
-            else if (RuntimeClassLoaderFactory.IsRemappedType(type))
-            {
-                // Remapped types extend their alter ego
-                // (e.g. cli.System.Object must appear to be derived from java.lang.Object)
-                // except when they're sealed, of course.
-                if (type.IsSealed)
-                    return CoreClasses.java.lang.Object.Wrapper;
-
-                return RuntimeClassLoaderFactory.GetWrapperFromType(type);
-            }
-            else if (RuntimeClassLoaderFactory.IsRemappedType(type.BaseType))
-            {
-                return GetWrapperFromDotNetType(type.BaseType);
-            }
-            else
-            {
-                return RuntimeClassLoaderFactory.GetWrapperFromType(type.BaseType);
-            }
-        }
-
-    }
 
     /// <summary>
     /// Implements a <see cref="RuntimeJavaType"/> that exposes existing managed .NET types not the result of static compilation.
@@ -211,14 +151,14 @@ namespace IKVM.Runtime
 
                     if (RuntimePrimitiveJavaType.IsPrimitiveType(t))
                     {
-                        sb.Append(RuntimeClassLoaderFactory.GetWrapperFromType(t).SigName);
+                        sb.Append(RuntimeClassLoaderFactory.GetJavaTypeFromType(t).SigName);
                     }
                     else
                     {
                         string s;
                         if (RuntimeClassLoaderFactory.IsRemappedType(t) || AttributeHelper.IsJavaModule(t.Module))
                         {
-                            s = RuntimeClassLoaderFactory.GetWrapperFromType(t).Name;
+                            s = RuntimeClassLoaderFactory.GetJavaTypeFromType(t).Name;
                         }
                         else
                         {
@@ -373,7 +313,7 @@ namespace IKVM.Runtime
             this.type = type;
         }
 
-        internal override RuntimeJavaType BaseTypeWrapper => baseTypeWrapper ??= RuntimeManagedJavaTypeFactory.GetBaseTypeWrapper(type);
+        internal override RuntimeJavaType BaseTypeWrapper => baseTypeWrapper ??= RuntimeManagedJavaTypeFactory.GetBaseJavaType(type);
 
         internal override RuntimeClassLoader GetClassLoader() => type.IsGenericType ? RuntimeClassLoaderFactory.GetGenericClassLoader(this) : RuntimeAssemblyClassLoaderFactory.FromAssembly(type.Assembly);
 
@@ -418,7 +358,7 @@ namespace IKVM.Runtime
                     javaUnderlyingType = underlyingType;
                 }
 
-                var fieldType = RuntimeClassLoaderFactory.GetWrapperFromType(javaUnderlyingType);
+                var fieldType = RuntimeClassLoaderFactory.GetJavaTypeFromType(javaUnderlyingType);
                 var fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
                 var fieldsList = new List<RuntimeJavaField>();
                 for (int i = 0; i < fields.Length; i++)
@@ -535,7 +475,7 @@ namespace IKVM.Runtime
                         {
                             if (RuntimeClassLoaderFactory.IsRemappedType(interfaces[i]))
                             {
-                                var tw = RuntimeClassLoaderFactory.GetWrapperFromType(interfaces[i]);
+                                var tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(interfaces[i]);
                                 foreach (var mw in tw.GetMethods())
                                 {
                                     // HACK we need to link here, because during a core library build we might reference java.lang.AutoCloseable (via IDisposable) before it has been linked
@@ -714,7 +654,7 @@ namespace IKVM.Runtime
                     }
                 }
 
-                var tw = RuntimeClassLoaderFactory.GetWrapperFromType(type);
+                var tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
                 args[i] = tw;
                 sb.Append(tw.SigName);
             }
@@ -737,7 +677,7 @@ namespace IKVM.Runtime
                     ret = null;
                     return false;
                 }
-                ret = RuntimeClassLoaderFactory.GetWrapperFromType(type);
+                ret = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
                 sb.Append(ret.SigName);
                 name = mb.Name;
                 sig = sb.ToString();
@@ -804,7 +744,7 @@ namespace IKVM.Runtime
             var list = new List<RuntimeJavaType>(nestedTypes.Length);
             for (int i = 0; i < nestedTypes.Length; i++)
                 if (!nestedTypes[i].IsGenericTypeDefinition)
-                    list.Add(RuntimeClassLoaderFactory.GetWrapperFromType(nestedTypes[i]));
+                    list.Add(RuntimeClassLoaderFactory.GetJavaTypeFromType(nestedTypes[i]));
 
             if (IsDelegate(type))
                 list.Add(GetClassLoader().RegisterInitiatingLoader(new DelegateInnerClassJavaType(Name + DelegateInterfaceSuffix, type)));
@@ -828,7 +768,7 @@ namespace IKVM.Runtime
                 {
                     var outer = type.DeclaringType;
                     if (outer != null && !type.IsGenericType)
-                        outerClass = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(outer);
+                        outerClass = RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(outer);
                 }
 
                 return outerClass;
@@ -839,7 +779,7 @@ namespace IKVM.Runtime
 
         RuntimeJavaField CreateFieldWrapperDotNet(Modifiers modifiers, string name, Type fieldType, FieldInfo field)
         {
-            var type = RuntimeClassLoaderFactory.GetWrapperFromType(fieldType);
+            var type = RuntimeClassLoaderFactory.GetJavaTypeFromType(fieldType);
             if (field.IsLiteral)
                 return new RuntimeConstantJavaField(this, type, name, type.SigName, modifiers, field, null, MemberFlags.None);
             else
@@ -854,7 +794,7 @@ namespace IKVM.Runtime
         static bool IsRemappedImplDerived(Type type)
         {
             for (; type != null; type = type.BaseType)
-                if (!RuntimeClassLoaderFactory.IsRemappedType(type) && RuntimeClassLoaderFactory.GetWrapperFromType(type).IsRemapped)
+                if (!RuntimeClassLoaderFactory.IsRemappedType(type) && RuntimeClassLoaderFactory.GetJavaTypeFromType(type).IsRemapped)
                     return true;
 
             return false;
@@ -918,7 +858,7 @@ namespace IKVM.Runtime
         {
             if (IsRemapped)
             {
-                var shadow = RuntimeClassLoaderFactory.GetWrapperFromType(type);
+                var shadow = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
                 var method = shadow.TypeAsBaseType.GetMethod("__<instanceof>");
                 if (method != null)
                 {
@@ -934,7 +874,7 @@ namespace IKVM.Runtime
         {
             if (IsRemapped)
             {
-                var shadow = RuntimeClassLoaderFactory.GetWrapperFromType(type);
+                var shadow = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
                 var method = shadow.TypeAsBaseType.GetMethod("__<checkcast>");
                 if (method != null)
                 {

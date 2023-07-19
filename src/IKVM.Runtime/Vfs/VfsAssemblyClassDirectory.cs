@@ -71,7 +71,7 @@ namespace IKVM.Runtime.Vfs
 
             try
             {
-                return acl.LoadClassByDottedNameFast(className);
+                return acl.TryLoadClassByName(className);
             }
             catch
             {

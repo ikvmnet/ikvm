@@ -318,9 +318,9 @@ namespace IKVM.Runtime
                 }
 
                 if (type == typeof(void) || type.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(type))
-                    tw = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(type);
+                    tw = RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(type);
                 else
-                    tw = RuntimeClassLoaderFactory.GetWrapperFromType(type);
+                    tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
 
                 clazz.typeWrapper = tw;
             }
@@ -1041,11 +1041,11 @@ namespace IKVM.Runtime
                     case '[':
                         // NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
                         // (because the ultimate element type was already loaded when this type was created)
-                        return GetClassLoader().LoadClassByDottedNameFast(name.Substring(1));
+                        return GetClassLoader().TryLoadClassByName(name.Substring(1));
                     case 'L':
                         // NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
                         // (because the ultimate element type was already loaded when this type was created)
-                        return GetClassLoader().LoadClassByDottedNameFast(name.Substring(2, name.Length - 3));
+                        return GetClassLoader().TryLoadClassByName(name.Substring(2, name.Length - 3));
                     case 'Z':
                         return RuntimePrimitiveJavaType.BOOLEAN;
                     case 'B':
@@ -1072,7 +1072,7 @@ namespace IKVM.Runtime
         {
             Debug.Assert(rank != 0);
             // NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
-            return GetClassLoader().LoadClassByDottedNameFast(new String('[', rank) + this.SigName);
+            return GetClassLoader().TryLoadClassByName(new String('[', rank) + this.SigName);
         }
 
         internal bool ImplementsInterface(RuntimeJavaType interfaceWrapper)
@@ -1580,11 +1580,11 @@ namespace IKVM.Runtime
                 if (decl != null && AttributeHelper.IsGhostInterface(decl))
                 {
                     // we have to return the declaring type for ghost interfaces
-                    interfaces[i] = RuntimeClassLoaderFactory.GetWrapperFromType(decl);
+                    interfaces[i] = RuntimeClassLoaderFactory.GetJavaTypeFromType(decl);
                 }
                 else
                 {
-                    interfaces[i] = RuntimeClassLoaderFactory.GetWrapperFromType(interfaceTypes[i]);
+                    interfaces[i] = RuntimeClassLoaderFactory.GetJavaTypeFromType(interfaceTypes[i]);
                 }
             }
 
@@ -1594,7 +1594,7 @@ namespace IKVM.Runtime
                 {
                     // for remapped interfaces, we also return the original interface (Java types will ignore it, if it isn't listed in the ImplementsAttribute)
                     var twRemapped = interfaces[i];
-                    var tw = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(interfaceTypes[i]);
+                    var tw = RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(interfaceTypes[i]);
                     interfaces[i] = tw;
                     if (Array.IndexOf(interfaces, twRemapped) == -1)
                         interfaces = ArrayUtil.Concat(interfaces, twRemapped);

@@ -157,7 +157,7 @@ namespace IKVM.Tools.Importer.MapXml
             }
             else if (Class != null)
             {
-                var tw = context.ClassLoader.LoadClassByDottedNameFast(Class);
+                var tw = context.ClassLoader.TryLoadClassByName(Class);
                 if (tw == null)
                 {
                     return null;

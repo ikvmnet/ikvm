@@ -364,7 +364,7 @@ namespace IKVM.Tools.Importer
             foreach (var prop in clazz.Properties)
             {
                 var typeWrapper = GetClassLoader().RetTypeWrapperFromSig(prop.Sig, LoadMode.Link);
-                var propargs = GetClassLoader().ArgTypeWrapperListFromSig(prop.Sig, LoadMode.Link);
+                var propargs = GetClassLoader().ArgJavaTypeListFromSig(prop.Sig, LoadMode.Link);
                 Type[] indexer = new Type[propargs.Length];
                 for (int i = 0; i < propargs.Length; i++)
                 {
@@ -543,7 +543,7 @@ namespace IKVM.Tools.Importer
         private void MapSignature(string sig, out Type returnType, out Type[] parameterTypes)
         {
             returnType = GetClassLoader().RetTypeWrapperFromSig(sig, LoadMode.Link).TypeAsSignatureType;
-            var parameterTypeWrappers = GetClassLoader().ArgTypeWrapperListFromSig(sig, LoadMode.Link);
+            var parameterTypeWrappers = GetClassLoader().ArgJavaTypeListFromSig(sig, LoadMode.Link);
             parameterTypes = new Type[parameterTypeWrappers.Length];
             for (int i = 0; i < parameterTypeWrappers.Length; i++)
             {
@@ -663,7 +663,7 @@ namespace IKVM.Tools.Importer
                                 }
                                 if (method.Override != null)
                                 {
-                                    var mw = GetClassLoader().LoadClassByDottedName(method.Override.Class).GetMethodWrapper(method.Override.Name, method.Sig, true);
+                                    var mw = GetClassLoader().LoadClassByName(method.Override.Class).GetMethodWrapper(method.Override.Name, method.Sig, true);
                                     mw.Link();
                                     typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
                                 }
@@ -708,7 +708,7 @@ namespace IKVM.Tools.Importer
                     {
                         foreach (Implements iface in clazz.Interfaces)
                         {
-                            var tw = GetClassLoader().LoadClassByDottedName(iface.Class);
+                            var tw = GetClassLoader().LoadClassByName(iface.Class);
                             // NOTE since this interface won't be part of the list in the ImplementAttribute,
                             // it won't be visible from Java that the type implements this interface.
                             typeBuilder.AddInterfaceImplementation(tw.TypeAsBaseType);
@@ -1202,7 +1202,7 @@ namespace IKVM.Tools.Importer
 
                 if (replacedMethods != null)
                     for (int i = 0; i < replacedMethods.Length; i++)
-                        list.Add(new ReplacedMethodWrapper(GetClassLoader().LoadClassByDottedName(replacedMethods[i].Class), replacedMethods[i].Name, replacedMethods[i].Sig, replacedMethods[i].Code));
+                        list.Add(new ReplacedMethodWrapper(GetClassLoader().LoadClassByName(replacedMethods[i].Class), replacedMethods[i].Name, replacedMethods[i].Sig, replacedMethods[i].Code));
 
                 if (baseReplacedMethodWrappers != null)
                     list.AddRange(baseReplacedMethodWrappers);

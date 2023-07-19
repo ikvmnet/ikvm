@@ -45,14 +45,14 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
             var t = o.GetType();
             if (t.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(t) && !t.IsSealed)
-                return RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(t);
+                return RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(t);
 
             for (; ; )
             {
                 // if GetWrapperFromType returns null (or if tw.IsAbstract), that
                 // must mean that the Type of the object is an implementation helper class
                 // (e.g. an AtomicReferenceFieldUpdater or ThreadLocal instrinsic subclass)
-                var tw = RuntimeClassLoaderFactory.GetWrapperFromType(t);
+                var tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(t);
                 if (tw != null && (!tw.IsAbstract || tw.IsArray))
                     return tw;
 
@@ -64,12 +64,12 @@ namespace IKVM.Java.Externs.ikvm.runtime
         {
             var t = Type.GetTypeFromHandle(handle);
             if (t.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(t) || t == typeof(void))
-                return RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(t).ClassObject;
+                return RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(t).ClassObject;
 
             if (!IsVisibleAsClass(t))
                 return null;
 
-            var tw = RuntimeClassLoaderFactory.GetWrapperFromType(t);
+            var tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(t);
             if (tw != null)
                 return tw.ClassObject;
 
@@ -80,12 +80,12 @@ namespace IKVM.Java.Externs.ikvm.runtime
         {
             var t = Type.GetTypeFromHandle(handle);
             if (t.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(t) || t == typeof(void))
-                return RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(t).MakeArrayType(rank).ClassObject;
+                return RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(t).MakeArrayType(rank).ClassObject;
 
             if (!IsVisibleAsClass(t))
                 return null;
 
-            var tw = RuntimeClassLoaderFactory.GetWrapperFromType(t);
+            var tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(t);
             if (tw != null)
                 return tw.MakeArrayType(rank).ClassObject;
 
@@ -107,7 +107,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
             if (!IsVisibleAsClass(type))
                 return null;
 
-            var wrapper = RuntimeClassLoaderFactory.GetWrapperFromType(type);
+            var wrapper = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
             if (wrapper == null)
                 return null;
 

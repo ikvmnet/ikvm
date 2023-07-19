@@ -236,7 +236,7 @@ namespace IKVM.Tools.Importer
             // possibly succeed on this class loader, otherwise we'll end up doing a lot of futile recursive loading attempts.
             if (classes.ContainsKey(name) || remapped.ContainsKey(name) || FindLoadedClass(name) != null)
             {
-                var tw = LoadClassByDottedNameFast(name);
+                var tw = TryLoadClassByName(name);
                 // HACK we don't want to load classes referenced by peers, hence the "== this" check
                 if (tw != null && tw.GetClassLoader() == this)
                 {
@@ -984,7 +984,7 @@ namespace IKVM.Tools.Importer
                     interfaceWrappers = new RuntimeJavaType[c.Interfaces.Length];
                     for (int i = 0; i < c.Interfaces.Length; i++)
                     {
-                        var iface = classLoader.LoadClassByDottedName(c.Interfaces[i].Class);
+                        var iface = classLoader.LoadClassByName(c.Interfaces[i].Class);
                         interfaceWrappers[i] = iface;
                         foreach (var mw in iface.GetMethods())
                         {
@@ -1311,7 +1311,7 @@ namespace IKVM.Tools.Importer
                             ilgen = CodeEmitter.Create(helper);
                             foreach (IKVM.Tools.Importer.MapXml.Class c in specialCases)
                             {
-                                var tw = typeWrapper.GetClassLoader().LoadClassByDottedName(c.Name);
+                                var tw = typeWrapper.GetClassLoader().LoadClassByName(c.Name);
                                 ilgen.Emit(OpCodes.Ldarg_0);
                                 ilgen.Emit(OpCodes.Isinst, tw.TypeAsTBD);
                                 ilgen.Emit(OpCodes.Dup);
@@ -1742,7 +1742,7 @@ namespace IKVM.Tools.Importer
                     }
                     else
                     {
-                        var tw = classLoader.LoadClassByDottedName(m.Redirect.Class);
+                        var tw = classLoader.LoadClassByName(m.Redirect.Class);
                         var mw = tw.GetMethodWrapper(redirName, redirSig, false);
                         if (mw == null)
                         {
@@ -1873,7 +1873,7 @@ namespace IKVM.Tools.Importer
                 {
                     foreach (IKVM.Tools.Importer.MapXml.Implements iface in classDef.Interfaces)
                     {
-                        GetClassLoader().LoadClassByDottedName(iface.Class).Finish();
+                        GetClassLoader().LoadClassByName(iface.Class).Finish();
                     }
                 }
 
@@ -2216,7 +2216,7 @@ namespace IKVM.Tools.Importer
                         dst = dst.Substring(1);
                     }
 
-                    mappedExceptions[i] = LoadClassByDottedName(dst);
+                    mappedExceptions[i] = LoadClassByName(dst);
                 }
 
                 // HACK we need to find the <exceptionMapping /> element and bind it
@@ -2268,7 +2268,7 @@ namespace IKVM.Tools.Importer
                             foreach (var instr in map[i].Code.Instructions)
                             {
                                 var newobj = instr as MapXml.NewObj;
-                                if (newobj != null && newobj.Class != null && context.ClassLoader.LoadClassByDottedName(newobj.Class).IsSubTypeOf(CoreClasses.java.lang.Throwable.Wrapper))
+                                if (newobj != null && newobj.Class != null && context.ClassLoader.LoadClassByName(newobj.Class).IsSubTypeOf(CoreClasses.java.lang.Throwable.Wrapper))
                                     mwSuppressFillInStackTrace.EmitCall(ilgen);
 
                                 instr.Generate(context, ilgen);
@@ -2279,7 +2279,7 @@ namespace IKVM.Tools.Importer
                     }
                     else
                     {
-                        var tw = context.ClassLoader.LoadClassByDottedName(map[i].Destination);
+                        var tw = context.ClassLoader.LoadClassByName(map[i].Destination);
                         var mw = tw.GetMethodWrapper("<init>", "()V", false);
                         mw.Link();
                         mwSuppressFillInStackTrace.EmitCall(ilgen);
@@ -2420,7 +2420,7 @@ namespace IKVM.Tools.Importer
             }
 
             // we manually add the array ghost interfaces
-            var array = RuntimeClassLoaderFactory.GetWrapperFromType(Types.Array);
+            var array = RuntimeClassLoaderFactory.GetJavaTypeFromType(Types.Array);
             AddGhost("java.io.Serializable", array);
             AddGhost("java.lang.Cloneable", array);
         }
@@ -2907,7 +2907,7 @@ namespace IKVM.Tools.Importer
             allwrappers = new List<RuntimeJavaType>();
             foreach (var s in classesToCompile)
             {
-                var wrapper = LoadClassByDottedNameFast(s);
+                var wrapper = TryLoadClassByName(s);
                 if (wrapper != null)
                 {
                     var loader = wrapper.GetClassLoader();
@@ -2958,7 +2958,7 @@ namespace IKVM.Tools.Importer
 
                 try
                 {
-                    wrapper = LoadClassByDottedNameFast(options.mainClass);
+                    wrapper = TryLoadClassByName(options.mainClass);
                 }
                 catch (RetargetableJavaException)
                 {
@@ -3038,7 +3038,7 @@ namespace IKVM.Tools.Importer
                 RuntimeJavaType classLoaderType = null;
                 try
                 {
-                    classLoaderType = LoadClassByDottedNameFast(options.classLoader);
+                    classLoaderType = TryLoadClassByName(options.classLoader);
                 }
                 catch (RetargetableJavaException)
                 {
@@ -3705,7 +3705,7 @@ namespace IKVM.Tools.Importer
 
         internal static RuntimeJavaType GetClassForMapXml(RuntimeClassLoader loader, string name)
         {
-            return loader.LoadClassByDottedNameFast(name) ?? throw new FatalCompilerErrorException(Message.MapFileClassNotFound, name);
+            return loader.TryLoadClassByName(name) ?? throw new FatalCompilerErrorException(Message.MapFileClassNotFound, name);
         }
 
         internal static RuntimeJavaField GetFieldForMapXml(RuntimeClassLoader loader, string clazz, string name, string sig)

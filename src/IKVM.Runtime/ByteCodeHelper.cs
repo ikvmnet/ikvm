@@ -207,7 +207,7 @@ namespace IKVM.Runtime
             try
             {
                 RuntimeJavaType context = RuntimeJavaType.FromClass(callerId.getCallerClass());
-                RuntimeJavaType wrapper = RuntimeClassLoader.FromCallerID(callerId).LoadClassByDottedName(clazz);
+                RuntimeJavaType wrapper = RuntimeClassLoader.FromCallerID(callerId).LoadClassByName(clazz);
                 global::java.lang.ClassLoader loader = callerId.getCallerClassLoader();
                 if (loader != null)
                 {
@@ -301,7 +301,7 @@ namespace IKVM.Runtime
             try
             {
                 RuntimeClassLoader loader = RuntimeClassLoader.FromCallerID(callerID);
-                RuntimeJavaType[] args = loader.ArgTypeWrapperListFromSig(sig, LoadMode.LoadOrThrow);
+                RuntimeJavaType[] args = loader.ArgJavaTypeListFromSig(sig, LoadMode.LoadOrThrow);
                 global::java.lang.Class[] ptypes = new global::java.lang.Class[args.Length];
                 for (int i = 0; i < ptypes.Length; i++)
                 {
@@ -435,7 +435,7 @@ namespace IKVM.Runtime
                 CodeEmitter ilgen = CodeEmitter.Create(dm);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, tw.Name + ".Invoke" + sig);
                 RuntimeClassLoaderFactory.GetBootstrapClassLoader()
-                    .LoadClassByDottedName(mw == null || mw.IsStatic ? "global::java.lang.AbstractMethodError" : "global::java.lang.IllegalAccessError")
+                    .LoadClassByName(mw == null || mw.IsStatic ? "global::java.lang.AbstractMethodError" : "global::java.lang.IllegalAccessError")
                     .GetMethodWrapper("<init>", "(Lglobal::java.lang.String;)V", false)
                     .EmitNewobj(ilgen);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Throw);
@@ -627,7 +627,7 @@ namespace IKVM.Runtime
 
         private static bool IsPrimitiveArrayType(Type type)
         {
-            return type.IsArray && RuntimeClassLoaderFactory.GetWrapperFromType(type.GetElementType()).IsPrimitive;
+            return type.IsArray && RuntimeClassLoaderFactory.GetJavaTypeFromType(type.GetElementType()).IsPrimitive;
         }
 
         [DebuggerStepThroughAttribute]

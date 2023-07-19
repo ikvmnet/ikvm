@@ -50,7 +50,7 @@ namespace IKVM.Runtime
         /// <param name="property"></param>
         /// <param name="modifiers"></param>
         internal RuntimeManagedByteCodePropertyJavaField(RuntimeJavaType declaringType, PropertyInfo property, ExModifiers modifiers) :
-            base(declaringType, RuntimeClassLoaderFactory.GetWrapperFromType(property.PropertyType), property.Name, RuntimeClassLoaderFactory.GetWrapperFromType(property.PropertyType).SigName, modifiers, null)
+            base(declaringType, RuntimeClassLoaderFactory.GetJavaTypeFromType(property.PropertyType), property.Name, RuntimeClassLoaderFactory.GetJavaTypeFromType(property.PropertyType).SigName, modifiers, null)
         {
             this.property = property;
         }

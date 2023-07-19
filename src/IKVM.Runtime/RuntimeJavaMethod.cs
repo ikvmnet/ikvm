@@ -242,7 +242,7 @@ namespace IKVM.Runtime
                 java.lang.Class[] array = new java.lang.Class[classes.Length];
                 for (int i = 0; i < classes.Length; i++)
                 {
-                    array[i] = this.DeclaringType.GetClassLoader().LoadClassByDottedName(classes[i]).ClassObject;
+                    array[i] = this.DeclaringType.GetClassLoader().LoadClassByName(classes[i]).ClassObject;
                 }
                 return array;
             }
@@ -298,7 +298,7 @@ namespace IKVM.Runtime
             }
             RuntimeClassLoader loader = this.DeclaringType.GetClassLoader();
             RuntimeJavaType ret = loader.RetTypeWrapperFromSig(Signature, mode);
-            RuntimeJavaType[] parameters = loader.ArgTypeWrapperListFromSig(Signature, mode);
+            RuntimeJavaType[] parameters = loader.ArgJavaTypeListFromSig(Signature, mode);
             lock (this)
             {
                 try

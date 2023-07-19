@@ -72,7 +72,7 @@ namespace IKVM.Java.Externs.java.lang
 
                 var type = Type.GetType(name);
                 if (type != null)
-                    tw = RuntimeClassLoaderFactory.GetWrapperFromType(type);
+                    tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
 
                 if (tw == null)
                 {
@@ -84,7 +84,7 @@ namespace IKVM.Java.Externs.java.lang
             {
                 try
                 {
-                    tw = RuntimeClassLoaderFactory.GetClassLoaderWrapper(loader).LoadClassByDottedName(name);
+                    tw = RuntimeClassLoaderFactory.GetClassLoaderWrapper(loader).LoadClassByName(name);
                 }
                 catch (ClassNotFoundException x)
                 {
@@ -342,7 +342,7 @@ namespace IKVM.Java.Externs.java.lang
                 if (enc == null)
                     return null;
 
-                return new object[] { tw.GetClassLoader().LoadClassByDottedName(enc[0]).ClassObject, enc[1], enc[2] == null ? null : enc[2].Replace('.', '/') };
+                return new object[] { tw.GetClassLoader().LoadClassByName(enc[0]).ClassObject, enc[1], enc[2] == null ? null : enc[2].Replace('.', '/') };
             }
             catch (RetargetableJavaException x)
             {
@@ -402,7 +402,7 @@ namespace IKVM.Java.Externs.java.lang
                 {
                     // dynamically compiled intrinsified lamdba anonymous types end up here and should get their
                     // protection domain from the host class
-                    pd = RuntimeClassLoaderFactory.GetWrapperFromType(wrapper.TypeAsTBD.DeclaringType).ClassObject.pd;
+                    pd = RuntimeClassLoaderFactory.GetJavaTypeFromType(wrapper.TypeAsTBD.DeclaringType).ClassObject.pd;
                 }
             }
             return pd;

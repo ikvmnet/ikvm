@@ -97,7 +97,7 @@ namespace IKVM.Tools.Importer.MapXml
             }
             else
             {
-                var tw = loader.LoadClassByDottedName(Class);
+                var tw = loader.LoadClassByName(Class);
                 var mw = tw.GetMethodWrapper(Name, Sig, false);
                 if (mw == null)
                 {

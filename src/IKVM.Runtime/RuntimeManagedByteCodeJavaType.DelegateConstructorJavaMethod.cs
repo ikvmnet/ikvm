@@ -62,7 +62,7 @@ namespace IKVM.Runtime
             /// <param name="tw"></param>
             /// <param name="method"></param>
             internal DelegateConstructorJavaMethod(RuntimeJavaType tw, MethodBase method) :
-                this(tw, tw.GetClassLoader().LoadClassByDottedName(tw.Name + RuntimeManagedJavaType.DelegateInterfaceSuffix), AttributeHelper.GetModifiers(method, false))
+                this(tw, tw.GetClassLoader().LoadClassByName(tw.Name + RuntimeManagedJavaType.DelegateInterfaceSuffix), AttributeHelper.GetModifiers(method, false))
             {
                 constructor = (ConstructorInfo)method;
             }

@@ -77,7 +77,7 @@ namespace IKVM.Runtime
             // check for patched constant pool items
             var tw = clazz.GetClassType();
             if (tw == null || tw == RuntimeVerifierJavaType.Null)
-                tw = classLoader.LoadClassByDottedNameFast(clazz.Name);
+                tw = classLoader.TryLoadClassByName(clazz.Name);
             if (tw == null)
                 throw new NoClassDefFoundError(clazz.Name);
 
@@ -264,7 +264,7 @@ namespace IKVM.Runtime
             {
                 throw new VerifyError("Delegate may not declare any fields");
             }
-            var iface = classLoader.LoadClassByDottedNameFast(f.Name + RuntimeManagedJavaType.DelegateInterfaceSuffix);
+            var iface = classLoader.TryLoadClassByName(f.Name + RuntimeManagedJavaType.DelegateInterfaceSuffix);
             DelegateInnerClassCheck(iface != null);
             DelegateInnerClassCheck(iface.IsInterface);
             DelegateInnerClassCheck(iface.IsPublic);

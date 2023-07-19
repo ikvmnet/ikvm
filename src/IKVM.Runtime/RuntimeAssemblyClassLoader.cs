@@ -50,87 +50,6 @@ namespace IKVM.Runtime
 {
 
     /// <summary>
-    /// Maintains instances of <see cref="RuntimeAssemblyClassLoader"/>.
-    /// </summary>
-    static class RuntimeAssemblyClassLoaderFactory
-    {
-
-        /// <summary>
-        /// Maps existing <see cref="RuntimeAssemblyClassLoader"/> instances to <see cref="Assembly"/> instances. Allows
-        /// assemblies to be unloaded.
-        /// </summary>
-        static readonly ConditionalWeakTable<Assembly, RuntimeAssemblyClassLoader> assemblyClassLoaders = new();
-
-#if !IMPORTER && !EXPORTER && !FIRST_PASS
-        internal static Dictionary<string, string> customClassLoaderRedirects;
-#endif
-
-        /// <summary>
-        /// Obtains the <see cref="RuntimeAssemblyClassLoader"/> for the given <see cref="Assembly"/>. This method should not
-        /// be used with dynamic Java assemblies
-        /// </summary>
-        /// <param name="assembly"></param>
-        /// <returns></returns>
-        public static RuntimeAssemblyClassLoader FromAssembly(Assembly assembly)
-        {
-            if (assemblyClassLoaders.TryGetValue(assembly, out RuntimeAssemblyClassLoader loader))
-                return loader;
-
-            loader = Create(assembly);
-
-            lock (assemblyClassLoaders)
-            {
-                if (assemblyClassLoaders.TryGetValue(assembly, out var existing))
-                    loader = existing;
-                else
-                    assemblyClassLoaders.Add(assembly, loader);
-            }
-
-            return loader;
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="RuntimeAssemblyClassLoader"/> for the given assembly.
-        /// </summary>
-        /// <param name="assembly"></param>
-        /// <returns></returns>
-        static RuntimeAssemblyClassLoader Create(Assembly assembly)
-        {
-            // If the assembly is a part of a multi-assembly shared class loader,
-            // it will export the __<MainAssembly> type from the main assembly in the group.
-            var forwarder = assembly.GetType("__<MainAssembly>");
-            if (forwarder != null)
-            {
-                var mainAssembly = forwarder.Assembly;
-                if (mainAssembly != assembly)
-                    return FromAssembly(mainAssembly);
-            }
-
-#if IMPORTER
-
-            if (JVM.BaseAssembly == null && CompilerClassLoader.IsCoreAssembly(assembly))
-            {
-                JVM.BaseAssembly = assembly;
-                RuntimeClassLoaderFactory.LoadRemappedTypes();
-            }
-
-#endif
-
-            if (assembly == JVM.BaseAssembly)
-            {
-                // This cast is necessary for ikvmc and a no-op for the runtime.
-                // Note that the cast cannot fail, because ikvmc will only return a non AssemblyClassLoader
-                // from GetBootstrapClassLoader() when compiling the core assembly and in that case JVM.CoreAssembly
-                // will be null.
-                return (RuntimeAssemblyClassLoader)RuntimeClassLoaderFactory.GetBootstrapClassLoader();
-            }
-
-            return new RuntimeAssemblyClassLoader(assembly);
-        }
-
-    }
-
-    /// <summary>
     /// Runtime support for the virtual class loader that appears to load .NET assemblies.
     /// </summary>
     internal class RuntimeAssemblyClassLoader : RuntimeClassLoader
@@ -449,7 +368,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal RuntimeJavaType CreateWrapperForAssemblyType(Type type)
+            internal RuntimeJavaType CreateJavaTypeForAssemblyType(Type type)
             {
                 var name = GetTypeNameAndType(type, out bool isJavaType);
                 if (name == null)
@@ -769,39 +688,38 @@ namespace IKVM.Runtime
         /// <param name="type"></param>
         /// <returns></returns>
         /// <exception cref="InternalException"></exception>
-        internal virtual RuntimeJavaType GetWrapperFromAssemblyType(Type type)
+        internal virtual RuntimeJavaType GetJavaTypeFromAssemblyType(Type type)
         {
             if (type.Name.EndsWith("[]"))
                 throw new InternalException();
             if (RuntimeAssemblyClassLoaderFactory.FromAssembly(type.Assembly) != this)
                 throw new InternalException();
 
-            var wrapper = GetLoader(type.Assembly).CreateWrapperForAssemblyType(type);
-            if (wrapper != null)
+            var javaType = GetLoader(type.Assembly).CreateJavaTypeForAssemblyType(type);
+            if (javaType != null)
             {
                 if (type.IsGenericType && !type.IsGenericTypeDefinition)
                 {
                     // in the case of "magic" implementation generic type instances we'll end up here as well,
                     // but then wrapper.GetClassLoader() will return this anyway
-                    wrapper = wrapper.GetClassLoader().RegisterInitiatingLoader(wrapper);
+                    javaType = javaType.GetClassLoader().RegisterInitiatingLoader(javaType);
                 }
                 else
                 {
-                    wrapper = RegisterInitiatingLoader(wrapper);
+                    javaType = RegisterInitiatingLoader(javaType);
                 }
 
-                // this really shouldn't happen, it means that we have two different types in our assembly that both
-                // have the same Java name
-                if (wrapper.TypeAsTBD != type && (!wrapper.IsRemapped || wrapper.TypeAsBaseType != type))
+                // this really shouldn't happen, it means that we have two different types in our assembly that both have the same Java name
+                if (javaType.TypeAsTBD != type && (!javaType.IsRemapped || javaType.TypeAsBaseType != type))
                 {
 #if IMPORTER
-                    throw new FatalCompilerErrorException(Message.AssemblyContainsDuplicateClassNames, type.FullName, wrapper.TypeAsTBD.FullName, wrapper.Name, type.Assembly.FullName);
+                    throw new FatalCompilerErrorException(Message.AssemblyContainsDuplicateClassNames, type.FullName, javaType.TypeAsTBD.FullName, javaType.Name, type.Assembly.FullName);
 #else
-                    throw new InternalException($"\nType \"{type.FullName}\" and \"{wrapper.TypeAsTBD.FullName}\" both map to the same name \"{wrapper.Name}\".");
+                    throw new InternalException($"\nType \"{type.FullName}\" and \"{javaType.TypeAsTBD.FullName}\" both map to the same name \"{javaType.Name}\".");
 #endif
                 }
 
-                return wrapper;
+                return javaType;
             }
 
             return null;
@@ -856,7 +774,7 @@ namespace IKVM.Runtime
         RuntimeJavaType LoadBootstrapIfNonJavaAssembly(string name)
         {
             if (!assemblyLoader.HasJavaModule)
-                return RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
+                return RuntimeClassLoaderFactory.GetBootstrapClassLoader().TryLoadClassByName(name);
 
             return null;
         }
@@ -1416,12 +1334,12 @@ namespace IKVM.Runtime
 
         }
 
-        internal override RuntimeJavaType GetWrapperFromAssemblyType(Type type)
+        internal override RuntimeJavaType GetJavaTypeFromAssemblyType(Type type)
         {
             // we have to special case the fake types here
             if (type.IsGenericType && !type.IsGenericTypeDefinition)
             {
-                var outer = RuntimeClassLoaderFactory.GetWrapperFromType(type.GetGenericArguments()[0]);
+                var outer = RuntimeClassLoaderFactory.GetJavaTypeFromType(type.GetGenericArguments()[0]);
 
                 foreach (var inner in outer.InnerClasses)
                 {
@@ -1436,7 +1354,7 @@ namespace IKVM.Runtime
                 return null;
             }
 
-            return base.GetWrapperFromAssemblyType(type);
+            return base.GetJavaTypeFromAssemblyType(type);
         }
 
         protected override void CheckProhibitedPackage(string className)

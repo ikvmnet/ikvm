@@ -139,14 +139,14 @@ namespace IKVM.Runtime
                 else if (RuntimeClassLoaderFactory.IsRemappedType(type.BaseType))
                 {
                     // if we directly extend System.Object or System.Exception, the base class must be cli.System.Object or cli.System.Exception
-                    return RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(type.BaseType);
+                    return RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(type.BaseType);
                 }
 
                 RuntimeJavaType tw = null;
                 while (tw == null)
                 {
                     type = type.BaseType;
-                    tw = RuntimeClassLoaderFactory.GetWrapperFromType(type);
+                    tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
                 }
 
                 return tw;
@@ -349,12 +349,12 @@ namespace IKVM.Runtime
                     }
                     else
                     {
-                        wrappers.Add(RuntimeClassLoaderFactory.GetWrapperFromType(nested));
+                        wrappers.Add(RuntimeClassLoaderFactory.GetJavaTypeFromType(nested));
                     }
                 }
                 foreach (string s in AttributeHelper.GetNonNestedInnerClasses(type))
                 {
-                    wrappers.Add(GetClassLoader().LoadClassByDottedName(s));
+                    wrappers.Add(GetClassLoader().LoadClassByName(s));
                 }
 
                 return wrappers.ToArray();
@@ -372,12 +372,12 @@ namespace IKVM.Runtime
                 Type declaringType = type.DeclaringType;
                 if (declaringType != null)
                 {
-                    return RuntimeClassLoaderFactory.GetWrapperFromType(declaringType);
+                    return RuntimeClassLoaderFactory.GetJavaTypeFromType(declaringType);
                 }
                 string decl = AttributeHelper.GetNonNestedOuterClasses(type);
                 if (decl != null)
                 {
-                    return GetClassLoader().LoadClassByDottedName(decl);
+                    return GetClassLoader().LoadClassByName(decl);
                 }
                 return null;
             }
@@ -478,7 +478,7 @@ namespace IKVM.Runtime
                 }
                 else if (type.IsPrimitive)
                 {
-                    type = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(type.TypeAsTBD);
+                    type = RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(type.TypeAsTBD);
                     if (sigtype != type.SigName)
                     {
                         throw new InvalidOperationException();
@@ -499,7 +499,7 @@ namespace IKVM.Runtime
                     }
                     try
                     {
-                        RuntimeJavaType tw = GetClassLoader().LoadClassByDottedNameFast(sigtype);
+                        RuntimeJavaType tw = GetClassLoader().TryLoadClassByName(sigtype);
                         if (tw != null && tw.IsRemapped)
                         {
                             type = tw;
@@ -942,7 +942,7 @@ namespace IKVM.Runtime
                 }
                 else if (type == Types.Void || type.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(type))
                 {
-                    tw = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(type);
+                    tw = RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(type);
                 }
                 else if (type.DeclaringType != null && type.DeclaringType.FullName == RuntimeUnloadableJavaType.ContainerTypeName)
                 {
@@ -950,7 +950,7 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    tw = RuntimeClassLoaderFactory.GetWrapperFromType(type);
+                    tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
                 }
             }
             if (rank != 0)
@@ -962,12 +962,12 @@ namespace IKVM.Runtime
 
         static RuntimeJavaType GetPropertyTypeWrapper(PropertyInfo property)
         {
-            return TypeWrapperFromModOpt(property.GetOptionalCustomModifiers()) ?? RuntimeClassLoaderFactory.GetWrapperFromType(property.PropertyType);
+            return TypeWrapperFromModOpt(property.GetOptionalCustomModifiers()) ?? RuntimeClassLoaderFactory.GetJavaTypeFromType(property.PropertyType);
         }
 
         internal static RuntimeJavaType GetFieldTypeWrapper(FieldInfo field)
         {
-            return TypeWrapperFromModOpt(field.GetOptionalCustomModifiers()) ?? RuntimeClassLoaderFactory.GetWrapperFromType(field.FieldType);
+            return TypeWrapperFromModOpt(field.GetOptionalCustomModifiers()) ?? RuntimeClassLoaderFactory.GetJavaTypeFromType(field.FieldType);
         }
 
         internal static RuntimeJavaType GetParameterTypeWrapper(ParameterInfo param)
@@ -983,7 +983,7 @@ namespace IKVM.Runtime
                 parameterType = parameterType.GetElementType().MakeArrayType();
             }
 
-            return RuntimeClassLoaderFactory.GetWrapperFromType(parameterType);
+            return RuntimeClassLoaderFactory.GetJavaTypeFromType(parameterType);
         }
 
         RuntimeJavaField CreateFieldWrapper(FieldInfo field, HideFromJavaFlags hideFromJavaFlags)
@@ -1253,7 +1253,7 @@ namespace IKVM.Runtime
                 return DeclaringTypeWrapper.GetSourceFileName();
 
             if (IsNestedTypeAnonymousOrLocalClass(type))
-                return RuntimeClassLoaderFactory.GetWrapperFromType(type.DeclaringType).GetSourceFileName();
+                return RuntimeClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).GetSourceFileName();
 
             if (type.Module.IsDefined(typeof(SourceFileAttribute), false))
                 return type.Name + ".java";

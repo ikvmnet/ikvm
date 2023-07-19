@@ -77,7 +77,7 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
 
         public static object LoadClassFromAssembly(Assembly asm, string className)
         {
-            RuntimeJavaType tw = RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).LoadClassByDottedNameFast(className);
+            RuntimeJavaType tw = RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).TryLoadClassByName(className);
             if (tw != null)
             {
                 return tw.ClassObject;

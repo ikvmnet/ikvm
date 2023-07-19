@@ -402,7 +402,7 @@ namespace IKVM.Runtime
 
                                         var match = new RuntimeJavaType[paramLength];
                                         for (int j = 0; j < paramLength; j++)
-                                            match[j] = RuntimeClassLoaderFactory.GetWrapperFromType(param[j].ParameterType);
+                                            match[j] = RuntimeClassLoaderFactory.GetJavaTypeFromType(param[j].ParameterType);
 
                                         if (m.Name == method.Name && IsCompatibleArgList(nargs, match))
                                         {
@@ -424,7 +424,7 @@ namespace IKVM.Runtime
                                     for (int j = nargs.Length; j < param.Length; j++)
                                     {
                                         var paramType = param[j].ParameterType;
-                                        var fieldTypeWrapper = RuntimeClassLoaderFactory.GetWrapperFromType(paramType.IsByRef ? paramType.GetElementType() : paramType);
+                                        var fieldTypeWrapper = RuntimeClassLoaderFactory.GetJavaTypeFromType(paramType.IsByRef ? paramType.GetElementType() : paramType);
                                         var field = wrapper.GetFieldWrapper(param[j].Name, fieldTypeWrapper.SigName);
                                         if (field == null)
                                         {
@@ -760,7 +760,7 @@ namespace IKVM.Runtime
                 }
 #if !IMPORTER
                 // When we're statically compiling we don't need to set the wrapper here, because we've already done so for the typeBuilder earlier.
-                wrapper.GetClassLoader().SetWrapperForType(type, wrapper);
+                RuntimeClassLoaderFactory.SetWrapperForType(type, wrapper);
 #endif
 #if IMPORTER
                 wrapper.FinishGhostStep2();
@@ -1997,9 +1997,9 @@ namespace IKVM.Runtime
                             // look for "magic" interfaces that imply a .NET interface
                             if (iface.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
                             {
-                                if (iface.Name == "java.lang.Iterable" && !wrapper.ImplementsInterface(RuntimeClassLoaderFactory.GetWrapperFromType(JVM.Import(typeof(System.Collections.IEnumerable)))))
+                                if (iface.Name == "java.lang.Iterable" && !wrapper.ImplementsInterface(RuntimeClassLoaderFactory.GetJavaTypeFromType(JVM.Import(typeof(System.Collections.IEnumerable)))))
                                 {
-                                    var enumeratorType = RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedNameFast("ikvm.lang.IterableEnumerator");
+                                    var enumeratorType = RuntimeClassLoaderFactory.GetBootstrapClassLoader().TryLoadClassByName("ikvm.lang.IterableEnumerator");
                                     if (enumeratorType != null)
                                     {
                                         typeBuilder.AddInterfaceImplementation(JVM.Import(typeof(System.Collections.IEnumerable)));

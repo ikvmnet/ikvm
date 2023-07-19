@@ -313,7 +313,7 @@ namespace IKVM.Runtime
                         {
                             try
                             {
-                                enclosingClassWrapper = wrapper.classLoader.LoadClassByDottedNameFast(enclosingClassName) as RuntimeByteCodeJavaType;
+                                enclosingClassWrapper = wrapper.classLoader.TryLoadClassByName(enclosingClassName) as RuntimeByteCodeJavaType;
                             }
                             catch (RetargetableJavaException x)
                             {
@@ -464,7 +464,7 @@ namespace IKVM.Runtime
 #if IMPORTER
                     // When we're statically compiling, we associate the typeBuilder with the wrapper. This enables types in referenced assemblies to refer back to
                     // types that we're currently compiling (i.e. a cyclic dependency between the currently assembly we're compiling and a referenced assembly).
-                    wrapper.GetClassLoader().SetWrapperForType(typeBuilder, wrapper);
+                    RuntimeClassLoaderFactory.SetWrapperForType(typeBuilder, wrapper);
                     if (outerClass.outerClass != 0)
                     {
                         if (enclosing != null && cantNest)
@@ -484,7 +484,7 @@ namespace IKVM.Runtime
                             bool exists = false;
                             try
                             {
-                                exists = wrapper.GetClassLoader().LoadClassByDottedNameFast(name) != null;
+                                exists = wrapper.GetClassLoader().TryLoadClassByName(name) != null;
                             }
                             catch (RetargetableJavaException) { }
                             if (!exists)
@@ -1351,7 +1351,7 @@ namespace IKVM.Runtime
                 {
                     try
                     {
-                        var tw = wrapper.GetClassLoader().LoadClassByDottedNameFast(type.Substring(1, type.Length - 2));
+                        var tw = wrapper.GetClassLoader().TryLoadClassByName(type.Substring(1, type.Length - 2));
                         if (tw != null)
                         {
                             if ((tw.Modifiers & Modifiers.Annotation) != 0)
@@ -1359,7 +1359,7 @@ namespace IKVM.Runtime
 
                             if ((tw.Modifiers & Modifiers.Enum) != 0)
                             {
-                                var enumType = RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedNameFast("java.lang.Enum");
+                                var enumType = RuntimeClassLoaderFactory.GetBootstrapClassLoader().TryLoadClassByName("java.lang.Enum");
                                 if (enumType != null && tw.IsSubTypeOf(enumType))
                                     return true;
                             }

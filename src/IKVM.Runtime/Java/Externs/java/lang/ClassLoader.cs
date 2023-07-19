@@ -136,7 +136,7 @@ namespace IKVM.Java.Externs.java.lang
 #else
             try
             {
-                return RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedNameFast(name)?.ClassObject;
+                return RuntimeClassLoaderFactory.GetBootstrapClassLoader().TryLoadClassByName(name)?.ClassObject;
             }
             catch (RetargetableJavaException x)
             {

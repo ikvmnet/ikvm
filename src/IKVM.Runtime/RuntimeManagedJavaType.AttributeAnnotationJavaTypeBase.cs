@@ -49,7 +49,7 @@ namespace IKVM.Runtime
                 return DeclaringTypeWrapper.GetClassLoader();
             }
 
-            internal sealed override RuntimeJavaType[] Interfaces => new RuntimeJavaType[] { RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.annotation.Annotation") };
+            internal sealed override RuntimeJavaType[] Interfaces => new RuntimeJavaType[] { RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByName("java.lang.annotation.Annotation") };
 
             internal sealed override bool IsFastClassLiteralSafe => true;
 

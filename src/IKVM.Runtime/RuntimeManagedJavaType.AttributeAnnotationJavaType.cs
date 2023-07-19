@@ -226,7 +226,7 @@ namespace IKVM.Runtime
                     }
                     else if (type.IsEnum)
                     {
-                        foreach (RuntimeJavaType tw in RuntimeClassLoaderFactory.GetWrapperFromType(type).InnerClasses)
+                        foreach (RuntimeJavaType tw in RuntimeClassLoaderFactory.GetJavaTypeFromType(type).InnerClasses)
                         {
                             if (tw is EnumEnumJavaType)
                             {
@@ -374,7 +374,7 @@ namespace IKVM.Runtime
 
 #endif // !IMPORTER && !FIRST_PASS && !EXPORTER
 
-            internal override RuntimeJavaType DeclaringTypeWrapper => RuntimeClassLoaderFactory.GetWrapperFromType(attributeType);
+            internal override RuntimeJavaType DeclaringTypeWrapper => RuntimeClassLoaderFactory.GetJavaTypeFromType(attributeType);
 
             internal override Type TypeAsTBD => fakeType;
 

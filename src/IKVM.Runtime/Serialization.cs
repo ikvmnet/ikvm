@@ -44,8 +44,8 @@ namespace IKVM.Runtime
 
         static readonly CustomAttributeBuilder serializableAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SerializableAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
         static readonly CustomAttributeBuilder securityCriticalAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SecurityCriticalAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
-        static readonly RuntimeJavaType iserializable = RuntimeClassLoaderFactory.GetWrapperFromType(JVM.Import(typeof(ISerializable)));
-        static readonly RuntimeJavaType iobjectreference = RuntimeClassLoaderFactory.GetWrapperFromType(JVM.Import(typeof(IObjectReference)));
+        static readonly RuntimeJavaType iserializable = RuntimeClassLoaderFactory.GetJavaTypeFromType(JVM.Import(typeof(ISerializable)));
+        static readonly RuntimeJavaType iobjectreference = RuntimeClassLoaderFactory.GetJavaTypeFromType(JVM.Import(typeof(IObjectReference)));
         static readonly RuntimeJavaType externalizable = RuntimeClassLoaderFactory.LoadClassCritical("java.io.Externalizable");
 
         internal static bool IsISerializable(RuntimeJavaType wrapper)

@@ -126,7 +126,7 @@ namespace IKVM.Runtime
             }
             else if (tw.TypeAsTBD == Types.Type)
             {
-                RuntimeJavaType valtw = loader.LoadClassByDottedNameFast(val);
+                RuntimeJavaType valtw = loader.TryLoadClassByName(val);
                 if (valtw != null)
                 {
                     return valtw.TypeAsBaseType;
@@ -204,7 +204,7 @@ namespace IKVM.Runtime
         private static void GetAttributeArgsAndTypes(RuntimeClassLoader loader, IKVM.Tools.Importer.MapXml.Attribute attr, out Type[] argTypes, out object[] args)
         {
             // TODO add error handling
-            RuntimeJavaType[] twargs = loader.ArgTypeWrapperListFromSig(attr.Sig, LoadMode.Link);
+            RuntimeJavaType[] twargs = loader.ArgJavaTypeListFromSig(attr.Sig, LoadMode.Link);
             argTypes = new Type[twargs.Length];
             args = new object[argTypes.Length];
             for (int i = 0; i < twargs.Length; i++)
@@ -287,7 +287,7 @@ namespace IKVM.Runtime
                 {
                     throw new NotImplementedException("Setting property values on Java attributes is not implemented");
                 }
-                RuntimeJavaType t = loader.LoadClassByDottedName(attr.Class);
+                RuntimeJavaType t = loader.LoadClassByName(attr.Class);
                 FieldInfo[] namedFields;
                 object[] fieldValues;
                 if (attr.Fields != null)

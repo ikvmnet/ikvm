@@ -185,7 +185,7 @@ namespace IKVM.Runtime
                 base.LazyPublishMembers();
             }
 
-            internal override RuntimeJavaType DeclaringTypeWrapper => RuntimeClassLoaderFactory.GetWrapperFromType(fakeType.GetGenericArguments()[0]);
+            internal override RuntimeJavaType DeclaringTypeWrapper => RuntimeClassLoaderFactory.GetJavaTypeFromType(fakeType.GetGenericArguments()[0]);
 
             internal override RuntimeClassLoader GetClassLoader()
             {

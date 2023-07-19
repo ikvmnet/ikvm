@@ -82,7 +82,7 @@ namespace IKVM.Tools.Importer.MapXml
                 }
                 else
                 {
-                    type = context.ClassLoader.LoadClassByDottedName(Catch.Class).TypeAsExceptionType;
+                    type = context.ClassLoader.LoadClassByName(Catch.Class).TypeAsExceptionType;
                 }
 
                 ilgen.BeginCatchBlock(type);

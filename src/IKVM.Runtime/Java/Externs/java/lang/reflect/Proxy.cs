@@ -61,7 +61,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
 				return null;
 			}
 			// we need to explicitly register the type, because the type isn't visible by normal means
-			tw.GetClassLoader().SetWrapperForType(type, tw);
+			RuntimeClassLoaderFactory.SetWrapperForType(type, tw);
 			RuntimeJavaType[] wrappers2 = tw.Interfaces;
 			if (wrappers.Length != wrappers.Length)
 			{

@@ -476,7 +476,7 @@ namespace IKVM.Runtime.JNI
                 if (n.StartsWith("L") && n.EndsWith(";"))
                     n = n.Substring(1, n.Length - 2);
 
-                var w = FindNativeMethodClassLoader(pEnv).LoadClassByDottedNameFast(n.Replace('/', '.'));
+                var w = FindNativeMethodClassLoader(pEnv).TryLoadClassByName(n.Replace('/', '.'));
                 if (w == null)
                     throw new java.lang.NoClassDefFoundError(n);
 

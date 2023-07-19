@@ -79,7 +79,7 @@ namespace IKVM.Tools.Importer
         internal static void Finish(RuntimeClassLoader loader)
         {
             var tb = (TypeBuilder)genericEnumEnumType;
-            var enumTypeWrapper = loader.LoadClassByDottedName("java.lang.Enum");
+            var enumTypeWrapper = loader.LoadClassByName("java.lang.Enum");
             enumTypeWrapper.Finish();
             tb.SetParent(enumTypeWrapper.TypeAsBaseType);
             var ilgen = CodeEmitter.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Private, new Type[] { Types.String, Types.Int32 }));

@@ -1857,7 +1857,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                return ((Func<object[], long, object>)arrayRefCache.GetValue(RuntimeClassLoaderFactory.GetWrapperFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatileGetter)(array, offset);
+                return ((Func<object[], long, object>)arrayRefCache.GetValue(RuntimeClassLoaderFactory.GetJavaTypeFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatileGetter)(array, offset);
             }
             catch (Exception e)
             {
@@ -1918,7 +1918,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                ((Action<object[], long, object>)arrayRefCache.GetValue(RuntimeClassLoaderFactory.GetWrapperFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatilePutter)(array, offset, value);
+                ((Action<object[], long, object>)arrayRefCache.GetValue(RuntimeClassLoaderFactory.GetJavaTypeFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatilePutter)(array, offset, value);
             }
             catch (Exception e)
             {
@@ -2457,7 +2457,7 @@ namespace IKVM.Java.Externs.sun.misc
         static object CompareAndSwapArray<T>(T[] o, long offset, T value, T comparand)
             where T : class
         {
-            return Interlocked.CompareExchange<T>(ref o[offset / ArrayIndexScale(RuntimeClassLoaderFactory.GetWrapperFromType(o.GetType()))], value, comparand);
+            return Interlocked.CompareExchange<T>(ref o[offset / ArrayIndexScale(RuntimeClassLoaderFactory.GetJavaTypeFromType(o.GetType()))], value, comparand);
         }
 
         /// <summary>
@@ -2477,7 +2477,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                return ((Func<object[], long, object, object, object>)arrayRefCache.GetValue(RuntimeClassLoaderFactory.GetWrapperFromType(o.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).CompareExchange)(o, offset, value, expected);
+                return ((Func<object[], long, object, object, object>)arrayRefCache.GetValue(RuntimeClassLoaderFactory.GetJavaTypeFromType(o.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).CompareExchange)(o, offset, value, expected);
             }
             catch (Exception e)
             {

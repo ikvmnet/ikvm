@@ -57,22 +57,22 @@ namespace IKVM.Tools.Importer
         static ProxyGenerator()
         {
             var bootClassLoader = RuntimeClassLoaderFactory.GetBootstrapClassLoader();
-            proxyClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.Proxy");
-            errorClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.Error");
-            runtimeExceptionClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.RuntimeException");
-            undeclaredThrowableExceptionConstructor = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.UndeclaredThrowableException").GetMethodWrapper("<init>", "(Ljava.lang.Throwable;)V", false);
+            proxyClass = bootClassLoader.TryLoadClassByName("java.lang.reflect.Proxy");
+            errorClass = bootClassLoader.TryLoadClassByName("java.lang.Error");
+            runtimeExceptionClass = bootClassLoader.TryLoadClassByName("java.lang.RuntimeException");
+            undeclaredThrowableExceptionConstructor = bootClassLoader.TryLoadClassByName("java.lang.reflect.UndeclaredThrowableException").GetMethodWrapper("<init>", "(Ljava.lang.Throwable;)V", false);
             undeclaredThrowableExceptionConstructor.Link();
             invocationHandlerField = proxyClass.GetFieldWrapper("h", "Ljava.lang.reflect.InvocationHandler;");
             invocationHandlerField.Link();
-            javaLangReflectMethod = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.Method");
-            javaLangNoSuchMethodException = bootClassLoader.LoadClassByDottedNameFast("java.lang.NoSuchMethodException");
-            javaLangNoClassDefFoundErrorConstructor = bootClassLoader.LoadClassByDottedNameFast("java.lang.NoClassDefFoundError").GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
+            javaLangReflectMethod = bootClassLoader.TryLoadClassByName("java.lang.reflect.Method");
+            javaLangNoSuchMethodException = bootClassLoader.TryLoadClassByName("java.lang.NoSuchMethodException");
+            javaLangNoClassDefFoundErrorConstructor = bootClassLoader.TryLoadClassByName("java.lang.NoClassDefFoundError").GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
             javaLangNoClassDefFoundErrorConstructor.Link();
-            javaLangThrowable_getMessage = bootClassLoader.LoadClassByDottedNameFast("java.lang.Throwable").GetMethodWrapper("getMessage", "()Ljava.lang.String;", false);
+            javaLangThrowable_getMessage = bootClassLoader.TryLoadClassByName("java.lang.Throwable").GetMethodWrapper("getMessage", "()Ljava.lang.String;", false);
             javaLangThrowable_getMessage.Link();
             javaLangClass_getMethod = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("getMethod", "(Ljava.lang.String;[Ljava.lang.Class;)Ljava.lang.reflect.Method;", false);
             javaLangClass_getMethod.Link();
-            invocationHandlerClass = bootClassLoader.LoadClassByDottedNameFast("java.lang.reflect.InvocationHandler");
+            invocationHandlerClass = bootClassLoader.TryLoadClassByName("java.lang.reflect.InvocationHandler");
             invokeMethod = invocationHandlerClass.GetMethodWrapper("invoke", "(Ljava.lang.Object;Ljava.lang.reflect.Method;[Ljava.lang.Object;)Ljava.lang.Object;", false);
             proxyConstructor = proxyClass.GetMethodWrapper("<init>", "(Ljava.lang.reflect.InvocationHandler;)V", false);
             proxyConstructor.Link();
@@ -89,7 +89,7 @@ namespace IKVM.Tools.Importer
             {
                 try
                 {
-                    wrappers[i] = loader.LoadClassByDottedNameFast(interfaces[i]);
+                    wrappers[i] = loader.TryLoadClassByName(interfaces[i]);
                 }
                 catch (RetargetableJavaException)
                 {
@@ -431,7 +431,7 @@ namespace IKVM.Tools.Importer
 
             var tw = new RuntimeJavaType[classes.Length];
             for (int i = 0; i < tw.Length; i++)
-                tw[i] = loader.LoadClassByDottedName(classes[i]);
+                tw[i] = loader.LoadClassByName(classes[i]);
 
             return tw;
         }

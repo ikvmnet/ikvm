@@ -29,7 +29,7 @@ static class JRELocaleProviderAdapter
     internal static bool isNonENLangSupported()
     {
 
-        return IKVM.Runtime.RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedNameFast("sun.text.resources.nl.FormatData_nl") != null;
+        return IKVM.Runtime.RuntimeClassLoaderFactory.GetBootstrapClassLoader().TryLoadClassByName("sun.text.resources.nl.FormatData_nl") != null;
 
     }
 
