@@ -114,7 +114,7 @@ namespace IKVM.Java.Externs.java.security
 
         static global::java.security.ProtectionDomain GetProtectionDomainFromType(Type type)
         {
-            if (type == null || type.Assembly == typeof(object).Assembly || type.Assembly == typeof(AccessController).Assembly || type.Assembly == IKVM.Java.Externs.java.lang.SecurityManager.jniAssembly || type.Assembly == typeof(global::java.lang.Thread).Assembly)
+            if (type == null || type.Assembly == typeof(object).Assembly || type.Assembly == typeof(AccessController).Assembly || type.Assembly == typeof(global::java.lang.Thread).Assembly)
                 return null;
 
             var tw = RuntimeClassLoader.GetWrapperFromType(type);
