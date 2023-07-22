@@ -35,81 +35,80 @@ using Type = IKVM.Reflection.Type;
 using System.Reflection;
 #endif
 
-
 namespace IKVM.Runtime
 {
 
 #if EXPORTER == FALSE
 
-    static class ByteCodeHelperMethods
+    class ByteCodeHelperMethods
     {
 
-        internal static readonly MethodInfo multianewarray;
-        internal static readonly MethodInfo multianewarray_ghost;
-        internal static readonly MethodInfo anewarray_ghost;
-        internal static readonly MethodInfo f2i;
-        internal static readonly MethodInfo d2i;
-        internal static readonly MethodInfo f2l;
-        internal static readonly MethodInfo d2l;
-        internal static readonly MethodInfo arraycopy_fast;
-        internal static readonly MethodInfo arraycopy_primitive_8;
-        internal static readonly MethodInfo arraycopy_primitive_4;
-        internal static readonly MethodInfo arraycopy_primitive_2;
-        internal static readonly MethodInfo arraycopy_primitive_1;
-        internal static readonly MethodInfo arraycopy;
-        internal static readonly MethodInfo DynamicCast;
-        internal static readonly MethodInfo DynamicAaload;
-        internal static readonly MethodInfo DynamicAastore;
-        internal static readonly MethodInfo DynamicClassLiteral;
-        internal static readonly MethodInfo DynamicMultianewarray;
-        internal static readonly MethodInfo DynamicNewarray;
-        internal static readonly MethodInfo DynamicNewCheckOnly;
-        internal static readonly MethodInfo DynamicCreateDelegate;
-        internal static readonly MethodInfo DynamicLoadMethodType;
-        internal static readonly MethodInfo DynamicLoadMethodHandle;
-        internal static readonly MethodInfo DynamicBinderMemberLookup;
-        internal static readonly MethodInfo DynamicMapException;
-        internal static readonly MethodInfo DynamicCallerID;
-        internal static readonly MethodInfo DynamicLinkIndyCallSite;
-        internal static readonly MethodInfo DynamicEraseInvokeExact;
-        internal static readonly MethodInfo VerboseCastFailure;
-        internal static readonly MethodInfo SkipFinalizer;
-        internal static readonly MethodInfo SkipFinalizerOf;
-        internal static readonly MethodInfo DynamicInstanceOf;
-        internal static readonly MethodInfo VolatileReadBoolean;
-        internal static readonly MethodInfo VolatileReadByte;
-        internal static readonly MethodInfo VolatileReadChar;
-        internal static readonly MethodInfo VolatileReadShort;
-        internal static readonly MethodInfo VolatileReadInt;
-        internal static readonly MethodInfo VolatileReadLong;
-        internal static readonly MethodInfo VolatileReadFloat;
-        internal static readonly MethodInfo VolatileReadDouble;
-        internal static readonly MethodInfo VolatileWriteBoolean;
-        internal static readonly MethodInfo VolatileWriteByte;
-        internal static readonly MethodInfo VolatileWriteChar;
-        internal static readonly MethodInfo VolatileWriteShort;
-        internal static readonly MethodInfo VolatileWriteInt;
-        internal static readonly MethodInfo VolatileWriteLong;
-        internal static readonly MethodInfo VolatileWriteFloat;
-        internal static readonly MethodInfo VolatileWriteDouble;
-        internal static readonly MethodInfo CompareAndSwapObject;
-        internal static readonly MethodInfo CompareAndSwapInt;
-        internal static readonly MethodInfo CompareAndSwapLong;
-        internal static readonly MethodInfo CompareAndSwapDouble;
-        internal static readonly MethodInfo mapException;
-        internal static readonly MethodInfo GetDelegateForInvokeExact;
-        internal static readonly MethodInfo GetDelegateForInvoke;
-        internal static readonly MethodInfo GetDelegateForInvokeBasic;
-        internal static readonly MethodInfo LoadMethodType;
-        internal static readonly MethodInfo LinkIndyCallSite;
+        internal readonly MethodInfo multianewarray;
+        internal readonly MethodInfo multianewarray_ghost;
+        internal readonly MethodInfo anewarray_ghost;
+        internal readonly MethodInfo f2i;
+        internal readonly MethodInfo d2i;
+        internal readonly MethodInfo f2l;
+        internal readonly MethodInfo d2l;
+        internal readonly MethodInfo arraycopy_fast;
+        internal readonly MethodInfo arraycopy_primitive_8;
+        internal readonly MethodInfo arraycopy_primitive_4;
+        internal readonly MethodInfo arraycopy_primitive_2;
+        internal readonly MethodInfo arraycopy_primitive_1;
+        internal readonly MethodInfo arraycopy;
+        internal readonly MethodInfo DynamicCast;
+        internal readonly MethodInfo DynamicAaload;
+        internal readonly MethodInfo DynamicAastore;
+        internal readonly MethodInfo DynamicClassLiteral;
+        internal readonly MethodInfo DynamicMultianewarray;
+        internal readonly MethodInfo DynamicNewarray;
+        internal readonly MethodInfo DynamicNewCheckOnly;
+        internal readonly MethodInfo DynamicCreateDelegate;
+        internal readonly MethodInfo DynamicLoadMethodType;
+        internal readonly MethodInfo DynamicLoadMethodHandle;
+        internal readonly MethodInfo DynamicBinderMemberLookup;
+        internal readonly MethodInfo DynamicMapException;
+        internal readonly MethodInfo DynamicCallerID;
+        internal readonly MethodInfo DynamicLinkIndyCallSite;
+        internal readonly MethodInfo DynamicEraseInvokeExact;
+        internal readonly MethodInfo VerboseCastFailure;
+        internal readonly MethodInfo SkipFinalizer;
+        internal readonly MethodInfo SkipFinalizerOf;
+        internal readonly MethodInfo DynamicInstanceOf;
+        internal readonly MethodInfo VolatileReadBoolean;
+        internal readonly MethodInfo VolatileReadByte;
+        internal readonly MethodInfo VolatileReadChar;
+        internal readonly MethodInfo VolatileReadShort;
+        internal readonly MethodInfo VolatileReadInt;
+        internal readonly MethodInfo VolatileReadLong;
+        internal readonly MethodInfo VolatileReadFloat;
+        internal readonly MethodInfo VolatileReadDouble;
+        internal readonly MethodInfo VolatileWriteBoolean;
+        internal readonly MethodInfo VolatileWriteByte;
+        internal readonly MethodInfo VolatileWriteChar;
+        internal readonly MethodInfo VolatileWriteShort;
+        internal readonly MethodInfo VolatileWriteInt;
+        internal readonly MethodInfo VolatileWriteLong;
+        internal readonly MethodInfo VolatileWriteFloat;
+        internal readonly MethodInfo VolatileWriteDouble;
+        internal readonly MethodInfo CompareAndSwapObject;
+        internal readonly MethodInfo CompareAndSwapInt;
+        internal readonly MethodInfo CompareAndSwapLong;
+        internal readonly MethodInfo CompareAndSwapDouble;
+        internal readonly MethodInfo mapException;
+        internal readonly MethodInfo GetDelegateForInvokeExact;
+        internal readonly MethodInfo GetDelegateForInvoke;
+        internal readonly MethodInfo GetDelegateForInvokeBasic;
+        internal readonly MethodInfo LoadMethodType;
+        internal readonly MethodInfo LinkIndyCallSite;
 
-        static ByteCodeHelperMethods()
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        public ByteCodeHelperMethods(RuntimeContext context)
         {
-#if IMPORTER
-		    var typeofByteCodeHelper = StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper");
-#else
-            var typeofByteCodeHelper = typeof(IKVM.Runtime.ByteCodeHelper);
-#endif
+		    var typeofByteCodeHelper = context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper");
             multianewarray = GetHelper(typeofByteCodeHelper, "multianewarray");
             multianewarray_ghost = GetHelper(typeofByteCodeHelper, "multianewarray_ghost");
             anewarray_ghost = GetHelper(typeofByteCodeHelper, "anewarray_ghost");
@@ -140,28 +139,28 @@ namespace IKVM.Runtime
             DynamicEraseInvokeExact = GetHelper(typeofByteCodeHelper, "DynamicEraseInvokeExact");
             VerboseCastFailure = GetHelper(typeofByteCodeHelper, "VerboseCastFailure");
             SkipFinalizer = GetHelper(typeofByteCodeHelper, "SkipFinalizer", new Type[] { });
-            SkipFinalizerOf = GetHelper(typeofByteCodeHelper, "SkipFinalizer", new Type[] { Types.Object });
+            SkipFinalizerOf = GetHelper(typeofByteCodeHelper, "SkipFinalizer", new Type[] { context.Types.Object });
             DynamicInstanceOf = GetHelper(typeofByteCodeHelper, "DynamicInstanceOf");
-            VolatileReadBoolean = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { Types.Boolean.MakeByRefType() });
-            VolatileReadByte = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { Types.Byte.MakeByRefType() });
-            VolatileReadChar = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { Types.Char.MakeByRefType() });
-            VolatileReadShort = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { Types.Int16.MakeByRefType() });
-            VolatileReadInt = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { Types.Int32.MakeByRefType() });
-            VolatileReadLong = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { Types.Int64.MakeByRefType() });
-            VolatileReadFloat = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { Types.Single.MakeByRefType() });
-            VolatileReadDouble = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { Types.Double.MakeByRefType() });
-            VolatileWriteBoolean = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { Types.Boolean.MakeByRefType(), Types.Boolean });
-            VolatileWriteByte = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { Types.Byte.MakeByRefType(), Types.Byte });
-            VolatileWriteChar = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { Types.Char.MakeByRefType(), Types.Char });
-            VolatileWriteShort = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { Types.Int16.MakeByRefType(), Types.Int16 });
-            VolatileWriteInt = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { Types.Int32.MakeByRefType(), Types.Int32 });
-            VolatileWriteLong = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { Types.Int64.MakeByRefType(), Types.Int64 });
-            VolatileWriteFloat = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { Types.Single.MakeByRefType(), Types.Single });
-            VolatileWriteDouble = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { Types.Double.MakeByRefType(), Types.Double });
-            CompareAndSwapObject = GetHelper(typeofByteCodeHelper, "CompareAndSwap", new[] { Types.Object.MakeByRefType(), Types.Object, Types.Object });
-            CompareAndSwapInt = GetHelper(typeofByteCodeHelper, "CompareAndSwap", new[] { Types.Int32.MakeByRefType(), Types.Int32, Types.Int32 });
-            CompareAndSwapLong = GetHelper(typeofByteCodeHelper, "CompareAndSwap", new[] { Types.Int64.MakeByRefType(), Types.Int64, Types.Int64 });
-            CompareAndSwapDouble = GetHelper(typeofByteCodeHelper, "CompareAndSwap", new[] { Types.Double.MakeByRefType(), Types.Double, Types.Double });
+            VolatileReadBoolean = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { context.Types.Boolean.MakeByRefType() });
+            VolatileReadByte = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { context.Types.Byte.MakeByRefType() });
+            VolatileReadChar = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { context.Types.Char.MakeByRefType() });
+            VolatileReadShort = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { context.Types.Int16.MakeByRefType() });
+            VolatileReadInt = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { context.Types.Int32.MakeByRefType() });
+            VolatileReadLong = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { context.Types.Int64.MakeByRefType() });
+            VolatileReadFloat = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { context.Types.Single.MakeByRefType() });
+            VolatileReadDouble = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { context.Types.Double.MakeByRefType() });
+            VolatileWriteBoolean = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { context.Types.Boolean.MakeByRefType(), context.Types.Boolean });
+            VolatileWriteByte = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { context.Types.Byte.MakeByRefType(), context.Types.Byte });
+            VolatileWriteChar = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { context.Types.Char.MakeByRefType(), context.Types.Char });
+            VolatileWriteShort = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { context.Types.Int16.MakeByRefType(), context.Types.Int16 });
+            VolatileWriteInt = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { context.Types.Int32.MakeByRefType(), context.Types.Int32 });
+            VolatileWriteLong = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { context.Types.Int64.MakeByRefType(), context.Types.Int64 });
+            VolatileWriteFloat = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { context.Types.Single.MakeByRefType(), context.Types.Single });
+            VolatileWriteDouble = GetHelper(typeofByteCodeHelper, "VolatileWrite", new Type[] { context.Types.Double.MakeByRefType(), context.Types.Double });
+            CompareAndSwapObject = GetHelper(typeofByteCodeHelper, "CompareAndSwap", new[] { context.Types.Object.MakeByRefType(), context.Types.Object, context.Types.Object });
+            CompareAndSwapInt = GetHelper(typeofByteCodeHelper, "CompareAndSwap", new[] { context.Types.Int32.MakeByRefType(), context.Types.Int32, context.Types.Int32 });
+            CompareAndSwapLong = GetHelper(typeofByteCodeHelper, "CompareAndSwap", new[] { context.Types.Int64.MakeByRefType(), context.Types.Int64, context.Types.Int64 });
+            CompareAndSwapDouble = GetHelper(typeofByteCodeHelper, "CompareAndSwap", new[] { context.Types.Double.MakeByRefType(), context.Types.Double, context.Types.Double });
             mapException = GetHelper(typeofByteCodeHelper, "MapException");
             GetDelegateForInvokeExact = GetHelper(typeofByteCodeHelper, "GetDelegateForInvokeExact");
             GetDelegateForInvoke = GetHelper(typeofByteCodeHelper, "GetDelegateForInvoke");

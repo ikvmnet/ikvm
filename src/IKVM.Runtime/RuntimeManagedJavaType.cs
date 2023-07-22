@@ -113,9 +113,9 @@ namespace IKVM.Runtime
 
         // NOTE when this is called on a remapped type, the "warped" underlying type name is returned.
         // E.g. GetName(typeof(object)) returns "cli.System.Object".
-        internal static string GetName(Type type)
+        internal static string GetName(RuntimeContext context, Type type)
         {
-            Debug.Assert(!type.Name.EndsWith("[]") && !AttributeHelper.IsJavaModule(type.Module));
+            Debug.Assert(!type.Name.EndsWith("[]") && !context.AttributeHelper.IsJavaModule(type.Module));
 
             var name = type.FullName;
             if (name == null)
@@ -149,20 +149,20 @@ namespace IKVM.Runtime
                         sb.Append('A');
                     }
 
-                    if (RuntimePrimitiveJavaType.IsPrimitiveType(t))
+                    if (RuntimePrimitiveJavaType.IsPrimitiveType(context, t))
                     {
-                        sb.Append(RuntimeClassLoaderFactory.GetJavaTypeFromType(t).SigName);
+                        sb.Append(context.ClassLoaderFactory.GetJavaTypeFromType(t).SigName);
                     }
                     else
                     {
                         string s;
-                        if (RuntimeClassLoaderFactory.IsRemappedType(t) || AttributeHelper.IsJavaModule(t.Module))
+                        if (context.ClassLoaderFactory.IsRemappedType(t) || context.AttributeHelper.IsJavaModule(t.Module))
                         {
-                            s = RuntimeClassLoaderFactory.GetJavaTypeFromType(t).Name;
+                            s = context.ClassLoaderFactory.GetJavaTypeFromType(t).Name;
                         }
                         else
                         {
-                            s = RuntimeManagedJavaType.GetName(t);
+                            s = RuntimeManagedJavaType.GetName(context, t);
                         }
 
                         // only do the mangling for non-generic types (because we don't want to convert
@@ -183,7 +183,7 @@ namespace IKVM.Runtime
                 return sb.ToString();
             }
 
-            if (AttributeHelper.IsNoPackagePrefix(type) && name.IndexOf('$') == -1)
+            if (context.AttributeHelper.IsNoPackagePrefix(type) && name.IndexOf('$') == -1)
                 return name.Replace('+', '$');
 
             return MangleTypeName(name);
@@ -284,38 +284,39 @@ namespace IKVM.Runtime
             return true;
         }
 
-        internal static RuntimeJavaType Create(Type type, string name)
+        internal static RuntimeJavaType Create(RuntimeContext context, Type type, string name)
         {
             if (type.ContainsGenericParameters)
             {
-                return new OpenGenericJavaType(type, name);
+                return new OpenGenericJavaType(context, type, name);
             }
             else
             {
-                return new RuntimeManagedJavaType(type, name);
+                return new RuntimeManagedJavaType(context, type, name);
             }
         }
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        RuntimeManagedJavaType(Type type, string name) :
-            base(TypeFlags.None, GetModifiers(type), name)
+        RuntimeManagedJavaType(RuntimeContext context, Type type, string name) :
+            base(context, TypeFlags.None, GetModifiers(type), name)
         {
             Debug.Assert(!type.IsByRef, type.FullName);
             Debug.Assert(!type.IsPointer, type.FullName);
             Debug.Assert(!type.Name.EndsWith("[]"), type.FullName);
             Debug.Assert(type is not TypeBuilder, type.FullName);
-            Debug.Assert(!AttributeHelper.IsJavaModule(type.Module));
+            Debug.Assert(!Context.AttributeHelper.IsJavaModule(type.Module));
 
             this.type = type;
         }
 
-        internal override RuntimeJavaType BaseTypeWrapper => baseTypeWrapper ??= RuntimeManagedJavaTypeFactory.GetBaseJavaType(type);
+        internal override RuntimeJavaType BaseTypeWrapper => baseTypeWrapper ??= Context.ManagedJavaTypeFactory.GetBaseJavaType(type);
 
-        internal override RuntimeClassLoader GetClassLoader() => type.IsGenericType ? RuntimeClassLoaderFactory.GetGenericClassLoader(this) : RuntimeAssemblyClassLoaderFactory.FromAssembly(type.Assembly);
+        internal override RuntimeClassLoader GetClassLoader() => type.IsGenericType ? Context.ClassLoaderFactory.GetGenericClassLoader(this) : Context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly);
 
         internal static string GetDelegateInvokeStubName(Type delegateType)
         {
@@ -337,28 +338,28 @@ namespace IKVM.Runtime
             {
                 Type underlyingType = EnumHelper.GetUnderlyingType(type);
                 Type javaUnderlyingType;
-                if (underlyingType == Types.SByte)
+                if (underlyingType == Context.Types.SByte)
                 {
-                    javaUnderlyingType = Types.Byte;
+                    javaUnderlyingType = Context.Types.Byte;
                 }
-                else if (underlyingType == Types.UInt16)
+                else if (underlyingType == Context.Types.UInt16)
                 {
-                    javaUnderlyingType = Types.Int16;
+                    javaUnderlyingType = Context.Types.Int16;
                 }
-                else if (underlyingType == Types.UInt32)
+                else if (underlyingType == Context.Types.UInt32)
                 {
-                    javaUnderlyingType = Types.Int32;
+                    javaUnderlyingType = Context.Types.Int32;
                 }
-                else if (underlyingType == Types.UInt64)
+                else if (underlyingType == Context.Types.UInt64)
                 {
-                    javaUnderlyingType = Types.Int64;
+                    javaUnderlyingType = Context.Types.Int64;
                 }
                 else
                 {
                     javaUnderlyingType = underlyingType;
                 }
 
-                var fieldType = RuntimeClassLoaderFactory.GetJavaTypeFromType(javaUnderlyingType);
+                var fieldType = Context.ClassLoaderFactory.GetJavaTypeFromType(javaUnderlyingType);
                 var fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
                 var fieldsList = new List<RuntimeJavaField>();
                 for (int i = 0; i < fields.Length; i++)
@@ -371,7 +372,7 @@ namespace IKVM.Runtime
                         else if (name.StartsWith("_") && name.EndsWith("Value"))
                             name = "_" + name;
 
-                        var val = EnumHelper.GetPrimitiveValue(underlyingType, fields[i].GetRawConstantValue());
+                        var val = EnumHelper.GetPrimitiveValue(Context, underlyingType, fields[i].GetRawConstantValue());
                         fieldsList.Add(new RuntimeConstantJavaField(this, fieldType, name, fieldType.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final, fields[i], val, MemberFlags.None));
                     }
                 }
@@ -393,7 +394,7 @@ namespace IKVM.Runtime
                     else
                     {
                         // TODO handle name/signature clash
-                        fieldsList.Add(CreateFieldWrapperDotNet(AttributeHelper.GetModifiers(fields[i], true).Modifiers, fields[i].Name, fields[i].FieldType, fields[i]));
+                        fieldsList.Add(CreateFieldWrapperDotNet(Context.AttributeHelper.GetModifiers(fields[i], true).Modifiers, fields[i].Name, fields[i].FieldType, fields[i]));
                     }
                 }
                 SetFields(fieldsList.ToArray());
@@ -401,7 +402,7 @@ namespace IKVM.Runtime
                 var methodsList = new Dictionary<string, RuntimeJavaMethod>();
 
                 // special case for delegate constructors!
-                if (IsDelegate(type))
+                if (IsDelegate(Context, type))
                 {
                     var iface = InnerClasses[0];
                     var mw = new DelegateJavaMethod(this, (DelegateInnerClassJavaType)iface);
@@ -409,7 +410,7 @@ namespace IKVM.Runtime
                 }
 
                 // add a protected default constructor to MulticastDelegate to make it easier to define a delegate in Java
-                if (type == Types.MulticastDelegate)
+                if (type == Context.Types.MulticastDelegate)
                     methodsList.Add("<init>()V", new MulticastDelegateCtorJavaMethod(this));
 
                 var constructors = type.GetConstructors(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
@@ -473,9 +474,9 @@ namespace IKVM.Runtime
                         // method that should be callable by anyone through the interface
                         if (interfaces[i].IsVisible)
                         {
-                            if (RuntimeClassLoaderFactory.IsRemappedType(interfaces[i]))
+                            if (Context.ClassLoaderFactory.IsRemappedType(interfaces[i]))
                             {
-                                var tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(interfaces[i]);
+                                var tw = Context.ClassLoaderFactory.GetJavaTypeFromType(interfaces[i]);
                                 foreach (var mw in tw.GetMethods())
                                 {
                                     // HACK we need to link here, because during a core library build we might reference java.lang.AutoCloseable (via IDisposable) before it has been linked
@@ -502,7 +503,7 @@ namespace IKVM.Runtime
                 // for non-final remapped types, we need to add all the virtual methods in our alter ego (which
                 // appears as our base class) and make them final (to prevent Java code from overriding these
                 // methods, which don't really exist).
-                if (RuntimeClassLoaderFactory.IsRemappedType(type) && !type.IsSealed && !type.IsInterface)
+                if (Context.ClassLoaderFactory.IsRemappedType(type) && !type.IsSealed && !type.IsInterface)
                 {
                     var baseTypeWrapper = BaseTypeWrapper;
 
@@ -654,14 +655,14 @@ namespace IKVM.Runtime
                     }
                 }
 
-                var tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
+                var tw = Context.ClassLoaderFactory.GetJavaTypeFromType(type);
                 args[i] = tw;
                 sb.Append(tw.SigName);
             }
             sb.Append(')');
             if (mb is ConstructorInfo)
             {
-                ret = RuntimePrimitiveJavaType.VOID;
+                ret = Context.PrimitiveJavaTypeFactory.VOID;
                 name = mb.IsStatic ? "<clinit>" : "<init>";
                 sb.Append(ret.SigName);
                 sig = sb.ToString();
@@ -677,7 +678,7 @@ namespace IKVM.Runtime
                     ret = null;
                     return false;
                 }
-                ret = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
+                ret = Context.ClassLoaderFactory.GetJavaTypeFromType(type);
                 sb.Append(ret.SigName);
                 name = mb.Name;
                 sig = sb.ToString();
@@ -685,11 +686,11 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override RuntimeJavaType[] Interfaces => interfaces ??= GetImplementedInterfacesAsTypeWrappers(type);
+        internal override RuntimeJavaType[] Interfaces => interfaces ??= GetImplementedInterfacesAsTypeWrappers(Context, type);
 
-        static bool IsAttribute(Type type)
+        static bool IsAttribute(RuntimeContext context, Type type)
         {
-            if (!type.IsAbstract && type.IsSubclassOf(Types.Attribute) && type.IsVisible)
+            if (!type.IsAbstract && type.IsSubclassOf(context.Types.Attribute) && type.IsVisible)
             {
                 //
                 // Based on the number of constructors and their arguments, we distinguish several types
@@ -704,20 +705,20 @@ namespace IKVM.Runtime
                 // 
                 // TODO currently we don't support "complex only" attributes.
                 //
-                AttributeAnnotationJavaType.GetConstructors(type, out var defCtor, out var singleOneArgCtor);
+                AttributeAnnotationJavaType.GetConstructors(context, type, out var defCtor, out var singleOneArgCtor);
                 return defCtor != null || singleOneArgCtor != null;
             }
 
             return false;
         }
 
-        static bool IsDelegate(Type type)
+        static bool IsDelegate(RuntimeContext context, Type type)
         {
             // HACK non-public delegates do not get the special treatment (because they are likely to refer to
             // non-public types in the arg list and they're not really useful anyway)
             // NOTE we don't have to check in what assembly the type lives, because this is a DotNetTypeWrapper,
             // we know that it is a different assembly.
-            if (!type.IsAbstract && type.IsSubclassOf(Types.MulticastDelegate) && type.IsVisible)
+            if (!type.IsAbstract && type.IsSubclassOf(context.Types.MulticastDelegate) && type.IsVisible)
             {
                 var invoke = type.GetMethod("Invoke");
                 if (invoke != null)
@@ -744,21 +745,21 @@ namespace IKVM.Runtime
             var list = new List<RuntimeJavaType>(nestedTypes.Length);
             for (int i = 0; i < nestedTypes.Length; i++)
                 if (!nestedTypes[i].IsGenericTypeDefinition)
-                    list.Add(RuntimeClassLoaderFactory.GetJavaTypeFromType(nestedTypes[i]));
+                    list.Add(Context.ClassLoaderFactory.GetJavaTypeFromType(nestedTypes[i]));
 
-            if (IsDelegate(type))
-                list.Add(GetClassLoader().RegisterInitiatingLoader(new DelegateInnerClassJavaType(Name + DelegateInterfaceSuffix, type)));
+            if (IsDelegate(Context, type))
+                list.Add(GetClassLoader().RegisterInitiatingLoader(new DelegateInnerClassJavaType(Context, Name + DelegateInterfaceSuffix, type)));
 
-            if (IsAttribute(type))
-                list.Add(GetClassLoader().RegisterInitiatingLoader(new AttributeAnnotationJavaType(Name + AttributeAnnotationSuffix, type)));
+            if (IsAttribute(Context, type))
+                list.Add(GetClassLoader().RegisterInitiatingLoader(new AttributeAnnotationJavaType(Context, Name + AttributeAnnotationSuffix, type)));
 
             if (type.IsEnum && type.IsVisible)
-                list.Add(GetClassLoader().RegisterInitiatingLoader(new EnumEnumJavaType(Name + EnumEnumSuffix, type)));
+                list.Add(GetClassLoader().RegisterInitiatingLoader(new EnumEnumJavaType(Context, Name + EnumEnumSuffix, type)));
 
             return list.ToArray();
         }
 
-        internal override bool IsFakeTypeContainer => IsDelegate(type) || IsAttribute(type) || (type.IsEnum && type.IsVisible);
+        internal override bool IsFakeTypeContainer => IsDelegate(Context, type) || IsAttribute(Context, type) || (type.IsEnum && type.IsVisible);
 
         internal override RuntimeJavaType DeclaringTypeWrapper
         {
@@ -768,7 +769,7 @@ namespace IKVM.Runtime
                 {
                     var outer = type.DeclaringType;
                     if (outer != null && !type.IsGenericType)
-                        outerClass = RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(outer);
+                        outerClass = Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(outer);
                 }
 
                 return outerClass;
@@ -779,7 +780,7 @@ namespace IKVM.Runtime
 
         RuntimeJavaField CreateFieldWrapperDotNet(Modifiers modifiers, string name, Type fieldType, FieldInfo field)
         {
-            var type = RuntimeClassLoaderFactory.GetJavaTypeFromType(fieldType);
+            var type = Context.ClassLoaderFactory.GetJavaTypeFromType(fieldType);
             if (field.IsLiteral)
                 return new RuntimeConstantJavaField(this, type, name, type.SigName, modifiers, field, null, MemberFlags.None);
             else
@@ -791,10 +792,10 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        static bool IsRemappedImplDerived(Type type)
+        static bool IsRemappedImplDerived(RuntimeContext context, Type type)
         {
             for (; type != null; type = type.BaseType)
-                if (!RuntimeClassLoaderFactory.IsRemappedType(type) && RuntimeClassLoaderFactory.GetJavaTypeFromType(type).IsRemapped)
+                if (!context.ClassLoaderFactory.IsRemappedType(type) && context.ClassLoaderFactory.GetJavaTypeFromType(type).IsRemapped)
                     return true;
 
             return false;
@@ -802,13 +803,13 @@ namespace IKVM.Runtime
 
         RuntimeJavaMethod CreateMethodWrapper(string name, string sig, RuntimeJavaType[] argTypeWrappers, RuntimeJavaType retTypeWrapper, MethodBase mb, bool privateInterfaceImplHack)
         {
-            var exmods = AttributeHelper.GetModifiers(mb, true);
+            var exmods = Context.AttributeHelper.GetModifiers(mb, true);
             var mods = exmods.Modifiers;
 
-            if (name == "Finalize" && sig == "()V" && !mb.IsStatic && IsRemappedImplDerived(TypeAsBaseType))
+            if (name == "Finalize" && sig == "()V" && !mb.IsStatic && IsRemappedImplDerived(Context, TypeAsBaseType))
             {
                 // TODO if the .NET also has a "finalize" method, we need to hide that one (or rename it, or whatever)
-                var mw = new RuntimeSimpleCallJavaMethod(this, "finalize", "()V", (MethodInfo)mb, RuntimePrimitiveJavaType.VOID, Array.Empty<RuntimeJavaType>(), mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
+                var mw = new RuntimeSimpleCallJavaMethod(this, "finalize", "()V", (MethodInfo)mb, Context.PrimitiveJavaTypeFactory.VOID, Array.Empty<RuntimeJavaType>(), mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
                 mw.SetDeclaredExceptions(new string[] { "java.lang.Throwable" });
                 return mw;
             }
@@ -850,7 +851,7 @@ namespace IKVM.Runtime
 
         internal override Type TypeAsTBD => type;
 
-        internal override bool IsRemapped => RuntimeClassLoaderFactory.IsRemappedType(type);
+        internal override bool IsRemapped => Context.ClassLoaderFactory.IsRemappedType(type);
 
 #if EMITTERS
 
@@ -858,7 +859,7 @@ namespace IKVM.Runtime
         {
             if (IsRemapped)
             {
-                var shadow = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
+                var shadow = Context.ClassLoaderFactory.GetJavaTypeFromType(type);
                 var method = shadow.TypeAsBaseType.GetMethod("__<instanceof>");
                 if (method != null)
                 {
@@ -874,7 +875,7 @@ namespace IKVM.Runtime
         {
             if (IsRemapped)
             {
-                var shadow = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
+                var shadow = Context.ClassLoaderFactory.GetJavaTypeFromType(type);
                 var method = shadow.TypeAsBaseType.GetMethod("__<checkcast>");
                 if (method != null)
                 {
@@ -955,7 +956,7 @@ namespace IKVM.Runtime
         }
 #endif
 
-        internal override bool IsFastClassLiteralSafe => type != Types.Void && !type.IsPrimitive && !IsRemapped;
+        internal override bool IsFastClassLiteralSafe => type != Context.Types.Void && !type.IsPrimitive && !IsRemapped;
 
 #if !IMPORTER && !EXPORTER
 

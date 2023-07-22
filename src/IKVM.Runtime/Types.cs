@@ -30,42 +30,109 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Runtime
 {
 
-    static class Types
+    /// <summary>
+    /// Provides various cached system types.
+    /// </summary>
+    class Types
     {
 
-        internal static readonly Type Object = JVM.Import(typeof(System.Object));
-        internal static readonly Type ValueType = JVM.Import(typeof(System.ValueType));
-        internal static readonly Type Enum = JVM.Import(typeof(System.Enum));
-        internal static readonly Type Type = JVM.Import(typeof(System.Type));
-        internal static readonly Type String = JVM.Import(typeof(System.String));
-        internal static readonly Type Exception = JVM.Import(typeof(System.Exception));
-        internal static readonly Type Array = JVM.Import(typeof(System.Array));
-        internal static readonly Type Attribute = JVM.Import(typeof(System.Attribute));
-        internal static readonly Type Delegate = JVM.Import(typeof(System.Delegate));
-        internal static readonly Type MulticastDelegate = JVM.Import(typeof(System.MulticastDelegate));
-        internal static readonly Type RuntimeTypeHandle = JVM.Import(typeof(System.RuntimeTypeHandle));
+        readonly RuntimeContext context;
 
-        internal static readonly Type IntPtr = JVM.Import(typeof(System.IntPtr));
-        internal static readonly Type Void = JVM.Import(typeof(void));
-        internal static readonly Type Boolean = JVM.Import(typeof(System.Boolean));
-        internal static readonly Type Byte = JVM.Import(typeof(System.Byte));
-        internal static readonly Type SByte = JVM.Import(typeof(System.SByte));
-        internal static readonly Type Char = JVM.Import(typeof(System.Char));
-        internal static readonly Type Int16 = JVM.Import(typeof(System.Int16));
-        internal static readonly Type UInt16 = JVM.Import(typeof(System.UInt16));
-        internal static readonly Type Int32 = JVM.Import(typeof(System.Int32));
-        internal static readonly Type UInt32 = JVM.Import(typeof(System.UInt32));
-        internal static readonly Type Int64 = JVM.Import(typeof(System.Int64));
-        internal static readonly Type UInt64 = JVM.Import(typeof(System.UInt64));
-        internal static readonly Type Single = JVM.Import(typeof(System.Single));
-        internal static readonly Type Double = JVM.Import(typeof(System.Double));
+        Type typeOfObject;
+        Type typeOfValueType;
+        Type typeOfEnum;
+        Type typeOfType;
+        Type typeOfString;
+        Type typeOfException;
+        Type typeOfArray;
+        Type typeOfAttribute;
+        Type typeOfDelegate;
+        Type typeOfMulticastDelegate;
+        Type typeOfRuntimeTypeHandle;
 
-        internal static readonly Type IsVolatile = JVM.Import(typeof(System.Runtime.CompilerServices.IsVolatile));
+        Type typeOfIntPtr;
+        Type typeOfVoid;
+        Type typeOfBoolean;
+        Type typeOfByte;
+        Type typeOfSByte;
+        Type typeOfChar;
+        Type typeOfInt16;
+        Type typeOfUInt16;
+        Type typeOfInt32;
+        Type typeOfUInt32;
+        Type typeOfInt64;
+        Type typeOfUInt64;
+        Type typeOfSingle;
+        Type typeOfDouble;
 
-        static Types()
+        Type typeOfIsVolatile;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public Types(RuntimeContext context)
         {
-
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
+
+        Type Import(System.Type type)
+        {
+            return context.Resolver.ResolveType(type.FullName);
+        }
+
+        public Type Object => typeOfObject ??= Import(typeof(System.Object));
+
+        public Type ValueType => typeOfValueType ??= Import(typeof(System.ValueType));
+
+        public Type Enum => typeOfEnum ??= Import(typeof(System.Enum));
+
+        public Type Type => typeOfType ??= Import(typeof(System.Type));
+
+        public Type String => typeOfString ??= Import(typeof(System.String));
+
+        public Type Exception => typeOfException ??= Import(typeof(System.Exception));
+
+        public Type Array => typeOfArray ??= Import(typeof(System.Array));
+
+        public Type Attribute => typeOfAttribute ??= Import(typeof(System.Attribute));
+
+        public Type Delegate => typeOfDelegate ??= Import(typeof(System.Delegate));
+
+        public Type MulticastDelegate => typeOfMulticastDelegate ??= Import(typeof(System.MulticastDelegate));
+
+        public Type RuntimeTypeHandle => typeOfRuntimeTypeHandle ??= Import(typeof(System.RuntimeTypeHandle));
+
+        public Type IntPtr => typeOfIntPtr ??= Import(typeof(IntPtr));
+
+        public Type Void => typeOfVoid ??= Import(typeof(void));
+
+        public Type Boolean => typeOfBoolean ??= Import(typeof(bool));
+
+        public Type Byte => typeOfByte ??= Import(typeof(byte));
+
+        public Type SByte => typeOfSByte ??= Import(typeof(sbyte));
+
+        public Type Char => typeOfChar ??= Import(typeof(char));
+
+        public Type Int16 => typeOfInt16 ??= Import(typeof(short));
+
+        public Type UInt16 => typeOfUInt16 ??= Import(typeof(ushort));
+
+        public Type Int32 => typeOfInt32 ??= Import(typeof(int));
+
+        public Type UInt32 => typeOfUInt32 ??= Import(typeof(uint));
+
+        public Type Int64 => typeOfInt64 ??= Import(typeof(long));
+
+        public Type UInt64 => typeOfUInt64 ??= Import(typeof(ulong));
+
+        public Type Single => typeOfSingle ??= Import(typeof(float));
+
+        public Type Double => typeOfDouble ??= Import(typeof(double));
+
+        public Type IsVolatile => typeOfIsVolatile ??= Import(typeof(System.Runtime.CompilerServices.IsVolatile));
 
     }
 

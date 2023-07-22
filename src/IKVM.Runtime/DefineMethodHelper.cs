@@ -85,7 +85,7 @@ namespace IKVM.Runtime
             }
             if (mw.HasCallerID)
             {
-                parameterTypes[parameterTypes.Length - 1] = CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType;
+                parameterTypes[parameterTypes.Length - 1] = mw.DeclaringType.Context.JavaBase.ikvmInternalCallerID.TypeAsSignatureType;
             }
             Type returnType = mustBePublic
                 ? mw.ReturnType.TypeAsPublicSignatureType

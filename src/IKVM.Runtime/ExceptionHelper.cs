@@ -45,46 +45,64 @@ using Throwable = java.lang.Throwable;
 namespace IKVM.Runtime
 {
 
-    static class ExceptionHelper
+    class ExceptionHelper
     {
 
-        private static readonly Dictionary<string, string> failedTypes = new Dictionary<string, string>();
-        private static readonly Key EXCEPTION_DATA_KEY = new Key();
-        private static readonly Exception NOT_REMAPPED = new Exception();
-        private static readonly Exception[] EMPTY_THROWABLE_ARRAY = new Exception[0];
-        private static readonly bool cleanStackTrace = JVM.SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
-#if !FIRST_PASS
-        private static readonly ikvm.@internal.WeakIdentityMap exceptions = new ikvm.@internal.WeakIdentityMap();
+        static readonly Key EXCEPTION_DATA_KEY = new Key();
+        static readonly Exception NOT_REMAPPED = new Exception();
+        static readonly Exception[] EMPTY_THROWABLE_ARRAY = new Exception[0];
+        static readonly bool cleanStackTrace = JVM.SafeGetEnvironmentVariable("IKVM_DISABLE_STACKTRACE_CLEANING") == null;
 
-        static ExceptionHelper()
+        readonly RuntimeContext context;
+        readonly Dictionary<string, string> failedTypes = new Dictionary<string, string>();
+
+#if FIRST_PASS == false
+        readonly ikvm.@internal.WeakIdentityMap exceptions = new ikvm.@internal.WeakIdentityMap();
+#endif
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        public ExceptionHelper(RuntimeContext context)
         {
+#if FIRST_PASS == false
             // make sure the exceptions map continues to work during AppDomain finalization
             GC.SuppressFinalize(exceptions);
+#endif
         }
+
+#if !FIRST_PASS
 
         [Serializable]
         internal sealed class ExceptionInfoHelper
         {
+
+            readonly ExceptionHelper exceptionHelper;
+
             [NonSerialized]
             private StackTrace tracePart1;
             [NonSerialized]
             private StackTrace tracePart2;
             private StackTraceElement[] stackTrace;
 
-            internal ExceptionInfoHelper(StackTraceElement[] stackTrace)
+            internal ExceptionInfoHelper(ExceptionHelper exceptionHelper, StackTraceElement[] stackTrace)
             {
+                this.exceptionHelper = exceptionHelper;
                 this.stackTrace = stackTrace;
             }
 
-            internal ExceptionInfoHelper(StackTrace tracePart1, StackTrace tracePart2)
+            internal ExceptionInfoHelper(ExceptionHelper exceptionHelper, StackTrace tracePart1, StackTrace tracePart2)
             {
+                this.exceptionHelper = exceptionHelper;
                 this.tracePart1 = tracePart1;
                 this.tracePart2 = tracePart2;
             }
 
             [HideFromJava]
-            internal ExceptionInfoHelper(Exception x, bool captureAdditionalStackTrace)
+            internal ExceptionInfoHelper(ExceptionHelper exceptionHelper, Exception x, bool captureAdditionalStackTrace)
             {
+                this.exceptionHelper = exceptionHelper;
                 tracePart1 = new StackTrace(x, true);
                 if (captureAdditionalStackTrace)
                 {
@@ -195,7 +213,7 @@ namespace IKVM.Runtime
                 return (StackTraceElement[])stackTrace.Clone();
             }
 
-            internal static void Append(List<StackTraceElement> stackTrace, StackTrace st, int skip, bool isLast)
+            internal void Append(List<StackTraceElement> stackTrace, StackTrace st, int skip, bool isLast)
             {
                 for (int i = skip; i < st.FrameCount; i++)
                 {
@@ -220,7 +238,7 @@ namespace IKVM.Runtime
                     int lineNumber = frame.GetFileLineNumber();
                     if (lineNumber == 0)
                     {
-                        lineNumber = GetLineNumber(frame);
+                        lineNumber = exceptionHelper.GetLineNumber(frame);
                     }
                     string fileName = frame.GetFileName();
                     if (fileName != null)
@@ -238,9 +256,9 @@ namespace IKVM.Runtime
                     }
                     if (fileName == null)
                     {
-                        fileName = GetFileName(frame);
+                        fileName = exceptionHelper.GetFileName(frame);
                     }
-                    stackTrace.Add(new StackTraceElement(getClassNameFromType(type), GetMethodName(m), fileName, IsNative(m) ? -2 : lineNumber));
+                    stackTrace.Add(new StackTraceElement(exceptionHelper.getClassNameFromType(type), GetMethodName(m), fileName, IsNative(m) ? -2 : lineNumber));
                 }
                 if (cleanStackTrace && isLast)
                 {
@@ -256,6 +274,7 @@ namespace IKVM.Runtime
         [Serializable]
         private sealed class Key : ISerializable
         {
+
             [Serializable]
             private sealed class Helper : IObjectReference
             {
@@ -328,22 +347,22 @@ namespace IKVM.Runtime
 #endif
         }
 
-        private static string getClassNameFromType(Type type)
+        private string getClassNameFromType(Type type)
         {
             if (type == null)
             {
                 return "<Module>";
             }
-            if (RuntimeClassLoaderFactory.IsRemappedType(type))
+            if (context.ClassLoaderFactory.IsRemappedType(type))
             {
-                return RuntimeManagedJavaType.GetName(type);
+                return RuntimeManagedJavaType.GetName(context, type);
             }
-            RuntimeJavaType tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
+            RuntimeJavaType tw = context.ClassLoaderFactory.GetJavaTypeFromType(type);
             if (tw != null)
             {
                 if (tw.IsPrimitive)
                 {
-                    return RuntimeManagedJavaType.GetName(type);
+                    return RuntimeManagedJavaType.GetName(context, type);
                 }
 #if !FIRST_PASS
                 if (tw.IsUnsafeAnonymous)
@@ -356,7 +375,7 @@ namespace IKVM.Runtime
             return type.FullName;
         }
 
-        private static int GetLineNumber(StackFrame frame)
+        private int GetLineNumber(StackFrame frame)
         {
             int ilOffset = frame.GetILOffset();
             if (ilOffset != StackFrame.OFFSET_UNKNOWN)
@@ -364,11 +383,11 @@ namespace IKVM.Runtime
                 MethodBase mb = frame.GetMethod();
                 if (mb != null && mb.DeclaringType != null)
                 {
-                    if (RuntimeClassLoaderFactory.IsRemappedType(mb.DeclaringType))
+                    if (context.ClassLoaderFactory.IsRemappedType(mb.DeclaringType))
                     {
                         return -1;
                     }
-                    RuntimeJavaType tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
+                    RuntimeJavaType tw = context.ClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
                     if (tw != null)
                     {
                         return tw.GetSourceLineNumber(mb, ilOffset);
@@ -378,16 +397,16 @@ namespace IKVM.Runtime
             return -1;
         }
 
-        private static string GetFileName(StackFrame frame)
+        private string GetFileName(StackFrame frame)
         {
             MethodBase mb = frame.GetMethod();
             if (mb != null && mb.DeclaringType != null)
             {
-                if (RuntimeClassLoaderFactory.IsRemappedType(mb.DeclaringType))
+                if (context.ClassLoaderFactory.IsRemappedType(mb.DeclaringType))
                 {
                     return null;
                 }
-                RuntimeJavaType tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
+                RuntimeJavaType tw = context.ClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
                 if (tw != null)
                 {
                     return tw.GetSourceFileName();
@@ -411,7 +430,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        internal static void writeObject(Exception x, ObjectOutputStream s)
+        internal void writeObject(Exception x, ObjectOutputStream s)
         {
 #if !FIRST_PASS
             lock (x)
@@ -651,17 +670,17 @@ namespace IKVM.Runtime
 #endif
         }
 
-        internal static int getStackTraceDepth(Exception _this)
+        internal int getStackTraceDepth(Exception _this)
         {
             return getOurStackTrace(_this).Length;
         }
 
-        internal static StackTraceElement getStackTraceElement(Exception _this, int index)
+        internal StackTraceElement getStackTraceElement(Exception _this, int index)
         {
             return getOurStackTrace(_this)[index];
         }
 
-        internal static StackTraceElement[] getOurStackTrace(Exception x)
+        internal StackTraceElement[] getOurStackTrace(Exception x)
         {
 #if FIRST_PASS
             return null;
@@ -694,7 +713,7 @@ namespace IKVM.Runtime
                     if (_this.stackTrace == Throwable.UNASSIGNED_STACK
                         || (_this.stackTrace == null && (_this.tracePart1 != null || _this.tracePart2 != null)))
                     {
-                        ExceptionInfoHelper eih = new ExceptionInfoHelper(_this.tracePart1, _this.tracePart2);
+                        ExceptionInfoHelper eih = new ExceptionInfoHelper(this, _this.tracePart1, _this.tracePart2);
                         _this.stackTrace = eih.get_StackTrace(x);
                         _this.tracePart1 = null;
                         _this.tracePart2 = null;
@@ -705,7 +724,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        internal static void setStackTrace(Exception x, StackTraceElement[] stackTrace)
+        internal void setStackTrace(Exception x, StackTraceElement[] stackTrace)
         {
 #if !FIRST_PASS
             StackTraceElement[] copy = (StackTraceElement[])stackTrace.Clone();
@@ -720,13 +739,13 @@ namespace IKVM.Runtime
 #endif
         }
 
-        private static void SetStackTraceImpl(Exception x, StackTraceElement[] stackTrace)
+        private void SetStackTraceImpl(Exception x, StackTraceElement[] stackTrace)
         {
 #if !FIRST_PASS
             Throwable _this = x as Throwable;
             if (_this == null)
             {
-                ExceptionInfoHelper eih = new ExceptionInfoHelper(stackTrace);
+                ExceptionInfoHelper eih = new ExceptionInfoHelper(this, stackTrace);
                 IDictionary data = x.Data;
                 if (data != null && !data.IsReadOnly)
                 {
@@ -752,12 +771,12 @@ namespace IKVM.Runtime
 
         // this method is *only* for .NET exceptions (i.e. types not derived from java.lang.Throwable)
         [HideFromJava]
-        internal static void fillInStackTrace(Exception x)
+        internal void fillInStackTrace(Exception x)
         {
 #if !FIRST_PASS
             lock (x)
             {
-                ExceptionInfoHelper eih = new ExceptionInfoHelper(null, new StackTrace(true));
+                ExceptionInfoHelper eih = new ExceptionInfoHelper(this, null, new StackTrace(true));
                 IDictionary data = x.Data;
                 if (data != null && !data.IsReadOnly)
                 {
@@ -771,14 +790,14 @@ namespace IKVM.Runtime
         }
 
         // this method is *only* for .NET exceptions (i.e. types not derived from java.lang.Throwable)
-        internal static void FixateException(Exception x)
+        internal void FixateException(Exception x)
         {
 #if !FIRST_PASS
             exceptions.put(x, NOT_REMAPPED);
 #endif
         }
 
-        internal static Exception UnmapException(Exception x)
+        internal Exception UnmapException(Exception x)
         {
 #if FIRST_PASS
             return null;
@@ -797,7 +816,7 @@ namespace IKVM.Runtime
         }
 
         [HideFromJava]
-        private static Exception MapTypeInitializeException(TypeInitializationException t, Type handler)
+        private Exception MapTypeInitializeException(TypeInitializationException t, Type handler)
         {
 #if FIRST_PASS
             return null;
@@ -827,7 +846,7 @@ namespace IKVM.Runtime
             if (wrapped)
             {
                 // transplant the stack trace
-                ((Throwable)r).setStackTrace(new ExceptionInfoHelper(t, true).get_StackTrace(t));
+                ((Throwable)r).setStackTrace(new ExceptionInfoHelper(this, t, true).get_StackTrace(t));
             }
             return r;
 #endif
@@ -848,7 +867,7 @@ namespace IKVM.Runtime
         }
 
         [HideFromJava]
-        internal static T MapException<T>(Exception x, bool remap, bool unused)
+        internal T MapException<T>(Exception x, bool remap, bool unused)
             where T : Exception
         {
 #if FIRST_PASS
@@ -908,7 +927,7 @@ namespace IKVM.Runtime
                         {
                             if (!data.Contains(EXCEPTION_DATA_KEY))
                             {
-                                data.Add(EXCEPTION_DATA_KEY, new ExceptionInfoHelper(x, true));
+                                data.Add(EXCEPTION_DATA_KEY, new ExceptionInfoHelper(this, x, true));
                             }
                         }
                     }

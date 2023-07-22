@@ -62,7 +62,7 @@ namespace IKVM.Runtime
                 internal void DoLink(TypeBuilder typeBuilder)
                 {
                     var attribs = MethodAttributes.HideBySig | MethodAttributes.Public;
-                    constructor = ReflectUtil.DefineConstructor(typeBuilder, attribs, new Type[] { Types.Object, Types.IntPtr });
+                    constructor = ReflectUtil.DefineConstructor(typeBuilder, attribs, new Type[] { DeclaringType.Context.Types.Object, DeclaringType.Context.Types.IntPtr });
                     constructor.SetImplementationFlags(MethodImplAttributes.Runtime);
                     var mw = GetParameters()[0].GetMethods()[0];
                     mw.Link();

@@ -171,7 +171,7 @@ namespace IKVM.Runtime
 
             internal string GetGenericSignature()
             {
-                SignatureAttribute attr = AttributeHelper.GetSignature(mbHelper != null ? mbHelper : GetMethod());
+                SignatureAttribute attr = DeclaringType.Context.AttributeHelper.GetSignature(mbHelper != null ? mbHelper : GetMethod());
                 if (attr != null)
                 {
                     return attr.Signature;

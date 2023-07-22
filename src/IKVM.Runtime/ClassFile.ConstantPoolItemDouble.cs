@@ -38,8 +38,10 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="reader"></param>
-            internal ConstantPoolItemDouble(DoubleConstantReader reader)
+            internal ConstantPoolItemDouble(RuntimeContext context, DoubleConstantReader reader) :
+                base(context)
             {
                 d = reader.Value;
             }

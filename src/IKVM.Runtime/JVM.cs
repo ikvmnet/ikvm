@@ -55,6 +55,7 @@ namespace IKVM.Runtime
         static int emitSymbols;
 #endif
 
+
         /// <summary>
         /// Reference to the 'java.base' assembly.
         /// </summary>
@@ -69,7 +70,14 @@ namespace IKVM.Runtime
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
-        readonly static object initializedLock = new object();
+        static readonly RuntimeContext context = new RuntimeContext(new JVM.Resolver());
+
+        /// <summary>
+        /// Gets the current <see cref="RuntimeContext"/> of the JVM.
+        /// </summary>
+        public static RuntimeContext Context => context;
+
+        static readonly  object initializedLock = new object();
         static bool initialized;
 
         static AccessorCache baseAccessors;
@@ -79,7 +87,7 @@ namespace IKVM.Runtime
         static Lazy<object> systemThreadGroup = new Lazy<object>(MakeSystemThreadGroup);
         static Lazy<object> mainThreadGroup = new Lazy<object>(MakeMainThreadGroup);
 
-        internal static AccessorCache BaseAccessors => AccessorCache.Get(ref baseAccessors, BaseAssembly);
+        internal static AccessorCache BaseAccessors => AccessorCache.Get(ref baseAccessors, context.Resolver.ResolveBaseAssembly());
 
         static ThreadGroupAccessor ThreadGroupAccessor => BaseAccessors.Get(ref threadGroupAccessor);
 
@@ -203,28 +211,6 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static Assembly BaseAssembly
-        {
-            get
-            {
-#if !IMPORTER && !EXPORTER
-                if (baseAssembly == null)
-                {
-#if FIRST_PASS
-                    throw new InvalidOperationException("This version of IKVM.Runtime.dll was compiled with FIRST_PASS defined.");
-#else
-                    baseAssembly = typeof(java.lang.Object).Assembly;
-#endif
-                }
-#endif
-                return baseAssembly;
-            }
-            set
-            {
-                baseAssembly = value;
-            }
-        }
-
 #if !IMPORTER && !EXPORTER
 
         internal static bool EmitSymbols
@@ -305,25 +291,6 @@ namespace IKVM.Runtime
                 key ^= (key >> 12);
             }
             return (int)key;
-        }
-
-#if IMPORTER || EXPORTER
-		internal static Type LoadType(System.Type type)
-		{
-			return StaticCompiler.GetRuntimeType(type.FullName);
-		}
-#endif
-
-        // this method resolves types in IKVM.Runtime.dll
-        // (the version of IKVM.Runtime.dll that we're running
-        // with can be different from the one we're compiling against.)
-        internal static Type LoadType(Type type)
-        {
-#if IMPORTER || EXPORTER
-			return StaticCompiler.GetRuntimeType(type.FullName);
-#else
-            return type;
-#endif
         }
 
         internal static object Box(object val)
@@ -482,15 +449,6 @@ namespace IKVM.Runtime
         }
 
 #endif
-
-        internal static Type Import(System.Type type)
-        {
-#if IMPORTER || EXPORTER
-			return StaticCompiler.Universe.Import(type);
-#else
-            return type;
-#endif
-        }
 
     }
 

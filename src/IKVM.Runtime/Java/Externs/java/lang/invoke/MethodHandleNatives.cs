@@ -38,7 +38,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
         {
             var tw = RuntimeJavaType.FromClass(clazz);
             // handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
-            return tw.IsInstance(obj) || (tw == CoreClasses.cli.System.Object.Wrapper && obj is Array);
+            return tw.IsInstance(obj) || (tw == tw.Context.JavaBase.cliSystemObject && obj is Array);
         }
 
         public static void init(global::java.lang.invoke.MemberName self, object refObj)
@@ -109,7 +109,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
             {
                 flags |= global::java.lang.invoke.MemberName.CALLER_SENSITIVE;
             }
-            if (mw.IsConstructor && mw.DeclaringType == CoreClasses.java.lang.String.Wrapper)
+            if (mw.IsConstructor && mw.DeclaringType == JVM.Context.JavaBase.javaLangString)
             {
                 global::java.lang.Class[] parameters1 = new global::java.lang.Class[mw.GetParameters().Length];
                 for (int i = 0; i < mw.GetParameters().Length; i++)
@@ -120,7 +120,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
                 self._type(mt);
                 self._flags(flags);
                 self._clazz(mw.DeclaringType.ClassObject);
-                self.vmtarget = CreateMemberNameDelegate(mw, null, false, self.getMethodType().changeReturnType(CoreClasses.java.lang.String.Wrapper.ClassObject));
+                self.vmtarget = CreateMemberNameDelegate(mw, null, false, self.getMethodType().changeReturnType(JVM.Context.JavaBase.javaLangString.ClassObject));
                 return;
             }
             self._flags(flags);
@@ -159,7 +159,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
             switch (self.getReferenceKind())
             {
                 case global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic:
-                    if (self.getDeclaringClass() == CoreClasses.java.lang.invoke.MethodHandle.Wrapper.ClassObject)
+                    if (self.getDeclaringClass() == JVM.Context.JavaBase.javaLangInvokeMethodHandle.ClassObject)
                     {
                         switch (self.getName())
                         {
@@ -168,7 +168,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
                             case "linkToSpecial":
                             case "linkToInterface":
                                 // this delegate is never used normally, only by the PrivateInvokeTest white-box JSR-292 tests
-                                self.vmtarget = MethodHandleUtil.DynamicMethodBuilder.CreateMethodHandleLinkTo(self);
+                                self.vmtarget = MethodHandleUtil.DynamicMethodBuilder.CreateMethodHandleLinkTo(JVM.Context, self);
                                 self._flags(self._flags() | global::java.lang.reflect.Modifier.STATIC | global::java.lang.reflect.Modifier.NATIVE | global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD);
                                 return self;
                         }
@@ -176,14 +176,14 @@ namespace IKVM.Java.Externs.java.lang.invoke
                     ResolveMethod(self, caller);
                     break;
                 case global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeVirtual:
-                    if (self.getDeclaringClass() == CoreClasses.java.lang.invoke.MethodHandle.Wrapper.ClassObject)
+                    if (self.getDeclaringClass() == JVM.Context.JavaBase.javaLangInvokeMethodHandle.ClassObject)
                     {
                         switch (self.getName())
                         {
                             case "invoke":
                             case "invokeExact":
                             case "invokeBasic":
-                                self.vmtarget = MethodHandleUtil.DynamicMethodBuilder.CreateMethodHandleInvoke(self);
+                                self.vmtarget = MethodHandleUtil.DynamicMethodBuilder.CreateMethodHandleInvoke(JVM.Context, self);
                                 self._flags(self._flags() | global::java.lang.reflect.Modifier.NATIVE | global::java.lang.reflect.Modifier.FINAL | global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD);
                                 return self;
                         }
@@ -209,6 +209,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
         }
 
 #if !FIRST_PASS
+
         static void ResolveMethod(global::java.lang.invoke.MemberName self, global::java.lang.Class caller)
         {
             bool invokeSpecial = self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeSpecial;
@@ -222,7 +223,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
                     mw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetInterfaceMethod(self.getName(), self.getSignature().Replace('/', '.'));
                     if (mw == null)
                     {
-                        mw = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), false);
+                        mw = JVM.Context.JavaBase.javaLangObject.GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), false);
                     }
                     if (mw != null && mw.IsConstructor)
                     {
@@ -248,9 +249,9 @@ namespace IKVM.Java.Externs.java.lang.invoke
             {
                 throw new global::java.lang.IncompatibleClassChangeError("private interface method requires invokespecial, not invokeinterface: method " + self.getDeclaringClass().getName() + "." + self.getName() + self.getSignature());
             }
-            if (mw.IsConstructor && mw.DeclaringType == CoreClasses.java.lang.String.Wrapper)
+            if (mw.IsConstructor && mw.DeclaringType == JVM.Context.JavaBase.javaLangString)
             {
-                self.vmtarget = CreateMemberNameDelegate(mw, caller, false, self.getMethodType().changeReturnType(CoreClasses.java.lang.String.Wrapper.ClassObject));
+                self.vmtarget = CreateMemberNameDelegate(mw, caller, false, self.getMethodType().changeReturnType(JVM.Context.JavaBase.javaLangString.ClassObject));
             }
             else if (!mw.IsConstructor || invokeSpecial || newInvokeSpecial)
             {
@@ -344,7 +345,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 #else
             if (mw.IsDynamicOnly)
             {
-                return MethodHandleUtil.DynamicMethodBuilder.CreateDynamicOnly(mw, type);
+                return MethodHandleUtil.DynamicMethodBuilder.CreateDynamicOnly(mw.DeclaringType.Context, mw, type);
             }
             // HACK this code is duplicated in compiler.cs
             if (mw.IsFinalizeOrClone)
@@ -352,17 +353,17 @@ namespace IKVM.Java.Externs.java.lang.invoke
                 RuntimeJavaType thisType = RuntimeJavaType.FromClass(caller);
                 // HACK we may need to redirect finalize or clone from java.lang.Object/Throwable
                 // to a more specific base type.
-                if (thisType.IsAssignableTo(CoreClasses.cli.System.Object.Wrapper))
+                if (thisType.IsAssignableTo(thisType.Context.JavaBase.cliSystemObject))
                 {
-                    mw = CoreClasses.cli.System.Object.Wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+                    mw = thisType.Context.JavaBase.cliSystemObject.GetMethodWrapper(mw.Name, mw.Signature, true);
                 }
-                else if (thisType.IsAssignableTo(CoreClasses.cli.System.Exception.Wrapper))
+                else if (thisType.IsAssignableTo(thisType.Context.JavaBase.cliSystemException))
                 {
-                    mw = CoreClasses.cli.System.Exception.Wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+                    mw = thisType.Context.JavaBase.cliSystemException.GetMethodWrapper(mw.Name, mw.Signature, true);
                 }
-                else if (thisType.IsAssignableTo(CoreClasses.java.lang.Throwable.Wrapper))
+                else if (thisType.IsAssignableTo(thisType.Context.JavaBase.javaLangThrowable))
                 {
-                    mw = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+                    mw = thisType.Context.JavaBase.javaLangThrowable.GetMethodWrapper(mw.Name, mw.Signature, true);
                 }
             }
             RuntimeJavaType tw = mw.DeclaringType;
@@ -373,15 +374,15 @@ namespace IKVM.Java.Externs.java.lang.invoke
             if (mi != null
                 && !mw.HasCallerID
                 && mw.IsStatic
-                && MethodHandleUtil.HasOnlyBasicTypes(mw.GetParameters(), mw.ReturnType)
+                && tw.Context.MethodHandleUtil.HasOnlyBasicTypes(mw.GetParameters(), mw.ReturnType)
                 && type.parameterCount() <= MethodHandleUtil.MaxArity)
             {
-                return Delegate.CreateDelegate(MethodHandleUtil.CreateMemberWrapperDelegateType(mw.GetParameters(), mw.ReturnType), mi);
+                return Delegate.CreateDelegate(tw.Context.MethodHandleUtil.CreateMemberWrapperDelegateType(mw.GetParameters(), mw.ReturnType), mi);
             }
             else
             {
                 // slow path where we emit a DynamicMethod
-                return MethodHandleUtil.DynamicMethodBuilder.CreateMemberName(mw, type, doDispatch);
+                return MethodHandleUtil.DynamicMethodBuilder.CreateMemberName(tw.Context, mw, type, doDispatch);
             }
 #endif
         }
@@ -464,7 +465,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 
         internal static void InitializeCallSite(global::java.lang.invoke.CallSite site)
         {
-            var type = typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(MethodHandleUtil.GetDelegateTypeForInvokeExact(site.type()));
+            var type = typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(JVM.Context.MethodHandleUtil.GetDelegateTypeForInvokeExact(site.type()));
             var ics = (IKVM.Runtime.IIndyCallSite)Activator.CreateInstance(type, true);
             Interlocked.CompareExchange(ref site.ics, ics, null);
         }

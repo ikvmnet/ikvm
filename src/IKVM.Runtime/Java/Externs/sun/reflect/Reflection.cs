@@ -58,7 +58,11 @@ namespace IKVM.Java.Externs.sun.reflect
         /// <returns></returns>
         static HideFromJavaFlags GetHideFromJavaFlagsImpl(MethodBase mb)
         {
-            return mb.Name.StartsWith("__<", StringComparison.Ordinal) ? HideFromJavaFlags.All : AttributeHelper.GetHideFromJavaFlags(mb);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return mb.Name.StartsWith("__<", StringComparison.Ordinal) ? HideFromJavaFlags.All : JVM.Context.AttributeHelper.GetHideFromJavaFlags(mb);
+#endif
         }
 
         /// <summary>
@@ -114,7 +118,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     continue;
 
                 if (--realFramesToSkip == 0)
-                    return RuntimeClassLoaderFactory.GetJavaTypeFromType(method.DeclaringType).ClassObject;
+                    return JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(method.DeclaringType).ClassObject;
             }
 #endif
         }

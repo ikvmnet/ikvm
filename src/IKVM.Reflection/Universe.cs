@@ -972,9 +972,8 @@ namespace IKVM.Reflection
         internal bool ResolveMissingTypeIsValueType(MissingType missingType)
         {
             if (missingTypeIsValueType != null)
-            {
                 return missingTypeIsValueType(missingType);
-            }
+
             throw new MissingMemberException(missingType);
         }
 

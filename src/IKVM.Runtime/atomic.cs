@@ -24,8 +24,6 @@
 
 using System;
 
-using IKVM.Runtime;
-
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -38,128 +36,141 @@ using System.Reflection.Emit;
 
 using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 
-static class AtomicReferenceFieldUpdaterEmitter
+namespace IKVM.Runtime
 {
 
-	internal static bool Emit(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaType wrapper, CodeEmitter ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code, InstructionFlags[] flags)
-	{
-		if (i >= 3
-			&& (flags[i - 0] & InstructionFlags.BranchTarget) == 0
-			&& (flags[i - 1] & InstructionFlags.BranchTarget) == 0
-			&& (flags[i - 2] & InstructionFlags.BranchTarget) == 0
-			&& (flags[i - 3] & InstructionFlags.BranchTarget) == 0
-			&& code[i - 1].NormalizedOpCode == NormalizedByteCode.__ldc_nothrow
-			&& code[i - 2].NormalizedOpCode == NormalizedByteCode.__ldc
-			&& code[i - 3].NormalizedOpCode == NormalizedByteCode.__ldc)
-		{
-			// we now have a structural match, now we need to make sure that the argument values are what we expect
-			RuntimeJavaType tclass = classFile.GetConstantPoolClassType(code[i - 3].Arg1);
-			RuntimeJavaType vclass = classFile.GetConstantPoolClassType(code[i - 2].Arg1);
-			string fieldName = classFile.GetConstantPoolConstantString(code[i - 1].Arg1);
-			if (tclass == wrapper && !vclass.IsUnloadable && !vclass.IsPrimitive && !vclass.IsNonPrimitiveValueType)
-			{
-				RuntimeJavaField field = wrapper.GetFieldWrapper(fieldName, vclass.SigName);
-				if (field != null && !field.IsStatic && field.IsVolatile && field.DeclaringType == wrapper && field.FieldTypeWrapper == vclass)
-				{
-					// everything matches up, now call the actual emitter
-					ilgen.Emit(OpCodes.Pop);
-					ilgen.Emit(OpCodes.Pop);
-					ilgen.Emit(OpCodes.Pop);
-					ilgen.Emit(OpCodes.Newobj, context.GetAtomicReferenceFieldUpdater(field));
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+    static class AtomicReferenceFieldUpdaterEmitter
+    {
 
-	internal static void EmitImpl(TypeBuilder tb, FieldInfo field)
-	{
-		EmitCompareAndSet("compareAndSet", tb, field);
-		EmitGet(tb, field);
-		EmitSet("set", tb, field);
-	}
+        internal static bool Emit(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaType wrapper, CodeEmitter ilgen, ClassFile classFile, int i, ClassFile.Method.Instruction[] code, InstructionFlags[] flags)
+        {
+            if (i >= 3
+                && (flags[i - 0] & InstructionFlags.BranchTarget) == 0
+                && (flags[i - 1] & InstructionFlags.BranchTarget) == 0
+                && (flags[i - 2] & InstructionFlags.BranchTarget) == 0
+                && (flags[i - 3] & InstructionFlags.BranchTarget) == 0
+                && code[i - 1].NormalizedOpCode == NormalizedByteCode.__ldc_nothrow
+                && code[i - 2].NormalizedOpCode == NormalizedByteCode.__ldc
+                && code[i - 3].NormalizedOpCode == NormalizedByteCode.__ldc)
+            {
+                // we now have a structural match, now we need to make sure that the argument values are what we expect
+                RuntimeJavaType tclass = classFile.GetConstantPoolClassType(code[i - 3].Arg1);
+                RuntimeJavaType vclass = classFile.GetConstantPoolClassType(code[i - 2].Arg1);
+                string fieldName = classFile.GetConstantPoolConstantString(code[i - 1].Arg1);
+                if (tclass == wrapper && !vclass.IsUnloadable && !vclass.IsPrimitive && !vclass.IsNonPrimitiveValueType)
+                {
+                    RuntimeJavaField field = wrapper.GetFieldWrapper(fieldName, vclass.SigName);
+                    if (field != null && !field.IsStatic && field.IsVolatile && field.DeclaringType == wrapper && field.FieldTypeWrapper == vclass)
+                    {
+                        // everything matches up, now call the actual emitter
+                        ilgen.Emit(OpCodes.Pop);
+                        ilgen.Emit(OpCodes.Pop);
+                        ilgen.Emit(OpCodes.Pop);
+                        ilgen.Emit(OpCodes.Newobj, context.GetAtomicReferenceFieldUpdater(field));
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
 
-	private static void EmitCompareAndSet(string name, TypeBuilder tb, FieldInfo field)
-	{
-		MethodBuilder compareAndSet = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, Types.Boolean, new Type[] { Types.Object, Types.Object, Types.Object });
-		ILGenerator ilgen = compareAndSet.GetILGenerator();
-		ilgen.Emit(OpCodes.Ldarg_1);
-		ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
-		ilgen.Emit(OpCodes.Ldflda, field);
-		ilgen.Emit(OpCodes.Ldarg_3);
-		ilgen.Emit(OpCodes.Castclass, field.FieldType);
-		ilgen.Emit(OpCodes.Ldarg_2);
-		ilgen.Emit(OpCodes.Castclass, field.FieldType);
-		ilgen.Emit(OpCodes.Call, MakeCompareExchange(field.FieldType));
-		ilgen.Emit(OpCodes.Ldarg_2);
-		ilgen.Emit(OpCodes.Ceq);
-		ilgen.Emit(OpCodes.Ret);
-	}
+        internal static void EmitImpl(RuntimeContext context, TypeBuilder tb, FieldInfo field)
+        {
+            EmitCompareAndSet(context, "compareAndSet", tb, field);
+            EmitGet(context, tb, field);
+            EmitSet(context, "set", tb, field);
+        }
 
-	internal static MethodInfo MakeCompareExchange(Type type)
-	{
-		return InterlockedMethods.CompareExchangeOfT.MakeGenericMethod(type);
-	}
+        private static void EmitCompareAndSet(RuntimeContext context, string name, TypeBuilder tb, FieldInfo field)
+        {
+            MethodBuilder compareAndSet = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, context.Types.Boolean, new Type[] { context.Types.Object, context.Types.Object, context.Types.Object });
+            ILGenerator ilgen = compareAndSet.GetILGenerator();
+            ilgen.Emit(OpCodes.Ldarg_1);
+            ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
+            ilgen.Emit(OpCodes.Ldflda, field);
+            ilgen.Emit(OpCodes.Ldarg_3);
+            ilgen.Emit(OpCodes.Castclass, field.FieldType);
+            ilgen.Emit(OpCodes.Ldarg_2);
+            ilgen.Emit(OpCodes.Castclass, field.FieldType);
+            ilgen.Emit(OpCodes.Call, MakeCompareExchange(context, field.FieldType));
+            ilgen.Emit(OpCodes.Ldarg_2);
+            ilgen.Emit(OpCodes.Ceq);
+            ilgen.Emit(OpCodes.Ret);
+        }
 
-	private static void EmitGet(TypeBuilder tb, FieldInfo field)
-	{
-		MethodBuilder get = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual, Types.Object, new Type[] { Types.Object });
-		ILGenerator ilgen = get.GetILGenerator();
-		ilgen.Emit(OpCodes.Ldarg_1);
-		ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
-		ilgen.Emit(OpCodes.Volatile);
-		ilgen.Emit(OpCodes.Ldfld, field);
-		ilgen.Emit(OpCodes.Ret);
-	}
+        internal static MethodInfo MakeCompareExchange(RuntimeContext context, Type type)
+        {
+            return context.InterlockedMethods.CompareExchangeOfT.MakeGenericMethod(type);
+        }
 
-	private static void EmitSet(string name, TypeBuilder tb, FieldInfo field)
-	{
-		MethodBuilder set = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, Types.Void, new Type[] { Types.Object, Types.Object });
-		CodeEmitter ilgen = CodeEmitter.Create(set);
-		ilgen.Emit(OpCodes.Ldarg_1);
-		ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
-		ilgen.Emit(OpCodes.Ldarg_2);
-		ilgen.Emit(OpCodes.Castclass, field.FieldType);
-		ilgen.Emit(OpCodes.Volatile);
-		ilgen.Emit(OpCodes.Stfld, field);
-		ilgen.EmitMemoryBarrier();
-		ilgen.Emit(OpCodes.Ret);
-		ilgen.DoEmit();
-	}
-}
+        static void EmitGet(RuntimeContext context, TypeBuilder tb, FieldInfo field)
+        {
+            MethodBuilder get = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual, context.Types.Object, new Type[] { context.Types.Object });
+            ILGenerator ilgen = get.GetILGenerator();
+            ilgen.Emit(OpCodes.Ldarg_1);
+            ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
+            ilgen.Emit(OpCodes.Volatile);
+            ilgen.Emit(OpCodes.Ldfld, field);
+            ilgen.Emit(OpCodes.Ret);
+        }
 
-static class InterlockedMethods
-{
+        static void EmitSet(RuntimeContext context, string name, TypeBuilder tb, FieldInfo field)
+        {
+            MethodBuilder set = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, context.Types.Void, new Type[] { context.Types.Object, context.Types.Object });
+            CodeEmitter ilgen = context.CodeEmitterFactory.Create(set);
+            ilgen.Emit(OpCodes.Ldarg_1);
+            ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
+            ilgen.Emit(OpCodes.Ldarg_2);
+            ilgen.Emit(OpCodes.Castclass, field.FieldType);
+            ilgen.Emit(OpCodes.Volatile);
+            ilgen.Emit(OpCodes.Stfld, field);
+            ilgen.EmitMemoryBarrier();
+            ilgen.Emit(OpCodes.Ret);
+            ilgen.DoEmit();
+        }
 
-	internal static readonly MethodInfo AddInt32;
-	internal static readonly MethodInfo CompareExchangeInt32;
-	internal static readonly MethodInfo CompareExchangeInt64;
-	internal static readonly MethodInfo CompareExchangeOfT;
-	internal static readonly MethodInfo ExchangeOfT;
+    }
 
-	static InterlockedMethods()
-	{
-		Type type = JVM.Import(typeof(System.Threading.Interlocked));
-		AddInt32 = type.GetMethod("Add", new Type[] { Types.Int32.MakeByRefType(), Types.Int32 });
-		CompareExchangeInt32 = type.GetMethod("CompareExchange", new Type[] { Types.Int32.MakeByRefType(), Types.Int32, Types.Int32 });
-		CompareExchangeInt64 = type.GetMethod("CompareExchange", new Type[] { Types.Int64.MakeByRefType(), Types.Int64, Types.Int64 });
-		foreach (MethodInfo m in type.GetMethods())
-		{
-			if (m.IsGenericMethodDefinition)
-			{
-				switch (m.Name)
-				{
-					case "CompareExchange":
-						CompareExchangeOfT = m;
-						break;
-					case "Exchange":
-						ExchangeOfT = m;
-						break;
-				}
-			}
-		}
+    class InterlockedMethods
+    {
 
-	}
+        readonly RuntimeContext context;
+
+        internal readonly MethodInfo AddInt32;
+        internal readonly MethodInfo CompareExchangeInt32;
+        internal readonly MethodInfo CompareExchangeInt64;
+        internal readonly MethodInfo CompareExchangeOfT;
+        internal readonly MethodInfo ExchangeOfT;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        public InterlockedMethods(RuntimeContext context)
+        {
+            this.context = context;
+
+            var type = context.Resolver.ResolveType(typeof(System.Threading.Interlocked).FullName);
+            AddInt32 = type.GetMethod("Add", new Type[] { context.Types.Int32.MakeByRefType(), context.Types.Int32 });
+            CompareExchangeInt32 = type.GetMethod("CompareExchange", new Type[] { context.Types.Int32.MakeByRefType(), context.Types.Int32, context.Types.Int32 });
+            CompareExchangeInt64 = type.GetMethod("CompareExchange", new Type[] { context.Types.Int64.MakeByRefType(), context.Types.Int64, context.Types.Int64 });
+            foreach (MethodInfo m in type.GetMethods())
+            {
+                if (m.IsGenericMethodDefinition)
+                {
+                    switch (m.Name)
+                    {
+                        case "CompareExchange":
+                            CompareExchangeOfT = m;
+                            break;
+                        case "Exchange":
+                            ExchangeOfT = m;
+                            break;
+                    }
+                }
+            }
+
+        }
+    }
 
 }

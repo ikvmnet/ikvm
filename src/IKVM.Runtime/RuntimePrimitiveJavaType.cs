@@ -38,18 +38,42 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
-    sealed class RuntimePrimitiveJavaType : RuntimeJavaType
+    class RuntimePrimitiveJavaTypeFactory
     {
 
-        internal static readonly RuntimePrimitiveJavaType BYTE = new RuntimePrimitiveJavaType(Types.Byte, "B");
-        internal static readonly RuntimePrimitiveJavaType CHAR = new RuntimePrimitiveJavaType(Types.Char, "C");
-        internal static readonly RuntimePrimitiveJavaType DOUBLE = new RuntimePrimitiveJavaType(Types.Double, "D");
-        internal static readonly RuntimePrimitiveJavaType FLOAT = new RuntimePrimitiveJavaType(Types.Single, "F");
-        internal static readonly RuntimePrimitiveJavaType INT = new RuntimePrimitiveJavaType(Types.Int32, "I");
-        internal static readonly RuntimePrimitiveJavaType LONG = new RuntimePrimitiveJavaType(Types.Int64, "J");
-        internal static readonly RuntimePrimitiveJavaType SHORT = new RuntimePrimitiveJavaType(Types.Int16, "S");
-        internal static readonly RuntimePrimitiveJavaType BOOLEAN = new RuntimePrimitiveJavaType(Types.Boolean, "Z");
-        internal static readonly RuntimePrimitiveJavaType VOID = new RuntimePrimitiveJavaType(Types.Void, "V");
+        RuntimeContext context;
+
+        internal readonly RuntimePrimitiveJavaType BYTE;
+        internal readonly RuntimePrimitiveJavaType CHAR;
+        internal readonly RuntimePrimitiveJavaType DOUBLE;
+        internal readonly RuntimePrimitiveJavaType FLOAT;
+        internal readonly RuntimePrimitiveJavaType INT;
+        internal readonly RuntimePrimitiveJavaType LONG;
+        internal readonly RuntimePrimitiveJavaType SHORT;
+        internal readonly RuntimePrimitiveJavaType BOOLEAN;
+        internal readonly RuntimePrimitiveJavaType VOID;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        public RuntimePrimitiveJavaTypeFactory(RuntimeContext context)
+        {
+            BYTE = new RuntimePrimitiveJavaType(context, context.Types.Byte, "B");
+            CHAR = new RuntimePrimitiveJavaType(context, context.Types.Char, "C");
+            DOUBLE = new RuntimePrimitiveJavaType(context, context.Types.Double, "D");
+            FLOAT = new RuntimePrimitiveJavaType(context, context.Types.Single, "F");
+            INT = new RuntimePrimitiveJavaType(context, context.Types.Int32, "I");
+            LONG = new RuntimePrimitiveJavaType(context, context.Types.Int64, "J");
+            SHORT = new RuntimePrimitiveJavaType(context, context.Types.Int16, "S");
+            BOOLEAN = new RuntimePrimitiveJavaType(context, context.Types.Boolean, "Z");
+            VOID = new RuntimePrimitiveJavaType(context, context.Types.Void, "V");
+        }
+
+    }
+
+    sealed class RuntimePrimitiveJavaType : RuntimeJavaType
+    {
 
         readonly Type type;
         readonly string sigName;
@@ -59,8 +83,8 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <param name="sigName"></param>
-        private RuntimePrimitiveJavaType(Type type, string sigName) :
-            base(TypeFlags.None, Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null)
+        public RuntimePrimitiveJavaType(RuntimeContext context, Type type, string sigName) :
+            base(context, TypeFlags.None, Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null)
         {
             this.type = type;
             this.sigName = sigName;
@@ -68,22 +92,22 @@ namespace IKVM.Runtime
 
         internal override RuntimeJavaType BaseTypeWrapper => null;
 
-        internal static bool IsPrimitiveType(Type type)
+        internal static bool IsPrimitiveType(RuntimeContext context, Type type)
         {
-            return type == BYTE.type
-                || type == CHAR.type
-                || type == DOUBLE.type
-                || type == FLOAT.type
-                || type == INT.type
-                || type == LONG.type
-                || type == SHORT.type
-                || type == BOOLEAN.type
-                || type == VOID.type;
+            return type == context.PrimitiveJavaTypeFactory.BYTE.type
+                || type == context.PrimitiveJavaTypeFactory.CHAR.type
+                || type == context.PrimitiveJavaTypeFactory.DOUBLE.type
+                || type == context.PrimitiveJavaTypeFactory.FLOAT.type
+                || type == context.PrimitiveJavaTypeFactory.INT.type
+                || type == context.PrimitiveJavaTypeFactory.LONG.type
+                || type == context.PrimitiveJavaTypeFactory.SHORT.type
+                || type == context.PrimitiveJavaTypeFactory.BOOLEAN.type
+                || type == context.PrimitiveJavaTypeFactory.VOID.type;
         }
 
         internal override string SigName => sigName;
 
-        internal override RuntimeClassLoader GetClassLoader() => RuntimeClassLoaderFactory.GetBootstrapClassLoader();
+        internal override RuntimeClassLoader GetClassLoader() => Context.ClassLoaderFactory.GetBootstrapClassLoader();
 
         internal override Type TypeAsTBD => type;
 
@@ -93,21 +117,21 @@ namespace IKVM.Runtime
 
         internal override void EmitLdind(CodeEmitter il)
         {
-            if (this == BOOLEAN)
+            if (this == Context.PrimitiveJavaTypeFactory.BOOLEAN)
                 il.Emit(OpCodes.Ldind_U1);
-            else if (this == BYTE)
+            else if (this == Context.PrimitiveJavaTypeFactory.BYTE)
                 il.Emit(OpCodes.Ldind_U1);
-            else if (this == CHAR)
+            else if (this == Context.PrimitiveJavaTypeFactory.CHAR)
                 il.Emit(OpCodes.Ldind_U2);
-            else if (this == SHORT)
+            else if (this == Context.PrimitiveJavaTypeFactory.SHORT)
                 il.Emit(OpCodes.Ldind_I2);
-            else if (this == INT)
+            else if (this == Context.PrimitiveJavaTypeFactory.INT)
                 il.Emit(OpCodes.Ldind_I4);
-            else if (this == LONG)
+            else if (this == Context.PrimitiveJavaTypeFactory.LONG)
                 il.Emit(OpCodes.Ldind_I8);
-            else if (this == FLOAT)
+            else if (this == Context.PrimitiveJavaTypeFactory.FLOAT)
                 il.Emit(OpCodes.Ldind_R4);
-            else if (this == DOUBLE)
+            else if (this == Context.PrimitiveJavaTypeFactory.DOUBLE)
                 il.Emit(OpCodes.Ldind_R8);
             else
                 throw new InternalException();
@@ -115,21 +139,21 @@ namespace IKVM.Runtime
 
         internal override void EmitStind(CodeEmitter il)
         {
-            if (this == BOOLEAN)
+            if (this == Context.PrimitiveJavaTypeFactory.BOOLEAN)
                 il.Emit(OpCodes.Stind_I1);
-            else if (this == BYTE)
+            else if (this == Context.PrimitiveJavaTypeFactory.BYTE)
                 il.Emit(OpCodes.Stind_I1);
-            else if (this == CHAR)
+            else if (this == Context.PrimitiveJavaTypeFactory.CHAR)
                 il.Emit(OpCodes.Stind_I2);
-            else if (this == SHORT)
+            else if (this == Context.PrimitiveJavaTypeFactory.SHORT)
                 il.Emit(OpCodes.Stind_I2);
-            else if (this == INT)
+            else if (this == Context.PrimitiveJavaTypeFactory.INT)
                 il.Emit(OpCodes.Stind_I4);
-            else if (this == LONG)
+            else if (this == Context.PrimitiveJavaTypeFactory.LONG)
                 il.Emit(OpCodes.Stind_I8);
-            else if (this == FLOAT)
+            else if (this == Context.PrimitiveJavaTypeFactory.FLOAT)
                 il.Emit(OpCodes.Stind_R4);
-            else if (this == DOUBLE)
+            else if (this == Context.PrimitiveJavaTypeFactory.DOUBLE)
                 il.Emit(OpCodes.Stind_R8);
             else
                 throw new InternalException();

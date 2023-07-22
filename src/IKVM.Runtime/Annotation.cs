@@ -102,14 +102,14 @@ namespace IKVM.Runtime
             }
             Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
 #if IMPORTER
-            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(StaticCompiler.GetRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
+            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(owner.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
 #else
             return null;
 #endif
         }
 #endif
 
-        private static object LookupEnumValue(Type enumType, string value)
+        private static object LookupEnumValue(RuntimeContext context, Type enumType, string value)
         {
             FieldInfo field = enumType.GetField(value, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
             if (field != null)
@@ -117,7 +117,7 @@ namespace IKVM.Runtime
                 return field.GetRawConstantValue();
             }
             // both __unspecified and missing values end up here
-            return EnumHelper.GetPrimitiveValue(EnumHelper.GetUnderlyingType(enumType), 0);
+            return EnumHelper.GetPrimitiveValue(context, EnumHelper.GetUnderlyingType(enumType), 0);
         }
 
         protected static object ConvertValue(RuntimeClassLoader loader, Type targetType, object obj)
@@ -133,14 +133,14 @@ namespace IKVM.Runtime
                     {
                         // TODO check the obj descriptor matches the type we expect
                         string s = ((object[])arr[i])[2].ToString();
-                        object newval = LookupEnumValue(targetType, s);
+                        object newval = LookupEnumValue(loader.Context, targetType, s);
                         if (value == null)
                         {
                             value = newval;
                         }
                         else
                         {
-                            value = EnumHelper.OrBoxedIntegrals(value, newval);
+                            value = EnumHelper.OrBoxedIntegrals(loader.Context, value, newval);
                         }
                     }
                     return value;
@@ -152,10 +152,10 @@ namespace IKVM.Runtime
                     {
                         // TODO we should probably return null and handle that
                     }
-                    return LookupEnumValue(targetType, s);
+                    return LookupEnumValue(loader.Context, targetType, s);
                 }
             }
-            else if (targetType == Types.Type)
+            else if (targetType == loader.Context.Types.Type)
             {
                 // TODO check the obj descriptor matches the type we expect
                 return loader.FieldTypeWrapperFromSig(((string)((object[])obj)[1]).Replace('/', '.'), LoadMode.LoadOrThrow).TypeAsTBD;

@@ -48,7 +48,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        internal static object Parse(Type type, string value)
+        internal static object Parse(RuntimeContext context, Type type, string value)
         {
             object retval = null;
             foreach (string str in value.Split(','))
@@ -64,16 +64,17 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    retval = OrBoxedIntegrals(retval, field.GetRawConstantValue());
+                    retval = OrBoxedIntegrals(context, retval, field.GetRawConstantValue());
                 }
             }
+
             return retval;
         }
 #endif
 
         // note that we only support the integer types that C# supports
         // (the CLI also supports bool, char, IntPtr & UIntPtr)
-        internal static object OrBoxedIntegrals(object v1, object v2)
+        internal static object OrBoxedIntegrals(RuntimeContext context, object v1, object v2)
         {
             Debug.Assert(v1.GetType() == v2.GetType());
             if (v1 is ulong)
@@ -85,7 +86,7 @@ namespace IKVM.Runtime
             else
             {
                 long v = ((IConvertible)v1).ToInt64(null) | ((IConvertible)v2).ToInt64(null);
-                switch (Type.GetTypeCode(JVM.Import(v1.GetType())))
+                switch (Type.GetTypeCode(context.Resolver.ResolveType(v1.GetType().FullName)))
                 {
                     case TypeCode.SByte:
                         return (sbyte)v;
@@ -108,13 +109,13 @@ namespace IKVM.Runtime
         }
 
         // this method can be used to convert an enum value or its underlying value to a Java primitive
-        internal static object GetPrimitiveValue(Type underlyingType, object obj)
+        internal static object GetPrimitiveValue(RuntimeContext context, Type underlyingType, object obj)
         {
             // Note that this method doesn't trust that obj is of the correct type,
             // because it turns out there exist assemblies (e.g. gtk-sharp.dll) that
             // have incorrectly typed enum constant values (e.g. int32 instead of uint32).
             long value;
-            if (obj is ulong || (obj is Enum && underlyingType == Types.UInt64))
+            if (obj is ulong || (obj is Enum && underlyingType == context.Types.UInt64))
             {
                 value = unchecked((long)((IConvertible)obj).ToUInt64(null));
             }
@@ -122,19 +123,19 @@ namespace IKVM.Runtime
             {
                 value = ((IConvertible)obj).ToInt64(null);
             }
-            if (underlyingType == Types.SByte || underlyingType == Types.Byte)
+            if (underlyingType == context.Types.SByte || underlyingType == context.Types.Byte)
             {
                 return unchecked((byte)value);
             }
-            else if (underlyingType == Types.Int16 || underlyingType == Types.UInt16)
+            else if (underlyingType == context.Types.Int16 || underlyingType == context.Types.UInt16)
             {
                 return unchecked((short)value);
             }
-            else if (underlyingType == Types.Int32 || underlyingType == Types.UInt32)
+            else if (underlyingType == context.Types.Int32 || underlyingType == context.Types.UInt32)
             {
                 return unchecked((int)value);
             }
-            else if (underlyingType == Types.Int64 || underlyingType == Types.UInt64)
+            else if (underlyingType == context.Types.Int64 || underlyingType == context.Types.UInt64)
             {
                 return value;
             }

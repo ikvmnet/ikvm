@@ -77,7 +77,7 @@ namespace IKVM.Tools.Importer.MapXml
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
-            if (!Validate())
+            if (!Validate(context))
             {
                 return;
             }
@@ -106,17 +106,17 @@ namespace IKVM.Tools.Importer.MapXml
             }
             else
             {
-                StaticCompiler.IssueMessage(Message.MapXmlUnableToResolveOpCode, ToString());
+                context.ClassLoader.Context.StaticCompiler.IssueMessage(Message.MapXmlUnableToResolveOpCode, ToString());
             }
         }
 
-        private bool Validate()
+        private bool Validate(CodeGenContext context)
         {
             if (Type != null && Class == null)
             {
                 if (Method != null || Field != null || Sig != null)
                 {
-                    StaticCompiler.IssueMessage(Message.MapXmlError, "not implemented: cannot use 'type' attribute with 'method' or 'field' attribute for ldtoken");
+                    context.ClassLoader.Context.StaticCompiler.IssueMessage(Message.MapXmlError, "not implemented: cannot use 'type' attribute with 'method' or 'field' attribute for ldtoken");
                     return false;
                 }
                 return true;
@@ -127,20 +127,20 @@ namespace IKVM.Tools.Importer.MapXml
                 {
                     if (Sig != null)
                     {
-                        StaticCompiler.IssueMessage(Message.MapXmlError, "cannot specify 'sig' attribute without either 'method' or 'field' attribute for ldtoken");
+                        context.ClassLoader.Context.StaticCompiler.IssueMessage(Message.MapXmlError, "cannot specify 'sig' attribute without either 'method' or 'field' attribute for ldtoken");
                     }
                     return true;
                 }
                 if (Method != null && Field != null)
                 {
-                    StaticCompiler.IssueMessage(Message.MapXmlError, "cannot specify both 'method' and 'field' attribute for ldtoken");
+                    context.ClassLoader.Context.StaticCompiler.IssueMessage(Message.MapXmlError, "cannot specify both 'method' and 'field' attribute for ldtoken");
                     return false;
                 }
                 return true;
             }
             else
             {
-                StaticCompiler.IssueMessage(Message.MapXmlError, "must specify either 'type' or 'class' attribute for ldtoken");
+                context.ClassLoader.Context.StaticCompiler.IssueMessage(Message.MapXmlError, "must specify either 'type' or 'class' attribute for ldtoken");
                 return false;
             }
         }
@@ -153,7 +153,7 @@ namespace IKVM.Tools.Importer.MapXml
                 {
                     throw new NotImplementedException();
                 }
-                return StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
+                return context.ClassLoader.Context.StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
             }
             else if (Class != null)
             {

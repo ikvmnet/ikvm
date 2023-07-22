@@ -80,6 +80,10 @@
         <JNITrampolineRuntimeIdentifier Include="osx-arm64" TargetName="aarch64-apple-macosx" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Include="JVM.Resolver.cs" />
+    </ItemGroup>
+
     <Target Name="CompileJNITrampolines" Inputs="$(JNITrampolineSourceDirectory)ikvm.c;$(JNITrampolineSourceDirectory)ikvm.h" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).ll" Condition=" '$(TargetFramework)' != '' ">
         <ItemGroup>
             <_JNITrampolinesIncludes Include="%(JNITrampolineRuntimeIdentifier.Includes)" />

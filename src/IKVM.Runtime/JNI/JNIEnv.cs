@@ -459,7 +459,7 @@ namespace IKVM.Runtime.JNI
             else if (env.classLoader != null)
                 return env.classLoader;
             else
-                return RuntimeClassLoaderFactory.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
+                return env.classLoader.Context.ClassLoaderFactory.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
         }
 
         internal static jclass FindClass(JNIEnv* pEnv, byte* name)
@@ -776,21 +776,21 @@ namespace IKVM.Runtime.JNI
             for (int i = 0; i < argTypes.Length; i++)
             {
                 var type = argTypes[i];
-                if (type == RuntimePrimitiveJavaType.BOOLEAN)
+                if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.BOOLEAN)
                     args[i] = pArgs[i].z != JNI_FALSE;
-                else if (type == RuntimePrimitiveJavaType.BYTE)
+                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.BYTE)
                     args[i] = (byte)pArgs[i].b;
-                else if (type == RuntimePrimitiveJavaType.CHAR)
+                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.CHAR)
                     args[i] = (char)pArgs[i].c;
-                else if (type == RuntimePrimitiveJavaType.SHORT)
+                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.SHORT)
                     args[i] = pArgs[i].s;
-                else if (type == RuntimePrimitiveJavaType.INT)
+                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.INT)
                     args[i] = pArgs[i].i;
-                else if (type == RuntimePrimitiveJavaType.LONG)
+                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.LONG)
                     args[i] = pArgs[i].j;
-                else if (type == RuntimePrimitiveJavaType.FLOAT)
+                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.FLOAT)
                     args[i] = pArgs[i].f;
-                else if (type == RuntimePrimitiveJavaType.DOUBLE)
+                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.DOUBLE)
                     args[i] = pArgs[i].d;
                 else
                     args[i] = argTypes[i].GhostWrap(UnwrapRef(env, pArgs[i].l));

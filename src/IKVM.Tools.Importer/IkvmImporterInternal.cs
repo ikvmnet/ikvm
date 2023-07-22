@@ -38,7 +38,7 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Tools.Importer
 {
 
-    sealed class IkvmImporterInternal
+    class IkvmImporterInternal
     {
 
         bool nonleaf;
@@ -156,40 +156,45 @@ namespace IKVM.Tools.Importer
 
         static int Compile(string[] args)
         {
-            List<string> argList = GetArgs(args);
+            var argList = GetArgs(args);
             if (argList.Count == 0 || argList.Contains("-?") || argList.Contains("-help"))
             {
                 PrintHelp();
                 return 0;
             }
+
             if (!argList.Contains("-nologo"))
             {
                 PrintHeader();
             }
 
-            IkvmImporterInternal comp = new IkvmImporterInternal();
-            List<CompilerOptions> targets = new List<CompilerOptions>();
-            CompilerOptions toplevel = new CompilerOptions();
-            StaticCompiler.toplevel = toplevel;
-            comp.ParseCommandLine(argList.GetEnumerator(), targets, toplevel);
-            StaticCompiler.Init(nonDeterministicOutput);
-            resolver.Warning += loader_Warning;
-            resolver.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
-            ResolveReferences(targets);
+            var compiler = new StaticCompiler();
+            var importer = new IkvmImporterInternal();
+            var targets = new List<CompilerOptions>();
+            var rootTarget = new CompilerOptions();
+            var context = new RuntimeContext(new ManagedResolver(compiler), rootTarget.bootstrap, compiler);
+
+            compiler.rootTarget = rootTarget;
+            importer.ParseCommandLine(context, compiler, argList.GetEnumerator(), targets, rootTarget);
+            compiler.Init(nonDeterministicOutput);
+            resolver.Warning += (warning, message, parameters) => loader_Warning(compiler, warning, message, parameters);
+            resolver.Init(compiler.Universe, nostdlib, rootTarget.unresolvedReferences, libpaths);
+            ResolveReferences(compiler, targets);
             ResolveStrongNameKeys(targets);
+
 
             if (targets.Count == 0)
             {
                 throw new FatalCompilerErrorException(Message.NoTargetsFound);
             }
-            if (StaticCompiler.errorCount != 0)
+            if (compiler.errorCount != 0)
             {
                 return 1;
             }
 
             try
             {
-                return CompilerClassLoader.Compile(runtimeAssembly, targets);
+                return CompilerClassLoader.Compile(context, compiler, runtimeAssembly, targets);
             }
             catch (FileFormatLimitationExceededException x)
             {
@@ -197,27 +202,27 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        static void loader_Warning(AssemblyResolver.WarningId warning, string message, string[] parameters)
+        static void loader_Warning(StaticCompiler compiler, AssemblyResolver.WarningId warning, string message, string[] parameters)
         {
             switch (warning)
             {
                 case AssemblyResolver.WarningId.HigherVersion:
-                    StaticCompiler.IssueMessage(Message.AssumeAssemblyVersionMatch, parameters);
+                    IssueMessage(compiler, Message.AssumeAssemblyVersionMatch, parameters);
                     break;
                 case AssemblyResolver.WarningId.InvalidLibDirectoryOption:
-                    StaticCompiler.IssueMessage(Message.InvalidDirectoryInLibOptionPath, parameters);
+                    IssueMessage(compiler, Message.InvalidDirectoryInLibOptionPath, parameters);
                     break;
                 case AssemblyResolver.WarningId.InvalidLibDirectoryEnvironment:
-                    StaticCompiler.IssueMessage(Message.InvalidDirectoryInLibEnvironmentPath, parameters);
+                    IssueMessage(compiler, Message.InvalidDirectoryInLibEnvironmentPath, parameters);
                     break;
                 case AssemblyResolver.WarningId.LegacySearchRule:
-                    StaticCompiler.IssueMessage(Message.LegacySearchRule, parameters);
+                    IssueMessage(compiler, Message.LegacySearchRule, parameters);
                     break;
                 case AssemblyResolver.WarningId.LocationIgnored:
-                    StaticCompiler.IssueMessage(Message.AssemblyLocationIgnored, parameters);
+                    IssueMessage(compiler, Message.AssemblyLocationIgnored, parameters);
                     break;
                 default:
-                    StaticCompiler.IssueMessage(Message.UnknownWarning, string.Format(message, parameters));
+                    IssueMessage(compiler, Message.UnknownWarning, string.Format(message, parameters));
                     break;
             }
         }
@@ -390,17 +395,17 @@ namespace IKVM.Tools.Importer
             Console.Error.WriteLine("                               class file.");
         }
 
-        void ParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
+        void ParseCommandLine(RuntimeContext context, StaticCompiler compiler, IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
         {
             options.target = PEFileKinds.ConsoleApplication;
             options.guessFileKind = true;
             options.version = new Version(0, 0, 0, 0);
             options.apartment = ApartmentState.STA;
             options.props = new Dictionary<string, string>();
-            ContinueParseCommandLine(arglist, targets, options);
+            ContinueParseCommandLine(context, compiler, arglist, targets, options);
         }
 
-        void ContinueParseCommandLine(IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
+        void ContinueParseCommandLine(RuntimeContext context, StaticCompiler compiler, IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
         {
             List<string> fileNames = new List<string>();
             while (arglist.MoveNext())
@@ -410,13 +415,13 @@ namespace IKVM.Tools.Importer
                 {
                     if (!nonleaf)
                     {
-                        ReadFiles(options, fileNames);
+                        ReadFiles(context, compiler, options, fileNames);
                         nonleaf = true;
                     }
                     IkvmImporterInternal nestedLevel = new IkvmImporterInternal();
                     nestedLevel.manifestMainClass = manifestMainClass;
                     nestedLevel.defaultAssemblyName = defaultAssemblyName;
-                    nestedLevel.ContinueParseCommandLine(arglist, targets, options.Copy());
+                    nestedLevel.ContinueParseCommandLine(context, compiler, arglist, targets, options.Copy());
                 }
                 else if (s == "}")
                 {
@@ -581,7 +586,7 @@ namespace IKVM.Tools.Importer
                         if (exists)
                         {
                             DirectoryInfo dir = new DirectoryInfo(spec);
-                            found = Recurse(options, dir, dir, "*");
+                            found = Recurse(context, compiler, options, dir, dir, "*");
                         }
                         else
                         {
@@ -590,11 +595,11 @@ namespace IKVM.Tools.Importer
                                 DirectoryInfo dir = new DirectoryInfo(Path.GetDirectoryName(spec));
                                 if (dir.Exists)
                                 {
-                                    found = Recurse(options, dir, dir, Path.GetFileName(spec));
+                                    found = Recurse(context, compiler, options, dir, dir, Path.GetFileName(spec));
                                 }
                                 else
                                 {
-                                    found = RecurseJar(options, spec);
+                                    found = RecurseJar(context, compiler, options, spec);
                                 }
                             }
                             catch (PathTooLongException)
@@ -842,7 +847,7 @@ namespace IKVM.Tools.Importer
                         string proxy = s.Substring(7);
                         if (options.proxies.Contains(proxy))
                         {
-                            StaticCompiler.IssueMessage(Message.DuplicateProxy, proxy);
+                            IssueMessage(compiler, Message.DuplicateProxy, proxy);
                         }
                         options.proxies.Add(proxy);
                     }
@@ -865,7 +870,7 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s.StartsWith("-assemblyattributes:", StringComparison.Ordinal))
                     {
-                        ProcessAttributeAnnotationsClass(ref options.assemblyAttributeAnnotations, s.Substring(20));
+                        ProcessAttributeAnnotationsClass(context, ref options.assemblyAttributeAnnotations, s.Substring(20));
                     }
                     else if (s == "-w4") // undocumented option to always warn if a class isn't found
                     {
@@ -874,6 +879,10 @@ namespace IKVM.Tools.Importer
                     else if (s == "-noparameterreflection") // undocumented option to compile core class libraries with, to disable MethodParameter attribute
                     {
                         options.noParameterReflection = true;
+                    }
+                    else if (s == "-bootstrap")
+                    {
+                        options.bootstrap = true;
                     }
                     else
                     {
@@ -889,11 +898,14 @@ namespace IKVM.Tools.Importer
                     throw new FatalCompilerErrorException(Message.SharedClassLoaderCannotBeUsedOnModuleTarget);
                 }
             }
+
             if (nonleaf)
             {
                 return;
             }
-            ReadFiles(options, fileNames);
+
+            ReadFiles(context, compiler, options, fileNames);
+
             if (options.assembly == null)
             {
                 string basename = options.path == null ? defaultAssemblyName : options.path.Name;
@@ -921,9 +933,10 @@ namespace IKVM.Tools.Importer
             }
             if (options.mainClass == null && manifestMainClass != null && (options.guessFileKind || options.target != PEFileKinds.Dll))
             {
-                StaticCompiler.IssueMessage(options, Message.MainMethodFromManifest, manifestMainClass);
+                IssueMessage(compiler, options, Message.MainMethodFromManifest, manifestMainClass);
                 options.mainClass = manifestMainClass;
             }
+
             targets.Add(options);
         }
 
@@ -958,7 +971,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private void ReadFiles(CompilerOptions options, List<string> fileNames)
+        private void ReadFiles(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, List<string> fileNames)
         {
             foreach (string fileName in fileNames)
             {
@@ -989,13 +1002,13 @@ namespace IKVM.Tools.Importer
                 catch { }
                 if (files == null || files.Length == 0)
                 {
-                    StaticCompiler.IssueMessage(Message.InputFileNotFound, fileName);
+                    IssueMessage(compiler, Message.InputFileNotFound, fileName);
                 }
                 else
                 {
                     foreach (string f in files)
                     {
-                        ProcessFile(options, null, f);
+                        ProcessFile(context, compiler, options, null, f);
                     }
                 }
             }
@@ -1060,9 +1073,9 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        static void ResolveReferences(List<CompilerOptions> targets)
+        static void ResolveReferences(StaticCompiler compiler, List<CompilerOptions> targets)
         {
-            Dictionary<string, IKVM.Reflection.Assembly> cache = new Dictionary<string, IKVM.Reflection.Assembly>();
+            var cache = new Dictionary<string, IKVM.Reflection.Assembly>();
             foreach (CompilerOptions target in targets)
             {
                 if (target.unresolvedReferences != null)
@@ -1081,7 +1094,7 @@ namespace IKVM.Tools.Importer
                         {
                             throw new FatalCompilerErrorException(Message.ReferenceNotFound, reference);
                         }
-                        next_reference:;
+                    next_reference:;
                     }
                 }
             }
@@ -1095,7 +1108,7 @@ namespace IKVM.Tools.Importer
                         Type forwarder = asm.GetType("__<MainAssembly>");
                         if (forwarder != null && forwarder.Assembly != asm)
                         {
-                            StaticCompiler.IssueMessage(Message.NonPrimaryAssemblyReference, asm.Location, forwarder.Assembly.GetName().Name);
+                            IssueMessage(compiler, Message.NonPrimaryAssemblyReference, asm.Location, forwarder.Assembly.GetName().Name);
                         }
                     }
                 }
@@ -1117,7 +1130,7 @@ namespace IKVM.Tools.Importer
                 {
                     foreach (Assembly asm in target.references)
                     {
-                        RuntimeAssemblyClassLoader.PreloadExportedAssemblies(asm);
+                        RuntimeAssemblyClassLoader.PreloadExportedAssemblies(compiler, asm);
                     }
                 }
             }
@@ -1161,13 +1174,13 @@ namespace IKVM.Tools.Importer
             return ms.ToArray();
         }
 
-        private static bool EmitStubWarning(CompilerOptions options, byte[] buf)
+        static bool EmitStubWarning(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, byte[] buf)
         {
             ClassFile cf;
 
             try
             {
-                cf = new ClassFile(ClassReader.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
+                cf = new ClassFile(context, ClassReader.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
             }
             catch (ClassFormatError)
             {
@@ -1186,19 +1199,19 @@ namespace IKVM.Tools.Importer
                 foreach (Match m in mc)
                 {
                     options.legacyStubReferences[m.Groups[1].Value] = null;
-                    StaticCompiler.IssueMessage(options, Message.StubsAreDeprecated, m.Groups[1].Value);
+                    IssueMessage(compiler, options, Message.StubsAreDeprecated, m.Groups[1].Value);
                 }
             }
             else
             {
                 options.legacyStubReferences[cf.IKVMAssemblyAttribute] = null;
-                StaticCompiler.IssueMessage(options, Message.StubsAreDeprecated, cf.IKVMAssemblyAttribute);
+                IssueMessage(compiler, options, Message.StubsAreDeprecated, cf.IKVMAssemblyAttribute);
             }
 
             return true;
         }
 
-        private static bool IsExcludedOrStubLegacy(CompilerOptions options, ZipArchiveEntry ze, byte[] data)
+        static bool IsExcludedOrStubLegacy(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, ZipArchiveEntry ze, byte[] data)
         {
             if (ze.Name.EndsWith(".class", StringComparison.OrdinalIgnoreCase))
             {
@@ -1206,7 +1219,7 @@ namespace IKVM.Tools.Importer
                 {
                     bool stub;
                     string name = ClassFile.GetClassName(data, 0, data.Length, out stub);
-                    if (options.IsExcludedClass(name) || (stub && EmitStubWarning(options, data)))
+                    if (options.IsExcludedClass(name) || (stub && EmitStubWarning(context, compiler, options, data)))
                     {
                         // we use stubs to add references, but otherwise ignore them
                         return true;
@@ -1219,7 +1232,7 @@ namespace IKVM.Tools.Importer
             return false;
         }
 
-        private void ProcessManifest(CompilerOptions options, ZipArchiveEntry ze)
+        void ProcessManifest(StaticCompiler compiler, CompilerOptions options, ZipArchiveEntry ze)
         {
             if (manifestMainClass == null)
             {
@@ -1246,7 +1259,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private bool ProcessZipFile(CompilerOptions options, string file, Predicate<ZipArchiveEntry> filter)
+        bool ProcessZipFile(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, string file, Predicate<ZipArchiveEntry> filter)
         {
             try
             {
@@ -1264,7 +1277,7 @@ namespace IKVM.Tools.Importer
                     {
                         found = true;
                         byte[] data = ReadFromZip(ze);
-                        if (IsExcludedOrStubLegacy(options, ze, data))
+                        if (IsExcludedOrStubLegacy(context, compiler, options, ze, data))
                         {
                             continue;
                         }
@@ -1275,7 +1288,7 @@ namespace IKVM.Tools.Importer
                         jar.Add(ze.FullName, data);
                         if (string.Equals(ze.FullName, "META-INF/MANIFEST.MF", StringComparison.OrdinalIgnoreCase))
                         {
-                            ProcessManifest(options, ze);
+                            ProcessManifest(compiler, options, ze);
                         }
                     }
                 }
@@ -1292,12 +1305,12 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private void ProcessFile(CompilerOptions options, DirectoryInfo baseDir, string file)
+        void ProcessFile(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, DirectoryInfo baseDir, string file)
         {
             FileInfo fileInfo = GetFileInfo(file);
             if (fileInfo.Extension.Equals(".jar", StringComparison.OrdinalIgnoreCase) || fileInfo.Extension.Equals(".zip", StringComparison.OrdinalIgnoreCase))
             {
-                ProcessZipFile(options, file, null);
+                ProcessZipFile(context, compiler, options, file, null);
             }
             else
             {
@@ -1312,7 +1325,7 @@ namespace IKVM.Tools.Importer
                         {
                             return;
                         }
-                        if (stub && EmitStubWarning(options, data))
+                        if (stub && EmitStubWarning(context, compiler, options, data))
                         {
                             // we use stubs to add references, but otherwise ignore them
                             return;
@@ -1322,12 +1335,12 @@ namespace IKVM.Tools.Importer
                     }
                     catch (ClassFormatError x)
                     {
-                        StaticCompiler.IssueMessage(Message.ClassFormatError, file, x.Message);
+                        IssueMessage(compiler, Message.ClassFormatError, file, x.Message);
                     }
                 }
                 if (baseDir == null)
                 {
-                    StaticCompiler.IssueMessage(Message.UnknownFileType, file);
+                    IssueMessage(compiler, Message.UnknownFileType, file);
                 }
                 else
                 {
@@ -1341,22 +1354,22 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private bool Recurse(CompilerOptions options, DirectoryInfo baseDir, DirectoryInfo dir, string spec)
+        bool Recurse(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, DirectoryInfo baseDir, DirectoryInfo dir, string spec)
         {
             bool found = false;
             foreach (FileInfo file in dir.GetFiles(spec))
             {
                 found = true;
-                ProcessFile(options, baseDir, file.FullName);
+                ProcessFile(context, compiler, options, baseDir, file.FullName);
             }
             foreach (DirectoryInfo sub in dir.GetDirectories())
             {
-                found |= Recurse(options, baseDir, sub, spec);
+                found |= Recurse(context, compiler, options, baseDir, sub, spec);
             }
             return found;
         }
 
-        private bool RecurseJar(CompilerOptions options, string path)
+        bool RecurseJar(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, string path)
         {
             string file = "";
             for (; ; )
@@ -1371,7 +1384,7 @@ namespace IKVM.Tools.Importer
                 {
                     string pathFilter = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
                     string fileFilter = "^" + Regex.Escape(Path.GetFileName(file)).Replace("\\*", ".*").Replace("\\?", ".") + "$";
-                    return ProcessZipFile(options, path, delegate (ZipArchiveEntry ze)
+                    return ProcessZipFile(context, compiler, options, path, delegate (ZipArchiveEntry ze)
                     {
                         // MONOBUG Path.GetDirectoryName() doesn't normalize / to \ on Windows
                         string name = ze.FullName.Replace('/', Path.DirectorySeparatorChar);
@@ -1408,17 +1421,277 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        static void ProcessAttributeAnnotationsClass(ref object[] annotations, string filename)
+        static void ProcessAttributeAnnotationsClass(RuntimeContext context, ref object[] annotations, string filename)
         {
             try
             {
                 using var file = File.OpenRead(filename);
-                var cf = new ClassFile(ClassReader.Read(file), null, ClassFileParseOptions.None, null);
+                var cf = new ClassFile(context, ClassReader.Read(file), null, ClassFileParseOptions.None, null);
                 ArrayAppend(ref annotations, cf.Annotations);
             }
             catch (Exception x)
             {
                 throw new FatalCompilerErrorException(Message.ErrorReadingFile, filename, x.Message);
+            }
+        }
+
+        internal static void IssueMessage(StaticCompiler compiler, Message msgId, params string[] values)
+        {
+            IssueMessage(compiler, compiler.rootTarget, msgId, values);
+        }
+
+        internal static void IssueMessage(StaticCompiler compiler, CompilerOptions options, Message msgId, params string[] values)
+        {
+            if (compiler.errorCount != 0 && msgId < Message.StartErrors && !options.warnaserror)
+            {
+                // don't display any warnings after we've emitted an error message
+                return;
+            }
+
+            string key = ((int)msgId).ToString();
+            for (int i = 0; ; i++)
+            {
+                if (options.suppressWarnings.ContainsKey(key))
+                {
+                    return;
+                }
+                if (i == values.Length)
+                {
+                    break;
+                }
+                key += ":" + values[i];
+            }
+            options.suppressWarnings.Add(key, key);
+            if (options.writeSuppressWarningsFile != null)
+            {
+                File.AppendAllText(options.writeSuppressWarningsFile.FullName, "-nowarn:" + key + Environment.NewLine);
+            }
+            string msg;
+            switch (msgId)
+            {
+                case Message.MainMethodFound:
+                    msg = "Found main method in class \"{0}\"";
+                    break;
+                case Message.OutputFileIs:
+                    msg = "Output file is \"{0}\"";
+                    break;
+                case Message.AutoAddRef:
+                    msg = "Automatically adding reference to \"{0}\"";
+                    break;
+                case Message.MainMethodFromManifest:
+                    msg = "Using main class \"{0}\" based on jar manifest";
+                    break;
+                case Message.ClassNotFound:
+                    msg = "Class \"{0}\" not found";
+                    break;
+                case Message.ClassFormatError:
+                    msg = "Unable to compile class \"{0}\"" + Environment.NewLine +
+                        "    (class format error \"{1}\")";
+                    break;
+                case Message.DuplicateClassName:
+                    msg = "Duplicate class name: \"{0}\"";
+                    break;
+                case Message.IllegalAccessError:
+                    msg = "Unable to compile class \"{0}\"" + Environment.NewLine +
+                        "    (illegal access error \"{1}\")";
+                    break;
+                case Message.VerificationError:
+                    msg = "Unable to compile class \"{0}\"" + Environment.NewLine +
+                        "    (verification error \"{1}\")";
+                    break;
+                case Message.NoClassDefFoundError:
+                    msg = "Unable to compile class \"{0}\"" + Environment.NewLine +
+                        "    (missing class \"{1}\")";
+                    break;
+                case Message.GenericUnableToCompileError:
+                    msg = "Unable to compile class \"{0}\"" + Environment.NewLine +
+                        "    (\"{1}\": \"{2}\")";
+                    break;
+                case Message.DuplicateResourceName:
+                    msg = "Skipping resource (name clash): \"{0}\"";
+                    break;
+                case Message.SkippingReferencedClass:
+                    msg = "Skipping class: \"{0}\"" + Environment.NewLine +
+                        "    (class is already available in referenced assembly \"{1}\")";
+                    break;
+                case Message.NoJniRuntime:
+                    msg = "Unable to load runtime JNI assembly";
+                    break;
+                case Message.EmittedNoClassDefFoundError:
+                    msg = "Emitted java.lang.NoClassDefFoundError in \"{0}\"" + Environment.NewLine +
+                        "    (\"{1}\")";
+                    break;
+                case Message.EmittedIllegalAccessError:
+                    msg = "Emitted java.lang.IllegalAccessError in \"{0}\"" + Environment.NewLine +
+                        "    (\"{1}\")";
+                    break;
+                case Message.EmittedInstantiationError:
+                    msg = "Emitted java.lang.InstantiationError in \"{0}\"" + Environment.NewLine +
+                        "    (\"{1}\")";
+                    break;
+                case Message.EmittedIncompatibleClassChangeError:
+                    msg = "Emitted java.lang.IncompatibleClassChangeError in \"{0}\"" + Environment.NewLine +
+                        "    (\"{1}\")";
+                    break;
+                case Message.EmittedNoSuchFieldError:
+                    msg = "Emitted java.lang.NoSuchFieldError in \"{0}\"" + Environment.NewLine +
+                        "    (\"{1}\")";
+                    break;
+                case Message.EmittedAbstractMethodError:
+                    msg = "Emitted java.lang.AbstractMethodError in \"{0}\"" + Environment.NewLine +
+                        "    (\"{1}\")";
+                    break;
+                case Message.EmittedNoSuchMethodError:
+                    msg = "Emitted java.lang.NoSuchMethodError in \"{0}\"" + Environment.NewLine +
+                        "    (\"{1}\")";
+                    break;
+                case Message.EmittedLinkageError:
+                    msg = "Emitted java.lang.LinkageError in \"{0}\"" + Environment.NewLine +
+                        "    (\"{1}\")";
+                    break;
+                case Message.EmittedVerificationError:
+                    msg = "Emitted java.lang.VerificationError in \"{0}\"" + Environment.NewLine +
+                        "    (\"{1}\")";
+                    break;
+                case Message.EmittedClassFormatError:
+                    msg = "Emitted java.lang.ClassFormatError in \"{0}\"" + Environment.NewLine +
+                        "    (\"{1}\")";
+                    break;
+                case Message.InvalidCustomAttribute:
+                    msg = "Error emitting \"{0}\" custom attribute" + Environment.NewLine +
+                        "    (\"{1}\")";
+                    break;
+                case Message.IgnoredCustomAttribute:
+                    msg = "Custom attribute \"{0}\" was ignored" + Environment.NewLine +
+                        "    (\"{1}\")";
+                    break;
+                case Message.AssumeAssemblyVersionMatch:
+                    msg = "Assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy";
+                    break;
+                case Message.InvalidDirectoryInLibOptionPath:
+                    msg = "Directory \"{0}\" specified in -lib option is not valid";
+                    break;
+                case Message.InvalidDirectoryInLibEnvironmentPath:
+                    msg = "Directory \"{0}\" specified in LIB environment is not valid";
+                    break;
+                case Message.LegacySearchRule:
+                    msg = "Found assembly \"{0}\" using legacy search rule, please append '.dll' to the reference";
+                    break;
+                case Message.AssemblyLocationIgnored:
+                    msg = "Assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identity \"{2}\"";
+                    break;
+                case Message.InterfaceMethodCantBeInternal:
+                    msg = "Ignoring @ikvm.lang.Internal annotation on interface method" + Environment.NewLine +
+                        "    (\"{0}.{1}{2}\")";
+                    break;
+                case Message.DllExportMustBeStaticMethod:
+                    msg = "Ignoring @ikvm.lang.DllExport annotation on non-static method" + Environment.NewLine +
+                        "    (\"{0}.{1}{2}\")";
+                    break;
+                case Message.DllExportRequiresSupportedPlatform:
+                    msg = "Ignoring @ikvm.lang.DllExport annotation due to unsupported target platform";
+                    break;
+                case Message.NonPrimaryAssemblyReference:
+                    msg = "Referenced assembly \"{0}\" is not the primary assembly of a shared class loader group, please reference primary assembly \"{1}\" instead";
+                    break;
+                case Message.MissingType:
+                    msg = "Reference to type \"{0}\" claims it is defined in \"{1}\", but it could not be found";
+                    break;
+                case Message.MissingReference:
+                    msg = "The type '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'";
+                    break;
+                case Message.DuplicateAssemblyReference:
+                    msg = "Duplicate assembly reference \"{0}\"";
+                    break;
+                case Message.UnableToResolveType:
+                    msg = "Reference in \"{0}\" to type \"{1}\" claims it is defined in \"{2}\", but it could not be found";
+                    break;
+                case Message.StubsAreDeprecated:
+                    msg = "Compiling stubs is deprecated. Please add a reference to assembly \"{0}\" instead.";
+                    break;
+                case Message.WrongClassName:
+                    msg = "Unable to compile \"{0}\" (wrong name: \"{1}\")";
+                    break;
+                case Message.ReflectionCallerClassRequiresCallerID:
+                    msg = "Reflection.getCallerClass() called from non-CallerID method" + Environment.NewLine +
+                        "    (\"{0}.{1}{2}\")";
+                    break;
+                case Message.LegacyAssemblyAttributesFound:
+                    msg = "Legacy assembly attributes container found. Please use the -assemblyattributes:<file> option.";
+                    break;
+                case Message.UnableToCreateLambdaFactory:
+                    msg = "Unable to create static lambda factory.";
+                    break;
+                case Message.UnableToCreateProxy:
+                    msg = "Unable to create proxy \"{0}\"" + Environment.NewLine +
+                        "    (\"{1}\")";
+                    break;
+                case Message.DuplicateProxy:
+                    msg = "Duplicate proxy \"{0}\"";
+                    break;
+                case Message.MapXmlUnableToResolveOpCode:
+                    msg = "Unable to resolve opcode in remap file: {0}";
+                    break;
+                case Message.MapXmlError:
+                    msg = "Error in remap file: {0}";
+                    break;
+                case Message.InputFileNotFound:
+                    msg = "Source file '{0}' not found";
+                    break;
+                case Message.UnknownFileType:
+                    msg = "Unknown file type: {0}";
+                    break;
+                case Message.UnknownElementInMapFile:
+                    msg = "Unknown element {0} in remap file, line {1}, column {2}";
+                    break;
+                case Message.UnknownAttributeInMapFile:
+                    msg = "Unknown attribute {0} in remap file, line {1}, column {2}";
+                    break;
+                case Message.InvalidMemberNameInMapFile:
+                    msg = "Invalid {0} name '{1}' in remap file in class {2}";
+                    break;
+                case Message.InvalidMemberSignatureInMapFile:
+                    msg = "Invalid {0} signature '{3}' in remap file for {0} {1}.{2}";
+                    break;
+                case Message.InvalidPropertyNameInMapFile:
+                    msg = "Invalid property {0} name '{3}' in remap file for property {1}.{2}";
+                    break;
+                case Message.InvalidPropertySignatureInMapFile:
+                    msg = "Invalid property {0} signature '{3}' in remap file for property {1}.{2}";
+                    break;
+                case Message.UnknownWarning:
+                    msg = "{0}";
+                    break;
+                case Message.CallerSensitiveOnUnsupportedMethod:
+                    msg = "CallerSensitive annotation on unsupported method" + Environment.NewLine +
+                        "    (\"{0}.{1}{2}\")";
+                    break;
+                case Message.RemappedTypeMissingDefaultInterfaceMethod:
+                    msg = "{0} does not implement default interface method {1}";
+                    break;
+                default:
+                    throw new InvalidProgramException();
+            }
+            bool error = msgId >= Message.StartErrors
+                || (options.warnaserror && msgId >= Message.StartWarnings)
+                || options.errorWarnings.ContainsKey(key)
+                || options.errorWarnings.ContainsKey(((int)msgId).ToString());
+            Console.Error.Write("{0} IKVMC{1:D4}: ", error ? "error" : msgId < Message.StartWarnings ? "note" : "warning", (int)msgId);
+            if (error && Message.StartWarnings <= msgId && msgId < Message.StartErrors)
+            {
+                Console.Error.Write("Warning as Error: ");
+            }
+            Console.Error.WriteLine(msg, values);
+            if (options != compiler.rootTarget && options.path != null)
+            {
+                Console.Error.WriteLine("    (in {0})", options.path);
+            }
+            if (error)
+            {
+                if (++compiler.errorCount == 100)
+                {
+                    throw new FatalCompilerErrorException(Message.MaximumErrorCountReached);
+                }
             }
         }
 

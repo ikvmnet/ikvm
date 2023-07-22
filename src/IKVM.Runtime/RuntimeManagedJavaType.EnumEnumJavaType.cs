@@ -54,13 +54,14 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="name"></param>
             /// <param name="enumType"></param>
-            internal EnumEnumJavaType(string name, Type enumType) :
-                base(Modifiers.Public | Modifiers.Enum | Modifiers.Final, name, RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Enum"))
+            internal EnumEnumJavaType(RuntimeContext context, string name, Type enumType) :
+                base(context, Modifiers.Public | Modifiers.Enum | Modifiers.Final, name, context.ClassLoaderFactory.LoadClassCritical("java.lang.Enum"))
             {
 #if IMPORTER || EXPORTER
-                this.fakeType = FakeTypes.GetEnumType(enumType);
+                this.fakeType = context.FakeTypes.GetEnumType(enumType);
 #elif !FIRST_PASS
                 this.fakeType = typeof(ikvm.@internal.EnumEnum<>).MakeGenericType(enumType);
 #endif
@@ -118,7 +119,7 @@ namespace IKVM.Runtime
                 protected override void EmitGetImpl(CodeEmitter ilgen)
                 {
 #if IMPORTER
-                    var typeofByteCodeHelper = StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper");
+                    var typeofByteCodeHelper = DeclaringType.Context.StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper");
 #else
                     var typeofByteCodeHelper = typeof(IKVM.Runtime.ByteCodeHelper);
 #endif
@@ -185,7 +186,7 @@ namespace IKVM.Runtime
                 base.LazyPublishMembers();
             }
 
-            internal override RuntimeJavaType DeclaringTypeWrapper => RuntimeClassLoaderFactory.GetJavaTypeFromType(fakeType.GetGenericArguments()[0]);
+            internal override RuntimeJavaType DeclaringTypeWrapper => Context.ClassLoaderFactory.GetJavaTypeFromType(fakeType.GetGenericArguments()[0]);
 
             internal override RuntimeClassLoader GetClassLoader()
             {

@@ -101,7 +101,7 @@ namespace IKVM.Tools.Importer.MapXml
             {
                 Debug.Assert(Class == null && Type != null);
                 Type[] argTypes = context.ClassLoader.ArgTypeListFromSig(Sig);
-                ConstructorInfo ci = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
+                ConstructorInfo ci = context.ClassLoader.Context.Resolver.ResolveType(Type).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
                 if (ci == null)
                 {
                     throw new InvalidOperationException("Missing .ctor: " + Type + "..ctor" + Sig);
@@ -195,11 +195,11 @@ namespace IKVM.Tools.Importer.MapXml
                         argTypes = new Type[types.Length];
                         for (int i = 0; i < types.Length; i++)
                         {
-                            argTypes[i] = StaticCompiler.GetTypeForMapXml(context.ClassLoader, types[i]);
+                            argTypes[i] = context.ClassLoader.Context.Resolver.ResolveType(types[i]);
                         }
                     }
 
-                    Type ti = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
+                    Type ti = context.ClassLoader.Context.Resolver.ResolveType(Type);
                     if (ti == null)
                     {
                         throw new InvalidOperationException("Missing type: " + Type);
@@ -212,6 +212,7 @@ namespace IKVM.Tools.Importer.MapXml
                         var m = ti.GetMethods().FirstOrDefault(i => i.Name == Name);
                         throw new InvalidOperationException("Missing method: " + ti.FullName + "." + Name + Sig + $" -> ({string.Join("; ", ta)}). {(m != null ? string.Join(";", m.GetParameters().Select(i => i.ParameterType.AssemblyQualifiedName)) : null)}");
                     }
+
                     ilgen.Emit(opcode, mi);
                 }
             }

@@ -23,6 +23,7 @@
 */
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -41,18 +42,30 @@ namespace IKVM.Runtime
     /// <summary>
     /// Maintains instances of <see cref="RuntimeAssemblyClassLoader"/>.
     /// </summary>
-    static class RuntimeAssemblyClassLoaderFactory
+    class RuntimeAssemblyClassLoaderFactory
     {
+
+        readonly RuntimeContext context;
 
         /// <summary>
         /// Maps existing <see cref="RuntimeAssemblyClassLoader"/> instances to <see cref="Assembly"/> instances. Allows
         /// assemblies to be unloaded.
         /// </summary>
-        static readonly ConditionalWeakTable<Assembly, RuntimeAssemblyClassLoader> assemblyClassLoaders = new();
+        readonly ConditionalWeakTable<Assembly, RuntimeAssemblyClassLoader> assemblyClassLoaders = new();
 
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
-        internal static Dictionary<string, string> customClassLoaderRedirects;
+        internal Dictionary<string, string> customClassLoaderRedirects;
 #endif
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <exception cref="System.ArgumentNullException"></exception>
+        public RuntimeAssemblyClassLoaderFactory(RuntimeContext context)
+        {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
+        }
 
         /// <summary>
         /// Obtains the <see cref="RuntimeAssemblyClassLoader"/> for the given <see cref="Assembly"/>. This method should not
@@ -60,7 +73,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        public static RuntimeAssemblyClassLoader FromAssembly(Assembly assembly)
+        public RuntimeAssemblyClassLoader FromAssembly(Assembly assembly)
         {
             if (assemblyClassLoaders.TryGetValue(assembly, out RuntimeAssemblyClassLoader loader))
                 return loader;
@@ -83,7 +96,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        static RuntimeAssemblyClassLoader Create(Assembly assembly)
+        RuntimeAssemblyClassLoader Create(Assembly assembly)
         {
             // If the assembly is a part of a multi-assembly shared class loader,
             // it will export the __<MainAssembly> type from the main assembly in the group.
@@ -95,26 +108,25 @@ namespace IKVM.Runtime
                     return FromAssembly(mainAssembly);
             }
 
+            var baseAssembly = context.Resolver.ResolveBaseAssembly();
 #if IMPORTER
-
-            if (JVM.BaseAssembly == null && CompilerClassLoader.IsCoreAssembly(assembly))
+            if (baseAssembly == null && context.Bootstrap)
             {
-                JVM.BaseAssembly = assembly;
-                RuntimeClassLoaderFactory.LoadRemappedTypes();
+                baseAssembly = assembly;
+                context.ClassLoaderFactory.LoadRemappedTypes();
             }
-
 #endif
 
-            if (assembly == JVM.BaseAssembly)
+            if (baseAssembly == assembly)
             {
                 // This cast is necessary for ikvmc and a no-op for the runtime.
                 // Note that the cast cannot fail, because ikvmc will only return a non AssemblyClassLoader
                 // from GetBootstrapClassLoader() when compiling the core assembly and in that case JVM.CoreAssembly
                 // will be null.
-                return (RuntimeAssemblyClassLoader)RuntimeClassLoaderFactory.GetBootstrapClassLoader();
+                return (RuntimeAssemblyClassLoader)context.ClassLoaderFactory.GetBootstrapClassLoader();
             }
 
-            return new RuntimeAssemblyClassLoader(assembly);
+            return new RuntimeAssemblyClassLoader(context, assembly);
         }
 
     }

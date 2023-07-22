@@ -87,7 +87,7 @@ namespace IKVM.Tools.Importer.MapXml
 #if NETCOREAPP
 				Class = Class.Replace("mscorlib", Universe.CoreLibName);
 #endif
-                var type = StaticCompiler.Universe.GetType(Class, true);
+                var type = loader.Context.Resolver.ResolveType(Class);
                 var mi = type.GetMethod(Name, redirParamTypes);
                 if (mi == null)
                 {

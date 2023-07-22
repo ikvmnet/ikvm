@@ -250,7 +250,7 @@ namespace IKVM.Runtime
             Profiler.Count("DynamicCast");
             if (!DynamicInstanceOf(obj, clazz))
             {
-                throw new global::java.lang.ClassCastException(IKVM.Java.Externs.ikvm.runtime.Util.GetTypeWrapperFromObject(obj).Name + " cannot be cast to " + clazz.getName());
+                throw new global::java.lang.ClassCastException(IKVM.Java.Externs.ikvm.runtime.Util.GetTypeWrapperFromObject(JVM.Context, obj).Name + " cannot be cast to " + clazz.getName());
             }
             return obj;
 #endif
@@ -347,7 +347,7 @@ namespace IKVM.Runtime
                         global::java.lang.invoke.MethodType mt = null;
                         DynamicLoadMethodType(ref mt, sig, callerID);
                         // HACK linkMethodHandleConstant is broken for MethodHandle.invoke[Exact]
-                        if (kind == (int)ReferenceKind.InvokeVirtual && refc == CoreClasses.java.lang.invoke.MethodHandle.Wrapper.ClassObject)
+                        if (kind == (int)ReferenceKind.InvokeVirtual && refc == JVM.Context.JavaBase.javaLangInvokeMethodHandle.ClassObject)
                         {
                             switch (name)
                             {
@@ -372,12 +372,12 @@ namespace IKVM.Runtime
             where T : class /* delegate */
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             try
             {
                 global::java.lang.invoke.MethodHandle mh = DynamicLoadMethodHandleImpl(kind, clazz, name, sig, callerID);
-                return GetDelegateForInvokeExact<T>(global::java.lang.invoke.MethodHandles.explicitCastArguments(mh, MethodHandleUtil.GetDelegateMethodType(typeof(T))));
+                return GetDelegateForInvokeExact<T>(global::java.lang.invoke.MethodHandles.explicitCastArguments(mh, JVM.Context.MethodHandleUtil.GetDelegateMethodType(typeof(T))));
             }
             catch (global::java.lang.IncompatibleClassChangeError x)
             {
@@ -402,7 +402,7 @@ namespace IKVM.Runtime
         public static Delegate DynamicCreateDelegate(object obj, Type delegateType, string name, string sig)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             RuntimeJavaType tw = RuntimeJavaType.FromClass(global::ikvm.runtime.Util.getClassFromObject(obj));
             RuntimeJavaMethod mw = tw.GetMethodWrapper(name, sig, true);
@@ -432,9 +432,9 @@ namespace IKVM.Runtime
                     parameterTypes[i + 1] = parameters[i].ParameterType;
                 }
                 System.Reflection.Emit.DynamicMethod dm = new System.Reflection.Emit.DynamicMethod("Invoke", invoke.ReturnType, parameterTypes);
-                CodeEmitter ilgen = CodeEmitter.Create(dm);
+                CodeEmitter ilgen = JVM.Context.CodeEmitterFactory.Create(dm);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, tw.Name + ".Invoke" + sig);
-                RuntimeClassLoaderFactory.GetBootstrapClassLoader()
+                JVM.Context.ClassLoaderFactory.GetBootstrapClassLoader()
                     .LoadClassByName(mw == null || mw.IsStatic ? "global::java.lang.AbstractMethodError" : "global::java.lang.IllegalAccessError")
                     .GetMethodWrapper("<init>", "(Lglobal::java.lang.String;)V", false)
                     .EmitNewobj(ilgen);
@@ -627,7 +627,11 @@ namespace IKVM.Runtime
 
         private static bool IsPrimitiveArrayType(Type type)
         {
-            return type.IsArray && RuntimeClassLoaderFactory.GetJavaTypeFromType(type.GetElementType()).IsPrimitive;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return type.IsArray && JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(type.GetElementType()).IsPrimitive;
+#endif
         }
 
         [DebuggerStepThroughAttribute]
@@ -1045,7 +1049,7 @@ namespace IKVM.Runtime
                 throw new ArgumentOutOfRangeException();
 
             // check for InitializeModule method present on classloader
-            var classLoader = RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
+            var classLoader = JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
             if (classLoader != null)
             {
                 var init = (Action<Module>)Delegate.CreateDelegate(typeof(Action<Module>), classLoader, "InitializeModule", false, false);
@@ -1085,23 +1089,27 @@ namespace IKVM.Runtime
         [HideFromJava]
         public static T MapException<T>(Exception x, MapFlags mode) where T : Exception
         {
-            return ExceptionHelper.MapException<T>(x, (mode & MapFlags.NoRemapping) == 0, (mode & MapFlags.Unused) != 0);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return JVM.Context.ExceptionHelper.MapException<T>(x, (mode & MapFlags.NoRemapping) == 0, (mode & MapFlags.Unused) != 0);
+#endif
         }
 
         [HideFromJava]
         public static Exception DynamicMapException(Exception x, MapFlags mode, global::java.lang.Class exceptionClass)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             RuntimeJavaType exceptionTypeWrapper = RuntimeJavaType.FromClass(exceptionClass);
             mode &= ~MapFlags.NoRemapping;
-            if (exceptionTypeWrapper.IsSubTypeOf(CoreClasses.cli.System.Exception.Wrapper))
+            if (exceptionTypeWrapper.IsSubTypeOf(JVM.Context.JavaBase.cliSystemException))
             {
                 mode |= MapFlags.NoRemapping;
             }
-            Type exceptionType = exceptionTypeWrapper == CoreClasses.java.lang.Throwable.Wrapper ? typeof(System.Exception) : exceptionTypeWrapper.TypeAsBaseType;
-            return (Exception)ByteCodeHelperMethods.mapException.MakeGenericMethod(exceptionType).Invoke(null, new object[] { x, mode });
+            Type exceptionType = exceptionTypeWrapper == JVM.Context.JavaBase.javaLangThrowable ? typeof(System.Exception) : exceptionTypeWrapper.TypeAsBaseType;
+            return (Exception)JVM.Context.ByteCodeHelperMethods.mapException.MakeGenericMethod(exceptionType).Invoke(null, new object[] { x, mode });
 #endif
         }
 
@@ -1114,7 +1122,7 @@ namespace IKVM.Runtime
             T del = h._invokeExactDelegate as T;
             if (del == null)
             {
-                del = MethodHandleUtil.GetDelegateForInvokeExact<T>(h);
+                del = JVM.Context.MethodHandleUtil.GetDelegateForInvokeExact<T>(h);
             }
             return del;
 #endif
@@ -1144,7 +1152,7 @@ namespace IKVM.Runtime
                 {
                     adapter = adapter.asType(realType.insertParameterTypes(0, (global::java.lang.Class)ClassLiteral<global::java.lang.invoke.MethodHandle>.Value)).asFixedArity();
                 }
-                adapter = adapter.asType(MethodHandleUtil.GetDelegateMethodType(typeof(T)));
+                adapter = adapter.asType(JVM.Context.MethodHandleUtil.GetDelegateMethodType(typeof(T)));
                 del = GetDelegateForInvokeExact<T>(adapter);
                 if (cache.TrySetType(h.type()))
                 {
@@ -1171,7 +1179,7 @@ namespace IKVM.Runtime
             T del = h.form.vmentry.vmtarget as T;
             if (del == null)
             {
-                del = MethodHandleUtil.GetVoidAdapter(h.form.vmentry) as T;
+                del = JVM.Context.MethodHandleUtil.GetVoidAdapter(h.form.vmentry) as T;
             }
             return del;
 #endif
@@ -1183,7 +1191,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return MethodHandleUtil.GetDelegateMethodType(typeof(T));
+            return JVM.Context.MethodHandleUtil.GetDelegateMethodType(typeof(T));
 #endif
         }
 

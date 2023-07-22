@@ -80,7 +80,7 @@ namespace IKVM.Tools.Importer.MapXml
                 {
                     Debug.Assert(Class == null ^ Type == null);
                     if (Type != null)
-                        typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
+                        typeType = context.ClassLoader.Context.StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
                     else
                         typeWrapper = context.ClassLoader.LoadClassByName(Class);
                 }

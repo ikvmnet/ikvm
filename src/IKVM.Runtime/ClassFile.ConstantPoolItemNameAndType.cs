@@ -39,8 +39,10 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="reader"></param>
-            internal ConstantPoolItemNameAndType(NameAndTypeConstantReader reader)
+            internal ConstantPoolItemNameAndType(RuntimeContext context, NameAndTypeConstantReader reader) :
+                base(context)
             {
                 nameIndex = reader.Record.NameIndex;
                 descriptorIndex = reader.Record.DescriptorIndex;

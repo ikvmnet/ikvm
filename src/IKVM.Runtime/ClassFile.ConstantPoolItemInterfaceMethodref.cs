@@ -36,8 +36,10 @@ namespace IKVM.Runtime
             /// <summary>
             /// initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="reader"></param>
-            internal ConstantPoolItemInterfaceMethodref(InterfaceMethodrefConstantReader reader) : base(reader.Record.ClassIndex, reader.Record.NameAndTypeIndex)
+            internal ConstantPoolItemInterfaceMethodref(RuntimeContext context, InterfaceMethodrefConstantReader reader) :
+                base(context, reader.Record.ClassIndex, reader.Record.NameAndTypeIndex)
             {
 
             }
@@ -55,7 +57,7 @@ namespace IKVM.Runtime
                     if (method == null)
                     {
                         // NOTE vmspec 5.4.3.4 clearly states that an interfacemethod may also refer to a method in Object
-                        method = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(Name, Signature, false);
+                        method = thisType.Context.JavaBase.javaLangObject.GetMethodWrapper(Name, Signature, false);
                     }
                     if (method != null)
                     {

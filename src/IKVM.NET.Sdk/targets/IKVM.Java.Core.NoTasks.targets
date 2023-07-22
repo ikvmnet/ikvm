@@ -87,7 +87,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         </ItemGroup>
 
         <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
-        <Message Text="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Importance="low" Condition="!Exists('%(ReferenceExport.CachePath)')" />
+        <Message Text="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Importance="high" Condition="!Exists('%(ReferenceExport.CachePath)')" />
         <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" />
         <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="Exists('%(ReferenceExport.StagePath)') And !Exists('%(ReferenceExport.CachePath)')" />
         <Touch Files="%(ReferenceExport.CachePath)" />
@@ -196,6 +196,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         <ItemGroup>
             <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
             <_IkvmCompilerArgs Include="-nologo" />
+            <_IkvmCompilerArgs Include="-bootstrap" Condition=" '$(Bootstrap)' == 'true' " />
             <_IkvmCompilerArgs Include="-debug" Condition=" '$(DebugType)' != 'none' " />
             <_IkvmCompilerArgs Include="-assembly:$(AssemblyName)" />
             <_IkvmCompilerArgs Include="-version:$(AssemblyVersion)" />

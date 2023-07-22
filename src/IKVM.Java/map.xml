@@ -2676,7 +2676,7 @@
             <!-- We replace this method, because it looks for %JAVA_HOME%/lib/ext/localedata.jar and we don't have that -->
             <method name="isNonENLangSupported" sig="()Z">
                 <body>
-                    <call type="JRELocaleProviderAdapter" name="isNonENLangSupported" sig="()Z" />
+                    <call type="IKVM.Java.Externs.sun.util.locale.provider.JRELocaleProviderAdapter" name="isNonENLangSupported" sig="()Z" />
                     <ret />
                 </body>
             </method>

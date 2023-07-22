@@ -60,7 +60,7 @@ namespace IKVM.Runtime
 #if IMPORTER
                 if (context.TypeWrapper.GetClassLoader().DisableDynamicBinding)
                 {
-                    StaticCompiler.IssueMessage(Message.UnableToCreateLambdaFactory);
+                    context.Context.StaticCompiler.IssueMessage(Message.UnableToCreateLambdaFactory);
                 }
 #endif
                 return false;
@@ -155,11 +155,11 @@ namespace IKVM.Runtime
                     }
                 }
             }
-            if (instantiatedMethodType.GetRetType() != RuntimePrimitiveJavaType.VOID)
+            if (instantiatedMethodType.GetRetType() != context.Context.PrimitiveJavaTypeFactory.VOID)
             {
                 RuntimeJavaType Rt = instantiatedMethodType.GetRetType();
                 RuntimeJavaType Ra = GetImplReturnType(implMethod);
-                if (Ra == RuntimePrimitiveJavaType.VOID || !IsAdaptable(Ra, Rt, true))
+                if (Ra == context.Context.PrimitiveJavaTypeFactory.VOID || !IsAdaptable(Ra, Rt, true))
                 {
                     Fail("The return type Rt is void, or the return type Ra is not void and is adaptable to Rt");
                     return false;
@@ -189,9 +189,9 @@ namespace IKVM.Runtime
             // we're not implementing the interfaces recursively (because we don't care about .NET Compact anymore),
             // but should we decide to do that, we'd need to somehow communicate to AnonymousTypeWrapper what the 'real' interface is
             tb.AddInterfaceImplementation(interfaceType.TypeAsBaseType);
-            if (serializable && Array.IndexOf(markers, CoreClasses.java.io.Serializable.Wrapper) == -1)
+            if (serializable && Array.IndexOf(markers, context.Context.JavaBase.javaIoSerializable) == -1)
             {
-                tb.AddInterfaceImplementation(CoreClasses.java.io.Serializable.Wrapper.TypeAsBaseType);
+                tb.AddInterfaceImplementation(context.Context.JavaBase.javaIoSerializable.TypeAsBaseType);
             }
             foreach (RuntimeJavaType marker in markers)
             {
@@ -331,21 +331,21 @@ namespace IKVM.Runtime
             switch (primitive.SigName[0])
             {
                 case 'Z':
-                    return RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Boolean");
+                    return primitive.Context.ClassLoaderFactory.LoadClassCritical("java.lang.Boolean");
                 case 'B':
-                    return RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Byte");
+                    return primitive.Context.ClassLoaderFactory.LoadClassCritical("java.lang.Byte");
                 case 'S':
-                    return RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Short");
+                    return primitive.Context.ClassLoaderFactory.LoadClassCritical("java.lang.Short");
                 case 'C':
-                    return RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Character");
+                    return primitive.Context.ClassLoaderFactory.LoadClassCritical("java.lang.Character");
                 case 'I':
-                    return RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Integer");
+                    return primitive.Context.ClassLoaderFactory.LoadClassCritical("java.lang.Integer");
                 case 'J':
-                    return RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Long");
+                    return primitive.Context.ClassLoaderFactory.LoadClassCritical("java.lang.Long");
                 case 'F':
-                    return RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Float");
+                    return primitive.Context.ClassLoaderFactory.LoadClassCritical("java.lang.Float");
                 case 'D':
-                    return RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Double");
+                    return primitive.Context.ClassLoaderFactory.LoadClassCritical("java.lang.Double");
                 default:
                     throw new InvalidOperationException();
             }
@@ -356,21 +356,21 @@ namespace IKVM.Runtime
             switch (wrapper.Name)
             {
                 case "java.lang.Boolean":
-                    return RuntimePrimitiveJavaType.BOOLEAN;
+                    return wrapper.Context.PrimitiveJavaTypeFactory.BOOLEAN;
                 case "java.lang.Byte":
-                    return RuntimePrimitiveJavaType.BYTE;
+                    return wrapper.Context.PrimitiveJavaTypeFactory.BYTE;
                 case "java.lang.Short":
-                    return RuntimePrimitiveJavaType.SHORT;
+                    return wrapper.Context.PrimitiveJavaTypeFactory.SHORT;
                 case "java.lang.Character":
-                    return RuntimePrimitiveJavaType.CHAR;
+                    return wrapper.Context.PrimitiveJavaTypeFactory.CHAR;
                 case "java.lang.Integer":
-                    return RuntimePrimitiveJavaType.INT;
+                    return wrapper.Context.PrimitiveJavaTypeFactory.INT;
                 case "java.lang.Long":
-                    return RuntimePrimitiveJavaType.LONG;
+                    return wrapper.Context.PrimitiveJavaTypeFactory.LONG;
                 case "java.lang.Float":
-                    return RuntimePrimitiveJavaType.FLOAT;
+                    return wrapper.Context.PrimitiveJavaTypeFactory.FLOAT;
                 case "java.lang.Double":
-                    return RuntimePrimitiveJavaType.DOUBLE;
+                    return wrapper.Context.PrimitiveJavaTypeFactory.DOUBLE;
                 default:
                     return null;
             }
@@ -418,9 +418,9 @@ namespace IKVM.Runtime
 
             // constructor
             MethodBuilder ctor = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, capturedTypes);
-            CodeEmitter ilgen = CodeEmitter.Create(ctor);
+            CodeEmitter ilgen = context.Context.CodeEmitterFactory.Create(ctor);
             ilgen.Emit(OpCodes.Ldarg_0);
-            ilgen.Emit(OpCodes.Call, Types.Object.GetConstructor(Type.EmptyTypes));
+            ilgen.Emit(OpCodes.Call, context.Context.Types.Object.GetConstructor(Type.EmptyTypes));
             for (int i = 0; i < capturedTypes.Length; i++)
             {
                 ilgen.EmitLdarg(0);
@@ -432,7 +432,7 @@ namespace IKVM.Runtime
 
             // instance getter
             MethodBuilder getInstance = tb.DefineMethod("__<GetInstance>", MethodAttributes.Assembly | MethodAttributes.Static, cpi.GetRetType().TypeAsBaseType, capturedTypes);
-            CodeEmitter ilgenGet = CodeEmitter.Create(getInstance);
+            CodeEmitter ilgenGet = context.Context.CodeEmitterFactory.Create(getInstance);
 
             if (capturedTypes.Length == 0)
             {
@@ -441,7 +441,7 @@ namespace IKVM.Runtime
 
                 // static constructor
                 MethodBuilder cctor = ReflectUtil.DefineTypeInitializer(tb, context.TypeWrapper.GetClassLoader());
-                CodeEmitter ilgenCCtor = CodeEmitter.Create(cctor);
+                CodeEmitter ilgenCCtor = context.Context.CodeEmitterFactory.Create(cctor);
                 ilgenCCtor.Emit(OpCodes.Newobj, ctor);
                 ilgenCCtor.Emit(OpCodes.Stsfld, instField);
                 ilgenCCtor.Emit(OpCodes.Ret);
@@ -472,8 +472,8 @@ namespace IKVM.Runtime
             // writeReplace method
             if (serializable)
             {
-                MethodBuilder writeReplace = tb.DefineMethod("writeReplace", MethodAttributes.Private, Types.Object, Type.EmptyTypes);
-                ilgen = CodeEmitter.Create(writeReplace);
+                MethodBuilder writeReplace = tb.DefineMethod("writeReplace", MethodAttributes.Private, context.Context.Types.Object, Type.EmptyTypes);
+                ilgen = context.Context.CodeEmitterFactory.Create(writeReplace);
                 context.TypeWrapper.EmitClassLiteral(ilgen);
                 ilgen.Emit(OpCodes.Ldstr, cpi.GetRetType().Name.Replace('.', '/'));
                 ilgen.Emit(OpCodes.Ldstr, cpi.Name);
@@ -484,7 +484,7 @@ namespace IKVM.Runtime
                 ilgen.Emit(OpCodes.Ldstr, implMethod.Signature.Replace('.', '/'));
                 ilgen.Emit(OpCodes.Ldstr, instantiatedMethodType.Signature.Replace('.', '/'));
                 ilgen.EmitLdc_I4(capturedFields.Length);
-                ilgen.Emit(OpCodes.Newarr, Types.Object);
+                ilgen.Emit(OpCodes.Newarr, context.Context.Types.Object);
                 for (int i = 0; i < capturedFields.Length; i++)
                 {
                     ilgen.Emit(OpCodes.Dup);
@@ -493,15 +493,15 @@ namespace IKVM.Runtime
                     ilgen.Emit(OpCodes.Ldfld, capturedFields[i]);
                     if (args[i].IsPrimitive)
                     {
-                        Boxer.EmitBox(ilgen, args[i]);
+                        context.Context.Boxer.EmitBox(ilgen, args[i]);
                     }
                     else if (args[i].IsGhost)
                     {
                         args[i].EmitConvSignatureTypeToStackType(ilgen);
                     }
-                    ilgen.Emit(OpCodes.Stelem, Types.Object);
+                    ilgen.Emit(OpCodes.Stelem, context.Context.Types.Object);
                 }
-                RuntimeJavaMethod ctorSerializedLambda = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.invoke.SerializedLambda").GetMethodWrapper(StringConstants.INIT,
+                RuntimeJavaMethod ctorSerializedLambda = context.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.SerializedLambda").GetMethodWrapper(StringConstants.INIT,
                     "(Ljava.lang.Class;Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;ILjava.lang.String;Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;[Ljava.lang.Object;)V", false);
                 ctorSerializedLambda.Link();
                 ctorSerializedLambda.EmitNewobj(ilgen);
@@ -511,8 +511,8 @@ namespace IKVM.Runtime
                 if (!context.TypeWrapper.GetClassLoader().NoAutomagicSerialization)
                 {
                     // add .NET serialization interop support
-                    Serialization.MarkSerializable(tb);
-                    Serialization.AddGetObjectData(tb);
+                    context.Context.Serialization.MarkSerializable(tb);
+                    context.Context.Serialization.AddGetObjectData(tb);
                 }
             }
 
@@ -528,9 +528,9 @@ namespace IKVM.Runtime
                 tb.DefineMethodOverride(mb, (MethodInfo)interfaceMethod.GetMethod());
             }
 
-            AttributeHelper.HideFromJava(mb);
+            context.Context.AttributeHelper.HideFromJava(mb);
 
-            CodeEmitter ilgen = CodeEmitter.Create(mb);
+            CodeEmitter ilgen = context.Context.CodeEmitterFactory.Create(mb);
             for (int i = 0; i < capturedFields.Length; i++)
             {
                 ilgen.EmitLdarg(0);
@@ -554,7 +554,7 @@ namespace IKVM.Runtime
                 RuntimeJavaType Ui = interfaceMethod.GetParameters()[i];
                 RuntimeJavaType Ti = instantiatedMethodType.GetArgTypes()[i];
                 RuntimeJavaType Aj = implParameters[i + k];
-                if (Ui == RuntimePrimitiveJavaType.BYTE)
+                if (Ui == context.Context.PrimitiveJavaTypeFactory.BYTE)
                 {
                     ilgen.Emit(OpCodes.Conv_I1);
                 }
@@ -577,26 +577,26 @@ namespace IKVM.Runtime
                 {
                     if (Ti.IsPrimitive && !Aj.IsPrimitive)
                     {
-                        Boxer.EmitBox(ilgen, Ti);
+                        context.Context.Boxer.EmitBox(ilgen, Ti);
                     }
                     else if (!Ti.IsPrimitive && Aj.IsPrimitive)
                     {
                         RuntimeJavaType primitive = GetPrimitiveFromWrapper(Ti);
-                        Boxer.EmitUnbox(ilgen, primitive, false);
-                        if (primitive == RuntimePrimitiveJavaType.BYTE)
+                        context.Context.Boxer.EmitUnbox(ilgen, primitive, false);
+                        if (primitive == context.Context.PrimitiveJavaTypeFactory.BYTE)
                         {
                             ilgen.Emit(OpCodes.Conv_I1);
                         }
                     }
-                    else if (Aj == RuntimePrimitiveJavaType.LONG)
+                    else if (Aj == context.Context.PrimitiveJavaTypeFactory.LONG)
                     {
                         ilgen.Emit(OpCodes.Conv_I8);
                     }
-                    else if (Aj == RuntimePrimitiveJavaType.FLOAT)
+                    else if (Aj == context.Context.PrimitiveJavaTypeFactory.FLOAT)
                     {
                         ilgen.Emit(OpCodes.Conv_R4);
                     }
-                    else if (Aj == RuntimePrimitiveJavaType.DOUBLE)
+                    else if (Aj == context.Context.PrimitiveJavaTypeFactory.DOUBLE)
                     {
                         ilgen.Emit(OpCodes.Conv_R8);
                     }
@@ -621,13 +621,13 @@ namespace IKVM.Runtime
             RuntimeJavaType Ru = interfaceMethod.ReturnType;
             RuntimeJavaType Ra = GetImplReturnType(implMethod);
             RuntimeJavaType Rt = instantiatedMethodType.GetRetType();
-            if (Ra == RuntimePrimitiveJavaType.BYTE)
+            if (Ra == context.Context.PrimitiveJavaTypeFactory.BYTE)
             {
                 ilgen.Emit(OpCodes.Conv_I1);
             }
             if (Ra != Ru)
             {
-                if (Ru == RuntimePrimitiveJavaType.VOID)
+                if (Ru == context.Context.PrimitiveJavaTypeFactory.VOID)
                 {
                     ilgen.Emit(OpCodes.Pop);
                 }
@@ -644,7 +644,7 @@ namespace IKVM.Runtime
             {
                 if (Rt.IsPrimitive)
                 {
-                    if (Rt == RuntimePrimitiveJavaType.VOID)
+                    if (Rt == context.Context.PrimitiveJavaTypeFactory.VOID)
                     {
                         // already popped
                     }
@@ -653,7 +653,7 @@ namespace IKVM.Runtime
                         RuntimeJavaType primitive = GetPrimitiveFromWrapper(Ra);
                         if (primitive != null)
                         {
-                            Boxer.EmitUnbox(ilgen, primitive, false);
+                            context.Context.Boxer.EmitUnbox(ilgen, primitive, false);
                         }
                         else
                         {
@@ -661,15 +661,15 @@ namespace IKVM.Runtime
                             EmitConvertingUnbox(ilgen, Rt);
                         }
                     }
-                    else if (Rt == RuntimePrimitiveJavaType.LONG)
+                    else if (Rt == context.Context.PrimitiveJavaTypeFactory.LONG)
                     {
                         ilgen.Emit(OpCodes.Conv_I8);
                     }
-                    else if (Rt == RuntimePrimitiveJavaType.FLOAT)
+                    else if (Rt == context.Context.PrimitiveJavaTypeFactory.FLOAT)
                     {
                         ilgen.Emit(OpCodes.Conv_R4);
                     }
-                    else if (Rt == RuntimePrimitiveJavaType.DOUBLE)
+                    else if (Rt == context.Context.PrimitiveJavaTypeFactory.DOUBLE)
                     {
                         ilgen.Emit(OpCodes.Conv_R8);
                     }
@@ -681,7 +681,7 @@ namespace IKVM.Runtime
                     {
                         tw = Ra;
                     }
-                    Boxer.EmitBox(ilgen, tw);
+                    context.Context.Boxer.EmitBox(ilgen, tw);
                 }
                 else
                 {
@@ -699,36 +699,36 @@ namespace IKVM.Runtime
             {
                 case 'Z':
                 case 'C':
-                    Boxer.EmitUnbox(ilgen, tw, true);
+                    tw.Context.Boxer.EmitUnbox(ilgen, tw, true);
                     break;
                 case 'B':
-                    EmitUnboxNumber(ilgen, "byteValue", "()B");
+                    EmitUnboxNumber(tw.Context, ilgen, "byteValue", "()B");
                     break;
                 case 'S':
-                    EmitUnboxNumber(ilgen, "shortValue", "()S");
+                    EmitUnboxNumber(tw.Context, ilgen, "shortValue", "()S");
                     break;
                 case 'I':
-                    EmitUnboxNumber(ilgen, "intValue", "()I");
+                    EmitUnboxNumber(tw.Context, ilgen, "intValue", "()I");
                     break;
                 case 'J':
-                    EmitUnboxNumber(ilgen, "longValue", "()J");
+                    EmitUnboxNumber(tw.Context, ilgen, "longValue", "()J");
                     break;
                 case 'F':
-                    EmitUnboxNumber(ilgen, "floatValue", "()F");
+                    EmitUnboxNumber(tw.Context, ilgen, "floatValue", "()F");
                     break;
                 case 'D':
-                    EmitUnboxNumber(ilgen, "doubleValue", "()D");
+                    EmitUnboxNumber(tw.Context, ilgen, "doubleValue", "()D");
                     break;
                 default:
                     throw new InvalidOperationException();
             }
         }
 
-        private static void EmitUnboxNumber(CodeEmitter ilgen, string methodName, string methodSig)
+        private static void EmitUnboxNumber(RuntimeContext context, CodeEmitter ilgen, string methodName, string methodSig)
         {
-            RuntimeJavaType tw = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Number");
+            var tw = context.ClassLoaderFactory.LoadClassCritical("java.lang.Number");
             tw.EmitCheckcast(ilgen);
-            RuntimeJavaMethod mw = tw.GetMethodWrapper(methodName, methodSig, false);
+            var mw = tw.GetMethodWrapper(methodName, methodSig, false);
             mw.Link();
             mw.EmitCallvirt(ilgen);
         }
@@ -747,7 +747,7 @@ namespace IKVM.Runtime
                     {
                         tb.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
                     }
-                    RuntimeByteCodeJavaType.FinishContext.EmitCallDefaultInterfaceMethod(mb, mw);
+                    context.EmitCallDefaultInterfaceMethod(mb, mw);
                 }
                 else if (IsObjectMethod(mw))
                 {
@@ -756,12 +756,12 @@ namespace IKVM.Runtime
                     {
                         tb.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
                     }
-                    CodeEmitter ilgen = CodeEmitter.Create(mb);
+                    CodeEmitter ilgen = context.Context.CodeEmitterFactory.Create(mb);
                     for (int i = 0, count = mw.GetParameters().Length; i <= count; i++)
                     {
                         ilgen.EmitLdarg(i);
                     }
-                    CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(mw.Name, mw.Signature, false).EmitCallvirt(ilgen);
+                    context.Context.JavaBase.javaLangObject.GetMethodWrapper(mw.Name, mw.Signature, false).EmitCallvirt(ilgen);
                     ilgen.Emit(OpCodes.Ret);
                     ilgen.DoEmit();
                 }
@@ -817,7 +817,7 @@ namespace IKVM.Runtime
             return tw.IsInterface
                 && !tw.IsGhost
                 && tw.IsAccessibleFrom(caller)
-                && !Serialization.IsISerializable(tw);
+                && !tw.Context.Serialization.IsISerializable(tw);
         }
 
         private static bool CheckSupportedInterfaces(RuntimeJavaType caller, RuntimeJavaType tw, RuntimeJavaType[] markers, ClassFile.ConstantPoolItemMethodType[] bridges, out RuntimeJavaMethod[] methodList)
@@ -935,8 +935,7 @@ namespace IKVM.Runtime
         private static bool IsObjectMethod(RuntimeJavaMethod mw)
         {
             RuntimeJavaMethod objectMethod;
-            return (objectMethod = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(mw.Name, mw.Signature, false)) != null
-                && objectMethod.IsPublic;
+            return (objectMethod = mw.DeclaringType.Context.JavaBase.javaLangObject.GetMethodWrapper(mw.Name, mw.Signature, false)) != null && objectMethod.IsPublic;
         }
 
         private static bool MatchSignatures(RuntimeJavaMethod interfaceMethod, ClassFile.ConstantPoolItemMethodType samMethodType)

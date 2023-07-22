@@ -26,37 +26,41 @@ using System;
 namespace IKVM.Runtime
 {
 
-    static class Boxer
+    class Boxer
     {
 
-        private static readonly RuntimeJavaType javaLangByte;
-        private static readonly RuntimeJavaMethod byteValue;
-        private static readonly RuntimeJavaMethod valueOfByte;
-        private static readonly RuntimeJavaType javaLangBoolean;
-        private static readonly RuntimeJavaMethod booleanValue;
-        private static readonly RuntimeJavaMethod valueOfBoolean;
-        private static readonly RuntimeJavaType javaLangShort;
-        private static readonly RuntimeJavaMethod shortValue;
-        private static readonly RuntimeJavaMethod valueOfShort;
-        private static readonly RuntimeJavaType javaLangCharacter;
-        private static readonly RuntimeJavaMethod charValue;
-        private static readonly RuntimeJavaMethod valueOfCharacter;
-        private static readonly RuntimeJavaType javaLangInteger;
-        private static readonly RuntimeJavaMethod intValue;
-        private static readonly RuntimeJavaMethod valueOfInteger;
-        private static readonly RuntimeJavaType javaLangFloat;
-        private static readonly RuntimeJavaMethod floatValue;
-        private static readonly RuntimeJavaMethod valueOfFloat;
-        private static readonly RuntimeJavaType javaLangLong;
-        private static readonly RuntimeJavaMethod longValue;
-        private static readonly RuntimeJavaMethod valueOfLong;
-        private static readonly RuntimeJavaType javaLangDouble;
-        private static readonly RuntimeJavaMethod doubleValue;
-        private static readonly RuntimeJavaMethod valueOfDouble;
+        readonly RuntimeJavaType javaLangByte;
+        readonly RuntimeJavaMethod byteValue;
+        readonly RuntimeJavaMethod valueOfByte;
+        readonly RuntimeJavaType javaLangBoolean;
+        readonly RuntimeJavaMethod booleanValue;
+        readonly RuntimeJavaMethod valueOfBoolean;
+        readonly RuntimeJavaType javaLangShort;
+        readonly RuntimeJavaMethod shortValue;
+        readonly RuntimeJavaMethod valueOfShort;
+        readonly RuntimeJavaType javaLangCharacter;
+        readonly RuntimeJavaMethod charValue;
+        readonly RuntimeJavaMethod valueOfCharacter;
+        readonly RuntimeJavaType javaLangInteger;
+        readonly RuntimeJavaMethod intValue;
+        readonly RuntimeJavaMethod valueOfInteger;
+        readonly RuntimeJavaType javaLangFloat;
+        readonly RuntimeJavaMethod floatValue;
+        readonly RuntimeJavaMethod valueOfFloat;
+        readonly RuntimeJavaType javaLangLong;
+        readonly RuntimeJavaMethod longValue;
+        readonly RuntimeJavaMethod valueOfLong;
+        readonly RuntimeJavaType javaLangDouble;
+        readonly RuntimeJavaMethod doubleValue;
+        readonly RuntimeJavaMethod valueOfDouble;
 
-        static Boxer()
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        public Boxer(RuntimeContext context)
         {
-            RuntimeClassLoader bootClassLoader = RuntimeClassLoaderFactory.GetBootstrapClassLoader();
+            RuntimeClassLoader bootClassLoader = context.ClassLoaderFactory.GetBootstrapClassLoader();
             javaLangByte = bootClassLoader.TryLoadClassByName("java.lang.Byte");
             byteValue = javaLangByte.GetMethodWrapper("byteValue", "()B", false);
             byteValue.Link();
@@ -99,9 +103,9 @@ namespace IKVM.Runtime
             valueOfDouble.Link();
         }
 
-        internal static void EmitUnbox(CodeEmitter ilgen, RuntimeJavaType tw, bool cast)
+        internal void EmitUnbox(CodeEmitter ilgen, RuntimeJavaType tw, bool cast)
         {
-            if (tw == RuntimePrimitiveJavaType.BYTE)
+            if (tw == ilgen.Context.PrimitiveJavaTypeFactory.BYTE)
             {
                 if (cast)
                 {
@@ -109,7 +113,7 @@ namespace IKVM.Runtime
                 }
                 byteValue.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.BOOLEAN)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.BOOLEAN)
             {
                 if (cast)
                 {
@@ -117,7 +121,7 @@ namespace IKVM.Runtime
                 }
                 booleanValue.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.SHORT)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.SHORT)
             {
                 if (cast)
                 {
@@ -125,7 +129,7 @@ namespace IKVM.Runtime
                 }
                 shortValue.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.CHAR)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.CHAR)
             {
                 if (cast)
                 {
@@ -133,7 +137,7 @@ namespace IKVM.Runtime
                 }
                 charValue.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.INT)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.INT)
             {
                 if (cast)
                 {
@@ -141,7 +145,7 @@ namespace IKVM.Runtime
                 }
                 intValue.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.FLOAT)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.FLOAT)
             {
                 if (cast)
                 {
@@ -149,7 +153,7 @@ namespace IKVM.Runtime
                 }
                 floatValue.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.LONG)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.LONG)
             {
                 if (cast)
                 {
@@ -157,7 +161,7 @@ namespace IKVM.Runtime
                 }
                 longValue.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.DOUBLE)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.DOUBLE)
             {
                 if (cast)
                 {
@@ -171,37 +175,37 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static void EmitBox(CodeEmitter ilgen, RuntimeJavaType tw)
+        internal void EmitBox(CodeEmitter ilgen, RuntimeJavaType tw)
         {
-            if (tw == RuntimePrimitiveJavaType.BYTE)
+            if (tw == ilgen.Context.PrimitiveJavaTypeFactory.BYTE)
             {
                 valueOfByte.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.BOOLEAN)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.BOOLEAN)
             {
                 valueOfBoolean.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.SHORT)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.SHORT)
             {
                 valueOfShort.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.CHAR)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.CHAR)
             {
                 valueOfCharacter.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.INT)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.INT)
             {
                 valueOfInteger.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.FLOAT)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.FLOAT)
             {
                 valueOfFloat.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.LONG)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.LONG)
             {
                 valueOfLong.EmitCall(ilgen);
             }
-            else if (tw == RuntimePrimitiveJavaType.DOUBLE)
+            else if (tw == ilgen.Context.PrimitiveJavaTypeFactory.DOUBLE)
             {
                 valueOfDouble.EmitCall(ilgen);
             }

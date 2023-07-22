@@ -49,21 +49,33 @@ namespace IKVM.Runtime
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="name"></param>
-        internal RuntimeUnloadableJavaType(string name) :
-            base(TypeFlags.None, RuntimeJavaType.UnloadableModifiersHack, name)
+        internal RuntimeUnloadableJavaType(RuntimeContext context, string name) :
+            base(context, TypeFlags.None, RuntimeJavaType.UnloadableModifiersHack, name)
         {
 
         }
 
-        internal RuntimeUnloadableJavaType(Type missingType) :
-            this(missingType.FullName) // TODO demangle and re-mangle appropriately
+        /// <summary>
+        /// Initializes a new instace.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="missingType"></param>
+        internal RuntimeUnloadableJavaType(RuntimeContext context, Type missingType) :
+            this(context, missingType.FullName) // TODO demangle and re-mangle appropriately
         {
             this.missingType = missingType;
         }
 
-        internal RuntimeUnloadableJavaType(string name, Type customModifier) :
-            this(name)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="name"></param>
+        /// <param name="customModifier"></param>
+        internal RuntimeUnloadableJavaType(RuntimeContext context, string name, Type customModifier) :
+            this(context, name)
         {
             this.customModifier = customModifier;
         }
@@ -110,7 +122,7 @@ namespace IKVM.Runtime
 #if IMPORTER
                 if (missingType != null)
                 {
-                    StaticCompiler.IssueMissingTypeMessage(missingType);
+                    Context.StaticCompiler.IssueMissingTypeMessage(missingType);
                     return Array.Empty<RuntimeJavaType>();
                 }
 #endif

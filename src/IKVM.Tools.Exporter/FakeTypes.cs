@@ -21,43 +21,57 @@
   jeroen@frijters.net
   
 */
+using IKVM.Runtime;
+
 using Type = IKVM.Reflection.Type;
 
-static class FakeTypes
+namespace IKVM.Tools.Exporter
 {
 
-    private static readonly Type genericType;
-
-    class Holder<T> { }
-
-    static FakeTypes()
+    class FakeTypes
     {
-        genericType = StaticCompiler.Universe.Import(typeof(Holder<>));
-    }
 
-    internal static Type GetAttributeType(Type type)
-    {
-        return genericType.MakeGenericType(type);
-    }
+        readonly RuntimeContext context;
+        readonly Type genericType;
 
-    internal static Type GetAttributeReturnValueType(Type type)
-    {
-        return genericType.MakeGenericType(type);
-    }
+        class Holder<T> { }
 
-    internal static Type GetAttributeMultipleType(Type type)
-    {
-        return genericType.MakeGenericType(type);
-    }
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <exception cref="System.ArgumentNullException"></exception>
+        public FakeTypes(RuntimeContext context)
+        {
+            this.context = context ?? throw new System.ArgumentNullException(nameof(context));
+            genericType = context.StaticCompiler.Universe.Import(typeof(Holder<>));
+        }
 
-    internal static Type GetDelegateType(Type type)
-    {
-        return genericType.MakeGenericType(type);
-    }
+        internal Type GetAttributeType(Type type)
+        {
+            return genericType.MakeGenericType(type);
+        }
 
-    internal static Type GetEnumType(Type type)
-    {
-        return genericType.MakeGenericType(type);
+        internal Type GetAttributeReturnValueType(Type type)
+        {
+            return genericType.MakeGenericType(type);
+        }
+
+        internal Type GetAttributeMultipleType(Type type)
+        {
+            return genericType.MakeGenericType(type);
+        }
+
+        internal Type GetDelegateType(Type type)
+        {
+            return genericType.MakeGenericType(type);
+        }
+
+        internal Type GetEnumType(Type type)
+        {
+            return genericType.MakeGenericType(type);
+        }
+
     }
 
 }

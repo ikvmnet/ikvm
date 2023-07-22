@@ -28,55 +28,59 @@ using IKVM.Runtime;
 namespace IKVM.Java.Externs.java.lang.reflect
 {
 
-	static class Proxy
-	{
+    static class Proxy
+    {
 
-		public static object defineClass0(global::java.lang.ClassLoader classLoader, string name, byte[] b, int off, int len)
-		{
-			return IKVM.Java.Externs.java.lang.ClassLoader.defineClass1(classLoader, name, b, off, len, null, null);
-		}
+        public static object defineClass0(global::java.lang.ClassLoader classLoader, string name, byte[] b, int off, int len)
+        {
+            return IKVM.Java.Externs.java.lang.ClassLoader.defineClass1(classLoader, name, b, off, len, null, null);
+        }
 
-		public static global::java.lang.Class getPrecompiledProxy(global::java.lang.ClassLoader classLoader, string proxyName, global::java.lang.Class[] interfaces)
-		{
-			RuntimeAssemblyClassLoader acl = RuntimeClassLoaderFactory.GetClassLoaderWrapper(classLoader) as RuntimeAssemblyClassLoader;
-			if (acl == null)
-			{
-				return null;
-			}
-			RuntimeJavaType[] wrappers = new RuntimeJavaType[interfaces.Length];
-			for (int i = 0; i < wrappers.Length; i++)
-			{
-				wrappers[i] = RuntimeJavaType.FromClass(interfaces[i]);
-			}
-			// TODO support multi assembly class loaders
-			Type type = acl.MainAssembly.GetType(TypeNameUtil.GetProxyName(wrappers));
-			if (type == null)
-			{
-				return null;
-			}
-			RuntimeJavaType tw = RuntimeManagedByteCodeJavaType.newInstance(proxyName, type);
-			RuntimeJavaType tw2 = acl.RegisterInitiatingLoader(tw);
-			if (tw != tw2)
-			{
-				return null;
-			}
-			// we need to explicitly register the type, because the type isn't visible by normal means
-			RuntimeClassLoaderFactory.SetWrapperForType(type, tw);
-			RuntimeJavaType[] wrappers2 = tw.Interfaces;
-			if (wrappers.Length != wrappers.Length)
-			{
-				return null;
-			}
-			for (int i = 0; i < wrappers.Length; i++)
-			{
-				if (wrappers[i] != wrappers2[i])
-				{
-					return null;
-				}
-			}
-			return tw.ClassObject;
-		}
+        public static global::java.lang.Class getPrecompiledProxy(global::java.lang.ClassLoader classLoader, string proxyName, global::java.lang.Class[] interfaces)
+        {
+#if FIRST_PASS
+			throw new NotImplementedException();
+#else
+            RuntimeAssemblyClassLoader acl = JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(classLoader) as RuntimeAssemblyClassLoader;
+            if (acl == null)
+            {
+                return null;
+            }
+            RuntimeJavaType[] wrappers = new RuntimeJavaType[interfaces.Length];
+            for (int i = 0; i < wrappers.Length; i++)
+            {
+                wrappers[i] = RuntimeJavaType.FromClass(interfaces[i]);
+            }
+            // TODO support multi assembly class loaders
+            Type type = acl.MainAssembly.GetType(TypeNameUtil.GetProxyName(wrappers));
+            if (type == null)
+            {
+                return null;
+            }
+            RuntimeJavaType tw = JVM.Context.ManagedByteCodeJavaTypeFactory.newInstance(proxyName, type);
+            RuntimeJavaType tw2 = acl.RegisterInitiatingLoader(tw);
+            if (tw != tw2)
+            {
+                return null;
+            }
+            // we need to explicitly register the type, because the type isn't visible by normal means
+            JVM.Context.ClassLoaderFactory.SetWrapperForType(type, tw);
+            RuntimeJavaType[] wrappers2 = tw.Interfaces;
+            if (wrappers.Length != wrappers.Length)
+            {
+                return null;
+            }
+            for (int i = 0; i < wrappers.Length; i++)
+            {
+                if (wrappers[i] != wrappers2[i])
+                {
+                    return null;
+                }
+            }
+            return tw.ClassObject;
+#endif
+        }
 
-	}
+    }
 
 }

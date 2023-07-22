@@ -39,8 +39,10 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="reader"></param>
-            internal ConstantPoolItemFieldref(FieldrefConstantReader reader) : base(reader.Record.ClassIndex, reader.Record.NameAndTypeIndex)
+            internal ConstantPoolItemFieldref(RuntimeContext context, FieldrefConstantReader reader) :
+                base(context, reader.Record.ClassIndex, reader.Record.NameAndTypeIndex)
             {
 
             }

@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -41,16 +42,20 @@ namespace IKVM.Java.Externs.java.lang
         /// </summary>
         static void LazyInitSystemPackages()
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             if (systemPackages == null)
             {
                 var dict = new Dictionary<string, string>();
-                var path = Path.Combine(VfsTable.Default.GetAssemblyResourcesPath(JVM.BaseAssembly), "resources.jar");
-                foreach (var pkgs in RuntimeClassLoaderFactory.GetBootstrapClassLoader().GetPackageInfo())
+                var path = Path.Combine(VfsTable.Default.GetAssemblyResourcesPath(JVM.Context.Resolver.ResolveBaseAssembly()), "resources.jar");
+                foreach (var pkgs in JVM.Context.ClassLoaderFactory.GetBootstrapClassLoader().GetPackageInfo())
                     foreach (var pkg in pkgs.Value)
                         dict[pkg.Replace('.', '/') + "/"] = path;
 
                 Interlocked.CompareExchange(ref systemPackages, dict, null);
             }
+#endif
         }
 
         public static string getSystemPackage0(string name)

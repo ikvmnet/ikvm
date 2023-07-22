@@ -69,8 +69,8 @@ namespace IKVM.Runtime
                         parameterTypes[i] = parameters[i].ParameterType;
                     }
                     MethodBuilder mb = tb.DefineMethod(this.Name, MethodAttributes.Public, invoke.ReturnType, parameterTypes);
-                    AttributeHelper.HideFromReflection(mb);
-                    CodeEmitter ilgen = CodeEmitter.Create(mb);
+                    DeclaringType.Context.AttributeHelper.HideFromReflection(mb);
+                    CodeEmitter ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mb);
                     if (mw == null || mw.IsStatic || !mw.IsPublic)
                     {
                         ilgen.EmitThrow(mw == null || mw.IsStatic ? "java.lang.AbstractMethodError" : "java.lang.IllegalAccessError", DeclaringType.Name + ".Invoke" + Signature);
@@ -111,7 +111,7 @@ namespace IKVM.Runtime
                     mw.Link();
                     mw.EmitCallvirt(ilgen);
                     CodeEmitterLocal returnValue = null;
-                    if (mw.ReturnType != RuntimePrimitiveJavaType.VOID)
+                    if (mw.ReturnType != DeclaringType.Context.PrimitiveJavaTypeFactory.VOID)
                     {
                         returnValue = ilgen.DeclareLocal(mw.ReturnType.TypeAsSignatureType);
                         ilgen.Emit(OpCodes.Stloc, returnValue);

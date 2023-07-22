@@ -44,13 +44,14 @@ namespace IKVM.Runtime
     abstract class RuntimeJavaMethod : RuntimeJavaMember
     {
 
-#if !IMPORTER && !FIRST_PASS && !EXPORTER
-        volatile java.lang.reflect.Executable reflectionMethod;
-#endif
         MethodBase method;
         string[] declaredExceptions;
         RuntimeJavaType returnTypeWrapper;
         RuntimeJavaType[] parameterTypeWrappers;
+
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
+        volatile java.lang.reflect.Executable reflectionMethod;
+#endif
 
 #if EMITTERS
 
@@ -100,7 +101,7 @@ namespace IKVM.Runtime
             Profiler.Count("MethodWrapper");
 
             this.method = method;
-            Debug.Assert(((returnType == null) == (parameterTypes == null)) || (returnType == RuntimePrimitiveJavaType.VOID));
+            Debug.Assert(((returnType == null) == (parameterTypes == null)) || (returnType == declaringType.Context.PrimitiveJavaTypeFactory.VOID));
             this.returnTypeWrapper = returnType;
             this.parameterTypeWrappers = parameterTypes;
             if (Intrinsics.IsIntrinsic(this))
@@ -227,9 +228,9 @@ namespace IKVM.Runtime
                 // NOTE if method is a MethodBuilder, GetCustomAttributes doesn't work (and if
                 // the method had any declared exceptions, the declaredExceptions field would have
                 // been set)
-                if (method != null && !(method is MethodBuilder))
+                if (method != null && method is not MethodBuilder)
                 {
-                    ThrowsAttribute attr = AttributeHelper.GetThrows(method);
+                    ThrowsAttribute attr = DeclaringType.Context.AttributeHelper.GetThrows(method);
                     if (attr != null)
                     {
                         classes = attr.classes;
@@ -309,7 +310,7 @@ namespace IKVM.Runtime
                 {
                     if (parameterTypeWrappers == null)
                     {
-                        Debug.Assert(returnTypeWrapper == null || returnTypeWrapper == RuntimePrimitiveJavaType.VOID);
+                        Debug.Assert(returnTypeWrapper == null || returnTypeWrapper == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID);
                         returnTypeWrapper = ret;
                         parameterTypeWrappers = parameters;
                         UpdateNonPublicTypeInSignatureFlag();
@@ -393,7 +394,7 @@ namespace IKVM.Runtime
             }
             if (HasCallerID)
             {
-                temp[len - 1] = CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType;
+                temp[len - 1] = DeclaringType.Context.JavaBase.ikvmInternalCallerID.TypeAsSignatureType;
             }
             return temp;
         }
@@ -445,21 +446,21 @@ namespace IKVM.Runtime
             var paramTypes = GetParameters();
             if (paramTypes.Length > MethodHandleUtil.MaxArity)
             {
-                var type = DeclaringType.TypeAsBaseType.Assembly.GetType(ReturnType == RuntimePrimitiveJavaType.VOID ? "__<>NVIV`" + paramTypes.Length : "__<>NVI`" + (paramTypes.Length + 1));
+                var type = DeclaringType.TypeAsBaseType.Assembly.GetType(ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID ? "__<>NVIV`" + paramTypes.Length : "__<>NVI`" + (paramTypes.Length + 1));
                 if (type == null)
-                    type = DeclaringType.GetClassLoader().GetTypeWrapperFactory().DefineDelegate(paramTypes.Length, ReturnType == RuntimePrimitiveJavaType.VOID);
+                    type = DeclaringType.GetClassLoader().GetTypeWrapperFactory().DefineDelegate(paramTypes.Length, ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID);
 
-                var types = new Type[paramTypes.Length + (ReturnType == RuntimePrimitiveJavaType.VOID ? 0 : 1)];
+                var types = new Type[paramTypes.Length + (ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID ? 0 : 1)];
                 for (int i = 0; i < paramTypes.Length; i++)
                     types[i] = paramTypes[i].TypeAsSignatureType;
 
-                if (ReturnType != RuntimePrimitiveJavaType.VOID)
+                if (ReturnType != DeclaringType.Context.PrimitiveJavaTypeFactory.VOID)
                     types[types.Length - 1] = ReturnType.TypeAsSignatureType;
 
                 return type.MakeGenericType(types);
             }
 
-            return MethodHandleUtil.CreateMemberWrapperDelegateType(paramTypes, ReturnType);
+            return DeclaringType.Context.MethodHandleUtil.CreateMemberWrapperDelegateType(paramTypes, ReturnType);
         }
 
         /// <summary>
@@ -494,7 +495,7 @@ namespace IKVM.Runtime
                 }
 
                 if (HasCallerID)
-                    types[typeLength - 1] = CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType;
+                    types[typeLength - 1] = DeclaringType.Context.JavaBase.ikvmInternalCallerID.TypeAsSignatureType;
 
                 if (ReturnType != null)
                     ReturnType.Finish();
@@ -593,7 +594,7 @@ namespace IKVM.Runtime
         {
             get
             {
-                return IsProtected && (DeclaringType == CoreClasses.java.lang.Object.Wrapper || DeclaringType == CoreClasses.java.lang.Throwable.Wrapper) && (Name == StringConstants.CLONE || Name == StringConstants.FINALIZE);
+                return IsProtected && (DeclaringType == DeclaringType.Context.JavaBase.javaLangObject || DeclaringType == DeclaringType.Context.JavaBase.javaLangThrowable) && (Name == StringConstants.CLONE || Name == StringConstants.FINALIZE);
             }
         }
     }

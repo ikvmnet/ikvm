@@ -33,6 +33,36 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Runtime
 {
 
+    class RuntimeVerifierJavaTypeFactory
+    {
+
+        readonly RuntimeContext context;
+
+        internal readonly RuntimeJavaType Invalid = null;
+        internal readonly RuntimeJavaType Null;
+        internal readonly RuntimeJavaType UninitializedThis;
+        internal readonly RuntimeJavaType Unloadable;
+        internal readonly RuntimeJavaType ExtendedFloat;
+        internal readonly RuntimeJavaType ExtendedDouble;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public RuntimeVerifierJavaTypeFactory(RuntimeContext context)
+        {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
+
+            Null = new RuntimeVerifierJavaType(context, "null", 0, null, null);
+            UninitializedThis = new RuntimeVerifierJavaType(context, "uninitialized-this", 0, null, null);
+            Unloadable = new RuntimeUnloadableJavaType(context, "<verifier>");
+            ExtendedFloat = new RuntimeVerifierJavaType(context, "<extfloat>", 0, null, null);
+            ExtendedDouble = new RuntimeVerifierJavaType(context, "<extdouble>", 0, null, null);
+        }
+
+    }
+
     // this is a container for the special verifier TypeWrappers
     sealed class RuntimeVerifierJavaType : RuntimeJavaType
     {
@@ -42,22 +72,48 @@ namespace IKVM.Runtime
         static readonly string This = string.Intern("this");
         static readonly string New = string.Intern("new");
         static readonly string Fault = string.Intern("<fault>");
-        internal static readonly RuntimeJavaType Invalid = null;
-        internal static readonly RuntimeJavaType Null = new RuntimeVerifierJavaType("null", 0, null, null);
-        internal static readonly RuntimeJavaType UninitializedThis = new RuntimeVerifierJavaType("uninitialized-this", 0, null, null);
-        internal static readonly RuntimeJavaType Unloadable = new RuntimeUnloadableJavaType("<verifier>");
-        internal static readonly RuntimeJavaType ExtendedFloat = new RuntimeVerifierJavaType("<extfloat>", 0, null, null);
-        internal static readonly RuntimeJavaType ExtendedDouble = new RuntimeVerifierJavaType("<extdouble>", 0, null, null);
 
         readonly int index;
         readonly RuntimeJavaType underlyingType;
         readonly MethodAnalyzer methodAnalyzer;
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="name"></param>
+        /// <param name="index"></param>
+        /// <param name="underlyingType"></param>
+        /// <param name="methodAnalyzer"></param>
+        public RuntimeVerifierJavaType(RuntimeContext context, string name, int index, RuntimeJavaType underlyingType, MethodAnalyzer methodAnalyzer) :
+            base(context, TypeFlags.None, RuntimeJavaType.VerifierTypeModifiersHack, name)
+        {
+            this.index = index;
+            this.underlyingType = underlyingType;
+            this.methodAnalyzer = methodAnalyzer;
+        }
+
 #if EXPORTER
 
         internal class MethodAnalyzer
         {
+
+            readonly RuntimeContext context;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="context"></param>
+            /// <exception cref="ArgumentNullException"></exception>
+            public MethodAnalyzer(RuntimeContext context)
+            {
+                this.context = context ?? throw new ArgumentNullException(nameof(context));
+            }
+
             internal void ClearFaultBlockException(int dummy) { }
+
+            public RuntimeContext Context => context;
+
         }
 
 #endif
@@ -69,12 +125,12 @@ namespace IKVM.Runtime
 
         internal static RuntimeJavaType MakeNew(RuntimeJavaType type, int bytecodeIndex)
         {
-            return new RuntimeVerifierJavaType(New, bytecodeIndex, type, null);
+            return new RuntimeVerifierJavaType(type.Context, New, bytecodeIndex, type, null);
         }
 
         internal static RuntimeJavaType MakeFaultBlockException(MethodAnalyzer ma, int handlerIndex)
         {
-            return new RuntimeVerifierJavaType(Fault, handlerIndex, null, ma);
+            return new RuntimeVerifierJavaType(ma.Context, Fault, handlerIndex, null, ma);
         }
 
         // NOTE the "this" type is special, it can only exist in local[0] and on the stack
@@ -84,7 +140,7 @@ namespace IKVM.Runtime
         // stack (using ldarg_0).
         internal static RuntimeJavaType MakeThis(RuntimeJavaType type)
         {
-            return new RuntimeVerifierJavaType(This, 0, type, null);
+            return new RuntimeVerifierJavaType(type.Context, This, 0, type, null);
         }
 
         internal static bool IsNotPresentOnStack(RuntimeJavaType w)
@@ -104,7 +160,7 @@ namespace IKVM.Runtime
 
         internal static bool IsNullOrUnloadable(RuntimeJavaType w)
         {
-            return w == Null || w.IsUnloadable;
+            return w == w.Context.VerifierJavaTypeFactory.Null || w.IsUnloadable;
         }
 
         internal static bool IsThis(RuntimeJavaType w)
@@ -132,14 +188,6 @@ namespace IKVM.Runtime
             {
                 return underlyingType;
             }
-        }
-
-        private RuntimeVerifierJavaType(string name, int index, RuntimeJavaType underlyingType, MethodAnalyzer methodAnalyzer)
-            : base(TypeFlags.None, RuntimeJavaType.VerifierTypeModifiersHack, name)
-        {
-            this.index = index;
-            this.underlyingType = underlyingType;
-            this.methodAnalyzer = methodAnalyzer;
         }
 
         internal override RuntimeJavaType BaseTypeWrapper

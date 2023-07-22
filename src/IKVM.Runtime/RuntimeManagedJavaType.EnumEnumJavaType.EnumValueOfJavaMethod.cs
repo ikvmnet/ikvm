@@ -40,7 +40,7 @@ namespace IKVM.Runtime
                 /// </summary>
                 /// <param name="declaringType"></param>
                 internal EnumValueOfJavaMethod(RuntimeJavaType declaringType) :
-                    base(declaringType, "valueOf", "(Ljava.lang.String;)" + declaringType.SigName, null, declaringType, new RuntimeJavaType[] { CoreClasses.java.lang.String.Wrapper }, Modifiers.Public | Modifiers.Static, MemberFlags.None)
+                    base(declaringType, "valueOf", "(Ljava.lang.String;)" + declaringType.SigName, null, declaringType, new RuntimeJavaType[] { declaringType.Context.JavaBase.javaLangString}, Modifiers.Public | Modifiers.Static, MemberFlags.None)
                 {
 
                 }

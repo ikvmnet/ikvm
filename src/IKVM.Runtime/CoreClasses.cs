@@ -24,127 +24,47 @@
 
 namespace IKVM.Runtime
 {
-    internal static class CoreClasses
-	{
 
-		internal static class cli
-		{
+    /// <summary>
+    /// Contains references to common Java base types.
+    /// </summary>
+    internal class CoreClasses
+    {
 
-			internal static class System
-			{
+        readonly RuntimeContext context;
 
-				internal static class Object
-				{
-					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-					// (we don't want the classes to be loaded prematurely, because they might not be available then)
-					static Object() { }
-					internal static readonly RuntimeJavaType Wrapper = RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(Types.Object);
-				}
+        public readonly RuntimeJavaType cliSystemObject;
+        public readonly RuntimeJavaType cliSystemException;
+        public readonly RuntimeJavaType ikvmInternalCallerID;
+        public readonly RuntimeJavaType javaIoSerializable;
+        public readonly RuntimeJavaType javaLangObject;
+        public readonly RuntimeJavaType javaLangString;
+        public readonly RuntimeJavaType javaLangClass;
+        public readonly RuntimeJavaType javaLangCloneable;
+        public readonly RuntimeJavaType javaLangThrowable;
+        public readonly RuntimeJavaType javaLangInvokeMethodHandle;
+        public readonly RuntimeJavaType javaLangInvokeMethodType;
 
-				internal static class Exception
-				{
-					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-					// (we don't want the classes to be loaded prematurely, because they might not be available then)
-					static Exception() { }
-					internal static readonly RuntimeJavaType Wrapper = RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(Types.Exception);
-				}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        public CoreClasses(RuntimeContext context)
+        {
+            this.context = context;
+            cliSystemObject = context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(context.Types.Object);
+            cliSystemException = context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(context.Types.Exception);
+            ikvmInternalCallerID = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.CallerID");
+            javaIoSerializable = context.ClassLoaderFactory.LoadClassCritical("java.io.Serializable");
+            javaLangObject = context.ClassLoaderFactory.LoadClassCritical("java.lang.Object");
+            javaLangString = context.ClassLoaderFactory.LoadClassCritical("java.lang.String");
+            javaLangClass = context.ClassLoaderFactory.LoadClassCritical("java.lang.Class");
+            javaLangCloneable = context.ClassLoaderFactory.LoadClassCritical("java.lang.Cloneable");
+            javaLangThrowable = context.ClassLoaderFactory.LoadClassCritical("java.lang.Throwable");
+            javaLangInvokeMethodHandle = context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandle");
+            javaLangInvokeMethodType = context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodType");
+        }
 
-			}
+    }
 
-		}
-
-		internal static class ikvm
-		{
-
-			internal static class @internal
-			{
-
-				internal static class CallerID
-				{
-					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-					// (we don't want the classes to be loaded prematurely, because they might not be available then)
-					static CallerID() { }
-					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoaderFactory.LoadClassCritical("ikvm.internal.CallerID");
-				}
-
-			}
-
-		}
-
-		internal static class java
-		{
-			internal static class io
-			{
-				internal static class Serializable
-				{
-					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-					// (we don't want the classes to be loaded prematurely, because they might not be available then)
-					static Serializable() { }
-					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoaderFactory.LoadClassCritical("java.io.Serializable");
-				}
-			}
-
-			internal static class lang
-			{
-				internal static class Object
-				{
-					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-					// (we don't want the classes to be loaded prematurely, because they might not be available then)
-					static Object() {}
-					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Object");
-				}
-
-				internal static class String
-				{
-					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-					// (we don't want the classes to be loaded prematurely, because they might not be available then)
-					static String() {}
-					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.String");
-				}
-
-				internal static class Class
-				{
-					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-					// (we don't want the classes to be loaded prematurely, because they might not be available then)
-					static Class() {}
-					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Class");
-				}
-
-				internal static class Cloneable
-				{
-					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-					// (we don't want the classes to be loaded prematurely, because they might not be available then)
-					static Cloneable() {}
-					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Cloneable");
-				}
-
-				internal static class Throwable
-				{
-					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-					// (we don't want the classes to be loaded prematurely, because they might not be available then)
-					static Throwable() {}
-					internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Throwable");
-				}
-
-				internal static class invoke
-				{
-					internal static class MethodHandle
-					{
-						// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-						// (we don't want the classes to be loaded prematurely, because they might not be available then)
-						static MethodHandle() { }
-						internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandle");
-					}
-
-					internal static class MethodType
-					{
-						// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
-						// (we don't want the classes to be loaded prematurely, because they might not be available then)
-						static MethodType() { }
-						internal static readonly RuntimeJavaType Wrapper = RuntimeClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodType");
-					}
-				}
-			}
-		}
-	}
 }
