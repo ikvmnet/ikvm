@@ -136,6 +136,7 @@ namespace IKVM.Runtime
 
             sealed class Container<T1, T2>
             {
+
                 public T1 target;
                 public T2 value;
 
@@ -146,8 +147,21 @@ namespace IKVM.Runtime
                 }
             }
 
-            private DynamicMethodBuilder(RuntimeContext context, string name, java.lang.invoke.MethodType type, Type container, object target, object value, Type owner, bool useBasicTypes)
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="context"></param>
+            /// <param name="name"></param>
+            /// <param name="type"></param>
+            /// <param name="container"></param>
+            /// <param name="target"></param>
+            /// <param name="value"></param>
+            /// <param name="owner"></param>
+            /// <param name="useBasicTypes"></param>
+            /// <exception cref="ArgumentNullException"></exception>
+            DynamicMethodBuilder(RuntimeContext context, string name, java.lang.invoke.MethodType type, Type container, object target, object value, Type owner, bool useBasicTypes)
             {
+                this.context = context ?? throw new ArgumentNullException(nameof(context));
                 this.type = type;
                 this.delegateType = useBasicTypes ? context.MethodHandleUtil.GetMemberWrapperDelegateType(type) : context.MethodHandleUtil.GetDelegateTypeForInvokeExact(type);
                 this.firstBoundValue = target;
@@ -190,8 +204,8 @@ namespace IKVM.Runtime
 
             internal static Delegate CreateVoidAdapter(RuntimeContext context, global::java.lang.invoke.MethodType type)
             {
-                DynamicMethodBuilder dm = new DynamicMethodBuilder(context, "VoidAdapter", type.changeReturnType(global::java.lang.Void.TYPE), null, null, null, null, true);
-                Type targetDelegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(type);
+                var dm = new DynamicMethodBuilder(context, "VoidAdapter", type.changeReturnType(global::java.lang.Void.TYPE), null, null, null, null, true);
+                var targetDelegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(type);
                 dm.Ldarg(0);
                 dm.EmitCheckcast(context.JavaBase.TypeOfJavaLangInvokeMethodHandle);
                 dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MethodHandle).GetField("form", BindingFlags.Instance | BindingFlags.NonPublic));

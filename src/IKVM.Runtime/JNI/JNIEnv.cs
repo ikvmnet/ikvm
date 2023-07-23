@@ -108,6 +108,7 @@ namespace IKVM.Runtime.JNI
 
         internal sealed class ManagedJNIEnv
         {
+
             // NOTE the initial bucket size must be a power of two < LOCAL_REF_MAX_BUCKET_SIZE,
             // because each time we grow it, we double the size and it must eventually reach
             // exactly LOCAL_REF_MAX_BUCKET_SIZE
@@ -116,6 +117,7 @@ namespace IKVM.Runtime.JNI
             const int LOCAL_REF_MAX_BUCKET_SIZE = (1 << LOCAL_REF_SHIFT);
             const int LOCAL_REF_MASK = (LOCAL_REF_MAX_BUCKET_SIZE - 1);
 
+            internal readonly RuntimeContext context;
             internal readonly JNIEnv* pJNIEnv;
             internal RuntimeClassLoader classLoader;
             internal ikvm.@internal.CallerID callerID;
@@ -129,8 +131,10 @@ namespace IKVM.Runtime.JNI
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            internal ManagedJNIEnv()
+            internal ManagedJNIEnv(RuntimeContext context)
             {
+                this.context = context ?? throw new ArgumentNullException(nameof(context));
+
                 pJNIEnv = (JNIEnv*)JNIMemory.Alloc(sizeof(JNIEnv));
                 localRefs = new object[32][];
                 active = localRefs[0] = new object[LOCAL_REF_INITIAL_BUCKET_SIZE];
@@ -356,11 +360,16 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static JNIEnv* CreateJNIEnv()
+        /// <summary>
+        /// Allocates a new thread local <see cref="JNIEnv"/> instance in native memory.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        internal static JNIEnv* CreateJNIEnv(RuntimeContext context)
         {
-            ManagedJNIEnv env = new ManagedJNIEnv();
+            var env = new ManagedJNIEnv(context);
             TlsHack.ManagedJNIEnv = env;
-            JNIEnv* pJNIEnv = env.pJNIEnv;
+            var pJNIEnv = env.pJNIEnv;
             pJNIEnv->vtable = JNINativeInterface.Handle;
             pJNIEnv->managedJNIEnv = GCHandle.Alloc(env, GCHandleType.WeakTrackResurrection);
             pJNIEnv->pinHandles = null;
@@ -369,6 +378,9 @@ namespace IKVM.Runtime.JNI
             return pJNIEnv;
         }
 
+        /// <summary>
+        /// Releases the current thread local <see cref="JNIEnv"/>.
+        /// </summary>
         internal static void FreeJNIEnv()
         {
             TlsHack.ManagedJNIEnv = null;
@@ -459,7 +471,7 @@ namespace IKVM.Runtime.JNI
             else if (env.classLoader != null)
                 return env.classLoader;
             else
-                return env.classLoader.Context.ClassLoaderFactory.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
+                return env.context.ClassLoaderFactory.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
         }
 
         internal static jclass FindClass(JNIEnv* pEnv, byte* name)
@@ -776,21 +788,21 @@ namespace IKVM.Runtime.JNI
             for (int i = 0; i < argTypes.Length; i++)
             {
                 var type = argTypes[i];
-                if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.BOOLEAN)
+                if (type == env.context.PrimitiveJavaTypeFactory.BOOLEAN)
                     args[i] = pArgs[i].z != JNI_FALSE;
-                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.BYTE)
+                else if (type == env.context.PrimitiveJavaTypeFactory.BYTE)
                     args[i] = (byte)pArgs[i].b;
-                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.CHAR)
+                else if (type == env.context.PrimitiveJavaTypeFactory.CHAR)
                     args[i] = (char)pArgs[i].c;
-                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.SHORT)
+                else if (type == env.context.PrimitiveJavaTypeFactory.SHORT)
                     args[i] = pArgs[i].s;
-                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.INT)
+                else if (type == env.context.PrimitiveJavaTypeFactory.INT)
                     args[i] = pArgs[i].i;
-                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.LONG)
+                else if (type == env.context.PrimitiveJavaTypeFactory.LONG)
                     args[i] = pArgs[i].j;
-                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.FLOAT)
+                else if (type == env.context.PrimitiveJavaTypeFactory.FLOAT)
                     args[i] = pArgs[i].f;
-                else if (type == env.classLoader.Context.PrimitiveJavaTypeFactory.DOUBLE)
+                else if (type == env.context.PrimitiveJavaTypeFactory.DOUBLE)
                     args[i] = pArgs[i].d;
                 else
                     args[i] = argTypes[i].GhostWrap(UnwrapRef(env, pArgs[i].l));

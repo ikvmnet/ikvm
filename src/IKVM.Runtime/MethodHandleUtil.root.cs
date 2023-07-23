@@ -51,7 +51,8 @@ namespace IKVM.Runtime
         /// </summary>
         public MethodHandleUtil(RuntimeContext context)
         {
-            this.context = context;
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
+
             typeofMHA = context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHA`8");
             typeofMHV = new Type[] {
                 context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV"),

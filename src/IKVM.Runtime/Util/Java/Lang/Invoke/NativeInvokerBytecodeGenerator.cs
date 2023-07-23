@@ -300,7 +300,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             // [IKVM] not implemented
         }
 
-        private void emitReferenceCast(Class cls, object arg)
+        void emitReferenceCast(Class cls, object arg)
         {
             // [IKVM] handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
             if (cls != context.JavaBase.TypeOfCliSystemObject.ClassObject)
@@ -309,7 +309,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             }
         }
 
-        private sealed class AnonymousClass : RuntimeJavaType
+        sealed class AnonymousClass : RuntimeJavaType
         {
 
             /// <summary>
