@@ -24,7 +24,7 @@ namespace IKVM.Runtime
 
         readonly IManagedTypeResolver resolver;
         readonly bool bootstrap;
-        readonly ConcurrentDictionary<Type, object> singletons;
+        readonly ConcurrentDictionary<Type, object> singletons = new ConcurrentDictionary<Type, object>();
 
         Types types;
         CoreClasses javaBase;

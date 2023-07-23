@@ -42,7 +42,6 @@ namespace IKVM.Runtime
     {
 
         volatile RuntimeJavaType[] interfaces;
-        volatile MethodInfo clone;
         readonly RuntimeJavaType ultimateElementTypeWrapper;
         Type arrayType;
         bool finished;
@@ -196,9 +195,5 @@ namespace IKVM.Runtime
             return type;
         }
     }
-
-#if !IMPORTER && !EXPORTER
-
-#endif
 
 }

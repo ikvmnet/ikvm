@@ -32,6 +32,8 @@ using IKVM.Runtime.Accessors.Java.Lang;
 
 using System.Runtime.CompilerServices;
 
+using IKVM.Runtime.Vfs;
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using Type = IKVM.Reflection.Type;
@@ -53,31 +55,27 @@ namespace IKVM.Runtime
 
 #if EXPORTER == false
         static int emitSymbols;
-#endif
-
-
-        /// <summary>
-        /// Reference to the 'java.base' assembly.
-        /// </summary>
-        static Assembly baseAssembly;
-
-#if EXPORTER == false
         internal static bool relaxedVerification = true;
         internal static bool AllowNonVirtualCalls;
         internal static readonly bool DisableEagerClassLoading = SafeGetEnvironmentVariable("IKVM_DISABLE_EAGER_CLASS_LOADING") != null;
 #endif
 
-
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
-        static readonly RuntimeContext context = new RuntimeContext(new JVM.Resolver());
+        static readonly RuntimeContext context = new RuntimeContext(new Resolver(), false);
+        static readonly VfsTable vfs = VfsTable.BuildDefaultTable(new VfsRuntimeContext(context), Properties.HomePath);
 
         /// <summary>
         /// Gets the current <see cref="RuntimeContext"/> of the JVM.
         /// </summary>
         public static RuntimeContext Context => context;
 
-        static readonly  object initializedLock = new object();
+        /// <summary>
+        /// Gets the current <see cref="VfsTable"/> of the JVM.
+        /// </summary>
+        public static VfsTable Vfs => vfs;
+
+        static readonly object initializedLock = new object();
         static bool initialized;
 
         static AccessorCache baseAccessors;

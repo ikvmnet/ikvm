@@ -139,7 +139,7 @@ namespace IKVM.Runtime.Accessors
 
             // generate new dynamic method
             var dm = DynamicMethodUtil.Create($"__<MethodAccessor>__{Type.Name.Replace(".", "_")}__{Method.Name}", Type, false, delegateReturnType, delegateParameterTypes);
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             // advance through each argument
             var n = 0;

@@ -68,9 +68,9 @@ namespace IKVM.Java.Externs.sun.nio.fs
             if (sm != null)
                 SecurityManagerAccessor.InvokeCheckRead(sm, path);
 
-            if (VfsTable.Default.IsPath(path))
+            if (JVM.Vfs.IsPath(path))
             {
-                var entry = VfsTable.Default.GetEntry(path);
+                var entry = JVM.Vfs.GetEntry(path);
 
                 if (entry is VfsFile vfsFile)
                     return DotNetDosFileAttributesAccessor.Init(

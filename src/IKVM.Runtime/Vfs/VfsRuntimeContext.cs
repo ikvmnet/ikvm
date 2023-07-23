@@ -18,10 +18,21 @@ namespace IKVM.Runtime.Vfs
     internal class VfsRuntimeContext : VfsContext
     {
 
+        readonly RuntimeContext context;
+
         /// <summary>
-        /// Default runtime context.
+        /// Initializes a new instance.
         /// </summary>
-        public static VfsContext Instance = new VfsRuntimeContext();
+        /// <param name="context"></param>
+        public VfsRuntimeContext(RuntimeContext context)
+        {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
+        }
+
+        /// <summary>
+        /// Gets the <see cref="RuntimeContext"/> that hosts this VFS context.
+        /// </summary>
+        public override RuntimeContext Context => context;
 
         /// <summary>
         /// Gets the assembly known by the given name.

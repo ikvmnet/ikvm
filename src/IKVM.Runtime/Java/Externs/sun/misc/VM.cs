@@ -59,7 +59,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (global::IKVM.Java.Externs.sun.reflect.Reflection.IsHideFromStackWalk(m))
                     continue;
 
-                if (m.DeclaringType != null && RuntimeClassLoaderFactory.GetJavaTypeFromType(m.DeclaringType) is RuntimeJavaType tw and not null)
+                if (m.DeclaringType != null && JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(m.DeclaringType) is RuntimeJavaType tw and not null)
                 {
                     // check that the assembly isn't java.base or the IKVM runtime
                     var clw = tw.GetClassLoader();

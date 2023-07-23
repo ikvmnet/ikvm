@@ -192,7 +192,7 @@ namespace IKVM.Runtime
                 p["java.ext.dirs"] = Path.Combine(HomePath, "lib", "ext");
                 p["java.endorsed.dirs"] = Path.Combine(HomePath, "lib", "endorsed");
                 p["sun.boot.library.path"] = GetBootLibraryPath();
-                p["sun.boot.class.path"] = VfsTable.Default.GetAssemblyClassesPath(Context.Resolver.ResolveBaseAssembly());
+                p["sun.boot.class.path"] = VfsTable.GetAssemblyClassesPath(Vfs.Context, Context.Resolver.ResolveBaseAssembly(), HomePath);
 
                 // various OS information
                 GetOSProperties(out var osname, out var osversion);

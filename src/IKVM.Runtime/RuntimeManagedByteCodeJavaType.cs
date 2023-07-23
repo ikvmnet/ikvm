@@ -1190,9 +1190,11 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="type"></param>
-            internal CompiledAnnotation(Type type)
+            internal CompiledAnnotation(RuntimeContext context, Type type)
             {
+                this.context = context ?? throw new ArgumentNullException(nameof(context));
                 constructor = type.GetConstructor(new Type[] { context.Resolver.ResolveType(typeof(object).FullName).MakeArrayType() });
             }
 
@@ -1243,7 +1245,7 @@ namespace IKVM.Runtime
             {
                 var annotationAttribute = Context.AttributeHelper.GetAnnotationAttributeType(type);
                 if (annotationAttribute != null)
-                    return new CompiledAnnotation(type.Assembly.GetType(annotationAttribute, true));
+                    return new CompiledAnnotation(Context, type.Assembly.GetType(annotationAttribute, true));
 
                 return null;
             }

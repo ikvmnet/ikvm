@@ -25,13 +25,15 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
-using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
+
+using System.Collections;
+using System.Collections.Generic;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -74,22 +76,23 @@ namespace IKVM.Runtime
 #endif
 
 #if !EXPORTER
+
         // NOTE this method returns null if the type could not be found
         // or if the type is not a Custom Attribute and we're not in the static compiler
         internal static Annotation Load(RuntimeJavaType owner, object[] def)
         {
             Debug.Assert(def[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION));
-            string annotationClass = (string)def[1];
+
+            var annotationClass = (string)def[1];
 #if !IMPORTER
-            if (!annotationClass.EndsWith("$Annotation;")
-                && !annotationClass.EndsWith("$Annotation$__ReturnValue;")
-                && !annotationClass.EndsWith("$Annotation$__Multiple;"))
+            if (!annotationClass.EndsWith("$Annotation;") && !annotationClass.EndsWith("$Annotation$__ReturnValue;") && !annotationClass.EndsWith("$Annotation$__Multiple;"))
             {
                 // we don't want to try to load an annotation in dynamic mode,
                 // unless it is a .NET custom attribute (which can affect runtime behavior)
                 return null;
             }
 #endif
+
             if (ClassFile.IsValidFieldSig(annotationClass))
             {
                 RuntimeJavaType tw = owner.GetClassLoader().RetTypeWrapperFromSig(annotationClass.Replace('/', '.'), LoadMode.Link);
@@ -102,11 +105,12 @@ namespace IKVM.Runtime
             }
             Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
 #if IMPORTER
-            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(owner.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
+            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(owner.Context, owner.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
 #else
             return null;
 #endif
         }
+
 #endif
 
         private static object LookupEnumValue(RuntimeContext context, Type enumType, string value)

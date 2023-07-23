@@ -141,7 +141,7 @@ namespace IKVM.Runtime
                                     skip1 = 1;
                                 }
                             }
-                            Append(list, tracePart1, skip1, false);
+                            Append(exceptionHelper, list, tracePart1, skip1, false);
                         }
                         if (tracePart2 != null && tracePart2.FrameCount > 0)
                         {
@@ -193,7 +193,7 @@ namespace IKVM.Runtime
                                     }
                                 }
                             }
-                            Append(list, tracePart2, skip, true);
+                            Append(exceptionHelper, list, tracePart2, skip, true);
                         }
                         if (cleanStackTrace && list.Count > 0)
                         {
@@ -211,7 +211,7 @@ namespace IKVM.Runtime
                 return (StackTraceElement[])stackTrace.Clone();
             }
 
-            internal void Append(List<StackTraceElement> stackTrace, StackTrace st, int skip, bool isLast)
+            internal static void Append(ExceptionHelper exceptionHelper, List<StackTraceElement> stackTrace, StackTrace st, int skip, bool isLast)
             {
                 for (int i = skip; i < st.FrameCount; i++)
                 {

@@ -852,28 +852,29 @@ namespace IKVM.Runtime
         static java.net.URL MakeResourceURL(Assembly asm, string name)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            return new java.io.File(Path.Combine(VfsTable.Default.GetAssemblyResourcesPath(asm), name)).toURI().toURL();
+            return new java.io.File(Path.Combine(VfsTable.GetAssemblyResourcesPath(JVM.Vfs.Context, asm, JVM.Properties.HomePath), name)).toURI().toURL();
 #endif
         }
 
         internal IEnumerable<java.net.URL> FindResources(string unmangledName)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             // cannot find resources in dynamic assembly
             if (assemblyLoader.Assembly.IsDynamic)
                 yield break;
 
             var found = false;
 
-#if !FIRST_PASS
             var urls = assemblyLoader.FindResources(unmangledName);
             while (urls.hasMoreElements())
             {
                 found = true;
                 yield return (java.net.URL)urls.nextElement();
             }
-#endif
 
             // assembly is not a Java assembly
             if (assemblyLoader.HasJavaModule == false)
@@ -919,14 +920,12 @@ namespace IKVM.Runtime
 
                         loader = exportedAssemblies[index] = GetLoaderForExportedAssembly(asm);
                     }
-#if !FIRST_PASS
                     urls = loader.FindResources(unmangledName);
                     while (urls.hasMoreElements())
                     {
                         found = true;
                         yield return (java.net.URL)urls.nextElement();
                     }
-#endif
                     if (loader.Assembly.GetManifestResourceInfo(name) != null)
                     {
                         found = true;
@@ -935,17 +934,16 @@ namespace IKVM.Runtime
                 }
             }
 
-#if !FIRST_PASS
-
             // if asked for a '.class' resource, we can return the appropriate stub
             if (!found && unmangledName.EndsWith(".class", StringComparison.Ordinal) && unmangledName.IndexOf('.') == unmangledName.Length - 6)
             {
                 var tw = FindLoadedClass(unmangledName.Substring(0, unmangledName.Length - 6).Replace('/', '.'));
                 if (tw != null && tw.GetClassLoader() == this && !tw.IsArray && !tw.IsDynamic)
-                    yield return new java.io.File(Path.Combine(VfsTable.Default.GetAssemblyClassesPath(assemblyLoader.Assembly), unmangledName)).toURI().toURL();
+                    yield return new java.io.File(Path.Combine(VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, assemblyLoader.Assembly, JVM.Properties.HomePath), unmangledName)).toURI().toURL();
             }
 
 #endif
+
         }
 
         protected struct Resource

@@ -41,7 +41,7 @@ namespace IKVM.Runtime
     class RuntimePrimitiveJavaTypeFactory
     {
 
-        RuntimeContext context;
+        readonly RuntimeContext context;
 
         internal readonly RuntimePrimitiveJavaType BYTE;
         internal readonly RuntimePrimitiveJavaType CHAR;
@@ -59,6 +59,7 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         public RuntimePrimitiveJavaTypeFactory(RuntimeContext context)
         {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
             BYTE = new RuntimePrimitiveJavaType(context, context.Types.Byte, "B");
             CHAR = new RuntimePrimitiveJavaType(context, context.Types.Char, "C");
             DOUBLE = new RuntimePrimitiveJavaType(context, context.Types.Double, "D");

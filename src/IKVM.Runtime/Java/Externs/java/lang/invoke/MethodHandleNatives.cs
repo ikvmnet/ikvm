@@ -116,7 +116,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
                 {
                     parameters1[i] = mw.GetParameters()[i].ClassObject;
                 }
-                global::java.lang.invoke.MethodType mt = global::java.lang.invoke.MethodType.methodType(RuntimePrimitiveJavaType.VOID.ClassObject, parameters1);
+                global::java.lang.invoke.MethodType mt = global::java.lang.invoke.MethodType.methodType(JVM.Context.PrimitiveJavaTypeFactory.VOID.ClassObject, parameters1);
                 self._type(mt);
                 self._flags(flags);
                 self._clazz(mw.DeclaringType.ClassObject);
