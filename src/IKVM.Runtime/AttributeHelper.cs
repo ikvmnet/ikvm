@@ -169,7 +169,7 @@ namespace IKVM.Runtime
         CustomAttributeBuilder HideFromReflectionBuilder => hideFromReflection ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(new Type[] { TypeOfHideFromJavaFlags }), new object[] { HideFromJavaFlags.Reflection | HideFromJavaFlags.StackTrace | HideFromJavaFlags.StackWalk });
 
         /// <summary>
-        /// 
+        /// Loads the given managed type from the runtime assembly.
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
@@ -1200,7 +1200,7 @@ namespace IKVM.Runtime
         internal object[] GetJavaModuleAttributes(Module mod)
         {
 #if !IMPORTER && !EXPORTER
-            return mod.GetCustomAttributes(typeofJavaModuleAttribute, false);
+            return mod.GetCustomAttributes(TypeOfJavaModuleAttribute, false);
 #else
             List<JavaModuleAttribute> attrs = new List<JavaModuleAttribute>();
             foreach (CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(mod, TypeOfJavaModuleAttribute, false))

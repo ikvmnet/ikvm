@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Security;
 
@@ -55,7 +56,7 @@ namespace IKVM.Runtime
         readonly Dictionary<string, string> failedTypes = new Dictionary<string, string>();
 
 #if FIRST_PASS == false
-        readonly ikvm.@internal.WeakIdentityMap exceptions = new ikvm.@internal.WeakIdentityMap();
+        readonly ConditionalWeakTable<Exception, Exception> exceptions = new();
 #endif
 
         /// <summary>
@@ -64,6 +65,8 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         public ExceptionHelper(RuntimeContext context)
         {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
+
 #if FIRST_PASS == false
             // make sure the exceptions map continues to work during AppDomain finalization
             GC.SuppressFinalize(exceptions);
@@ -233,12 +236,11 @@ namespace IKVM.Runtime
                     {
                         continue;
                     }
-                    int lineNumber = frame.GetFileLineNumber();
+                    var lineNumber = frame.GetFileLineNumber();
                     if (lineNumber == 0)
-                    {
                         lineNumber = exceptionHelper.GetLineNumber(frame);
-                    }
-                    string fileName = frame.GetFileName();
+
+                    var fileName = frame.GetFileName();
                     if (fileName != null)
                     {
                         try
@@ -252,19 +254,14 @@ namespace IKVM.Runtime
                             fileName = null;
                         }
                     }
-                    if (fileName == null)
-                    {
-                        fileName = exceptionHelper.GetFileName(frame);
-                    }
+
+                    fileName ??= exceptionHelper.GetFileName(frame);
                     stackTrace.Add(new StackTraceElement(exceptionHelper.GetClassNameFromType(type), GetMethodName(m), fileName, IsNative(m) ? -2 : lineNumber));
                 }
+
                 if (cleanStackTrace && isLast)
-                {
                     while (stackTrace.Count > 0 && stackTrace[stackTrace.Count - 1].getClassName().StartsWith("cli.System.Threading.", StringComparison.Ordinal))
-                    {
                         stackTrace.RemoveAt(stackTrace.Count - 1);
-                    }
-                }
             }
         }
 #endif
@@ -835,7 +832,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            exceptions.put(e, NOT_REMAPPED);
+            exceptions.Add(e, NOT_REMAPPED);
 #endif
         }
 
@@ -858,7 +855,7 @@ namespace IKVM.Runtime
                 var org = Interlocked.Exchange(ref t.original, null);
                 if (org != null)
                 {
-                    exceptions.put(org, e);
+                    exceptions.Add(org, e);
                     e = org;
                 }
             }
@@ -922,27 +919,23 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            Exception org = e;
-            bool nonJavaException = !(e is Throwable);
+            var org = e;
+            var nonJavaException = e is not Throwable;
             if (nonJavaException && remap)
             {
                 if (e is TypeInitializationException tie)
                     return (T)MapTypeInitializeException(tie, typeof(T));
 
-                var obj = exceptions.get(e);
-                var remapped = (Exception)obj;
+                exceptions.TryGetValue(e, out var obj);
+                var remapped = obj;
                 if (remapped == null)
                 {
                     remapped = Throwable.__mapImpl(e);
                     if (remapped == e)
-                    {
-                        exceptions.put(e, NOT_REMAPPED);
-                    }
+                        exceptions.Add(e, NOT_REMAPPED);
                     else
-                    {
-                        exceptions.put(e, remapped);
+                        exceptions.Add(e, remapped);
                         e = remapped;
-                    }
                 }
                 else if (remapped != NOT_REMAPPED)
                 {
@@ -962,7 +955,7 @@ namespace IKVM.Runtime
                     if (t != org)
                     {
                         t.original = org;
-                        exceptions.remove(org);
+                        exceptions.Remove(org);
                     }
                 }
                 else
@@ -981,7 +974,7 @@ namespace IKVM.Runtime
                 }
 
                 if (nonJavaException && !remap)
-                    exceptions.put(e, NOT_REMAPPED);
+                    exceptions.Add(e, NOT_REMAPPED);
 
                 return (T)e;
             }
