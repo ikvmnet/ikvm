@@ -186,21 +186,21 @@ namespace IKVM.Java.Externs.ikvm.runtime
         }
 
         [HideFromJava]
-        public static Exception mapException(Exception x)
+        public static Exception mapException(Exception e)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return JVM.Context.ExceptionHelper.MapException<Exception>(x, true, false);
+            return JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
 #endif
         }
 
-        public static Exception unmapException(Exception x)
+        public static Exception unmapException(Exception e)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return JVM.Context.ExceptionHelper.UnmapException(x);
+            return ExceptionHelper.UnmapException(e);
 #endif
         }
 

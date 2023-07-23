@@ -496,17 +496,17 @@ namespace IKVM.Runtime
 
         internal void HideFromReflection(MethodBuilder mb)
         {
-            mb.SetCustomAttribute(hideFromReflection);
+            mb.SetCustomAttribute(HideFromReflectionBuilder);
         }
 
         internal void HideFromReflection(FieldBuilder fb)
         {
-            fb.SetCustomAttribute(hideFromReflection);
+            fb.SetCustomAttribute(HideFromReflectionBuilder);
         }
 
         internal void HideFromReflection(PropertyBuilder pb)
         {
-            pb.SetCustomAttribute(hideFromReflection);
+            pb.SetCustomAttribute(HideFromReflectionBuilder);
         }
 
         internal void HideFromJava(TypeBuilder typeBuilder)

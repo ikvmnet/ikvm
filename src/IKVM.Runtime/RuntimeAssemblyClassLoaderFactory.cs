@@ -110,11 +110,8 @@ namespace IKVM.Runtime
 
             var baseAssembly = context.Resolver.ResolveBaseAssembly();
 #if IMPORTER
-            if (baseAssembly == null && context.Bootstrap)
-            {
-                baseAssembly = assembly;
+            if (baseAssembly != null && assembly.IsDefined(context.StaticCompiler.GetRuntimeType("IKVM.Attributes.RemappedClassAttribute"), false))
                 context.ClassLoaderFactory.LoadRemappedTypes();
-            }
 #endif
 
             if (baseAssembly == assembly)

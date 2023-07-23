@@ -150,10 +150,10 @@ namespace IKVM.Runtime
             // these are the types that may not be used as a type argument when instantiating a generic type
             return type == context.Types.Void
 #if NETFRAMEWORK
-                || type == context.Resolver.ResolveRuntimeType(typeof(ArgIterator).FullName)
+                || type == context.Resolver.ResolveType(typeof(ArgIterator).FullName)
 #endif
-                || type == context.Resolver.ResolveRuntimeType(typeof(RuntimeArgumentHandle).FullName)
-                || type == context.Resolver.ResolveRuntimeType(typeof(TypedReference).FullName)
+                || type == context.Resolver.ResolveType(typeof(RuntimeArgumentHandle).FullName)
+                || type == context.Resolver.ResolveType(typeof(TypedReference).FullName)
                 || type.ContainsGenericParameters
                 || type.IsByRef;
         }

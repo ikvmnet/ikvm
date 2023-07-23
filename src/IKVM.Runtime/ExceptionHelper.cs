@@ -33,14 +33,12 @@ using IKVM.Attributes;
 using IDictionary = System.Collections.IDictionary;
 using Interlocked = System.Threading.Interlocked;
 using MethodBase = System.Reflection.MethodBase;
+
 using ObjectInputStream = java.io.ObjectInputStream;
 using ObjectOutputStream = java.io.ObjectOutputStream;
 using ObjectStreamField = java.io.ObjectStreamField;
 using StackTraceElement = java.lang.StackTraceElement;
-
-#if !FIRST_PASS
 using Throwable = java.lang.Throwable;
-#endif
 
 namespace IKVM.Runtime
 {
@@ -258,7 +256,7 @@ namespace IKVM.Runtime
                     {
                         fileName = exceptionHelper.GetFileName(frame);
                     }
-                    stackTrace.Add(new StackTraceElement(exceptionHelper.getClassNameFromType(type), GetMethodName(m), fileName, IsNative(m) ? -2 : lineNumber));
+                    stackTrace.Add(new StackTraceElement(exceptionHelper.GetClassNameFromType(type), GetMethodName(m), fileName, IsNative(m) ? -2 : lineNumber));
                 }
                 if (cleanStackTrace && isLast)
                 {
@@ -337,18 +335,20 @@ namespace IKVM.Runtime
             }
         }
 
-        private static bool IsHideFromJava(MethodBase mb)
+        static bool IsHideFromJava(MethodBase mb)
         {
 #if FIRST_PASS
-            return false;
+            throw new NotImplementedException();
 #else
-            return (IKVM.Java.Externs.sun.reflect.Reflection.GetHideFromJavaFlags(mb) & HideFromJavaFlags.StackTrace) != 0
-                || (mb.DeclaringType == typeof(ikvm.runtime.Util) && mb.Name == "mapException");
+            return (IKVM.Java.Externs.sun.reflect.Reflection.GetHideFromJavaFlags(mb) & HideFromJavaFlags.StackTrace) != 0 || (mb.DeclaringType == typeof(ikvm.runtime.Util) && mb.Name == "mapException");
 #endif
         }
 
-        private string getClassNameFromType(Type type)
+        string GetClassNameFromType(Type type)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             if (type == null)
             {
                 return "<Module>";
@@ -364,18 +364,19 @@ namespace IKVM.Runtime
                 {
                     return RuntimeManagedJavaType.GetName(context, type);
                 }
-#if !FIRST_PASS
                 if (tw.IsUnsafeAnonymous)
                 {
                     return tw.ClassObject.getName();
                 }
-#endif
+
                 return tw.Name;
             }
+
             return type.FullName;
+#endif
         }
 
-        private int GetLineNumber(StackFrame frame)
+        int GetLineNumber(StackFrame frame)
         {
             int ilOffset = frame.GetILOffset();
             if (ilOffset != StackFrame.OFFSET_UNKNOWN)
@@ -394,10 +395,11 @@ namespace IKVM.Runtime
                     }
                 }
             }
+
             return -1;
         }
 
-        private string GetFileName(StackFrame frame)
+        string GetFileName(StackFrame frame)
         {
             MethodBase mb = frame.GetMethod();
             if (mb != null && mb.DeclaringType != null)
@@ -412,14 +414,21 @@ namespace IKVM.Runtime
                     return tw.GetSourceFileName();
                 }
             }
+
             return null;
         }
 
-        // called from map.xml
-        internal static ObjectStreamField[] getPersistentFields()
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// Called from map.xml for IKVM.Java.
+        /// </remarks>
+        /// <returns></returns>
+        internal static ObjectStreamField[] GetPersistentFields()
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             return new ObjectStreamField[] {
                 new ObjectStreamField("detailMessage", typeof(global::java.lang.String)),
@@ -430,45 +439,56 @@ namespace IKVM.Runtime
 #endif
         }
 
-        internal void writeObject(Exception x, ObjectOutputStream s)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// Called from map.xml for IKVM.Java.
+        /// </remarks>
+        /// <param name="e"></param>
+        /// <param name="s"></param>
+        internal static void WriteObject(Exception e, ObjectOutputStream s)
         {
-#if !FIRST_PASS
-            lock (x)
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            lock (e)
             {
                 ObjectOutputStream.PutField fields = s.putFields();
-                Throwable _thisJava = x as Throwable;
-                if (_thisJava == null)
+                if (e is not Throwable t)
                 {
-                    fields.put("detailMessage", x.Message);
-                    fields.put("cause", x.InnerException);
+                    fields.put("detailMessage", e.Message);
+                    fields.put("cause", e.InnerException);
                     // suppressed exceptions are not supported on CLR exceptions
                     fields.put("suppressedExceptions", null);
-                    fields.put("stackTrace", getOurStackTrace(x));
+                    fields.put("stackTrace", GetOurStackTrace(e));
                 }
                 else
                 {
-                    fields.put("detailMessage", _thisJava.detailMessage);
-                    fields.put("cause", _thisJava.cause);
-                    fields.put("suppressedExceptions", _thisJava.suppressedExceptions);
-                    getOurStackTrace(x);
-                    fields.put("stackTrace", _thisJava.stackTrace ?? java.lang.ThrowableHelper.SentinelHolder.STACK_TRACE_SENTINEL);
+                    fields.put("detailMessage", t.detailMessage);
+                    fields.put("cause", t.cause);
+                    fields.put("suppressedExceptions", t.suppressedExceptions);
+                    GetOurStackTrace(e);
+                    fields.put("stackTrace", t.stackTrace ?? java.lang.ThrowableHelper.SentinelHolder.STACK_TRACE_SENTINEL);
                 }
                 s.writeFields();
             }
 #endif
         }
 
-        internal static void readObject(Exception x, ObjectInputStream s)
+        internal static void ReadObject(Exception e, ObjectInputStream stream)
         {
-#if !FIRST_PASS
-            lock (x)
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            lock (e)
             {
                 // when you serialize a .NET exception it gets replaced by a com.sun.xml.internal.ws.developer.ServerSideException,
                 // so we know that Exception is always a Throwable
-                Throwable _this = (Throwable)x;
+                Throwable _this = (Throwable)e;
 
                 // this the equivalent of s.defaultReadObject();
-                ObjectInputStream.GetField fields = s.readFields();
+                ObjectInputStream.GetField fields = stream.readFields();
                 object detailMessage = fields.get("detailMessage", null);
                 object cause = fields.get("cause", null);
                 ConstructorInfo ctor = typeof(Throwable).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(string), typeof(Exception), typeof(bool), typeof(bool) }, null);
@@ -550,81 +570,76 @@ namespace IKVM.Runtime
         internal static string GetMessageFromCause(Exception cause)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            if (cause == null)
-            {
-                return "";
-            }
-            return ikvm.extensions.ExtensionMethods.toString(cause);
+            return cause != null ? ikvm.extensions.ExtensionMethods.toString(cause) : "";
 #endif
         }
 
-        internal static string getLocalizedMessage(Exception x)
+        internal static string GetLocalizedMessage(Exception x)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             return ikvm.extensions.ExtensionMethods.getMessage(x);
 #endif
         }
 
-        internal static string toString(Exception x)
+        internal static string ToString(Exception x)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            string message = ikvm.extensions.ExtensionMethods.getLocalizedMessage(x);
+            var message = ikvm.extensions.ExtensionMethods.getLocalizedMessage(x);
             if (message == null)
-            {
                 return ikvm.extensions.ExtensionMethods.getClass(x).getName();
-            }
-            return ikvm.extensions.ExtensionMethods.getClass(x).getName() + ": " + message;
+            else
+                return ikvm.extensions.ExtensionMethods.getClass(x).getName() + ": " + message;
 #endif
         }
 
-        internal static Exception getCause(Exception _this)
+        internal static Exception GetCause(Exception _this)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             lock (_this)
             {
-                Exception cause = ((Throwable)_this).cause;
+                var cause = ((Throwable)_this).cause;
                 return cause == _this ? null : cause;
             }
 #endif
         }
 
-        internal static void checkInitCause(Exception _this, Exception _this_cause, Exception cause)
+        internal static void CheckInitCause(Exception self, Exception self_cause, Exception cause)
         {
-#if !FIRST_PASS
-            if (_this_cause != _this)
-            {
-                throw new java.lang.IllegalStateException("Can't overwrite cause with " + java.util.Objects.toString(cause, "a null"), _this);
-            }
-            if (cause == _this)
-            {
-                throw new java.lang.IllegalArgumentException("Self-causation not permitted", _this);
-            }
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (self_cause != self)
+                throw new java.lang.IllegalStateException("Can't overwrite cause with " + java.util.Objects.toString(cause, "a null"), self);
+
+            if (cause == self)
+                throw new java.lang.IllegalArgumentException("Self-causation not permitted", self);
 #endif
         }
 
-        internal static void addSuppressed(Exception _this, Exception x)
+        internal static void AddSuppressed(Exception self, Exception e)
         {
-#if !FIRST_PASS
-            lock (_this)
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            lock (self)
             {
-                if (_this == x)
+                if (self == e)
                 {
-                    throw new java.lang.IllegalArgumentException("Self-suppression not permitted", x);
+                    throw new java.lang.IllegalArgumentException("Self-suppression not permitted", e);
                 }
-                if (x == null)
+                if (e == null)
                 {
                     throw new java.lang.NullPointerException("Cannot suppress a null exception.");
                 }
-                Throwable _thisJava = _this as Throwable;
-                if (_thisJava == null)
+                if (self is not Throwable _thisJava)
                 {
                     // we ignore suppressed exceptions for non-Java exceptions
                 }
@@ -634,64 +649,69 @@ namespace IKVM.Runtime
                     {
                         return;
                     }
+
                     if (_thisJava.suppressedExceptions == Throwable.SUPPRESSED_SENTINEL)
                     {
                         _thisJava.suppressedExceptions = new java.util.ArrayList();
                     }
-                    _thisJava.suppressedExceptions.add(x);
+
+                    _thisJava.suppressedExceptions.add(e);
                 }
             }
 #endif
         }
 
-        internal static Exception[] getSuppressed(Exception _this)
+        internal static Exception[] GetSuppressed(Exception self)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            lock (_this)
+            lock (self)
             {
-                Throwable _thisJava = _this as Throwable;
-                if (_thisJava == null)
+                if (self is not Throwable t)
                 {
                     // we ignore suppressed exceptions for non-Java exceptions
                     return EMPTY_THROWABLE_ARRAY;
                 }
                 else
                 {
-                    if (_thisJava.suppressedExceptions == Throwable.SUPPRESSED_SENTINEL
-                        || _thisJava.suppressedExceptions == null)
-                    {
+                    if (t.suppressedExceptions == Throwable.SUPPRESSED_SENTINEL || t.suppressedExceptions == null)
                         return EMPTY_THROWABLE_ARRAY;
-                    }
-                    return (Exception[])_thisJava.suppressedExceptions.toArray(EMPTY_THROWABLE_ARRAY);
+                    else
+                        return (Exception[])t.suppressedExceptions.toArray(EMPTY_THROWABLE_ARRAY);
                 }
             }
 #endif
         }
 
-        internal int getStackTraceDepth(Exception _this)
+        internal static int GetStackTraceDepth(Exception self)
         {
-            return getOurStackTrace(_this).Length;
+            return GetOurStackTrace(self).Length;
         }
 
-        internal StackTraceElement getStackTraceElement(Exception _this, int index)
+        internal static StackTraceElement GetStackTraceElement(Exception self, int index)
         {
-            return getOurStackTrace(_this)[index];
+            return GetOurStackTrace(self)[index];
         }
 
-        internal StackTraceElement[] getOurStackTrace(Exception x)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// Called from map.xml for IKVM.Java.
+        /// </remarks>
+        /// <returns></returns>
+        internal static StackTraceElement[] GetOurStackTrace(Exception e)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            Throwable _this = x as Throwable;
-            if (_this == null)
+            if (e is not Throwable self)
             {
-                lock (x)
+                lock (e)
                 {
                     ExceptionInfoHelper eih = null;
-                    IDictionary data = x.Data;
+                    IDictionary data = e.Data;
                     if (data != null && !data.IsReadOnly)
                     {
                         lock (data.SyncRoot)
@@ -703,127 +723,159 @@ namespace IKVM.Runtime
                     {
                         return Throwable.UNASSIGNED_STACK;
                     }
-                    return eih.get_StackTrace(x);
+                    return eih.get_StackTrace(e);
                 }
             }
             else
             {
-                lock (_this)
+                lock (self)
                 {
-                    if (_this.stackTrace == Throwable.UNASSIGNED_STACK
-                        || (_this.stackTrace == null && (_this.tracePart1 != null || _this.tracePart2 != null)))
+                    if (self.stackTrace == Throwable.UNASSIGNED_STACK
+                        || (self.stackTrace == null && (self.tracePart1 != null || self.tracePart2 != null)))
                     {
-                        ExceptionInfoHelper eih = new ExceptionInfoHelper(this, _this.tracePart1, _this.tracePart2);
-                        _this.stackTrace = eih.get_StackTrace(x);
-                        _this.tracePart1 = null;
-                        _this.tracePart2 = null;
+                        ExceptionInfoHelper eih = new ExceptionInfoHelper(JVM.Context.ExceptionHelper, self.tracePart1, self.tracePart2);
+                        self.stackTrace = eih.get_StackTrace(e);
+                        self.tracePart1 = null;
+                        self.tracePart2 = null;
                     }
                 }
-                return _this.stackTrace ?? Throwable.UNASSIGNED_STACK;
+                return self.stackTrace ?? Throwable.UNASSIGNED_STACK;
             }
 #endif
         }
 
-        internal void setStackTrace(Exception x, StackTraceElement[] stackTrace)
-        {
-#if !FIRST_PASS
-            StackTraceElement[] copy = (StackTraceElement[])stackTrace.Clone();
-            for (int i = 0; i < copy.Length; i++)
-            {
-                if (copy[i] == null)
-                {
-                    throw new java.lang.NullPointerException();
-                }
-            }
-            SetStackTraceImpl(x, copy);
-#endif
-        }
-
-        private void SetStackTraceImpl(Exception x, StackTraceElement[] stackTrace)
-        {
-#if !FIRST_PASS
-            Throwable _this = x as Throwable;
-            if (_this == null)
-            {
-                ExceptionInfoHelper eih = new ExceptionInfoHelper(this, stackTrace);
-                IDictionary data = x.Data;
-                if (data != null && !data.IsReadOnly)
-                {
-                    lock (data.SyncRoot)
-                    {
-                        data[EXCEPTION_DATA_KEY] = eih;
-                    }
-                }
-            }
-            else
-            {
-                lock (_this)
-                {
-                    if (_this.stackTrace == null && _this.tracePart1 == null && _this.tracePart2 == null)
-                    {
-                        return;
-                    }
-                    _this.stackTrace = stackTrace;
-                }
-            }
-#endif
-        }
-
-        // this method is *only* for .NET exceptions (i.e. types not derived from java.lang.Throwable)
-        [HideFromJava]
-        internal void fillInStackTrace(Exception x)
-        {
-#if !FIRST_PASS
-            lock (x)
-            {
-                ExceptionInfoHelper eih = new ExceptionInfoHelper(this, null, new StackTrace(true));
-                IDictionary data = x.Data;
-                if (data != null && !data.IsReadOnly)
-                {
-                    lock (data.SyncRoot)
-                    {
-                        data[EXCEPTION_DATA_KEY] = eih;
-                    }
-                }
-            }
-#endif
-        }
-
-        // this method is *only* for .NET exceptions (i.e. types not derived from java.lang.Throwable)
-        internal void FixateException(Exception x)
-        {
-#if !FIRST_PASS
-            exceptions.put(x, NOT_REMAPPED);
-#endif
-        }
-
-        internal Exception UnmapException(Exception x)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// Called from map.xml for IKVM.Java.
+        /// </remarks>
+        /// <returns></returns>
+        internal static void SetStackTrace(Exception e, StackTraceElement[] stackTrace)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            if (x is Throwable)
+            var copy = (StackTraceElement[])stackTrace.Clone();
+            for (int i = 0; i < copy.Length; i++)
+                if (copy[i] == null)
+                    throw new java.lang.NullPointerException();
+
+            JVM.Context.ExceptionHelper.SetStackTraceImpl(e, copy);
+#endif
+        }
+
+        void SetStackTraceImpl(Exception e, StackTraceElement[] stackTrace)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (e is not Throwable t)
             {
-                Exception org = Interlocked.Exchange(ref ((Throwable)x).original, null);
+                var eih = new ExceptionInfoHelper(this, stackTrace);
+                var data = e.Data;
+                if (data != null && !data.IsReadOnly)
+                    lock (data.SyncRoot)
+                        data[EXCEPTION_DATA_KEY] = eih;
+            }
+            else
+            {
+                lock (t)
+                {
+                    if (t.stackTrace == null && t.tracePart1 == null && t.tracePart2 == null)
+                        return;
+
+                    t.stackTrace = stackTrace;
+                }
+            }
+#endif
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// This method is *only* for .NET exceptions (i.e. types not derived from java.lang.Throwable).
+        /// </remarks>
+        /// <param name="e"></param>
+        [HideFromJava]
+        internal static void FillInStackTrace(Exception e)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            lock (e)
+            {
+                var eih = new ExceptionInfoHelper(JVM.Context.ExceptionHelper, null, new StackTrace(true));
+                var data = e.Data;
+                if (data != null && !data.IsReadOnly)
+                    lock (data.SyncRoot)
+                        data[EXCEPTION_DATA_KEY] = eih;
+            }
+#endif
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// This method is *only* for .NET exceptions (i.e. types not derived from java.lang.Throwable).
+        /// </remarks>
+        /// <param name="e"></param>
+        internal static void FixateException(Exception e)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            JVM.Context.ExceptionHelper.FixateExceptionImpl(e);
+#endif
+        }
+        void FixateExceptionImpl(Exception e)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            exceptions.put(e, NOT_REMAPPED);
+#endif
+        }
+
+        internal static Exception UnmapException(Exception e)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return JVM.Context.ExceptionHelper.UnmapExceptionImpl(e);
+#endif
+        }
+
+        Exception UnmapExceptionImpl(Exception e)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (e is Throwable t)
+            {
+                var org = Interlocked.Exchange(ref t.original, null);
                 if (org != null)
                 {
-                    exceptions.put(org, x);
-                    x = org;
+                    exceptions.put(org, e);
+                    e = org;
                 }
             }
-            return x;
+
+            return e;
 #endif
         }
 
         [HideFromJava]
-        private Exception MapTypeInitializeException(TypeInitializationException t, Type handler)
+        Exception MapTypeInitializeException(TypeInitializationException t, Type handler)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             bool wrapped = false;
             Exception r = MapException<Exception>(t.InnerException, true, false);
-            if (!(r is java.lang.Error))
+            if (r is not java.lang.Error)
             {
                 // Forwarding "r" as cause only doesn't make it available in the debugger details
                 // of current versions of VS, so at least provide a text representation instead.
@@ -848,64 +900,59 @@ namespace IKVM.Runtime
                 // transplant the stack trace
                 ((Throwable)r).setStackTrace(new ExceptionInfoHelper(this, t, true).get_StackTrace(t));
             }
+
             return r;
 #endif
         }
 
-        private static bool IsInstanceOfType<T>(Exception t, bool remap)
+        bool IsInstanceOfType<T>(Exception t, bool remap)
             where T : Exception
         {
 #if FIRST_PASS
-            return false;
+            throw new NotImplementedException();
 #else
-            if (!remap && typeof(T) == typeof(Exception))
-            {
-                return !(t is Throwable);
-            }
-            return t is T;
+            return remap || typeof(T) != typeof(Exception) ? t is T : t is not Throwable;
 #endif
         }
 
         [HideFromJava]
-        internal T MapException<T>(Exception x, bool remap, bool unused)
+        internal T MapException<T>(Exception e, bool remap, bool unused)
             where T : Exception
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            Exception org = x;
-            bool nonJavaException = !(x is Throwable);
+            Exception org = e;
+            bool nonJavaException = !(e is Throwable);
             if (nonJavaException && remap)
             {
-                if (x is TypeInitializationException)
-                {
-                    return (T)MapTypeInitializeException((TypeInitializationException)x, typeof(T));
-                }
-                object obj = exceptions.get(x);
-                Exception remapped = (Exception)obj;
+                if (e is TypeInitializationException tie)
+                    return (T)MapTypeInitializeException(tie, typeof(T));
+
+                var obj = exceptions.get(e);
+                var remapped = (Exception)obj;
                 if (remapped == null)
                 {
-                    remapped = Throwable.__mapImpl(x);
-                    if (remapped == x)
+                    remapped = Throwable.__mapImpl(e);
+                    if (remapped == e)
                     {
-                        exceptions.put(x, NOT_REMAPPED);
+                        exceptions.put(e, NOT_REMAPPED);
                     }
                     else
                     {
-                        exceptions.put(x, remapped);
-                        x = remapped;
+                        exceptions.put(e, remapped);
+                        e = remapped;
                     }
                 }
                 else if (remapped != NOT_REMAPPED)
                 {
-                    x = remapped;
+                    e = remapped;
                 }
             }
 
-            if (IsInstanceOfType<T>(x, remap))
+            if (IsInstanceOfType<T>(e, remap))
             {
-                Throwable t = x as Throwable;
-                if (t != null)
+                if (e is Throwable t)
                 {
                     if (!unused && t.tracePart1 == null && t.tracePart2 == null && t.stackTrace == Throwable.UNASSIGNED_STACK)
                     {
@@ -920,25 +967,25 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    IDictionary data = x.Data;
+                    IDictionary data = e.Data;
                     if (data != null && !data.IsReadOnly)
                     {
                         lock (data.SyncRoot)
                         {
                             if (!data.Contains(EXCEPTION_DATA_KEY))
                             {
-                                data.Add(EXCEPTION_DATA_KEY, new ExceptionInfoHelper(this, x, true));
+                                data.Add(EXCEPTION_DATA_KEY, new ExceptionInfoHelper(this, e, true));
                             }
                         }
                     }
                 }
 
                 if (nonJavaException && !remap)
-                {
-                    exceptions.put(x, NOT_REMAPPED);
-                }
-                return (T)x;
+                    exceptions.put(e, NOT_REMAPPED);
+
+                return (T)e;
             }
+
             return null;
 #endif
         }

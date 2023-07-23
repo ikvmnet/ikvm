@@ -3291,7 +3291,7 @@ namespace IKVM.Runtime
                         }
                         else
                         {
-                            CodeEmitterLocal ghost = ilGenerator.AllocTempLocal(declaringType.Context.Types.Object);
+                            CodeEmitterLocal ghost = ilGenerator.AllocTempLocal(finish.Context.Types.Object);
                             ilGenerator.Emit(OpCodes.Stloc, ghost);
                             CodeEmitterLocal local = ilGenerator.AllocTempLocal(args[i].TypeAsSignatureType);
                             ilGenerator.Emit(OpCodes.Ldloca, local);

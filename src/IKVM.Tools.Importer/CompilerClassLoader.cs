@@ -1731,38 +1731,22 @@ namespace IKVM.Tools.Importer
 
                 private void EmitRedirect(Type baseType, CodeEmitter ilgen)
                 {
-                    string redirName = m.Redirect.Name;
-                    string redirSig = m.Redirect.Sig;
-                    if (redirName == null)
+                    var redirName = m.Redirect.Name ?? m.Name;
+                    var redirSig = m.Redirect.Sig ?? m.Sig;
+                    var classLoader = DeclaringType.GetClassLoader();
+
+                    // type specified, or class missing, assume loading .NET type
+                    if (m.Redirect.Type != null || m.Redirect.Class == null)
                     {
-                        redirName = m.Name;
-                    }
-                    if (redirSig == null)
-                    {
-                        redirSig = m.Sig;
-                    }
-                    RuntimeClassLoader classLoader = DeclaringType.GetClassLoader();
-                    // HACK if the class name contains a comma, we assume it is a .NET type
-                    if (m.Redirect.Class == null || m.Redirect.Class.IndexOf(',') >= 0)
-                    {
-                        // TODO better error handling
-                        Type type = m.Redirect.Class == null ? baseType : DeclaringType.Context.StaticCompiler.Universe.GetType(m.Redirect.Class, true);
-                        Type[] redirParamTypes = classLoader.ArgTypeListFromSig(redirSig);
-                        MethodInfo mi = type.GetMethod(m.Redirect.Name, redirParamTypes);
-                        if (mi == null)
-                        {
-                            throw new InvalidOperationException();
-                        }
+                        var type = m.Redirect.Type != null ? DeclaringType.Context.StaticCompiler.Universe.GetType(m.Redirect.Type, true) : baseType;
+                        var redirParamTypes = classLoader.ArgTypeListFromSig(redirSig);
+                        var mi = type.GetMethod(m.Redirect.Name, redirParamTypes) ?? throw new InvalidOperationException();
                         ilgen.Emit(OpCodes.Call, mi);
                     }
                     else
                     {
                         var tw = classLoader.LoadClassByName(m.Redirect.Class);
-                        var mw = tw.GetMethodWrapper(redirName, redirSig, false);
-                        if (mw == null)
-                        {
-                            throw new InvalidOperationException("Missing redirect method: " + tw.Name + "." + redirName + redirSig);
-                        }
+                        var mw = tw.GetMethodWrapper(redirName, redirSig, false) ?? throw new InvalidOperationException("Missing redirect method: " + tw.Name + "." + redirName + redirSig);
                         mw.Link();
                         mw.EmitCall(ilgen);
                     }
@@ -3558,7 +3542,7 @@ namespace IKVM.Tools.Importer
 
         internal Type GetRuntimeType(string name)
         {
-            return runtimeAssembly.GetType(name) ?? throw new TypeLoadException(name);
+            return runtimeAssembly.GetType(name);
         }
 
         internal Type GetTypeForMapXml(RuntimeClassLoader loader, string name)
