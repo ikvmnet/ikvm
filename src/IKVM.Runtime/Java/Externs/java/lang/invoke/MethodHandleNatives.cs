@@ -38,7 +38,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
         {
             var tw = RuntimeJavaType.FromClass(clazz);
             // handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
-            return tw.IsInstance(obj) || (tw == tw.Context.JavaBase.cliSystemObject && obj is Array);
+            return tw.IsInstance(obj) || (tw == tw.Context.JavaBase.TypeOfCliSystemObject && obj is Array);
         }
 
         public static void init(global::java.lang.invoke.MemberName self, object refObj)
@@ -109,7 +109,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
             {
                 flags |= global::java.lang.invoke.MemberName.CALLER_SENSITIVE;
             }
-            if (mw.IsConstructor && mw.DeclaringType == JVM.Context.JavaBase.javaLangString)
+            if (mw.IsConstructor && mw.DeclaringType == JVM.Context.JavaBase.TypeOfJavaLangString)
             {
                 global::java.lang.Class[] parameters1 = new global::java.lang.Class[mw.GetParameters().Length];
                 for (int i = 0; i < mw.GetParameters().Length; i++)
@@ -120,7 +120,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
                 self._type(mt);
                 self._flags(flags);
                 self._clazz(mw.DeclaringType.ClassObject);
-                self.vmtarget = CreateMemberNameDelegate(mw, null, false, self.getMethodType().changeReturnType(JVM.Context.JavaBase.javaLangString.ClassObject));
+                self.vmtarget = CreateMemberNameDelegate(mw, null, false, self.getMethodType().changeReturnType(JVM.Context.JavaBase.TypeOfJavaLangString.ClassObject));
                 return;
             }
             self._flags(flags);
@@ -159,7 +159,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
             switch (self.getReferenceKind())
             {
                 case global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic:
-                    if (self.getDeclaringClass() == JVM.Context.JavaBase.javaLangInvokeMethodHandle.ClassObject)
+                    if (self.getDeclaringClass() == JVM.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject)
                     {
                         switch (self.getName())
                         {
@@ -176,7 +176,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
                     ResolveMethod(self, caller);
                     break;
                 case global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeVirtual:
-                    if (self.getDeclaringClass() == JVM.Context.JavaBase.javaLangInvokeMethodHandle.ClassObject)
+                    if (self.getDeclaringClass() == JVM.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject)
                     {
                         switch (self.getName())
                         {
@@ -223,7 +223,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
                     mw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetInterfaceMethod(self.getName(), self.getSignature().Replace('/', '.'));
                     if (mw == null)
                     {
-                        mw = JVM.Context.JavaBase.javaLangObject.GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), false);
+                        mw = JVM.Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), false);
                     }
                     if (mw != null && mw.IsConstructor)
                     {
@@ -249,9 +249,9 @@ namespace IKVM.Java.Externs.java.lang.invoke
             {
                 throw new global::java.lang.IncompatibleClassChangeError("private interface method requires invokespecial, not invokeinterface: method " + self.getDeclaringClass().getName() + "." + self.getName() + self.getSignature());
             }
-            if (mw.IsConstructor && mw.DeclaringType == JVM.Context.JavaBase.javaLangString)
+            if (mw.IsConstructor && mw.DeclaringType == JVM.Context.JavaBase.TypeOfJavaLangString)
             {
-                self.vmtarget = CreateMemberNameDelegate(mw, caller, false, self.getMethodType().changeReturnType(JVM.Context.JavaBase.javaLangString.ClassObject));
+                self.vmtarget = CreateMemberNameDelegate(mw, caller, false, self.getMethodType().changeReturnType(JVM.Context.JavaBase.TypeOfJavaLangString.ClassObject));
             }
             else if (!mw.IsConstructor || invokeSpecial || newInvokeSpecial)
             {
@@ -353,17 +353,17 @@ namespace IKVM.Java.Externs.java.lang.invoke
                 RuntimeJavaType thisType = RuntimeJavaType.FromClass(caller);
                 // HACK we may need to redirect finalize or clone from java.lang.Object/Throwable
                 // to a more specific base type.
-                if (thisType.IsAssignableTo(thisType.Context.JavaBase.cliSystemObject))
+                if (thisType.IsAssignableTo(thisType.Context.JavaBase.TypeOfCliSystemObject))
                 {
-                    mw = thisType.Context.JavaBase.cliSystemObject.GetMethodWrapper(mw.Name, mw.Signature, true);
+                    mw = thisType.Context.JavaBase.TypeOfCliSystemObject.GetMethodWrapper(mw.Name, mw.Signature, true);
                 }
-                else if (thisType.IsAssignableTo(thisType.Context.JavaBase.cliSystemException))
+                else if (thisType.IsAssignableTo(thisType.Context.JavaBase.TypeOfCliSystemException))
                 {
-                    mw = thisType.Context.JavaBase.cliSystemException.GetMethodWrapper(mw.Name, mw.Signature, true);
+                    mw = thisType.Context.JavaBase.TypeOfCliSystemException.GetMethodWrapper(mw.Name, mw.Signature, true);
                 }
-                else if (thisType.IsAssignableTo(thisType.Context.JavaBase.javaLangThrowable))
+                else if (thisType.IsAssignableTo(thisType.Context.JavaBase.TypeOfjavaLangThrowable))
                 {
-                    mw = thisType.Context.JavaBase.javaLangThrowable.GetMethodWrapper(mw.Name, mw.Signature, true);
+                    mw = thisType.Context.JavaBase.TypeOfjavaLangThrowable.GetMethodWrapper(mw.Name, mw.Signature, true);
                 }
             }
             RuntimeJavaType tw = mw.DeclaringType;

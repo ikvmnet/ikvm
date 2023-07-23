@@ -191,7 +191,7 @@ namespace IKVM.Runtime
 
         object ParseValue(RuntimeClassLoader loader, RuntimeJavaType tw, string val)
         {
-            if (tw == context.JavaBase.javaLangString)
+            if (tw == context.JavaBase.TypeOfJavaLangString)
             {
                 return val;
             }
@@ -289,7 +289,7 @@ namespace IKVM.Runtime
             {
                 argTypes[i] = twargs[i].TypeAsSignatureType;
                 RuntimeJavaType tw = twargs[i];
-                if (tw == context.JavaBase.javaLangObject)
+                if (tw == context.JavaBase.TypeOfJavaLangObject)
                 {
                     tw = loader.FieldTypeWrapperFromSig(attr.Params[i].Sig, LoadMode.Link);
                 }

@@ -1120,7 +1120,7 @@ namespace IKVM.Runtime
                 return ImplementsInterface(baseType);
             }
             // NOTE this isn't just an optimization, it is also required when this is an interface
-            if (baseType == Context.JavaBase.javaLangObject)
+            if (baseType == Context.JavaBase.TypeOfJavaLangObject)
             {
                 return true;
             }
@@ -1614,7 +1614,7 @@ namespace IKVM.Runtime
             Debug.Assert(!IsPublic);
 
             if (IsUnloadable || IsInterface)
-                return Context.JavaBase.javaLangObject;
+                return Context.JavaBase.TypeOfJavaLangObject;
 
             for (var tw = this; ; tw = tw.BaseTypeWrapper)
                 if (tw.IsPublic)

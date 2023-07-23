@@ -61,6 +61,7 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         public MethodAnalyzerFactory(RuntimeContext context)
         {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
             ByteArrayType = context.PrimitiveJavaTypeFactory.BYTE.MakeArrayType(1);
             BooleanArrayType = context.PrimitiveJavaTypeFactory.BOOLEAN.MakeArrayType(1);
             ShortArrayType = context.PrimitiveJavaTypeFactory.SHORT.MakeArrayType(1);
@@ -588,23 +589,23 @@ namespace IKVM.Runtime
                                                 s.PushLong();
                                                 break;
                                             case ClassFile.ConstantType.String:
-                                                s.PushType(context.JavaBase.javaLangString);
+                                                s.PushType(context.JavaBase.TypeOfJavaLangString);
                                                 break;
                                             case ClassFile.ConstantType.LiveObject:
-                                                s.PushType(context.JavaBase.javaLangObject);
+                                                s.PushType(context.JavaBase.TypeOfJavaLangObject);
                                                 break;
                                             case ClassFile.ConstantType.Class:
                                                 if (classFile.MajorVersion < 49)
                                                 {
                                                     throw new VerifyError("Illegal type in constant pool");
                                                 }
-                                                s.PushType(context.JavaBase.javaLangClass);
+                                                s.PushType(context.JavaBase.TypeOfJavaLangClass);
                                                 break;
                                             case ClassFile.ConstantType.MethodHandle:
-                                                s.PushType(context.JavaBase.javaLangInvokeMethodHandle);
+                                                s.PushType(context.JavaBase.TypeOfJavaLangInvokeMethodHandle);
                                                 break;
                                             case ClassFile.ConstantType.MethodType:
-                                                s.PushType(context.JavaBase.javaLangInvokeMethodType);
+                                                s.PushType(context.JavaBase.TypeOfJavaLangInvokeMethodType);
                                                 break;
                                             default:
                                                 // NOTE this is not a VerifyError, because it cannot happen (unless we have
@@ -1152,7 +1153,7 @@ namespace IKVM.Runtime
                                     }
                                     else
                                     {
-                                        s.PopObjectType(context.JavaBase.javaLangThrowable);
+                                        s.PopObjectType(context.JavaBase.TypeOfjavaLangThrowable);
                                     }
                                     break;
                                 case NormalizedByteCode.__tableswitch:
@@ -1691,7 +1692,7 @@ namespace IKVM.Runtime
                 SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessError, "tried to access class {0} from class {1}", cpi.Class, wrapper.Name);
             }
             else if (cpi.Kind == ReferenceKind.InvokeVirtual
-                && cpi.GetClassType() == context.JavaBase.javaLangInvokeMethodHandle
+                && cpi.GetClassType() == context.JavaBase.TypeOfJavaLangInvokeMethodHandle
                 && (cpi.Name == "invoke" || cpi.Name == "invokeExact"))
             {
                 // it's allowed to use ldc to create a MethodHandle invoker
@@ -2059,7 +2060,7 @@ namespace IKVM.Runtime
                 {
                     // exception blocks that only contain harmless instructions (i.e. instructions that will *never* throw an exception)
                     // are also filtered out (to improve the quality of the generated code)
-                    RuntimeJavaType exceptionType = ei.catch_type == 0 ? context.JavaBase.javaLangThrowable : classFile.GetConstantPoolClassType(ei.catch_type);
+                    RuntimeJavaType exceptionType = ei.catch_type == 0 ? context.JavaBase.TypeOfjavaLangThrowable : classFile.GetConstantPoolClassType(ei.catch_type);
                     if (exceptionType.IsUnloadable)
                     {
                         // we can't remove handlers for unloadable types
@@ -2545,7 +2546,7 @@ namespace IKVM.Runtime
             else if (invoke == NormalizedByteCode.__invokestatic
                 && cpi.Class == "java.lang.invoke.MethodHandle"
                 && (cpi.Name == "linkToVirtual" || cpi.Name == "linkToStatic" || cpi.Name == "linkToSpecial" || cpi.Name == "linkToInterface")
-                && context.JavaBase.javaLangInvokeMethodHandle.IsPackageAccessibleFrom(wrapper))
+                && context.JavaBase.TypeOfJavaLangInvokeMethodHandle.IsPackageAccessibleFrom(wrapper))
             {
                 instr.PatchOpCode(NormalizedByteCode.__methodhandle_link);
                 return;
@@ -2661,7 +2662,7 @@ namespace IKVM.Runtime
                             // NOTE special case for incorrect invocation of Object.clone(), because this could mean
                             // we're calling clone() on an array
                             // (bug in javac, see http://developer.java.sun.com/developer/bugParade/bugs/4329886.html)
-                            if (cpi.GetClassType() == context.JavaBase.javaLangObject
+                            if (cpi.GetClassType() == context.JavaBase.TypeOfJavaLangObject
                                 && thisType.IsArray
                                 && ReferenceEquals(cpi.Name, StringConstants.CLONE))
                             {

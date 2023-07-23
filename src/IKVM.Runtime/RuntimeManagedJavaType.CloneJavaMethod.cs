@@ -52,7 +52,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="declaringType"></param>
             internal CloneJavaMethod(RuntimeManagedJavaType declaringType) :
-                base(declaringType, "clone", "()Ljava.lang.Object;", null, declaringType.Context.JavaBase.javaLangObject, Array.Empty<RuntimeJavaType>(), Modifiers.Protected | Modifiers.Final, MemberFlags.None)
+                base(declaringType, "clone", "()Ljava.lang.Object;", null, declaringType.Context.JavaBase.TypeOfJavaLangObject, Array.Empty<RuntimeJavaType>(), Modifiers.Protected | Modifiers.Final, MemberFlags.None)
             {
 
             }
@@ -62,7 +62,7 @@ namespace IKVM.Runtime
             internal override void EmitCall(CodeEmitter ilgen)
             {
                 ilgen.Emit(OpCodes.Dup);
-                ilgen.Emit(OpCodes.Isinst, DeclaringType.Context.JavaBase.javaLangCloneable.TypeAsBaseType);
+                ilgen.Emit(OpCodes.Isinst, DeclaringType.Context.JavaBase.TypeOfJavaLangCloneable.TypeAsBaseType);
                 var label1 = ilgen.DefineLabel();
                 ilgen.EmitBrtrue(label1);
                 var label2 = ilgen.DefineLabel();

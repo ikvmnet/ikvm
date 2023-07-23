@@ -97,7 +97,7 @@ namespace IKVM.Runtime
             {
                 MarkSerializable(typeBuilder);
             }
-            else if (wrapper.IsSubTypeOf(wrapper.Context.JavaBase.javaIoSerializable) && IsSafeForAutomagicSerialization(wrapper))
+            else if (wrapper.IsSubTypeOf(wrapper.Context.JavaBase.TypeOfJavaIoSerializable) && IsSafeForAutomagicSerialization(wrapper))
             {
                 if (wrapper.IsSubTypeOf(TypeOfExternalizable))
                 {
@@ -108,7 +108,7 @@ namespace IKVM.Runtime
                         ctor.Link();
 
                         serializationCtor = AddConstructor(typeBuilder, ctor, null, true);
-                        if (!wrapper.BaseTypeWrapper.IsSubTypeOf(wrapper.Context.JavaBase.javaIoSerializable))
+                        if (!wrapper.BaseTypeWrapper.IsSubTypeOf(wrapper.Context.JavaBase.TypeOfJavaIoSerializable))
                         {
                             AddGetObjectData(typeBuilder);
                         }
@@ -118,7 +118,7 @@ namespace IKVM.Runtime
                         }
                     }
                 }
-                else if (wrapper.BaseTypeWrapper.IsSubTypeOf(wrapper.Context.JavaBase.javaIoSerializable))
+                else if (wrapper.BaseTypeWrapper.IsSubTypeOf(wrapper.Context.JavaBase.TypeOfJavaIoSerializable))
                 {
                     var baseCtor = wrapper.GetBaseSerializationConstructor();
                     if (baseCtor != null && (baseCtor.IsFamily || baseCtor.IsFamilyOrAssembly))

@@ -139,8 +139,8 @@ namespace IKVM.Runtime
                 MethodInfo method;
                 if (!dynamicClassLiteral.TryGetValue(cacheKey, out method))
                 {
-                    FieldBuilder fb = typeBuilder.DefineField("__<>class", context.JavaBase.javaLangClass.TypeAsSignatureType, FieldAttributes.PrivateScope | FieldAttributes.Static);
-                    MethodBuilder mb = DefineHelperMethod("__<>class", context.JavaBase.javaLangClass.TypeAsSignatureType, Type.EmptyTypes);
+                    FieldBuilder fb = typeBuilder.DefineField("__<>class", context.JavaBase.TypeOfJavaLangClass.TypeAsSignatureType, FieldAttributes.PrivateScope | FieldAttributes.Static);
+                    MethodBuilder mb = DefineHelperMethod("__<>class", context.JavaBase.TypeOfJavaLangClass.TypeAsSignatureType, Type.EmptyTypes);
                     CodeEmitter ilgen2 = context.CodeEmitterFactory.Create(mb);
                     ilgen2.Emit(OpCodes.Ldsfld, fb);
                     CodeEmitterLabel label = ilgen2.DefineLabel();
@@ -165,7 +165,7 @@ namespace IKVM.Runtime
                 throw new InvalidOperationException();
 #else
                 EmitLiveObjectLoad(ilgen, DynamicCallerIDProvider.CreateCallerID(host));
-                context.JavaBase.ikvmInternalCallerID.EmitCheckcast(ilgen);
+                context.JavaBase.TypeOfIkvmInternalCallerID.EmitCheckcast(ilgen);
 #endif
             }
 
@@ -189,7 +189,7 @@ namespace IKVM.Runtime
 
             private void CreateGetCallerID()
             {
-                RuntimeJavaType tw = context.JavaBase.ikvmInternalCallerID;
+                RuntimeJavaType tw = context.JavaBase.TypeOfIkvmInternalCallerID;
                 FieldBuilder callerIDField = typeBuilder.DefineField("__<callerID>", tw.TypeAsSignatureType, FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.SpecialName);
                 MethodBuilder mb = DefineHelperMethod("__<GetCallerID>", tw.TypeAsSignatureType, Type.EmptyTypes);
                 callerIDMethod = mb;
@@ -405,7 +405,7 @@ namespace IKVM.Runtime
                                         nargs = ArrayUtil.Concat(wrapper, args);
 
                                     if (methods[i].HasCallerID)
-                                        nargs = ArrayUtil.Concat(nargs, context.JavaBase.ikvmInternalCallerID);
+                                        nargs = ArrayUtil.Concat(nargs, context.JavaBase.TypeOfIkvmInternalCallerID);
 
                                     foreach (var method in nativeCodeType.GetMethods(BindingFlags.Static | BindingFlags.Public))
                                     {
@@ -1052,7 +1052,7 @@ namespace IKVM.Runtime
             private void AddImplementsAttribute()
             {
                 var interfaces = wrapper.Interfaces;
-                if (wrapper.BaseTypeWrapper == context.JavaBase.javaLangObject)
+                if (wrapper.BaseTypeWrapper == context.JavaBase.TypeOfJavaLangObject)
                 {
                     // We special case classes extending java.lang.Object to optimize the metadata encoding
                     // for anonymous classes that implement an interface.
@@ -1683,7 +1683,7 @@ namespace IKVM.Runtime
                         // are public and so we can get away with replacing all other types with object.
                         argTypes[i + instance] = !args[i].IsUnloadable && (args[i].IsPrimitive || args[i].IsGhost || args[i].IsNonPrimitiveValueType) ? args[i].TypeAsSignatureType : typeof(object);
                     }
-                    argTypes[argTypes.Length - 1] = context.context.JavaBase.ikvmInternalCallerID.TypeAsSignatureType;
+                    argTypes[argTypes.Length - 1] = context.context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
                     Type retType = !mw.ReturnType.IsUnloadable && (mw.ReturnType.IsPrimitive || mw.ReturnType.IsGhost || mw.ReturnType.IsNonPrimitiveValueType) ? mw.ReturnType.TypeAsSignatureType : typeof(object);
                     MethodBuilder mb = tb.DefineMethod("method", MethodAttributes.Public | MethodAttributes.Static, retType, argTypes);
                     context.context.AttributeHelper.HideFromJava(mb);
@@ -2010,7 +2010,7 @@ namespace IKVM.Runtime
                 ilgen.Emit(OpCodes.Ldc_I4_1);
                 ilgen.Emit(OpCodes.Ldc_I4_0);
                 ilgen.Emit(OpCodes.Newobj, context.Resolver.ResolveType(typeof(StackFrame).FullName).GetConstructor(new Type[] { context.Types.Int32, context.Types.Boolean }));
-                var callerID = context.JavaBase.ikvmInternalCallerID.GetMethodWrapper("create", "(Lcli.System.Diagnostics.StackFrame;)Likvm.internal.CallerID;", false);
+                var callerID = context.JavaBase.TypeOfIkvmInternalCallerID.GetMethodWrapper("create", "(Lcli.System.Diagnostics.StackFrame;)Likvm.internal.CallerID;", false);
                 callerID.Link();
                 callerID.EmitCall(ilgen);
                 if (mw.IsStatic)
@@ -2040,7 +2040,7 @@ namespace IKVM.Runtime
                         if (!wrapper.IsInterface)
                         {
                             // look for "magic" interfaces that imply a .NET interface
-                            if (iface.GetClassLoader() == context.JavaBase.javaLangObject.GetClassLoader())
+                            if (iface.GetClassLoader() == context.JavaBase.TypeOfJavaLangObject.GetClassLoader())
                             {
                                 if (iface.Name == "java.lang.Iterable" && !wrapper.ImplementsInterface(context.ClassLoaderFactory.GetJavaTypeFromType(context.Resolver.ResolveType(typeof(System.Collections.IEnumerable).FullName))))
                                 {
@@ -2200,7 +2200,7 @@ namespace IKVM.Runtime
 
             void EmitCallerIDInitialization(CodeEmitter ilGenerator, FieldInfo callerIDField)
             {
-                var tw = context.JavaBase.ikvmInternalCallerID;
+                var tw = context.JavaBase.TypeOfIkvmInternalCallerID;
                 if (tw.InternalsVisibleTo(wrapper))
                 {
                     var create = tw.GetMethodWrapper("create", "(Lcli.System.RuntimeTypeHandle;)Likvm.internal.CallerID;", false);
@@ -2218,7 +2218,7 @@ namespace IKVM.Runtime
 
             internal static TypeBuilder EmitCreateCallerID(RuntimeContext context, TypeBuilder typeBuilder, CodeEmitter ilGenerator)
             {
-                var tw = context.JavaBase.ikvmInternalCallerID;
+                var tw = context.JavaBase.TypeOfIkvmInternalCallerID;
                 var typeCallerID = typeBuilder.DefineNestedType(NestedTypeName.CallerID, TypeAttributes.Sealed | TypeAttributes.NestedPrivate, tw.TypeAsBaseType);
                 var cb = ReflectUtil.DefineConstructor(typeCallerID, MethodAttributes.Assembly, null);
                 var ctorIlgen = context.CodeEmitterFactory.Create(cb);
@@ -2406,12 +2406,12 @@ namespace IKVM.Runtime
 
             internal FieldBuilder DefineDynamicMethodHandleCacheField()
             {
-                return typeBuilder.DefineField("__<>dynamicMethodHandleCache", context.JavaBase.javaLangInvokeMethodHandle.TypeAsSignatureType, FieldAttributes.Static | FieldAttributes.PrivateScope);
+                return typeBuilder.DefineField("__<>dynamicMethodHandleCache", context.JavaBase.TypeOfJavaLangInvokeMethodHandle.TypeAsSignatureType, FieldAttributes.Static | FieldAttributes.PrivateScope);
             }
 
             internal FieldBuilder DefineDynamicMethodTypeCacheField()
             {
-                return typeBuilder.DefineField("__<>dynamicMethodTypeCache", context.JavaBase.javaLangInvokeMethodType.TypeAsSignatureType, FieldAttributes.Static | FieldAttributes.PrivateScope);
+                return typeBuilder.DefineField("__<>dynamicMethodTypeCache", context.JavaBase.TypeOfJavaLangInvokeMethodType.TypeAsSignatureType, FieldAttributes.Static | FieldAttributes.PrivateScope);
             }
 
             internal MethodBuilder DefineDelegateInvokeErrorStub(Type returnType, Type[] parameterTypes)

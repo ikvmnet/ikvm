@@ -66,7 +66,7 @@ namespace IKVM.Runtime
             if (RuntimeVerifierJavaType.IsFaultBlockException(type))
             {
                 RuntimeVerifierJavaType.ClearFaultBlockException(type);
-                type = type.Context.JavaBase.javaLangThrowable;
+                type = type.Context.JavaBase.TypeOfjavaLangThrowable;
             }
 
             return type;

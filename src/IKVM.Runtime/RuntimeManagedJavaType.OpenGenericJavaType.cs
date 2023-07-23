@@ -71,7 +71,7 @@ namespace IKVM.Runtime
                 this.type = type;
             }
 
-            internal override RuntimeJavaType BaseTypeWrapper => type.IsInterface ? null : Context.JavaBase.javaLangObject;
+            internal override RuntimeJavaType BaseTypeWrapper => type.IsInterface ? null : Context.JavaBase.TypeOfJavaLangObject;
 
             internal override Type TypeAsTBD => type;
 

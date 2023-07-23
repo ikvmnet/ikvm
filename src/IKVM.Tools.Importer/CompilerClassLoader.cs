@@ -875,7 +875,7 @@ namespace IKVM.Tools.Importer
                     return null;
                 }
 
-                return context.JavaBase.javaLangObject;
+                return context.JavaBase.TypeOfJavaLangObject;
             }
 
             internal RemapperTypeWrapper(RuntimeContext context, CompilerClassLoader classLoader, IKVM.Tools.Importer.MapXml.Class c, IKVM.Tools.Importer.MapXml.Root map)
@@ -2263,7 +2263,7 @@ namespace IKVM.Tools.Importer
 
             internal void Emit(MapXml.CodeGenContext context, CodeEmitter ilgen)
             {
-                var mwSuppressFillInStackTrace = rcontext.JavaBase.javaLangThrowable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
+                var mwSuppressFillInStackTrace = rcontext.JavaBase.TypeOfjavaLangThrowable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
                 mwSuppressFillInStackTrace.Link();
                 ilgen.Emit(OpCodes.Ldarg_0);
                 ilgen.Emit(OpCodes.Callvirt, rcontext.CompilerFactory.GetTypeMethod);
@@ -2286,7 +2286,7 @@ namespace IKVM.Tools.Importer
                             foreach (var instr in map[i].Code.Instructions)
                             {
                                 var newobj = instr as MapXml.NewObj;
-                                if (newobj != null && newobj.Class != null && context.ClassLoader.LoadClassByName(newobj.Class).IsSubTypeOf(rcontext.JavaBase.javaLangThrowable))
+                                if (newobj != null && newobj.Class != null && context.ClassLoader.LoadClassByName(newobj.Class).IsSubTypeOf(rcontext.JavaBase.TypeOfjavaLangThrowable))
                                     mwSuppressFillInStackTrace.EmitCall(ilgen);
 
                                 instr.Generate(context, ilgen);
@@ -2862,7 +2862,7 @@ namespace IKVM.Tools.Importer
             // the Method interface for delegates and the Annotation annotation for custom attributes)
             if (map != null && options.bootstrap)
             {
-                fakeTypes = new FakeTypes(Context);
+                fakeTypes = Context.FakeTypes;
                 fakeTypes.Create(GetTypeWrapperFactory().ModuleBuilder, this);
             }
 

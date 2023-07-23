@@ -394,7 +394,7 @@ namespace IKVM.Runtime
             }
             if (HasCallerID)
             {
-                temp[len - 1] = DeclaringType.Context.JavaBase.ikvmInternalCallerID.TypeAsSignatureType;
+                temp[len - 1] = DeclaringType.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
             }
             return temp;
         }
@@ -495,7 +495,7 @@ namespace IKVM.Runtime
                 }
 
                 if (HasCallerID)
-                    types[typeLength - 1] = DeclaringType.Context.JavaBase.ikvmInternalCallerID.TypeAsSignatureType;
+                    types[typeLength - 1] = DeclaringType.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
 
                 if (ReturnType != null)
                     ReturnType.Finish();
@@ -594,7 +594,7 @@ namespace IKVM.Runtime
         {
             get
             {
-                return IsProtected && (DeclaringType == DeclaringType.Context.JavaBase.javaLangObject || DeclaringType == DeclaringType.Context.JavaBase.javaLangThrowable) && (Name == StringConstants.CLONE || Name == StringConstants.FINALIZE);
+                return IsProtected && (DeclaringType == DeclaringType.Context.JavaBase.TypeOfJavaLangObject || DeclaringType == DeclaringType.Context.JavaBase.TypeOfjavaLangThrowable) && (Name == StringConstants.CLONE || Name == StringConstants.FINALIZE);
             }
         }
     }

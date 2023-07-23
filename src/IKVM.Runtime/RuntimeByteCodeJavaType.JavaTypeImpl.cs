@@ -1574,7 +1574,7 @@ namespace IKVM.Runtime
                     else
                     {
                         Type argType;
-                        if (tw == tw.Context.JavaBase.javaLangClass)
+                        if (tw == tw.Context.JavaBase.TypeOfJavaLangClass)
                         {
                             argType = tw.Context.Types.Type;
                         }
@@ -2279,7 +2279,7 @@ namespace IKVM.Runtime
                     wrapper = wrapper.BaseTypeWrapper;
                 }
 
-                if (wrapper == wrapper.Context.JavaBase.javaLangObject || wrapper == wrapper.Context.JavaBase.javaLangThrowable)
+                if (wrapper == wrapper.Context.JavaBase.TypeOfJavaLangObject || wrapper == wrapper.Context.JavaBase.TypeOfjavaLangThrowable)
                 {
                     return wrapper.Context.Types.Object.GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Instance);
                 }
@@ -2688,7 +2688,7 @@ namespace IKVM.Runtime
                     if (baseMethods[index] != null && ReferenceEquals(m.Name, StringConstants.FINALIZE) && ReferenceEquals(m.Signature, StringConstants.SIG_VOID))
                     {
                         baseFinalize = GetBaseFinalizeMethod(wrapper.BaseTypeWrapper);
-                        if (baseMethods[index][0].DeclaringType == wrapper.Context.JavaBase.javaLangObject)
+                        if (baseMethods[index][0].DeclaringType == wrapper.Context.JavaBase.TypeOfJavaLangObject)
                         {
                             // This type is the first type in the hierarchy to introduce a finalize method
                             // (other than the one in java.lang.Object obviously), so we need to override

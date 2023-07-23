@@ -193,7 +193,7 @@ namespace IKVM.Runtime
                 {
                     if (type == context.Types.String)
                     {
-                        return context.JavaBase.javaLangString;
+                        return context.JavaBase.TypeOfJavaLangString;
                     }
                     else if (type == context.Types.Boolean)
                     {
@@ -229,7 +229,7 @@ namespace IKVM.Runtime
                     }
                     else if (type == context.Types.Type)
                     {
-                        return context.JavaBase.javaLangClass;
+                        return context.JavaBase.TypeOfJavaLangClass;
                     }
                     else if (type.IsEnum)
                     {
@@ -357,11 +357,11 @@ namespace IKVM.Runtime
                     {
                         return java.lang.Double.valueOf(0D);
                     }
-                    else if (mw.ReturnType == Context.JavaBase.javaLangString)
+                    else if (mw.ReturnType == Context.JavaBase.TypeOfJavaLangString)
                     {
                         return "";
                     }
-                    else if (mw.ReturnType == Context.JavaBase.javaLangClass)
+                    else if (mw.ReturnType == Context.JavaBase.TypeOfJavaLangClass)
                     {
                         return (java.lang.Class)typeof(ikvm.@internal.__unspecified);
                     }

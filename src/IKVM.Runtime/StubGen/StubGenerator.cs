@@ -116,7 +116,7 @@ namespace IKVM.StubGen
                     // MethodHandle doesn't have any native methods with an empty argument list
                     // (or at least it throws a NPE when it examines the signature of a method without any parameters when it
                     // accesses argtypes.tail.tail)
-                    if (mw.Name == "<init>" || (tw == context.JavaBase.javaLangInvokeMethodHandle && (mw.Modifiers & Modifiers.Native) == 0))
+                    if (mw.Name == "<init>" || (tw == context.JavaBase.TypeOfJavaLangInvokeMethodHandle && (mw.Modifiers & Modifiers.Native) == 0))
                     {
                         m = writer.AddMethod(mw.Modifiers, mw.Name, mw.Signature.Replace('.', '/'));
                         CodeAttribute code = new CodeAttribute(writer);
@@ -241,7 +241,7 @@ namespace IKVM.StubGen
                     if (fw.IsPublic || fw.IsProtected || isSerialVersionUID || includeNonPublicMembers)
                     {
                         object constant = null;
-                        if (fw.GetField() != null && fw.GetField().IsLiteral && (fw.FieldTypeWrapper.IsPrimitive || fw.FieldTypeWrapper == context.JavaBase.javaLangString))
+                        if (fw.GetField() != null && fw.GetField().IsLiteral && (fw.FieldTypeWrapper.IsPrimitive || fw.FieldTypeWrapper == context.JavaBase.TypeOfJavaLangString))
                         {
                             constant = fw.GetField().GetRawConstantValue();
                             if (fw.GetField().FieldType.IsEnum)
@@ -752,7 +752,7 @@ namespace IKVM.StubGen
                 bes.WriteByte((byte)'D');
                 bes.WriteUInt16(classFile.AddDouble(0));
             }
-            else if (type == context.JavaBase.javaLangString)
+            else if (type == context.JavaBase.TypeOfJavaLangString)
             {
                 bes.WriteByte((byte)'s');
                 bes.WriteUInt16(classFile.AddUtf8(""));
@@ -763,7 +763,7 @@ namespace IKVM.StubGen
                 bes.WriteUInt16(classFile.AddUtf8("L" + type.Name.Replace('.', '/') + ";"));
                 bes.WriteUInt16(classFile.AddUtf8("__unspecified"));
             }
-            else if (type == context.JavaBase.javaLangClass)
+            else if (type == context.JavaBase.TypeOfJavaLangClass)
             {
                 bes.WriteByte((byte)'c');
                 bes.WriteUInt16(classFile.AddUtf8("Likvm/internal/__unspecified;"));

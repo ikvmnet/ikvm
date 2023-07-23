@@ -62,7 +62,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeJavaType BaseTypeWrapper
         {
-            get { return Context.JavaBase.javaLangObject; }
+            get { return Context.JavaBase.TypeOfJavaLangObject; }
         }
 
         internal override RuntimeClassLoader GetClassLoader()
@@ -77,7 +77,7 @@ namespace IKVM.Runtime
 
         protected override void LazyPublishMembers()
         {
-            var mw = new RuntimeSimpleCallJavaMethod(this, "clone", "()Ljava.lang.Object;", GetCloneMethod(Context), Context.JavaBase.javaLangObject, Array.Empty<RuntimeJavaType>(), Modifiers.Public, MemberFlags.HideFromReflection, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
+            var mw = new RuntimeSimpleCallJavaMethod(this, "clone", "()Ljava.lang.Object;", GetCloneMethod(Context), Context.JavaBase.TypeOfJavaLangObject, Array.Empty<RuntimeJavaType>(), Modifiers.Public, MemberFlags.HideFromReflection, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
             mw.Link();
             SetMethods(new RuntimeJavaMethod[] { mw });
             SetFields(Array.Empty<RuntimeJavaField>());
@@ -107,8 +107,8 @@ namespace IKVM.Runtime
                 if (interfaces == null)
                 {
                     RuntimeJavaType[] tw = new RuntimeJavaType[2];
-                    tw[0] = Context.JavaBase.javaLangCloneable;
-                    tw[1] = Context.JavaBase.javaIoSerializable;
+                    tw[0] = Context.JavaBase.TypeOfJavaLangCloneable;
+                    tw[1] = Context.JavaBase.TypeOfJavaIoSerializable;
                     interfaces = tw;
                 }
                 return interfaces;

@@ -76,15 +76,15 @@ namespace IKVM.Tools.Importer
             javaLangNoClassDefFoundErrorConstructor.Link();
             javaLangThrowable_getMessage = bootClassLoader.TryLoadClassByName("java.lang.Throwable").GetMethodWrapper("getMessage", "()Ljava.lang.String;", false);
             javaLangThrowable_getMessage.Link();
-            javaLangClass_getMethod = context.JavaBase.javaLangClass.GetMethodWrapper("getMethod", "(Ljava.lang.String;[Ljava.lang.Class;)Ljava.lang.reflect.Method;", false);
+            javaLangClass_getMethod = context.JavaBase.TypeOfJavaLangClass.GetMethodWrapper("getMethod", "(Ljava.lang.String;[Ljava.lang.Class;)Ljava.lang.reflect.Method;", false);
             javaLangClass_getMethod.Link();
             invocationHandlerClass = bootClassLoader.TryLoadClassByName("java.lang.reflect.InvocationHandler");
             invokeMethod = invocationHandlerClass.GetMethodWrapper("invoke", "(Ljava.lang.Object;Ljava.lang.reflect.Method;[Ljava.lang.Object;)Ljava.lang.Object;", false);
             proxyConstructor = proxyClass.GetMethodWrapper("<init>", "(Ljava.lang.reflect.InvocationHandler;)V", false);
             proxyConstructor.Link();
-            hashCodeMethod = context.JavaBase.javaLangObject.GetMethodWrapper("hashCode", "()I", false);
-            equalsMethod = context.JavaBase.javaLangObject.GetMethodWrapper("equals", "(Ljava.lang.Object;)Z", false);
-            toStringMethod = context.JavaBase.javaLangObject.GetMethodWrapper("toString", "()Ljava.lang.String;", false);
+            hashCodeMethod = context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper("hashCode", "()I", false);
+            equalsMethod = context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper("equals", "(Ljava.lang.Object;)Z", false);
+            toStringMethod = context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper("toString", "()Ljava.lang.String;", false);
         }
 
         internal void Create(CompilerClassLoader loader, string proxy)
@@ -316,7 +316,7 @@ namespace IKVM.Tools.Importer
                 {
                     context.Boxer.EmitUnbox(ilgen, returnType, true);
                 }
-                else if (returnType != context.JavaBase.javaLangObject)
+                else if (returnType != context.JavaBase.TypeOfJavaLangObject)
                 {
                     ilgen.EmitCastclass(returnType.TypeAsSignatureType);
                 }
@@ -361,7 +361,7 @@ namespace IKVM.Tools.Importer
         void CreateStaticInitializer(TypeBuilder tb, List<ProxyMethod> methods, CompilerClassLoader loader)
         {
             var ilgen = loader.Context.CodeEmitterFactory.Create(ReflectUtil.DefineTypeInitializer(tb, loader));
-            var callerID = ilgen.DeclareLocal(loader.Context.JavaBase.ikvmInternalCallerID.TypeAsSignatureType);
+            var callerID = ilgen.DeclareLocal(loader.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType);
             var tbCallerID = RuntimeByteCodeJavaType.FinishContext.EmitCreateCallerID(loader.Context, tb, ilgen);
             ilgen.Emit(OpCodes.Stloc, callerID);
             // HACK we shouldn't create the nested type here (the outer type must be created first)
@@ -373,7 +373,7 @@ namespace IKVM.Tools.Importer
                 ilgen.Emit(OpCodes.Ldstr, method.mw.Name);
                 var parameters = method.mw.GetParameters();
                 ilgen.EmitLdc_I4(parameters.Length);
-                ilgen.Emit(OpCodes.Newarr, loader.Context.JavaBase.javaLangClass.TypeAsArrayType);
+                ilgen.Emit(OpCodes.Newarr, loader.Context.JavaBase.TypeOfJavaLangClass.TypeAsArrayType);
                 for (int i = 0; i < parameters.Length; i++)
                 {
                     ilgen.Emit(OpCodes.Dup);

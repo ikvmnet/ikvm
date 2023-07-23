@@ -175,7 +175,7 @@ namespace IKVM.Runtime
                 || tw == context.PrimitiveJavaTypeFactory.FLOAT
                 || tw == context.PrimitiveJavaTypeFactory.DOUBLE
                 || tw == context.PrimitiveJavaTypeFactory.VOID
-                || tw == context.JavaBase.javaLangObject;
+                || tw == context.JavaBase.TypeOfJavaLangObject;
         }
 
         internal int SlotCount(RuntimeJavaType[] parameters)

@@ -130,7 +130,7 @@ namespace IKVM.Runtime
                 {
                     RuntimeJavaMethod mw;
                     if (method.IsVirtual
-                        && (mw = Context.JavaBase.javaLangObject.GetMethodWrapper(method.Name, method.Signature, false)) != null
+                        && (mw = Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(method.Name, method.Signature, false)) != null
                         && mw.IsVirtual
                         && mw.IsFinal)
                     {
@@ -380,7 +380,7 @@ namespace IKVM.Runtime
         {
             get
             {
-                return this.IsSubTypeOf(Context.JavaBase.javaIoSerializable);
+                return this.IsSubTypeOf(Context.JavaBase.TypeOfJavaIoSerializable);
             }
         }
 

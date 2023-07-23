@@ -80,7 +80,7 @@ namespace IKVM.Runtime
             {
                 // except when they're sealed.
                 if (type.IsSealed)
-                    return context.JavaBase.javaLangObject;
+                    return context.JavaBase.TypeOfJavaLangObject;
 
                 return context.ClassLoaderFactory.GetJavaTypeFromType(type);
             }

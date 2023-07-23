@@ -73,7 +73,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeJavaType BaseTypeWrapper
         {
-            get { return Context.JavaBase.javaLangObject; }
+            get { return Context.JavaBase.TypeOfJavaLangObject; }
         }
 
         internal override RuntimeJavaType[] Interfaces
@@ -109,7 +109,7 @@ namespace IKVM.Runtime
                 }
                 else if (mi.Name == "writeReplace")
                 {
-                    methods.Add(new RuntimeTypicalJavaMethod(this, "writeReplace", "()Ljava.lang.Object;", mi, Context.JavaBase.javaLangObject, Array.Empty<RuntimeJavaType>(), Modifiers.Private | Modifiers.Final, MemberFlags.None));
+                    methods.Add(new RuntimeTypicalJavaMethod(this, "writeReplace", "()Ljava.lang.Object;", mi, Context.JavaBase.TypeOfJavaLangObject, Array.Empty<RuntimeJavaType>(), Modifiers.Private | Modifiers.Final, MemberFlags.None));
                 }
             }
 

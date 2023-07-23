@@ -148,7 +148,7 @@ namespace IKVM.Runtime
 
         internal static bool IsIntrinsic(RuntimeJavaMethod mw)
         {
-            return intrinsics.ContainsKey(new IntrinsicKey(mw)) && mw.DeclaringType.GetClassLoader() == mw.DeclaringType.Context.JavaBase.javaLangObject.GetClassLoader();
+            return intrinsics.ContainsKey(new IntrinsicKey(mw)) && mw.DeclaringType.GetClassLoader() == mw.DeclaringType.Context.JavaBase.TypeOfJavaLangObject.GetClassLoader();
         }
 
         internal static bool Emit(EmitIntrinsicContext context)
@@ -221,7 +221,7 @@ namespace IKVM.Runtime
         private static bool IsSafeForGetClassOptimization(RuntimeJavaType tw)
         {
             // because of ghost arrays, we don't optimize if both types are either java.lang.Object or an array
-            return tw != tw.Context.JavaBase.javaLangObject && !tw.IsArray;
+            return tw != tw.Context.JavaBase.TypeOfJavaLangObject && !tw.IsArray;
         }
 
         private static bool Float_floatToRawIntBits(EmitIntrinsicContext eic)
@@ -332,11 +332,11 @@ namespace IKVM.Runtime
                 if (MatchInvokeStatic(eic, 1, "java.lang.ClassLoader", "getClassLoader", "(Ljava.lang.Class;)Ljava.lang.ClassLoader;"))
                 {
                     eic.PatchOpCode(1, NormalizedByteCode.__nop);
-                    mw = eic.Context.TypeWrapper.Context.JavaBase.ikvmInternalCallerID.GetMethodWrapper("getCallerClassLoader", "()Ljava.lang.ClassLoader;", false);
+                    mw = eic.Context.TypeWrapper.Context.JavaBase.TypeOfIkvmInternalCallerID.GetMethodWrapper("getCallerClassLoader", "()Ljava.lang.ClassLoader;", false);
                 }
                 else
                 {
-                    mw = eic.Context.TypeWrapper.Context.JavaBase.ikvmInternalCallerID.GetMethodWrapper("getCallerClass", "()Ljava.lang.Class;", false);
+                    mw = eic.Context.TypeWrapper.Context.JavaBase.TypeOfIkvmInternalCallerID.GetMethodWrapper("getCallerClass", "()Ljava.lang.Class;", false);
                 }
                 mw.Link();
                 mw.EmitCallvirt(eic.Emitter);
@@ -405,7 +405,7 @@ namespace IKVM.Runtime
         {
             eic.Emitter.Emit(OpCodes.Pop);
             eic.Emitter.Emit(OpCodes.Ldnull);
-            var mw = eic.Context.TypeWrapper.Context.JavaBase.javaLangClass.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);
+            var mw = eic.Context.TypeWrapper.Context.JavaBase.TypeOfJavaLangClass.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);
             mw.Link();
             mw.EmitNewobj(eic.Emitter);
             return true;
@@ -1009,7 +1009,7 @@ namespace IKVM.Runtime
         static void EmitConsumeUnsafe(EmitIntrinsicContext eic)
         {
 #if IMPORTER
-            if (eic.Caller.DeclaringType.GetClassLoader() == eic.Context.TypeWrapper.Context.JavaBase.javaLangObject.GetClassLoader())
+            if (eic.Caller.DeclaringType.GetClassLoader() == eic.Context.TypeWrapper.Context.JavaBase.TypeOfJavaLangObject.GetClassLoader())
             {
                 // we're compiling the core library (which is obviously trusted), so we don't need to check
                 // if we really have an Unsafe instance
@@ -1024,7 +1024,7 @@ namespace IKVM.Runtime
 
         static RuntimeJavaField GetUnsafeField(EmitIntrinsicContext eic, ClassFile.ConstantPoolItemFieldref field)
         {
-            if (eic.Caller.DeclaringType.GetClassLoader() != eic.Method.DeclaringType.Context.JavaBase.javaLangObject.GetClassLoader())
+            if (eic.Caller.DeclaringType.GetClassLoader() != eic.Method.DeclaringType.Context.JavaBase.TypeOfJavaLangObject.GetClassLoader())
             {
                 // this code does not solve the general problem and assumes non-hostile, well behaved static initializers
                 // so we only support the core class library

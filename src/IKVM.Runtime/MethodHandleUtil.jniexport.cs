@@ -193,7 +193,7 @@ namespace IKVM.Runtime
                 DynamicMethodBuilder dm = new DynamicMethodBuilder(context, "VoidAdapter", type.changeReturnType(global::java.lang.Void.TYPE), null, null, null, null, true);
                 Type targetDelegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(type);
                 dm.Ldarg(0);
-                dm.EmitCheckcast(context.JavaBase.javaLangInvokeMethodHandle);
+                dm.EmitCheckcast(context.JavaBase.TypeOfJavaLangInvokeMethodHandle);
                 dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MethodHandle).GetField("form", BindingFlags.Instance | BindingFlags.NonPublic));
                 dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.LambdaForm).GetField("vmentry", BindingFlags.Instance | BindingFlags.NonPublic));
                 dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic));
@@ -212,7 +212,7 @@ namespace IKVM.Runtime
             {
                 FinishTypes(type);
                 DynamicMethodBuilder dm = new DynamicMethodBuilder(context, "InvokeExact", type, typeof(java.lang.invoke.MethodHandle), null, null, null, false);
-                Type targetDelegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(type.insertParameterTypes(0, context.JavaBase.javaLangInvokeMethodHandle.ClassObject));
+                Type targetDelegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(type.insertParameterTypes(0, context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject));
                 dm.ilgen.Emit(OpCodes.Ldarg_0);
                 dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MethodHandle).GetField("form", BindingFlags.Instance | BindingFlags.NonPublic));
                 dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.LambdaForm).GetField("vmentry", BindingFlags.Instance | BindingFlags.NonPublic));
@@ -253,7 +253,7 @@ namespace IKVM.Runtime
                 {
                     retType.EmitConvStackTypeToSignatureType(dm.ilgen, null);
                 }
-                else if (!retType.IsPrimitive && retType != context.JavaBase.javaLangObject)
+                else if (!retType.IsPrimitive && retType != context.JavaBase.TypeOfJavaLangObject)
                 {
                     dm.EmitCheckcast(retType);
                 }
@@ -287,7 +287,7 @@ namespace IKVM.Runtime
                 DynamicMethodBuilder dm = new DynamicMethodBuilder(context, "DirectMethodHandle." + mn.getName() + type, type,
                     typeof(Container<,>).MakeGenericType(typeof(object), typeof(IKVM.Runtime.InvokeCache<>).MakeGenericType(targetDelegateType)), null, null, null, true);
                 dm.Ldarg(0);
-                dm.EmitCheckcast(context.JavaBase.javaLangInvokeMethodHandle);
+                dm.EmitCheckcast(context.JavaBase.TypeOfJavaLangInvokeMethodHandle);
                 switch (mn.getName())
                 {
                     case "invokeExact":
@@ -352,7 +352,7 @@ namespace IKVM.Runtime
                 DynamicMethodBuilder dm = new DynamicMethodBuilder(context, "MemberName:" + mw.DeclaringType.Name + "::" + mw.Name + mw.Signature, type, null, mw.HasCallerID ? DynamicCallerIDProvider.Instance : null, null, owner, true);
                 for (int i = 0, count = type.parameterCount(); i < count; i++)
                 {
-                    if (i == 0 && !mw.IsStatic && (tw.IsGhost || tw.IsNonPrimitiveValueType || tw.IsRemapped) && (!mw.IsConstructor || tw != context.JavaBase.javaLangString))
+                    if (i == 0 && !mw.IsStatic && (tw.IsGhost || tw.IsNonPrimitiveValueType || tw.IsRemapped) && (!mw.IsConstructor || tw != context.JavaBase.TypeOfJavaLangString))
                     {
                         if (tw.IsGhost || tw.IsNonPrimitiveValueType)
                         {
@@ -367,7 +367,7 @@ namespace IKVM.Runtime
                             {
                                 dm.EmitCastclass(tw.TypeAsBaseType);
                             }
-                            else if (tw != context.JavaBase.cliSystemObject)
+                            else if (tw != context.JavaBase.TypeOfCliSystemObject)
                             {
                                 dm.EmitCheckcast(tw);
                             }
@@ -411,7 +411,7 @@ namespace IKVM.Runtime
                     else
                     {
                         // we can re-use the implementations from cli.System.Object (even though the object may not in-fact extend cli.System.Object)
-                        context.JavaBase.cliSystemObject.GetMethodWrapper(mw.Name, mw.Signature, false).EmitCall(dm.ilgen);
+                        context.JavaBase.TypeOfCliSystemObject.GetMethodWrapper(mw.Name, mw.Signature, false).EmitCall(dm.ilgen);
                     }
                 }
                 else if (doDispatch && !mw.IsStatic)

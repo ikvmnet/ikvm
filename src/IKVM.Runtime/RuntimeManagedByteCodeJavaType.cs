@@ -140,7 +140,7 @@ namespace IKVM.Runtime
             else if (type.BaseType == null)
             {
                 // System.Object must appear to be derived from java.lang.Object
-                return context.JavaBase.javaLangObject;
+                return context.JavaBase.TypeOfJavaLangObject;
             }
             else
             {
@@ -150,7 +150,7 @@ namespace IKVM.Runtime
                     if (attr.Type == context.Types.Object)
                         return null;
                     else
-                        return context.JavaBase.javaLangObject;
+                        return context.JavaBase.TypeOfJavaLangObject;
                 }
                 else if (context.ClassLoaderFactory.IsRemappedType(type.BaseType))
                 {
@@ -287,7 +287,7 @@ namespace IKVM.Runtime
             var attr = Context.AttributeHelper.GetImplements(type);
             if (attr == null)
             {
-                if (BaseTypeWrapper == Context.JavaBase.javaLangObject)
+                if (BaseTypeWrapper == Context.JavaBase.TypeOfJavaLangObject)
                     return GetImplementedInterfacesAsTypeWrappers(Context, type);
 
                 return Array.Empty<RuntimeJavaType>();
@@ -582,7 +582,7 @@ namespace IKVM.Runtime
 #if EXPORTER
             return type.FullName == "ikvm.internal.CallerID";
 #else
-            return type == context.JavaBase.ikvmInternalCallerID.TypeAsSignatureType;
+            return type == context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
 #endif
         }
 

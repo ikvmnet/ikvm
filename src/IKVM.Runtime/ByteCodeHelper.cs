@@ -347,7 +347,7 @@ namespace IKVM.Runtime
                         global::java.lang.invoke.MethodType mt = null;
                         DynamicLoadMethodType(ref mt, sig, callerID);
                         // HACK linkMethodHandleConstant is broken for MethodHandle.invoke[Exact]
-                        if (kind == (int)ReferenceKind.InvokeVirtual && refc == JVM.Context.JavaBase.javaLangInvokeMethodHandle.ClassObject)
+                        if (kind == (int)ReferenceKind.InvokeVirtual && refc == JVM.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject)
                         {
                             switch (name)
                             {
@@ -1104,11 +1104,11 @@ namespace IKVM.Runtime
 #else
             RuntimeJavaType exceptionTypeWrapper = RuntimeJavaType.FromClass(exceptionClass);
             mode &= ~MapFlags.NoRemapping;
-            if (exceptionTypeWrapper.IsSubTypeOf(JVM.Context.JavaBase.cliSystemException))
+            if (exceptionTypeWrapper.IsSubTypeOf(JVM.Context.JavaBase.TypeOfCliSystemException))
             {
                 mode |= MapFlags.NoRemapping;
             }
-            Type exceptionType = exceptionTypeWrapper == JVM.Context.JavaBase.javaLangThrowable ? typeof(System.Exception) : exceptionTypeWrapper.TypeAsBaseType;
+            Type exceptionType = exceptionTypeWrapper == JVM.Context.JavaBase.TypeOfjavaLangThrowable ? typeof(System.Exception) : exceptionTypeWrapper.TypeAsBaseType;
             return (Exception)JVM.Context.ByteCodeHelperMethods.mapException.MakeGenericMethod(exceptionType).Invoke(null, new object[] { x, mode });
 #endif
         }

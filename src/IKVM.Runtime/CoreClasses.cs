@@ -33,17 +33,17 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
 
-        public readonly RuntimeJavaType cliSystemObject;
-        public readonly RuntimeJavaType cliSystemException;
-        public readonly RuntimeJavaType ikvmInternalCallerID;
-        public readonly RuntimeJavaType javaIoSerializable;
-        public readonly RuntimeJavaType javaLangObject;
-        public readonly RuntimeJavaType javaLangString;
-        public readonly RuntimeJavaType javaLangClass;
-        public readonly RuntimeJavaType javaLangCloneable;
-        public readonly RuntimeJavaType javaLangThrowable;
-        public readonly RuntimeJavaType javaLangInvokeMethodHandle;
-        public readonly RuntimeJavaType javaLangInvokeMethodType;
+        RuntimeJavaType typeOfCliSystemObject;
+        RuntimeJavaType typeOfCliSystemException;
+        RuntimeJavaType typeOfIkvmInternalCallerID;
+        RuntimeJavaType typeOfJavaIoSerializable;
+        RuntimeJavaType typeOfJavaLangObject;
+        RuntimeJavaType typeOfJavaLangString;
+        RuntimeJavaType typeOfJavaLangClass;
+        RuntimeJavaType typeOfJavaLangCloneable;
+        RuntimeJavaType typeOfjavaLangThrowable;
+        RuntimeJavaType typeOfJavaLangInvokeMethodHandle;
+        RuntimeJavaType typeOfJavaLangInvokeMethodType;
 
         /// <summary>
         /// Initializes a new instance.
@@ -52,18 +52,29 @@ namespace IKVM.Runtime
         public CoreClasses(RuntimeContext context)
         {
             this.context = context;
-            cliSystemObject = context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(context.Types.Object);
-            cliSystemException = context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(context.Types.Exception);
-            ikvmInternalCallerID = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.CallerID");
-            javaIoSerializable = context.ClassLoaderFactory.LoadClassCritical("java.io.Serializable");
-            javaLangObject = context.ClassLoaderFactory.LoadClassCritical("java.lang.Object");
-            javaLangString = context.ClassLoaderFactory.LoadClassCritical("java.lang.String");
-            javaLangClass = context.ClassLoaderFactory.LoadClassCritical("java.lang.Class");
-            javaLangCloneable = context.ClassLoaderFactory.LoadClassCritical("java.lang.Cloneable");
-            javaLangThrowable = context.ClassLoaderFactory.LoadClassCritical("java.lang.Throwable");
-            javaLangInvokeMethodHandle = context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandle");
-            javaLangInvokeMethodType = context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodType");
         }
+
+        public RuntimeJavaType TypeOfCliSystemObject => typeOfCliSystemObject ??= context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(context.Types.Object);
+
+        public RuntimeJavaType TypeOfCliSystemException => typeOfCliSystemException ??= context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(context.Types.Exception);
+
+        public RuntimeJavaType TypeOfIkvmInternalCallerID => typeOfIkvmInternalCallerID ??= context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.CallerID");
+
+        public RuntimeJavaType TypeOfJavaIoSerializable => typeOfJavaIoSerializable ??= context.ClassLoaderFactory.LoadClassCritical("java.io.Serializable");
+
+        public RuntimeJavaType TypeOfJavaLangObject => typeOfJavaLangObject ??= context.ClassLoaderFactory.LoadClassCritical("java.lang.Object");
+
+        public RuntimeJavaType TypeOfJavaLangString => typeOfJavaLangString ??= context.ClassLoaderFactory.LoadClassCritical("java.lang.String");
+
+        public RuntimeJavaType TypeOfJavaLangClass => typeOfJavaLangClass ??= context.ClassLoaderFactory.LoadClassCritical("java.lang.Class");
+
+        public RuntimeJavaType TypeOfJavaLangCloneable => typeOfJavaLangCloneable ??= context.ClassLoaderFactory.LoadClassCritical("java.lang.Cloneable");
+
+        public RuntimeJavaType TypeOfjavaLangThrowable => typeOfjavaLangThrowable ??= context.ClassLoaderFactory.LoadClassCritical("java.lang.Throwable");
+
+        public RuntimeJavaType TypeOfJavaLangInvokeMethodHandle => typeOfJavaLangInvokeMethodHandle ??= context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandle");
+
+        public RuntimeJavaType TypeOfJavaLangInvokeMethodType => typeOfJavaLangInvokeMethodType ??= context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodType");
 
     }
 

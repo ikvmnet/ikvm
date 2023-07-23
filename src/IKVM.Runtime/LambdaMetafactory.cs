@@ -189,9 +189,9 @@ namespace IKVM.Runtime
             // we're not implementing the interfaces recursively (because we don't care about .NET Compact anymore),
             // but should we decide to do that, we'd need to somehow communicate to AnonymousTypeWrapper what the 'real' interface is
             tb.AddInterfaceImplementation(interfaceType.TypeAsBaseType);
-            if (serializable && Array.IndexOf(markers, context.Context.JavaBase.javaIoSerializable) == -1)
+            if (serializable && Array.IndexOf(markers, context.Context.JavaBase.TypeOfJavaIoSerializable) == -1)
             {
-                tb.AddInterfaceImplementation(context.Context.JavaBase.javaIoSerializable.TypeAsBaseType);
+                tb.AddInterfaceImplementation(context.Context.JavaBase.TypeOfJavaIoSerializable.TypeAsBaseType);
             }
             foreach (RuntimeJavaType marker in markers)
             {
@@ -761,7 +761,7 @@ namespace IKVM.Runtime
                     {
                         ilgen.EmitLdarg(i);
                     }
-                    context.Context.JavaBase.javaLangObject.GetMethodWrapper(mw.Name, mw.Signature, false).EmitCallvirt(ilgen);
+                    context.Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(mw.Name, mw.Signature, false).EmitCallvirt(ilgen);
                     ilgen.Emit(OpCodes.Ret);
                     ilgen.DoEmit();
                 }
@@ -935,7 +935,7 @@ namespace IKVM.Runtime
         private static bool IsObjectMethod(RuntimeJavaMethod mw)
         {
             RuntimeJavaMethod objectMethod;
-            return (objectMethod = mw.DeclaringType.Context.JavaBase.javaLangObject.GetMethodWrapper(mw.Name, mw.Signature, false)) != null && objectMethod.IsPublic;
+            return (objectMethod = mw.DeclaringType.Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(mw.Name, mw.Signature, false)) != null && objectMethod.IsPublic;
         }
 
         private static bool MatchSignatures(RuntimeJavaMethod interfaceMethod, ClassFile.ConstantPoolItemMethodType samMethodType)

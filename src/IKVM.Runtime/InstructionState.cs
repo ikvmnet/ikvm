@@ -299,12 +299,12 @@ namespace IKVM.Runtime
             if (RuntimeVerifierJavaType.IsFaultBlockException(type1))
             {
                 RuntimeVerifierJavaType.ClearFaultBlockException(type1);
-                return FindCommonBaseType(context, context.JavaBase.javaLangThrowable, type2);
+                return FindCommonBaseType(context, context.JavaBase.TypeOfjavaLangThrowable, type2);
             }
             if (RuntimeVerifierJavaType.IsFaultBlockException(type2))
             {
                 RuntimeVerifierJavaType.ClearFaultBlockException(type2);
-                return FindCommonBaseType(context, type1, context.JavaBase.javaLangThrowable);
+                return FindCommonBaseType(context, type1, context.JavaBase.TypeOfjavaLangThrowable);
             }
             if (type1.IsPrimitive || type2.IsPrimitive)
             {
@@ -353,7 +353,7 @@ namespace IKVM.Runtime
                 RuntimeJavaType baseType;
                 if (elem1.IsPrimitive || elem2.IsPrimitive || elem1.IsNonPrimitiveValueType || elem2.IsNonPrimitiveValueType)
                 {
-                    baseType = context.JavaBase.javaLangObject;
+                    baseType = context.JavaBase.TypeOfJavaLangObject;
                     rank--;
                     if (rank == 0)
                     {
@@ -385,7 +385,7 @@ namespace IKVM.Runtime
                 // sure that the reference actually implements the interface.
                 // NOTE the ECMA CLI spec also specifies this interface merging algorithm, so we can't
                 // really do anything more clever than this.
-                return context.JavaBase.javaLangObject;
+                return context.JavaBase.TypeOfJavaLangObject;
             }
             Stack<RuntimeJavaType> st1 = new Stack<RuntimeJavaType>();
             Stack<RuntimeJavaType> st2 = new Stack<RuntimeJavaType>();
@@ -403,7 +403,7 @@ namespace IKVM.Runtime
             {
                 return context.VerifierJavaTypeFactory.Unloadable;
             }
-            RuntimeJavaType type = context.JavaBase.javaLangObject;
+            RuntimeJavaType type = context.JavaBase.TypeOfJavaLangObject;
             for (; ; )
             {
                 t1 = st1.Count > 0 ? st1.Pop() : null;
@@ -729,7 +729,7 @@ namespace IKVM.Runtime
             if (RuntimeVerifierJavaType.IsFaultBlockException(type))
             {
                 RuntimeVerifierJavaType.ClearFaultBlockException(type);
-                type = context.JavaBase.javaLangThrowable;
+                type = context.JavaBase.TypeOfjavaLangThrowable;
             }
             return type;
         }
@@ -783,7 +783,7 @@ namespace IKVM.Runtime
             {
                 // throw at the end of the method
             }
-            else if (baseType == baseType.Context.JavaBase.javaLangObject)
+            else if (baseType == baseType.Context.JavaBase.TypeOfJavaLangObject)
             {
                 return type;
             }
@@ -938,7 +938,7 @@ namespace IKVM.Runtime
             {
                 StackCopyOnWrite();
                 changed = true;
-                stack[0] = context.JavaBase.javaLangThrowable;
+                stack[0] = context.JavaBase.TypeOfjavaLangThrowable;
             }
         }
 

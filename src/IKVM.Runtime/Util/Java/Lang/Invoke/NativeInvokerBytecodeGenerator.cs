@@ -278,7 +278,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             switch (ptype.name())
             {
                 case "L_TYPE":
-                    if (VerifyType.isNullConversion(context.JavaBase.javaLangObject.ClassObject, pclass, false))
+                    if (VerifyType.isNullConversion(context.JavaBase.TypeOfJavaLangObject.ClassObject, pclass, false))
                     {
                         //if (PROFILE_LEVEL > 0)
                         //    emitReferenceCast(Object.class, arg);
@@ -303,7 +303,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
         private void emitReferenceCast(Class cls, object arg)
         {
             // [IKVM] handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
-            if (cls != context.JavaBase.cliSystemObject.ClassObject)
+            if (cls != context.JavaBase.TypeOfCliSystemObject.ClassObject)
             {
                 RuntimeJavaType.FromClass(cls).EmitCheckcast(ilgen);
             }
@@ -334,7 +334,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
             internal override RuntimeJavaType BaseTypeWrapper
             {
-                get { return Context.JavaBase.javaLangObject; }
+                get { return Context.JavaBase.TypeOfJavaLangObject; }
             }
         }
 
@@ -461,7 +461,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                 //assert(target != null) : name.exprString();
                 //mv.visitLdcInsn(constantPlaceholder(target));
                 EmitConstant(target);
-                emitReferenceCast(context.JavaBase.javaLangInvokeMethodHandle.ClassObject, target);
+                emitReferenceCast(context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject, target);
             }
             else
             {
@@ -824,7 +824,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             // load exception class
             emitPushArgument(invoker, 1);
             ilgen.Emit(OpCodes.Ldloc, exception);
-            context.JavaBase.javaLangClass.GetMethodWrapper("isInstance", "(Ljava.lang.Object;)Z", false).EmitCall(ilgen);
+            context.JavaBase.TypeOfJavaLangClass.GetMethodWrapper("isInstance", "(Ljava.lang.Object;)Z", false).EmitCall(ilgen);
             CodeEmitterLabel L_rethrow = ilgen.DefineLabel();
             ilgen.EmitBrfalse(L_rethrow);
 
@@ -833,7 +833,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             emitPushArgument(invoker, 2);
             ilgen.Emit(OpCodes.Ldloc, exception);
             emitPushArguments(args, 1); // skip 1st argument: method handle
-            MethodType catcherType = type.insertParameterTypes(0, context.JavaBase.javaLangThrowable.ClassObject);
+            MethodType catcherType = type.insertParameterTypes(0, context.JavaBase.TypeOfjavaLangThrowable.ClassObject);
             EmitInvokeBasic(catcherType.basicType());
             if (returnValue != null)
             {
@@ -1118,12 +1118,12 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
         private bool IsMethodHandleLinkTo(java.lang.invoke.MemberName member)
         {
-            return member.getDeclaringClass() == context.JavaBase.javaLangInvokeMethodHandle.ClassObject && member.getName().StartsWith("linkTo", StringComparison.Ordinal);
+            return member.getDeclaringClass() == context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject && member.getName().StartsWith("linkTo", StringComparison.Ordinal);
         }
 
         private bool IsMethodHandleInvokeBasic(java.lang.invoke.MemberName member)
         {
-            return member.getDeclaringClass() == context.JavaBase.javaLangInvokeMethodHandle.ClassObject && member.getName() == "invokeBasic";
+            return member.getDeclaringClass() == context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject && member.getName() == "invokeBasic";
         }
 
         private RuntimeJavaMethod GetMethodWrapper(java.lang.invoke.MemberName member)
