@@ -150,10 +150,10 @@ namespace IKVM.Runtime
             // these are the types that may not be used as a type argument when instantiating a generic type
             return type == context.Types.Void
 #if NETFRAMEWORK
-                || type == context.Resolver.ResolveType(typeof(ArgIterator).FullName)
+                || type == context.Resolver.ResolveCoreType(typeof(ArgIterator).FullName)
 #endif
-                || type == context.Resolver.ResolveType(typeof(RuntimeArgumentHandle).FullName)
-                || type == context.Resolver.ResolveType(typeof(TypedReference).FullName)
+                || type == context.Resolver.ResolveCoreType(typeof(RuntimeArgumentHandle).FullName)
+                || type == context.Resolver.ResolveCoreType(typeof(TypedReference).FullName)
                 || type.ContainsGenericParameters
                 || type.IsByRef;
         }
@@ -1626,7 +1626,7 @@ namespace IKVM.Runtime
         // return the constructor used for automagic .NET serialization
         internal virtual MethodBase GetSerializationConstructor()
         {
-            return TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { context.Resolver.ResolveType(typeof(System.Runtime.Serialization.SerializationInfo).FullName), context.Resolver.ResolveType(typeof(System.Runtime.Serialization.StreamingContext).FullName) }, null);
+            return TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.SerializationInfo).FullName), context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.StreamingContext).FullName) }, null);
         }
 
         internal virtual MethodBase GetBaseSerializationConstructor()

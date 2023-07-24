@@ -79,7 +79,7 @@ namespace IKVM.Runtime
 
         Type Import(System.Type type)
         {
-            return context.Resolver.ResolveType(type.FullName);
+            return context.Resolver.ResolveCoreType(type.FullName);
         }
 
         public Type Object => typeOfObject ??= Import(typeof(System.Object));

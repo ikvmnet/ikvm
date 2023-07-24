@@ -104,7 +104,7 @@ namespace IKVM.StubGen
             AddAnnotations(writer, writer, tw.TypeAsBaseType);
             AddTypeAnnotations(writer, writer, tw, tw.GetRawTypeAnnotations());
             writer.AddStringAttribute("IKVM.NET.Assembly", GetAssemblyName(tw));
-            if (tw.TypeAsBaseType.IsDefined(context.Resolver.ResolveType(typeof(ObsoleteAttribute).FullName), false))
+            if (tw.TypeAsBaseType.IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false))
                 writer.AddAttribute(new DeprecatedAttribute(writer));
 
             foreach (var mw in tw.GetMethods())
@@ -183,7 +183,7 @@ namespace IKVM.StubGen
                             }
                             m.AddAttribute(attrib);
                         }
-                        if (mb.IsDefined(context.Resolver.ResolveType(typeof(ObsoleteAttribute).FullName), false)
+                        if (mb.IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false)
                             // HACK the instancehelper methods are marked as Obsolete (to direct people toward the ikvm.extensions methods instead)
                             // but in the Java world most of them are not deprecated (and to keep the Japi results clean we need to reflect this)
                             && (!mb.Name.StartsWith("instancehelper_")
@@ -255,7 +255,7 @@ namespace IKVM.StubGen
                         {
                             f.AddAttribute(writer.MakeStringAttribute("Signature", sig));
                         }
-                        if (fw.GetField() != null && fw.GetField().IsDefined(context.Resolver.ResolveType(typeof(ObsoleteAttribute).FullName), false))
+                        if (fw.GetField() != null && fw.GetField().IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false))
                         {
                             f.AddAttribute(new DeprecatedAttribute(writer));
                         }
@@ -584,7 +584,7 @@ namespace IKVM.StubGen
         private int GetObsoleteCount(MethodBase mb)
         {
 #if EXPORTER
-            return mb.__GetCustomAttributes(context.Resolver.ResolveType(typeof(ObsoleteAttribute).FullName), false).Count;
+            return mb.__GetCustomAttributes(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false).Count;
 #else
 			return mb.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length;
 #endif

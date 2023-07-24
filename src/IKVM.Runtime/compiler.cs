@@ -122,7 +122,7 @@ namespace IKVM.Runtime
 
         public MethodInfo GetTypeMethod => getTypeMethod ??= context.Types.Object.GetMethod("GetType", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 
-        public MethodInfo KeepAliveMethod => keepAliveMethod ??= context.Resolver.ResolveType(typeof(GC).FullName).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, new Type[] { context.Types.Object }, null);
+        public MethodInfo KeepAliveMethod => keepAliveMethod ??= context.Resolver.ResolveCoreType(typeof(GC).FullName).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, new Type[] { context.Types.Object }, null);
 
         public RuntimeJavaMethod GetClassFromTypeHandle => getClassFromTypeHandle ??= context.ClassLoaderFactory.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;)Ljava.lang.Class;", false);
 
@@ -1758,7 +1758,7 @@ namespace IKVM.Runtime
                         }
                     case NormalizedByteCode.__multianewarray:
                         {
-                            CodeEmitterLocal localArray = ilGenerator.UnsafeAllocTempLocal(finish.Context.Resolver.ResolveType(typeof(int).FullName).MakeArrayType());
+                            CodeEmitterLocal localArray = ilGenerator.UnsafeAllocTempLocal(finish.Context.Resolver.ResolveCoreType(typeof(int).FullName).MakeArrayType());
                             CodeEmitterLocal localInt = ilGenerator.UnsafeAllocTempLocal(finish.Context.Types.Int32);
                             ilGenerator.EmitLdc_I4(instr.Arg2);
                             ilGenerator.Emit(OpCodes.Newarr, finish.Context.Types.Int32);

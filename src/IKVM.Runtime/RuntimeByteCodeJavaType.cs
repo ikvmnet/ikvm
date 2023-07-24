@@ -671,7 +671,7 @@ namespace IKVM.Runtime
                             {
                                 foreach (IKVM.Tools.Importer.MapXml.Attribute attr in method.Attributes)
                                 {
-                                    if (Context.StaticCompiler.GetType(classLoader, attr.Type) == Context.Resolver.ResolveType(typeof(System.Runtime.InteropServices.DllImportAttribute).FullName))
+                                    if (Context.StaticCompiler.GetType(classLoader, attr.Type) == Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.DllImportAttribute).FullName))
                                     {
                                         return true;
                                     }

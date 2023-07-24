@@ -36,7 +36,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        Type ResolveType(string typeName);
+        Type ResolveCoreType(string typeName);
 
         /// <summary>
         /// Resolves the known Java base assembly.

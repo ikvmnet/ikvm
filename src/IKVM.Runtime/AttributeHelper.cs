@@ -317,7 +317,7 @@ namespace IKVM.Runtime
             GetAttributeArgsAndTypes(loader, attr, out argTypes, out args);
             if (attr.Type != null)
             {
-                var t = context.Resolver.ResolveType(attr.Type);
+                var t = context.Resolver.ResolveCoreType(attr.Type);
                 var ci = t.GetConstructor(argTypes);
                 if (ci == null)
                     throw new InvalidOperationException($"Constructor missing: {attr.Type}::<init>{attr.Sig}");
@@ -399,8 +399,8 @@ namespace IKVM.Runtime
         {
             if (editorBrowsableNever == null)
             {
-                var typeofEditorBrowsableAttribute = context.Resolver.ResolveType(typeof(EditorBrowsableAttribute).FullName);
-                var typeofEditorBrowsableState = context.Resolver.ResolveType(typeof(EditorBrowsableState).FullName);
+                var typeofEditorBrowsableAttribute = context.Resolver.ResolveCoreType(typeof(EditorBrowsableAttribute).FullName);
+                var typeofEditorBrowsableState = context.Resolver.ResolveCoreType(typeof(EditorBrowsableState).FullName);
                 var ctor = (ConstructorInfo)typeofEditorBrowsableAttribute.__CreateMissingMethod(ConstructorInfo.ConstructorName, CallingConventions.Standard | CallingConventions.HasThis, null, default, new Type[] { typeofEditorBrowsableState }, null);
                 editorBrowsableNever = CustomAttributeBuilder.__FromBlob(ctor, new byte[] { 01, 00, 01, 00, 00, 00, 00, 00 });
             }
@@ -410,7 +410,7 @@ namespace IKVM.Runtime
 
         internal void SetCompilerGenerated(TypeBuilder tb)
         {
-            compilerGeneratedAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor(Type.EmptyTypes), Array.Empty<object>());
+            compilerGeneratedAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor(Type.EmptyTypes), Array.Empty<object>());
             tb.SetCustomAttribute(compilerGeneratedAttribute);
         }
 
@@ -432,7 +432,7 @@ namespace IKVM.Runtime
         internal void SetDeprecatedAttribute(MethodBuilder mb)
         {
             if (deprecatedAttribute == null)
-                deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
+                deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
 
             mb.SetCustomAttribute(deprecatedAttribute);
         }
@@ -441,7 +441,7 @@ namespace IKVM.Runtime
         {
             if (deprecatedAttribute == null)
             {
-                deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
+                deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
             }
 
             tb.SetCustomAttribute(deprecatedAttribute);
@@ -450,7 +450,7 @@ namespace IKVM.Runtime
         internal void SetDeprecatedAttribute(FieldBuilder fb)
         {
             if (deprecatedAttribute == null)
-                deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
+                deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
 
             fb.SetCustomAttribute(deprecatedAttribute);
         }
@@ -459,7 +459,7 @@ namespace IKVM.Runtime
         {
             if (deprecatedAttribute == null)
             {
-                deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
+                deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
             }
             pb.SetCustomAttribute(deprecatedAttribute);
         }
@@ -468,7 +468,7 @@ namespace IKVM.Runtime
         {
             if (exceptions != null && exceptions.Length != 0)
             {
-                throwsAttribute ??= TypeOfThrowsAttribute.GetConstructor(new Type[] { context.Resolver.ResolveType(typeof(string).FullName).MakeArrayType() });
+                throwsAttribute ??= TypeOfThrowsAttribute.GetConstructor(new Type[] { context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType() });
                 exceptions = UnicodeUtil.EscapeInvalidSurrogates(exceptions);
                 mb.SetCustomAttribute(new CustomAttributeBuilder(throwsAttribute, new object[] { exceptions }));
             }
@@ -593,7 +593,7 @@ namespace IKVM.Runtime
                 interfaces[i] = UnicodeUtil.EscapeInvalidSurrogates(ifaceWrappers[i].Name);
 
             if (implementsAttribute == null)
-                implementsAttribute = TypeOfImplementsAttribute.GetConstructor(new Type[] { context.Resolver.ResolveType(typeof(string).FullName).MakeArrayType() });
+                implementsAttribute = TypeOfImplementsAttribute.GetConstructor(new Type[] { context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType() });
 
             typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(implementsAttribute, new object[] { interfaces }));
         }
@@ -693,7 +693,7 @@ namespace IKVM.Runtime
             }
 
             var parameters = mb.GetParameters();
-            if (parameters.Length > 0 && parameters[parameters.Length - 1].IsDefined(context.Resolver.ResolveType(typeof(ParamArrayAttribute).FullName), false))
+            if (parameters.Length > 0 && parameters[parameters.Length - 1].IsDefined(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName), false))
                 modifiers |= Modifiers.VarArgs;
 
             return new ExModifiers(modifiers, false);
@@ -831,7 +831,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                lineNumberTableAttribute1 ??= TypeOfLineNumberTableAttribute.GetConstructor(new Type[] { context.Resolver.ResolveType(typeof(byte).FullName).MakeArrayType() });
+                lineNumberTableAttribute1 ??= TypeOfLineNumberTableAttribute.GetConstructor(new Type[] { context.Resolver.ResolveCoreType(typeof(byte).FullName).MakeArrayType() });
                 con = lineNumberTableAttribute1;
                 arg = writer.ToArray();
             }
@@ -916,7 +916,7 @@ namespace IKVM.Runtime
 
         internal void SetParamArrayAttribute(ParameterBuilder pb)
         {
-            paramArrayAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveType(typeof(ParamArrayAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
+            paramArrayAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
             pb.SetCustomAttribute(paramArrayAttribute);
         }
 
@@ -1176,7 +1176,7 @@ namespace IKVM.Runtime
             var list = new List<AssemblyName>();
             foreach (var cad in CustomAttributeData.GetCustomAttributes(assembly))
             {
-                if (cad.Constructor.DeclaringType == context.Resolver.ResolveType(typeof(InternalsVisibleToAttribute).FullName))
+                if (cad.Constructor.DeclaringType == context.Resolver.ResolveCoreType(typeof(InternalsVisibleToAttribute).FullName))
                 {
                     try
                     {
@@ -1275,13 +1275,13 @@ namespace IKVM.Runtime
 
         internal void SetRuntimeCompatibilityAttribute(AssemblyBuilder assemblyBuilder)
         {
-            var runtimeCompatibilityAttribute = context.Resolver.ResolveType(typeof(RuntimeCompatibilityAttribute).FullName);
+            var runtimeCompatibilityAttribute = context.Resolver.ResolveCoreType(typeof(RuntimeCompatibilityAttribute).FullName);
             assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(runtimeCompatibilityAttribute.GetConstructor(Type.EmptyTypes), Array.Empty<object>(), new PropertyInfo[] { runtimeCompatibilityAttribute.GetProperty("WrapNonExceptionThrows") }, new object[] { true }, Array.Empty<FieldInfo>(), Array.Empty<object>()));
         }
 
         internal void SetInternalsVisibleToAttribute(AssemblyBuilder assemblyBuilder, string assemblyName)
         {
-            var internalsVisibleToAttribute = context.Resolver.ResolveType(typeof(InternalsVisibleToAttribute).FullName);
+            var internalsVisibleToAttribute = context.Resolver.ResolveCoreType(typeof(InternalsVisibleToAttribute).FullName);
             var cab = new CustomAttributeBuilder(internalsVisibleToAttribute.GetConstructor(new Type[] { context.Types.String }), new object[] { assemblyName });
             assemblyBuilder.SetCustomAttribute(cab);
         }

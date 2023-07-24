@@ -1108,7 +1108,7 @@ namespace IKVM.Runtime
                 }
                 if (fld.IsTransient)
                 {
-                    CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveType(typeof(NonSerializedAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
+                    CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveCoreType(typeof(NonSerializedAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
                     field.SetCustomAttribute(transientAttrib);
                 }
 #if IMPORTER
@@ -1528,7 +1528,7 @@ namespace IKVM.Runtime
                                                     }
                                                 }
                                             }
-                                            attributeUsageAttribute = new CustomAttributeBuilder(context.Resolver.ResolveType(typeof(AttributeUsageAttribute).FullName).GetConstructor(new Type[] { context.Resolver.ResolveType(typeof(AttributeTargets).FullName) }), new object[] { targets });
+                                            attributeUsageAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName).GetConstructor(new Type[] { context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName) }), new object[] { targets });
                                         }
                                     }
                                 }
@@ -1554,7 +1554,7 @@ namespace IKVM.Runtime
                         }
                     }
 
-                    defineConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, new Type[] { context.Resolver.ResolveType(typeof(object).FullName).MakeArrayType() });
+                    defineConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, new Type[] { context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType() });
                     context.AttributeHelper.SetEditorBrowsableNever(defineConstructor);
                 }
 
@@ -1833,7 +1833,7 @@ namespace IKVM.Runtime
                                     pb.SetGetMethod(getter);
                                     // TODO implement the getter method
                                     ilgen = context.CodeEmitterFactory.Create(getter);
-                                    ilgen.ThrowException(context.Resolver.ResolveType(typeof(NotImplementedException).FullName));
+                                    ilgen.ThrowException(context.Resolver.ResolveCoreType(typeof(NotImplementedException).FullName));
                                     ilgen.DoEmit();
                                 }
                             }

@@ -1710,11 +1710,11 @@ namespace IKVM.Runtime
 
                 MethodInfo UnwrapLocalRefMethod => LocalRefStructType.GetMethod("UnwrapLocalRef");
 
-                MethodInfo WriteLineMethod => context.Resolver.ResolveType(typeof(Console).FullName).GetMethod("WriteLine", new Type[] { context.Types.Object });
+                MethodInfo WriteLineMethod => context.Resolver.ResolveCoreType(typeof(Console).FullName).GetMethod("WriteLine", new Type[] { context.Types.Object });
 
-                MethodInfo MonitorEnterMethod => context.Resolver.ResolveType(typeof(System.Threading.Monitor).FullName).GetMethod("Enter", new Type[] { context.Types.Object });
+                MethodInfo MonitorEnterMethod => context.Resolver.ResolveCoreType(typeof(System.Threading.Monitor).FullName).GetMethod("Enter", new Type[] { context.Types.Object });
 
-                MethodInfo MonitorExitMethod => context.Resolver.ResolveType(typeof(System.Threading.Monitor).FullName).GetMethod("Exit", new Type[] { context.Types.Object });
+                MethodInfo MonitorExitMethod => context.Resolver.ResolveCoreType(typeof(System.Threading.Monitor).FullName).GetMethod("Exit", new Type[] { context.Types.Object });
 
                 internal void Generate(RuntimeByteCodeJavaType.FinishContext context, CodeEmitter ilGenerator, RuntimeByteCodeJavaType wrapper, RuntimeJavaMethod mw, TypeBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, RuntimeJavaType[] args, bool thruProxy)
                 {
@@ -1978,7 +1978,7 @@ namespace IKVM.Runtime
                 }
                 ilgen.Emit(OpCodes.Ldc_I4_1);
                 ilgen.Emit(OpCodes.Ldc_I4_0);
-                ilgen.Emit(OpCodes.Newobj, context.Resolver.ResolveType(typeof(StackFrame).FullName).GetConstructor(new Type[] { context.Types.Int32, context.Types.Boolean }));
+                ilgen.Emit(OpCodes.Newobj, context.Resolver.ResolveCoreType(typeof(StackFrame).FullName).GetConstructor(new Type[] { context.Types.Int32, context.Types.Boolean }));
                 var callerID = context.JavaBase.TypeOfIkvmInternalCallerID.GetMethodWrapper("create", "(Lcli.System.Diagnostics.StackFrame;)Likvm.internal.CallerID;", false);
                 callerID.Link();
                 callerID.EmitCall(ilgen);
@@ -2011,16 +2011,16 @@ namespace IKVM.Runtime
                             // look for "magic" interfaces that imply a .NET interface
                             if (iface.GetClassLoader() == context.JavaBase.TypeOfJavaLangObject.GetClassLoader())
                             {
-                                if (iface.Name == "java.lang.Iterable" && !wrapper.ImplementsInterface(context.ClassLoaderFactory.GetJavaTypeFromType(context.Resolver.ResolveType(typeof(System.Collections.IEnumerable).FullName))))
+                                if (iface.Name == "java.lang.Iterable" && !wrapper.ImplementsInterface(context.ClassLoaderFactory.GetJavaTypeFromType(context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerable).FullName))))
                                 {
                                     var enumeratorType = context.ClassLoaderFactory.GetBootstrapClassLoader().TryLoadClassByName("ikvm.lang.IterableEnumerator");
                                     if (enumeratorType != null)
                                     {
-                                        typeBuilder.AddInterfaceImplementation(context.Resolver.ResolveType(typeof(System.Collections.IEnumerable).FullName));
+                                        typeBuilder.AddInterfaceImplementation(context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerable).FullName));
                                         // FXBUG we're using the same method name as the C# compiler here because both the .NET and Mono implementations of Xml serialization depend on this method name
-                                        var mb = typeBuilder.DefineMethod("System.Collections.IEnumerable.GetEnumerator", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, context.Resolver.ResolveType(typeof(System.Collections.IEnumerator).FullName), Type.EmptyTypes);
+                                        var mb = typeBuilder.DefineMethod("System.Collections.IEnumerable.GetEnumerator", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerator).FullName), Type.EmptyTypes);
                                         context.AttributeHelper.HideFromJava(mb);
-                                        typeBuilder.DefineMethodOverride(mb, context.Resolver.ResolveType(typeof(System.Collections.IEnumerable).FullName).GetMethod("GetEnumerator"));
+                                        typeBuilder.DefineMethodOverride(mb, context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerable).FullName).GetMethod("GetEnumerator"));
                                         var ilgen = context.CodeEmitterFactory.Create(mb);
                                         ilgen.Emit(OpCodes.Ldarg_0);
                                         var mw = enumeratorType.GetMethodWrapper("<init>", "(Ljava.lang.Iterable;)V", false);
@@ -2264,7 +2264,7 @@ namespace IKVM.Runtime
                 int id = nestedTypeBuilders == null ? 0 : nestedTypeBuilders.Count;
                 var tb = typeBuilder.DefineNestedType(NestedTypeName.ThreadLocal + id, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, threadLocal.TypeAsBaseType);
                 var fb = tb.DefineField("field", context.Types.Object, FieldAttributes.Private | FieldAttributes.Static);
-                fb.SetCustomAttribute(new CustomAttributeBuilder(context.Resolver.ResolveType(typeof(ThreadStaticAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]));
+                fb.SetCustomAttribute(new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ThreadStaticAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]));
 
                 var mbGet = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, context.Types.Object, Type.EmptyTypes);
                 var ilgen = mbGet.GetILGenerator();

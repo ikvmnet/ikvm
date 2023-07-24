@@ -86,7 +86,7 @@ namespace IKVM.Runtime
             else
             {
                 long v = ((IConvertible)v1).ToInt64(null) | ((IConvertible)v2).ToInt64(null);
-                switch (Type.GetTypeCode(context.Resolver.ResolveType(v1.GetType().FullName)))
+                switch (Type.GetTypeCode(context.Resolver.ResolveCoreType(v1.GetType().FullName)))
                 {
                     case TypeCode.SByte:
                         return (sbyte)v;

@@ -1195,7 +1195,7 @@ namespace IKVM.Runtime
             internal CompiledAnnotation(RuntimeContext context, Type type)
             {
                 this.context = context ?? throw new ArgumentNullException(nameof(context));
-                constructor = type.GetConstructor(new Type[] { context.Resolver.ResolveType(typeof(object).FullName).MakeArrayType() });
+                constructor = type.GetConstructor(new Type[] { context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType() });
             }
 
             private CustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)

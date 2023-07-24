@@ -60,7 +60,7 @@ namespace IKVM.Tools.Exporter
             /// </summary>
             /// <param name="typeName"></param>
             /// <returns></returns>
-            public Type ResolveType(string typeName)
+            public Type ResolveCoreType(string typeName)
             {
                 foreach (var assembly in compiler.Universe.GetAssemblies())
                     if (assembly.GetType(typeName) is Type t)
