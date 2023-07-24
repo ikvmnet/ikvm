@@ -164,16 +164,27 @@ namespace IKVM.Tools.Exporter
             }
             else
             {
+                Assembly runtimeAssembly = null;
+                Assembly baseAssembly = null;
+
                 if (options.Bootstrap)
                 {
-                    compiler = new StaticCompiler(universe, assemblyResolver, assemblyResolver.LoadFile(typeof(IkvmExporterTool).Assembly.Location));
+                    var runtimeAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) == "IKVM.Runtime");
+                    if (runtimeAssemblyPath != null)
+                        runtimeAssembly = assemblyResolver.LoadFile(runtimeAssemblyPath);
+
+                    if (runtimeAssembly == null || runtimeAssembly.__IsMissing)
+                    {
+                        Console.Error.WriteLine("Error: IKVM.Runtime not found.");
+                        return 1;
+                    }
+
+                    compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
                     context = new RuntimeContext(new ManagedResolver(compiler, null), true, compiler);
                     context.ClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader(context));
                 }
                 else
                 {
-                    Assembly runtimeAssembly = null;
-                    Assembly baseAssembly = null;
 
                     var runtimeAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) == "IKVM.Runtime");
                     if (runtimeAssemblyPath != null)

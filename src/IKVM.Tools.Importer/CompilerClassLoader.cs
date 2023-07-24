@@ -2888,7 +2888,7 @@ namespace IKVM.Tools.Importer
             // if we're compiling the core class library, generate the "fake" generic types
             // that represent the not-really existing types (i.e. the Java enums that represent .NET enums,
             // the Method interface for delegates and the Annotation annotation for custom attributes)
-            if (map != null && options.bootstrap)
+            if (options.bootstrap)
             {
                 fakeTypes = Context.FakeTypes;
                 fakeTypes.Create(GetTypeWrapperFactory().ModuleBuilder, this);

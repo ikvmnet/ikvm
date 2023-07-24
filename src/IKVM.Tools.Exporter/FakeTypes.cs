@@ -21,6 +21,8 @@
   jeroen@frijters.net
   
 */
+using System;
+
 using IKVM.Runtime;
 
 using Type = IKVM.Reflection.Type;
@@ -34,17 +36,15 @@ namespace IKVM.Tools.Exporter
         readonly RuntimeContext context;
         readonly Type genericType;
 
-        class Holder<T> { }
-
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <exception cref="System.ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
         public FakeTypes(RuntimeContext context)
         {
-            this.context = context ?? throw new System.ArgumentNullException(nameof(context));
-            genericType = context.StaticCompiler.Universe.Import(typeof(Holder<>));
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
+            genericType = context.Resolver.ResolveRuntimeType("IKVM.Runtime.ValueObject`1");
         }
 
         internal Type GetAttributeType(Type type)

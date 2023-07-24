@@ -20,7 +20,7 @@ namespace IKVM.Tools.Exporter.Tests
     {
 
         [TestMethod]
-        public async Task Can_stub_library()
+        public async Task CanStubCoreLibrary()
         {
             var options = new IkvmExporterOptions()
             {
@@ -34,11 +34,11 @@ namespace IKVM.Tools.Exporter.Tests
 
 #if NETFRAMEWORK
             options.Libraries.Add(RuntimeEnvironment.GetRuntimeDirectory());
-            options.Assembly = typeof(System.Linq.Enumerable).Assembly.Location;
+            options.Assembly = typeof(object).Assembly.Location;
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #else
             options.References.AddRange(DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()));
-            options.Assembly = typeof(System.Linq.Enumerable).Assembly.Location;
+            options.Assembly = typeof(object).Assembly.Location;
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #endif
 
