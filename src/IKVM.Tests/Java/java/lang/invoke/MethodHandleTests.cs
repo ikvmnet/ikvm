@@ -3,6 +3,8 @@
 using global::java.lang;
 using global::java.lang.invoke;
 
+using IKVM.Runtime;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Tests.Java.java.lang.invoke
@@ -16,6 +18,7 @@ namespace IKVM.Tests.Java.java.lang.invoke
         [Ignore("#276")]
         public void CanInvokeVirtualMethodExact()
         {
+            JVM.EnsureInitialized();
             var lookup = MethodHandles.lookup();
             var mt = MethodType.methodType((Class)typeof(string), new[] { (Class)typeof(char), (Class)typeof(char) });
             var mh = lookup.findVirtual((Class)typeof(string), "replace", mt);
@@ -27,6 +30,7 @@ namespace IKVM.Tests.Java.java.lang.invoke
         [Ignore("#276")]
         public void CanInvokeVirtualMethodWithArguments()
         {
+            JVM.EnsureInitialized();
             var lookup = MethodHandles.lookup();
             var mt = MethodType.methodType((Class)typeof(string), new[] { (Class)typeof(char), (Class)typeof(char) });
             var mh = lookup.findVirtual((Class)typeof(string), "replace", mt);
@@ -36,6 +40,7 @@ namespace IKVM.Tests.Java.java.lang.invoke
         [TestMethod]
         public void CanInvokeStaticVarArgsMethod()
         {
+            JVM.EnsureInitialized();
             var lookup = MethodHandles.lookup();
             var mt = MethodType.methodType((Class)typeof(global::java.util.List), new[] { (Class)typeof(object[]) });
             var mh = lookup.findStatic(typeof(global::java.util.Arrays), "asList", mt);
@@ -48,6 +53,7 @@ namespace IKVM.Tests.Java.java.lang.invoke
         [Ignore("#276")]
         public void CanReverseArguments()
         {
+            JVM.EnsureInitialized();
             var lookup = MethodHandles.lookup();
             var mt = MethodType.methodType((Class)typeof(string), new[] { (Class)typeof(char), (Class)typeof(char) });
             var mh = lookup.findVirtual((Class)typeof(string), "replace", mt);

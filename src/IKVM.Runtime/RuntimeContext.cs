@@ -9,7 +9,7 @@ using IKVM.Tools.Importer;
 using IKVM.Tools.Exporter;
 #endif
 
-#if IMPORTER ==false
+#if IMPORTER == false
 using IKVM.StubGen;
 #endif
 
@@ -101,7 +101,7 @@ namespace IKVM.Runtime
         /// <typeparam name="T"></typeparam>
         /// <param name="create"></param>
         /// <returns></returns>
-        public T GetOrCreateSingleton<T>(Func<T> create) => (T)singletons.GetOrAdd(typeof(T), () => create());
+        public T GetOrCreateSingleton<T>(Func<T> create) => (T)singletons.GetOrAdd(typeof(T), _ => create());
 
         /// <summary>
         /// Gets the <see cref="IManagedTypeResolver"/> associated with this instance of the runtime.

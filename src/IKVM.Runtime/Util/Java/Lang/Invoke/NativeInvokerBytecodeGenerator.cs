@@ -93,17 +93,27 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
         }
 
-        private NativeInvokerBytecodeGenerator(RuntimeContext context, java.lang.invoke.LambdaForm lambdaForm, global::java.lang.invoke.MethodType invokerType)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="lambdaForm"></param>
+        /// <param name="invokerType"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="BailoutException"></exception>
+        NativeInvokerBytecodeGenerator(RuntimeContext context, java.lang.invoke.LambdaForm lambdaForm, global::java.lang.invoke.MethodType invokerType)
         {
-            if (invokerType != invokerType.basicType())
-            {
-                throw new BailoutException(Bailout.NotBasicType, invokerType);
-            }
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
             this.lambdaForm = lambdaForm;
             this.invokerType = invokerType;
+
+            if (invokerType != invokerType.basicType())
+                throw new BailoutException(Bailout.NotBasicType, invokerType);
+
             this.delegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(invokerType);
-            MethodInfo mi = context.MethodHandleUtil.GetDelegateInvokeMethod(delegateType);
-            Type[] paramTypes = MethodHandleUtil.GetParameterTypes(typeof(object[]), mi);
+            var mi = context.MethodHandleUtil.GetDelegateInvokeMethod(delegateType);
+            var paramTypes = MethodHandleUtil.GetParameterTypes(typeof(object[]), mi);
+
             // HACK the code we generate is not verifiable (known issue: locals aren't typed correctly), so we stick the DynamicMethod into mscorlib (a security critical assembly)
             this.dm = new DynamicMethod(lambdaForm.debugName, mi.ReturnType, paramTypes, typeof(object).Module, true);
             this.ilgen = context.CodeEmitterFactory.Create(this.dm);

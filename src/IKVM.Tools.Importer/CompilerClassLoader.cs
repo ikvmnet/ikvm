@@ -2738,16 +2738,18 @@ namespace IKVM.Tools.Importer
             }
 
             Tracer.Info(Tracer.Compiler, "Constructing compiler");
-            RuntimeAssemblyClassLoader[] referencedAssemblies = new RuntimeAssemblyClassLoader[references.Count];
+            var referencedAssemblies = new RuntimeAssemblyClassLoader[references.Count];
             for (int i = 0; i < references.Count; i++)
             {
                 var acl = context.AssemblyClassLoaderFactory.FromAssembly(references[i]);
                 if (Array.IndexOf(referencedAssemblies, acl) != -1)
-                {
                     compiler.IssueMessage(options, Message.DuplicateAssemblyReference, acl.MainAssembly.FullName);
-                }
 
                 referencedAssemblies[i] = acl;
+
+                // if reference is to base assembly, set it explicitly for resolution
+                if (compiler.baseAssembly == null && options.bootstrap == false && IsBaseAssembly(compiler, acl.MainAssembly))
+                    compiler.baseAssembly = acl.MainAssembly;
             }
 
             loader = new CompilerClassLoader(context, referencedAssemblies, options, options.path, options.targetIsModule, options.assembly, h);
@@ -2793,8 +2795,8 @@ namespace IKVM.Tools.Importer
                     context.ClassLoaderFactory.SetBootstrapClassLoader(loader);
             }
 
-            // If we do not yet have a reference to the core assembly and we are not compiling the core assembly,
-            // try to find the core assembly by looking at the assemblies that the runtime references
+            // If we do not yet have a reference to the base assembly and we are not compiling the base assembly,
+            // try to find the base assembly by looking at the assemblies that the runtime references
             var baseAssembly = compiler.baseAssembly;
             if (baseAssembly == null && options.bootstrap == false)
             {
@@ -2804,13 +2806,15 @@ namespace IKVM.Tools.Importer
 
                     try
                     {
-                        asm = LoadReferencedAssembly(compiler, Path.Combine(compiler.runtimeAssembly.Location, "..", name.Name + ".dll"));
+                        var path = Path.Combine(Path.GetDirectoryName(compiler.runtimeAssembly.Location), name.Name + ".dll");
+                        if (File.Exists(path))
+                            asm = LoadReferencedAssembly(compiler, path);
                     }
                     catch (FileNotFoundException)
                     {
                     }
 
-                    if (asm != null && IsCoreAssembly(compiler, asm))
+                    if (asm != null && IsBaseAssembly(compiler, asm))
                     {
                         RuntimeAssemblyClassLoader.PreloadExportedAssemblies(context.StaticCompiler, asm);
                         compiler.baseAssembly = asm;
@@ -2845,13 +2849,14 @@ namespace IKVM.Tools.Importer
 
             if (options.bootstrap == false)
             {
+                loader.fakeTypes = context.FakeTypes;
                 loader.fakeTypes.Load(context.Resolver.ResolveBaseAssembly());
             }
 
             return 0;
         }
 
-        static bool IsCoreAssembly(StaticCompiler compiler, Assembly asm)
+        static bool IsBaseAssembly(StaticCompiler compiler, Assembly asm)
         {
             return asm.IsDefined(compiler.GetRuntimeType("IKVM.Attributes.RemappedClassAttribute"), false);
         }
