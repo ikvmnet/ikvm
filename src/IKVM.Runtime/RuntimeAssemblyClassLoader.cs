@@ -461,23 +461,25 @@ namespace IKVM.Runtime
             {
                 using (Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
                 {
-                    BinaryReader rdr = new BinaryReader(stream);
-                    int assemblyCount = rdr.ReadInt32();
+                    var rdr = new BinaryReader(stream);
+                    var assemblyCount = rdr.ReadInt32();
                     for (int i = 0; i < assemblyCount; i++)
                     {
-                        string assemblyName = rdr.ReadString();
-                        int typeCount = rdr.ReadInt32();
+                        var assemblyName = rdr.ReadString();
+                        var typeCount = rdr.ReadInt32();
                         if (typeCount != 0)
                         {
                             for (int j = 0; j < typeCount; j++)
-                            {
                                 rdr.ReadInt32();
-                            }
+
                             try
                             {
-                                compiler.LoadFile(assembly.Location + "/../" + new AssemblyName(assemblyName).Name + ".dll");
+                                compiler.LoadFile(Path.Combine(Path.GetDirectoryName(assembly.Location), new AssemblyName(assemblyName).Name + ".dll"));
                             }
-                            catch { }
+                            catch
+                            {
+
+                            }
                         }
                     }
                 }

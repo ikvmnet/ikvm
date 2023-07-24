@@ -21,7 +21,6 @@
   jeroen@frijters.net
   
 */
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -535,7 +534,7 @@ namespace IKVM.Tools.Importer
             }
 
             // invoke the launcher main method
-            var launchMethod = Context.StaticCompiler.GetRuntimeType("IKVM.Runtime.Launcher").GetMethod("Run");
+            var launchMethod = Context.Resolver.ResolveRuntimeType("IKVM.Runtime.Launcher").GetMethod("Run");
             ilgen.Emit(OpCodes.Call, launchMethod);
             ilgen.Emit(OpCodes.Ret);
 
@@ -2748,7 +2747,7 @@ namespace IKVM.Tools.Importer
                 referencedAssemblies[i] = acl;
 
                 // if reference is to base assembly, set it explicitly for resolution
-                if (compiler.baseAssembly == null && options.bootstrap == false && IsBaseAssembly(compiler, acl.MainAssembly))
+                if (compiler.baseAssembly == null && options.bootstrap == false && IsBaseAssembly(context, acl.MainAssembly))
                     compiler.baseAssembly = acl.MainAssembly;
             }
 
@@ -2797,8 +2796,7 @@ namespace IKVM.Tools.Importer
 
             // If we do not yet have a reference to the base assembly and we are not compiling the base assembly,
             // try to find the base assembly by looking at the assemblies that the runtime references
-            var baseAssembly = compiler.baseAssembly;
-            if (baseAssembly == null && options.bootstrap == false)
+            if (compiler.baseAssembly == null && options.bootstrap == false)
             {
                 foreach (var name in compiler.runtimeAssembly.GetReferencedAssemblies())
                 {
@@ -2812,9 +2810,10 @@ namespace IKVM.Tools.Importer
                     }
                     catch (FileNotFoundException)
                     {
+
                     }
 
-                    if (asm != null && IsBaseAssembly(compiler, asm))
+                    if (asm != null && IsBaseAssembly(context, asm))
                     {
                         RuntimeAssemblyClassLoader.PreloadExportedAssemblies(context.StaticCompiler, asm);
                         compiler.baseAssembly = asm;
@@ -2856,9 +2855,9 @@ namespace IKVM.Tools.Importer
             return 0;
         }
 
-        static bool IsBaseAssembly(StaticCompiler compiler, Assembly asm)
+        static bool IsBaseAssembly(RuntimeContext context, Assembly asm)
         {
-            return asm.IsDefined(compiler.GetRuntimeType("IKVM.Attributes.RemappedClassAttribute"), false);
+            return asm.IsDefined(context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.RemappedClassAttribute).FullName), false);
         }
 
         private static Assembly LoadReferencedAssembly(StaticCompiler compiler, string r)

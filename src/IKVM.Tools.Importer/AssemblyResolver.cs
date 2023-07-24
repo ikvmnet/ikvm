@@ -468,11 +468,10 @@ namespace IKVM.Tools.Importer
             {
                 foreach (string dir in libpath)
                 {
-                    string path = Path.Combine(dir, file);
+                    var path = Path.Combine(dir, file);
                     if (File.Exists(path))
-                    {
                         yield return path;
-                    }
+
                     // for legacy compat, we try again after appending .dll
                     path = Path.Combine(dir, file + ".dll");
                     if (File.Exists(path))

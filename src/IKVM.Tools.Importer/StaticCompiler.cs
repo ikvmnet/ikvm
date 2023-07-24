@@ -23,6 +23,7 @@
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 
@@ -35,6 +36,8 @@ namespace IKVM.Tools.Importer
 {
     class StaticCompiler
     {
+
+        readonly ConcurrentDictionary<string, Type> runtimeTypeCache = new();
 
         internal Universe universe;
         internal Assembly runtimeAssembly;
@@ -85,7 +88,7 @@ namespace IKVM.Tools.Importer
 
         internal Type GetRuntimeType(string name)
         {
-            return runtimeAssembly.GetType(name);
+            return runtimeTypeCache.GetOrAdd(name, runtimeAssembly.GetType);
         }
 
         internal Type GetTypeForMapXml(RuntimeClassLoader loader, string name)

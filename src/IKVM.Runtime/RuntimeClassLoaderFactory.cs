@@ -21,7 +21,6 @@
   jeroen@frijters.net
   
 */
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -98,10 +97,10 @@ namespace IKVM.Runtime
         internal void LoadRemappedTypes()
         {
             // if we're compiling the base assembly, we won't be able to resolve one
-            var coreAssembly = context.Resolver.ResolveBaseAssembly();
-            if (coreAssembly != null && remappedTypes.Count == 0)
+            var baseAssembly = context.Resolver.ResolveBaseAssembly();
+            if (baseAssembly != null && remappedTypes.Count == 0)
             {
-                var remapped = context.AttributeHelper.GetRemappedClasses(coreAssembly);
+                var remapped = context.AttributeHelper.GetRemappedClasses(baseAssembly);
                 if (remapped.Length > 0)
                 {
                     foreach (var r in remapped)
@@ -123,7 +122,6 @@ namespace IKVM.Runtime
             return remappedTypes.ContainsKey(type);
         }
 
-
 #if IMPORTER || EXPORTER
         internal RuntimeClassLoader GetBootstrapClassLoader()
 #else
@@ -131,10 +129,7 @@ namespace IKVM.Runtime
 #endif
         {
             lock (wrapperLock)
-            {
-                bootstrapClassLoader ??= new BootstrapClassLoader(context);
-                return bootstrapClassLoader;
-            }
+                return bootstrapClassLoader ??= new BootstrapClassLoader(context);
         }
 
 #if !IMPORTER && !EXPORTER
