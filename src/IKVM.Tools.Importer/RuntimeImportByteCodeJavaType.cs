@@ -929,7 +929,7 @@ namespace IKVM.Tools.Importer
                     ilgen.Emit(OpCodes.Ldarg_0);
                     ilgen.Emit(OpCodes.Ldtoken, typeBuilder);
                     ilgen.Emit(OpCodes.Ldarg_1);
-                    ilgen.Emit(OpCodes.Call, Context.Resolver.ResolveRuntimeType(typeof(IKVM.Runtime.GhostTag).Name).GetMethod("IsGhostArrayInstance", BindingFlags.NonPublic | BindingFlags.Static));
+                    ilgen.Emit(OpCodes.Call, Context.Resolver.ResolveRuntimeType(typeof(IKVM.Runtime.GhostTag).FullName).GetMethod("IsGhostArrayInstance", BindingFlags.NonPublic | BindingFlags.Static));
                     ilgen.Emit(OpCodes.Ret);
                     ilgen.DoEmit();
 
