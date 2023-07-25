@@ -7,6 +7,7 @@
         <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">netcoreapp3.1</IkvmToolFramework>
         <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">net461</IkvmToolFramework>
         <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">netcoreapp3.1</IkvmToolFramework>
+        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">net6.0</IkvmToolFramework>
         <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X86'">win7-x86</IkvmToolRuntime>
         <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">win7-x64</IkvmToolRuntime>
         <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">linux-x64</IkvmToolRuntime>

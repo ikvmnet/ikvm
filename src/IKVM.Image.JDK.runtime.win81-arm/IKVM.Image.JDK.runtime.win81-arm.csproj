@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net461;netcoreapp3.1;net6.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM JDK Runtime Image</Description>
@@ -28,6 +28,11 @@
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win81-arm</SetRuntimeIdentifier>
             <ProjectPackagePath>ikvm\netcoreapp3.1\win81-arm\bin</ProjectPackagePath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win81-arm</SetRuntimeIdentifier>
+            <ProjectPackagePath>ikvm\net6.0\win81-arm\bin</ProjectPackagePath>
         </PublishProjectReference>
     </ItemGroup>
 

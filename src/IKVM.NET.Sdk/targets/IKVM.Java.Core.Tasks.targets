@@ -9,8 +9,6 @@
 
     <!-- Override IKVM.NET.Sdk: invoke exporter through task  -->
     <Target Name="_ExportReference" DependsOnTargets="ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
-        <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
-
         <ItemGroup>
             <_ReferenceExportReference Remove="@(_ReferenceExportReference)" />
             <_ReferenceExportReference Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
@@ -81,7 +79,6 @@
 
     <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
     <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmRuntimeAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
-        <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
 

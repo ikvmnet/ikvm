@@ -4,7 +4,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</IkvmMSBuildTaskFolder>
+        <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">net6.0</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskFactory Condition=" '$(MSBuildRuntimeType)' == 'Core' "></IkvmMSBuildTaskFactory>
         <IkvmMSBuildTaskFactory Condition=" '$(MSBuildRuntimeType)' != 'Core' ">TaskHostFactory</IkvmMSBuildTaskFactory>

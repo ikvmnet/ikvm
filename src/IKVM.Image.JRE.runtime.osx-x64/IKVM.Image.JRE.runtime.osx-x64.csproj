@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net461;netcoreapp3.1;net6.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM JRE Runtime Image</Description>
@@ -28,6 +28,11 @@
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
             <ProjectPackagePath>ikvm\netcoreapp3.1\osx-x64\bin</ProjectPackagePath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
+            <ProjectPackagePath>ikvm\net6.0\osx-x64\bin</ProjectPackagePath>
         </PublishProjectReference>
     </ItemGroup>
 

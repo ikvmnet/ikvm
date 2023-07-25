@@ -5,7 +5,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net461;netcoreapp3.1;net6.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <StartupObject>com.sun.tools.internal.ws.WsImport</StartupObject>
         <RootNamespace>ikvm.tools.wsimport</RootNamespace>
