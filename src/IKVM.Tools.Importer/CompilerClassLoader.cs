@@ -2740,15 +2740,15 @@ namespace IKVM.Tools.Importer
             var referencedAssemblies = new List<RuntimeAssemblyClassLoader>(references.Count);
             for (int i = 0; i < references.Count; i++)
             {
+                // if reference is to base assembly, set it explicitly for resolution
+                if (compiler.baseAssembly == null && options.bootstrap == false && IsBaseAssembly(context, references[i]))
+                    compiler.baseAssembly = references[i];
+
                 var acl = context.AssemblyClassLoaderFactory.FromAssembly(references[i]);
                 if (referencedAssemblies.Contains(acl))
                     compiler.IssueMessage(options, Message.DuplicateAssemblyReference, acl.MainAssembly.FullName);
 
-                // if reference is to base assembly, set it explicitly for resolution
-                if (compiler.baseAssembly == null && options.bootstrap == false && IsBaseAssembly(context, acl.MainAssembly))
-                    compiler.baseAssembly = acl.MainAssembly;
-                else
-                    referencedAssemblies.Add(acl);
+                referencedAssemblies.Add(acl);
             }
 
             loader = new CompilerClassLoader(context, referencedAssemblies.ToArray(), options, options.path, options.targetIsModule, options.assembly, h);
