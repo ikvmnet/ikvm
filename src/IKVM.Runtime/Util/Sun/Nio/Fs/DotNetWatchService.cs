@@ -3,6 +3,7 @@ using IKVM.Runtime.Accessors.Java.Nio.File;
 using IKVM.Runtime.Accessors.Sun.Nio.Fs;
 using IKVM.Runtime.Extensions;
 using System;
+using System.ComponentModel;
 using System.IO;
 
 namespace IKVM.Runtime.Util.Sun.Nio.Fs
@@ -142,7 +143,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Fs
                 {
                     DotNetWatchServiceKey.error(key);
                 }
-                else if (overflow)
+                else if (Overflow)
                 {
                     DotNetWatchServiceKey.signalEvent(key,
                         StandardWatchEventKinds.OVERFLOW, null);
