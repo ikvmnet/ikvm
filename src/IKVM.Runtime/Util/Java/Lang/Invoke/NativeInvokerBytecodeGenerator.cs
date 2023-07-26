@@ -823,7 +823,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
             // [IKVM] map the exception and store it in a local and exit the handler
             ilgen.EmitLdc_I4(0);
-            ilgen.Emit(OpCodes.Call, context.ByteCodeHelperMethods.mapException.MakeGenericMethod(typeof(Exception)));
+            ilgen.Emit(OpCodes.Call, context.ByteCodeHelperMethods.MapException.MakeGenericMethod(typeof(Exception)));
             CodeEmitterLocal exception = ilgen.DeclareLocal(typeof(Exception));
             ilgen.Emit(OpCodes.Stloc, exception);
             ilgen.EmitLeave(L_handler);

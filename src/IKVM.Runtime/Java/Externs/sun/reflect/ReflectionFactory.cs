@@ -674,7 +674,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
                     il.MarkLabel(exceptionWrapLabel);
                     il.Emit(OpCodes.Ldc_I4_0);
-                    il.Emit(OpCodes.Call, il.Context.ByteCodeHelperMethods.mapException.MakeGenericMethod(il.Context.Types.Exception));
+                    il.Emit(OpCodes.Call, il.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(il.Context.Types.Exception));
                     il.Emit(OpCodes.Newobj, invocationTargetExceptionCtor);
 
                     il.MarkLabel(exceptionThrowLabel);
@@ -689,9 +689,9 @@ namespace IKVM.Java.Externs.sun.reflect
                     // generate invoker
                     invoker = (Invoker)dm.CreateDelegate(typeof(Invoker));
 
-                    // invoker needs to run clinit, wrap in an invoker that does so
-                    if ((mw.IsStatic || mw.DeclaringType.IsInterface) && mw.DeclaringType.HasStaticInitializer)
-                        invoker = new Invoker(new RunClassInit(this, mw.DeclaringType, invoker).invoke);
+                    //// invoker needs to run clinit, wrap in an invoker that does so
+                    //if ((mw.IsStatic || mw.DeclaringType.IsInterface) && mw.DeclaringType.HasStaticInitializer)
+                    //    invoker = new Invoker(new RunClassInit(this, mw.DeclaringType, invoker).invoke);
                 }
                 catch (RetargetableJavaException x)
                 {
@@ -705,6 +705,10 @@ namespace IKVM.Java.Externs.sun.reflect
                 try
                 {
                     return invoker(obj, args, callerID);
+                }
+                catch (System.InvalidProgramException e)
+                {
+                    throw;
                 }
                 catch (MethodAccessException x)
                 {
@@ -807,7 +811,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 CodeEmitterLabel label = ilgen.DefineLabel();
                 ilgen.EmitBrtrue(label);
                 ilgen.Emit(OpCodes.Ldc_I4_0);
-                ilgen.Emit(OpCodes.Call, ilgen.Context.ByteCodeHelperMethods.mapException.MakeGenericMethod(ilgen.Context.Types.Exception));
+                ilgen.Emit(OpCodes.Call, ilgen.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(ilgen.Context.Types.Exception));
                 ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.invocationTargetExceptionCtor);
                 ilgen.MarkLabel(label);
                 ilgen.Emit(OpCodes.Throw);

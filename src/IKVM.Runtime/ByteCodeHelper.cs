@@ -1109,7 +1109,7 @@ namespace IKVM.Runtime
                 mode |= MapFlags.NoRemapping;
             }
             Type exceptionType = exceptionTypeWrapper == JVM.Context.JavaBase.TypeOfjavaLangThrowable ? typeof(System.Exception) : exceptionTypeWrapper.TypeAsBaseType;
-            return (Exception)JVM.Context.ByteCodeHelperMethods.mapException.MakeGenericMethod(exceptionType).Invoke(null, new object[] { x, mode });
+            return (Exception)JVM.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(exceptionType).Invoke(null, new object[] { x, mode });
 #endif
         }
 
