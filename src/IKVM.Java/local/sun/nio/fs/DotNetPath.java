@@ -25,7 +25,6 @@
 package sun.nio.fs;
 
 import com.sun.nio.file.ExtendedWatchEventModifier;
-import com.sun.nio.file.SensitivityWatchEventModifier;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -513,73 +512,33 @@ final class DotNetPath extends AbstractPath {
 
     public WatchKey register(WatchService watcher, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers) throws IOException
     {
-        if (!(watcher instanceof DotNetFileSystem.NetWatchService))
+        if (!(watcher instanceof DotNetWatchService))
         {
             // null check
             watcher.getClass();
             throw new ProviderMismatchException();
         }
-        boolean create = false;
-        boolean delete = false;
-        boolean modify = false;
-        boolean overflow = false;
-        boolean subtree = false;
-        for (WatchEvent.Kind<?> kind : events)
-        {
-            if (kind == StandardWatchEventKinds.ENTRY_CREATE)
-            {
-                create = true;
-            }
-            else if (kind == StandardWatchEventKinds.ENTRY_DELETE)
-            {
-                delete = true;
-            }
-            else if (kind == StandardWatchEventKinds.ENTRY_MODIFY)
-            {
-                modify = true;
-            }
-            else if (kind == StandardWatchEventKinds.OVERFLOW)
-            {
-                overflow = true;
-            }
-            else
-            {
-                // null check
-                kind.getClass();
-                throw new UnsupportedOperationException();
-            }
-        }
-        if (!create && !delete && !modify)
-        {
-            throw new IllegalArgumentException();
-        }
-        for (WatchEvent.Modifier modifier : modifiers)
-        {
-            if (modifier == ExtendedWatchEventModifier.FILE_TREE)
-            {
-                subtree = true;
-            }
-            else if (modifier instanceof SensitivityWatchEventModifier)
-            {
-                // ignore
-            }
-            else
-            {
-                // null check
-                modifier.getClass();
-                throw new UnsupportedOperationException();
-            }
-        }
+        
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
         {
+            boolean subtree = false;
+            for(WatchEvent.Modifier modifier : modifiers)
+            {
+                if(modifier == ExtendedWatchEventModifier.FILE_TREE)
+                {
+                    subtree = true;
+                    break;
+                }
+            }
+            
             sm.checkRead(path);
             if (subtree)
             {
                 sm.checkRead(path + cli.System.IO.Path.DirectorySeparatorChar + '-');
             }
         }
-        return ((DotNetFileSystem.NetWatchService)watcher).register(this, create, delete, modify, overflow, subtree);
+        return ((DotNetWatchService)watcher).register(this, events, modifiers);
     }
 
     public int compareTo(Path other)

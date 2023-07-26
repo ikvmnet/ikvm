@@ -1,0 +1,145 @@
+﻿using IKVM.Runtime.Accessors.Com.Sun.Nio.File;
+using IKVM.Runtime.Accessors.Java.Nio.File;
+using IKVM.Runtime.Accessors.Sun.Nio.Fs;
+using System;
+using System.IO;
+
+namespace IKVM.Runtime.Util.Sun.Nio.Fs
+{
+
+#if !FIRST_PASS
+
+    internal static class DotNetWatchService
+    {
+        private static DotNetWatchServiceKeyAccessor dotNetWatchServiceKey;
+        private static ExtendedWatchEventModifierAccessor extendedWatchEventModifier;
+        private static SensitivityWatchEventModifierAccessor sensitivityWatchEventModifier;
+        private static StandardWatchEventKindsAccessor standardWatchEventKinds;
+
+        private static DotNetWatchServiceKeyAccessor DotNetWatchServiceKey => JVM.BaseAccessors.Get(ref dotNetWatchServiceKey);
+
+        private static ExtendedWatchEventModifierAccessor ExtendedWatchEventModifier => JVM.BaseAccessors.Get(ref extendedWatchEventModifier);
+
+        private static SensitivityWatchEventModifierAccessor SensitivityWatchEventModifier => JVM.BaseAccessors.Get(ref sensitivityWatchEventModifier);
+
+        private static StandardWatchEventKindsAccessor StandardWatchEventKinds => JVM.BaseAccessors.Get(ref standardWatchEventKinds);
+
+        internal static void Close(object key)
+        {
+            if (DotNetWatchServiceKey.State.ExchangeValue(key, null) is not FileSystemWatcher fsw)
+            {
+                return;
+            }
+
+            fsw.Dispose();
+        }
+
+        internal static void Register(object key, string dir, object[] events, object[] modifiers)
+        {
+            // we could reuse the FileSystemWatcher, but for now we just recreate it
+            // (and we run the risk of missing some events while we're doing that)
+            Close(key);
+            FileSystemWatcher watcher = null;
+            try
+            {
+                watcher = new FileSystemWatcher(dir);
+                WatchServiceHandler handler = new WatchServiceHandler(key);
+                bool valid = false;
+                foreach (var @event in events)
+                {
+                    if (@event == StandardWatchEventKinds.OVERFLOW)
+                    {
+                        handler.Overflow = true;
+                    }
+                    else
+                    {
+                        valid = true;
+                        if (@event == StandardWatchEventKinds.ENTRY_CREATE)
+                        {
+                            watcher.Created += handler.EventHandler;
+                        }
+                        else if (@event == StandardWatchEventKinds.ENTRY_DELETE)
+                        {
+                            watcher.Deleted += handler.EventHandler;
+                        }
+                        else if (@event == StandardWatchEventKinds.ENTRY_MODIFY)
+                        {
+                            watcher.Changed += handler.EventHandler;
+                        }
+                        else
+                        {
+                            @event.GetType();
+                            throw new global::java.lang.UnsupportedOperationException();
+                        }
+                    }
+                }
+
+                if (!valid)
+                {
+                    throw new global::java.lang.IllegalArgumentException();
+                }
+
+                watcher.Error += handler.ErrorHandler;
+                foreach (var modifier in modifiers)
+                {
+                    if (modifier == ExtendedWatchEventModifier.FILE_TREE)
+                    {
+                        watcher.IncludeSubdirectories = true;
+                    }
+                    else if (SensitivityWatchEventModifier.Is(modifier))
+                    {
+                    }
+                    else
+                    {
+                        modifier.GetType();
+                        throw new global::java.lang.UnsupportedOperationException();
+                    }
+                }
+
+                watcher.EnableRaisingEvents = true;
+                DotNetWatchServiceKey.State.SetValue(key, watcher);
+                watcher = null;
+            }
+            catch (Exception e) when (e is ArgumentException or FileNotFoundException)
+            {
+                throw new global::java.io.FileNotFoundException();
+            }
+            finally
+            {
+                watcher?.Dispose();
+            }
+        }
+
+        private class WatchServiceHandler
+        {
+            private readonly object key;
+
+            public readonly ErrorEventHandler ErrorHandler;
+
+            public readonly FileSystemEventHandler EventHandler;
+
+            public bool Overflow { get; set; }
+
+            public WatchServiceHandler(object key)
+            {
+                this.key = key;
+                ErrorHandler = OnError;
+                EventHandler = OnEvent;
+            }
+
+            private void OnError(object sender, ErrorEventArgs e)
+            {
+
+            }
+
+            private void OnEvent(object sender, FileSystemEventArgs e)
+            {
+
+            }
+        }
+
+    }
+
+#endif
+
+}

@@ -1,0 +1,72 @@
+package sun.nio.fs;
+
+import java.io.Closeable;
+import java.nio.file.WatchEvent;
+import java.util.concurrent.ConcurrentHashMap;
+
+final class DotNetWatchService extends AbstractWatchService {
+    private final ConcurrentHashMap<DotNetPath, DotNetWatchKey> keys = new ConcurrentHashMap();
+
+    @Override
+    void implClose()
+            throws IOException {
+        for (DotNetWatchKey key : keys.keySet()) {
+            key.close();
+        }
+
+        keys.clear();
+    }
+
+    @Override
+    DotNetWatchKey register(DotNetPath path, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers)
+            throws IOException {
+        if (!isOpen()) {
+            throw new ClosedWatchServiceException();
+        }
+
+        if (path == null) {
+            throw new ArgumentNullException(nameof(path));
+        }
+
+        final DotNetWatchKey key = keys.computeIfAbsent(path, c -> new DotNetWatchKey(c));
+        register0(key, path, events, modifiers);
+        return key;
+    }
+
+    void remove(DotNetPath dir) {
+        final DotNetWatchKey key = keys.remove(dir);
+        close0(key, dir);
+    }
+
+    final class DotNetWatchKey extends AbstractWatchKey implements Closeable {
+        private final DotNetPath dir;
+        private Object state;
+
+        DotNetWatchKey(DotNetPath dir) {
+            super(dir, DotNetWatchService.this);
+            this.dir = dir;
+        }
+
+        @Override
+        public void cancel() {
+            synchronized (DotNetWatchService.this.closeLock()) {
+                DotNetWatchService.this.keys.remove(dir, this);
+                close();
+            }
+        }
+
+        @Override
+        public synchronized void close() throws IOException {
+            close0(this, dir);
+        }
+
+        @Override
+        public boolean isValid() {
+            return state != null;
+        }
+    }
+
+    static native void close0(DotNetWatchKey self, DotNetPath dir);
+
+    static native void register0(DotNetWatchKey self, DotNetPath dir, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers);
+}
