@@ -22,7 +22,7 @@
   jeroen@frijters.net
   
 */
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.lang.@ref
 {
@@ -32,11 +32,7 @@ namespace IKVM.Java.Externs.java.lang.@ref
 
         public static bool noclassgc()
         {
-#if CLASSGC
-            return !JVM.classUnloading;
-#else
             return true;
-#endif
         }
 
     }

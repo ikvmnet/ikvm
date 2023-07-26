@@ -23,17 +23,15 @@
 */
 using System;
 
-using IKVM.Internal;
-
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
+using IKVM.Runtime;
 
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
 	public sealed class NonNestedOuterClassAttribute : Attribute
 	{
+
 		private string outerClassName;
 
 		public NonNestedOuterClassAttribute(string outerClassName)
@@ -41,12 +39,8 @@ namespace IKVM.Attributes
 			this.outerClassName = UnicodeUtil.UnescapeInvalidSurrogates(outerClassName);
 		}
 
-		public string OuterClassName
-		{
-			get
-			{
-				return outerClassName;
-			}
-		}
-	}
+        public string OuterClassName => outerClassName;
+
+    }
+
 }

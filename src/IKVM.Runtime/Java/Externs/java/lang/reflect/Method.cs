@@ -21,7 +21,7 @@
   jeroen@frijters.net
   
 */
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.lang.reflect
 {
@@ -31,7 +31,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
 
 		public static object getDefaultValue(global::java.lang.reflect.Method thisMethod)
 		{
-			MethodWrapper mw = MethodWrapper.FromExecutable(thisMethod);
+			RuntimeJavaMethod mw = RuntimeJavaMethod.FromExecutable(thisMethod);
 			return mw.DeclaringType.GetAnnotationDefault(mw);
 		}
 

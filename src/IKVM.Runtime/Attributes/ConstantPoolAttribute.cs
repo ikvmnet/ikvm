@@ -24,17 +24,15 @@
 using System;
 using System.Collections.Generic;
 
-using IKVM.Internal;
-
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
+using IKVM.Runtime;
 
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
 	public sealed class ConstantPoolAttribute : Attribute
 	{
+
 		internal readonly object[] constantPool;
 
 		public ConstantPoolAttribute(object[] constantPool)
@@ -112,5 +110,7 @@ namespace IKVM.Attributes
 			}
 			return obj;
 		}
+
 	}
+
 }

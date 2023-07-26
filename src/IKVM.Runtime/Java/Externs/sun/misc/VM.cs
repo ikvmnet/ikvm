@@ -25,7 +25,6 @@
 using System;
 using System.Diagnostics;
 
-using IKVM.Internal;
 using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.sun.misc
@@ -60,11 +59,11 @@ namespace IKVM.Java.Externs.sun.misc
                 if (global::IKVM.Java.Externs.sun.reflect.Reflection.IsHideFromStackWalk(m))
                     continue;
 
-                if (m.DeclaringType != null && ClassLoaderWrapper.GetWrapperFromType(m.DeclaringType) is TypeWrapper tw and not null)
+                if (m.DeclaringType != null && RuntimeClassLoaderFactory.GetWrapperFromType(m.DeclaringType) is RuntimeJavaType tw and not null)
                 {
                     // check that the assembly isn't java.base or the IKVM runtime
                     var clw = tw.GetClassLoader();
-                    if (clw is AssemblyClassLoader acl)
+                    if (clw is RuntimeAssemblyClassLoader acl)
                         if (acl.GetAssembly(tw) == typeof(object).Assembly || acl.GetAssembly(tw) == typeof(VM).Assembly)
                             continue;
 

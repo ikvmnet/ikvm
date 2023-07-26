@@ -24,7 +24,6 @@
 using System.IO;
 using System.Reflection;
 
-using IKVM.Internal;
 using IKVM.Runtime;
 
 #if NETCOREAPP
@@ -41,7 +40,7 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
         {
             using var mem = new MemoryStream();
 #if FIRST_PASS == false
-            StubGen.StubGenerator.WriteClass(mem, TypeWrapper.FromClass(c), true, true, true, true, false);
+            StubGen.StubGenerator.WriteClass(mem, RuntimeJavaType.FromClass(c), true, true, true, true, false);
 #endif
             return mem.ToArray();
         }
@@ -78,7 +77,7 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
 
         public static object LoadClassFromAssembly(Assembly asm, string className)
         {
-            TypeWrapper tw = AssemblyClassLoader.FromAssembly(asm).LoadClassByDottedNameFast(className);
+            RuntimeJavaType tw = RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).LoadClassByDottedNameFast(className);
             if (tw != null)
             {
                 return tw.ClassObject;
@@ -97,7 +96,7 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
 
         public static global::java.lang.ClassLoader GetGenericClassLoaderById(int id)
         {
-            return ClassLoaderWrapper.GetGenericClassLoaderById(id).GetJavaClassLoader();
+            return RuntimeClassLoaderFactory.GetGenericClassLoaderById(id).GetJavaClassLoader();
         }
 
     }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 
 namespace IKVM.Runtime.Vfs
@@ -13,7 +13,7 @@ namespace IKVM.Runtime.Vfs
     internal sealed class VfsAssemblyClassFile : VfsFile
     {
 
-        readonly TypeWrapper type;
+        readonly RuntimeJavaType type;
         readonly Lazy<byte[]> buff;
 
         /// <summary>
@@ -21,7 +21,7 @@ namespace IKVM.Runtime.Vfs
         /// </summary>
         /// <param name="context"></param>
         /// <param name="type"></param>
-        internal VfsAssemblyClassFile(VfsContext context, TypeWrapper type) :
+        internal VfsAssemblyClassFile(VfsContext context, RuntimeJavaType type) :
             base(context)
         {
             this.type = type ?? throw new ArgumentNullException(nameof(type));

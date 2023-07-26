@@ -24,8 +24,10 @@
 
 namespace IKVM.StubGen
 {
+
     sealed class StringAttribute : ClassFileAttribute
 	{
+
 		private ushort string_index;
 
 		public StringAttribute(ushort name_index, ushort string_index)
@@ -40,5 +42,7 @@ namespace IKVM.StubGen
 			bes.WriteUInt32(2);
 			bes.WriteUInt16(string_index);
 		}
+
 	}
+
 }

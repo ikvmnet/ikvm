@@ -23,7 +23,7 @@
 */
 using System;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.lang.reflect
 {
@@ -38,15 +38,15 @@ namespace IKVM.Java.Externs.java.lang.reflect
 
 		public static global::java.lang.Class getPrecompiledProxy(global::java.lang.ClassLoader classLoader, string proxyName, global::java.lang.Class[] interfaces)
 		{
-			AssemblyClassLoader acl = ClassLoaderWrapper.GetClassLoaderWrapper(classLoader) as AssemblyClassLoader;
+			RuntimeAssemblyClassLoader acl = RuntimeClassLoaderFactory.GetClassLoaderWrapper(classLoader) as RuntimeAssemblyClassLoader;
 			if (acl == null)
 			{
 				return null;
 			}
-			TypeWrapper[] wrappers = new TypeWrapper[interfaces.Length];
+			RuntimeJavaType[] wrappers = new RuntimeJavaType[interfaces.Length];
 			for (int i = 0; i < wrappers.Length; i++)
 			{
-				wrappers[i] = TypeWrapper.FromClass(interfaces[i]);
+				wrappers[i] = RuntimeJavaType.FromClass(interfaces[i]);
 			}
 			// TODO support multi assembly class loaders
 			Type type = acl.MainAssembly.GetType(TypeNameUtil.GetProxyName(wrappers));
@@ -54,15 +54,15 @@ namespace IKVM.Java.Externs.java.lang.reflect
 			{
 				return null;
 			}
-			TypeWrapper tw = CompiledTypeWrapper.newInstance(proxyName, type);
-			TypeWrapper tw2 = acl.RegisterInitiatingLoader(tw);
+			RuntimeJavaType tw = RuntimeManagedByteCodeJavaType.newInstance(proxyName, type);
+			RuntimeJavaType tw2 = acl.RegisterInitiatingLoader(tw);
 			if (tw != tw2)
 			{
 				return null;
 			}
 			// we need to explicitly register the type, because the type isn't visible by normal means
 			tw.GetClassLoader().SetWrapperForType(type, tw);
-			TypeWrapper[] wrappers2 = tw.Interfaces;
+			RuntimeJavaType[] wrappers2 = tw.Interfaces;
 			if (wrappers.Length != wrappers.Length)
 			{
 				return null;

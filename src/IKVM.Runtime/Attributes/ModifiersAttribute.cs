@@ -23,14 +23,10 @@
 */
 using System;
 
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
-
 namespace IKVM.Attributes
 {
 
-	[AttributeUsage(AttributeTargets.All)]
+    [AttributeUsage(AttributeTargets.All)]
 	public sealed class ModifiersAttribute : Attribute
 	{
 

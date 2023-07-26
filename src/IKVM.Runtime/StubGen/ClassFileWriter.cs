@@ -32,6 +32,7 @@ namespace IKVM.StubGen
 
     sealed class ClassFileWriter : IAttributeOwner
 	{
+
 		private List<ConstantPoolItem> cplist = new List<ConstantPoolItem>();
 		private Dictionary<ConstantPoolItem, ushort> cphashtable = new Dictionary<ConstantPoolItem, ushort>();
 		private List<FieldOrMethod> fields = new List<FieldOrMethod>();
@@ -239,6 +240,7 @@ namespace IKVM.StubGen
 				attribs[i].Write(bes);
 			}
 		}
+
 	}
 
 }

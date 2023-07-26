@@ -24,7 +24,7 @@
 using System;
 using System.Globalization;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Runtime
 {
@@ -98,7 +98,7 @@ namespace IKVM.Runtime
 			sysAsserts = false;
 		}
 
-		internal static bool IsEnabled(TypeWrapper tw)
+		internal static bool IsEnabled(RuntimeJavaType tw)
 		{
 			string className = tw.Name;
 
@@ -130,7 +130,7 @@ namespace IKVM.Runtime
 				} while (len > 0);
 			}
 
-			return tw.GetClassLoader() == ClassLoaderWrapper.GetBootstrapClassLoader() ? sysAsserts : userAsserts;
+			return tw.GetClassLoader() == RuntimeClassLoaderFactory.GetBootstrapClassLoader() ? sysAsserts : userAsserts;
 		}
 
 		private static int Count(OptionNode n)

@@ -24,7 +24,7 @@
 */
 using System.Reflection;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.sun.misc
 {
@@ -36,7 +36,7 @@ namespace IKVM.Java.Externs.sun.misc
 		{
 			if (extcl == null || asm.IsDefined(typeof(IKVM.Attributes.CustomAssemblyClassLoaderAttribute), false))
 			{
-				return AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
+				return RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
 			}
 			return null;
 		}

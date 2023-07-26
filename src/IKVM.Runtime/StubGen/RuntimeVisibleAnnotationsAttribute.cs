@@ -27,8 +27,10 @@ using IKVM.Attributes;
 
 namespace IKVM.StubGen
 {
+
     sealed class RuntimeVisibleAnnotationsAttribute : ClassFileAttribute
 	{
+
 		private ClassFileWriter classFile;
 		private MemoryStream mem;
 		private BigEndianStream bes;
@@ -176,5 +178,7 @@ namespace IKVM.StubGen
 		{
 			get { return (uint)mem.Length + 2; }
 		}
+
 	}
+
 }

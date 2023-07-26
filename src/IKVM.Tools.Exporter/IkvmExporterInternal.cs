@@ -4,7 +4,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 
-using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Runtime;
 using IKVM.Tools.Importer;
@@ -22,7 +21,7 @@ namespace IKVM.Tools.Exporter
 
         static ZipArchive zipFile;
         static Dictionary<string, string> done = new Dictionary<string, string>();
-        static Dictionary<string, TypeWrapper> todo = new Dictionary<string, TypeWrapper>();
+        static Dictionary<string, RuntimeJavaType> todo = new Dictionary<string, RuntimeJavaType>();
         static FileInfo file;
 
         /// <summary>
@@ -31,8 +30,8 @@ namespace IKVM.Tools.Exporter
         /// <param name="options"></param>
         public static int Execute(IkvmExporterOptions options)
         {
-            IKVM.Internal.Tracer.EnableTraceConsoleListener();
-            IKVM.Internal.Tracer.EnableTraceForDebug();
+            IKVM.Runtime.Tracer.EnableTraceConsoleListener();
+            IKVM.Runtime.Tracer.EnableTraceForDebug();
 
             var references = new List<string>();
             if (options.References != null)
@@ -99,7 +98,7 @@ namespace IKVM.Tools.Exporter
                 if (options.Boostrap)
                 {
                     StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(typeof(IkvmExporterTool).Assembly.Location);
-                    ClassLoaderWrapper.SetBootstrapClassLoader(new BootstrapBootstrapClassLoader());
+                    RuntimeClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader());
                 }
                 else
                 {
@@ -222,7 +221,7 @@ namespace IKVM.Tools.Exporter
             }
         }
 
-        static void WriteClass(IkvmExporterOptions options, TypeWrapper tw)
+        static void WriteClass(IkvmExporterOptions options, RuntimeJavaType tw)
         {
             var entry = zipFile.CreateEntry(tw.Name.Replace('.', '/') + ".class");
             entry.LastWriteTime = new DateTime(1980, 01, 01, 0, 0, 0, DateTimeKind.Utc);
@@ -251,11 +250,11 @@ namespace IKVM.Tools.Exporter
             {
                 if ((t.IsPublic || options.IncludeNonPublicTypes) && ExportNamespace(options.Namespaces, t) && !t.IsGenericTypeDefinition && !AttributeHelper.IsHideFromJava(t) && (!t.IsGenericType || !AttributeHelper.IsJavaModule(t.Module)))
                 {
-                    TypeWrapper c;
-                    if (ClassLoaderWrapper.IsRemappedType(t) || t.IsPrimitive || t == Types.Void)
-                        c = DotNetTypeWrapper.GetWrapperFromDotNetType(t);
+                    RuntimeJavaType c;
+                    if (RuntimeClassLoaderFactory.IsRemappedType(t) || t.IsPrimitive || t == Types.Void)
+                        c = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(t);
                     else
-                        c = ClassLoaderWrapper.GetWrapperFromType(t);
+                        c = RuntimeClassLoaderFactory.GetWrapperFromType(t);
 
                     if (c != null)
                         AddToExportList(c);
@@ -266,7 +265,7 @@ namespace IKVM.Tools.Exporter
             do
             {
                 keepGoing = false;
-                foreach (var c in new List<TypeWrapper>(todo.Values).OrderBy(i => i.Name))
+                foreach (var c in new List<RuntimeJavaType>(todo.Values).OrderBy(i => i.Name))
                 {
                     if (!done.ContainsKey(c.Name))
                     {
@@ -298,29 +297,28 @@ namespace IKVM.Tools.Exporter
             return rc;
         }
 
-        private static void AddToExportList(TypeWrapper c)
+        private static void AddToExportList(RuntimeJavaType c)
         {
             todo[c.Name] = c;
         }
 
-        private static bool IsNonVectorArray(TypeWrapper tw)
+        private static bool IsNonVectorArray(RuntimeJavaType tw)
         {
             return !tw.IsArray && tw.TypeAsBaseType.IsArray;
         }
 
-        private static void AddToExportListIfNeeded(TypeWrapper tw)
+        private static void AddToExportListIfNeeded(RuntimeJavaType tw)
         {
             while (tw.IsArray)
-            {
                 tw = tw.ElementTypeWrapper;
-            }
+
             if (tw.IsUnloadable && tw.Name.StartsWith("Missing/"))
             {
                 Console.Error.WriteLine("Error: unable to find assembly '{0}'", tw.Name.Substring(8));
                 Environment.Exit(1);
                 return;
             }
-            if (tw is StubTypeWrapper)
+            if (tw is RuntimeStubJavaType)
             {
                 // skip
             }
@@ -330,35 +328,29 @@ namespace IKVM.Tools.Exporter
             }
         }
 
-        private static void AddToExportListIfNeeded(TypeWrapper[] types)
+        private static void AddToExportListIfNeeded(RuntimeJavaType[] types)
         {
-            foreach (TypeWrapper tw in types)
-            {
+            foreach (var tw in types)
                 AddToExportListIfNeeded(tw);
-            }
         }
 
-        private static void ProcessClass(TypeWrapper tw)
+        private static void ProcessClass(RuntimeJavaType tw)
         {
-            TypeWrapper superclass = tw.BaseTypeWrapper;
+            RuntimeJavaType superclass = tw.BaseTypeWrapper;
             if (superclass != null)
-            {
                 AddToExportListIfNeeded(superclass);
-            }
+
             AddToExportListIfNeeded(tw.Interfaces);
-            TypeWrapper outerClass = tw.DeclaringTypeWrapper;
+
+            var outerClass = tw.DeclaringTypeWrapper;
             if (outerClass != null)
-            {
                 AddToExportList(outerClass);
-            }
-            foreach (TypeWrapper innerClass in tw.InnerClasses)
-            {
+
+            foreach (var innerClass in tw.InnerClasses)
                 if (innerClass.IsPublic)
-                {
                     AddToExportList(innerClass);
-                }
-            }
-            foreach (MethodWrapper mw in tw.GetMethods())
+
+            foreach (var mw in tw.GetMethods())
             {
                 if (mw.IsPublic || mw.IsProtected)
                 {
@@ -367,7 +359,8 @@ namespace IKVM.Tools.Exporter
                     AddToExportListIfNeeded(mw.GetParameters());
                 }
             }
-            foreach (FieldWrapper fw in tw.GetFields())
+
+            foreach (var fw in tw.GetFields())
             {
                 if (fw.IsPublic || fw.IsProtected)
                 {

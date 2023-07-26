@@ -25,8 +25,10 @@ using System;
 
 namespace IKVM.StubGen
 {
+
     sealed class ConstantPoolItemFloat : ConstantPoolItem
 	{
+
 		private float v;
 
 		public ConstantPoolItemFloat(float v)
@@ -53,5 +55,7 @@ namespace IKVM.StubGen
 			bes.WriteByte((byte)Constant.Float);
 			bes.WriteFloat(v);
 		}
+
 	}
+
 }

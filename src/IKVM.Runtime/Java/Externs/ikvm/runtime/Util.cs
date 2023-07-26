@@ -22,12 +22,9 @@
   
 */
 using System;
-using System.Reflection.Emit;
 
 using IKVM.Attributes;
-using IKVM.Internal;
 using IKVM.Runtime;
-
 
 namespace IKVM.Java.Externs.ikvm.runtime
 {
@@ -40,22 +37,22 @@ namespace IKVM.Java.Externs.ikvm.runtime
             return GetTypeWrapperFromObject(o).ClassObject;
         }
 
-        internal static TypeWrapper GetTypeWrapperFromObject(object o)
+        internal static RuntimeJavaType GetTypeWrapperFromObject(object o)
         {
             var ghostType = GhostTag.GetTag(o);
             if (ghostType != null)
                 return ghostType;
 
             var t = o.GetType();
-            if (t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t) && !t.IsSealed)
-                return DotNetTypeWrapper.GetWrapperFromDotNetType(t);
+            if (t.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(t) && !t.IsSealed)
+                return RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(t);
 
             for (; ; )
             {
                 // if GetWrapperFromType returns null (or if tw.IsAbstract), that
                 // must mean that the Type of the object is an implementation helper class
                 // (e.g. an AtomicReferenceFieldUpdater or ThreadLocal instrinsic subclass)
-                var tw = ClassLoaderWrapper.GetWrapperFromType(t);
+                var tw = RuntimeClassLoaderFactory.GetWrapperFromType(t);
                 if (tw != null && (!tw.IsAbstract || tw.IsArray))
                     return tw;
 
@@ -66,13 +63,13 @@ namespace IKVM.Java.Externs.ikvm.runtime
         public static global::java.lang.Class getClassFromTypeHandle(RuntimeTypeHandle handle)
         {
             var t = Type.GetTypeFromHandle(handle);
-            if (t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t) || t == typeof(void))
-                return DotNetTypeWrapper.GetWrapperFromDotNetType(t).ClassObject;
+            if (t.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(t) || t == typeof(void))
+                return RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(t).ClassObject;
 
             if (!IsVisibleAsClass(t))
                 return null;
 
-            var tw = ClassLoaderWrapper.GetWrapperFromType(t);
+            var tw = RuntimeClassLoaderFactory.GetWrapperFromType(t);
             if (tw != null)
                 return tw.ClassObject;
 
@@ -82,13 +79,13 @@ namespace IKVM.Java.Externs.ikvm.runtime
         public static global::java.lang.Class getClassFromTypeHandle(RuntimeTypeHandle handle, int rank)
         {
             var t = Type.GetTypeFromHandle(handle);
-            if (t.IsPrimitive || ClassLoaderWrapper.IsRemappedType(t) || t == typeof(void))
-                return DotNetTypeWrapper.GetWrapperFromDotNetType(t).MakeArrayType(rank).ClassObject;
+            if (t.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(t) || t == typeof(void))
+                return RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(t).MakeArrayType(rank).ClassObject;
 
             if (!IsVisibleAsClass(t))
                 return null;
 
-            var tw = ClassLoaderWrapper.GetWrapperFromType(t);
+            var tw = RuntimeClassLoaderFactory.GetWrapperFromType(t);
             if (tw != null)
                 return tw.MakeArrayType(rank).ClassObject;
 
@@ -110,7 +107,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
             if (!IsVisibleAsClass(type))
                 return null;
 
-            var wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
+            var wrapper = RuntimeClassLoaderFactory.GetWrapperFromType(type);
             if (wrapper == null)
                 return null;
 
@@ -149,7 +146,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
         /// <returns></returns>
         public static Type getInstanceTypeFromClass(global::java.lang.Class classObject)
         {
-            var wrapper = TypeWrapper.FromClass(classObject);
+            var wrapper = RuntimeJavaType.FromClass(classObject);
             if (wrapper.IsRemapped && wrapper.IsFinal)
                 return wrapper.TypeAsTBD;
             else
@@ -163,7 +160,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
         /// <returns></returns>
         public static Type getRuntimeTypeFromClass(global::java.lang.Class classObject)
         {
-            var wrapper = TypeWrapper.FromClass(classObject);
+            var wrapper = RuntimeJavaType.FromClass(classObject);
             wrapper.Finish();
 
             if (wrapper.IsRemapped && wrapper.IsFinal)

@@ -21,25 +21,23 @@
   jeroen@frijters.net
   
 */
-#define CHECK_INVARIANTS
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Diagnostics.SymbolStore;
 using System.Diagnostics;
 
-using IKVM.Runtime;
-
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     sealed class CodeEmitter
@@ -51,6 +49,7 @@ namespace IKVM.Internal
         static readonly MethodInfo monitorExit = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Exit", BindingFlags.Public | BindingFlags.Static, null, new Type[] { Types.Object }, null);
         static readonly bool experimentalOptimizations = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_OPTIMIZATIONS") != null;
         static MethodInfo memoryBarrier;
+
         ILGenerator ilgen_real;
 #if !IMPORTER
         bool inFinally;
@@ -67,6 +66,9 @@ namespace IKVM.Internal
 		Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
 #endif
 
+        /// <summary>
+        /// Initializes the static instance.
+        /// </summary>
         static CodeEmitter()
         {
             if (experimentalOptimizations)
@@ -77,6 +79,7 @@ namespace IKVM.Internal
 
         enum CodeType : short
         {
+
             Unreachable,
             OpCode,
             BeginScope,
@@ -96,6 +99,7 @@ namespace IKVM.Internal
             ClearStack,
             MonitorEnter,
             MonitorExit,
+
         }
 
         enum CodeTypeFlags : short
@@ -2041,15 +2045,14 @@ namespace IKVM.Internal
             }
         }
 
-        [Conditional("CHECK_INVARIANTS")]
-        private void CheckInvariants()
+        void CheckInvariants()
         {
             CheckInvariantBranchInOrOutOfBlocks();
             CheckInvariantOpCodeUsage();
             CheckInvariantLocalVariables();
         }
 
-        private void CheckInvariantBranchInOrOutOfBlocks()
+        void CheckInvariantBranchInOrOutOfBlocks()
         {
             /*
 			 * We maintain an invariant that a branch (other than an explicit leave)
@@ -2659,8 +2662,8 @@ namespace IKVM.Internal
 
         internal void EmitThrow(string dottedClassName)
         {
-            TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
-            MethodWrapper mw = exception.GetMethodWrapper("<init>", "()V", false);
+            RuntimeJavaType exception = RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
+            RuntimeJavaMethod mw = exception.GetMethodWrapper("<init>", "()V", false);
             mw.Link();
             mw.EmitNewobj(this);
             Emit(OpCodes.Throw);
@@ -2668,9 +2671,9 @@ namespace IKVM.Internal
 
         internal void EmitThrow(string dottedClassName, string message)
         {
-            TypeWrapper exception = ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
+            RuntimeJavaType exception = RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
             Emit(OpCodes.Ldstr, message);
-            MethodWrapper mw = exception.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
+            RuntimeJavaMethod mw = exception.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
             mw.Link();
             mw.EmitNewobj(this);
             Emit(OpCodes.Throw);
@@ -2878,7 +2881,7 @@ namespace IKVM.Internal
 			foreach(System.Diagnostics.StackFrame frame in labels.Values)
 			{
 				string name = frame.GetFileName() + ":" + frame.GetFileLineNumber();
-				IKVM.Internal.JVM.CriticalFailure("Label failure: " + name, null);
+				IKVM.Runtime.JVM.CriticalFailure("Label failure: " + name, null);
 			}
 #endif
         }
@@ -2907,6 +2910,7 @@ namespace IKVM.Internal
         {
             EmitPseudoOpCode(CodeType.MonitorExit, null);
         }
+
     }
 
 }

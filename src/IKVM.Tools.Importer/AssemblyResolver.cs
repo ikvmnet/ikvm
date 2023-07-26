@@ -25,8 +25,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-using IKVM.Internal;
 using IKVM.Reflection;
+using IKVM.Runtime;
 
 namespace IKVM.Tools.Importer
 {

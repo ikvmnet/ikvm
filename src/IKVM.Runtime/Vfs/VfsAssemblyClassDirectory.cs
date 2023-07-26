@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Syntax;
 
 namespace IKVM.Runtime.Vfs
@@ -62,12 +62,12 @@ namespace IKVM.Runtime.Vfs
         /// </summary>
         /// <param name="className"></param>
         /// <returns></returns>
-        TypeWrapper TryLoadType(JavaTypeName className)
+        RuntimeJavaType TryLoadType(JavaTypeName className)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            var acl = AssemblyClassLoader.FromAssembly(assembly);
+            var acl = RuntimeAssemblyClassLoaderFactory.FromAssembly(assembly);
 
             try
             {
@@ -90,7 +90,7 @@ namespace IKVM.Runtime.Vfs
         /// <exception cref="NotImplementedException"></exception>
         VfsEntry GetClassEntry(JavaTypeName className)
         {
-            return TryLoadType(className) is TypeWrapper tw && !tw.IsArray ? new VfsAssemblyClassFile(Context, tw) : null;
+            return TryLoadType(className) is RuntimeJavaType tw && !tw.IsArray ? new VfsAssemblyClassFile(Context, tw) : null;
         }
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace IKVM.Runtime.Vfs
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new PlatformNotSupportedException();
 #else
-            var acl = AssemblyClassLoader.FromAssembly(assembly);
+            var acl = RuntimeAssemblyClassLoaderFactory.FromAssembly(assembly);
             if (acl == null)
                 throw new InvalidOperationException("Could not locate assembly loader.");
 
@@ -162,7 +162,7 @@ namespace IKVM.Runtime.Vfs
 #else
             var lst = new HashSet<string>();
 
-            var acl = AssemblyClassLoader.FromAssembly(assembly);
+            var acl = RuntimeAssemblyClassLoaderFactory.FromAssembly(assembly);
             if (acl == null)
                 throw new InvalidOperationException("Could not locate assembly loader.");
 

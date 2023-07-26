@@ -22,12 +22,17 @@
   
 */
 
-enum ByteCodeFlowControl : byte
+namespace IKVM.Runtime
 {
-	Next,
-	Branch,
-	CondBranch,
-	Return,
-	Throw,
-	Switch,
+
+	enum ByteCodeFlowControl : byte
+	{
+		Next,
+		Branch,
+		CondBranch,
+		Return,
+		Throw,
+		Switch,
+	}
+
 }

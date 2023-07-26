@@ -25,8 +25,10 @@ using System.Collections.Generic;
 
 namespace IKVM.StubGen
 {
+
     sealed class InnerClassesAttribute : ClassFileAttribute
 	{
+
 		private ClassFileWriter classFile;
 		private List<Item> classes = new List<Item>();
 
@@ -70,5 +72,7 @@ namespace IKVM.StubGen
 			i.inner_class_access_flags = access;
 			classes.Add(i);
 		}
+
 	}
+
 }

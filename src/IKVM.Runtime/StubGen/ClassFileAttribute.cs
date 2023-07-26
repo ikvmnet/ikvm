@@ -24,8 +24,10 @@
 
 namespace IKVM.StubGen
 {
+
     abstract class ClassFileAttribute
 	{
+
 		private ushort name_index;
 
 		public ClassFileAttribute(ushort name_index)
@@ -37,5 +39,7 @@ namespace IKVM.StubGen
 		{
 			bes.WriteUInt16(name_index);
 		}
+
 	}
+
 }

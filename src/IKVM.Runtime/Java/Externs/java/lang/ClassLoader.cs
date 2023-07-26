@@ -25,7 +25,7 @@ using System;
 using System.Linq;
 
 using IKVM.ByteCode.Reading;
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.lang
 {
@@ -76,7 +76,7 @@ namespace IKVM.Java.Externs.java.lang
 
             try
             {
-                var classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(self);
+                var classLoaderWrapper = RuntimeClassLoaderFactory.GetClassLoaderWrapper(self);
                 var classFile = new ClassFile(ClassReader.Read(new ReadOnlyMemory<byte>(b, off, len)), name, classLoaderWrapper.ClassFileParseOptions, null);
                 if (name != null && classFile.Name != name)
                     throw new global::java.lang.NoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");
@@ -136,7 +136,7 @@ namespace IKVM.Java.Externs.java.lang
 #else
             try
             {
-                return ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast(name)?.ClassObject;
+                return RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedNameFast(name)?.ClassObject;
             }
             catch (RetargetableJavaException x)
             {
@@ -153,7 +153,7 @@ namespace IKVM.Java.Externs.java.lang
         /// <returns></returns>
         public static global::java.lang.Class findLoadedClass0(global::java.lang.ClassLoader self, string name)
         {
-            return name != null ? (ClassLoaderWrapper.GetClassLoaderWrapper(self).FindLoadedClass(name)?.ClassObject) : null;
+            return name != null ? (RuntimeClassLoaderFactory.GetClassLoaderWrapper(self).FindLoadedClass(name)?.ClassObject) : null;
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace IKVM.Java.Externs.java.lang
         /// <returns></returns>
         public static global::java.net.URL getBootstrapResource(string name)
         {
-            return ClassLoaderWrapper.GetBootstrapClassLoader().GetResources(name).FirstOrDefault();
+            return RuntimeClassLoaderFactory.GetBootstrapClassLoader().GetResources(name).FirstOrDefault();
         }
 
         /// <summary>
@@ -176,7 +176,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return new global::ikvm.runtime.EnumerationWrapper(ClassLoaderWrapper.GetBootstrapClassLoader().GetResources(name));
+            return new global::ikvm.runtime.EnumerationWrapper(RuntimeClassLoaderFactory.GetBootstrapClassLoader().GetResources(name));
 #endif
         }
 

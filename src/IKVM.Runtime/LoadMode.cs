@@ -23,16 +23,7 @@
 */
 using System;
 
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using Type = IKVM.Reflection.Type;
-using ProtectionDomain = System.Object;
-#else
-#endif
-
-
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     [Flags]
