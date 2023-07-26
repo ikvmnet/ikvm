@@ -11,7 +11,12 @@ import java.nio.file.WatchKey;
 import java.util.concurrent.ConcurrentHashMap;
 
 final class DotNetWatchService extends AbstractWatchService {
+    private final DotNetFileSystem fs;
     private final ConcurrentHashMap<DotNetPath, DotNetWatchKey> keys = new ConcurrentHashMap();
+
+    DotNetWatchService(DotNetFileSystem fs) {
+        this.fs = fs;
+    }
 
     @Override
     void implClose()
@@ -33,16 +38,11 @@ final class DotNetWatchService extends AbstractWatchService {
             path.getClass();
             throw new ProviderMismatchException();
         }
-        final DotNetPath dir = (DotNetPath)path;
+        final DotNetPath dir = (DotNetPath) path;
 
         final DotNetWatchKey key = keys.computeIfAbsent(dir, c -> new DotNetWatchKey(c));
-        register0(key, dir, events, modifiers);
+        register0(fs, key, dir, events, (Object[]) modifiers);
         return key;
-    }
-
-    void remove(DotNetPath dir) {
-        final DotNetWatchKey key = keys.remove(dir);
-        close0(key, dir);
     }
 
     final class DotNetWatchKey extends AbstractWatchKey implements Closeable {
@@ -64,7 +64,7 @@ final class DotNetWatchService extends AbstractWatchService {
 
         @Override
         public synchronized void close() {
-            close0(this, dir);
+            close0(this);
         }
 
         @Override
@@ -78,7 +78,7 @@ final class DotNetWatchService extends AbstractWatchService {
         }
     }
 
-    static native void close0(Object self, Object dir);
+    static native void close0(Object key);
 
-    static native void register0(Object self, Object dir, Object[] events, Object... modifiers);
+    static native void register0(Object fs, Object key, Object dir, Object[] events, Object... modifiers);
 }

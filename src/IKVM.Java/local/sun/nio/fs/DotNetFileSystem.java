@@ -213,7 +213,7 @@ final class DotNetFileSystem extends FileSystem {
 
     public WatchService newWatchService() throws IOException
     {
-        return new DotNetWatchService();
+        return new DotNetWatchService(this);
     }
 
 }
