@@ -1,9 +1,9 @@
 using IKVM.Runtime.Accessors.Sun.Nio.Fs;
 using usnfs = IKVM.Runtime.Util.Sun.Nio.Fs;
 
-namespace IKVM.Runtime.Java.Externs.sun.nio.fs
+namespace IKVM.Java.Externs.sun.nio.fs
 {
-    public static partial class DotNetWatchService
+    internal static partial class DotNetWatchService
     {
 
         public static void close0(object key) => close0Impl(key);
@@ -18,7 +18,7 @@ namespace IKVM.Runtime.Java.Externs.sun.nio.fs
 
 #if !FIRST_PASS
 
-    public static partial class DotNetWatchService
+    internal static partial class DotNetWatchService
     {
 
         private static DotNetPathAccessor dotNetPath;

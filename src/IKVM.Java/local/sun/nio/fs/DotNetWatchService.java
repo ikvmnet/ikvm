@@ -78,8 +78,7 @@ final class DotNetWatchService extends AbstractWatchService {
         }
     }
 
-    static native void close0(DotNetWatchKey self, DotNetPath dir);
+    static native void close0(Object self, Object dir);
 
-    static native void register0(DotNetWatchKey self, DotNetPath dir, WatchEvent.Kind<?>[] events,
-            WatchEvent.Modifier... modifiers);
+    static native void register0(Object self, Object dir, Object[] events, Object... modifiers);
 }
