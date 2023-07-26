@@ -26,10 +26,10 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
             => (error0 ??= GetMethod(ref error0, nameof(error), null, default)).Invoker(self);
 
         public void signalEvent(object self)
-            => (signalEvent0 ??= GetMethod(ref signalEvent0, nameof(signalEvent), null, default).Invoker(self);
+            => (signalEvent0 ??= GetMethod(ref signalEvent0, nameof(signalEvent), null, default)).Invoker(self);
 
         public void signalEvent(object self, object kind, object context)
-            => (signalEvent1 ??= GetMethod(ref signalEvent1, nameof(signalEvent), null, Resolve("java.nio.file.WatchEvent.Kind"), typeof(object))).Invoker(self, kind, context);
+            => (signalEvent1 ??= GetMethod(ref signalEvent1, nameof(signalEvent), null, WatchEventKind, typeof(object))).Invoker(self, kind, context);
     }
 
 #endif
