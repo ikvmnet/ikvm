@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.lang.IllegalArgumentException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Path;
+import java.nio.file.ProviderMismatchException;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.util.concurrent.ConcurrentHashMap;
