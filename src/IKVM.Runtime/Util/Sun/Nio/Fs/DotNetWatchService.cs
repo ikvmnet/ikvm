@@ -39,6 +39,9 @@ namespace IKVM.Runtime.Util.Sun.Nio.Fs
             fsw.Dispose();
         }
 
+        internal static void Register(object fs, object key, object dir, object[] events, object[] modifiers)
+            => Register(fs, key, DotNetPath.GetPath(dir), events, modifiers);
+
         internal static void Register(object fs, object key, string dir, object[] events, object[] modifiers)
         {
             // we could reuse the FileSystemWatcher, but for now we just recreate it

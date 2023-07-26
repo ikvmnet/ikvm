@@ -21,15 +21,11 @@ namespace IKVM.Java.Externs.sun.nio.fs
     internal static partial class DotNetWatchService
     {
 
-        private static DotNetPathAccessor dotNetPath;
-
-        private static DotNetPathAccessor DotNetPath => JVM.BaseAccessors.Get(ref dotNetPath);
-
         static partial void close0Impl(object key)
             => usnfs.DotNetWatchService.Close(key);
 
         static partial void register0Impl(object fs, object key, object dir, object[] events, object[] modifiers)
-            => usnfs.DotNetWatchService.Register(fs, key, DotNetPath.GetPath(dir), events, modifiers);
+            => usnfs.DotNetWatchService.Register(fs, key, dir, events, modifiers);
 
     }
 
