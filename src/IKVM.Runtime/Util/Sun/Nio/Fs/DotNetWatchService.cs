@@ -38,7 +38,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Fs
             fsw.Dispose();
         }
 
-        internal static void Register(object key, string dir, object[] events, object[] modifiers)
+        internal static void Register(object fs, object key, string dir, object[] events, object[] modifiers)
         {
             // we could reuse the FileSystemWatcher, but for now we just recreate it
             // (and we run the risk of missing some events while we're doing that)
