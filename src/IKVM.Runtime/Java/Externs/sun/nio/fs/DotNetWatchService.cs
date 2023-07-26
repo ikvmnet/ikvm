@@ -5,18 +5,22 @@ namespace IKVM.Runtime.Java.Externs.sun.nio.fs
 {
     public static partial class DotNetWatchService
     {
+
         public static void close0(object key) => close0Impl(key);
 
-        public static void register0(object key, object dir, object[] events, params object[] modifiers) => register0Impl(key, dir, events, modifiers);
+        public static void register0(object fs, object key, object dir, object[] events, params object[] modifiers) => register0Impl(fs, key, dir, events, modifiers);
 
         static partial void close0Impl(object key);
 
-        static partial void register0Impl(object key, object dir, object[] events, object[] modifiers);
+        static partial void register0Impl(object fs, object key, object dir, object[] events, object[] modifiers);
+
     }
 
 #if !FIRST_PASS
+
     public static partial class DotNetWatchService
     {
+
         private static DotNetPathAccessor dotNetPath;
 
         private static DotNetPathAccessor DotNetPath => JVM.BaseAccessors.Get(ref dotNetPath);
@@ -24,8 +28,11 @@ namespace IKVM.Runtime.Java.Externs.sun.nio.fs
         static partial void close0Impl(object key)
             => usnfs.DotNetWatchService.Close(key);
 
-        static partial void register0Impl(object key, object dir, object[] events, object[] modifiers)
-            => usnfs.DotNetWatchService.Register(key, DotNetPath.GetPath(dir), events, modifiers);
+        static partial void register0Impl(object fs, object key, object dir, object[] events, object[] modifiers)
+            => usnfs.DotNetWatchService.Register(fs, key, DotNetPath.GetPath(dir), events, modifiers);
+
     }
+
 #endif
+
 }

@@ -1,6 +1,7 @@
 package sun.nio.fs;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.nio.file.WatchEvent;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -64,9 +65,15 @@ final class DotNetWatchService extends AbstractWatchService {
         public boolean isValid() {
             return state != null;
         }
+
+        void error() {
+            cancel();
+            signal();
+        }
     }
 
     static native void close0(DotNetWatchKey self, DotNetPath dir);
 
-    static native void register0(DotNetWatchKey self, DotNetPath dir, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers);
+    static native void register0(DotNetWatchKey self, DotNetPath dir, WatchEvent.Kind<?>[] events,
+            WatchEvent.Modifier... modifiers);
 }

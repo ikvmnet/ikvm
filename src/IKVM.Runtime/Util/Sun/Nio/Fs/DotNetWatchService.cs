@@ -1,6 +1,7 @@
 ﻿using IKVM.Runtime.Accessors.Com.Sun.Nio.File;
 using IKVM.Runtime.Accessors.Java.Nio.File;
 using IKVM.Runtime.Accessors.Sun.Nio.Fs;
+using IKVM.Runtime.Extensions;
 using System;
 using System.IO;
 
@@ -11,10 +12,13 @@ namespace IKVM.Runtime.Util.Sun.Nio.Fs
 
     internal static class DotNetWatchService
     {
+        private static DotNetPathAccessor dotNetPath;
         private static DotNetWatchServiceKeyAccessor dotNetWatchServiceKey;
         private static ExtendedWatchEventModifierAccessor extendedWatchEventModifier;
         private static SensitivityWatchEventModifierAccessor sensitivityWatchEventModifier;
         private static StandardWatchEventKindsAccessor standardWatchEventKinds;
+
+        private static DotNetPathAccessor DotNetPath => JVM.BaseAccessors.Get(ref dotNetPath);
 
         private static DotNetWatchServiceKeyAccessor DotNetWatchServiceKey => JVM.BaseAccessors.Get(ref dotNetWatchServiceKey);
 
@@ -43,7 +47,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Fs
             try
             {
                 watcher = new FileSystemWatcher(dir);
-                WatchServiceHandler handler = new WatchServiceHandler(key);
+                WatchServiceHandler handler = new WatchServiceHandler(fs, key);
                 bool valid = false;
                 foreach (var @event in events)
                 {
@@ -88,6 +92,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Fs
                     }
                     else if (SensitivityWatchEventModifier.Is(modifier))
                     {
+                        // Ignore
                     }
                     else
                     {
@@ -112,6 +117,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Fs
 
         private class WatchServiceHandler
         {
+            private readonly object fs;
             private readonly object key;
 
             public readonly ErrorEventHandler ErrorHandler;
@@ -120,7 +126,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Fs
 
             public bool Overflow { get; set; }
 
-            public WatchServiceHandler(object key)
+            public WatchServiceHandler(object fs, object key)
             {
                 this.key = key;
                 ErrorHandler = OnError;
@@ -129,13 +135,31 @@ namespace IKVM.Runtime.Util.Sun.Nio.Fs
 
             private void OnError(object sender, ErrorEventArgs e)
             {
+                const int E_FAIL = unchecked((int)0x80004005);
 
+                if (e.GetException() is Win32Exception win32Exception
+                    && win32Exception.ErrorCode == E_FAIL)
+                {
+                    DotNetWatchServiceKey.error(key);
+                }
+                else if (overflow)
+                {
+                    DotNetWatchServiceKey.signalEvent(key,
+                        StandardWatchEventKinds.OVERFLOW, null);
+                }
             }
 
             private void OnEvent(object sender, FileSystemEventArgs e)
             {
-
+                DotNetWatchServiceKey.signalEvent(key,
+                    e.ChangeType switch
+                    {
+                        WatcherChangeTypes.Created => StandardWatchEventKinds.ENTRY_CREATE,
+                        WatcherChangeTypes.Deleted => StandardWatchEventKinds.ENTRY_DELETE,
+                        _ => StandardWatchEventKinds.ENTRY_MODIFY
+                    }, DotNetPath.Init(fs, e.Name));
             }
+
         }
 
     }
