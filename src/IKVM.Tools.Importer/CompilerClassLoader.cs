@@ -2737,21 +2737,21 @@ namespace IKVM.Tools.Importer
             }
 
             Tracer.Info(Tracer.Compiler, "Constructing compiler");
-            var referencedAssemblies = new RuntimeAssemblyClassLoader[references.Count];
+            var referencedAssemblies = new List<RuntimeAssemblyClassLoader>(references.Count);
             for (int i = 0; i < references.Count; i++)
             {
+                // if reference is to base assembly, set it explicitly for resolution
+                if (compiler.baseAssembly == null && options.bootstrap == false && IsBaseAssembly(context, references[i]))
+                    compiler.baseAssembly = references[i];
+
                 var acl = context.AssemblyClassLoaderFactory.FromAssembly(references[i]);
-                if (Array.IndexOf(referencedAssemblies, acl) != -1)
+                if (referencedAssemblies.Contains(acl))
                     compiler.IssueMessage(options, Message.DuplicateAssemblyReference, acl.MainAssembly.FullName);
 
-                referencedAssemblies[i] = acl;
-
-                // if reference is to base assembly, set it explicitly for resolution
-                if (compiler.baseAssembly == null && options.bootstrap == false && IsBaseAssembly(context, acl.MainAssembly))
-                    compiler.baseAssembly = acl.MainAssembly;
+                referencedAssemblies.Add(acl);
             }
 
-            loader = new CompilerClassLoader(context, referencedAssemblies, options, options.path, options.targetIsModule, options.assembly, h);
+            loader = new CompilerClassLoader(context, referencedAssemblies.ToArray(), options, options.path, options.targetIsModule, options.assembly, h);
             loader.classesToCompile = new List<string>(h.Keys);
             if (options.remapfile != null)
             {

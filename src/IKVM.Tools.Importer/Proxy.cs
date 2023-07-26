@@ -327,7 +327,7 @@ namespace IKVM.Tools.Importer
             // TODO consider using a filter here (but we would need to add filter support to CodeEmitter)
             ilgen.BeginCatchBlock(loader.Context.Types.Exception);
             ilgen.EmitLdc_I4(0);
-            ilgen.Emit(OpCodes.Call, loader.Context.ByteCodeHelperMethods.mapException.MakeGenericMethod(loader.Context.Types.Exception));
+            ilgen.Emit(OpCodes.Call, loader.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(loader.Context.Types.Exception));
             CodeEmitterLocal exception = ilgen.DeclareLocal(context.Types.Exception);
             ilgen.Emit(OpCodes.Stloc, exception);
             CodeEmitterLabel rethrow = ilgen.DefineLabel();

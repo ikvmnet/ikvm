@@ -95,7 +95,7 @@ namespace IKVM.Runtime
         internal readonly MethodInfo CompareAndSwapInt;
         internal readonly MethodInfo CompareAndSwapLong;
         internal readonly MethodInfo CompareAndSwapDouble;
-        internal readonly MethodInfo mapException;
+        internal readonly MethodInfo MapException;
         internal readonly MethodInfo GetDelegateForInvokeExact;
         internal readonly MethodInfo GetDelegateForInvoke;
         internal readonly MethodInfo GetDelegateForInvokeBasic;
@@ -161,7 +161,7 @@ namespace IKVM.Runtime
             CompareAndSwapInt = GetHelper(typeofByteCodeHelper, "CompareAndSwap", new[] { context.Types.Int32.MakeByRefType(), context.Types.Int32, context.Types.Int32 });
             CompareAndSwapLong = GetHelper(typeofByteCodeHelper, "CompareAndSwap", new[] { context.Types.Int64.MakeByRefType(), context.Types.Int64, context.Types.Int64 });
             CompareAndSwapDouble = GetHelper(typeofByteCodeHelper, "CompareAndSwap", new[] { context.Types.Double.MakeByRefType(), context.Types.Double, context.Types.Double });
-            mapException = GetHelper(typeofByteCodeHelper, "MapException");
+            MapException = GetHelper(typeofByteCodeHelper, "MapException");
             GetDelegateForInvokeExact = GetHelper(typeofByteCodeHelper, "GetDelegateForInvokeExact");
             GetDelegateForInvoke = GetHelper(typeofByteCodeHelper, "GetDelegateForInvoke");
             GetDelegateForInvokeBasic = GetHelper(typeofByteCodeHelper, "GetDelegateForInvokeBasic");
@@ -177,10 +177,13 @@ namespace IKVM.Runtime
         static MethodInfo GetHelper(Type type, string method, Type[] parameters)
         {
             var mi = parameters == null ? type.GetMethod(method) : type.GetMethod(method, parameters);
+            if (mi == null)
 #if IMPORTER
-		    if (mi == null)
 			    throw new FatalCompilerErrorException(Message.RuntimeMethodMissing, method);
+#else
+                throw new InternalException("Missing ByteCodeHelper method in runtime.");
 #endif
+
             return mi;
         }
 
