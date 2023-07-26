@@ -2,7 +2,11 @@ package sun.nio.fs;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.IllegalArgumentException;
+import java.nio.file.ClosedWatchServiceException;
+import java.nio.file.Path;
 import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
 import java.util.concurrent.ConcurrentHashMap;
 
 final class DotNetWatchService extends AbstractWatchService {
@@ -11,7 +15,7 @@ final class DotNetWatchService extends AbstractWatchService {
     @Override
     void implClose()
             throws IOException {
-        for (DotNetWatchKey key : keys.keySet()) {
+        for (DotNetWatchKey key : keys.values()) {
             key.close();
         }
 
@@ -19,18 +23,19 @@ final class DotNetWatchService extends AbstractWatchService {
     }
 
     @Override
-    DotNetWatchKey register(DotNetPath path, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers)
+    WatchKey register(Path path, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers)
             throws IOException {
         if (!isOpen()) {
             throw new ClosedWatchServiceException();
         }
-
-        if (path == null) {
-            throw new ArgumentNullException(nameof(path));
+        if (!(path instanceof DotNetPath)) {
+            path.getClass();
+            throw new ProviderMismatchException();
         }
+        final DotNetPath dir = (DotNetPath)path;
 
-        final DotNetWatchKey key = keys.computeIfAbsent(path, c -> new DotNetWatchKey(c));
-        register0(key, path, events, modifiers);
+        final DotNetWatchKey key = keys.computeIfAbsent(dir, c -> new DotNetWatchKey(c));
+        register0(key, dir, events, modifiers);
         return key;
     }
 
