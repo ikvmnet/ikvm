@@ -63,7 +63,7 @@ final class DotNetWatchService extends AbstractWatchService {
         }
 
         @Override
-        public synchronized void close() throws IOException {
+        public synchronized void close() {
             close0(this, dir);
         }
 
