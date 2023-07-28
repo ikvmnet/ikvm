@@ -522,8 +522,8 @@ jobs:
       id: test-name
       with:
         script: |
-            const run = context.matrix.run + "?";
-            const tst = run.substring(0, run.indexOf("?"));
+            const run = context.matrix.run;
+            const tst = run.split('?')[0];
             return tst;
         result-encoding: string
     - name: Download Tests
