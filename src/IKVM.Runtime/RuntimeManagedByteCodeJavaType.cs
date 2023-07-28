@@ -668,39 +668,36 @@ namespace IKVM.Runtime
 
         protected override void LazyPublishMethods()
         {
-            bool isDelegate = type.BaseType == Context.Types.MulticastDelegate;
-            List<RuntimeJavaMethod> methods = new List<RuntimeJavaMethod>();
             const BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
-            foreach (ConstructorInfo ctor in type.GetConstructors(flags))
+
+            var isDelegate = type.BaseType == Context.Types.MulticastDelegate;
+            var methods = new List<RuntimeJavaMethod>();
+
+            foreach (var ctor in type.GetConstructors(flags))
             {
-                HideFromJavaFlags hideFromJavaFlags = Context.AttributeHelper.GetHideFromJavaFlags(ctor);
+                var hideFromJavaFlags = Context.AttributeHelper.GetHideFromJavaFlags(ctor);
                 if (isDelegate && !ctor.IsStatic && (hideFromJavaFlags & HideFromJavaFlags.Code) == 0)
-                {
                     methods.Add(new DelegateConstructorJavaMethod(this, ctor));
-                }
                 else
-                {
                     AddMethodOrConstructor(ctor, hideFromJavaFlags, methods);
-                }
             }
+
             AddMethods(type.GetMethods(flags), methods);
+
             if (type.IsInterface && (type.IsPublic || type.IsNestedPublic))
             {
-                Type privateInterfaceMethods = type.GetNestedType(NestedTypeName.PrivateInterfaceMethods, BindingFlags.NonPublic);
+                var privateInterfaceMethods = type.GetNestedType(NestedTypeName.PrivateInterfaceMethods, BindingFlags.NonPublic);
                 if (privateInterfaceMethods != null)
-                {
                     AddMethods(privateInterfaceMethods.GetMethods(flags), methods);
-                }
             }
+
             SetMethods(methods.ToArray());
         }
 
         private void AddMethods(MethodInfo[] add, List<RuntimeJavaMethod> methods)
         {
-            foreach (MethodInfo method in add)
-            {
+            foreach (var method in add)
                 AddMethodOrConstructor(method, Context.AttributeHelper.GetHideFromJavaFlags(method), methods);
-            }
         }
 
         private void AddMethodOrConstructor(MethodBase method, HideFromJavaFlags hideFromJavaFlags, List<RuntimeJavaMethod> methods)
