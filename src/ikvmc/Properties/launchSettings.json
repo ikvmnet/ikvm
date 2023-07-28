@@ -1,8 +1,9 @@
 {
   "profiles": {
     "ikvmc": {
-      "commandName": "Project",
-      "commandLineArgs": "@C:\\dev\\ikvm\\src\\ikvm.java.tests\\obj\\Debug\\net461\\IKVM.Java.Tests.ikvmc.rsp"
+        "commandName": "Project",
+        "commandLineArgs": "@obj\\Debug\\netcoreapp3.1\\IKVM.Java.ikvmc.rsp",
+        "workingDirectory": ""
     }
   }
 }
