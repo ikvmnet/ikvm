@@ -16,7 +16,7 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
 
         internal FieldAccessor<object, object> State => GetField(ref state, "state");
 
-        private TypeFlags Void => voidType ??= typeof(void);
+        private Type Void => voidType ??= typeof(void);
 
         private Type WatchEventKind => watchEventKind ??= Resolve("java.nio.file.WatchEvent+Kind");
 
