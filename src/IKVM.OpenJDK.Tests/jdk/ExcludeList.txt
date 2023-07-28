@@ -3427,3 +3427,6 @@ java/lang/invoke/CustomizedLambdaFormTest.java                                  
 
 # Shell fails on Windows
 sun/security/tools/keytool/keyalg.sh                                                                                    windows-all
+
+# Class(-Loader) GC not supported
+javax/management/mxbean/MXBeanLoadingTest1.java                                                                         generic-all
