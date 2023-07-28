@@ -520,9 +520,11 @@ jobs:
     - name: Get Test Name
       uses: actions/github-script@v6
       id: test-name
+      env:
+        MATRIX_RUN: '${{ matrix.run }}'
       with:
         script: |
-            const run = context.matrix.run;
+            const run = process.env.MATRIX_RUN;
             const tst = run.split('?')[0];
             return tst;
         result-encoding: string
