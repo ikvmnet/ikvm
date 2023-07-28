@@ -82,16 +82,15 @@ namespace IKVM.Runtime
 
         static object MultianewarrayHelper(Type elemType, int[] lengths, int index)
         {
-            object o = Array.CreateInstance(elemType, lengths[index++]);
+            var o = Array.CreateInstance(elemType, lengths[index++]);
             if (index < lengths.Length)
             {
                 elemType = elemType.GetElementType();
-                object[] a = (object[])o;
+                var a = (object[])o;
                 for (int i = 0; i < a.Length; i++)
-                {
                     a[i] = MultianewarrayHelper(elemType, lengths, index);
-                }
             }
+
             return o;
         }
 
@@ -105,7 +104,8 @@ namespace IKVM.Runtime
                 rank++;
                 type = type.GetElementType();
             }
-            object obj = multianewarray(RuntimeArrayJavaType.MakeArrayType(typeof(object), rank).TypeHandle, lengths);
+
+            var obj = multianewarray(RuntimeArrayJavaType.MakeArrayType(typeof(object), rank).TypeHandle, lengths);
             GhostTag.SetTag(obj, typeHandle);
             return obj;
         }
@@ -113,7 +113,7 @@ namespace IKVM.Runtime
         [DebuggerStepThrough]
         public static T[] anewarray_ghost<T>(int length, RuntimeTypeHandle typeHandle)
         {
-            T[] obj = new T[length];
+            var obj = new T[length];
             GhostTag.SetTag(obj, typeHandle);
             return obj;
         }
@@ -125,12 +125,12 @@ namespace IKVM.Runtime
             throw new NotImplementedException();
 #else
             Profiler.Count("DynamicMultianewarray");
-            RuntimeJavaType wrapper = RuntimeJavaType.FromClass(clazz);
-            object obj = multianewarray(wrapper.TypeAsArrayType.TypeHandle, lengths);
+
+            var wrapper = RuntimeJavaType.FromClass(clazz);
+            var obj = multianewarray(wrapper.TypeAsArrayType.TypeHandle, lengths);
             if (wrapper.IsGhostArray)
-            {
                 GhostTag.SetTag(obj, wrapper);
-            }
+
             return obj;
 #endif
         }
@@ -143,15 +143,13 @@ namespace IKVM.Runtime
 #else
             Profiler.Count("DynamicNewarray");
             if (length < 0)
-            {
                 throw new global::java.lang.NegativeArraySizeException();
-            }
-            RuntimeJavaType wrapper = RuntimeJavaType.FromClass(clazz);
-            Array obj = Array.CreateInstance(wrapper.TypeAsArrayType, length);
+
+            var wrapper = RuntimeJavaType.FromClass(clazz);
+            var obj = Array.CreateInstance(wrapper.TypeAsArrayType, length);
             if (wrapper.IsGhost || wrapper.IsGhostArray)
-            {
                 GhostTag.SetTag(obj, wrapper.MakeArrayType(1));
-            }
+
             return obj;
 #endif
         }
@@ -183,48 +181,47 @@ namespace IKVM.Runtime
 #if EXPORTER == false
 
         // the sole purpose of this method is to check whether the clazz can be instantiated (but not to actually do it)
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static void DynamicNewCheckOnly(global::java.lang.Class clazz)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             Profiler.Count("DynamicNewCheckOnly");
-            RuntimeJavaType wrapper = RuntimeJavaType.FromClass(clazz);
+            var wrapper = RuntimeJavaType.FromClass(clazz);
             if (wrapper.IsAbstract)
-            {
                 throw new global::java.lang.InstantiationError(wrapper.Name);
-            }
+
             wrapper.RunClassInit();
 #endif
         }
 
-        private static RuntimeJavaType LoadTypeWrapper(string clazz, ikvm.@internal.CallerID callerId)
+        static RuntimeJavaType LoadTypeWrapper(string clazz, ikvm.@internal.CallerID callerId)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             try
             {
-                RuntimeJavaType context = RuntimeJavaType.FromClass(callerId.getCallerClass());
-                RuntimeJavaType wrapper = RuntimeClassLoader.FromCallerID(callerId).LoadClassByName(clazz);
-                global::java.lang.ClassLoader loader = callerId.getCallerClassLoader();
+                var context = RuntimeJavaType.FromClass(callerId.getCallerClass());
+                var wrapper = RuntimeClassLoader.FromCallerID(callerId).LoadClassByName(clazz);
+                var loader = callerId.getCallerClassLoader();
                 if (loader != null)
                 {
                     ClassLoaderAccessor cla = null;
                     JVM.BaseAccessors.Get(ref cla);
                     cla.InvokeCheckPackageAccess(loader, wrapper.ClassObject, callerId.getCallerClass().pd);
                 }
+
                 if (!wrapper.IsAccessibleFrom(context))
-                {
                     throw new global::java.lang.IllegalAccessError("Try to access class " + wrapper.Name + " from class " + context.Name);
-                }
+
                 wrapper.Finish();
                 return wrapper;
             }
-            catch (RetargetableJavaException x)
+            catch (RetargetableJavaException e)
             {
-                throw x.ToJava();
+                throw e.ToJava();
             }
 #endif
         }
@@ -249,9 +246,8 @@ namespace IKVM.Runtime
             Debug.Assert(obj != null);
             Profiler.Count("DynamicCast");
             if (!DynamicInstanceOf(obj, clazz))
-            {
                 throw new global::java.lang.ClassCastException(IKVM.Java.Externs.ikvm.runtime.Util.GetTypeWrapperFromObject(JVM.Context, obj).Name + " cannot be cast to " + clazz.getName());
-            }
+
             return obj;
 #endif
         }
@@ -264,20 +260,18 @@ namespace IKVM.Runtime
 #else
             Debug.Assert(obj != null);
             Profiler.Count("DynamicInstanceOf");
-            RuntimeJavaType tw = RuntimeJavaType.FromClass(clazz);
+
+            var tw = RuntimeJavaType.FromClass(clazz);
             // we have to mimick the bytecode behavior, which allows these .NET-isms to show through
             if (tw.TypeAsBaseType == typeof(Array))
-            {
                 return obj is Array;
-            }
+
             if (tw.TypeAsBaseType == typeof(string))
-            {
                 return obj is string;
-            }
+
             if (tw.TypeAsBaseType == typeof(IComparable))
-            {
                 return obj is IComparable;
-            }
+
             return tw.IsInstance(obj);
 #endif
         }
@@ -286,9 +280,7 @@ namespace IKVM.Runtime
         public static global::java.lang.invoke.MethodType DynamicLoadMethodType(ref global::java.lang.invoke.MethodType cache, string sig, ikvm.@internal.CallerID callerID)
         {
             if (cache == null)
-            {
                 DynamicLoadMethodTypeImpl(ref cache, sig, callerID);
-            }
 
             return cache;
         }
@@ -300,18 +292,17 @@ namespace IKVM.Runtime
 #else
             try
             {
-                RuntimeClassLoader loader = RuntimeClassLoader.FromCallerID(callerID);
-                RuntimeJavaType[] args = loader.ArgJavaTypeListFromSig(sig, LoadMode.LoadOrThrow);
-                global::java.lang.Class[] ptypes = new global::java.lang.Class[args.Length];
+                var loader = RuntimeClassLoader.FromCallerID(callerID);
+                var args = loader.ArgJavaTypeListFromSig(sig, LoadMode.LoadOrThrow);
+                var ptypes = new global::java.lang.Class[args.Length];
                 for (int i = 0; i < ptypes.Length; i++)
-                {
                     ptypes[i] = args[i].ClassObject;
-                }
+
                 Interlocked.CompareExchange(ref cache, global::java.lang.invoke.MethodType.methodType(loader.RetTypeWrapperFromSig(sig, LoadMode.LoadOrThrow).ClassObject, ptypes), null);
             }
-            catch (RetargetableJavaException x)
+            catch (RetargetableJavaException e)
             {
-                throw x.ToJava();
+                throw e.ToJava();
             }
 #endif
         }
@@ -320,9 +311,7 @@ namespace IKVM.Runtime
         public static global::java.lang.invoke.MethodHandle DynamicLoadMethodHandle(ref global::java.lang.invoke.MethodHandle cache, int kind, string clazz, string name, string sig, ikvm.@internal.CallerID callerID)
         {
             if (cache == null)
-            {
                 Interlocked.CompareExchange(ref cache, DynamicLoadMethodHandleImpl(kind, clazz, name, sig, callerID), null);
-            }
 
             return cache;
         }
@@ -332,7 +321,8 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            global::java.lang.Class refc = LoadTypeWrapper(clazz, callerID).ClassObject;
+            var refc = LoadTypeWrapper(clazz, callerID).ClassObject;
+
             try
             {
                 switch ((ReferenceKind)kind)
@@ -357,6 +347,7 @@ namespace IKVM.Runtime
                                     return global::java.lang.invoke.MethodHandles.invoker(mt);
                             }
                         }
+
                         return global::java.lang.invoke.MethodHandleNatives.linkMethodHandleConstant(callerID.getCallerClass(), kind, refc, name, mt);
                 }
             }
@@ -369,7 +360,7 @@ namespace IKVM.Runtime
 
         [DebuggerStepThrough]
         public static T DynamicBinderMemberLookup<T>(int kind, string clazz, string name, string sig, ikvm.@internal.CallerID callerID)
-            where T : class /* delegate */
+            where T : class, Delegate
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -1102,91 +1093,78 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            RuntimeJavaType exceptionTypeWrapper = RuntimeJavaType.FromClass(exceptionClass);
+            var exceptionTypeWrapper = RuntimeJavaType.FromClass(exceptionClass);
             mode &= ~MapFlags.NoRemapping;
             if (exceptionTypeWrapper.IsSubTypeOf(JVM.Context.JavaBase.TypeOfCliSystemException))
-            {
                 mode |= MapFlags.NoRemapping;
-            }
-            Type exceptionType = exceptionTypeWrapper == JVM.Context.JavaBase.TypeOfjavaLangThrowable ? typeof(System.Exception) : exceptionTypeWrapper.TypeAsBaseType;
+
+            var exceptionType = exceptionTypeWrapper == JVM.Context.JavaBase.TypeOfjavaLangThrowable ? typeof(System.Exception) : exceptionTypeWrapper.TypeAsBaseType;
             return (Exception)JVM.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(exceptionType).Invoke(null, new object[] { x, mode });
 #endif
         }
 
         public static T GetDelegateForInvokeExact<T>(global::java.lang.invoke.MethodHandle h)
-            where T : class
+            where T : class, Delegate
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            T del = h._invokeExactDelegate as T;
-            if (del == null)
-            {
-                del = JVM.Context.MethodHandleUtil.GetDelegateForInvokeExact<T>(h);
-            }
+            var del = h._invokeExactDelegate as T;
+            del ??= JVM.Context.MethodHandleUtil.GetDelegateForInvokeExact<T>(h);
             return del;
 #endif
         }
 
         public static T GetDelegateForInvoke<T>(global::java.lang.invoke.MethodHandle h, global::java.lang.invoke.MethodType realType, ref InvokeCache<T> cache)
-            where T : class
+            where T : class, Delegate
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             T del;
             if (cache.Type == h.type() && (del = (h.isVarargsCollector() ? cache.varArg : cache.fixedArg)) != null)
-            {
                 return del;
-            }
+
             del = h.form.vmentry.vmtarget as T;
             if (del == null)
             {
-                global::java.lang.invoke.MethodHandle adapter = global::java.lang.invoke.MethodHandles.exactInvoker(h.type());
+                var adapter = global::java.lang.invoke.MethodHandles.exactInvoker(h.type());
                 if (h.isVarargsCollector())
-                {
                     adapter = adapter.asVarargsCollector(h.type().parameterType(h.type().parameterCount() - 1));
-                }
+
                 // if realType is set, the delegate contains erased unloadable types
                 if (realType != null)
-                {
                     adapter = adapter.asType(realType.insertParameterTypes(0, (global::java.lang.Class)ClassLiteral<global::java.lang.invoke.MethodHandle>.Value)).asFixedArity();
-                }
+
                 adapter = adapter.asType(JVM.Context.MethodHandleUtil.GetDelegateMethodType(typeof(T)));
                 del = GetDelegateForInvokeExact<T>(adapter);
                 if (cache.TrySetType(h.type()))
                 {
                     if (h.isVarargsCollector())
-                    {
                         cache.varArg = del;
-                    }
                     else
-                    {
                         cache.fixedArg = del;
-                    }
                 }
             }
+
             return del;
 #endif
         }
 
         public static T GetDelegateForInvokeBasic<T>(global::java.lang.invoke.MethodHandle h)
-            where T : class
+            where T : class, Delegate
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            T del = h.form.vmentry.vmtarget as T;
-            if (del == null)
-            {
-                del = JVM.Context.MethodHandleUtil.GetVoidAdapter(h.form.vmentry) as T;
-            }
+            var del = h.form.vmentry.vmtarget as T;
+            del ??= MethodHandleUtil.GetVoidAdapter(h.form.vmentry) as T;
             return del;
 #endif
         }
 
         public static global::java.lang.invoke.MethodType LoadMethodType<T>()
-            where T : class // Delegate
+            where T : class, Delegate
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -1197,22 +1175,22 @@ namespace IKVM.Runtime
 
         [HideFromJava]
         public static void LinkIndyCallSite<T>(ref IndyCallSite<T> site, global::java.lang.invoke.CallSite cs, Exception x)
-            where T : class // Delegate
+            where T : class, Delegate
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             // when a CallSite is first constructed, it doesn't call MethodHandleNatives.setCallSiteTargetNormal(),
             // so we have to check if we need to initialize it here (i.e. attach an IndyCallSite<T> to it)
             if (cs != null)
             {
                 if (cs.ics == null)
-                {
                     MethodHandleNatives.InitializeCallSite(cs);
-                }
+
                 lock (cs.ics)
-                {
                     cs.ics.SetTarget(cs.target);
-                }
             }
+
             IndyCallSite<T> ics;
             if (x != null || cs == null || (ics = cs.ics as IndyCallSite<T>) == null)
             {
@@ -1232,19 +1210,20 @@ namespace IKVM.Runtime
                                 exc),
                         0, type.parameterArray()));
             }
-            IndyCallSite<T> curr = site;
+
+            var curr = site;
             if (curr.IsBootstrap)
-            {
                 Interlocked.CompareExchange(ref site, ics, curr);
-            }
 #endif
         }
 
         [HideFromJava]
         public static void DynamicLinkIndyCallSite<T>(ref IndyCallSite<T> site, global::java.lang.invoke.CallSite cs, Exception x, string signature, ikvm.@internal.CallerID callerID)
-            where T : class // Delegate
+            where T : class, Delegate
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             // when a CallSite is first constructed, it doesn't call MethodHandleNatives.setCallSiteTargetNormal(),
             // so we have to check if we need to initialize it here (i.e. attach an IndyCallSite<T> to it)
             if (cs != null)
@@ -1258,6 +1237,7 @@ namespace IKVM.Runtime
                     cs.ics.SetTarget(cs.target);
                 }
             }
+
             global::java.lang.invoke.MethodType typeCache = null;
             IndyCallSite<T> ics;
             if (x != null || cs == null || cs.type() != DynamicLoadMethodType(ref typeCache, signature, callerID))
@@ -1305,12 +1285,14 @@ namespace IKVM.Runtime
     }
 
     public sealed class IndyCallSite<T> : IIndyCallSite
-        where T : class // Delegate
+        where T : class, Delegate
     {
+
         internal readonly bool IsBootstrap;
-        private volatile T target;
+        volatile T target;
 
         internal IndyCallSite()
+
         {
         }
 
@@ -1346,12 +1328,9 @@ namespace IKVM.Runtime
         internal T fixedArg;
         internal T varArg;
 
-        private global::java.lang.invoke.MethodType type;
+        global::java.lang.invoke.MethodType type;
 
-        internal global::java.lang.invoke.MethodType Type
-        {
-            get { return type; }
-        }
+        internal global::java.lang.invoke.MethodType Type => type;
 
         internal bool TrySetType(global::java.lang.invoke.MethodType newType)
         {
@@ -1366,10 +1345,12 @@ namespace IKVM.Runtime
     [StructLayout(LayoutKind.Explicit)]
     public struct DoubleConverter
     {
+
         [FieldOffset(0)]
-        private double d;
+        double d;
+
         [FieldOffset(0)]
-        private long l;
+        long l;
 
         public static long ToLong(double value, ref DoubleConverter converter)
         {
@@ -1382,15 +1363,18 @@ namespace IKVM.Runtime
             converter.l = value;
             return converter.d;
         }
+
     }
 
     [StructLayout(LayoutKind.Explicit)]
     public struct FloatConverter
     {
+
         [FieldOffset(0)]
-        private float f;
+        float f;
+
         [FieldOffset(0)]
-        private int i;
+        int i;
 
         public static int ToInt(float value, ref FloatConverter converter)
         {
@@ -1403,6 +1387,7 @@ namespace IKVM.Runtime
             converter.i = value;
             return converter.f;
         }
+
     }
 
     public struct MHA<T1, T2, T3, T4, T5, T6, T7, T8>

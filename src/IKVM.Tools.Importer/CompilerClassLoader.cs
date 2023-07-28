@@ -2254,7 +2254,7 @@ namespace IKVM.Tools.Importer
                 for (int i = 0; i < map.Length; i++)
                 {
                     ilgen.Emit(OpCodes.Dup);
-                    ilgen.Emit(OpCodes.Ldtoken, rcontext.StaticCompiler.Universe.GetType(map[i].Source, true));
+                    ilgen.Emit(OpCodes.Ldtoken, rcontext.Resolver.ResolveCoreType(map[i].Source));
                     ilgen.Emit(OpCodes.Call, rcontext.CompilerFactory.GetTypeFromHandleMethod);
                     ilgen.Emit(OpCodes.Ceq);
                     var label = ilgen.DefineLabel();
