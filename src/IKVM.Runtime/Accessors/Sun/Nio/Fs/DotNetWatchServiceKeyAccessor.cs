@@ -11,9 +11,12 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
         private MethodAccessor<Action<object>> signalEvent0;
         private MethodAccessor<Action<object, object, object>> signalEvent1;
         private FieldAccessor<object, object> state;
+        private Type voidType;
         private Type watchEventKind;
 
         internal FieldAccessor<object, object> State => GetField(ref state, "state");
+
+        private TypeFlags Void => voidType ??= typeof(void);
 
         private Type WatchEventKind => watchEventKind ??= Resolve("java.nio.file.WatchEvent+Kind");
 
@@ -23,13 +26,13 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
         }
 
         public void error(object self)
-            => (error0 ??= GetMethod(ref error0, nameof(error), null, default)).Invoker(self);
+            => (error0 ??= GetMethod(ref error0, nameof(error), Void, default)).Invoker(self);
 
         public void signalEvent(object self)
-            => (signalEvent0 ??= GetMethod(ref signalEvent0, nameof(signalEvent), null, default)).Invoker(self);
+            => (signalEvent0 ??= GetMethod(ref signalEvent0, nameof(signalEvent), Void default)).Invoker(self);
 
         public void signalEvent(object self, object kind, object context)
-            => (signalEvent1 ??= GetMethod(ref signalEvent1, nameof(signalEvent), null, WatchEventKind, typeof(object))).Invoker(self, kind, context);
+            => (signalEvent1 ??= GetMethod(ref signalEvent1, nameof(signalEvent), Void, WatchEventKind, typeof(object))).Invoker(self, kind, context);
     }
 
 #endif
