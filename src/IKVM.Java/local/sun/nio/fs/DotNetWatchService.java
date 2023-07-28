@@ -56,14 +56,13 @@ final class DotNetWatchService extends AbstractWatchService {
 
         @Override
         public void cancel() {
-            synchronized (DotNetWatchService.this.closeLock()) {
-                DotNetWatchService.this.keys.remove(dir, this);
+            if (DotNetWatchService.this.keys.remove(dir, this)) {
                 close();
             }
         }
 
         @Override
-        public synchronized void close() {
+        public void close() {
             close0(this);
         }
 
