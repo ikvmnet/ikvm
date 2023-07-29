@@ -38,7 +38,7 @@ namespace IKVM.Tools.Exporter.Tests
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #else
             options.References.AddRange(DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()));
-            options.Assembly = typeof(object).Assembly.Location;
+            options.Assembly = options.References.First(i => Path.GetFileNameWithoutExtension(i) == "System.Runtime");
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #endif
 
