@@ -74,6 +74,7 @@ namespace IKVM.Tools.Importer
                 // if the current class widens access on an abstract base class method,
                 // we need to inject an artificial base class to workaround a C# compiler bug
                 List<RuntimeJavaMethod> methods = null;
+
                 foreach (var mw in GetMethods())
                 {
                     if (!mw.IsStatic && mw.IsPublic)
@@ -86,6 +87,7 @@ namespace IKVM.Tools.Importer
                         }
                     }
                 }
+
                 if (methods != null)
                 {
                     var name = "__WorkaroundBaseClass__." + UnicodeUtil.EscapeInvalidSurrogates(Name);
@@ -115,7 +117,7 @@ namespace IKVM.Tools.Importer
             workaroundBaseClass?.Finish();
         }
 
-        private sealed class WorkaroundBaseClass
+        sealed class WorkaroundBaseClass
         {
 
             readonly RuntimeImportByteCodeJavaType wrapper;

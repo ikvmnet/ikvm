@@ -104,18 +104,11 @@ namespace IKVM.Runtime
             internal T GetValue<T>(int key)
                 where T : class, new()
             {
-                if (items == null)
-                {
-                    items = new List<Item>();
-                }
+                items ??= new List<Item>();
                 for (int i = 0; i < items.Count; i++)
-                {
-                    T value;
-                    if (items[i].key == key && (value = items[i].value as T) != null)
-                    {
+                    if (items[i].key == key && items[i].value is T value)
                         return value;
-                    }
-                }
+
                 Item item;
                 item.key = key;
                 T val = new T();
@@ -127,23 +120,20 @@ namespace IKVM.Runtime
             internal void EmitDynamicClassLiteral(CodeEmitter ilgen, RuntimeJavaType tw, bool dynamicCallerID)
             {
                 Debug.Assert(tw.IsUnloadable);
-                if (dynamicClassLiteral == null)
-                {
-                    dynamicClassLiteral = new Dictionary<string, MethodInfo>();
-                }
-                string cacheKey = tw.Name;
+
+                dynamicClassLiteral ??= new Dictionary<string, MethodInfo>();
+
+                var cacheKey = tw.Name;
                 if (dynamicCallerID)
-                {
                     cacheKey += ";dynamic";
-                }
-                MethodInfo method;
-                if (!dynamicClassLiteral.TryGetValue(cacheKey, out method))
+
+                if (!dynamicClassLiteral.TryGetValue(cacheKey, out var method))
                 {
-                    FieldBuilder fb = typeBuilder.DefineField("__<>class", context.JavaBase.TypeOfJavaLangClass.TypeAsSignatureType, FieldAttributes.PrivateScope | FieldAttributes.Static);
-                    MethodBuilder mb = DefineHelperMethod("__<>class", context.JavaBase.TypeOfJavaLangClass.TypeAsSignatureType, Type.EmptyTypes);
-                    CodeEmitter ilgen2 = context.CodeEmitterFactory.Create(mb);
+                    var fb = typeBuilder.DefineField("__<>class", context.JavaBase.TypeOfJavaLangClass.TypeAsSignatureType, FieldAttributes.PrivateScope | FieldAttributes.Static);
+                    var mb = DefineHelperMethod("__<>class", context.JavaBase.TypeOfJavaLangClass.TypeAsSignatureType, Type.EmptyTypes);
+                    var ilgen2 = context.CodeEmitterFactory.Create(mb);
                     ilgen2.Emit(OpCodes.Ldsfld, fb);
-                    CodeEmitterLabel label = ilgen2.DefineLabel();
+                    var label = ilgen2.DefineLabel();
                     ilgen2.EmitBrtrue(label);
                     ilgen2.Emit(OpCodes.Ldstr, tw.Name);
                     EmitCallerID(ilgen2, dynamicCallerID);
@@ -156,6 +146,7 @@ namespace IKVM.Runtime
                     method = mb;
                     dynamicClassLiteral.Add(cacheKey, method);
                 }
+
                 ilgen.Emit(OpCodes.Call, method);
             }
 
@@ -206,20 +197,17 @@ namespace IKVM.Runtime
 
             private void RegisterNestedTypeBuilder(TypeBuilder tb)
             {
-                if (nestedTypeBuilders == null)
-                {
-                    nestedTypeBuilders = new List<TypeBuilder>();
-                }
+                nestedTypeBuilders ??= new List<TypeBuilder>();
                 nestedTypeBuilders.Add(tb);
             }
 
             internal Type FinishImpl()
             {
-                RuntimeJavaMethod[] methods = wrapper.GetMethods();
-                RuntimeJavaField[] fields = wrapper.GetFields();
+                var methods = wrapper.GetMethods();
+                var fields = wrapper.GetFields();
 #if IMPORTER
                 wrapper.FinishGhost(typeBuilder, methods);
-#endif // IMPORTER
+#endif
 
                 if (!classFile.IsInterface)
                 {
@@ -231,7 +219,8 @@ namespace IKVM.Runtime
                 // if we're not abstract make sure we don't inherit any abstract methods
                 if (!wrapper.IsAbstract)
                 {
-                    RuntimeJavaType parent = wrapper.BaseTypeWrapper;
+                    var parent = wrapper.BaseTypeWrapper;
+
                     // if parent is not abstract, the .NET implementation will never have abstract methods (only
                     // stubs that throw AbstractMethodError)
                     // NOTE interfaces are supposed to be abstract, but the VM doesn't enforce this, so
@@ -240,14 +229,14 @@ namespace IKVM.Runtime
                     {
                         foreach (RuntimeJavaMethod mw in parent.GetMethods())
                         {
-                            MethodInfo mi = mw.GetMethod() as MethodInfo;
+                            var mi = mw.GetMethod() as MethodInfo;
                             if (mi != null && mi.IsAbstract && !mi.DeclaringType.IsInterface)
                             {
                                 bool needStub = false;
                                 bool needRename = false;
                                 if (mw.IsPublic || mw.IsProtected)
                                 {
-                                    RuntimeJavaMethod fmw = wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+                                    var fmw = wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
                                     while (fmw != mw && (fmw.IsStatic || fmw.IsPrivate))
                                     {
                                         needRename = true;
@@ -260,7 +249,7 @@ namespace IKVM.Runtime
                                 }
                                 else
                                 {
-                                    RuntimeJavaMethod fmw = wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+                                    var fmw = wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
                                     while (fmw != mw && (fmw.IsStatic || fmw.IsPrivate || !(mw.DeclaringType.IsPackageAccessibleFrom(fmw.DeclaringType) || (mw.IsInternal && mw.DeclaringType.InternalsVisibleTo(fmw.DeclaringType)))))
                                     {
                                         needRename = true;
@@ -295,6 +284,7 @@ namespace IKVM.Runtime
                                 }
                             }
                         }
+
                         parent = parent.BaseTypeWrapper;
                     }
                 }
@@ -306,8 +296,8 @@ namespace IKVM.Runtime
                 bool hasConstructor = false;
                 for (int i = 0; i < classFile.Methods.Length; i++)
                 {
-                    ClassFile.Method m = classFile.Methods[i];
-                    MethodBuilder mb = (MethodBuilder)methods[i].GetMethod();
+                    var m = classFile.Methods[i];
+                    var mb = (MethodBuilder)methods[i].GetMethod();
                     if (mb == null)
                     {
                         // method doesn't really exist (e.g. delegate constructor or <clinit> that is optimized away)
@@ -326,7 +316,7 @@ namespace IKVM.Runtime
                     else if (m.IsConstructor)
                     {
                         hasConstructor = true;
-                        CodeEmitter ilGenerator = context.CodeEmitterFactory.Create(mb);
+                        var ilGenerator = context.CodeEmitterFactory.Create(mb);
                         CompileConstructorBody(this, ilGenerator, i);
                     }
                     else
@@ -526,6 +516,7 @@ namespace IKVM.Runtime
                                 CreateDefaultMethodInterop(ref tbDefaultMethods, mb, methods[i]);
 #endif
                             }
+
                             var ilGenerator = context.CodeEmitterFactory.Create(mb);
                             if (!m.IsStatic && !m.IsPublic && classFile.IsInterface)
                             {
@@ -545,7 +536,7 @@ namespace IKVM.Runtime
                                 ilGenerator.DoEmit();
                                 continue;
                             }
-#endif // IMPORTER
+#endif
                             var nonleaf = false;
                             Compiler.Compile(this, host, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf);
                             ilGenerator.CheckLabels();
@@ -554,7 +545,7 @@ namespace IKVM.Runtime
                                 mb.SetImplementationFlags(mb.GetMethodImplementationFlags());
 #if IMPORTER
                             ilGenerator.EmitLineNumberTable(mb);
-#else // IMPORTER
+#else
                             var linenumbers = ilGenerator.GetLineNumberTable();
                             if (linenumbers != null)
                             {
