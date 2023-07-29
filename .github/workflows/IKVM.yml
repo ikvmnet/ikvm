@@ -240,6 +240,9 @@ jobs:
       with:
         name: nuget
         path: C:\nuget.tar.gz
+    - name: Delete NuGet Packages
+      shell: pwsh
+      run: ri C:\nuget.tar.gz
     - name: Package Binaries
       run: tar czvf C:\bin.tar.gz bin
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -248,6 +251,9 @@ jobs:
       with:
         name: bin
         path: C:\bin.tar.gz
+    - name: Delete Binaries
+      shell: pwsh
+      run: ri C:\bin.tar.gz
     - name: Package Tools
       run: tar czvf C:\tools.tar.gz tools
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -256,6 +262,9 @@ jobs:
       with:
         name: tools
         path: C:\tools.tar.gz
+    - name: Delete Tools
+      shell: pwsh
+      run: ri C:\tools.tar.gz
     - name: Package Image
       run: tar czvf C:\image.tar.gz image
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -264,14 +273,130 @@ jobs:
       with:
         name: image
         path: C:\image.tar.gz
-    - name: Package Tests
-      run: tar czvf C:\tests.tar.gz tests
+    - name: Delete Image
+      shell: pwsh
+      run: ri C:\image.tar.gz
+    - name: Package Tests (IKVM.ByteCode.Tests)
+      run: tar czvf C:\tests--IKVM.ByteCode.Tests.tar.gz tests\IKVM.ByteCode.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
-    - name: Upload Tests
+    - name: Upload Tests (IKVM.ByteCode.Tests)
       uses: actions/upload-artifact@v3
       with:
-        name: tests
-        path: C:\tests.tar.gz
+        name: tests--IKVM.ByteCode.Tests
+        path: C:\tests--IKVM.ByteCode.Tests.tar.gz
+    - name: Delete Tests (IKVM.ByteCode.Tests)
+      shell: pwsh
+      run: ri C:\tests--IKVM.ByteCode.Tests.tar.gz
+    - name: Package Tests (IKVM.Tests)
+      run: tar czvf C:\tests--IKVM.Tests.tar.gz tests\IKVM.Tests
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+    - name: Upload Tests (IKVM.Tests)
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests--IKVM.Tests
+        path: C:\tests--IKVM.Tests.tar.gz
+    - name: Delete Tests (IKVM.Tests)
+      shell: pwsh
+      run: ri C:\tests--IKVM.Tests.tar.gz
+    - name: Package Tests (IKVM.Java.Tests)
+      run: tar czvf C:\tests--IKVM.Java.Tests.tar.gz tests\IKVM.Java.Tests
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+    - name: Upload Tests (IKVM.Java.Tests)
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests--IKVM.Java.Tests
+        path: C:\tests--IKVM.Java.Tests.tar.gz
+    - name: Delete Tests (IKVM.Java.Tests)
+      shell: pwsh
+      run: ri C:\tests--IKVM.Java.Tests.tar.gz
+    - name: Package Tests (IKVM.Tools.Tests)
+      run: tar czvf C:\tests--IKVM.Tools.Tests.tar.gz tests\IKVM.Tools.Tests
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+    - name: Upload Tests (IKVM.Tools.Tests)
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests--IKVM.Tools.Tests
+        path: C:\tests--IKVM.Tools.Tests.tar.gz
+    - name: Delete Tests (IKVM.Tools.Tests)
+      shell: pwsh
+      run: ri C:\tests--IKVM.Tools.Tests.tar.gz
+    - name: Package Tests (IKVM.Tools.Exporter.Tests)
+      run: tar czvf C:\tests--IKVM.Tools.Exporter.Tests.tar.gz tests\IKVM.Tools.Exporter.Tests
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+    - name: Upload Tests (IKVM.Tools.Exporter.Tests)
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests--IKVM.Tools.Exporter.Tests
+        path: C:\tests--IKVM.Tools.Exporter.Tests.tar.gz
+    - name: Delete Tests (IKVM.Tools.Exporter.Tests)
+      shell: pwsh
+      run: ri C:\tests--IKVM.Tools.Exporter.Tests.tar.gz
+    - name: Package Tests (IKVM.Tools.Importer.Tests)
+      run: tar czvf C:\tests--IKVM.Tools.Importer.Tests.tar.gz tests\IKVM.Tools.Importer.Tests
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+    - name: Upload Tests (IKVM.Tools.Importer.Tests)
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests--IKVM.Tools.Importer.Tests
+        path: C:\tests--IKVM.Tools.Importer.Tests.tar.gz
+    - name: Delete Tests (IKVM.Tools.Importer.Tests)
+      shell: pwsh
+      run: ri C:\tests--IKVM.Tools.Importer.Tests.tar.gz
+    - name: Package Tests (IKVM.MSBuild.Tasks.Tests)
+      run: tar czvf C:\tests--IKVM.MSBuild.Tasks.Tests.tar.gz tests\IKVM.MSBuild.Tasks.Tests
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+    - name: Upload Tests (IKVM.MSBuild.Tasks.Tests)
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests--IKVM.MSBuild.Tasks.Tests
+        path: C:\tests--IKVM.MSBuild.Tasks.Tests.tar.gz
+    - name: Delete Tests (IKVM.MSBuild.Tasks.Tests)
+      shell: pwsh
+      run: ri C:\tests--IKVM.MSBuild.Tasks.Tests.tar.gz
+    - name: Package Tests (IKVM.MSBuild.Tests)
+      run: tar czvf C:\tests--IKVM.MSBuild.Tests.tar.gz tests\IKVM.MSBuild.Tests
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+    - name: Upload Tests (IKVM.MSBuild.Tests)
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests--IKVM.MSBuild.Tests
+        path: C:\tests--IKVM.MSBuild.Tests.tar.gz
+    - name: Delete Tests (IKVM.MSBuild.Tests)
+      shell: pwsh
+      run: ri C:\tests--IKVM.MSBuild.Tests.tar.gz
+    - name: Package Tests (IKVM.NET.Sdk.Tests)
+      run: tar czvf C:\tests--IKVM.NET.Sdk.Tests.tar.gz tests\IKVM.NET.Sdk.Tests
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+    - name: Upload Tests (IKVM.NET.Sdk.Tests)
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests--IKVM.NET.Sdk.Tests
+        path: C:\tests--IKVM.NET.Sdk.Tests.tar.gz
+    - name: Delete Tests (IKVM.NET.Sdk.Tests)
+      shell: pwsh
+      run: ri C:\tests--IKVM.NET.Sdk.Tests.tar.gz
+    - name: Package Tests (IKVM.JTReg.TestAdapter.Tests)
+      run: tar czvf C:\tests--IKVM.JTReg.TestAdapter.Tests.tar.gz tests\IKVM.JTReg.TestAdapter.Tests
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+    - name: Upload Tests (IKVM.JTReg.TestAdapter.Tests)
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests--IKVM.JTReg.TestAdapter.Tests
+        path: C:\tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
+    - name: Delete Tests (IKVM.JTReg.TestAdapter.Tests)
+      shell: pwsh
+      run: ri C:\tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
+    - name: Package Tests (IKVM.OpenJDK.Tests)
+      run: tar czvf C:\tests--IKVM.OpenJDK.Tests.tar.gz tests\IKVM.OpenJDK.Tests
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+    - name: Upload Tests (IKVM.OpenJDK.Tests)
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests--IKVM.OpenJDK.Tests
+        path: C:\tests--IKVM.OpenJDK.Tests.tar.gz
+    - name: Delete Tests (IKVM.OpenJDK.Tests)
+      shell: pwsh
+      run: ri C:\tests--IKVM.OpenJDK.Tests.tar.gz
   test:
     strategy:
       matrix:
@@ -433,17 +558,28 @@ jobs:
     - name: Setup WSL
       if: matrix.sys == 'windows'
       uses: Vampire/setup-wsl@v2
+    - name: Get Test Name
+      uses: actions/github-script@v6
+      id: test-name
+      env:
+        MATRIX_RUN: '${{ matrix.run }}'
+      with:
+        script: |
+            const run = process.env.MATRIX_RUN;
+            const tst = run.split('?')[0];
+            return tst;
+        result-encoding: string
     - name: Download Tests
       uses: actions/download-artifact@v3
       with:
-        name: tests
+        name: tests--${{ steps.test-name.outputs.result }}
         path: ${{ env.IKVMPATH }}
     - name: Restore Tests
-      run: tar xzvf tests.tar.gz
+      run: tar xzvf tests--${{ steps.test-name.outputs.result }}.tar.gz
       working-directory: ${{ env.IKVMPATH }}
     - name: Delete Tests
       shell: pwsh
-      run: ri tests.tar.gz
+      run: ri tests--${{ steps.test-name.outputs.result }}.tar.gz
       working-directory: ${{ env.IKVMPATH }}
     - name: Execute Tests
       timeout-minutes: 120

@@ -33,17 +33,17 @@ namespace IKVM.StubGen
     sealed class ClassFileWriter : IAttributeOwner
 	{
 
-		private List<ConstantPoolItem> cplist = new List<ConstantPoolItem>();
-		private Dictionary<ConstantPoolItem, ushort> cphashtable = new Dictionary<ConstantPoolItem, ushort>();
-		private List<FieldOrMethod> fields = new List<FieldOrMethod>();
-		private List<FieldOrMethod> methods = new List<FieldOrMethod>();
-		private List<ClassFileAttribute> attribs = new List<ClassFileAttribute>();
-		private List<ushort> interfaces = new List<ushort>();
-		private Modifiers access_flags;
-		private ushort this_class;
-		private ushort super_class;
-		private ushort minorVersion;
-		private ushort majorVersion;
+		List<ConstantPoolItem> cplist = new List<ConstantPoolItem>();
+		Dictionary<ConstantPoolItem, ushort> cphashtable = new Dictionary<ConstantPoolItem, ushort>();
+		List<FieldOrMethod> fields = new List<FieldOrMethod>();
+		List<FieldOrMethod> methods = new List<FieldOrMethod>();
+		List<ClassFileAttribute> attribs = new List<ClassFileAttribute>();
+		List<ushort> interfaces = new List<ushort>();
+		Modifiers access_flags;
+		ushort this_class;
+		ushort super_class;
+		ushort minorVersion;
+		ushort majorVersion;
 
 		public ClassFileWriter(Modifiers mods, string name, string super, ushort minorVersion, ushort majorVersion)
 		{

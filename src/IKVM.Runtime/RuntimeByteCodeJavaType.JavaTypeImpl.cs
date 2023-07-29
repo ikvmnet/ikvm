@@ -92,13 +92,10 @@ namespace IKVM.Runtime
                     if (m.IsClassInitializer)
                     {
 #if IMPORTER
-                        bool noop;
-                        if (IsSideEffectFreeStaticInitializerOrNoop(m, out noop))
+                        if (IsSideEffectFreeStaticInitializerOrNoop(m, out var noop))
                         {
                             if (noop)
-                            {
                                 flags |= MemberFlags.NoOp;
-                            }
                         }
                         else
                         {
@@ -108,15 +105,12 @@ namespace IKVM.Runtime
                         hasclinit = true;
 #endif
                     }
+
                     if (m.IsInternal)
-                    {
                         flags |= MemberFlags.InternalAccess;
-                    }
 #if IMPORTER
                     if (m.IsCallerSensitive && SupportsCallerID(m))
-                    {
                         flags |= MemberFlags.CallerID;
-                    }
 #endif
                     if (wrapper.IsGhost && m.IsVirtual)
                     {
@@ -142,33 +136,30 @@ namespace IKVM.Runtime
                     {
                         if (!classFile.IsInterface && m.IsVirtual)
                         {
-                            bool explicitOverride;
-                            baseMethods[i] = FindBaseMethods(m, out explicitOverride);
+                            baseMethods[i] = FindBaseMethods(m, out var explicitOverride);
                             if (explicitOverride)
-                            {
                                 flags |= MemberFlags.ExplicitOverride;
-                            }
                         }
 
                         methods[i] = new RuntimeTypicalJavaMethod(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
                     }
                 }
+
                 if (hasclinit)
-                {
                     wrapper.SetHasStaticInitializer();
-                }
+
                 if (!wrapper.IsInterface || wrapper.IsPublic)
                 {
-                    List<RuntimeJavaMethod> methodsArray = new List<RuntimeJavaMethod>(methods);
-                    List<RuntimeJavaMethod[]> baseMethodsArray = new List<RuntimeJavaMethod[]>(baseMethods);
+                    var methodsArray = new List<RuntimeJavaMethod>(methods);
+                    var baseMethodsArray = new List<RuntimeJavaMethod[]>(baseMethods);
                     AddMirandaMethods(methodsArray, baseMethodsArray, wrapper);
                     methods = methodsArray.ToArray();
                     baseMethods = baseMethodsArray.ToArray();
                 }
+
                 if (!wrapper.IsInterface)
-                {
                     AddDelegateInvokeStubs(wrapper, ref methods);
-                }
+
                 wrapper.SetMethods(methods);
 
                 fields = new RuntimeJavaField[classFile.Fields.Length];
@@ -981,6 +972,7 @@ namespace IKVM.Runtime
                     Tracer.Info(Tracer.Compiler, "Unused field {0}::{1}", wrapper.Name, fw.Name);
                     return null;
                 }
+
                 // for compatibility with broken Java code that assumes that reflection returns the fields in class declaration
                 // order, we emit the fields in class declaration order in the .NET metadata (and then when we retrieve them
                 // using .NET reflection, we sort on metadata token.)
@@ -994,6 +986,7 @@ namespace IKVM.Runtime
                         }
                     }
                 }
+
                 if (fieldIndex >= classFile.Fields.Length)
                 {
                     // this must be a field defined in map.xml
@@ -1153,12 +1146,13 @@ namespace IKVM.Runtime
 
             internal override DynamicImpl Finish()
             {
-                RuntimeJavaType baseTypeWrapper = wrapper.BaseTypeWrapper;
+                var baseTypeWrapper = wrapper.BaseTypeWrapper;
                 if (baseTypeWrapper != null)
                 {
                     baseTypeWrapper.Finish();
                     baseTypeWrapper.LinkAll();
                 }
+
                 // NOTE there is a bug in the CLR (.NET 1.0 & 1.1 [1.2 is not yet available]) that
                 // causes the AppDomain.TypeResolve event to receive the incorrect type name for nested types.
                 // The Name in the ResolveEventArgs contains only the nested type name, not the full type name,
@@ -1174,30 +1168,30 @@ namespace IKVM.Runtime
                     iface.Finish();
                     iface.LinkAll();
                 }
+
                 // make sure all classes are loaded, before we start finishing the type. During finishing, we
                 // may not run any Java code, because that might result in a request to finish the type that we
                 // are in the process of finishing, and this would be a problem.
                 // Prevent infinity recursion for broken class loaders by keeping a recursion count and falling
                 // back to late binding if we recurse more than twice.
-                LoadMode mode = System.Threading.Interlocked.Increment(ref recursionCount) > 2 || (JVM.DisableEagerClassLoading && wrapper.Name != "sun.reflect.misc.Trampoline")
+                var mode = System.Threading.Interlocked.Increment(ref recursionCount) > 2 || (JVM.DisableEagerClassLoading && wrapper.Name != "sun.reflect.misc.Trampoline")
                     ? LoadMode.ReturnUnloadable
                     : LoadMode.Link;
                 try
                 {
                     classFile.Link(wrapper, mode);
+
                     for (int i = 0; i < fields.Length; i++)
-                    {
                         fields[i].Link(mode);
-                    }
+
                     for (int i = 0; i < methods.Length; i++)
-                    {
                         methods[i].Link(mode);
-                    }
                 }
                 finally
                 {
                     System.Threading.Interlocked.Decrement(ref recursionCount);
                 }
+
                 // this is the correct lock, FinishCore doesn't call any user code and mutates global state,
                 // so it needs to be protected by a lock.
                 lock (this)
@@ -1215,7 +1209,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            private FinishedTypeImpl FinishCore()
+            FinishedTypeImpl FinishCore()
             {
                 // it is possible that the loading of the referenced classes triggered a finish of us,
                 // if that happens, we just return
@@ -1233,12 +1227,13 @@ namespace IKVM.Runtime
                 {
                     RuntimeJavaType declaringTypeWrapper = null;
                     var innerClassesTypeWrappers = Array.Empty<RuntimeJavaType>();
+
                     // if we're an inner class, we need to attach an InnerClass attribute
                     ClassFile.InnerClass[] innerclasses = classFile.InnerClasses;
                     if (innerclasses != null)
                     {
                         // TODO consider not pre-computing innerClassesTypeWrappers and declaringTypeWrapper here
-                        List<RuntimeJavaType> wrappers = new List<RuntimeJavaType>();
+                        var wrappers = new List<RuntimeJavaType>();
                         for (int i = 0; i < innerclasses.Length; i++)
                         {
                             if (innerclasses[i].innerClass != 0 && innerclasses[i].outerClass != 0)
@@ -1267,7 +1262,7 @@ namespace IKVM.Runtime
                                         impl.annotationBuilder.Link();
                             }
                         }
-#endif //IMPORTER
+#endif
                     }
 #if IMPORTER
 
@@ -1288,6 +1283,7 @@ namespace IKVM.Runtime
 
                     var context = new FinishContext(wrapper.Context, host, classFile, wrapper, typeBuilder);
                     var type = context.FinishImpl();
+
 #if IMPORTER
                     if (annotationBuilder != null)
                     {
@@ -1311,6 +1307,7 @@ namespace IKVM.Runtime
                         finishedClinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
                     }
 #endif
+
                     finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, wrapper.ReflectiveModifiers, Metadata.Create(classFile), finishedClinitMethod, finalizeMethod, host);
                     return finishedType;
                 }
