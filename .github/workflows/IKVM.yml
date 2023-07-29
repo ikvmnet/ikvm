@@ -240,6 +240,9 @@ jobs:
       with:
         name: nuget
         path: C:\nuget.tar.gz
+    - name: Delete NuGet Packages
+      shell: pwsh
+      run: ri C:\nuget.tar.gz
     - name: Package Binaries
       run: tar czvf C:\bin.tar.gz bin
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -248,6 +251,9 @@ jobs:
       with:
         name: bin
         path: C:\bin.tar.gz
+    - name: Delete Binaries
+      shell: pwsh
+      run: ri C:\bin.tar.gz
     - name: Package Tools
       run: tar czvf C:\tools.tar.gz tools
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -256,6 +262,9 @@ jobs:
       with:
         name: tools
         path: C:\tools.tar.gz
+    - name: Delete Tools
+      shell: pwsh
+      run: ri C:\tools.tar.gz
     - name: Package Image
       run: tar czvf C:\image.tar.gz image
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -264,6 +273,9 @@ jobs:
       with:
         name: image
         path: C:\image.tar.gz
+    - name: Delete Image
+      shell: pwsh
+      run: ri C:\image.tar.gz
 
     - name: Package Tests (IKVM.ByteCode.Tests)
       run: tar czvf C:\tests--IKVM.ByteCode.Tests.tar.gz tests\IKVM.ByteCode.Tests
