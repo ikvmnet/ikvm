@@ -276,7 +276,6 @@ jobs:
     - name: Delete Image
       shell: pwsh
       run: ri C:\image.tar.gz
-
     - name: Package Tests (IKVM.ByteCode.Tests)
       run: tar czvf C:\tests--IKVM.ByteCode.Tests.tar.gz tests\IKVM.ByteCode.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -288,7 +287,6 @@ jobs:
     - name: Delete Tests (IKVM.ByteCode.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.ByteCode.Tests.tar.gz
-
     - name: Package Tests (IKVM.Tests)
       run: tar czvf C:\tests--IKVM.Tests.tar.gz tests\IKVM.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -300,7 +298,6 @@ jobs:
     - name: Delete Tests (IKVM.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.Tests.tar.gz
-
     - name: Package Tests (IKVM.Java.Tests)
       run: tar czvf C:\tests--IKVM.Java.Tests.tar.gz tests\IKVM.Java.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -312,7 +309,6 @@ jobs:
     - name: Delete Tests (IKVM.Java.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.Java.Tests.tar.gz
-
     - name: Package Tests (IKVM.Tools.Tests)
       run: tar czvf C:\tests--IKVM.Tools.Tests.tar.gz tests\IKVM.Tools.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -324,7 +320,6 @@ jobs:
     - name: Delete Tests (IKVM.Tools.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.Tools.Tests.tar.gz
-
     - name: Package Tests (IKVM.Tools.Exporter.Tests)
       run: tar czvf C:\tests--IKVM.Tools.Exporter.Tests.tar.gz tests\IKVM.Tools.Exporter.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -336,7 +331,6 @@ jobs:
     - name: Delete Tests (IKVM.Tools.Exporter.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.Tools.Exporter.Tests.tar.gz
-
     - name: Package Tests (IKVM.Tools.Importer.Tests)
       run: tar czvf C:\tests--IKVM.Tools.Importer.Tests.tar.gz tests\IKVM.Tools.Importer.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -348,7 +342,6 @@ jobs:
     - name: Delete Tests (IKVM.Tools.Importer.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.Tools.Importer.Tests.tar.gz
-
     - name: Package Tests (IKVM.MSBuild.Tasks.Tests)
       run: tar czvf C:\tests--IKVM.MSBuild.Tasks.Tests.tar.gz tests\IKVM.MSBuild.Tasks.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -360,7 +353,6 @@ jobs:
     - name: Delete Tests (IKVM.MSBuild.Tasks.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.MSBuild.Tasks.Tests.tar.gz
-
     - name: Package Tests (IKVM.MSBuild.Tests)
       run: tar czvf C:\tests--IKVM.MSBuild.Tests.tar.gz tests\IKVM.MSBuild.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -372,7 +364,6 @@ jobs:
     - name: Delete Tests (IKVM.MSBuild.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.MSBuild.Tests.tar.gz
-
     - name: Package Tests (IKVM.NET.Sdk.Tests)
       run: tar czvf C:\tests--IKVM.NET.Sdk.Tests.tar.gz tests\IKVM.NET.Sdk.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -384,7 +375,6 @@ jobs:
     - name: Delete Tests (IKVM.NET.Sdk.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.NET.Sdk.Tests.tar.gz
-
     - name: Package Tests (IKVM.JTReg.TestAdapter.Tests)
       run: tar czvf C:\tests--IKVM.JTReg.TestAdapter.Tests.tar.gz tests\IKVM.JTReg.TestAdapter.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -396,7 +386,6 @@ jobs:
     - name: Delete Tests (IKVM.JTReg.TestAdapter.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
-
     - name: Package Tests (IKVM.OpenJDK.Tests)
       run: tar czvf C:\tests--IKVM.OpenJDK.Tests.tar.gz tests\IKVM.OpenJDK.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -408,7 +397,6 @@ jobs:
     - name: Delete Tests (IKVM.OpenJDK.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.OpenJDK.Tests.tar.gz
-
   test:
     strategy:
       matrix:
