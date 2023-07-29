@@ -293,15 +293,17 @@ jobs:
         - IKVM.OpenJDK.Tests?TestPartition=7
         tfm:
         - net461
-        - netcoreapp3.1
         - net6.0
         - net7.0
         sys:
         - windows
         - linux
+        - osx-x64
         exclude:
         - tfm: net461
           sys: linux
+        - tfm: net461
+          sys: osx-x64
         - run: IKVM.Java.Tests
           tfm: net6.0
         - run: IKVM.Tools.Exporter.Tests
@@ -351,40 +353,46 @@ jobs:
           tfm: net472
           sys: windows
         - run: IKVM.MSBuild.Tasks.Tests
-          tfm: netcoreapp3.1
-          sys: windows
-        - run: IKVM.MSBuild.Tasks.Tests
           tfm: net6.0
           sys: windows
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net7.0
           sys: windows
         - run: IKVM.MSBuild.Tasks.Tests
-          tfm: netcoreapp3.1
-          sys: linux
-        - run: IKVM.MSBuild.Tasks.Tests
           tfm: net6.0
           sys: linux
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net7.0
           sys: linux
+        - run: IKVM.MSBuild.Tasks.Tests
+          tfm: net6.0
+          sys: osx-x64
+        - run: IKVM.MSBuild.Tasks.Tests
+          tfm: net7.0
+          sys: osx-x64
         - run: IKVM.MSBuild.Tests
           tfm: net7.0
           sys: windows
         - run: IKVM.MSBuild.Tests
           tfm: net7.0
           sys: linux
+        - run: IKVM.MSBuild.Tests
+          tfm: net7.0
+          sys: osx-x64
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
           sys: windows
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
           sys: linux
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net7.0
+          sys: osx-x64
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
     - build-ikvm
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
     steps:
     - name: Set Paths (Windows)
       if: runner.os == 'Windows'
@@ -398,8 +406,8 @@ jobs:
         Add-Content $env:GITHUB_ENV "`nIKVMPATH=$dir\ikvm"
         Add-Content $env:GITHUB_ENV "`nTMP=$dir\temp`nTEMP=$dir\temp`nTMPDIR=$dir\temp"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir\dotnet"
-    - name: Set Paths (Linux)
-      if: runner.os == 'Linux'
+    - name: Set Paths (Linux/OS X)
+      if: runner.os == 'Linux' || runner.os == 'macOS'
       shell: pwsh
       run: |
         $dir="${{ runner.temp }}/w"
