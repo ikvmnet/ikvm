@@ -118,6 +118,14 @@ namespace IKVM.NET.Sdk.Tests
                 ("netcoreapp3.1",   "linux-arm"),
                 ("netcoreapp3.1",   "linux-arm64"),
                 ("netcoreapp3.1",   "osx-x64"),
+                ("net6.0",          "win7-x86"),
+                ("net6.0",          "win7-x64"),
+                ("net6.0",          "win81-arm"),
+                ("net6.0",          "linux-x64"),
+                ("net6.0",          "linux-arm"),
+                ("net6.0",          "linux-arm64"),
+                ("net6.0",          "osx-x64"),
+                ("net6.0",          "osx-arm64"),
             };
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -131,6 +139,14 @@ namespace IKVM.NET.Sdk.Tests
                     ("netcoreapp3.1",   "linux-arm"),
                     ("netcoreapp3.1",   "linux-arm64"),
                     ("netcoreapp3.1",   "osx-x64"),
+                    ("net6.0",          "win7-x86"),
+                    ("net6.0",          "win7-x64"),
+                    ("net6.0",          "win81-arm"),
+                    ("net6.0",          "linux-x64"),
+                    ("net6.0",          "linux-arm"),
+                    ("net6.0",          "linux-arm64"),
+                    ("net6.0",          "osx-x64"),
+                    ("net6.0",          "osx-arm64"),
                 };
             }
 
