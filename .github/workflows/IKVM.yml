@@ -398,7 +398,7 @@ jobs:
       run: ri C:\tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
 
     - name: Package Tests (IKVM.OpenJDK.Tests)
-      run: tar czvf C:\test--IKVM.OpenJDK.Tests.tar.gz tests\IKVM.OpenJDK.Tests
+      run: tar czvf C:\tests--IKVM.OpenJDK.Tests.tar.gz tests\IKVM.OpenJDK.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests (IKVM.OpenJDK.Tests)
       uses: actions/upload-artifact@v3
