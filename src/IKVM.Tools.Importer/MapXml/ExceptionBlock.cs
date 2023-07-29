@@ -24,9 +24,8 @@
 
 using System.Linq;
 using System.Xml.Linq;
-using System.Xml.Serialization;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 using Type = IKVM.Reflection.Type;
 
@@ -83,7 +82,7 @@ namespace IKVM.Tools.Importer.MapXml
                 }
                 else
                 {
-                    type = context.ClassLoader.LoadClassByDottedName(Catch.Class).TypeAsExceptionType;
+                    type = context.ClassLoader.LoadClassByName(Catch.Class).TypeAsExceptionType;
                 }
 
                 ilgen.BeginCatchBlock(type);

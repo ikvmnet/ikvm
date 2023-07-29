@@ -25,7 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.security
 {
@@ -114,10 +114,10 @@ namespace IKVM.Java.Externs.java.security
 
         static global::java.security.ProtectionDomain GetProtectionDomainFromType(Type type)
         {
-            if (type == null || type.Assembly == typeof(object).Assembly || type.Assembly == typeof(AccessController).Assembly || type.Assembly == IKVM.Java.Externs.java.lang.SecurityManager.jniAssembly || type.Assembly == typeof(global::java.lang.Thread).Assembly)
+            if (type == null || type.Assembly == typeof(object).Assembly || type.Assembly == typeof(AccessController).Assembly || type.Assembly == typeof(global::java.lang.Thread).Assembly)
                 return null;
 
-            var tw = ClassLoaderWrapper.GetWrapperFromType(type);
+            var tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
             if (tw != null)
                 return IKVM.Java.Externs.java.lang.Class.getProtectionDomain0(tw.ClassObject);
 

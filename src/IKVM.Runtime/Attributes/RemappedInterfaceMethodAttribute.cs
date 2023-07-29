@@ -23,15 +23,13 @@
 */
 using System;
 
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
-
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Interface)]
 	public sealed class RemappedInterfaceMethodAttribute : Attribute
 	{
+
 		private string name;
 		private string mappedTo;
 		private string[] throws;
@@ -43,28 +41,12 @@ namespace IKVM.Attributes
 			this.throws = throws;
 		}
 
-		public string Name
-		{
-			get
-			{
-				return name;
-			}
-		}
+        public string Name => name;
 
-		public string MappedTo
-		{
-			get
-			{
-				return mappedTo;
-			}
-		}
+        public string MappedTo => mappedTo;
 
-		public string[] Throws
-		{
-			get
-			{
-				return throws;
-			}
-		}
-	}
+        public string[] Throws => throws;
+
+    }
+
 }

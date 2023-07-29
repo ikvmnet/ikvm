@@ -23,84 +23,85 @@
 */
 using System;
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
+
     static class Boxer
     {
 
-        private static readonly TypeWrapper javaLangByte;
-        private static readonly MethodWrapper byteValue;
-        private static readonly MethodWrapper valueOfByte;
-        private static readonly TypeWrapper javaLangBoolean;
-        private static readonly MethodWrapper booleanValue;
-        private static readonly MethodWrapper valueOfBoolean;
-        private static readonly TypeWrapper javaLangShort;
-        private static readonly MethodWrapper shortValue;
-        private static readonly MethodWrapper valueOfShort;
-        private static readonly TypeWrapper javaLangCharacter;
-        private static readonly MethodWrapper charValue;
-        private static readonly MethodWrapper valueOfCharacter;
-        private static readonly TypeWrapper javaLangInteger;
-        private static readonly MethodWrapper intValue;
-        private static readonly MethodWrapper valueOfInteger;
-        private static readonly TypeWrapper javaLangFloat;
-        private static readonly MethodWrapper floatValue;
-        private static readonly MethodWrapper valueOfFloat;
-        private static readonly TypeWrapper javaLangLong;
-        private static readonly MethodWrapper longValue;
-        private static readonly MethodWrapper valueOfLong;
-        private static readonly TypeWrapper javaLangDouble;
-        private static readonly MethodWrapper doubleValue;
-        private static readonly MethodWrapper valueOfDouble;
+        private static readonly RuntimeJavaType javaLangByte;
+        private static readonly RuntimeJavaMethod byteValue;
+        private static readonly RuntimeJavaMethod valueOfByte;
+        private static readonly RuntimeJavaType javaLangBoolean;
+        private static readonly RuntimeJavaMethod booleanValue;
+        private static readonly RuntimeJavaMethod valueOfBoolean;
+        private static readonly RuntimeJavaType javaLangShort;
+        private static readonly RuntimeJavaMethod shortValue;
+        private static readonly RuntimeJavaMethod valueOfShort;
+        private static readonly RuntimeJavaType javaLangCharacter;
+        private static readonly RuntimeJavaMethod charValue;
+        private static readonly RuntimeJavaMethod valueOfCharacter;
+        private static readonly RuntimeJavaType javaLangInteger;
+        private static readonly RuntimeJavaMethod intValue;
+        private static readonly RuntimeJavaMethod valueOfInteger;
+        private static readonly RuntimeJavaType javaLangFloat;
+        private static readonly RuntimeJavaMethod floatValue;
+        private static readonly RuntimeJavaMethod valueOfFloat;
+        private static readonly RuntimeJavaType javaLangLong;
+        private static readonly RuntimeJavaMethod longValue;
+        private static readonly RuntimeJavaMethod valueOfLong;
+        private static readonly RuntimeJavaType javaLangDouble;
+        private static readonly RuntimeJavaMethod doubleValue;
+        private static readonly RuntimeJavaMethod valueOfDouble;
 
         static Boxer()
         {
-            ClassLoaderWrapper bootClassLoader = ClassLoaderWrapper.GetBootstrapClassLoader();
-            javaLangByte = bootClassLoader.LoadClassByDottedNameFast("java.lang.Byte");
+            RuntimeClassLoader bootClassLoader = RuntimeClassLoaderFactory.GetBootstrapClassLoader();
+            javaLangByte = bootClassLoader.TryLoadClassByName("java.lang.Byte");
             byteValue = javaLangByte.GetMethodWrapper("byteValue", "()B", false);
             byteValue.Link();
             valueOfByte = javaLangByte.GetMethodWrapper("valueOf", "(B)Ljava.lang.Byte;", false);
             valueOfByte.Link();
-            javaLangBoolean = bootClassLoader.LoadClassByDottedNameFast("java.lang.Boolean");
+            javaLangBoolean = bootClassLoader.TryLoadClassByName("java.lang.Boolean");
             booleanValue = javaLangBoolean.GetMethodWrapper("booleanValue", "()Z", false);
             booleanValue.Link();
             valueOfBoolean = javaLangBoolean.GetMethodWrapper("valueOf", "(Z)Ljava.lang.Boolean;", false);
             valueOfBoolean.Link();
-            javaLangShort = bootClassLoader.LoadClassByDottedNameFast("java.lang.Short");
+            javaLangShort = bootClassLoader.TryLoadClassByName("java.lang.Short");
             shortValue = javaLangShort.GetMethodWrapper("shortValue", "()S", false);
             shortValue.Link();
             valueOfShort = javaLangShort.GetMethodWrapper("valueOf", "(S)Ljava.lang.Short;", false);
             valueOfShort.Link();
-            javaLangCharacter = bootClassLoader.LoadClassByDottedNameFast("java.lang.Character");
+            javaLangCharacter = bootClassLoader.TryLoadClassByName("java.lang.Character");
             charValue = javaLangCharacter.GetMethodWrapper("charValue", "()C", false);
             charValue.Link();
             valueOfCharacter = javaLangCharacter.GetMethodWrapper("valueOf", "(C)Ljava.lang.Character;", false);
             valueOfCharacter.Link();
-            javaLangInteger = bootClassLoader.LoadClassByDottedNameFast("java.lang.Integer");
+            javaLangInteger = bootClassLoader.TryLoadClassByName("java.lang.Integer");
             intValue = javaLangInteger.GetMethodWrapper("intValue", "()I", false);
             intValue.Link();
             valueOfInteger = javaLangInteger.GetMethodWrapper("valueOf", "(I)Ljava.lang.Integer;", false);
             valueOfInteger.Link();
-            javaLangFloat = bootClassLoader.LoadClassByDottedNameFast("java.lang.Float");
+            javaLangFloat = bootClassLoader.TryLoadClassByName("java.lang.Float");
             floatValue = javaLangFloat.GetMethodWrapper("floatValue", "()F", false);
             floatValue.Link();
             valueOfFloat = javaLangFloat.GetMethodWrapper("valueOf", "(F)Ljava.lang.Float;", false);
             valueOfFloat.Link();
-            javaLangLong = bootClassLoader.LoadClassByDottedNameFast("java.lang.Long");
+            javaLangLong = bootClassLoader.TryLoadClassByName("java.lang.Long");
             longValue = javaLangLong.GetMethodWrapper("longValue", "()J", false);
             longValue.Link();
             valueOfLong = javaLangLong.GetMethodWrapper("valueOf", "(J)Ljava.lang.Long;", false);
             valueOfLong.Link();
-            javaLangDouble = bootClassLoader.LoadClassByDottedNameFast("java.lang.Double");
+            javaLangDouble = bootClassLoader.TryLoadClassByName("java.lang.Double");
             doubleValue = javaLangDouble.GetMethodWrapper("doubleValue", "()D", false);
             doubleValue.Link();
             valueOfDouble = javaLangDouble.GetMethodWrapper("valueOf", "(D)Ljava.lang.Double;", false);
             valueOfDouble.Link();
         }
 
-        internal static void EmitUnbox(CodeEmitter ilgen, TypeWrapper tw, bool cast)
+        internal static void EmitUnbox(CodeEmitter ilgen, RuntimeJavaType tw, bool cast)
         {
-            if (tw == PrimitiveTypeWrapper.BYTE)
+            if (tw == RuntimePrimitiveJavaType.BYTE)
             {
                 if (cast)
                 {
@@ -108,7 +109,7 @@ namespace IKVM.Internal
                 }
                 byteValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.BOOLEAN)
+            else if (tw == RuntimePrimitiveJavaType.BOOLEAN)
             {
                 if (cast)
                 {
@@ -116,7 +117,7 @@ namespace IKVM.Internal
                 }
                 booleanValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.SHORT)
+            else if (tw == RuntimePrimitiveJavaType.SHORT)
             {
                 if (cast)
                 {
@@ -124,7 +125,7 @@ namespace IKVM.Internal
                 }
                 shortValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.CHAR)
+            else if (tw == RuntimePrimitiveJavaType.CHAR)
             {
                 if (cast)
                 {
@@ -132,7 +133,7 @@ namespace IKVM.Internal
                 }
                 charValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.INT)
+            else if (tw == RuntimePrimitiveJavaType.INT)
             {
                 if (cast)
                 {
@@ -140,7 +141,7 @@ namespace IKVM.Internal
                 }
                 intValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.FLOAT)
+            else if (tw == RuntimePrimitiveJavaType.FLOAT)
             {
                 if (cast)
                 {
@@ -148,7 +149,7 @@ namespace IKVM.Internal
                 }
                 floatValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.LONG)
+            else if (tw == RuntimePrimitiveJavaType.LONG)
             {
                 if (cast)
                 {
@@ -156,7 +157,7 @@ namespace IKVM.Internal
                 }
                 longValue.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.DOUBLE)
+            else if (tw == RuntimePrimitiveJavaType.DOUBLE)
             {
                 if (cast)
                 {
@@ -170,37 +171,37 @@ namespace IKVM.Internal
             }
         }
 
-        internal static void EmitBox(CodeEmitter ilgen, TypeWrapper tw)
+        internal static void EmitBox(CodeEmitter ilgen, RuntimeJavaType tw)
         {
-            if (tw == PrimitiveTypeWrapper.BYTE)
+            if (tw == RuntimePrimitiveJavaType.BYTE)
             {
                 valueOfByte.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.BOOLEAN)
+            else if (tw == RuntimePrimitiveJavaType.BOOLEAN)
             {
                 valueOfBoolean.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.SHORT)
+            else if (tw == RuntimePrimitiveJavaType.SHORT)
             {
                 valueOfShort.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.CHAR)
+            else if (tw == RuntimePrimitiveJavaType.CHAR)
             {
                 valueOfCharacter.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.INT)
+            else if (tw == RuntimePrimitiveJavaType.INT)
             {
                 valueOfInteger.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.FLOAT)
+            else if (tw == RuntimePrimitiveJavaType.FLOAT)
             {
                 valueOfFloat.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.LONG)
+            else if (tw == RuntimePrimitiveJavaType.LONG)
             {
                 valueOfLong.EmitCall(ilgen);
             }
-            else if (tw == PrimitiveTypeWrapper.DOUBLE)
+            else if (tw == RuntimePrimitiveJavaType.DOUBLE)
             {
                 valueOfDouble.EmitCall(ilgen);
             }

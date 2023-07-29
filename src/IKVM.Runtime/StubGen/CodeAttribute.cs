@@ -24,8 +24,10 @@
 
 namespace IKVM.StubGen
 {
+
     sealed class CodeAttribute : ClassFileAttribute
 	{
+
 		private ClassFileWriter classFile;
 		private ushort max_stack;
 		private ushort max_locals;
@@ -69,5 +71,7 @@ namespace IKVM.StubGen
 			bes.WriteUInt16(0);	// no exceptions
 			bes.WriteUInt16(0); // no attributes
 		}
+
 	}
+
 }

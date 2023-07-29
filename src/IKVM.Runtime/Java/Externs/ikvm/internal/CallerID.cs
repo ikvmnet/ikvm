@@ -23,7 +23,7 @@
 */
 using System.Reflection;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.ikvm.@internal
 {
@@ -33,17 +33,17 @@ namespace IKVM.Java.Externs.ikvm.@internal
 
         public static global::java.lang.Class GetClass(object obj)
         {
-            return ClassLoaderWrapper.GetWrapperFromType(obj.GetType().DeclaringType).ClassObject;
+            return RuntimeClassLoaderFactory.GetJavaTypeFromType(obj.GetType().DeclaringType).ClassObject;
         }
 
         public static global::java.lang.ClassLoader GetClassLoader(object obj)
         {
-            return ClassLoaderWrapper.GetWrapperFromType(obj.GetType().DeclaringType).GetClassLoader().GetJavaClassLoader();
+            return RuntimeClassLoaderFactory.GetJavaTypeFromType(obj.GetType().DeclaringType).GetClassLoader().GetJavaClassLoader();
         }
 
         public static global::java.lang.ClassLoader GetAssemblyClassLoader(Assembly asm)
         {
-            return AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
+            return RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
         }
 
     }

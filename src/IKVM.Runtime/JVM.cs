@@ -423,29 +423,37 @@ namespace IKVM.Runtime
         }
 
 #if !IMPORTER && !EXPORTER
+
         internal static object NewAnnotation(java.lang.ClassLoader classLoader, object definition)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             java.lang.annotation.Annotation ann = null;
             try
             {
                 ann = (java.lang.annotation.Annotation)ikvm.@internal.AnnotationAttributeBase.newAnnotation(classLoader, definition);
             }
-            catch (java.lang.TypeNotPresentException) { }
-            if (ann != null && sun.reflect.annotation.AnnotationType.getInstance(ann.annotationType()).retention() == java.lang.annotation.RetentionPolicy.RUNTIME)
+            catch (java.lang.TypeNotPresentException)
             {
-                return ann;
+
             }
-#endif
+
+            if (ann != null && sun.reflect.annotation.AnnotationType.getInstance(ann.annotationType()).retention() == java.lang.annotation.RetentionPolicy.RUNTIME)
+                return ann;
+
             return null;
+#endif
         }
+
 #endif
 
 #if !IMPORTER && !EXPORTER
+
         internal static object NewAnnotationElementValue(java.lang.ClassLoader classLoader, java.lang.Class expectedClass, object definition)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             try
             {
@@ -458,9 +466,11 @@ namespace IKVM.Runtime
             }
 #endif
         }
+
 #endif
 
 #if !IMPORTER && !EXPORTER
+
         // helper for JNI (which doesn't have access to core library internals)
         internal static object NewDirectByteBuffer(long address, int capacity)
         {
@@ -470,6 +480,7 @@ namespace IKVM.Runtime
             return java.nio.DirectByteBuffer.__new(address, capacity);
 #endif
         }
+
 #endif
 
         internal static Type Import(System.Type type)

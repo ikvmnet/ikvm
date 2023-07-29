@@ -547,7 +547,7 @@ namespace IKVM.Runtime
                     if (IntPtr.Size == 4)
                         return RuntimeUtil.IsWindows ? "x86" : "i386";
                     else
-                        return "amd64"; 
+                        return "amd64";
                 }
 
                 if (arch.Equals("AMD64", StringComparison.OrdinalIgnoreCase))
@@ -670,6 +670,9 @@ namespace IKVM.Runtime
                 if (self == null)
                     yield break;
 
+                // implicitly include native libraries along side application (publish)
+                yield return self;
+
                 // search in runtime specific directories
                 foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
                     yield return Path.Combine(self, "runtimes", rid, "native");
@@ -693,7 +696,7 @@ namespace IKVM.Runtime
                 try
                 {
                     foreach (ProcessModule module in Process.GetCurrentProcess().Modules)
-                        if (string.Compare(module.ModuleName, "kernel32.dll", StringComparison.OrdinalIgnoreCase) == 0)
+                        if (string.Equals(module.ModuleName, "kernel32.dll", StringComparison.OrdinalIgnoreCase))
                             return module.FileVersionInfo;
                 }
                 catch

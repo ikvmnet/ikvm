@@ -25,19 +25,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.lang
 {
 
     static class SecurityManager
     {
-
-        // this field is set by code in the JNI assembly itself,
-        // to prevent having to load the JNI assembly when it isn't used.
-        internal static volatile Assembly jniAssembly;
 
         public static global::java.lang.Class[] getClassContext(object thisSecurityManager)
         {
@@ -58,7 +53,7 @@ namespace IKVM.Java.Externs.java.lang
                 if (type == typeof(global::java.lang.SecurityManager))
                     continue;
 
-                stack.Add(ClassLoaderWrapper.GetWrapperFromType(type).ClassObject);
+                stack.Add(RuntimeClassLoaderFactory.GetJavaTypeFromType(type).ClassObject);
             }
 
             return stack.ToArray();
@@ -69,7 +64,7 @@ namespace IKVM.Java.Externs.java.lang
         {
             var currentClass = currentLoadedClass0(thisSecurityManager);
             if (currentClass != null)
-                return TypeWrapper.FromClass(currentClass).GetClassLoader().GetJavaClassLoader();
+                return RuntimeJavaType.FromClass(currentClass).GetClassLoader().GetJavaClassLoader();
 
             return null;
         }

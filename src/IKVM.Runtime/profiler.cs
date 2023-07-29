@@ -25,97 +25,103 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-sealed class Profiler
+namespace IKVM.Runtime
 {
-	private static Profiler instance = new Profiler();
-	private static Dictionary<string, Entry> counters = new Dictionary<string, Entry>();
-	[ThreadStatic]
-	private static Stack<Entry> stack;
 
-	private sealed class Entry
+    sealed class Profiler
 	{
-		internal long Time;
-		internal long Count;
-	}
 
-	~Profiler()
-	{
-		// get rid off the warning that "instance" is unused
-		instance.Equals(null);
-		Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "Event", "Count", "Time (ms)");
-		Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "-----", "-----", "---------");
-		long totalTime = 0;
-		foreach(KeyValuePair<string, Entry> e in counters)
+		private static Profiler instance = new Profiler();
+		private static Dictionary<string, Entry> counters = new Dictionary<string, Entry>();
+		[ThreadStatic]
+		private static Stack<Entry> stack;
+
+		private sealed class Entry
 		{
-			Entry entry = e.Value;
-			if(entry.Time == 0)
+			internal long Time;
+			internal long Count;
+		}
+
+		~Profiler()
+		{
+			// get rid off the warning that "instance" is unused
+			instance.Equals(null);
+			Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "Event", "Count", "Time (ms)");
+			Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "-----", "-----", "---------");
+			long totalTime = 0;
+			foreach (KeyValuePair<string, Entry> e in counters)
 			{
-				Console.Error.WriteLine("{0,-40}{1,10}", e.Key, entry.Count);
+				Entry entry = e.Value;
+				if (entry.Time == 0)
+				{
+					Console.Error.WriteLine("{0,-40}{1,10}", e.Key, entry.Count);
+				}
+				else
+				{
+					totalTime += entry.Time / 10000;
+					Console.Error.WriteLine("{0,-40}{1,10}{2,12}", e.Key, entry.Count, entry.Time / 10000);
+				}
 			}
-			else
+			Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "", "", "---------");
+			Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "", "", totalTime);
+		}
+
+		[Conditional("PROFILE")]
+		internal static void Enter(string name)
+		{
+			long ticks = DateTime.Now.Ticks;
+			lock (counters)
 			{
-				totalTime += entry.Time / 10000;
-				Console.Error.WriteLine("{0,-40}{1,10}{2,12}", e.Key, entry.Count, entry.Time / 10000);
+				if (stack == null)
+				{
+					stack = new Stack<Entry>();
+				}
+				if (stack.Count > 0)
+				{
+					stack.Peek().Time += ticks;
+				}
+				Entry e;
+				if (!counters.TryGetValue(name, out e))
+				{
+					e = new Entry();
+					counters[name] = e;
+				}
+				e.Count++;
+				e.Time -= ticks;
+				stack.Push(e);
 			}
 		}
-		Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "", "", "---------");
-		Console.Error.WriteLine("{0,-40}{1,10}{2,12}", "", "", totalTime);
-	}
 
-	[Conditional("PROFILE")]
-	internal static void Enter(string name)
-	{
-		long ticks = DateTime.Now.Ticks;
-		lock(counters)
+		[Conditional("PROFILE")]
+		internal static void Leave(string name)
 		{
-			if(stack == null)
+			long ticks = DateTime.Now.Ticks;
+			stack.Pop();
+			lock (counters)
 			{
-				stack = new Stack<Entry>();
+				Entry e = counters[name];
+				e.Time += ticks;
+				if (stack.Count > 0)
+				{
+					((Entry)stack.Peek()).Time -= ticks;
+				}
 			}
-			if(stack.Count > 0)
-			{
-				stack.Peek().Time += ticks;
-			}
-			Entry e;
-			if(!counters.TryGetValue(name, out e))
-			{
-				e = new Entry();
-				counters[name] = e;
-			}
-			e.Count++;
-			e.Time -= ticks;
-			stack.Push(e);
 		}
-	}
 
-	[Conditional("PROFILE")]
-	internal static void Leave(string name)
-	{
-		long ticks = DateTime.Now.Ticks;
-		stack.Pop();
-		lock(counters)
+		[Conditional("PROFILE")]
+		internal static void Count(string name)
 		{
-			Entry e = counters[name];
-			e.Time += ticks;
-			if(stack.Count > 0)
+			lock (counters)
 			{
-				((Entry)stack.Peek()).Time -= ticks;
+				Entry e;
+				if (!counters.TryGetValue(name, out e))
+				{
+					e = new Entry();
+					counters[name] = e;
+				}
+				e.Count++;
 			}
 		}
 	}
 
-	[Conditional("PROFILE")]
-	internal static void Count(string name)
-	{
-		lock(counters)
-		{
-			Entry e;
-			if(!counters.TryGetValue(name, out e))
-			{
-				e = new Entry();
-				counters[name] = e;
-			}
-			e.Count++;
-		}
-	}
 }

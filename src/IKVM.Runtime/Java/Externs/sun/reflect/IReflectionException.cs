@@ -21,7 +21,7 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
 #if !FIRST_PASS

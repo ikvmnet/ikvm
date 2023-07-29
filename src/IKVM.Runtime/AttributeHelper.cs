@@ -48,7 +48,7 @@ using System.Reflection.Emit;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     static class AttributeHelper
@@ -110,7 +110,7 @@ namespace IKVM.Internal
 
 #if IMPORTER
 
-        private static object ParseValue(ClassLoaderWrapper loader, TypeWrapper tw, string val)
+        private static object ParseValue(RuntimeClassLoader loader, RuntimeJavaType tw, string val)
         {
             if (tw == CoreClasses.java.lang.String.Wrapper)
             {
@@ -126,42 +126,42 @@ namespace IKVM.Internal
             }
             else if (tw.TypeAsTBD == Types.Type)
             {
-                TypeWrapper valtw = loader.LoadClassByDottedNameFast(val);
+                RuntimeJavaType valtw = loader.TryLoadClassByName(val);
                 if (valtw != null)
                 {
                     return valtw.TypeAsBaseType;
                 }
                 return StaticCompiler.Universe.GetType(val, true);
             }
-            else if (tw == PrimitiveTypeWrapper.BOOLEAN)
+            else if (tw == RuntimePrimitiveJavaType.BOOLEAN)
             {
                 return bool.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.BYTE)
+            else if (tw == RuntimePrimitiveJavaType.BYTE)
             {
                 return (byte)sbyte.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.CHAR)
+            else if (tw == RuntimePrimitiveJavaType.CHAR)
             {
                 return char.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.SHORT)
+            else if (tw == RuntimePrimitiveJavaType.SHORT)
             {
                 return short.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.INT)
+            else if (tw == RuntimePrimitiveJavaType.INT)
             {
                 return int.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.FLOAT)
+            else if (tw == RuntimePrimitiveJavaType.FLOAT)
             {
                 return float.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.LONG)
+            else if (tw == RuntimePrimitiveJavaType.LONG)
             {
                 return long.Parse(val);
             }
-            else if (tw == PrimitiveTypeWrapper.DOUBLE)
+            else if (tw == RuntimePrimitiveJavaType.DOUBLE)
             {
                 return double.Parse(val);
             }
@@ -171,46 +171,46 @@ namespace IKVM.Internal
             }
         }
 
-        internal static void SetCustomAttribute(ClassLoaderWrapper loader, TypeBuilder tb, IKVM.Tools.Importer.MapXml.Attribute attr)
+        internal static void SetCustomAttribute(RuntimeClassLoader loader, TypeBuilder tb, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             tb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
-        internal static void SetCustomAttribute(ClassLoaderWrapper loader, FieldBuilder fb, IKVM.Tools.Importer.MapXml.Attribute attr)
+        internal static void SetCustomAttribute(RuntimeClassLoader loader, FieldBuilder fb, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             fb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
-        internal static void SetCustomAttribute(ClassLoaderWrapper loader, ParameterBuilder pb, IKVM.Tools.Importer.MapXml.Attribute attr)
+        internal static void SetCustomAttribute(RuntimeClassLoader loader, ParameterBuilder pb, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             pb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
-        internal static void SetCustomAttribute(ClassLoaderWrapper loader, MethodBuilder mb, IKVM.Tools.Importer.MapXml.Attribute attr)
+        internal static void SetCustomAttribute(RuntimeClassLoader loader, MethodBuilder mb, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             mb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
-        internal static void SetCustomAttribute(ClassLoaderWrapper loader, PropertyBuilder pb, IKVM.Tools.Importer.MapXml.Attribute attr)
+        internal static void SetCustomAttribute(RuntimeClassLoader loader, PropertyBuilder pb, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             pb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
-        internal static void SetCustomAttribute(ClassLoaderWrapper loader, AssemblyBuilder ab, IKVM.Tools.Importer.MapXml.Attribute attr)
+        internal static void SetCustomAttribute(RuntimeClassLoader loader, AssemblyBuilder ab, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             ab.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
-        private static void GetAttributeArgsAndTypes(ClassLoaderWrapper loader, IKVM.Tools.Importer.MapXml.Attribute attr, out Type[] argTypes, out object[] args)
+        private static void GetAttributeArgsAndTypes(RuntimeClassLoader loader, IKVM.Tools.Importer.MapXml.Attribute attr, out Type[] argTypes, out object[] args)
         {
             // TODO add error handling
-            TypeWrapper[] twargs = loader.ArgTypeWrapperListFromSig(attr.Sig, LoadMode.Link);
+            RuntimeJavaType[] twargs = loader.ArgJavaTypeListFromSig(attr.Sig, LoadMode.Link);
             argTypes = new Type[twargs.Length];
             args = new object[argTypes.Length];
             for (int i = 0; i < twargs.Length; i++)
             {
                 argTypes[i] = twargs[i].TypeAsSignatureType;
-                TypeWrapper tw = twargs[i];
+                RuntimeJavaType tw = twargs[i];
                 if (tw == CoreClasses.java.lang.Object.Wrapper)
                 {
                     tw = loader.FieldTypeWrapperFromSig(attr.Params[i].Sig, LoadMode.Link);
@@ -231,7 +231,7 @@ namespace IKVM.Internal
             }
         }
 
-        static CustomAttributeBuilder CreateCustomAttribute(ClassLoaderWrapper loader, IKVM.Tools.Importer.MapXml.Attribute attr)
+        static CustomAttributeBuilder CreateCustomAttribute(RuntimeClassLoader loader, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             // TODO add error handling
             Type[] argTypes;
@@ -287,7 +287,7 @@ namespace IKVM.Internal
                 {
                     throw new NotImplementedException("Setting property values on Java attributes is not implemented");
                 }
-                TypeWrapper t = loader.LoadClassByDottedName(attr.Class);
+                RuntimeJavaType t = loader.LoadClassByName(attr.Class);
                 FieldInfo[] namedFields;
                 object[] fieldValues;
                 if (attr.Fields != null)
@@ -296,7 +296,7 @@ namespace IKVM.Internal
                     fieldValues = new object[attr.Fields.Length];
                     for (int i = 0; i < namedFields.Length; i++)
                     {
-                        FieldWrapper fw = t.GetFieldWrapper(attr.Fields[i].Name, attr.Fields[i].Sig);
+                        RuntimeJavaField fw = t.GetFieldWrapper(attr.Fields[i].Name, attr.Fields[i].Sig);
                         fw.Link();
                         namedFields[i] = fw.GetField();
                         fieldValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSig(attr.Fields[i].Sig, LoadMode.Link), attr.Fields[i].Value);
@@ -307,7 +307,7 @@ namespace IKVM.Internal
                     namedFields = new FieldInfo[0];
                     fieldValues = new object[0];
                 }
-                MethodWrapper mw = t.GetMethodWrapper("<init>", attr.Sig, false);
+                var mw = t.GetMethodWrapper("<init>", attr.Sig, false);
                 if (mw == null)
                 {
                     throw new InvalidOperationException(string.Format("Constructor missing: {0}::<init>{1}", attr.Class, attr.Sig));
@@ -532,7 +532,7 @@ namespace IKVM.Internal
 
 #if IMPORTER
 
-        internal static void SetImplementsAttribute(TypeBuilder typeBuilder, TypeWrapper[] ifaceWrappers)
+        internal static void SetImplementsAttribute(TypeBuilder typeBuilder, RuntimeJavaType[] ifaceWrappers)
         {
             var interfaces = new string[ifaceWrappers.Length];
             for (int i = 0; i < interfaces.Length; i++)

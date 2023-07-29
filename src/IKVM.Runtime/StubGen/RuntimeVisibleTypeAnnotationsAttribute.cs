@@ -24,8 +24,10 @@
 
 namespace IKVM.StubGen
 {
+
     sealed class RuntimeVisibleTypeAnnotationsAttribute : ClassFileAttribute
 	{
+
 		private readonly byte[] data;
 
 		internal RuntimeVisibleTypeAnnotationsAttribute(ClassFileWriter classFile, byte[] data)
@@ -40,5 +42,7 @@ namespace IKVM.StubGen
 			bes.WriteUInt32((uint)data.Length);
 			bes.WriteBytes(data);
 		}
+
 	}
+
 }

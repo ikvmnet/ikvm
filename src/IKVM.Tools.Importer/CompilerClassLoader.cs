@@ -35,7 +35,6 @@ using System.Xml.Linq;
 
 using IKVM.Attributes;
 using IKVM.ByteCode.Reading;
-using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -45,7 +44,7 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Tools.Importer
 {
 
-    sealed class CompilerClassLoader : ClassLoaderWrapper
+    sealed class CompilerClassLoader : RuntimeClassLoader
     {
 
         const string DEFAULT_RUNTIME_ARGS_PREFIX = "-J";
@@ -59,11 +58,11 @@ namespace IKVM.Tools.Importer
         AssemblyBuilder assemblyBuilder;
         MapXml.Attribute[] assemblyAttributes;
         CompilerOptions options;
-        AssemblyClassLoader[] referencedAssemblies;
+        RuntimeAssemblyClassLoader[] referencedAssemblies;
         Dictionary<string, string> nameMappings = new Dictionary<string, string>();
         Packages packages;
-        Dictionary<string, List<TypeWrapper>> ghosts;
-        TypeWrapper[] mappedExceptions;
+        Dictionary<string, List<RuntimeJavaType>> ghosts;
+        RuntimeJavaType[] mappedExceptions;
         bool[] mappedExceptionsAllSubClasses;
         Dictionary<string, MapXml.Class> mapxml_Classes;
         Dictionary<MethodKey, MapXml.InstructionList> mapxml_MethodBodies;
@@ -73,13 +72,13 @@ namespace IKVM.Tools.Importer
         List<string> classesToCompile;
         List<CompilerClassLoader> peerReferences = new List<CompilerClassLoader>();
         Dictionary<string, string> peerLoading = new Dictionary<string, string>();
-        List<ClassLoaderWrapper> internalsVisibleTo = new List<ClassLoaderWrapper>();
-        List<TypeWrapper> dynamicallyImportedTypes = new List<TypeWrapper>();
+        List<RuntimeClassLoader> internalsVisibleTo = new List<RuntimeClassLoader>();
+        List<RuntimeJavaType> dynamicallyImportedTypes = new List<RuntimeJavaType>();
         List<string> jarList = new List<string>();
-        List<TypeWrapper> allwrappers;
+        List<RuntimeJavaType> allwrappers;
         bool compilingCoreAssembly;
 
-        internal CompilerClassLoader(AssemblyClassLoader[] referencedAssemblies, CompilerOptions options, FileInfo assemblyPath, bool targetIsModule, string assemblyName, Dictionary<string, Jar.Item> classes, bool compilingCoreAssembly)
+        internal CompilerClassLoader(RuntimeAssemblyClassLoader[] referencedAssemblies, CompilerOptions options, FileInfo assemblyPath, bool targetIsModule, string assemblyName, Dictionary<string, Jar.Item> classes, bool compilingCoreAssembly)
             : base(options.codegenoptions, null)
         {
             this.referencedAssemblies = referencedAssemblies;
@@ -103,7 +102,7 @@ namespace IKVM.Tools.Importer
             nameMappings.Add(javaName, typeName);
         }
 
-        internal void AddReference(AssemblyClassLoader acl)
+        internal void AddReference(RuntimeAssemblyClassLoader acl)
         {
             referencedAssemblies = ArrayUtil.Concat(referencedAssemblies, acl);
         }
@@ -181,15 +180,13 @@ namespace IKVM.Tools.Importer
             return "CompilerClassLoader:" + options.assembly;
         }
 
-        protected override TypeWrapper LoadClassImpl(string name, LoadMode mode)
+        protected override RuntimeJavaType LoadClassImpl(string name, LoadMode mode)
         {
-            foreach (AssemblyClassLoader acl in referencedAssemblies)
+            foreach (RuntimeAssemblyClassLoader acl in referencedAssemblies)
             {
-                TypeWrapper tw = acl.DoLoad(name);
+                var tw = acl.DoLoad(name);
                 if (tw != null)
-                {
                     return tw;
-                }
             }
 
             if (!peerLoading.ContainsKey(name))
@@ -199,19 +196,15 @@ namespace IKVM.Tools.Importer
                 {
                     foreach (CompilerClassLoader ccl in peerReferences)
                     {
-                        TypeWrapper tw = ccl.PeerLoad(name);
+                        var tw = ccl.PeerLoad(name);
                         if (tw != null)
-                        {
                             return tw;
-                        }
                     }
                     if (options.sharedclassloader != null && options.sharedclassloader[0] != this)
                     {
-                        TypeWrapper tw = options.sharedclassloader[0].PeerLoad(name);
+                        var tw = options.sharedclassloader[0].PeerLoad(name);
                         if (tw != null)
-                        {
                             return tw;
-                        }
                     }
                 }
                 finally
@@ -220,7 +213,7 @@ namespace IKVM.Tools.Importer
                 }
             }
 
-            TypeWrapper tw1 = GetTypeWrapperCompilerHook(name);
+            var tw1 = GetTypeWrapperCompilerHook(name);
             if (tw1 != null)
             {
                 return tw1;
@@ -237,13 +230,13 @@ namespace IKVM.Tools.Importer
             return FindOrLoadGenericClass(name, mode);
         }
 
-        private TypeWrapper PeerLoad(string name)
+        private RuntimeJavaType PeerLoad(string name)
         {
             // To keep the performance acceptable in cases where we're compiling many targets, we first check if the load can
             // possibly succeed on this class loader, otherwise we'll end up doing a lot of futile recursive loading attempts.
             if (classes.ContainsKey(name) || remapped.ContainsKey(name) || FindLoadedClass(name) != null)
             {
-                TypeWrapper tw = LoadClassByDottedNameFast(name);
+                var tw = TryLoadClassByName(name);
                 // HACK we don't want to load classes referenced by peers, hence the "== this" check
                 if (tw != null && tw.GetClassLoader() == this)
                 {
@@ -256,7 +249,7 @@ namespace IKVM.Tools.Importer
                 {
                     if (ccl != this)
                     {
-                        TypeWrapper tw = ccl.PeerLoad(name);
+                        var tw = ccl.PeerLoad(name);
                         if (tw != null)
                         {
                             return tw;
@@ -267,7 +260,7 @@ namespace IKVM.Tools.Importer
             return null;
         }
 
-        private TypeWrapper GetTypeWrapperCompilerHook(string name)
+        private RuntimeJavaType GetTypeWrapperCompilerHook(string name)
         {
             RemapperTypeWrapper rtw;
             if (remapped.TryGetValue(name, out rtw))
@@ -354,7 +347,7 @@ namespace IKVM.Tools.Importer
                     }
                     try
                     {
-                        TypeWrapper tw = DefineClass(f, null);
+                        var tw = DefineClass(f, null);
                         // we successfully created the type, so we don't need to include the class as a resource
                         if (options.nojarstubs)
                         {
@@ -408,7 +401,7 @@ namespace IKVM.Tools.Importer
 
         // HACK when we're compiling multiple targets with -sharedclassloader, each target will have its own CompilerClassLoader,
         // so we need to consider them equivalent (because they represent the same class loader).
-        internal bool IsEquivalentTo(ClassLoaderWrapper other)
+        internal bool IsEquivalentTo(RuntimeClassLoader other)
         {
             if (this == other)
             {
@@ -426,10 +419,10 @@ namespace IKVM.Tools.Importer
             return false;
         }
 
-        internal override bool InternalsVisibleToImpl(TypeWrapper wrapper, TypeWrapper friend)
+        internal override bool InternalsVisibleToImpl(RuntimeJavaType wrapper, RuntimeJavaType friend)
         {
             Debug.Assert(wrapper.GetClassLoader() == this);
-            ClassLoaderWrapper other = friend.GetClassLoader();
+            RuntimeClassLoader other = friend.GetClassLoader();
             // TODO ideally we should also respect InternalsVisibleToAttribute.Annotation here
             if (this == other || internalsVisibleTo.Contains(other))
             {
@@ -476,7 +469,7 @@ namespace IKVM.Tools.Importer
         /// <param name="properties"></param>
         /// <param name="noglobbing"></param>
         /// <param name="apartmentAttributeType"></param>
-        void SetMain(TypeWrapper type, PEFileKinds target, IDictionary<string, string> properties, bool noglobbing, Type apartmentAttributeType)
+        void SetMain(RuntimeJavaType type, PEFileKinds target, IDictionary<string, string> properties, bool noglobbing, Type apartmentAttributeType)
         {
             if (type is null)
                 throw new ArgumentNullException(nameof(type));
@@ -668,7 +661,7 @@ namespace IKVM.Tools.Importer
 
         private void AddWildcardExports(Dictionary<string, List<string>> exportedNamesPerAssembly)
         {
-            foreach (AssemblyClassLoader acl in referencedAssemblies)
+            foreach (RuntimeAssemblyClassLoader acl in referencedAssemblies)
             {
                 exportedNamesPerAssembly[acl.MainAssembly.FullName] = null;
             }
@@ -678,7 +671,7 @@ namespace IKVM.Tools.Importer
         {
             Dictionary<string, List<string>> exportedNamesPerAssembly = new Dictionary<string, List<string>>();
             AddWildcardExports(exportedNamesPerAssembly);
-            foreach (TypeWrapper tw in dynamicallyImportedTypes)
+            foreach (var tw in dynamicallyImportedTypes)
             {
                 AddExportMapEntry(exportedNamesPerAssembly, (CompilerClassLoader)tw.GetClassLoader(), tw.Name);
             }
@@ -839,17 +832,17 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private sealed class RemapperTypeWrapper : TypeWrapper
+        private sealed class RemapperTypeWrapper : RuntimeJavaType
         {
             private CompilerClassLoader classLoader;
             private TypeBuilder typeBuilder;
             private TypeBuilder helperTypeBuilder;
             private Type shadowType;
             private IKVM.Tools.Importer.MapXml.Class classDef;
-            private TypeWrapper baseTypeWrapper;
-            private TypeWrapper[] interfaceWrappers;
+            private RuntimeJavaType baseTypeWrapper;
+            private RuntimeJavaType[] interfaceWrappers;
 
-            internal override ClassLoaderWrapper GetClassLoader()
+            internal override RuntimeClassLoader GetClassLoader()
             {
                 return classLoader;
             }
@@ -862,7 +855,7 @@ namespace IKVM.Tools.Importer
                 }
             }
 
-            private static TypeWrapper GetBaseWrapper(IKVM.Tools.Importer.MapXml.Class c)
+            private static RuntimeJavaType GetBaseWrapper(IKVM.Tools.Importer.MapXml.Class c)
             {
                 if ((c.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Interface) != 0)
                 {
@@ -943,7 +936,7 @@ namespace IKVM.Tools.Importer
                     AttributeHelper.SetRemappedType(typeBuilder, shadowType);
                 }
 
-                List<MethodWrapper> methods = new List<MethodWrapper>();
+                var methods = new List<RuntimeJavaMethod>();
 
                 if (c.Constructors != null)
                 {
@@ -963,9 +956,9 @@ namespace IKVM.Tools.Importer
                 // add methods from our super classes (e.g. Throwable should have Object's methods)
                 if (!this.IsFinal && !this.IsInterface && this.BaseTypeWrapper != null)
                 {
-                    foreach (MethodWrapper mw in BaseTypeWrapper.GetMethods())
+                    foreach (var mw in BaseTypeWrapper.GetMethods())
                     {
-                        RemappedMethodWrapper rmw = mw as RemappedMethodWrapper;
+                        var rmw = mw as RemappedMethodWrapper;
                         if (rmw != null && (rmw.IsPublic || rmw.IsProtected))
                         {
                             if (!FindMethod(methods, rmw.Name, rmw.Signature))
@@ -979,7 +972,7 @@ namespace IKVM.Tools.Importer
                 SetMethods(methods.ToArray());
             }
 
-            internal sealed override TypeWrapper BaseTypeWrapper
+            internal sealed override RuntimeJavaType BaseTypeWrapper
             {
                 get { return baseTypeWrapper; }
             }
@@ -988,12 +981,12 @@ namespace IKVM.Tools.Importer
             {
                 if (c.Interfaces != null)
                 {
-                    interfaceWrappers = new TypeWrapper[c.Interfaces.Length];
+                    interfaceWrappers = new RuntimeJavaType[c.Interfaces.Length];
                     for (int i = 0; i < c.Interfaces.Length; i++)
                     {
-                        TypeWrapper iface = classLoader.LoadClassByDottedName(c.Interfaces[i].Class);
+                        var iface = classLoader.LoadClassByName(c.Interfaces[i].Class);
                         interfaceWrappers[i] = iface;
-                        foreach (MethodWrapper mw in iface.GetMethods())
+                        foreach (var mw in iface.GetMethods())
                         {
                             // make sure default interface methods are implemented (they currently have to be explicitly implemented in map.xml)
                             if (mw.IsVirtual && !mw.IsAbstract)
@@ -1008,13 +1001,13 @@ namespace IKVM.Tools.Importer
                 }
                 else
                 {
-                    interfaceWrappers = TypeWrapper.EmptyArray;
+                    interfaceWrappers = Array.Empty<RuntimeJavaType>();
                 }
             }
 
-            private static bool FindMethod(List<MethodWrapper> methods, string name, string sig)
+            private static bool FindMethod(List<RuntimeJavaMethod> methods, string name, string sig)
             {
-                foreach (MethodWrapper mw in methods)
+                foreach (var mw in methods)
                 {
                     if (mw.Name == name && mw.Signature == sig)
                     {
@@ -1024,7 +1017,7 @@ namespace IKVM.Tools.Importer
                 return false;
             }
 
-            abstract class RemappedMethodBaseWrapper : MethodWrapper
+            abstract class RemappedMethodBaseWrapper : RuntimeJavaMethod
             {
                 internal RemappedMethodBaseWrapper(RemapperTypeWrapper typeWrapper, string name, string sig, Modifiers modifiers)
                     : base(typeWrapper, name, sig, null, null, null, modifiers, MemberFlags.None)
@@ -1318,7 +1311,7 @@ namespace IKVM.Tools.Importer
                             ilgen = CodeEmitter.Create(helper);
                             foreach (IKVM.Tools.Importer.MapXml.Class c in specialCases)
                             {
-                                TypeWrapper tw = typeWrapper.GetClassLoader().LoadClassByDottedName(c.Name);
+                                var tw = typeWrapper.GetClassLoader().LoadClassByName(c.Name);
                                 ilgen.Emit(OpCodes.Ldarg_0);
                                 ilgen.Emit(OpCodes.Isinst, tw.TypeAsTBD);
                                 ilgen.Emit(OpCodes.Dup);
@@ -1328,7 +1321,7 @@ namespace IKVM.Tools.Importer
                                 {
                                     ilgen.EmitLdarg(i);
                                 }
-                                MethodWrapper mw = tw.GetMethodWrapper(m.Name, m.Sig, false);
+                                var mw = tw.GetMethodWrapper(m.Name, m.Sig, false);
                                 mw.Link();
                                 mw.EmitCallvirt(ilgen);
                                 ilgen.Emit(OpCodes.Ret);
@@ -1733,7 +1726,7 @@ namespace IKVM.Tools.Importer
                     {
                         redirSig = m.Sig;
                     }
-                    ClassLoaderWrapper classLoader = DeclaringType.GetClassLoader();
+                    RuntimeClassLoader classLoader = DeclaringType.GetClassLoader();
                     // HACK if the class name contains a comma, we assume it is a .NET type
                     if (m.Redirect.Class == null || m.Redirect.Class.IndexOf(',') >= 0)
                     {
@@ -1749,8 +1742,8 @@ namespace IKVM.Tools.Importer
                     }
                     else
                     {
-                        TypeWrapper tw = classLoader.LoadClassByDottedName(m.Redirect.Class);
-                        MethodWrapper mw = tw.GetMethodWrapper(redirName, redirSig, false);
+                        var tw = classLoader.LoadClassByName(m.Redirect.Class);
+                        var mw = tw.GetMethodWrapper(redirName, redirSig, false);
                         if (mw == null)
                         {
                             throw new InvalidOperationException("Missing redirect method: " + tw.Name + "." + redirName + redirSig);
@@ -1761,7 +1754,7 @@ namespace IKVM.Tools.Importer
                 }
             }
 
-            private static void SetParameters(ClassLoaderWrapper loader, MethodBuilder mb, IKVM.Tools.Importer.MapXml.Parameter[] parameters)
+            private static void SetParameters(RuntimeClassLoader loader, MethodBuilder mb, IKVM.Tools.Importer.MapXml.Parameter[] parameters)
             {
                 if (parameters != null)
                 {
@@ -1783,7 +1776,7 @@ namespace IKVM.Tools.Importer
             {
                 if (!shadowType.IsSealed)
                 {
-                    foreach (TypeWrapper ifaceTypeWrapper in interfaceWrappers)
+                    foreach (var ifaceTypeWrapper in interfaceWrappers)
                     {
                         typeBuilder.AddInterfaceImplementation(ifaceTypeWrapper.TypeAsBaseType);
                     }
@@ -1793,10 +1786,10 @@ namespace IKVM.Tools.Importer
 
             internal void Process2ndPassStep2(IKVM.Tools.Importer.MapXml.Root map)
             {
-                IKVM.Tools.Importer.MapXml.Class c = classDef;
-                TypeBuilder tb = typeBuilder;
+                var c = classDef;
+                var tb = typeBuilder;
 
-                List<FieldWrapper> fields = new List<FieldWrapper>();
+                var fields = new List<RuntimeJavaField>();
 
                 // TODO fields should be moved to the RemapperTypeWrapper constructor as well
                 if (c.Fields != null)
@@ -1838,11 +1831,11 @@ namespace IKVM.Tools.Importer
                                         throw new NotImplementedException("remapped constant field of type: " + f.Sig);
                                 }
                                 fb.SetConstant(constant);
-                                fields.Add(new ConstantFieldWrapper(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig, LoadMode.LoadOrThrow), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, constant, MemberFlags.None));
+                                fields.Add(new RuntimeConstantJavaField(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig, LoadMode.LoadOrThrow), f.Name, f.Sig, (Modifiers)f.Modifiers, fb, constant, MemberFlags.None));
                             }
                             else
                             {
-                                fields.Add(FieldWrapper.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig, LoadMode.LoadOrThrow), fb, f.Name, f.Sig, new ExModifiers((Modifiers)f.Modifiers, false)));
+                                fields.Add(RuntimeJavaField.Create(this, GetClassLoader().FieldTypeWrapperFromSig(f.Sig, LoadMode.LoadOrThrow), fb, f.Name, f.Sig, new ExModifiers((Modifiers)f.Modifiers, false)));
                             }
                         }
                     }
@@ -1880,7 +1873,7 @@ namespace IKVM.Tools.Importer
                 {
                     foreach (IKVM.Tools.Importer.MapXml.Implements iface in classDef.Interfaces)
                     {
-                        GetClassLoader().LoadClassByDottedName(iface.Class).Finish();
+                        GetClassLoader().LoadClassByName(iface.Class).Finish();
                     }
                 }
 
@@ -1892,16 +1885,15 @@ namespace IKVM.Tools.Importer
                     // For all inherited methods, we emit a method that hides the inherited method and
                     // annotate it with EditorBrowsableAttribute(EditorBrowsableState.Never) to make
                     // sure the inherited methods don't show up in Intellisense.
-                    Dictionary<string, MethodBuilder> methods = new Dictionary<string, MethodBuilder>();
-                    foreach (MethodWrapper mw in GetMethods())
+                    var methods = new Dictionary<string, MethodBuilder>();
+                    foreach (var mw in GetMethods())
                     {
-                        MethodBuilder mb = mw.GetMethod() as MethodBuilder;
+                        var mb = mw.GetMethod() as MethodBuilder;
                         if (mb != null)
-                        {
                             methods.Add(MakeMethodKey(mb), mb);
-                        }
                     }
-                    foreach (MethodInfo mi in typeBuilder.BaseType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy))
+
+                    foreach (var mi in typeBuilder.BaseType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy))
                     {
                         string key = MakeMethodKey(mi);
                         if (!methods.ContainsKey(key))
@@ -1934,7 +1926,8 @@ namespace IKVM.Tools.Importer
                             methods[key] = mb;
                         }
                     }
-                    foreach (PropertyInfo pi in typeBuilder.BaseType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
+
+                    foreach (var pi in typeBuilder.BaseType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
                     {
                         ParameterInfo[] paramInfo = pi.GetIndexParameters();
                         Type[] paramTypes = new Type[paramInfo.Length];
@@ -1957,22 +1950,21 @@ namespace IKVM.Tools.Importer
 
                 typeBuilder.CreateType();
                 if (helperTypeBuilder != null)
-                {
                     helperTypeBuilder.CreateType();
-                }
             }
 
             private static string MakeMethodKey(MethodInfo method)
             {
-                StringBuilder sb = new StringBuilder();
+                var sb = new StringBuilder();
                 sb.Append(method.ReturnType.AssemblyQualifiedName).Append(":").Append(method.Name);
-                ParameterInfo[] paramInfo = method.GetParameters();
-                Type[] paramTypes = new Type[paramInfo.Length];
+                var paramInfo = method.GetParameters();
+                var paramTypes = new Type[paramInfo.Length];
                 for (int i = 0; i < paramInfo.Length; i++)
                 {
                     paramTypes[i] = paramInfo[i].ParameterType;
                     sb.Append(":").Append(paramInfo[i].ParameterType.AssemblyQualifiedName);
                 }
+
                 return sb.ToString();
             }
 
@@ -1980,9 +1972,8 @@ namespace IKVM.Tools.Importer
             {
                 // FXBUG .NET 1.1 doesn't allow static methods on interfaces
                 if (typeBuilder.IsInterface)
-                {
                     return;
-                }
+
                 MethodAttributes attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
                 MethodBuilder mb = typeBuilder.DefineMethod("__<instanceof>", attr, Types.Boolean, new Type[] { Types.Object });
                 AttributeHelper.HideFromJava(mb);
@@ -2082,12 +2073,12 @@ namespace IKVM.Tools.Importer
                 ilgen.DoEmit();
             }
 
-            internal override MethodBase LinkMethod(MethodWrapper mw)
+            internal override MethodBase LinkMethod(RuntimeJavaMethod mw)
             {
                 return ((RemappedMethodBaseWrapper)mw).DoLink();
             }
 
-            internal override TypeWrapper[] Interfaces
+            internal override RuntimeJavaType[] Interfaces
             {
                 get
                 {
@@ -2200,7 +2191,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        internal bool IsMapUnsafeException(TypeWrapper tw)
+        internal bool IsMapUnsafeException(RuntimeJavaType tw)
         {
             if (mappedExceptions != null)
                 for (int i = 0; i < mappedExceptions.Length; i++)
@@ -2215,7 +2206,7 @@ namespace IKVM.Tools.Importer
             if (map.ExceptionMappings.Length > 0)
             {
                 mappedExceptionsAllSubClasses = new bool[map.ExceptionMappings.Length];
-                mappedExceptions = new TypeWrapper[map.ExceptionMappings.Length];
+                mappedExceptions = new RuntimeJavaType[map.ExceptionMappings.Length];
                 for (int i = 0; i < mappedExceptions.Length; i++)
                 {
                     var dst = map.ExceptionMappings[i].Destination;
@@ -2225,7 +2216,7 @@ namespace IKVM.Tools.Importer
                         dst = dst.Substring(1);
                     }
 
-                    mappedExceptions[i] = LoadClassByDottedName(dst);
+                    mappedExceptions[i] = LoadClassByName(dst);
                 }
 
                 // HACK we need to find the <exceptionMapping /> element and bind it
@@ -2277,7 +2268,7 @@ namespace IKVM.Tools.Importer
                             foreach (var instr in map[i].Code.Instructions)
                             {
                                 var newobj = instr as MapXml.NewObj;
-                                if (newobj != null && newobj.Class != null && context.ClassLoader.LoadClassByDottedName(newobj.Class).IsSubTypeOf(CoreClasses.java.lang.Throwable.Wrapper))
+                                if (newobj != null && newobj.Class != null && context.ClassLoader.LoadClassByName(newobj.Class).IsSubTypeOf(CoreClasses.java.lang.Throwable.Wrapper))
                                     mwSuppressFillInStackTrace.EmitCall(ilgen);
 
                                 instr.Generate(context, ilgen);
@@ -2288,7 +2279,7 @@ namespace IKVM.Tools.Importer
                     }
                     else
                     {
-                        var tw = context.ClassLoader.LoadClassByDottedName(map[i].Destination);
+                        var tw = context.ClassLoader.LoadClassByName(map[i].Destination);
                         var mw = tw.GetMethodWrapper("<init>", "()V", false);
                         mw.Link();
                         mwSuppressFillInStackTrace.EmitCall(ilgen);
@@ -2358,7 +2349,7 @@ namespace IKVM.Tools.Importer
             return prologue;
         }
 
-        internal MapXml.ReplaceMethodCall[] GetReplacedMethodsFor(MethodWrapper mw)
+        internal MapXml.ReplaceMethodCall[] GetReplacedMethodsFor(RuntimeJavaMethod mw)
         {
             if (mapxml_ReplacedMethods == null)
                 return null;
@@ -2401,14 +2392,14 @@ namespace IKVM.Tools.Importer
             return null;
         }
 
-        internal bool IsGhost(TypeWrapper tw)
+        internal bool IsGhost(RuntimeJavaType tw)
         {
             return ghosts != null && tw.IsInterface && ghosts.ContainsKey(tw.Name);
         }
 
         void SetupGhosts(MapXml.Root map)
         {
-            ghosts = new Dictionary<string, List<TypeWrapper>>();
+            ghosts = new Dictionary<string, List<RuntimeJavaType>>();
 
             // find the ghost interfaces
             foreach (var c in map.Assembly.Classes)
@@ -2429,25 +2420,25 @@ namespace IKVM.Tools.Importer
             }
 
             // we manually add the array ghost interfaces
-            var array = ClassLoaderWrapper.GetWrapperFromType(Types.Array);
+            var array = RuntimeClassLoaderFactory.GetJavaTypeFromType(Types.Array);
             AddGhost("java.io.Serializable", array);
             AddGhost("java.lang.Cloneable", array);
         }
 
-        private void AddGhost(string interfaceName, TypeWrapper implementer)
+        private void AddGhost(string interfaceName, RuntimeJavaType implementer)
         {
             if (!ghosts.TryGetValue(interfaceName, out var list))
             {
-                list = new List<TypeWrapper>();
+                list = new List<RuntimeJavaType>();
                 ghosts[interfaceName] = list;
             }
 
             list.Add(implementer);
         }
 
-        internal TypeWrapper[] GetGhostImplementers(TypeWrapper wrapper)
+        internal RuntimeJavaType[] GetGhostImplementers(RuntimeJavaType wrapper)
         {
-            return ghosts.TryGetValue(wrapper.Name, out var list) ? list.ToArray() : TypeWrapper.EmptyArray;
+            return ghosts.TryGetValue(wrapper.Name, out var list) ? list.ToArray() : Array.Empty<RuntimeJavaType>();
         }
 
         internal void FinishRemappedTypes()
@@ -2769,10 +2760,10 @@ namespace IKVM.Tools.Importer
             }
 
             Tracer.Info(Tracer.Compiler, "Constructing compiler");
-            AssemblyClassLoader[] referencedAssemblies = new AssemblyClassLoader[references.Count];
+            RuntimeAssemblyClassLoader[] referencedAssemblies = new RuntimeAssemblyClassLoader[references.Count];
             for (int i = 0; i < references.Count; i++)
             {
-                AssemblyClassLoader acl = AssemblyClassLoader.FromAssembly(references[i]);
+                RuntimeAssemblyClassLoader acl = RuntimeAssemblyClassLoaderFactory.FromAssembly(references[i]);
                 if (Array.IndexOf(referencedAssemblies, acl) != -1)
                 {
                     StaticCompiler.IssueMessage(options, Message.DuplicateAssemblyReference, acl.MainAssembly.FullName);
@@ -2821,7 +2812,7 @@ namespace IKVM.Tools.Importer
                 if (loader.CheckCompilingCoreAssembly())
                 {
                     compilingCoreAssembly = true;
-                    ClassLoaderWrapper.SetBootstrapClassLoader(loader);
+                    RuntimeClassLoaderFactory.SetBootstrapClassLoader(loader);
                 }
             }
 
@@ -2843,7 +2834,7 @@ namespace IKVM.Tools.Importer
 
                     if (asm != null && IsCoreAssembly(asm))
                     {
-                        AssemblyClassLoader.PreloadExportedAssemblies(asm);
+                        RuntimeAssemblyClassLoader.PreloadExportedAssemblies(asm);
                         JVM.BaseAssembly = asm;
                         break;
                     }
@@ -2855,13 +2846,13 @@ namespace IKVM.Tools.Importer
                 }
 
                 // we need to scan again for remapped types, now that we've loaded the core library
-                ClassLoaderWrapper.LoadRemappedTypes();
+                RuntimeClassLoaderFactory.LoadRemappedTypes();
             }
 
             if (!compilingCoreAssembly)
             {
                 allReferencesAreStrongNamed &= IsSigned(JVM.BaseAssembly);
-                loader.AddReference(AssemblyClassLoader.FromAssembly(JVM.BaseAssembly));
+                loader.AddReference(RuntimeAssemblyClassLoaderFactory.FromAssembly(JVM.BaseAssembly));
             }
 
             if ((options.keyPair != null || options.publicKey != null) && !allReferencesAreStrongNamed)
@@ -2913,17 +2904,17 @@ namespace IKVM.Tools.Importer
             if (map != null && CheckCompilingCoreAssembly())
                 FakeTypes.Create(GetTypeWrapperFactory().ModuleBuilder, this);
 
-            allwrappers = new List<TypeWrapper>();
+            allwrappers = new List<RuntimeJavaType>();
             foreach (var s in classesToCompile)
             {
-                var wrapper = LoadClassByDottedNameFast(s);
+                var wrapper = TryLoadClassByName(s);
                 if (wrapper != null)
                 {
                     var loader = wrapper.GetClassLoader();
                     if (loader != this)
                     {
-                        if (loader is AssemblyClassLoader)
-                            StaticCompiler.IssueMessage(options, Message.SkippingReferencedClass, s, ((AssemblyClassLoader)loader).GetAssembly(wrapper).FullName);
+                        if (loader is RuntimeAssemblyClassLoader)
+                            StaticCompiler.IssueMessage(options, Message.SkippingReferencedClass, s, ((RuntimeAssemblyClassLoader)loader).GetAssembly(wrapper).FullName);
 
                         continue;
                     }
@@ -2939,9 +2930,9 @@ namespace IKVM.Tools.Importer
         private void CompilePass2()
         {
             Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
-            foreach (TypeWrapper tw in allwrappers)
+            foreach (RuntimeJavaType tw in allwrappers)
             {
-                DynamicTypeWrapper dtw = tw as DynamicTypeWrapper;
+                RuntimeByteCodeJavaType dtw = tw as RuntimeByteCodeJavaType;
                 if (dtw != null)
                 {
                     dtw.CreateStep2();
@@ -2963,11 +2954,11 @@ namespace IKVM.Tools.Importer
 
             if (options.mainClass != null)
             {
-                TypeWrapper wrapper = null;
+                RuntimeJavaType wrapper = null;
 
                 try
                 {
-                    wrapper = LoadClassByDottedNameFast(options.mainClass);
+                    wrapper = TryLoadClassByName(options.mainClass);
                 }
                 catch (RetargetableJavaException)
                 {
@@ -3044,10 +3035,10 @@ namespace IKVM.Tools.Importer
 
             if (options.classLoader != null)
             {
-                TypeWrapper classLoaderType = null;
+                RuntimeJavaType classLoaderType = null;
                 try
                 {
-                    classLoaderType = LoadClassByDottedNameFast(options.classLoader);
+                    classLoaderType = TryLoadClassByName(options.classLoader);
                 }
                 catch (RetargetableJavaException)
                 {
@@ -3063,7 +3054,7 @@ namespace IKVM.Tools.Importer
                 if (classLoaderType.IsAbstract)
                     throw new FatalCompilerErrorException(Message.ClassLoaderIsAbstract);
 
-                if (classLoaderType.IsAssignableTo(ClassLoaderWrapper.LoadClassCritical("java.lang.ClassLoader")) == false)
+                if (classLoaderType.IsAssignableTo(RuntimeClassLoaderFactory.LoadClassCritical("java.lang.ClassLoader")) == false)
                     throw new FatalCompilerErrorException(Message.ClassLoaderNotClassLoader);
 
                 var classLoaderInitMethod = classLoaderType.GetMethodWrapper("<init>", "(Lcli.System.Reflection.Assembly;)V", false);
@@ -3202,7 +3193,7 @@ namespace IKVM.Tools.Importer
 
         internal Type GetTypeFromReferencedAssembly(string name)
         {
-            foreach (AssemblyClassLoader acl in referencedAssemblies)
+            foreach (RuntimeAssemblyClassLoader acl in referencedAssemblies)
             {
                 Type type = acl.MainAssembly.GetType(name, false);
                 if (type != null)
@@ -3707,17 +3698,17 @@ namespace IKVM.Tools.Importer
             return runtimeAssembly.GetType(name) ?? throw new TypeLoadException(name);
         }
 
-        internal static Type GetTypeForMapXml(ClassLoaderWrapper loader, string name)
+        internal static Type GetTypeForMapXml(RuntimeClassLoader loader, string name)
         {
             return GetType(loader, name) ?? throw new FatalCompilerErrorException(Message.MapFileTypeNotFound, name);
         }
 
-        internal static TypeWrapper GetClassForMapXml(ClassLoaderWrapper loader, string name)
+        internal static RuntimeJavaType GetClassForMapXml(RuntimeClassLoader loader, string name)
         {
-            return loader.LoadClassByDottedNameFast(name) ?? throw new FatalCompilerErrorException(Message.MapFileClassNotFound, name);
+            return loader.TryLoadClassByName(name) ?? throw new FatalCompilerErrorException(Message.MapFileClassNotFound, name);
         }
 
-        internal static FieldWrapper GetFieldForMapXml(ClassLoaderWrapper loader, string clazz, string name, string sig)
+        internal static RuntimeJavaField GetFieldForMapXml(RuntimeClassLoader loader, string clazz, string name, string sig)
         {
             var fw = GetClassForMapXml(loader, clazz).GetFieldWrapper(name, sig);
             if (fw == null)
@@ -3727,7 +3718,7 @@ namespace IKVM.Tools.Importer
             return fw;
         }
 
-        internal static Type GetType(ClassLoaderWrapper loader, string name)
+        internal static Type GetType(RuntimeClassLoader loader, string name)
         {
             var ccl = (CompilerClassLoader)loader;
             return ccl.GetTypeFromReferencedAssembly(name);
@@ -3993,24 +3984,24 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        internal static void LinkageError(string msg, TypeWrapper actualType, TypeWrapper expectedType, params object[] values)
+        internal static void LinkageError(string msg, RuntimeJavaType actualType, RuntimeJavaType expectedType, params object[] values)
         {
             object[] args = new object[values.Length + 2];
             values.CopyTo(args, 2);
             args[0] = AssemblyQualifiedName(actualType);
             args[1] = AssemblyQualifiedName(expectedType);
             string str = string.Format(msg, args);
-            if (actualType is UnloadableTypeWrapper && (expectedType is CompiledTypeWrapper || expectedType is DotNetTypeWrapper))
+            if (actualType is RuntimeUnloadableJavaType && (expectedType is RuntimeManagedByteCodeJavaType || expectedType is RuntimeManagedJavaType))
             {
                 str += string.Format("\n\t(Please add a reference to {0})", expectedType.TypeAsBaseType.Assembly.Location);
             }
             throw new FatalCompilerErrorException(Message.LinkageError, str);
         }
 
-        private static string AssemblyQualifiedName(TypeWrapper tw)
+        private static string AssemblyQualifiedName(RuntimeJavaType tw)
         {
-            ClassLoaderWrapper loader = tw.GetClassLoader();
-            AssemblyClassLoader acl = loader as AssemblyClassLoader;
+            RuntimeClassLoader loader = tw.GetClassLoader();
+            RuntimeAssemblyClassLoader acl = loader as RuntimeAssemblyClassLoader;
             if (acl != null)
             {
                 return tw.Name + ", " + acl.GetAssembly(tw).FullName;

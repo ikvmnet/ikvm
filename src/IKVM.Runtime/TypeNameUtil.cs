@@ -22,22 +22,12 @@
   
 */
 
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-#endif
-
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
-
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
+
     static class TypeNameUtil
     {
+
         // note that MangleNestedTypeName() assumes that there are less than 16 special characters
         private const string specialCharactersString = "\\+,[]*&\u0000";
         internal const string ProxiesContainer = "__<Proxies>";
@@ -135,20 +125,21 @@ namespace IKVM.Internal
             return sb.ToString();
         }
 
-        internal static string GetProxyNestedName(TypeWrapper[] interfaces)
+        internal static string GetProxyNestedName(RuntimeJavaType[] interfaces)
         {
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            foreach (TypeWrapper tw in interfaces)
+            foreach (RuntimeJavaType tw in interfaces)
             {
                 sb.Append(tw.Name.Length).Append('|').Append(tw.Name);
             }
             return TypeNameUtil.MangleNestedTypeName(sb.ToString());
         }
 
-        internal static string GetProxyName(TypeWrapper[] interfaces)
+        internal static string GetProxyName(RuntimeJavaType[] interfaces)
         {
             return ProxiesContainer + "+" + GetProxyNestedName(interfaces);
         }
+
     }
 
 }

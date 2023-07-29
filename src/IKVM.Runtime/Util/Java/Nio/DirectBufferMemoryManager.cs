@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Buffers;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 
 namespace IKVM.Runtime.Util.Java.Nio

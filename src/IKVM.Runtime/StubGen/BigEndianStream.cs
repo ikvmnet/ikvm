@@ -26,8 +26,10 @@ using System.IO;
 
 namespace IKVM.StubGen
 {
+
     sealed class BigEndianStream
 	{
+
 		private Stream stream;
 
 		public BigEndianStream(Stream stream)
@@ -108,5 +110,7 @@ namespace IKVM.StubGen
 			WriteUInt16((ushort)j);
 			stream.Write(buf, 0, j);
 		}
+
 	}
+
 }

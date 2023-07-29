@@ -25,8 +25,6 @@ using System;
 using System.Runtime.Serialization;
 using System.Security;
 
-using IKVM.Runtime;
-
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -38,7 +36,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     static class Serialization
@@ -46,16 +44,16 @@ namespace IKVM.Internal
 
         static readonly CustomAttributeBuilder serializableAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SerializableAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
         static readonly CustomAttributeBuilder securityCriticalAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SecurityCriticalAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
-        static readonly TypeWrapper iserializable = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(ISerializable)));
-        static readonly TypeWrapper iobjectreference = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(IObjectReference)));
-        static readonly TypeWrapper externalizable = ClassLoaderWrapper.LoadClassCritical("java.io.Externalizable");
+        static readonly RuntimeJavaType iserializable = RuntimeClassLoaderFactory.GetJavaTypeFromType(JVM.Import(typeof(ISerializable)));
+        static readonly RuntimeJavaType iobjectreference = RuntimeClassLoaderFactory.GetJavaTypeFromType(JVM.Import(typeof(IObjectReference)));
+        static readonly RuntimeJavaType externalizable = RuntimeClassLoaderFactory.LoadClassCritical("java.io.Externalizable");
 
-        internal static bool IsISerializable(TypeWrapper wrapper)
+        internal static bool IsISerializable(RuntimeJavaType wrapper)
         {
             return wrapper == iserializable;
         }
 
-        static bool IsSafeForAutomagicSerialization(TypeWrapper wrapper)
+        static bool IsSafeForAutomagicSerialization(RuntimeJavaType wrapper)
         {
             if (wrapper.TypeAsBaseType.IsSerializable)
                 return false;
@@ -71,7 +69,7 @@ namespace IKVM.Internal
                 return true;
         }
 
-        internal static MethodBuilder AddAutomagicSerialization(DynamicTypeWrapper wrapper, TypeBuilder typeBuilder)
+        internal static MethodBuilder AddAutomagicSerialization(RuntimeByteCodeJavaType wrapper, TypeBuilder typeBuilder)
         {
             MethodBuilder serializationCtor = null;
             if ((wrapper.Modifiers & IKVM.Attributes.Modifiers.Enum) != 0)
@@ -118,7 +116,7 @@ namespace IKVM.Internal
                         AddGetObjectData(typeBuilder);
 #if IMPORTER
 						// because the base type can be a __WorkaroundBaseClass__, we may need to replace the constructor
-						baseCtor = ((AotTypeWrapper)wrapper).ReplaceMethodWrapper(baseCtor);
+						baseCtor = ((RuntimeImportByteCodeJavaType)wrapper).ReplaceMethodWrapper(baseCtor);
 #endif
                         baseCtor.Link();
                         serializationCtor = AddConstructor(typeBuilder, baseCtor, null, true);
@@ -161,15 +159,15 @@ namespace IKVM.Internal
             CodeEmitter ilgen = CodeEmitter.Create(getObjectData);
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ldarg_1);
-            TypeWrapper serializationHelper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.Serialization");
-            MethodWrapper mw = serializationHelper.GetMethodWrapper("writeObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
+            RuntimeJavaType serializationHelper = RuntimeClassLoaderFactory.LoadClassCritical("ikvm.internal.Serialization");
+            RuntimeJavaMethod mw = serializationHelper.GetMethodWrapper("writeObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
             mw.Link();
             mw.EmitCall(ilgen);
             ilgen.Emit(OpCodes.Ret);
             ilgen.DoEmit();
         }
 
-        static MethodBuilder AddConstructor(TypeBuilder tb, MethodWrapper defaultConstructor, MethodBase serializationConstructor, bool callReadObject)
+        static MethodBuilder AddConstructor(TypeBuilder tb, RuntimeJavaMethod defaultConstructor, MethodBase serializationConstructor, bool callReadObject)
         {
             MethodBuilder ctor = ReflectUtil.DefineConstructor(tb, MethodAttributes.Family, new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
             AttributeHelper.HideFromJava(ctor);
@@ -189,8 +187,8 @@ namespace IKVM.Internal
             {
                 ilgen.Emit(OpCodes.Ldarg_0);
                 ilgen.Emit(OpCodes.Ldarg_1);
-                TypeWrapper serializationHelper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.Serialization");
-                MethodWrapper mw = serializationHelper.GetMethodWrapper("readObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
+                RuntimeJavaType serializationHelper = RuntimeClassLoaderFactory.LoadClassCritical("ikvm.internal.Serialization");
+                RuntimeJavaMethod mw = serializationHelper.GetMethodWrapper("readObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
                 mw.Link();
                 mw.EmitCall(ilgen);
             }
@@ -199,7 +197,7 @@ namespace IKVM.Internal
             return ctor;
         }
 
-        static void AddReadResolve(DynamicTypeWrapper wrapper, TypeBuilder tb)
+        static void AddReadResolve(RuntimeByteCodeJavaType wrapper, TypeBuilder tb)
         {
             var mw = wrapper.GetMethodWrapper("readResolve", "()Ljava.lang.Object;", false);
             if (mw != null && !wrapper.IsSubTypeOf(iobjectreference))

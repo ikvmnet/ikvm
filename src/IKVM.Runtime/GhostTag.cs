@@ -26,15 +26,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 
 using IKVM.Attributes;
-using IKVM.Internal;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-#endif
 
 namespace IKVM.Runtime
 {
@@ -42,32 +33,32 @@ namespace IKVM.Runtime
     static class GhostTag
     {
 
-        static volatile ConditionalWeakTable<object, TypeWrapper> dict;
+        static volatile ConditionalWeakTable<object, RuntimeJavaType> dict;
 
         internal static void SetTag(object obj, RuntimeTypeHandle typeHandle)
         {
 #if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
-            SetTag(obj, ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(typeHandle)));
+            SetTag(obj, RuntimeClassLoaderFactory.GetJavaTypeFromType(Type.GetTypeFromHandle(typeHandle)));
 #endif
         }
 
-        internal static void SetTag(object obj, TypeWrapper wrapper)
+        internal static void SetTag(object obj, RuntimeJavaType wrapper)
         {
             if (dict == null)
             {
-                ConditionalWeakTable<object, TypeWrapper> newDict = new ConditionalWeakTable<object, TypeWrapper>();
+                ConditionalWeakTable<object, RuntimeJavaType> newDict = new ConditionalWeakTable<object, RuntimeJavaType>();
                 Interlocked.CompareExchange(ref dict, newDict, null);
             }
             dict.Add(obj, wrapper);
         }
 
-        internal static TypeWrapper GetTag(object obj)
+        internal static RuntimeJavaType GetTag(object obj)
         {
             if (dict != null)
             {
-                TypeWrapper tw;
+                RuntimeJavaType tw;
                 dict.TryGetValue(obj, out tw);
                 return tw;
             }
@@ -80,10 +71,10 @@ namespace IKVM.Runtime
 #if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
-            TypeWrapper tw1 = GhostTag.GetTag(obj);
+            RuntimeJavaType tw1 = GhostTag.GetTag(obj);
             if (tw1 != null)
             {
-                TypeWrapper tw2 = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(typeHandle)).MakeArrayType(rank);
+                RuntimeJavaType tw2 = RuntimeClassLoaderFactory.GetJavaTypeFromType(Type.GetTypeFromHandle(typeHandle)).MakeArrayType(rank);
                 return tw1.IsAssignableTo(tw2);
             }
             return false;
@@ -103,6 +94,7 @@ namespace IKVM.Runtime
             throw new global::java.lang.ClassCastException(sb.ToString());
 #endif
         }
+
     }
 
 }

@@ -28,7 +28,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     public static class Tracer

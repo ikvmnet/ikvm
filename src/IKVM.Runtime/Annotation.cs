@@ -41,7 +41,7 @@ using System.Reflection.Emit;
 using IKVM.Tools.Importer;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     abstract class Annotation
@@ -49,7 +49,7 @@ namespace IKVM.Internal
 
 #if IMPORTER
 
-        internal static Annotation LoadAssemblyCustomAttribute(ClassLoaderWrapper loader, object[] def)
+        internal static Annotation LoadAssemblyCustomAttribute(RuntimeClassLoader loader, object[] def)
         {
             if (def.Length == 0)
                 throw new ArgumentException("LoadAssemblyCustomAttribute did not receive any definitions.");
@@ -76,7 +76,7 @@ namespace IKVM.Internal
 #if !EXPORTER
         // NOTE this method returns null if the type could not be found
         // or if the type is not a Custom Attribute and we're not in the static compiler
-        internal static Annotation Load(TypeWrapper owner, object[] def)
+        internal static Annotation Load(RuntimeJavaType owner, object[] def)
         {
             Debug.Assert(def[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION));
             string annotationClass = (string)def[1];
@@ -92,7 +92,7 @@ namespace IKVM.Internal
 #endif
             if (ClassFile.IsValidFieldSig(annotationClass))
             {
-                TypeWrapper tw = owner.GetClassLoader().RetTypeWrapperFromSig(annotationClass.Replace('/', '.'), LoadMode.Link);
+                RuntimeJavaType tw = owner.GetClassLoader().RetTypeWrapperFromSig(annotationClass.Replace('/', '.'), LoadMode.Link);
                 // Java allows inaccessible annotations to be used, so when the annotation isn't visible
                 // we fall back to using the DynamicAnnotationAttribute.
                 if (!tw.IsUnloadable && tw.IsAccessibleFrom(owner))
@@ -102,7 +102,7 @@ namespace IKVM.Internal
             }
             Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
 #if IMPORTER
-            return new CompiledTypeWrapper.CompiledAnnotation(StaticCompiler.GetRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
+            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(StaticCompiler.GetRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
 #else
             return null;
 #endif
@@ -120,7 +120,7 @@ namespace IKVM.Internal
             return EnumHelper.GetPrimitiveValue(EnumHelper.GetUnderlyingType(enumType), 0);
         }
 
-        protected static object ConvertValue(ClassLoaderWrapper loader, Type targetType, object obj)
+        protected static object ConvertValue(RuntimeClassLoader loader, Type targetType, object obj)
         {
             if (targetType.IsEnum)
             {
@@ -222,7 +222,7 @@ namespace IKVM.Internal
             return false;
         }
 
-        protected static object QualifyClassNames(ClassLoaderWrapper loader, object annotation)
+        protected static object QualifyClassNames(RuntimeClassLoader loader, object annotation)
         {
             bool copy = false;
             object[] def = (object[])annotation;
@@ -248,7 +248,7 @@ namespace IKVM.Internal
             return def;
         }
 
-        private static object[] ValueQualifyClassNames(ClassLoaderWrapper loader, object[] val)
+        private static object[] ValueQualifyClassNames(RuntimeClassLoader loader, object[] val)
         {
             if (val[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION))
             {
@@ -259,7 +259,7 @@ namespace IKVM.Internal
                 string sig = (string)val[1];
                 if (sig.StartsWith("L"))
                 {
-                    TypeWrapper tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
+                    RuntimeJavaType tw = loader.TryLoadClassByName(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
                     if (tw != null)
                     {
                         return new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";" };
@@ -270,7 +270,7 @@ namespace IKVM.Internal
             else if (val[0].Equals(AnnotationDefaultAttribute.TAG_ENUM))
             {
                 string sig = (string)val[1];
-                TypeWrapper tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
+                RuntimeJavaType tw = loader.TryLoadClassByName(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
                 if (tw != null)
                 {
                     return new object[] { AnnotationDefaultAttribute.TAG_ENUM, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";", val[2] };
@@ -311,14 +311,14 @@ namespace IKVM.Internal
             }
         }
 
-        internal abstract void Apply(ClassLoaderWrapper loader, TypeBuilder tb, object annotation);
-        internal abstract void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation);
-        internal abstract void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation);
-        internal abstract void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation);
-        internal abstract void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation);
-        internal abstract void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, FieldBuilder fb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, ParameterBuilder pb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, PropertyBuilder pb, object annotation);
 
-        internal virtual void ApplyReturnValue(ClassLoaderWrapper loader, MethodBuilder mb, ref ParameterBuilder pb, object annotation)
+        internal virtual void ApplyReturnValue(RuntimeClassLoader loader, MethodBuilder mb, ref ParameterBuilder pb, object annotation)
         {
 
         }

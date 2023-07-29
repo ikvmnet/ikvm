@@ -23,11 +23,12 @@
 */
 using System;
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     static class ArrayUtil
     {
+
         internal static T[] Concat<T, X>(X obj, T[] arr)
             where X : T
         {

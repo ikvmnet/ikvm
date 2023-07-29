@@ -21,14 +21,15 @@
   jeroen@frijters.net
   
 */
-using IKVM.Internal;
+using IKVM.Runtime;
 
 static class Intrinsics
 {
 
-    internal static bool IsIntrinsic(MethodWrapper methodWrapper)
+    internal static bool IsIntrinsic(RuntimeJavaMethod methodWrapper)
     {
         return false;
     }
 
 }
+

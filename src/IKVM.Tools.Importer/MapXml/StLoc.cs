@@ -25,8 +25,8 @@
 using System.Diagnostics;
 using System.Xml.Linq;
 
-using IKVM.Internal;
 using IKVM.Reflection.Emit;
+using IKVM.Runtime;
 
 using Type = IKVM.Reflection.Type;
 
@@ -62,7 +62,7 @@ namespace IKVM.Tools.Importer.MapXml
             inst.Type = (string)element.Attribute("type");
         }
 
-        TypeWrapper typeWrapper;
+        RuntimeJavaType typeWrapper;
         Type typeType;
 
         public string Name { get; set; }
@@ -82,7 +82,7 @@ namespace IKVM.Tools.Importer.MapXml
                     if (Type != null)
                         typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
                     else
-                        typeWrapper = context.ClassLoader.LoadClassByDottedName(Class);
+                        typeWrapper = context.ClassLoader.LoadClassByName(Class);
                 }
 
                 lb = ilgen.DeclareLocal(typeType != null ? typeType : typeWrapper.TypeAsTBD);

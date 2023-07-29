@@ -25,7 +25,7 @@
 using System.Linq;
 using System.Xml.Linq;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Tools.Importer.MapXml
 {
@@ -53,7 +53,7 @@ namespace IKVM.Tools.Importer.MapXml
 
         public Redirect Redirect { get; set; }
 
-        internal void Emit(ClassLoaderWrapper loader, CodeEmitter ilgen)
+        internal void Emit(RuntimeClassLoader loader, CodeEmitter ilgen)
         {
             if (Prologue != null)
                 Prologue.Emit(loader, ilgen);

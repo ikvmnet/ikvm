@@ -25,9 +25,9 @@
 using System;
 using System.Xml.Linq;
 
-using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Runtime;
 
 using Type = IKVM.Reflection.Type;
 
@@ -71,7 +71,7 @@ namespace IKVM.Tools.Importer.MapXml
 
         public string Type { get; set; }
 
-        internal void Emit(ClassLoaderWrapper loader, CodeEmitter ilgen)
+        internal void Emit(RuntimeClassLoader loader, CodeEmitter ilgen)
         {
             if (Type != "static" || Class == null || Name == null || Sig == null)
                 throw new NotImplementedException();
@@ -87,8 +87,8 @@ namespace IKVM.Tools.Importer.MapXml
 #if NETCOREAPP
 				Class = Class.Replace("mscorlib", Universe.CoreLibName);
 #endif
-                Type type = StaticCompiler.Universe.GetType(Class, true);
-                MethodInfo mi = type.GetMethod(Name, redirParamTypes);
+                var type = StaticCompiler.Universe.GetType(Class, true);
+                var mi = type.GetMethod(Name, redirParamTypes);
                 if (mi == null)
                 {
                     throw new InvalidOperationException();
@@ -97,8 +97,8 @@ namespace IKVM.Tools.Importer.MapXml
             }
             else
             {
-                TypeWrapper tw = loader.LoadClassByDottedName(Class);
-                MethodWrapper mw = tw.GetMethodWrapper(Name, Sig, false);
+                var tw = loader.LoadClassByName(Class);
+                var mw = tw.GetMethodWrapper(Name, Sig, false);
                 if (mw == null)
                 {
                     throw new InvalidOperationException();

@@ -21,9 +21,9 @@
   jeroen@frijters.net
   
 */
+using System;
 using System.Collections.Generic;
 
-using IKVM.Internal;
 using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.lang.reflect
@@ -35,57 +35,53 @@ namespace IKVM.Java.Externs.java.lang.reflect
         public static object[] getParameters0(global::java.lang.reflect.Executable _this)
         {
 #if FIRST_PASS
-		    return null;
+		    throw new NotImplementedException();
 #else
-            MethodWrapper mw = MethodWrapper.FromExecutable(_this);
-            MethodParametersEntry[] methodParameters = mw.DeclaringType.GetMethodParameters(mw);
+            var mw = RuntimeJavaMethod.FromExecutable(_this);
+            var methodParameters = mw.DeclaringType.GetMethodParameters(mw);
             if (methodParameters == null)
-            {
                 return null;
-            }
+
             if (methodParameters == MethodParametersEntry.Malformed)
-            {
                 throw new global::java.lang.reflect.MalformedParametersException("Invalid constant pool index");
-            }
-            global::java.lang.reflect.Parameter[] parameters = new global::java.lang.reflect.Parameter[methodParameters.Length];
+
+            var parameters = new global::java.lang.reflect.Parameter[methodParameters.Length];
             for (int i = 0; i < parameters.Length; i++)
-            {
                 parameters[i] = new global::java.lang.reflect.Parameter(methodParameters[i].name ?? "", (int)(ushort)methodParameters[i].accessFlags, _this, i);
-            }
+
             return parameters;
 #endif
         }
 
         public static byte[] getTypeAnnotationBytes0(global::java.lang.reflect.Executable _this)
         {
-            MethodWrapper mw = MethodWrapper.FromExecutable(_this);
+            var mw = RuntimeJavaMethod.FromExecutable(_this);
             return mw.DeclaringType.GetMethodRawTypeAnnotations(mw);
         }
 
         public static object declaredAnnotationsImpl(global::java.lang.reflect.Executable executable)
         {
-            MethodWrapper mw = MethodWrapper.FromExecutable(executable);
+            var mw = RuntimeJavaMethod.FromExecutable(executable);
             return IKVM.Java.Externs.java.lang.Class.AnnotationsToMap(mw.DeclaringType.GetClassLoader(), mw.DeclaringType.GetMethodAnnotations(mw));
         }
 
         public static object[][] sharedGetParameterAnnotationsImpl(global::java.lang.reflect.Executable executable)
         {
 #if FIRST_PASS
-		    return null;
+            throw new NotImplementedException();
 #else
-            MethodWrapper mw = MethodWrapper.FromExecutable(executable);
-            object[][] objAnn = mw.DeclaringType.GetParameterAnnotations(mw);
+            var mw = RuntimeJavaMethod.FromExecutable(executable);
+            var objAnn = mw.DeclaringType.GetParameterAnnotations(mw);
             if (objAnn == null)
-            {
                 return null;
-            }
-            global::java.lang.annotation.Annotation[][] ann = new global::java.lang.annotation.Annotation[objAnn.Length][];
+
+            var ann = new global::java.lang.annotation.Annotation[objAnn.Length][];
             for (int i = 0; i < ann.Length; i++)
             {
-                List<global::java.lang.annotation.Annotation> list = new List<global::java.lang.annotation.Annotation>();
-                foreach (object obj in objAnn[i])
+                var list = new List<global::java.lang.annotation.Annotation>();
+                foreach (var obj in objAnn[i])
                 {
-                    global::java.lang.annotation.Annotation a = obj as global::java.lang.annotation.Annotation;
+                    var a = obj as global::java.lang.annotation.Annotation;
                     if (a != null)
                     {
                         list.Add(IKVM.Java.Externs.java.lang.Class.FreezeOrWrapAttribute(a));
@@ -94,9 +90,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
                     {
                         a = (global::java.lang.annotation.Annotation)JVM.NewAnnotation(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), ((IKVM.Attributes.DynamicAnnotationAttribute)obj).Definition);
                         if (a != null)
-                        {
                             list.Add(a);
-                        }
                     }
                 }
 

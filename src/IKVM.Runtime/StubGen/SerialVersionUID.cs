@@ -26,7 +26,7 @@ using System.Linq;
 using System.Security.Cryptography;
 
 using IKVM.Attributes;
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.StubGen
 {
@@ -34,9 +34,10 @@ namespace IKVM.StubGen
     static class SerialVersionUID
     {
 
+
         readonly static SHA1 sha1 = SHA1.Create();
 
-        internal static long Compute(TypeWrapper tw)
+        internal static long Compute(RuntimeJavaType tw)
         {
             var mem = new MemoryStream();
             var bes = new BigEndianStream(mem);
@@ -59,12 +60,12 @@ namespace IKVM.StubGen
             return hash;
         }
 
-        static void WriteClassName(BigEndianStream bes, TypeWrapper tw)
+        static void WriteClassName(BigEndianStream bes, RuntimeJavaType tw)
         {
             bes.WriteUtf8(tw.Name);
         }
 
-        static void WriteModifiers(BigEndianStream bes, TypeWrapper tw)
+        static void WriteModifiers(BigEndianStream bes, RuntimeJavaType tw)
         {
             var mods = tw.ReflectiveModifiers & (Modifiers.Public | Modifiers.Final | Modifiers.Interface | Modifiers.Abstract);
             if ((mods & Modifiers.Interface) != 0)
@@ -77,18 +78,18 @@ namespace IKVM.StubGen
             bes.WriteUInt32((uint)mods);
         }
 
-        static bool HasJavaMethods(TypeWrapper tw)
+        static bool HasJavaMethods(RuntimeJavaType tw)
         {
             return tw.GetMethods().Any(i => !i.IsHideFromReflection && !i.IsClassInitializer);
         }
 
-        static void WriteInterfaces(BigEndianStream bes, TypeWrapper tw)
+        static void WriteInterfaces(BigEndianStream bes, RuntimeJavaType tw)
         {
             foreach (var i in tw.Interfaces.OrderBy(i => i.Name))
                 bes.WriteUtf8(i.Name);
         }
 
-        static void WriteFields(BigEndianStream bes, TypeWrapper tw)
+        static void WriteFields(BigEndianStream bes, RuntimeJavaType tw)
         {
             foreach (var fw in tw.GetFields().Where(i => !i.IsHideFromReflection).OrderBy(i => i.Name))
             {
@@ -102,7 +103,7 @@ namespace IKVM.StubGen
             }
         }
 
-        static void WriteStaticInitializer(BigEndianStream bes, TypeWrapper tw)
+        static void WriteStaticInitializer(BigEndianStream bes, RuntimeJavaType tw)
         {
             var type = tw.TypeAsTBD;
             if (!type.IsArray && type.TypeInitializer != null)
@@ -116,7 +117,7 @@ namespace IKVM.StubGen
             }
         }
 
-        static void WriteConstructors(BigEndianStream bes, TypeWrapper tw)
+        static void WriteConstructors(BigEndianStream bes, RuntimeJavaType tw)
         {
             var ctors = tw.GetMethods()
                 .Where(i => i.IsConstructor && !i.IsHideFromReflection && !i.IsPrivate)
@@ -131,7 +132,7 @@ namespace IKVM.StubGen
             }
         }
 
-        static void WriteMethods(BigEndianStream bes, TypeWrapper tw)
+        static void WriteMethods(BigEndianStream bes, RuntimeJavaType tw)
         {
             var methods = tw.GetMethods()
                 .Where(i => !i.IsConstructor && !i.IsHideFromReflection && !i.IsPrivate)

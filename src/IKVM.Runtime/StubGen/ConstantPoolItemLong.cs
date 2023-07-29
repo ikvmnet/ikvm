@@ -24,8 +24,10 @@
 
 namespace IKVM.StubGen
 {
+
     sealed class ConstantPoolItemLong : ConstantPoolItem
 	{
+
 		private long v;
 
 		public ConstantPoolItemLong(long v)
@@ -52,5 +54,7 @@ namespace IKVM.StubGen
 			bes.WriteByte((byte)Constant.Long);
 			bes.WriteInt64(v);
 		}
+
 	}
+
 }

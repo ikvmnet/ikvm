@@ -24,8 +24,10 @@
 
 namespace IKVM.StubGen
 {
+
     sealed class ConstantPoolItemClass : ConstantPoolItem
 	{
+
 		private ushort name_index;
 
 		public ConstantPoolItemClass(ushort name_index)
@@ -52,5 +54,7 @@ namespace IKVM.StubGen
 			bes.WriteByte((byte)Constant.Class);
 			bes.WriteUInt16(name_index);
 		}
+
 	}
+
 }

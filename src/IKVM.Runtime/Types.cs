@@ -23,13 +23,11 @@
 */
 using System;
 
-using IKVM.Runtime;
-
 #if IMPORTER || EXPORTER
 using Type = IKVM.Reflection.Type;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     static class Types

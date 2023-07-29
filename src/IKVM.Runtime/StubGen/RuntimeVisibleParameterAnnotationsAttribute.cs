@@ -25,8 +25,10 @@ using System.Collections.Generic;
 
 namespace IKVM.StubGen
 {
+
     sealed class RuntimeVisibleParameterAnnotationsAttribute : ClassFileAttribute
 	{
+
 		private readonly List<RuntimeVisibleAnnotationsAttribute> parameters = new List<RuntimeVisibleAnnotationsAttribute>();
 
 		internal RuntimeVisibleParameterAnnotationsAttribute(ClassFileWriter classFile)
@@ -54,5 +56,7 @@ namespace IKVM.StubGen
 				attr.WriteImpl(bes);
 			}
 		}
+
 	}
+
 }

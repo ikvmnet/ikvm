@@ -27,9 +27,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Xml.Linq;
 
-using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Runtime;
 
 using Type = IKVM.Reflection.Type;
 
@@ -114,7 +114,7 @@ namespace IKVM.Tools.Importer.MapXml
                 if (Class != null)
                 {
                     Debug.Assert(Sig != null);
-                    MethodWrapper method = context.ClassLoader.LoadClassByDottedName(Class).GetMethodWrapper(Name, Sig, false);
+                    var method = context.ClassLoader.LoadClassByName(Class).GetMethodWrapper(Name, Sig, false);
                     if (method == null)
                     {
                         throw new InvalidOperationException("method not found: " + Class + "." + Name + Sig);
@@ -122,7 +122,7 @@ namespace IKVM.Tools.Importer.MapXml
                     method.Link();
                     // TODO this code is part of what Compiler.CastInterfaceArgs (in compiler.cs) does,
                     // it would be nice if we could avoid this duplication...
-                    TypeWrapper[] argTypeWrappers = method.GetParameters();
+                    var argTypeWrappers = method.GetParameters();
                     for (int i = 0; i < argTypeWrappers.Length; i++)
                     {
                         if (argTypeWrappers[i].IsGhost)
@@ -130,7 +130,7 @@ namespace IKVM.Tools.Importer.MapXml
                             CodeEmitterLocal[] temps = new CodeEmitterLocal[argTypeWrappers.Length + (method.IsStatic ? 0 : 1)];
                             for (int j = temps.Length - 1; j >= 0; j--)
                             {
-                                TypeWrapper tw;
+                                RuntimeJavaType tw;
                                 if (method.IsStatic)
                                 {
                                     tw = argTypeWrappers[j];

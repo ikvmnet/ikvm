@@ -24,8 +24,8 @@
 
 using System.Xml.Linq;
 
-using IKVM.Internal;
 using IKVM.Reflection.Emit;
+using IKVM.Runtime;
 
 namespace IKVM.Tools.Importer.MapXml
 {
@@ -59,7 +59,7 @@ namespace IKVM.Tools.Importer.MapXml
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
-            ilgen.Emit(OpCodes.Castclass, context.ClassLoader.LoadClassByDottedName(Class).TypeAsBaseType);
+            ilgen.Emit(OpCodes.Castclass, context.ClassLoader.LoadClassByName(Class).TypeAsBaseType);
         }
 
     }

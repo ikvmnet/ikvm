@@ -24,8 +24,10 @@
 
 namespace IKVM.StubGen
 {
+
     enum Constant
 	{
+
 		Utf8 = 1,
 		Integer = 3,
 		Float = 4,
@@ -37,5 +39,7 @@ namespace IKVM.StubGen
 		Methodref = 10,
 		InterfaceMethodref = 11,
 		NameAndType = 12
+
 	}
+
 }

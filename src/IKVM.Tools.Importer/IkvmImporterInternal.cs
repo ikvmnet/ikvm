@@ -29,7 +29,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 using IKVM.ByteCode.Reading;
-using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -1118,7 +1117,7 @@ namespace IKVM.Tools.Importer
                 {
                     foreach (Assembly asm in target.references)
                     {
-                        AssemblyClassLoader.PreloadExportedAssemblies(asm);
+                        RuntimeAssemblyClassLoader.PreloadExportedAssemblies(asm);
                     }
                 }
             }

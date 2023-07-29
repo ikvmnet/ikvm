@@ -29,7 +29,6 @@ using System.Runtime.Serialization;
 using System.Security;
 
 using IKVM.Attributes;
-using IKVM.Runtime;
 
 using IDictionary = System.Collections.IDictionary;
 using Interlocked = System.Threading.Interlocked;
@@ -43,7 +42,7 @@ using StackTraceElement = java.lang.StackTraceElement;
 using Throwable = java.lang.Throwable;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     static class ExceptionHelper
@@ -335,16 +334,16 @@ namespace IKVM.Internal
             {
                 return "<Module>";
             }
-            if (ClassLoaderWrapper.IsRemappedType(type))
+            if (RuntimeClassLoaderFactory.IsRemappedType(type))
             {
-                return DotNetTypeWrapper.GetName(type);
+                return RuntimeManagedJavaType.GetName(type);
             }
-            TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
+            RuntimeJavaType tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
             if (tw != null)
             {
                 if (tw.IsPrimitive)
                 {
-                    return DotNetTypeWrapper.GetName(type);
+                    return RuntimeManagedJavaType.GetName(type);
                 }
 #if !FIRST_PASS
                 if (tw.IsUnsafeAnonymous)
@@ -365,11 +364,11 @@ namespace IKVM.Internal
                 MethodBase mb = frame.GetMethod();
                 if (mb != null && mb.DeclaringType != null)
                 {
-                    if (ClassLoaderWrapper.IsRemappedType(mb.DeclaringType))
+                    if (RuntimeClassLoaderFactory.IsRemappedType(mb.DeclaringType))
                     {
                         return -1;
                     }
-                    TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
+                    RuntimeJavaType tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
                     if (tw != null)
                     {
                         return tw.GetSourceLineNumber(mb, ilOffset);
@@ -384,11 +383,11 @@ namespace IKVM.Internal
             MethodBase mb = frame.GetMethod();
             if (mb != null && mb.DeclaringType != null)
             {
-                if (ClassLoaderWrapper.IsRemappedType(mb.DeclaringType))
+                if (RuntimeClassLoaderFactory.IsRemappedType(mb.DeclaringType))
                 {
                     return null;
                 }
-                TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(mb.DeclaringType);
+                RuntimeJavaType tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
                 if (tw != null)
                 {
                     return tw.GetSourceFileName();

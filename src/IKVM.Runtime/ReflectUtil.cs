@@ -32,7 +32,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
     static class ReflectUtil
@@ -124,7 +124,7 @@ namespace IKVM.Internal
             }
         }
 
-        internal static MethodBuilder DefineTypeInitializer(TypeBuilder typeBuilder, ClassLoaderWrapper loader)
+        internal static MethodBuilder DefineTypeInitializer(TypeBuilder typeBuilder, RuntimeClassLoader loader)
         {
             MethodAttributes attr = MethodAttributes.Static | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName;
             if (typeBuilder.IsInterface && loader.WorkaroundInterfacePrivateMethods)

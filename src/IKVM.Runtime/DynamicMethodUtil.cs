@@ -3,8 +3,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Security;
 
-using IKVM.Internal;
-
 namespace IKVM.Runtime
 {
 

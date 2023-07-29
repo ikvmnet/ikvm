@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 
 using IKVM.Attributes;
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Ikvm.Internal;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Accessors.Java.Lang.Reflect;
@@ -240,7 +240,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
-            ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(AssemblyClassLoader.FromAssembly(assembly));
+            RuntimeClassLoaderFactory.GetBootstrapClassLoader().AddDelegate(RuntimeAssemblyClassLoaderFactory.FromAssembly(assembly));
 #endif
         }
 
@@ -403,14 +403,6 @@ namespace IKVM.Runtime
                         continue;
                     }
 
-                    if (ArgEquals(arg, "-Xnoclassgc"))
-                    {
-#if CLASSGC
-                        JVM.classUnloading = false;
-#endif
-                        continue;
-                    }
-
                     if (ArgEquals(arg, "-Xverify"))
                     {
                         JVM.relaxedVerification = false;
@@ -526,7 +518,7 @@ namespace IKVM.Runtime
                 SystemAccessor.InvokeSetProperty("sun.java.command", initialize["sun.java.command"]);
 
                 // find the main method and ensure it is accessible
-                var method = ClassAccessor.InvokeGetMethod(clazz, "main", ClassAccessor.InitArray(ClassLoaderWrapper.GetWrapperFromType(typeof(string[])).ClassObject), CallerIDAccessor.InvokeCreate(typeof(Launcher).TypeHandle));
+                var method = ClassAccessor.InvokeGetMethod(clazz, "main", ClassAccessor.InitArray(RuntimeClassLoaderFactory.GetJavaTypeFromType(typeof(string[])).ClassObject), CallerIDAccessor.InvokeCreate(typeof(Launcher).TypeHandle));
                 MethodAccessor.InvokeSetAccessible(method, true);
 
                 try
