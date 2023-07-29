@@ -45,6 +45,9 @@
         <ProjectReference Include="..\IKVM.Image.JRE.runtime.osx-x64\IKVM.Image.JRE.runtime.osx-x64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.JRE.runtime.osx-arm64\IKVM.Image.JRE.runtime.osx-arm64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>

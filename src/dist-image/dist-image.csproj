@@ -27,7 +27,6 @@
         <ImageTarget Include="netcoreapp3.1|linux-musl-arm" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-musl-arm" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm;'))" />
         <ImageTarget Include="netcoreapp3.1|linux-musl-arm64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-musl-arm64" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm64;'))" />
         <ImageTarget Include="netcoreapp3.1|osx-x64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="osx-x64" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))" />
-        <ImageTarget Include="netcoreapp3.1|osx-arm64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="osx-arm64" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))" />
         <ImageTarget Include="net6.0|win7-x64" TargetFramework="net6.0" RuntimeIdentifier="win7-x64" Condition="$(_EnabledImageRuntimes.Contains(';win7-x64;'))" />
         <ImageTarget Include="net6.0|win7-x86" TargetFramework="net6.0" RuntimeIdentifier="win7-x86" Condition="$(_EnabledImageRuntimes.Contains(';win7-x86;'))" />
         <ImageTarget Include="net6.0|win81-arm" TargetFramework="net6.0" RuntimeIdentifier="win81-arm" Condition="$(_EnabledImageRuntimes.Contains(';win81-arm;'))" />

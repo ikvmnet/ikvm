@@ -26,6 +26,9 @@
         <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.osx-x64\IKVM.MSBuild.Tools.runtime.osx-x64.csproj" Condition="$(_EnabledToolRuntimes.Contains('osx-x64'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.osx-arm64\IKVM.MSBuild.Tools.runtime.osx-arm64.csproj" Condition="$(_EnabledToolRuntimes.Contains('osx-arm64'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>
