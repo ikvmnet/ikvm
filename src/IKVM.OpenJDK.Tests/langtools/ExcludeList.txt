@@ -112,4 +112,4 @@ tools/javac/file/zip/T6836682.java                                              
 # however, RuntimeByteCodeJavaType can't currently be guarenteed to emit methods in the exact correct order, since some of the method linking is recursive and ondemand.
 # so, until this is fixed, and we have a stable way to determine method order, we're disabling this guy
 # it did work previously, by accident, as far as I can tell
-tools/javac/lambda/MostSpecific09                                                                                       generic-all
+tools/javac/lambda/MostSpecific09.java                                                                                  generic-all
