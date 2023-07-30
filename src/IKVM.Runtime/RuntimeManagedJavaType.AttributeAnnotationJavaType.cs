@@ -29,6 +29,7 @@ using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
+using System.Net.Mime;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -36,6 +37,10 @@ using System.Reflection.Emit;
 
 #if IMPORTER
 using IKVM.Tools.Importer;
+#endif
+
+#if EXPORTER
+using IKVM.Tools.Exporter;
 #endif
 
 namespace IKVM.Runtime
@@ -56,37 +61,37 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="name"></param>
             /// <param name="attributeType"></param>
-            internal AttributeAnnotationJavaType(string name, Type attributeType) :
-                base(name)
+            internal AttributeAnnotationJavaType(RuntimeContext context, string name, Type attributeType) :
+                base(context, name)
             {
 #if IMPORTER || EXPORTER
-                this.fakeType = FakeTypes.GetAttributeType(attributeType);
+                this.fakeType = context.FakeTypes.GetAttributeType(attributeType);
 #elif !FIRST_PASS
                 this.fakeType = typeof(ikvm.@internal.AttributeAnnotation<>).MakeGenericType(attributeType);
 #endif
                 this.attributeType = attributeType;
             }
 
-            static bool IsSupportedType(Type type)
+            static bool IsSupportedType(RuntimeContext context, Type type)
             {
                 // Java annotations only support one-dimensional arrays
                 if (ReflectUtil.IsVector(type))
                     type = type.GetElementType();
 
-                return type == Types.String
-                    || type == Types.Boolean
-                    || type == Types.Byte
-                    || type == Types.Char
-                    || type == Types.Int16
-                    || type == Types.Int32
-                    || type == Types.Single
-                    || type == Types.Int64
-                    || type == Types.Double
-                    || type == Types.Type
+                return type == context.Types.String
+                    || type == context.Types.Boolean
+                    || type == context.Types.Byte
+                    || type == context.Types.Char
+                    || type == context.Types.Int16
+                    || type == context.Types.Int32
+                    || type == context.Types.Single
+                    || type == context.Types.Int64
+                    || type == context.Types.Double
+                    || type == context.Types.Type
                     || type.IsEnum;
             }
 
-            internal static void GetConstructors(Type type, out ConstructorInfo defCtor, out ConstructorInfo singleOneArgCtor)
+            internal static void GetConstructors(RuntimeContext context, Type type, out ConstructorInfo defCtor, out ConstructorInfo singleOneArgCtor)
             {
                 defCtor = null;
                 int oneArgCtorCount = 0;
@@ -95,7 +100,7 @@ namespace IKVM.Runtime
                 // HACK we have a special rule to make some additional custom attributes from mscorlib usable:
                 // Attributes that have two constructors, one an enum and another one taking a byte, short or int,
                 // we only expose the enum constructor.
-                if (constructors.Length == 2 && type.Assembly == Types.Object.Assembly)
+                if (constructors.Length == 2 && type.Assembly == context.Types.Object.Assembly)
                 {
                     ParameterInfo[] p0 = constructors[0].GetParameters();
                     ParameterInfo[] p1 = constructors[1].GetParameters();
@@ -111,7 +116,7 @@ namespace IKVM.Runtime
                             t1 = tmp;
                             swapped = true;
                         }
-                        if (t0.IsEnum && (t1 == Types.Byte || t1 == Types.Int16 || t1 == Types.Int32))
+                        if (t0.IsEnum && (t1 == context.Types.Byte || t1 == context.Types.Int16 || t1 == context.Types.Int32))
                         {
                             if (swapped)
                             {
@@ -125,7 +130,8 @@ namespace IKVM.Runtime
                         }
                     }
                 }
-                if (type.Assembly == Types.Object.Assembly)
+
+                if (type.Assembly == context.Types.Object.Assembly)
                 {
                     if (type.FullName == "System.Runtime.CompilerServices.MethodImplAttribute")
                     {
@@ -140,6 +146,7 @@ namespace IKVM.Runtime
                         }
                     }
                 }
+
                 foreach (ConstructorInfo ci in constructors)
                 {
                     ParameterInfo[] args = ci.GetParameters();
@@ -149,7 +156,7 @@ namespace IKVM.Runtime
                     }
                     else if (args.Length == 1)
                     {
-                        if (IsSupportedType(args[0].ParameterType))
+                        if (IsSupportedType(context, args[0].ParameterType))
                         {
                             oneArgCtor = ci;
                             oneArgCtorCount++;
@@ -177,60 +184,60 @@ namespace IKVM.Runtime
                 /// <param name="type"></param>
                 /// <param name="optional"></param>
                 internal AttributeAnnotationJavaMethod(AttributeAnnotationJavaType tw, string name, Type type, bool optional) :
-                    this(tw, name, MapType(type, false), optional)
+                    this(tw, name, MapType(tw.Context, type, false), optional)
                 {
 
                 }
 
-                static RuntimeJavaType MapType(Type type, bool isArray)
+                static RuntimeJavaType MapType(RuntimeContext context, Type type, bool isArray)
                 {
-                    if (type == Types.String)
+                    if (type == context.Types.String)
                     {
-                        return CoreClasses.java.lang.String.Wrapper;
+                        return context.JavaBase.TypeOfJavaLangString;
                     }
-                    else if (type == Types.Boolean)
+                    else if (type == context.Types.Boolean)
                     {
-                        return RuntimePrimitiveJavaType.BOOLEAN;
+                        return context.PrimitiveJavaTypeFactory.BOOLEAN;
                     }
-                    else if (type == Types.Byte)
+                    else if (type == context.Types.Byte)
                     {
-                        return RuntimePrimitiveJavaType.BYTE;
+                        return context.PrimitiveJavaTypeFactory.BYTE;
                     }
-                    else if (type == Types.Char)
+                    else if (type == context.Types.Char)
                     {
-                        return RuntimePrimitiveJavaType.CHAR;
+                        return context.PrimitiveJavaTypeFactory.CHAR;
                     }
-                    else if (type == Types.Int16)
+                    else if (type == context.Types.Int16)
                     {
-                        return RuntimePrimitiveJavaType.SHORT;
+                        return context.PrimitiveJavaTypeFactory.SHORT;
                     }
-                    else if (type == Types.Int32)
+                    else if (type == context.Types.Int32)
                     {
-                        return RuntimePrimitiveJavaType.INT;
+                        return context.PrimitiveJavaTypeFactory.INT;
                     }
-                    else if (type == Types.Single)
+                    else if (type == context.Types.Single)
                     {
-                        return RuntimePrimitiveJavaType.FLOAT;
+                        return context.PrimitiveJavaTypeFactory.FLOAT;
                     }
-                    else if (type == Types.Int64)
+                    else if (type == context.Types.Int64)
                     {
-                        return RuntimePrimitiveJavaType.LONG;
+                        return context.PrimitiveJavaTypeFactory.LONG;
                     }
-                    else if (type == Types.Double)
+                    else if (type == context.Types.Double)
                     {
-                        return RuntimePrimitiveJavaType.DOUBLE;
+                        return context.PrimitiveJavaTypeFactory.DOUBLE;
                     }
-                    else if (type == Types.Type)
+                    else if (type == context.Types.Type)
                     {
-                        return CoreClasses.java.lang.Class.Wrapper;
+                        return context.JavaBase.TypeOfJavaLangClass;
                     }
                     else if (type.IsEnum)
                     {
-                        foreach (RuntimeJavaType tw in RuntimeClassLoaderFactory.GetJavaTypeFromType(type).InnerClasses)
+                        foreach (RuntimeJavaType tw in context.ClassLoaderFactory.GetJavaTypeFromType(type).InnerClasses)
                         {
                             if (tw is EnumEnumJavaType)
                             {
-                                if (!isArray && type.IsDefined(JVM.Import(typeof(FlagsAttribute)), false))
+                                if (!isArray && type.IsDefined(context.Resolver.ResolveCoreType(typeof(FlagsAttribute).FullName), false))
                                 {
                                     return tw.MakeArrayType(1);
                                 }
@@ -241,7 +248,7 @@ namespace IKVM.Runtime
                     }
                     else if (!isArray && ReflectUtil.IsVector(type))
                     {
-                        return MapType(type.GetElementType(), true).MakeArrayType(1);
+                        return MapType(context, type.GetElementType(), true).MakeArrayType(1);
                     }
                     else
                     {
@@ -271,7 +278,7 @@ namespace IKVM.Runtime
             protected override void LazyPublishMembers()
             {
                 var methods = new List<RuntimeJavaMethod>();
-                GetConstructors(attributeType, out var defCtor, out var singleOneArgCtor);
+                GetConstructors(Context, attributeType, out var defCtor, out var singleOneArgCtor);
 
                 if (singleOneArgCtor != null)
                     methods.Add(new AttributeAnnotationJavaMethod(this, "value", singleOneArgCtor.GetParameters()[0].ParameterType, defCtor != null));
@@ -285,12 +292,12 @@ namespace IKVM.Runtime
                     var getter = pi.GetGetMethod();
                     var setter = pi.GetSetMethod();
                     ParameterInfo[] parameters;
-                    if (getter != null && getter.GetParameters().Length == 0 && getter.ReturnType == pi.PropertyType && setter != null && (parameters = setter.GetParameters()).Length == 1 && parameters[0].ParameterType == pi.PropertyType && setter.ReturnType == Types.Void && IsSupportedType(pi.PropertyType))
+                    if (getter != null && getter.GetParameters().Length == 0 && getter.ReturnType == pi.PropertyType && setter != null && (parameters = setter.GetParameters()).Length == 1 && parameters[0].ParameterType == pi.PropertyType && setter.ReturnType == Context.Types.Void && IsSupportedType(Context, pi.PropertyType))
                         AddMethodIfUnique(methods, new AttributeAnnotationJavaMethod(this, pi.Name, pi.PropertyType, true));
                 }
 
                 foreach (var fi in attributeType.GetFields(BindingFlags.Public | BindingFlags.Instance))
-                    if (!fi.IsInitOnly && IsSupportedType(fi.FieldType))
+                    if (!fi.IsInitOnly && IsSupportedType(Context, fi.FieldType))
                         AddMethodIfUnique(methods, new AttributeAnnotationJavaMethod(this, fi.Name, fi.FieldType, true));
 
                 SetMethods(methods.ToArray());
@@ -318,43 +325,43 @@ namespace IKVM.Runtime
             {
                 if (mw.IsOptionalAttributeAnnotationValue)
                 {
-                    if (mw.ReturnType == RuntimePrimitiveJavaType.BOOLEAN)
+                    if (mw.ReturnType == Context.PrimitiveJavaTypeFactory.BOOLEAN)
                     {
                         return java.lang.Boolean.FALSE;
                     }
-                    else if (mw.ReturnType == RuntimePrimitiveJavaType.BYTE)
+                    else if (mw.ReturnType == Context.PrimitiveJavaTypeFactory.BYTE)
                     {
                         return java.lang.Byte.valueOf((byte)0);
                     }
-                    else if (mw.ReturnType == RuntimePrimitiveJavaType.CHAR)
+                    else if (mw.ReturnType == Context.PrimitiveJavaTypeFactory.CHAR)
                     {
                         return java.lang.Character.valueOf((char)0);
                     }
-                    else if (mw.ReturnType == RuntimePrimitiveJavaType.SHORT)
+                    else if (mw.ReturnType == Context.PrimitiveJavaTypeFactory.SHORT)
                     {
                         return java.lang.Short.valueOf((short)0);
                     }
-                    else if (mw.ReturnType == RuntimePrimitiveJavaType.INT)
+                    else if (mw.ReturnType == Context.PrimitiveJavaTypeFactory.INT)
                     {
                         return java.lang.Integer.valueOf(0);
                     }
-                    else if (mw.ReturnType == RuntimePrimitiveJavaType.FLOAT)
+                    else if (mw.ReturnType == Context.PrimitiveJavaTypeFactory.FLOAT)
                     {
                         return java.lang.Float.valueOf(0F);
                     }
-                    else if (mw.ReturnType == RuntimePrimitiveJavaType.LONG)
+                    else if (mw.ReturnType == Context.PrimitiveJavaTypeFactory.LONG)
                     {
                         return java.lang.Long.valueOf(0L);
                     }
-                    else if (mw.ReturnType == RuntimePrimitiveJavaType.DOUBLE)
+                    else if (mw.ReturnType == Context.PrimitiveJavaTypeFactory.DOUBLE)
                     {
                         return java.lang.Double.valueOf(0D);
                     }
-                    else if (mw.ReturnType == CoreClasses.java.lang.String.Wrapper)
+                    else if (mw.ReturnType == Context.JavaBase.TypeOfJavaLangString)
                     {
                         return "";
                     }
-                    else if (mw.ReturnType == CoreClasses.java.lang.Class.Wrapper)
+                    else if (mw.ReturnType == Context.JavaBase.TypeOfJavaLangClass)
                     {
                         return (java.lang.Class)typeof(ikvm.@internal.__unspecified);
                     }
@@ -374,7 +381,7 @@ namespace IKVM.Runtime
 
 #endif // !IMPORTER && !FIRST_PASS && !EXPORTER
 
-            internal override RuntimeJavaType DeclaringTypeWrapper => RuntimeClassLoaderFactory.GetJavaTypeFromType(attributeType);
+            internal override RuntimeJavaType DeclaringTypeWrapper => Context.ClassLoaderFactory.GetJavaTypeFromType(attributeType);
 
             internal override Type TypeAsTBD => fakeType;
 
@@ -386,11 +393,11 @@ namespace IKVM.Runtime
                 AttributeUsageAttribute attr = GetAttributeUsage();
                 if ((attr.ValidOn & AttributeTargets.ReturnValue) != 0)
                 {
-                    list.Add(GetClassLoader().RegisterInitiatingLoader(new ReturnValueAnnotationJavaType(this)));
+                    list.Add(GetClassLoader().RegisterInitiatingLoader(new ReturnValueAnnotationJavaType(Context, this)));
                 }
                 if (attr.AllowMultiple)
                 {
-                    list.Add(GetClassLoader().RegisterInitiatingLoader(new MultipleAnnotationJavaType(this)));
+                    list.Add(GetClassLoader().RegisterInitiatingLoader(new MultipleAnnotationJavaType(Context, this)));
                 }
                 return list.ToArray();
             }
@@ -404,9 +411,9 @@ namespace IKVM.Runtime
                 bool inherited = true;
                 foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(attributeType))
                 {
-                    if (cad.Constructor.DeclaringType == JVM.Import(typeof(AttributeUsageAttribute)))
+                    if (cad.Constructor.DeclaringType == Context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName))
                     {
-                        if (cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == JVM.Import(typeof(AttributeTargets)))
+                        if (cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == Context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName))
                         {
                             validOn = (AttributeTargets)cad.ConstructorArguments[0].Value;
                         }
@@ -486,7 +493,7 @@ namespace IKVM.Runtime
                     ConstructorInfo defCtor;
                     ConstructorInfo singleOneArgCtor;
                     object ctorArg = null;
-                    GetConstructors(type, out defCtor, out singleOneArgCtor);
+                    GetConstructors(loader.Context, type, out defCtor, out singleOneArgCtor);
                     List<PropertyInfo> properties = new List<PropertyInfo>();
                     List<object> propertyValues = new List<object>();
                     List<FieldInfo> fields = new List<FieldInfo>();
@@ -531,7 +538,7 @@ namespace IKVM.Runtime
 
                 internal override void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation)
                 {
-                    if (type == JVM.Import(typeof(System.Runtime.InteropServices.StructLayoutAttribute)) && tb.BaseType != Types.Object)
+                    if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.StructLayoutAttribute).FullName) && tb.BaseType != loader.Context.Types.Object)
                     {
                         // we have to handle this explicitly, because if we apply an illegal StructLayoutAttribute,
                         // TypeBuilder.CreateType() will later on throw an exception.
@@ -560,7 +567,7 @@ namespace IKVM.Runtime
                 {
                     // TODO with the current custom attribute annotation restrictions it is impossible to use this CA,
                     // but if we make it possible, we should also implement it here
-                    if (type == JVM.Import(typeof(System.Runtime.InteropServices.DefaultParameterValueAttribute)))
+                    if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.DefaultParameterValueAttribute).FullName))
                         throw new NotImplementedException();
                     else
                         pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
@@ -569,13 +576,13 @@ namespace IKVM.Runtime
                 internal override void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation)
                 {
 #if IMPORTER
-                    if (type == JVM.Import(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute)))
+                    if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute).FullName))
                     {
-                        ab.__AddTypeForwarder((Type)ConvertValue(loader, Types.Type, ((object[])annotation)[3]));
+                        ab.__AddTypeForwarder((Type)ConvertValue(loader, loader.Context.Types.Type, ((object[])annotation)[3]));
                     }
-                    else if (type == JVM.Import(typeof(System.Reflection.AssemblyVersionAttribute)))
+                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyVersionAttribute).FullName))
                     {
-                        string str = (string)ConvertValue(loader, Types.String, ((object[])annotation)[3]);
+                        string str = (string)ConvertValue(loader, loader.Context.Types.String, ((object[])annotation)[3]);
                         Version version;
                         if (IkvmImporterInternal.TryParseVersion(str, out version))
                         {
@@ -586,26 +593,26 @@ namespace IKVM.Runtime
                             loader.IssueMessage(Message.InvalidCustomAttribute, type.FullName, "The version '" + str + "' is invalid.");
                         }
                     }
-                    else if (type == JVM.Import(typeof(System.Reflection.AssemblyCultureAttribute)))
+                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyCultureAttribute).FullName))
                     {
-                        string str = (string)ConvertValue(loader, Types.String, ((object[])annotation)[3]);
+                        string str = (string)ConvertValue(loader, loader.Context.Types.String, ((object[])annotation)[3]);
                         if (str != "")
                         {
                             ab.__SetAssemblyCulture(str);
                         }
                     }
-                    else if (type == JVM.Import(typeof(System.Reflection.AssemblyDelaySignAttribute))
-                        || type == JVM.Import(typeof(System.Reflection.AssemblyKeyFileAttribute))
-                        || type == JVM.Import(typeof(System.Reflection.AssemblyKeyNameAttribute)))
+                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyDelaySignAttribute).FullName)
+                        || type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyKeyFileAttribute).FullName)
+                        || type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyKeyNameAttribute).FullName))
                     {
                         loader.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Please use the corresponding compiler switch.");
                     }
-                    else if (type == JVM.Import(typeof(System.Reflection.AssemblyAlgorithmIdAttribute)))
+                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyAlgorithmIdAttribute).FullName))
                     {
                         // this attribute is currently not exposed as an annotation and isn't very interesting
                         throw new NotImplementedException();
                     }
-                    else if (type == JVM.Import(typeof(System.Reflection.AssemblyFlagsAttribute)))
+                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyFlagsAttribute).FullName))
                     {
                         // this attribute is currently not exposed as an annotation and isn't very interesting
                         throw new NotImplementedException();

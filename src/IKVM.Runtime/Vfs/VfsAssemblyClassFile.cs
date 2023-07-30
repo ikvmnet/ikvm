@@ -38,7 +38,7 @@ namespace IKVM.Runtime.Vfs
             throw new NotImplementedException();
 #else
             var stream = new MemoryStream();
-            IKVM.StubGen.StubGenerator.WriteClass(stream, type, true, true, true, true, false);
+            Context.Context.StubGenerator.WriteClass(stream, type, true, true, true, true, false);
             return stream.ToArray();
 #endif
         }

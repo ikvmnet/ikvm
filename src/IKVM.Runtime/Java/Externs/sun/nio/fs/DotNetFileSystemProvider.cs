@@ -91,9 +91,9 @@ namespace IKVM.Java.Externs.sun.nio.fs
 
             try
             {
-                if (VfsTable.Default.IsPath(path))
+                if (JVM.Vfs.IsPath(path))
                 {
-                    if (VfsTable.Default.GetEntry(path) is VfsFile vfsFile)
+                    if (JVM.Vfs.GetEntry(path) is VfsFile vfsFile)
                         return FileDescriptorAccessor.FromStream(vfsFile.Open(mode, access));
 
                     throw new global::java.lang.UnsupportedOperationException();
@@ -224,9 +224,9 @@ namespace IKVM.Java.Externs.sun.nio.fs
 
             try
             {
-                if (VfsTable.Default.IsPath(path))
+                if (JVM.Vfs.IsPath(path))
                 {
-                    if (VfsTable.Default.GetEntry(path) is not VfsDirectory vfsDirectory)
+                    if (JVM.Vfs.GetEntry(path) is not VfsDirectory vfsDirectory)
                         throw new global::java.nio.file.NotDirectoryException(path);
 
                     return DotNetDirectoryStreamAccessor.Init(dir, vfsDirectory.List().Select(i => Path.Combine(path, i)), filter);

@@ -11,6 +11,11 @@ namespace IKVM.Runtime.Vfs
     {
 
         /// <summary>
+        /// Gets the runtime context that hosts the VFS.
+        /// </summary>
+        public abstract RuntimeContext Context { get; }
+
+        /// <summary>
         /// Gets all of the assemblies known by the VFS.
         /// </summary>
         /// <returns></returns>

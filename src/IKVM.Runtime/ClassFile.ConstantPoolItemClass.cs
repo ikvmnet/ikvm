@@ -44,9 +44,11 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="reader"></param>
             /// <exception cref="ArgumentNullException"></exception>
-            internal ConstantPoolItemClass(ClassConstantReader reader)
+            internal ConstantPoolItemClass(RuntimeContext context, ClassConstantReader reader) :
+                base(context)
             {
                 this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
             }
@@ -54,9 +56,11 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="name"></param>
             /// <param name="typeWrapper"></param>
-            internal ConstantPoolItemClass(string name, RuntimeJavaType typeWrapper)
+            internal ConstantPoolItemClass(RuntimeContext context, string name, RuntimeJavaType typeWrapper) :
+                base(context)
             {
                 this.name = name;
                 this.typeWrapper = typeWrapper;
@@ -135,11 +139,13 @@ namespace IKVM.Runtime
                                 start++;
                             }
                         }
+
                         if (name.IndexOfAny(invalidJava15Characters, start, end - start) >= 0)
                         {
                             goto barf;
                         }
-                        name = String.Intern(name.Replace('/', '.'));
+
+                        name = string.Intern(name.Replace('/', '.'));
                         return;
                     }
                 }
@@ -149,10 +155,7 @@ namespace IKVM.Runtime
 
             internal override void MarkLinkRequired()
             {
-                if (typeWrapper == null)
-                {
-                    typeWrapper = RuntimeVerifierJavaType.Null;
-                }
+                typeWrapper ??= Context.VerifierJavaTypeFactory.Null;
             }
 
             internal void LinkSelf(RuntimeJavaType thisType)
@@ -162,9 +165,9 @@ namespace IKVM.Runtime
 
             internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
-                if (typeWrapper == RuntimeVerifierJavaType.Null)
+                if (typeWrapper == Context.VerifierJavaTypeFactory.Null)
                 {
-                    RuntimeJavaType tw = thisType.GetClassLoader().LoadClass(name, mode | LoadMode.WarnClassNotFound);
+                    var tw = thisType.GetClassLoader().LoadClass(name, mode | LoadMode.WarnClassNotFound);
 #if !IMPORTER && !FIRST_PASS
                     if (!tw.IsUnloadable)
                     {
@@ -174,7 +177,7 @@ namespace IKVM.Runtime
                         }
                         catch (java.lang.SecurityException)
                         {
-                            tw = new RuntimeUnloadableJavaType(name);
+                            tw = new RuntimeUnloadableJavaType(Context, name);
                         }
                     }
 #endif

@@ -51,7 +51,7 @@ namespace IKVM.Runtime
             /// <param name="iface"></param>
             /// <param name="mods"></param>
             DelegateConstructorJavaMethod(RuntimeJavaType tw, RuntimeJavaType iface, ExModifiers mods) :
-               base(tw, StringConstants.INIT, "(" + iface.SigName + ")V", null, RuntimePrimitiveJavaType.VOID, new RuntimeJavaType[] { iface }, mods.Modifiers, mods.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None)
+               base(tw, StringConstants.INIT, "(" + iface.SigName + ")V", null, tw.Context.PrimitiveJavaTypeFactory.VOID, new RuntimeJavaType[] { iface }, mods.Modifiers, mods.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None)
             {
 
             }
@@ -62,7 +62,7 @@ namespace IKVM.Runtime
             /// <param name="tw"></param>
             /// <param name="method"></param>
             internal DelegateConstructorJavaMethod(RuntimeJavaType tw, MethodBase method) :
-                this(tw, tw.GetClassLoader().LoadClassByName(tw.Name + RuntimeManagedJavaType.DelegateInterfaceSuffix), AttributeHelper.GetModifiers(method, false))
+                this(tw, tw.GetClassLoader().LoadClassByName(tw.Name + RuntimeManagedJavaType.DelegateInterfaceSuffix), tw.Context.AttributeHelper.GetModifiers(method, false))
             {
                 constructor = (ConstructorInfo)method;
             }

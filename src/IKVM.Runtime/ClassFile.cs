@@ -44,6 +44,7 @@ namespace IKVM.Runtime
         const ushort FLAG_FORCEINLINE = 0x2000;
         const ushort FLAG_HAS_ASSERTIONS = 0x4000;
 
+        readonly RuntimeContext context;
         readonly ClassReader reader;
 
         ConstantPoolItem[] constantpool;
@@ -113,6 +114,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="reader"></param>
         /// <param name="inputClassName"></param>
         /// <param name="options"></param>
@@ -120,8 +122,9 @@ namespace IKVM.Runtime
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="UnsupportedClassVersionError"></exception>
         /// <exception cref="ClassFormatError"></exception>
-        internal ClassFile(ClassReader reader, string inputClassName, ClassFileParseOptions options, object[] constantPoolPatches)
+        internal ClassFile(RuntimeContext context, ClassReader reader, string inputClassName, ClassFileParseOptions options, object[] constantPoolPatches)
         {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
             this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
 
             try
@@ -139,49 +142,49 @@ namespace IKVM.Runtime
                             // longs and doubles can leave holes in the constant pool
                             break;
                         case ClassConstantReader clazzConstant:
-                            constantpool[i] = new ConstantPoolItemClass(clazzConstant);
+                            constantpool[i] = new ConstantPoolItemClass(context, clazzConstant);
                             break;
                         case DoubleConstantReader doubleConstant:
-                            constantpool[i] = new ConstantPoolItemDouble(doubleConstant);
+                            constantpool[i] = new ConstantPoolItemDouble(context, doubleConstant);
                             break;
                         case FieldrefConstantReader fieldRefConstant:
-                            constantpool[i] = new ConstantPoolItemFieldref(fieldRefConstant);
+                            constantpool[i] = new ConstantPoolItemFieldref(context, fieldRefConstant);
                             break;
                         case FloatConstantReader floatConstant:
-                            constantpool[i] = new ConstantPoolItemFloat(floatConstant);
+                            constantpool[i] = new ConstantPoolItemFloat(context, floatConstant);
                             break;
                         case IntegerConstantReader integerConstant:
-                            constantpool[i] = new ConstantPoolItemInteger(integerConstant);
+                            constantpool[i] = new ConstantPoolItemInteger(context, integerConstant);
                             break;
                         case InterfaceMethodrefConstantReader interfaceMethodrefConstant:
-                            constantpool[i] = new ConstantPoolItemInterfaceMethodref(interfaceMethodrefConstant);
+                            constantpool[i] = new ConstantPoolItemInterfaceMethodref(context, interfaceMethodrefConstant);
                             break;
                         case LongConstantReader longConstant:
-                            constantpool[i] = new ConstantPoolItemLong(longConstant);
+                            constantpool[i] = new ConstantPoolItemLong(context, longConstant);
                             break;
                         case MethodrefConstantReader methodrefConstantReader:
-                            constantpool[i] = new ConstantPoolItemMethodref(methodrefConstantReader);
+                            constantpool[i] = new ConstantPoolItemMethodref(context, methodrefConstantReader);
                             break;
                         case NameAndTypeConstantReader nameAndType:
-                            constantpool[i] = new ConstantPoolItemNameAndType(nameAndType);
+                            constantpool[i] = new ConstantPoolItemNameAndType(context, nameAndType);
                             break;
                         case MethodHandleConstantReader methodHandle:
                             if (reader.Version < 51)
                                 goto default;
-                            constantpool[i] = new ConstantPoolItemMethodHandle(methodHandle);
+                            constantpool[i] = new ConstantPoolItemMethodHandle(context, methodHandle);
                             break;
                         case MethodTypeConstantReader methodType:
                             if (reader.Version < 51)
                                 goto default;
-                            constantpool[i] = new ConstantPoolItemMethodType(methodType);
+                            constantpool[i] = new ConstantPoolItemMethodType(context, methodType);
                             break;
                         case InvokeDynamicConstantReader invokeDynamic:
                             if (reader.Version < 51)
                                 goto default;
-                            constantpool[i] = new ConstantPoolItemInvokeDynamic(invokeDynamic);
+                            constantpool[i] = new ConstantPoolItemInvokeDynamic(context, invokeDynamic);
                             break;
                         case StringConstantReader stringConstant:
-                            constantpool[i] = new ConstantPoolItemString(stringConstant);
+                            constantpool[i] = new ConstantPoolItemString(context, stringConstant);
                             break;
                         case Utf8ConstantReader utf8ConstantReader:
                             utf8_cp[i] = utf8ConstantReader.Value;
@@ -470,7 +473,7 @@ namespace IKVM.Runtime
         {
             for (int i = 0; i < constantpool.Length; i++)
                 if (constantpool[i] == null && utf8_cp[i] != null)
-                    constantpool[i] = new ConstantPoolItemUtf8(utf8_cp[i]);
+                    constantpool[i] = new ConstantPoolItemUtf8(context, utf8_cp[i]);
         }
 
         void CheckDuplicates<T>(T[] members, string msg)
@@ -512,7 +515,7 @@ namespace IKVM.Runtime
                         switch (constantpool[i].GetConstantType())
                         {
                             case ConstantType.String:
-                                constantpool[i] = new ConstantPoolItemLiveObject(constantPoolPatches[i]);
+                                constantpool[i] = new ConstantPoolItemLiveObject(context, constantPoolPatches[i]);
                                 break;
                             case ConstantType.Class:
                                 java.lang.Class clazz;
@@ -520,11 +523,11 @@ namespace IKVM.Runtime
                                 if ((clazz = constantPoolPatches[i] as java.lang.Class) != null)
                                 {
                                     RuntimeJavaType tw = RuntimeJavaType.FromClass(clazz);
-                                    constantpool[i] = new ConstantPoolItemClass(tw.Name, tw);
+                                    constantpool[i] = new ConstantPoolItemClass(context, tw.Name, tw);
                                 }
                                 else if ((name = constantPoolPatches[i] as string) != null)
                                 {
-                                    constantpool[i] = new ConstantPoolItemClass(String.Intern(name.Replace('/', '.')), null);
+                                    constantpool[i] = new ConstantPoolItemClass(context, string.Intern(name.Replace('/', '.')), null);
                                 }
                                 else
                                 {

@@ -34,25 +34,29 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
         public static global::java.lang.Class getClassFromObject(object o)
         {
-            return GetTypeWrapperFromObject(o).ClassObject;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetTypeWrapperFromObject(JVM.Context, o).ClassObject;
+#endif
         }
 
-        internal static RuntimeJavaType GetTypeWrapperFromObject(object o)
+        internal static RuntimeJavaType GetTypeWrapperFromObject(RuntimeContext context, object o)
         {
             var ghostType = GhostTag.GetTag(o);
             if (ghostType != null)
                 return ghostType;
 
             var t = o.GetType();
-            if (t.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(t) && !t.IsSealed)
-                return RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(t);
+            if (t.IsPrimitive || context.ClassLoaderFactory.IsRemappedType(t) && !t.IsSealed)
+                return context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(t);
 
             for (; ; )
             {
                 // if GetWrapperFromType returns null (or if tw.IsAbstract), that
                 // must mean that the Type of the object is an implementation helper class
                 // (e.g. an AtomicReferenceFieldUpdater or ThreadLocal instrinsic subclass)
-                var tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(t);
+                var tw = context.ClassLoaderFactory.GetJavaTypeFromType(t);
                 if (tw != null && (!tw.IsAbstract || tw.IsArray))
                     return tw;
 
@@ -62,38 +66,49 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
         public static global::java.lang.Class getClassFromTypeHandle(RuntimeTypeHandle handle)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             var t = Type.GetTypeFromHandle(handle);
-            if (t.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(t) || t == typeof(void))
-                return RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(t).ClassObject;
+            if (t.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(t) || t == typeof(void))
+                return JVM.Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(t).ClassObject;
 
             if (!IsVisibleAsClass(t))
                 return null;
 
-            var tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(t);
+            var tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(t);
             if (tw != null)
                 return tw.ClassObject;
 
             return null;
+#endif
         }
 
         public static global::java.lang.Class getClassFromTypeHandle(RuntimeTypeHandle handle, int rank)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             var t = Type.GetTypeFromHandle(handle);
-            if (t.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(t) || t == typeof(void))
-                return RuntimeManagedJavaTypeFactory.GetJavaTypeFromManagedType(t).MakeArrayType(rank).ClassObject;
+            if (t.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(t) || t == typeof(void))
+                return JVM.Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(t).MakeArrayType(rank).ClassObject;
 
             if (!IsVisibleAsClass(t))
                 return null;
 
-            var tw = RuntimeClassLoaderFactory.GetJavaTypeFromType(t);
+            var tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(t);
             if (tw != null)
                 return tw.MakeArrayType(rank).ClassObject;
 
             return null;
+#endif
         }
 
         public static global::java.lang.Class getFriendlyClassFromType(Type type)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             int rank = 0;
             while (ReflectUtil.IsVector(type))
             {
@@ -101,13 +116,13 @@ namespace IKVM.Java.Externs.ikvm.runtime
                 rank++;
             }
 
-            if (type.DeclaringType != null && AttributeHelper.IsGhostInterface(type.DeclaringType))
+            if (type.DeclaringType != null && JVM.Context.AttributeHelper.IsGhostInterface(type.DeclaringType))
                 type = type.DeclaringType;
 
             if (!IsVisibleAsClass(type))
                 return null;
 
-            var wrapper = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
+            var wrapper = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(type);
             if (wrapper == null)
                 return null;
 
@@ -115,6 +130,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
                 wrapper = wrapper.MakeArrayType(rank);
 
             return wrapper.ClassObject;
+#endif
         }
 
         private static bool IsVisibleAsClass(Type type)
@@ -170,14 +186,22 @@ namespace IKVM.Java.Externs.ikvm.runtime
         }
 
         [HideFromJava]
-        public static Exception mapException(Exception x)
+        public static Exception mapException(Exception e)
         {
-            return ExceptionHelper.MapException<Exception>(x, true, false);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return JVM.Context.ExceptionHelper.MapException<Exception>(e, true, false);
+#endif
         }
 
-        public static Exception unmapException(Exception x)
+        public static Exception unmapException(Exception e)
         {
-            return ExceptionHelper.UnmapException(x);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return ExceptionHelper.UnmapException(e);
+#endif
         }
 
     }

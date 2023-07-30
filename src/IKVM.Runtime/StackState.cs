@@ -57,7 +57,8 @@ namespace IKVM.Runtime
             {
                 throw new VerifyError("Unable to pop operand off an empty stack");
             }
-            RuntimeJavaType type = state.GetStackByIndex(--sp);
+
+            var type = state.GetStackByIndex(--sp);
             if (RuntimeVerifierJavaType.IsThis(type))
             {
                 type = ((RuntimeVerifierJavaType)type).UnderlyingType;
@@ -65,8 +66,9 @@ namespace IKVM.Runtime
             if (RuntimeVerifierJavaType.IsFaultBlockException(type))
             {
                 RuntimeVerifierJavaType.ClearFaultBlockException(type);
-                type = CoreClasses.java.lang.Throwable.Wrapper;
+                type = type.Context.JavaBase.TypeOfjavaLangThrowable;
             }
+
             return type;
         }
 

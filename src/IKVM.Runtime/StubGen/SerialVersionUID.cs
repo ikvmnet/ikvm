@@ -108,7 +108,7 @@ namespace IKVM.StubGen
             var type = tw.TypeAsTBD;
             if (!type.IsArray && type.TypeInitializer != null)
             {
-                if (!AttributeHelper.IsHideFromJava(type.TypeInitializer))
+                if (!tw.Context.AttributeHelper.IsHideFromJava(type.TypeInitializer))
                 {
                     bes.WriteUtf8("<clinit>");
                     bes.WriteUInt32((uint)Modifiers.Static);

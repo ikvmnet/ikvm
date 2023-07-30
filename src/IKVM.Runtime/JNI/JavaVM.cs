@@ -70,24 +70,46 @@ namespace IKVM.Runtime.JNI
             }
         }
 
+        /// <summary>
+        /// Unloads a Java VM and reclaims its resources.
+        /// </summary>
+        /// <param name="pJVM"></param>
+        /// <returns></returns>
         internal static jint DestroyJavaVM(JavaVM* pJVM)
         {
             if (JNIVM.jvmDestroyed)
-            {
                 return JNIEnv.JNI_ERR;
-            }
+
             JNIVM.jvmDestroyed = true;
             IKVM.Java.Externs.java.lang.Thread.WaitUntilLastJniThread();
             return JNIEnv.JNI_OK;
         }
 
+        /// <summary>
+        /// Attaches the current thread to a Java VM. Returns a JNI interface pointer in the JNIEnv argument.
+        /// </summary>
+        /// <param name="pJVM"></param>
+        /// <param name="penv"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
         internal static jint AttachCurrentThread(JavaVM* pJVM, void** penv, void* args)
         {
             return AttachCurrentThreadImpl(pJVM, penv, (JavaVMAttachArgs*)args, false);
         }
 
+        /// <summary>
+        /// Attaches the current thread to a Java VM. Returns a JNI interface pointer in the JNIEnv argument.
+        /// </summary>
+        /// <param name="pJVM"></param>
+        /// <param name="penv"></param>
+        /// <param name="pAttachArgs"></param>
+        /// <param name="asDaemon"></param>
+        /// <returns></returns>
         internal static jint AttachCurrentThreadImpl(JavaVM* pJVM, void** penv, JavaVMAttachArgs* pAttachArgs, bool asDaemon)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             if (pAttachArgs != null)
             {
                 if (!JNIVM.IsSupportedJniVersion(pAttachArgs->version) || pAttachArgs->version == JNIEnv.JNI_VERSION_1_1)
@@ -130,10 +152,16 @@ namespace IKVM.Runtime.JNI
                     IKVM.Java.Externs.java.lang.Thread.AttachThreadFromJni(threadGroup);
             }
 
-            *penv = JNIEnv.CreateJNIEnv();
+            *penv = JNIEnv.CreateJNIEnv(JVM.Context);
             return JNIEnv.JNI_OK;
+#endif
         }
 
+        /// <summary>
+        /// Detaches the current thread from a Java VM. All Java monitors held by this thread are released. All Java threads waiting for this thread to die are notified.
+        /// </summary>
+        /// <param name="pJVM"></param>
+        /// <returns></returns>
         internal static jint DetachCurrentThread(JavaVM* pJVM)
         {
             if (TlsHack.ManagedJNIEnv == null)
@@ -152,15 +180,17 @@ namespace IKVM.Runtime.JNI
         {
             if (JNIVM.IsSupportedJniVersion(version))
             {
-                JNIEnv.ManagedJNIEnv env = TlsHack.ManagedJNIEnv;
+                var env = TlsHack.ManagedJNIEnv;
                 if (env != null)
                 {
                     *penv = env.pJNIEnv;
                     return JNIEnv.JNI_OK;
                 }
+
                 *penv = null;
                 return JNIEnv.JNI_EDETACHED;
             }
+
             *penv = null;
             return JNIEnv.JNI_EVERSION;
         }

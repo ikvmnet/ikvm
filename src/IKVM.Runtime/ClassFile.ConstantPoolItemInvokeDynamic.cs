@@ -42,8 +42,10 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="reader"></param>
-            internal ConstantPoolItemInvokeDynamic(InvokeDynamicConstantReader reader)
+            internal ConstantPoolItemInvokeDynamic(RuntimeContext context, InvokeDynamicConstantReader reader) :
+                base(context)
             {
                 bootstrap_specifier_index = reader.Record.BootstrapMethodAttributeIndex;
                 name_and_type_index = reader.Record.NameAndTypeIndex;

@@ -195,7 +195,7 @@ namespace IKVM.Runtime
                                 {
                                     if (classFile.IsInterface)
                                     {
-                                        StaticCompiler.IssueMessage(Message.InterfaceMethodCantBeInternal, classFile.Name, Name, Signature);
+                                        classFile.context.StaticCompiler.IssueMessage(Message.InterfaceMethodCantBeInternal, classFile.Name, Name, Signature);
                                     }
                                     else
                                     {
@@ -218,7 +218,7 @@ namespace IKVM.Runtime
                                     {
                                         if (!IsStatic)
                                         {
-                                            StaticCompiler.IssueMessage(Message.DllExportMustBeStaticMethod, classFile.Name, this.Name, this.Signature);
+                                            classFile.context.StaticCompiler.IssueMessage(Message.DllExportMustBeStaticMethod, classFile.Name, this.Name, this.Signature);
                                         }
                                         else
                                         {

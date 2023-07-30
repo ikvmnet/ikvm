@@ -85,6 +85,8 @@
         <Compile Include="..\IKVM.Runtime\ByteCodeHelper.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeManagedJavaType.*.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeManagedJavaTypeFactory.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeContext.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\IManagedTypeResolver.cs" LinkBase="IKVM.Runtime" />
     </ItemGroup>
 
     <ItemGroup>

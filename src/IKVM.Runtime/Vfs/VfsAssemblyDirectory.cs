@@ -144,7 +144,7 @@ namespace IKVM.Runtime.Vfs
                 if (assemblyName != null)
                 {
                     var assembly = Context.GetAssembly(assemblyName);
-                    if (assembly != null && assembly.IsDynamic == false && name == VfsTable.Default.GetAssemblyDirectoryName(assembly))
+                    if (assembly != null && assembly.IsDynamic == false && name == VfsTable.GetAssemblyDirectoryName(Context, assembly))
                         return directories.GetOrAdd(assembly, CreateAssemblyDirectory);
                 }
 

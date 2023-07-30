@@ -32,6 +32,22 @@ namespace IKVM.Runtime
         internal abstract class ConstantPoolItem
         {
 
+            readonly RuntimeContext context;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="context"></param>
+            protected ConstantPoolItem(RuntimeContext context)
+            {
+                this.context = context ?? throw new ArgumentNullException(nameof(context));
+            }
+
+            /// <summary>
+            /// Gets the <see cref="RuntimeContext"/> that hosts this instanc.
+            /// </summary>
+            public RuntimeContext Context => context;
+
             internal virtual void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
 

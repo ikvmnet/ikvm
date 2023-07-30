@@ -21,6 +21,8 @@
   jeroen@frijters.net
   
 */
+using System;
+
 using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.lang.invoke
@@ -33,13 +35,13 @@ namespace IKVM.Java.Externs.java.lang.invoke
 		public static global::java.lang.invoke.DirectMethodHandle makeStringAllocator(global::java.lang.invoke.MemberName member)
 		{
 #if FIRST_PASS
-		return null;
+			throw new NotImplementedException();
 #else
 			// we cannot construct strings via the standard two-pass approach (allocateObject followed by constructor invocation),
 			// so we special case string construction here (to call our static factory method instead)
-			if (member.getDeclaringClass() == CoreClasses.java.lang.String.Wrapper.ClassObject)
+			if (member.getDeclaringClass() == JVM.Context.JavaBase.TypeOfJavaLangString.ClassObject)
 			{
-				global::java.lang.invoke.MethodType mt = member.getMethodType().changeReturnType(CoreClasses.java.lang.String.Wrapper.ClassObject);
+				global::java.lang.invoke.MethodType mt = member.getMethodType().changeReturnType(JVM.Context.JavaBase.TypeOfJavaLangString.ClassObject);
 				return new global::java.lang.invoke.DirectMethodHandle(mt, global::java.lang.invoke.DirectMethodHandle._preparedLambdaForm(mt, global::java.lang.invoke.MethodTypeForm.LF_INVSTATIC), member, null);
 			}
 

@@ -192,7 +192,7 @@ namespace IKVM.Runtime
                 p["java.ext.dirs"] = Path.Combine(HomePath, "lib", "ext");
                 p["java.endorsed.dirs"] = Path.Combine(HomePath, "lib", "endorsed");
                 p["sun.boot.library.path"] = GetBootLibraryPath();
-                p["sun.boot.class.path"] = VfsTable.Default.GetAssemblyClassesPath(BaseAssembly);
+                p["sun.boot.class.path"] = VfsTable.GetAssemblyClassesPath(Vfs.Context, Context.Resolver.ResolveBaseAssembly(), HomePath);
 
                 // various OS information
                 GetOSProperties(out var osname, out var osversion);
@@ -579,6 +579,9 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static string GetLibraryPath()
             {
+#if FIRST_PASS || IMPORTER || EXPORTER
+                throw new NotImplementedException();
+#else
                 var libraryPath = new List<string>();
 
                 if (RuntimeUtil.IsWindows)
@@ -626,7 +629,7 @@ namespace IKVM.Runtime
 
                 try
                 {
-                    libraryPath.Insert(0, Path.GetDirectoryName(BaseAssembly.Location));
+                    libraryPath.Insert(0, Path.GetDirectoryName(Context.Resolver.ResolveBaseAssembly().Location));
                 }
                 catch (Exception)
                 {
@@ -637,6 +640,7 @@ namespace IKVM.Runtime
                     libraryPath.Add(".");
 
                 return string.Join(Path.PathSeparator.ToString(), libraryPath);
+#endif
             }
 
             /// <summary>

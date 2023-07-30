@@ -68,7 +68,7 @@ namespace IKVM.Tools.Importer.MapXml
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
             // we don't use fw.EmitSet because we don't want automatic unboxing and whatever
-            ilgen.Emit(OpCodes.Stsfld, StaticCompiler.GetFieldForMapXml(context.ClassLoader, Class, Name, Sig).GetField());
+            ilgen.Emit(OpCodes.Stsfld, context.ClassLoader.Context.StaticCompiler.GetFieldForMapXml(context.ClassLoader, Class, Name, Sig).GetField());
         }
 
     }

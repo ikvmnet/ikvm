@@ -58,11 +58,11 @@ namespace IKVM.Runtime
                 /// Initializes a new instance.
                 /// </summary>
                 /// <param name="declaringType"></param>
-                internal ReturnValueAnnotationJavaType(AttributeAnnotationJavaType declaringType) :
-                    base(declaringType.Name + AttributeAnnotationReturnValueSuffix)
+                internal ReturnValueAnnotationJavaType(RuntimeContext context, AttributeAnnotationJavaType declaringType) :
+                    base(context, declaringType.Name + AttributeAnnotationReturnValueSuffix)
                 {
 #if IMPORTER || EXPORTER
-                    this.fakeType = FakeTypes.GetAttributeReturnValueType(declaringType.attributeType);
+                    this.fakeType = context.FakeTypes.GetAttributeReturnValueType(declaringType.attributeType);
 #elif !FIRST_PASS
                     this.fakeType = typeof(ikvm.@internal.AttributeAnnotationReturnValue<>).MakeGenericType(declaringType.attributeType);
 #endif

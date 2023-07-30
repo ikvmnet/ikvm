@@ -97,7 +97,7 @@ namespace IKVM.Tools.Importer
             }
 
 #if IMPORTER
-			universe.AssemblyResolve += AssemblyResolve;
+            universe.AssemblyResolve += AssemblyResolve;
 #else
             universe.AssemblyResolve += LegacyAssemblyResolve;
 #endif
@@ -259,37 +259,13 @@ namespace IKVM.Tools.Importer
 
         Assembly AssemblyResolve(object sender, IKVM.Reflection.ResolveEventArgs args)
         {
-            AssemblyName name = new AssemblyName(args.Name);
-            AssemblyName previousMatch = null;
-            int previousMatchLevel = 0;
+            var name = new AssemblyName(args.Name);
 
             foreach (var asm in universe.GetAssemblies())
-                if (Match(asm.GetName(), name, ref previousMatch, ref previousMatchLevel))
+                if (Match(asm.GetName(), name))
                     return asm;
 
-            if (previousMatch != null)
-            {
-                if (previousMatchLevel == 2)
-                {
-#if NETFRAMEWORK
-                    EmitWarning(WarningId.HigherVersion, "assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy", previousMatch.FullName, name.FullName);
-#endif
-                    return universe.Load(previousMatch.FullName);
-                }
-                else if (args.RequestingAssembly != null)
-                {
-                    Console.Error.WriteLine("Error: Assembly '{0}' uses '{1}' which has a higher version than referenced assembly '{2}'", args.RequestingAssembly.FullName, name.FullName, previousMatch.FullName);
-                    Environment.Exit(1);
-                    return null;
-                }
-                else
-                {
-                    Console.Error.WriteLine("Error: Assembly '{0}' was requested which is a higher version than referenced assembly '{1}'", name.FullName, previousMatch.FullName);
-                    Environment.Exit(1);
-                    return null;
-                }
-            }
-            else if (args.RequestingAssembly != null)
+            if (args.RequestingAssembly != null)
             {
                 return universe.CreateMissingAssembly(args.Name);
             }
@@ -306,103 +282,35 @@ namespace IKVM.Tools.Importer
 
         internal Assembly LegacyLoad(AssemblyName name, Assembly requestingAssembly)
         {
-            AssemblyName previousMatch = null;
-            int previousMatchLevel = 0;
             foreach (Assembly asm in universe.GetAssemblies())
-            {
-                if (Match(asm.GetName(), name, ref previousMatch, ref previousMatchLevel))
-                {
+                if (Match(asm.GetName(), name))
                     return asm;
-                }
-            }
+
             foreach (string file in FindAssemblyPath(name.Name + ".dll"))
-            {
-                if (Match(AssemblyName.GetAssemblyName(file), name, ref previousMatch, ref previousMatchLevel))
-                {
+                if (Match(AssemblyName.GetAssemblyName(file), name))
                     return LoadFile(file);
-                }
-            }
+
             if (requestingAssembly != null)
             {
-                string path = Path.Combine(Path.GetDirectoryName(requestingAssembly.Location), name.Name + ".dll");
-                if (File.Exists(path) && Match(AssemblyName.GetAssemblyName(path), name, ref previousMatch, ref previousMatchLevel))
-                {
+                var path = Path.Combine(Path.GetDirectoryName(requestingAssembly.Location), name.Name + ".dll");
+                if (File.Exists(path) && Match(AssemblyName.GetAssemblyName(path), name))
                     return LoadFile(path);
-                }
             }
-            if (previousMatch != null)
-            {
-                if (previousMatchLevel == 2)
-                {
-                    EmitWarning(WarningId.HigherVersion, "assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy", previousMatch.FullName, name.FullName);
-                    return LoadFile(new Uri(previousMatch.CodeBase).LocalPath);
-                }
-                else if (requestingAssembly != null)
-                {
-                    Console.Error.WriteLine("Error: Assembly '{0}' uses '{1}' which has a higher version than referenced assembly '{2}'", requestingAssembly.FullName, name.FullName, previousMatch.FullName);
-                }
-                else
-                {
-                    Console.Error.WriteLine("Error: Assembly '{0}' was requested which is a higher version than referenced assembly '{1}'", name.FullName, previousMatch.FullName);
-                }
-            }
-            else
-            {
+
 #if EXPORTER
-                return universe.CreateMissingAssembly(name.FullName);
+            return universe.CreateMissingAssembly(name.FullName);
 #else
-				Console.Error.WriteLine("Error: unable to find assembly '{0}'", name.FullName);
-				if (requestingAssembly != null)
-				{
-					Console.Error.WriteLine("    (a dependency of '{0}')", requestingAssembly.FullName);
-				}
+            Console.Error.WriteLine("Error: unable to find assembly '{0}'", name.FullName);
+            if (requestingAssembly != null)
+                Console.Error.WriteLine("    (a dependency of '{0}')", requestingAssembly.FullName);
 #endif
-            }
-            Environment.Exit(1);
-            return null;
+
+            throw new InvalidOperationException();
         }
 
-        private bool Match(AssemblyName assemblyDef, AssemblyName assemblyRef, ref AssemblyName bestMatch, ref int bestMatchLevel)
+        private bool Match(AssemblyName assemblyDef, AssemblyName assemblyRef)
         {
-            // Match levels:
-            //   0 = no match
-            //   1 = lower version match (i.e. not a suitable match, but used in error reporting: something was found but the version was too low)
-            //   2 = higher version potential match (i.e. we can use this version, but if it is available the exact match will be preferred)
-            //
-            // If we find a perfect match, bestMatch is not changed but we return true to signal that the search can end right now.
-            AssemblyComparisonResult result;
-            universe.CompareAssemblyIdentity(assemblyRef.FullName, false, assemblyDef.FullName, true, out result);
-            switch (result)
-            {
-                case AssemblyComparisonResult.EquivalentFullMatch:
-                case AssemblyComparisonResult.EquivalentPartialMatch:
-                case AssemblyComparisonResult.EquivalentFXUnified:
-                case AssemblyComparisonResult.EquivalentPartialFXUnified:
-                case AssemblyComparisonResult.EquivalentPartialWeakNamed:
-                case AssemblyComparisonResult.EquivalentWeakNamed:
-                    return true;
-                case AssemblyComparisonResult.NonEquivalentPartialVersion:
-                case AssemblyComparisonResult.NonEquivalentVersion:
-                    if (bestMatchLevel < 1)
-                    {
-                        bestMatchLevel = 1;
-                        bestMatch = assemblyDef;
-                    }
-                    return false;
-                case AssemblyComparisonResult.EquivalentUnified:
-                case AssemblyComparisonResult.EquivalentPartialUnified:
-                    if (bestMatchLevel < 2)
-                    {
-                        bestMatchLevel = 2;
-                        bestMatch = assemblyDef;
-                    }
-                    return false;
-                case AssemblyComparisonResult.NonEquivalent:
-                case AssemblyComparisonResult.Unknown:
-                    return false;
-                default:
-                    throw new NotImplementedException();
-            }
+            return assemblyRef.Name == assemblyDef.Name;
         }
 
         private void AddLibraryPaths(string str, bool option)
@@ -468,11 +376,10 @@ namespace IKVM.Tools.Importer
             {
                 foreach (string dir in libpath)
                 {
-                    string path = Path.Combine(dir, file);
+                    var path = Path.Combine(dir, file);
                     if (File.Exists(path))
-                    {
                         yield return path;
-                    }
+
                     // for legacy compat, we try again after appending .dll
                     path = Path.Combine(dir, file + ".dll");
                     if (File.Exists(path))

@@ -41,8 +41,10 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="reader"></param>
-            internal ConstantPoolItemMethodType(MethodTypeConstantReader reader)
+            internal ConstantPoolItemMethodType(RuntimeContext context, MethodTypeConstantReader reader) :
+                base(context)
             {
                 signature_index = reader.Record.DescriptorIndex;
             }

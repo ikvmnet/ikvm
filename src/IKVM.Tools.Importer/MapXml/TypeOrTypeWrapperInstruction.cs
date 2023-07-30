@@ -66,7 +66,7 @@ namespace IKVM.Tools.Importer.MapXml
                 }
                 else
                 {
-                    typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
+                    typeType = context.ClassLoader.Context.StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
                 }
             }
         }

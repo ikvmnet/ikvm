@@ -52,7 +52,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="declaringType"></param>
             internal CloneJavaMethod(RuntimeManagedJavaType declaringType) :
-                base(declaringType, "clone", "()Ljava.lang.Object;", null, CoreClasses.java.lang.Object.Wrapper, Array.Empty<RuntimeJavaType>(), Modifiers.Protected | Modifiers.Final, MemberFlags.None)
+                base(declaringType, "clone", "()Ljava.lang.Object;", null, declaringType.Context.JavaBase.TypeOfJavaLangObject, Array.Empty<RuntimeJavaType>(), Modifiers.Protected | Modifiers.Final, MemberFlags.None)
             {
 
             }
@@ -62,7 +62,7 @@ namespace IKVM.Runtime
             internal override void EmitCall(CodeEmitter ilgen)
             {
                 ilgen.Emit(OpCodes.Dup);
-                ilgen.Emit(OpCodes.Isinst, CoreClasses.java.lang.Cloneable.Wrapper.TypeAsBaseType);
+                ilgen.Emit(OpCodes.Isinst, DeclaringType.Context.JavaBase.TypeOfJavaLangCloneable.TypeAsBaseType);
                 var label1 = ilgen.DefineLabel();
                 ilgen.EmitBrtrue(label1);
                 var label2 = ilgen.DefineLabel();
@@ -71,7 +71,7 @@ namespace IKVM.Runtime
                 ilgen.MarkLabel(label2);
                 ilgen.EmitThrow("java.lang.NullPointerException");
                 ilgen.MarkLabel(label1);
-                ilgen.Emit(OpCodes.Call, Types.Object.GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic, null, Type.EmptyTypes, null));
+                ilgen.Emit(OpCodes.Call, DeclaringType.Context.Types.Object.GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic, null, Type.EmptyTypes, null));
             }
 
             internal override void EmitCallvirt(CodeEmitter ilgen)

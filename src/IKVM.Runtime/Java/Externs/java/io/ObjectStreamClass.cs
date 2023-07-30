@@ -155,7 +155,7 @@ namespace IKVM.Java.Externs.java.io
 
         public static bool hasStaticInitializer(global::java.lang.Class cl)
         {
-            RuntimeJavaType wrapper = RuntimeJavaType.FromClass(cl);
+            var wrapper = RuntimeJavaType.FromClass(cl);
             try
             {
                 wrapper.Finish();
@@ -164,18 +164,22 @@ namespace IKVM.Java.Externs.java.io
             {
                 throw x.ToJava();
             }
-            Type type = wrapper.TypeAsTBD;
+
+            var type = wrapper.TypeAsTBD;
             if (!type.IsArray && type.TypeInitializer != null)
             {
                 wrapper.RunClassInit();
-                return !AttributeHelper.IsHideFromJava(type.TypeInitializer);
+                return !wrapper.Context.AttributeHelper.IsHideFromJava(type.TypeInitializer);
             }
+
             return false;
         }
 
 #if !FIRST_PASS && !NO_REF_EMIT
+
         private sealed class FastFieldReflector : global::ikvm.@internal.FieldReflectorBase
         {
+
             private static readonly MethodInfo ReadByteMethod = typeof(IOHelpers).GetMethod("ReadByte");
             private static readonly MethodInfo ReadBooleanMethod = typeof(IOHelpers).GetMethod("ReadBoolean");
             private static readonly MethodInfo ReadCharMethod = typeof(IOHelpers).GetMethod("ReadChar");
@@ -250,10 +254,10 @@ namespace IKVM.Java.Externs.java.io
                     var dmPrimGetter = DynamicMethodUtil.Create("__<PrimFieldGetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(byte[]) });
                     var dmObjSetter = DynamicMethodUtil.Create("__<ObjFieldSetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(object[]) });
                     var dmPrimSetter = DynamicMethodUtil.Create("__<PrimFieldSetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(byte[]) });
-                    var ilgenObjGetter = CodeEmitter.Create(dmObjGetter);
-                    var ilgenPrimGetter = CodeEmitter.Create(dmPrimGetter);
-                    var ilgenObjSetter = CodeEmitter.Create(dmObjSetter);
-                    var ilgenPrimSetter = CodeEmitter.Create(dmPrimSetter);
+                    var ilgenObjGetter = JVM.Context.CodeEmitterFactory.Create(dmObjGetter);
+                    var ilgenPrimGetter = JVM.Context.CodeEmitterFactory.Create(dmPrimGetter);
+                    var ilgenObjSetter = JVM.Context.CodeEmitterFactory.Create(dmObjSetter);
+                    var ilgenPrimSetter = JVM.Context.CodeEmitterFactory.Create(dmPrimSetter);
 
                     // we want the getters to be verifiable (because writeObject can be used from partial trust),
                     // so we create a local to hold the properly typed object reference
@@ -291,35 +295,35 @@ namespace IKVM.Java.Externs.java.io
                             ilgenPrimGetter.EmitLdc_I4(field.getOffset());
                             ilgenPrimGetter.Emit(OpCodes.Ldloc, primGetterThis);
                             fw.EmitGet(ilgenPrimGetter);
-                            if (fieldType == RuntimePrimitiveJavaType.BYTE)
+                            if (fieldType == ilgenPrimGetter.Context.PrimitiveJavaTypeFactory.BYTE)
                             {
                                 ilgenPrimGetter.Emit(OpCodes.Call, WriteByteMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.BOOLEAN)
+                            else if (fieldType == ilgenPrimGetter.Context.PrimitiveJavaTypeFactory.BOOLEAN)
                             {
                                 ilgenPrimGetter.Emit(OpCodes.Call, WriteBooleanMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.CHAR)
+                            else if (fieldType == ilgenPrimGetter.Context.PrimitiveJavaTypeFactory.CHAR)
                             {
                                 ilgenPrimGetter.Emit(OpCodes.Call, WriteCharMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.SHORT)
+                            else if (fieldType == ilgenPrimGetter.Context.PrimitiveJavaTypeFactory.SHORT)
                             {
                                 ilgenPrimGetter.Emit(OpCodes.Call, WriteShortMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.INT)
+                            else if (fieldType == ilgenPrimGetter.Context.PrimitiveJavaTypeFactory.INT)
                             {
                                 ilgenPrimGetter.Emit(OpCodes.Call, WriteIntMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.FLOAT)
+                            else if (fieldType == ilgenPrimGetter.Context.PrimitiveJavaTypeFactory.FLOAT)
                             {
                                 ilgenPrimGetter.Emit(OpCodes.Call, WriteFloatMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.LONG)
+                            else if (fieldType == ilgenPrimGetter.Context.PrimitiveJavaTypeFactory.LONG)
                             {
                                 ilgenPrimGetter.Emit(OpCodes.Call, WriteLongMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.DOUBLE)
+                            else if (fieldType == ilgenPrimGetter.Context.PrimitiveJavaTypeFactory.DOUBLE)
                             {
                                 ilgenPrimGetter.Emit(OpCodes.Call, WriteDoubleMethod);
                             }
@@ -333,35 +337,35 @@ namespace IKVM.Java.Externs.java.io
                             ilgenPrimSetter.Emit(OpCodes.Castclass, tw.TypeAsBaseType);
                             ilgenPrimSetter.Emit(OpCodes.Ldarg_1);
                             ilgenPrimSetter.EmitLdc_I4(field.getOffset());
-                            if (fieldType == RuntimePrimitiveJavaType.BYTE)
+                            if (fieldType == ilgenPrimSetter.Context.PrimitiveJavaTypeFactory.BYTE)
                             {
                                 ilgenPrimSetter.Emit(OpCodes.Call, ReadByteMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.BOOLEAN)
+                            else if (fieldType == ilgenPrimSetter.Context.PrimitiveJavaTypeFactory.BOOLEAN)
                             {
                                 ilgenPrimSetter.Emit(OpCodes.Call, ReadBooleanMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.CHAR)
+                            else if (fieldType == ilgenPrimSetter.Context.PrimitiveJavaTypeFactory.CHAR)
                             {
                                 ilgenPrimSetter.Emit(OpCodes.Call, ReadCharMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.SHORT)
+                            else if (fieldType == ilgenPrimSetter.Context.PrimitiveJavaTypeFactory.SHORT)
                             {
                                 ilgenPrimSetter.Emit(OpCodes.Call, ReadShortMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.INT)
+                            else if (fieldType == ilgenPrimSetter.Context.PrimitiveJavaTypeFactory.INT)
                             {
                                 ilgenPrimSetter.Emit(OpCodes.Call, ReadIntMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.FLOAT)
+                            else if (fieldType == ilgenPrimSetter.Context.PrimitiveJavaTypeFactory.FLOAT)
                             {
                                 ilgenPrimSetter.Emit(OpCodes.Call, ReadFloatMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.LONG)
+                            else if (fieldType == ilgenPrimSetter.Context.PrimitiveJavaTypeFactory.LONG)
                             {
                                 ilgenPrimSetter.Emit(OpCodes.Call, ReadLongMethod);
                             }
-                            else if (fieldType == RuntimePrimitiveJavaType.DOUBLE)
+                            else if (fieldType == ilgenPrimSetter.Context.PrimitiveJavaTypeFactory.DOUBLE)
                             {
                                 ilgenPrimSetter.Emit(OpCodes.Call, ReadDoubleMethod);
                             }

@@ -74,7 +74,7 @@ namespace IKVM.Java.Externs.sun.nio.fs
             if (sm != null)
                 SecurityManagerAccessor.InvokeCheckWrite(sm, path);
 
-            if (VfsTable.Default.IsPath(path))
+            if (JVM.Vfs.IsPath(path))
                 throw new global::java.io.IOException("Cannot modify VFS entries.");
 
             try

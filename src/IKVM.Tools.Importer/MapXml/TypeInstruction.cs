@@ -56,7 +56,7 @@ namespace IKVM.Tools.Importer.MapXml
             if (typeType == null)
             {
                 Debug.Assert(Type != null);
-                typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
+                typeType = context.ClassLoader.Context.StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
             }
 
             ilgen.Emit(opcode, typeType);

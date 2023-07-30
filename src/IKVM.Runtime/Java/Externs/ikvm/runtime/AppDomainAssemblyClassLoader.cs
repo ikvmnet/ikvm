@@ -25,6 +25,8 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
+using IKVM.Runtime;
+
 namespace IKVM.Java.Externs.ikvm.runtime
 {
 
@@ -39,7 +41,11 @@ namespace IKVM.Java.Externs.ikvm.runtime
         /// <returns></returns>
         static object LoadClassFromAssembly(Assembly assembly, string className)
         {
-            return assembly.IsDynamic == false ? (IKVM.Runtime.RuntimeAssemblyClassLoaderFactory.FromAssembly(assembly).DoLoad(className)?.ClassObject) : null;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return assembly.IsDynamic == false ? (JVM.Context.AssemblyClassLoaderFactory.FromAssembly(assembly).DoLoad(className)?.ClassObject) : null;
+#endif
         }
 
         /// <summary>
@@ -68,6 +74,9 @@ namespace IKVM.Java.Externs.ikvm.runtime
         /// <returns></returns>
         static IEnumerable<global::java.net.URL> FindResources(string name)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             var done = new HashSet<IKVM.Runtime.RuntimeAssemblyClassLoader>();
 
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
@@ -75,11 +84,12 @@ namespace IKVM.Java.Externs.ikvm.runtime
                 if (asm.IsDynamic)
                     continue;
 
-                var acl = IKVM.Runtime.RuntimeAssemblyClassLoaderFactory.FromAssembly(asm);
+                var acl = JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm);
                 if (done.Add(acl))
                     foreach (var url in acl.FindResources(name))
                         yield return url;
             }
+#endif
         }
 
         /// <summary>

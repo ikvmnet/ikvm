@@ -48,7 +48,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="declaringType"></param>
             internal FinalizeJavaMethod(RuntimeManagedJavaType declaringType) :
-                base(declaringType, "finalize", "()V", null, RuntimePrimitiveJavaType.VOID, Array.Empty<RuntimeJavaType>(), Modifiers.Protected | Modifiers.Final, MemberFlags.None)
+                base(declaringType, "finalize", "()V", null, declaringType.Context.PrimitiveJavaTypeFactory.VOID, Array.Empty<RuntimeJavaType>(), Modifiers.Protected | Modifiers.Final, MemberFlags.None)
             {
 
             }

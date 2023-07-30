@@ -22,7 +22,6 @@
   
 */
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 using IKVM.Attributes;
@@ -67,12 +66,20 @@ namespace IKVM.Runtime
 
         }
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="declaringType"></param>
+        /// <param name="name"></param>
+        /// <param name="sig"></param>
+        /// <param name="modifiers"></param>
+        /// <param name="flags"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         protected RuntimeJavaMember(RuntimeJavaType declaringType, string name, string sig, Modifiers modifiers, MemberFlags flags)
         {
-            Debug.Assert(declaringType != null);
-            this.declaringType = declaringType;
-            this.name = String.Intern(name);
-            this.sig = String.Intern(sig);
+            this.declaringType = declaringType ?? throw new ArgumentNullException(nameof(declaringType));
+            this.name = string.Intern(name);
+            this.sig = string.Intern(sig);
             this.modifiers = modifiers;
             this.flags = flags;
         }
@@ -118,7 +125,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-         bool IsPublicOrProtectedMemberAccessible(RuntimeJavaType caller, RuntimeJavaType instance)
+        bool IsPublicOrProtectedMemberAccessible(RuntimeJavaType caller, RuntimeJavaType instance)
         {
             if (IsPublic || (IsProtected && caller.IsSubTypeOf(DeclaringType) && (IsStatic || instance.IsUnloadable || instance.IsSubTypeOf(caller))))
                 return DeclaringType.IsPublic || InPracticeInternalsVisibleTo(caller);
@@ -126,7 +133,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-         bool InPracticeInternalsVisibleTo(RuntimeJavaType caller)
+        bool InPracticeInternalsVisibleTo(RuntimeJavaType caller)
         {
 #if !IMPORTER
             if (DeclaringType.TypeAsTBD.Assembly.Equals(caller.TypeAsTBD.Assembly))

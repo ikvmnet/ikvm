@@ -52,7 +52,7 @@ namespace IKVM.Runtime
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
         internal RuntimeConstructorAccessStubJavaMethod(RuntimeJavaType declaringType, string sig, ConstructorInfo core, ConstructorInfo stub, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
-            base(declaringType, StringConstants.INIT, sig, core, RuntimePrimitiveJavaType.VOID, parameterTypes, modifiers, flags)
+            base(declaringType, StringConstants.INIT, sig, core, declaringType.Context.PrimitiveJavaTypeFactory.VOID, parameterTypes, modifiers, flags)
         {
             this.stub = stub;
         }
