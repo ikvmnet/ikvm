@@ -37,9 +37,10 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="name"></param>
-            internal AttributeAnnotationJavaTypeBase(string name) :
-                base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract | Modifiers.Annotation, name, null)
+            internal AttributeAnnotationJavaTypeBase(RuntimeContext context, string name) :
+                base(context, Modifiers.Public | Modifiers.Interface | Modifiers.Abstract | Modifiers.Annotation, name, null)
             {
 
             }
@@ -49,7 +50,7 @@ namespace IKVM.Runtime
                 return DeclaringTypeWrapper.GetClassLoader();
             }
 
-            internal sealed override RuntimeJavaType[] Interfaces => new RuntimeJavaType[] { RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedName("java.lang.annotation.Annotation") };
+            internal sealed override RuntimeJavaType[] Interfaces => new RuntimeJavaType[] { Context.ClassLoaderFactory.GetBootstrapClassLoader().LoadClassByName("java.lang.annotation.Annotation") };
 
             internal sealed override bool IsFastClassLiteralSafe => true;
 

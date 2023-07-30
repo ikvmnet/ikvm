@@ -47,11 +47,9 @@ namespace IKVM.Attributes
 			this.methodSig = UnicodeUtil.UnescapeInvalidSurrogates(methodSig);
 		}
 
-		internal EnclosingMethodAttribute SetClassName(Type type)
+		internal EnclosingMethodAttribute SetClassName(RuntimeContext context, Type type)
 		{
-			if (className == null)
-				className = IKVM.Runtime.RuntimeClassLoaderFactory.GetWrapperFromType(type.DeclaringType).Name;
-
+			className ??= context.ClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).Name;
 			return this;
 		}
 

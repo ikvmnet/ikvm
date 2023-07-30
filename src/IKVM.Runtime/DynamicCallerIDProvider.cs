@@ -21,8 +21,8 @@
   jeroen@frijters.net
   
 */
+using System;
 using System.Diagnostics;
-using System.Reflection;
 
 namespace IKVM.Runtime
 {
@@ -40,28 +40,32 @@ namespace IKVM.Runtime
 
         internal ikvm.@internal.CallerID GetCallerID()
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             for (int i = 0; ;)
             {
-                MethodBase method = new StackFrame(i++, false).GetMethod();
+                var method = new StackFrame(i++, false).GetMethod();
                 if (method == null)
                 {
-#if !FIRST_PASS
                     return ikvm.@internal.CallerID.create(null, null);
-#endif
                 }
+
                 if (IKVM.Java.Externs.sun.reflect.Reflection.IsHideFromStackWalk(method))
                 {
                     continue;
                 }
-                RuntimeJavaType caller = RuntimeClassLoaderFactory.GetWrapperFromType(method.DeclaringType);
+
+                var caller = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(method.DeclaringType);
                 return CreateCallerID(caller.Host ?? caller);
             }
+#endif
         }
 
         internal static ikvm.@internal.CallerID CreateCallerID(RuntimeJavaType tw)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             return ikvm.@internal.CallerID.create(tw.ClassObject, tw.GetClassLoader().GetJavaClassLoader());
 #endif

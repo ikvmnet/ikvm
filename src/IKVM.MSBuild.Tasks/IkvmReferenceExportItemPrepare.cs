@@ -295,7 +295,7 @@
             await BuildAssemblyReferencesAsync(path, referencesList, hs, cancellationToken);
 
             // ensure the required libraries are present
-            foreach (var n in new[] { "mscorlib", "netstandard", "IKVM.Runtime", "IKVM.Java" })
+            foreach (var n in new[] { "IKVM.Runtime", "IKVM.Java" })
             {
                 foreach (var i in referencesList)
                     if ((await GetAssemblyInfoAsync(i)).Name == n)

@@ -117,7 +117,7 @@ namespace IKVM.Runtime
                 pb.SetSetMethod((MethodBuilder)setter.GetMethod());
             }
 #if IMPORTER
-            AttributeHelper.SetModifiers(pb, this.Modifiers, this.IsInternal);
+            DeclaringType.Context.AttributeHelper.SetModifiers(pb, this.Modifiers, this.IsInternal);
 #endif
         }
 
@@ -141,7 +141,7 @@ namespace IKVM.Runtime
         internal static void EmitThrowNoSuchMethodErrorForGetter(CodeEmitter ilgen, RuntimeJavaType type, RuntimeJavaMember member)
         {
 #if IMPORTER
-            StaticCompiler.IssueMessage(Message.EmittedNoSuchMethodError, "<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature);
+            type.Context.StaticCompiler.IssueMessage(Message.EmittedNoSuchMethodError, "<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature);
 #endif
             // HACK the branch around the throw is to keep the verifier happy
             CodeEmitterLabel label = ilgen.DefineLabel();
@@ -186,7 +186,7 @@ namespace IKVM.Runtime
         internal static void EmitThrowNoSuchMethodErrorForSetter(CodeEmitter ilgen, RuntimeJavaMember member)
         {
 #if IMPORTER
-            StaticCompiler.IssueMessage(Message.EmittedNoSuchMethodError, "<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature);
+            member.DeclaringType.Context.StaticCompiler.IssueMessage(Message.EmittedNoSuchMethodError, "<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature);
 #endif
             // HACK the branch around the throw is to keep the verifier happy
             CodeEmitterLabel label = ilgen.DefineLabel();

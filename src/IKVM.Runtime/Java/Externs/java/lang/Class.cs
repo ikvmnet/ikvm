@@ -72,7 +72,7 @@ namespace IKVM.Java.Externs.java.lang
 
                 var type = Type.GetType(name);
                 if (type != null)
-                    tw = RuntimeClassLoaderFactory.GetWrapperFromType(type);
+                    tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(type);
 
                 if (tw == null)
                 {
@@ -84,7 +84,7 @@ namespace IKVM.Java.Externs.java.lang
             {
                 try
                 {
-                    tw = RuntimeClassLoaderFactory.GetClassLoaderWrapper(loader).LoadClassByDottedName(name);
+                    tw = JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(loader).LoadClassByName(name);
                 }
                 catch (ClassNotFoundException x)
                 {
@@ -238,38 +238,41 @@ namespace IKVM.Java.Externs.java.lang
 
         public static string getName0(global::java.lang.Class thisClass)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             var tw = RuntimeJavaType.FromClass(thisClass);
             if (tw.IsPrimitive)
             {
-                if (tw == RuntimePrimitiveJavaType.BYTE)
+                if (tw == JVM.Context.PrimitiveJavaTypeFactory.BYTE)
                     return "byte";
-                else if (tw == RuntimePrimitiveJavaType.CHAR)
+                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.CHAR)
                     return "char";
-                else if (tw == RuntimePrimitiveJavaType.DOUBLE)
+                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.DOUBLE)
                     return "double";
-                else if (tw == RuntimePrimitiveJavaType.FLOAT)
+                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.FLOAT)
                     return "float";
-                else if (tw == RuntimePrimitiveJavaType.INT)
+                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.INT)
                     return "int";
-                else if (tw == RuntimePrimitiveJavaType.LONG)
+                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.LONG)
                     return "long";
-                else if (tw == RuntimePrimitiveJavaType.SHORT)
+                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.SHORT)
                     return "short";
-                else if (tw == RuntimePrimitiveJavaType.BOOLEAN)
+                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.BOOLEAN)
                     return "boolean";
-                else if (tw == RuntimePrimitiveJavaType.VOID)
+                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.VOID)
                     return "void";
             }
 
             if (tw.IsUnsafeAnonymous)
             {
-#if !FIRST_PASS
                 // for OpenJDK compatibility and debugging convenience we modify the class name to
                 // include the identity hashcode of the class object
                 return tw.Name + "/" + global::java.lang.System.identityHashCode(thisClass);
-#endif
             }
+
             return tw.Name;
+#endif
         }
 
         public static string getSigName(global::java.lang.Class thisClass)
@@ -342,7 +345,7 @@ namespace IKVM.Java.Externs.java.lang
                 if (enc == null)
                     return null;
 
-                return new object[] { tw.GetClassLoader().LoadClassByDottedName(enc[0]).ClassObject, enc[1], enc[2] == null ? null : enc[2].Replace('.', '/') };
+                return new object[] { tw.GetClassLoader().LoadClassByName(enc[0]).ClassObject, enc[1], enc[2] == null ? null : enc[2].Replace('.', '/') };
             }
             catch (RetargetableJavaException x)
             {
@@ -402,7 +405,7 @@ namespace IKVM.Java.Externs.java.lang
                 {
                     // dynamically compiled intrinsified lamdba anonymous types end up here and should get their
                     // protection domain from the host class
-                    pd = RuntimeClassLoaderFactory.GetWrapperFromType(wrapper.TypeAsTBD.DeclaringType).ClassObject.pd;
+                    pd = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(wrapper.TypeAsTBD.DeclaringType).ClassObject.pd;
                 }
             }
             return pd;
@@ -419,19 +422,26 @@ namespace IKVM.Java.Externs.java.lang
         /// <param name="name"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public static global::java.lang.Class getPrimitiveClass(string name) => name switch
+        public static global::java.lang.Class getPrimitiveClass(string name)
         {
-            "byte" => RuntimePrimitiveJavaType.BYTE.ClassObject,
-            "char" => RuntimePrimitiveJavaType.CHAR.ClassObject,
-            "double" => RuntimePrimitiveJavaType.DOUBLE.ClassObject,
-            "float" => RuntimePrimitiveJavaType.FLOAT.ClassObject,
-            "int" => RuntimePrimitiveJavaType.INT.ClassObject,
-            "long" => RuntimePrimitiveJavaType.LONG.ClassObject,
-            "short" => RuntimePrimitiveJavaType.SHORT.ClassObject,
-            "boolean" => RuntimePrimitiveJavaType.BOOLEAN.ClassObject,
-            "void" => RuntimePrimitiveJavaType.VOID.ClassObject,
-            _ => throw new ArgumentException(name),
-        };
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return name switch
+            {
+                "byte" => JVM.Context.PrimitiveJavaTypeFactory.BYTE.ClassObject,
+                "char" => JVM.Context.PrimitiveJavaTypeFactory.CHAR.ClassObject,
+                "double" => JVM.Context.PrimitiveJavaTypeFactory.DOUBLE.ClassObject,
+                "float" => JVM.Context.PrimitiveJavaTypeFactory.FLOAT.ClassObject,
+                "int" => JVM.Context.PrimitiveJavaTypeFactory.INT.ClassObject,
+                "long" => JVM.Context.PrimitiveJavaTypeFactory.LONG.ClassObject,
+                "short" => JVM.Context.PrimitiveJavaTypeFactory.SHORT.ClassObject,
+                "boolean" => JVM.Context.PrimitiveJavaTypeFactory.BOOLEAN.ClassObject,
+                "void" => JVM.Context.PrimitiveJavaTypeFactory.VOID.ClassObject,
+                _ => throw new ArgumentException(name),
+            };
+#endif
+        }
 
         public static string getGenericSignature0(global::java.lang.Class thisClass)
         {

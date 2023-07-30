@@ -25,13 +25,15 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
-using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
+
+using System.Collections;
+using System.Collections.Generic;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -74,22 +76,23 @@ namespace IKVM.Runtime
 #endif
 
 #if !EXPORTER
+
         // NOTE this method returns null if the type could not be found
         // or if the type is not a Custom Attribute and we're not in the static compiler
         internal static Annotation Load(RuntimeJavaType owner, object[] def)
         {
             Debug.Assert(def[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION));
-            string annotationClass = (string)def[1];
+
+            var annotationClass = (string)def[1];
 #if !IMPORTER
-            if (!annotationClass.EndsWith("$Annotation;")
-                && !annotationClass.EndsWith("$Annotation$__ReturnValue;")
-                && !annotationClass.EndsWith("$Annotation$__Multiple;"))
+            if (!annotationClass.EndsWith("$Annotation;") && !annotationClass.EndsWith("$Annotation$__ReturnValue;") && !annotationClass.EndsWith("$Annotation$__Multiple;"))
             {
                 // we don't want to try to load an annotation in dynamic mode,
                 // unless it is a .NET custom attribute (which can affect runtime behavior)
                 return null;
             }
 #endif
+
             if (ClassFile.IsValidFieldSig(annotationClass))
             {
                 RuntimeJavaType tw = owner.GetClassLoader().RetTypeWrapperFromSig(annotationClass.Replace('/', '.'), LoadMode.Link);
@@ -102,14 +105,15 @@ namespace IKVM.Runtime
             }
             Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
 #if IMPORTER
-            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(StaticCompiler.GetRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
+            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(owner.Context, owner.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
 #else
             return null;
 #endif
         }
+
 #endif
 
-        private static object LookupEnumValue(Type enumType, string value)
+        private static object LookupEnumValue(RuntimeContext context, Type enumType, string value)
         {
             FieldInfo field = enumType.GetField(value, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
             if (field != null)
@@ -117,7 +121,7 @@ namespace IKVM.Runtime
                 return field.GetRawConstantValue();
             }
             // both __unspecified and missing values end up here
-            return EnumHelper.GetPrimitiveValue(EnumHelper.GetUnderlyingType(enumType), 0);
+            return EnumHelper.GetPrimitiveValue(context, EnumHelper.GetUnderlyingType(enumType), 0);
         }
 
         protected static object ConvertValue(RuntimeClassLoader loader, Type targetType, object obj)
@@ -133,14 +137,14 @@ namespace IKVM.Runtime
                     {
                         // TODO check the obj descriptor matches the type we expect
                         string s = ((object[])arr[i])[2].ToString();
-                        object newval = LookupEnumValue(targetType, s);
+                        object newval = LookupEnumValue(loader.Context, targetType, s);
                         if (value == null)
                         {
                             value = newval;
                         }
                         else
                         {
-                            value = EnumHelper.OrBoxedIntegrals(value, newval);
+                            value = EnumHelper.OrBoxedIntegrals(loader.Context, value, newval);
                         }
                     }
                     return value;
@@ -152,10 +156,10 @@ namespace IKVM.Runtime
                     {
                         // TODO we should probably return null and handle that
                     }
-                    return LookupEnumValue(targetType, s);
+                    return LookupEnumValue(loader.Context, targetType, s);
                 }
             }
-            else if (targetType == Types.Type)
+            else if (targetType == loader.Context.Types.Type)
             {
                 // TODO check the obj descriptor matches the type we expect
                 return loader.FieldTypeWrapperFromSig(((string)((object[])obj)[1]).Replace('/', '.'), LoadMode.LoadOrThrow).TypeAsTBD;
@@ -259,7 +263,7 @@ namespace IKVM.Runtime
                 string sig = (string)val[1];
                 if (sig.StartsWith("L"))
                 {
-                    RuntimeJavaType tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
+                    RuntimeJavaType tw = loader.TryLoadClassByName(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
                     if (tw != null)
                     {
                         return new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";" };
@@ -270,7 +274,7 @@ namespace IKVM.Runtime
             else if (val[0].Equals(AnnotationDefaultAttribute.TAG_ENUM))
             {
                 string sig = (string)val[1];
-                RuntimeJavaType tw = loader.LoadClassByDottedNameFast(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
+                RuntimeJavaType tw = loader.TryLoadClassByName(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
                 if (tw != null)
                 {
                     return new object[] { AnnotationDefaultAttribute.TAG_ENUM, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";", val[2] };

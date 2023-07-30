@@ -28,10 +28,17 @@ namespace IKVM.Runtime
     readonly struct CodeInfo
     {
 
-        private readonly InstructionState[] state;
+        readonly RuntimeContext context;
+        readonly InstructionState[] state;
 
-        internal CodeInfo(InstructionState[] state)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="state"></param>
+        internal CodeInfo(RuntimeContext context, InstructionState[] state)
         {
+            this.context = context;
             this.state = state;
         }
 
@@ -62,7 +69,7 @@ namespace IKVM.Runtime
 
         internal bool IsStackTypeExtendedDouble(int index, int pos)
         {
-            return state[index].GetStackSlotEx(pos) == RuntimeVerifierJavaType.ExtendedDouble;
+            return state[index].GetStackSlotEx(pos) == context.VerifierJavaTypeFactory.ExtendedDouble;
         }
 
         internal RuntimeJavaType GetLocalTypeWrapper(int index, int local)

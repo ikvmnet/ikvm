@@ -101,7 +101,7 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<PropertyAccessorGet>__{Type.Name.Replace(".", "_")}__{Property.Name}", Type, false, typeof(TProperty), Array.Empty<Type>());
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             il.Emit(Property.GetMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, Property.GetMethod);
             il.Emit(OpCodes.Ret);
@@ -122,7 +122,7 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<PropertyAccessorSet>__{Type.Name.Replace(".", "_")}__{Property.Name}", Type, false, typeof(void), new[] { typeof(TProperty) });
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(Property.SetMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, Property.SetMethod);
@@ -204,7 +204,7 @@ namespace IKVM.Runtime.Accessors
                 throw new InternalException($"Property {Property.Name} cannot be read.");
 
             var dm = DynamicMethodUtil.Create($"__<PropertyAccessorGet>__{Property.DeclaringType.Name.Replace(".", "_")}__{Property.Name}", Type, false, typeof(TProperty), new[] { typeof(TObject) });
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Castclass, Type);
@@ -229,7 +229,7 @@ namespace IKVM.Runtime.Accessors
                 throw new InternalException($"Property {Property.Name} cannot be written.");
 
             var dm = DynamicMethodUtil.Create($"__<PropertyAccessorSet>__{Property.DeclaringType.Name.Replace(".", "_")}__{Property.Name}", Type, false, typeof(void), new[] { typeof(TObject), typeof(TProperty) });
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Castclass, Type);

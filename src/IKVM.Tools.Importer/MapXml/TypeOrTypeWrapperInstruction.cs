@@ -62,11 +62,11 @@ namespace IKVM.Tools.Importer.MapXml
                 Debug.Assert(Class == null ^ Type == null);
                 if (Class != null)
                 {
-                    typeWrapper = context.ClassLoader.LoadClassByDottedName(Class);
+                    typeWrapper = context.ClassLoader.LoadClassByName(Class);
                 }
                 else
                 {
-                    typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
+                    typeType = context.ClassLoader.Context.StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
                 }
             }
         }

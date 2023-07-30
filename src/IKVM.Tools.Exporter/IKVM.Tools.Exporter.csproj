@@ -20,8 +20,10 @@
         <Compile Include="..\IKVM.Runtime\Syntax\**\*.cs" LinkBase="IKVM.Runtime\Syntax" />
         <Compile Include="..\IKVM.Runtime\InternalException.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeAssemblyClassLoader.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeAssemblyClassLoaderFactory.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\Attributes\**\*.cs" LinkBase="IKVM.Runtime\Attributes" />
         <Compile Include="..\IKVM.Runtime\RuntimeClassLoader.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeClassLoaderFactory.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeGenericClassLoader.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\CoreClasses.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeManagedJavaType.cs" LinkBase="IKVM.Runtime" />
@@ -82,6 +84,9 @@
         <Compile Include="..\IKVM.Runtime\ByteCodeHelperMethods.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\ByteCodeHelper.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeManagedJavaType.*.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeManagedJavaTypeFactory.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeContext.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\IManagedTypeResolver.cs" LinkBase="IKVM.Runtime" />
     </ItemGroup>
 
     <ItemGroup>

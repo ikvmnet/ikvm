@@ -42,9 +42,11 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="classIndex"></param>
             /// <param name="nameAndTypeIndex"></param>
-            internal ConstantPoolItemFMI(ushort classIndex, ushort nameAndTypeIndex)
+            internal ConstantPoolItemFMI(RuntimeContext context, ushort classIndex, ushort nameAndTypeIndex) :
+                base(context)
             {
                 class_index = classIndex;
                 name_and_type_index = nameAndTypeIndex;

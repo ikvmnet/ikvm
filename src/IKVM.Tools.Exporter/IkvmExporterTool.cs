@@ -135,7 +135,7 @@ namespace IKVM.Tools.Exporter
             Forwarders = context.ParseResult.GetValueForOption(forwardersOption),
             NoStdLib = context.ParseResult.GetValueForOption(noStdLibOption),
             Shared = context.ParseResult.GetValueForOption(sharedOption),
-            Boostrap = context.ParseResult.GetValueForOption(bootstrapOption),
+            Bootstrap = context.ParseResult.GetValueForOption(bootstrapOption),
             ContinueOnError = context.ParseResult.GetValueForOption(continueOnErrorOption),
             Assembly = context.ParseResult.GetValueForArgument(assemblyArgument)
         }, CancellationToken.None);

@@ -354,7 +354,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
                 throw new global::java.lang.NullPointerException();
             }
             Type type = arrayObj.GetType();
-            if (ReflectUtil.IsVector(type) && RuntimeClassLoaderFactory.GetWrapperFromType(type.GetElementType()).IsPrimitive)
+            if (ReflectUtil.IsVector(type) && JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(type.GetElementType()).IsPrimitive)
             {
                 global::java.lang.Boolean booleanValue = value as global::java.lang.Boolean;
                 if (booleanValue != null)

@@ -41,8 +41,10 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="reader"></param>
-            internal ConstantPoolItemMethodType(MethodTypeConstantReader reader)
+            internal ConstantPoolItemMethodType(RuntimeContext context, MethodTypeConstantReader reader) :
+                base(context)
             {
                 signature_index = reader.Record.DescriptorIndex;
             }
@@ -67,7 +69,7 @@ namespace IKVM.Runtime
                 }
 
                 var classLoader = thisType.GetClassLoader();
-                var args = classLoader.ArgTypeWrapperListFromSig(descriptor, mode);
+                var args = classLoader.ArgJavaTypeListFromSig(descriptor, mode);
                 var ret = classLoader.RetTypeWrapperFromSig(descriptor, mode);
 
                 lock (this)

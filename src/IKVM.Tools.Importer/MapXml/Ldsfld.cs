@@ -73,12 +73,12 @@ namespace IKVM.Tools.Importer.MapXml
         {
             if (Type != null)
             {
-                ilgen.Emit(OpCodes.Ldsfld, StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type).GetField(Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic));
+                ilgen.Emit(OpCodes.Ldsfld, context.ClassLoader.Context.StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type).GetField(Name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic));
             }
             else
             {
                 // we don't use fw.EmitGet because we don't want automatic unboxing and whatever
-                ilgen.Emit(OpCodes.Ldsfld, StaticCompiler.GetFieldForMapXml(context.ClassLoader, Class, Name, Sig).GetField());
+                ilgen.Emit(OpCodes.Ldsfld, context.ClassLoader.Context.StaticCompiler.GetFieldForMapXml(context.ClassLoader, Class, Name, Sig).GetField());
             }
         }
 

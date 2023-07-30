@@ -43,20 +43,24 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
         public static void setWrapper(global::java.lang.ClassLoader _this, Assembly assembly)
         {
-            RuntimeClassLoaderFactory.SetWrapperForClassLoader(_this, RuntimeAssemblyClassLoaderFactory.FromAssembly(assembly));
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            JVM.Context.ClassLoaderFactory.SetWrapperForClassLoader(_this, JVM.Context.AssemblyClassLoaderFactory.FromAssembly(assembly));
+#endif
         }
 
         public static global::java.lang.Class loadClass(global::java.lang.ClassLoader _this, string name, bool resolve)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             try
             {
                 if (ClassLoaderAccessor.InvokeCheckName(_this, name) == false)
                     throw new ClassNotFoundException(name);
 
-                var wrapper = (RuntimeAssemblyClassLoader)RuntimeClassLoaderFactory.GetClassLoaderWrapper(_this);
+                var wrapper = (RuntimeAssemblyClassLoader)JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(_this);
                 var tw = wrapper.LoadClass(name);
                 if (tw == null)
                 {
@@ -87,45 +91,52 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
         public static global::java.net.URL getResource(global::java.lang.ClassLoader _this, string name)
         {
-#if !FIRST_PASS
-            var wrapper = (RuntimeAssemblyClassLoader)RuntimeClassLoaderFactory.GetClassLoaderWrapper(_this);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var wrapper = (RuntimeAssemblyClassLoader)JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(_this);
             foreach (global::java.net.URL url in wrapper.GetResources(name))
                 return url;
-#endif
+
             return null;
+#endif
         }
 
         public static global::java.util.Enumeration getResources(global::java.lang.ClassLoader _this, string name)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            return new global::ikvm.runtime.EnumerationWrapper(((RuntimeAssemblyClassLoader)RuntimeClassLoaderFactory.GetClassLoaderWrapper(_this)).GetResources(name));
+            return new global::ikvm.runtime.EnumerationWrapper(((RuntimeAssemblyClassLoader)JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(_this)).GetResources(name));
 #endif
         }
 
         public static global::java.net.URL findResource(global::java.lang.ClassLoader _this, string name)
         {
-#if !FIRST_PASS
-            var wrapper = (RuntimeAssemblyClassLoader)RuntimeClassLoaderFactory.GetClassLoaderWrapper(_this);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var wrapper = (RuntimeAssemblyClassLoader)JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(_this);
             foreach (global::java.net.URL url in wrapper.FindResources(name))
             {
                 return url;
             }
-#endif
+
             return null;
+#endif
         }
 
         public static global::java.util.Enumeration findResources(global::java.lang.ClassLoader _this, string name)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            return new global::ikvm.runtime.EnumerationWrapper(((RuntimeAssemblyClassLoader)RuntimeClassLoaderFactory.GetClassLoaderWrapper(_this)).FindResources(name));
+            return new global::ikvm.runtime.EnumerationWrapper(((RuntimeAssemblyClassLoader)JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(_this)).FindResources(name));
 #endif
         }
 
 #if !FIRST_PASS
+
         static global::java.net.URL GetCodeBase(Assembly assembly)
         {
             try
@@ -194,8 +205,10 @@ namespace IKVM.Java.Externs.ikvm.runtime
         /// <param name="_this"></param>
         public static void lazyDefinePackages(global::java.lang.ClassLoader _this)
         {
-#if !FIRST_PASS
-            var wrapper = (RuntimeAssemblyClassLoader)RuntimeClassLoaderFactory.GetClassLoaderWrapper(_this);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var wrapper = (RuntimeAssemblyClassLoader)JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(_this);
             var sealBase = GetCodeBase(wrapper.MainAssembly);
 
             foreach (var packages in wrapper.GetPackageInfo())
@@ -232,14 +245,22 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
         public static string toString(global::java.lang.ClassLoader _this)
         {
-            return ((RuntimeAssemblyClassLoader)RuntimeClassLoaderFactory.GetClassLoaderWrapper(_this)).MainAssembly.FullName;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return ((RuntimeAssemblyClassLoader)JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(_this)).MainAssembly.FullName;
+#endif
         }
 
         public static global::java.lang.ClassLoader getAssemblyClassLoader(Assembly asm)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             // note that we don't do a security check here, because if you have the Assembly object,
             // you can already get at all the types in it.
-            return RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
+            return JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
+#endif
         }
 
     }

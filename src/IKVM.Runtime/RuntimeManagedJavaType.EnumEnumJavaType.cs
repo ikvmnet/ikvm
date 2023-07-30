@@ -54,23 +54,26 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="name"></param>
             /// <param name="enumType"></param>
-            internal EnumEnumJavaType(string name, Type enumType) :
-                base(Modifiers.Public | Modifiers.Enum | Modifiers.Final, name, RuntimeClassLoaderFactory.LoadClassCritical("java.lang.Enum"))
+            internal EnumEnumJavaType(RuntimeContext context, string name, Type enumType) :
+                base(context, Modifiers.Public | Modifiers.Enum | Modifiers.Final, name, context.ClassLoaderFactory.LoadClassCritical("java.lang.Enum"))
             {
 #if IMPORTER || EXPORTER
-                this.fakeType = FakeTypes.GetEnumType(enumType);
+                this.fakeType = context.FakeTypes.GetEnumType(enumType);
 #elif !FIRST_PASS
                 this.fakeType = typeof(ikvm.@internal.EnumEnum<>).MakeGenericType(enumType);
 #endif
             }
 
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
+
             internal object GetUnspecifiedValue()
             {
                 return GetFieldWrapper("__unspecified", this.SigName).GetValue(null);
             }
+
 #endif
 
             sealed class EnumJavaField : RuntimeJavaField
@@ -117,13 +120,9 @@ namespace IKVM.Runtime
 #if EMITTERS
                 protected override void EmitGetImpl(CodeEmitter ilgen)
                 {
-#if IMPORTER
-                    var typeofByteCodeHelper = StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper");
-#else
-                    var typeofByteCodeHelper = typeof(IKVM.Runtime.ByteCodeHelper);
-#endif
-                    ilgen.Emit(OpCodes.Ldstr, this.Name);
-                    ilgen.Emit(OpCodes.Call, typeofByteCodeHelper.GetMethod("GetDotNetEnumField").MakeGenericMethod(this.DeclaringType.TypeAsBaseType));
+                    var typeofByteCodeHelper = DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper");
+                    ilgen.Emit(OpCodes.Ldstr, Name);
+                    ilgen.Emit(OpCodes.Call, typeofByteCodeHelper.GetMethod("GetDotNetEnumField").MakeGenericMethod(DeclaringType.TypeAsBaseType));
                 }
 
                 protected override void EmitSetImpl(CodeEmitter ilgen)
@@ -169,15 +168,12 @@ namespace IKVM.Runtime
 
             protected override void LazyPublishMembers()
             {
-                List<RuntimeJavaField> fields = new List<RuntimeJavaField>();
+                var fields = new List<RuntimeJavaField>();
                 int ordinal = 0;
-                foreach (FieldInfo field in this.DeclaringTypeWrapper.TypeAsTBD.GetFields(BindingFlags.Static | BindingFlags.Public))
-                {
+                foreach (var field in DeclaringTypeWrapper.TypeAsTBD.GetFields(BindingFlags.Static | BindingFlags.Public))
                     if (field.IsLiteral)
-                    {
                         fields.Add(new EnumJavaField(this, field.Name, ordinal++));
-                    }
-                }
+
                 // TODO if the enum already has an __unspecified value, rename this one
                 fields.Add(new EnumJavaField(this, "__unspecified", ordinal++));
                 SetFields(fields.ToArray());
@@ -185,7 +181,7 @@ namespace IKVM.Runtime
                 base.LazyPublishMembers();
             }
 
-            internal override RuntimeJavaType DeclaringTypeWrapper => RuntimeClassLoaderFactory.GetWrapperFromType(fakeType.GetGenericArguments()[0]);
+            internal override RuntimeJavaType DeclaringTypeWrapper => Context.ClassLoaderFactory.GetJavaTypeFromType(fakeType.GetGenericArguments()[0]);
 
             internal override RuntimeClassLoader GetClassLoader()
             {

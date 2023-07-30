@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+using System;
 using System.IO;
 using System.Reflection;
 
@@ -38,11 +39,13 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
 
         public static byte[] GenerateStub(global::java.lang.Class c)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             using var mem = new MemoryStream();
-#if FIRST_PASS == false
-            StubGen.StubGenerator.WriteClass(mem, RuntimeJavaType.FromClass(c), true, true, true, true, false);
-#endif
+            JVM.Context.StubGenerator.WriteClass(mem, RuntimeJavaType.FromClass(c), true, true, true, true, false);
             return mem.ToArray();
+#endif
         }
 
         public static Stream ReadResourceFromAssemblyImpl(Assembly asm, string resource)
@@ -77,12 +80,15 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
 
         public static object LoadClassFromAssembly(Assembly asm, string className)
         {
-            RuntimeJavaType tw = RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).LoadClassByDottedNameFast(className);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var tw = JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm).TryLoadClassByName(className);
             if (tw != null)
-            {
                 return tw.ClassObject;
-            }
+
             return null;
+#endif
         }
 
         public static Assembly LoadAssembly(string name)
@@ -96,7 +102,11 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
 
         public static global::java.lang.ClassLoader GetGenericClassLoaderById(int id)
         {
-            return RuntimeClassLoaderFactory.GetGenericClassLoaderById(id).GetJavaClassLoader();
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return JVM.Context.ClassLoaderFactory.GetGenericClassLoaderById(id).GetJavaClassLoader();
+#endif
         }
 
     }

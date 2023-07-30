@@ -64,7 +64,7 @@ namespace IKVM.Tools.Importer.MapXml
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
-            var emitter = new CompilerClassLoader.ExceptionMapEmitter(mapping);
+            var emitter = new CompilerClassLoader.ExceptionMapEmitter(context.ClassLoader.Context, mapping);
             emitter.Emit(context, ilgen);
         }
 

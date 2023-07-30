@@ -37,7 +37,7 @@ namespace IKVM.Runtime
     partial class RuntimeManagedByteCodeJavaType
     {
 
-        sealed class GhostJavaType : RuntimeManagedByteCodeJavaType
+        public sealed class GhostJavaType : RuntimeManagedByteCodeJavaType
         {
 
             volatile FieldInfo ghostRefField;
@@ -46,10 +46,11 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="name"></param>
             /// <param name="type"></param>
-            internal GhostJavaType(string name, Type type) :
-                base(name, type)
+            internal GhostJavaType(RuntimeContext context, string name, Type type) :
+                base(context, name, type)
             {
 
             }

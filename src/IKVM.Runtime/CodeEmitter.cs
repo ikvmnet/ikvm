@@ -40,15 +40,68 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
+    class CodeEmitterFactory
+    {
+
+        readonly RuntimeContext context;
+
+        MethodInfo objectToString;
+        MethodInfo verboseCastFailure;
+        MethodInfo monitorEnter;
+        MethodInfo monitorExit;
+        MethodInfo memoryBarrier;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        public CodeEmitterFactory(RuntimeContext context)
+        {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
+        }
+
+        public MethodInfo ObjectToStringMethod => objectToString ??= context.Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+
+        public MethodInfo VerboseCastFailureMethod => verboseCastFailure ??= JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : context.ByteCodeHelperMethods.VerboseCastFailure;
+
+        public MethodInfo MonitorEnterMethod => monitorEnter ??= context.Resolver.ResolveCoreType(typeof(System.Threading.Monitor).FullName).GetMethod("Enter", BindingFlags.Public | BindingFlags.Static, null, new Type[] { context.Types.Object }, null);
+
+        public MethodInfo MonitorExitMethod => monitorExit ??= context.Resolver.ResolveCoreType(typeof(System.Threading.Monitor).FullName).GetMethod("Exit", BindingFlags.Public | BindingFlags.Static, null, new Type[] { context.Types.Object }, null);
+
+        public MethodInfo MemoryBarrierMethod => memoryBarrier ??= context.Resolver.ResolveCoreType(typeof(System.Threading.Thread).FullName).GetMethod("MemoryBarrier", Type.EmptyTypes);
+
+        public bool ExperimentalOptimizations = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_OPTIMIZATIONS") != null;
+
+        /// <summary>
+        /// Creates a new instance.
+        /// </summary>
+        /// <param name="mb"></param>
+        /// <returns></returns>
+        public CodeEmitter Create(MethodBuilder mb)
+        {
+            return new CodeEmitter(context, mb.GetILGenerator(), mb.DeclaringType);
+        }
+
+#if IMPORTER == false
+
+        /// <summary>
+        /// Creates a new instance.
+        /// </summary>
+        /// <param name="dm"></param>
+        /// <returns></returns>
+        public CodeEmitter Create(DynamicMethod dm)
+        {
+            return new CodeEmitter(context, dm.GetILGenerator(), null);
+        }
+
+#endif
+
+    }
+
     sealed class CodeEmitter
     {
 
-        static readonly MethodInfo objectToString = Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
-        static readonly MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
-        static readonly MethodInfo monitorEnter = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Enter", BindingFlags.Public | BindingFlags.Static, null, new Type[] { Types.Object }, null);
-        static readonly MethodInfo monitorExit = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Exit", BindingFlags.Public | BindingFlags.Static, null, new Type[] { Types.Object }, null);
-        static readonly bool experimentalOptimizations = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_OPTIMIZATIONS") != null;
-        static MethodInfo memoryBarrier;
+        readonly RuntimeContext context;
 
         ILGenerator ilgen_real;
 #if !IMPORTER
@@ -65,17 +118,6 @@ namespace IKVM.Runtime
 #if LABELCHECK
 		Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
 #endif
-
-        /// <summary>
-        /// Initializes the static instance.
-        /// </summary>
-        static CodeEmitter()
-        {
-            if (experimentalOptimizations)
-            {
-                Console.Error.WriteLine("IKVM.NET experimental optimizations enabled.");
-            }
-        }
 
         enum CodeType : short
         {
@@ -209,7 +251,7 @@ namespace IKVM.Runtime
                         case CodeType.BeginFinallyBlock:
                         case CodeType.EndExceptionBlock:
 #if IMPORTER
-							return 0;
+                            return 0;
 #else
                             if ((flags & CodeTypeFlags.EndFaultOrFinally) != 0)
                                 return 1 + 2;
@@ -387,26 +429,28 @@ namespace IKVM.Runtime
 
         }
 
-        internal static CodeEmitter Create(MethodBuilder mb)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="ilgen"></param>
+        /// <param name="declaringType"></param>
+        public CodeEmitter(RuntimeContext context, ILGenerator ilgen, Type declaringType)
         {
-            return new CodeEmitter(mb.GetILGenerator(), mb.DeclaringType);
-        }
+            this.context = context;
 
-#if !IMPORTER
-        internal static CodeEmitter Create(DynamicMethod dm)
-        {
-            return new CodeEmitter(dm.GetILGenerator(), null);
-        }
-#endif
-
-        private CodeEmitter(ILGenerator ilgen, Type declaringType)
-        {
 #if IMPORTER
-			ilgen.__DisableExceptionBlockAssistance();
+            ilgen.__DisableExceptionBlockAssistance();
 #endif
+
             this.ilgen_real = ilgen;
             this.declaringType = declaringType;
         }
+
+        /// <summary>
+        /// Gets the <see cref="RuntimeContext"/> that hosts this code emitter.
+        /// </summary>
+        public RuntimeContext Context => context;
 
         private void EmitPseudoOpCode(CodeType type, object data)
         {
@@ -467,17 +511,13 @@ namespace IKVM.Runtime
 #endif
                     break;
                 case CodeType.MemoryBarrier:
-                    if (memoryBarrier == null)
-                    {
-                        memoryBarrier = JVM.Import(typeof(System.Threading.Thread)).GetMethod("MemoryBarrier", Type.EmptyTypes);
-                    }
-                    ilgen_real.Emit(OpCodes.Call, memoryBarrier);
+                    ilgen_real.Emit(OpCodes.Call, context.CodeEmitterFactory.MemoryBarrierMethod);
                     break;
                 case CodeType.MonitorEnter:
-                    ilgen_real.Emit(OpCodes.Call, monitorEnter);
+                    ilgen_real.Emit(OpCodes.Call, context.CodeEmitterFactory.MonitorEnterMethod);
                     break;
                 case CodeType.MonitorExit:
-                    ilgen_real.Emit(OpCodes.Call, monitorExit);
+                    ilgen_real.Emit(OpCodes.Call, context.CodeEmitterFactory.MonitorExitMethod);
                     break;
                 case CodeType.TailCallPrevention:
                     ilgen_real.Emit(OpCodes.Ldnull);
@@ -881,17 +921,17 @@ namespace IKVM.Runtime
                     code[i] = new OpCodeWrapper(OpCodes.Ldc_I4, code[i].ValueInt32 & code[i + 1].ValueInt32);
                     code.RemoveRange(i + 1, 2);
                 }
-                else if (MatchCompare(i, OpCodes.Cgt, OpCodes.Clt_Un, Types.Double)     // dcmpl
-                    || MatchCompare(i, OpCodes.Cgt, OpCodes.Clt_Un, Types.Single))      // fcmpl
+                else if (MatchCompare(i, OpCodes.Cgt, OpCodes.Clt_Un, context.Types.Double)     // dcmpl
+                    || MatchCompare(i, OpCodes.Cgt, OpCodes.Clt_Un, context.Types.Single))      // fcmpl
                 {
                     PatchCompare(i, OpCodes.Ble_Un, OpCodes.Blt_Un, OpCodes.Bge, OpCodes.Bgt);
                 }
-                else if (MatchCompare(i, OpCodes.Cgt_Un, OpCodes.Clt, Types.Double)     // dcmpg
-                    || MatchCompare(i, OpCodes.Cgt_Un, OpCodes.Clt, Types.Single))      // fcmpg
+                else if (MatchCompare(i, OpCodes.Cgt_Un, OpCodes.Clt, context.Types.Double)     // dcmpg
+                    || MatchCompare(i, OpCodes.Cgt_Un, OpCodes.Clt, context.Types.Single))      // fcmpg
                 {
                     PatchCompare(i, OpCodes.Ble, OpCodes.Blt, OpCodes.Bge_Un, OpCodes.Bgt_Un);
                 }
-                else if (MatchCompare(i, OpCodes.Cgt, OpCodes.Clt, Types.Int64))        // lcmp
+                else if (MatchCompare(i, OpCodes.Cgt, OpCodes.Clt, context.Types.Int64))        // lcmp
                 {
                     PatchCompare(i, OpCodes.Ble, OpCodes.Blt, OpCodes.Bge, OpCodes.Bgt);
                 }
@@ -2195,7 +2235,7 @@ namespace IKVM.Runtime
             CLRv4_x64_JIT_Workaround();
             RemoveRedundantMemoryBarriers();
 
-            if (experimentalOptimizations)
+            if (false)
             {
                 CheckInvariants();
                 MoveLocalDeclarationToBeginScope();
@@ -2230,8 +2270,8 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER
-			OptimizeEncodings();
-			OptimizeBranchSizes();
+            OptimizeEncodings();
+            OptimizeBranchSizes();
 #endif
 
             int ilOffset = 0;
@@ -2608,7 +2648,7 @@ namespace IKVM.Runtime
         internal void EndExceptionBlock()
         {
 #if IMPORTER
-			EmitPseudoOpCode(CodeType.EndExceptionBlock, null);
+            EmitPseudoOpCode(CodeType.EndExceptionBlock, null);
 #else
             EmitPseudoOpCode(CodeType.EndExceptionBlock, inFinally ? CodeTypeFlags.EndFaultOrFinally : CodeTypeFlags.None);
             inFinally = exceptionStack.Pop();
@@ -2651,18 +2691,18 @@ namespace IKVM.Runtime
         }
 
 #if IMPORTER
-		internal void EmitLineNumberTable(MethodBuilder mb)
-		{
-			if(linenums != null)
-			{
-				AttributeHelper.SetLineNumberTable(mb, linenums);
-			}
-		}
+        internal void EmitLineNumberTable(MethodBuilder mb)
+        {
+            if (linenums != null)
+            {
+                context.AttributeHelper.SetLineNumberTable(mb, linenums);
+            }
+        }
 #endif // IMPORTER
 
         internal void EmitThrow(string dottedClassName)
         {
-            RuntimeJavaType exception = RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
+            RuntimeJavaType exception = context.ClassLoaderFactory.GetBootstrapClassLoader().LoadClassByName(dottedClassName);
             RuntimeJavaMethod mw = exception.GetMethodWrapper("<init>", "()V", false);
             mw.Link();
             mw.EmitNewobj(this);
@@ -2671,7 +2711,7 @@ namespace IKVM.Runtime
 
         internal void EmitThrow(string dottedClassName, string message)
         {
-            RuntimeJavaType exception = RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedName(dottedClassName);
+            RuntimeJavaType exception = context.ClassLoaderFactory.GetBootstrapClassLoader().LoadClassByName(dottedClassName);
             Emit(OpCodes.Ldstr, message);
             RuntimeJavaMethod mw = exception.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
             mw.Link();
@@ -2682,15 +2722,15 @@ namespace IKVM.Runtime
         internal void EmitNullCheck()
         {
             // I think this is the most efficient way to generate a NullReferenceException if the reference is null
-            Emit(OpCodes.Ldvirtftn, objectToString);
+            Emit(OpCodes.Ldvirtftn, context.CodeEmitterFactory.ObjectToStringMethod);
             Emit(OpCodes.Pop);
         }
 
         internal void EmitCastclass(Type type)
         {
-            if (verboseCastFailure != null)
+            if (context.CodeEmitterFactory.VerboseCastFailureMethod != null)
             {
-                CodeEmitterLocal lb = DeclareLocal(Types.Object);
+                CodeEmitterLocal lb = DeclareLocal(context.Types.Object);
                 Emit(OpCodes.Stloc, lb);
                 Emit(OpCodes.Ldloc, lb);
                 Emit(OpCodes.Isinst, type);
@@ -2701,7 +2741,7 @@ namespace IKVM.Runtime
                 EmitBrfalse(ok);    // handle null
                 Emit(OpCodes.Ldtoken, type);
                 Emit(OpCodes.Ldloc, lb);
-                Emit(OpCodes.Call, verboseCastFailure);
+                Emit(OpCodes.Call, context.CodeEmitterFactory.VerboseCastFailureMethod);
                 MarkLabel(ok);
             }
             else
@@ -2846,27 +2886,27 @@ namespace IKVM.Runtime
 
         internal void Emit_lcmp()
         {
-            EmitCmp(Types.Int64, OpCodes.Cgt, OpCodes.Clt);
+            EmitCmp(context.Types.Int64, OpCodes.Cgt, OpCodes.Clt);
         }
 
         internal void Emit_fcmpl()
         {
-            EmitCmp(Types.Single, OpCodes.Cgt, OpCodes.Clt_Un);
+            EmitCmp(context.Types.Single, OpCodes.Cgt, OpCodes.Clt_Un);
         }
 
         internal void Emit_fcmpg()
         {
-            EmitCmp(Types.Single, OpCodes.Cgt_Un, OpCodes.Clt);
+            EmitCmp(context.Types.Single, OpCodes.Cgt_Un, OpCodes.Clt);
         }
 
         internal void Emit_dcmpl()
         {
-            EmitCmp(Types.Double, OpCodes.Cgt, OpCodes.Clt_Un);
+            EmitCmp(context.Types.Double, OpCodes.Cgt, OpCodes.Clt_Un);
         }
 
         internal void Emit_dcmpg()
         {
-            EmitCmp(Types.Double, OpCodes.Cgt_Un, OpCodes.Clt);
+            EmitCmp(context.Types.Double, OpCodes.Cgt_Un, OpCodes.Clt);
         }
 
         internal void Emit_And_I4(int v)

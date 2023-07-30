@@ -18,6 +18,10 @@ public class MethodHandleTests {
         }
 
     }
+
+    interface AddItf {
+        void apply(List st, int idx, Object v) throws Throwable;
+    }
     
     @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
     public void canInvokeVirtual() throws Throwable {
@@ -61,6 +65,29 @@ public class MethodHandleTests {
         if (!s.equals("ab")) {
             throw new Exception(s);
         }
+    }
+
+    @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
+    public void canInvokeStaticMethodThatReturnsVoid() throws Throwable {
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MethodType pmt = MethodType.methodType(void.class, int.class, Object.class);
+        MethodHandle pms = lookup.findVirtual(List.class, "add", pmt);
+        List<String> list = new ArrayList<>();
+        pms.invoke(list, 0, "Hi");
+        AddItf pf2 = pms::invoke;
+        pf2.apply(list, 1, "there");
+        AddItf pf3 = pms::invokeExact;
+        pf3.apply(list, 2, "you");
+
+        if (!list.get(0).equals("Hi")) {
+            throw new Exception(list.get(0));
+        };
+        if (!list.get(1).equals("there")) {
+            throw new Exception(list.get(1));
+        };
+        if (!list.get(2).equals("you")) {
+            throw new Exception(list.get(2));
+        };
     }
 
 }

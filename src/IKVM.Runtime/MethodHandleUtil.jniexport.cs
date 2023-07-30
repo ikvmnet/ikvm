@@ -26,14 +26,15 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.Runtime
 {
 
-    static partial class MethodHandleUtil
+    partial class MethodHandleUtil
     {
 
-        internal static Type GetMemberWrapperDelegateType(global::java.lang.invoke.MethodType type)
+        internal Type GetMemberWrapperDelegateType(global::java.lang.invoke.MethodType type)
         {
 #if FIRST_PASS
 		    throw new NotImplementedException();
@@ -44,95 +45,97 @@ namespace IKVM.Runtime
 
 #if FIRST_PASS == false
 
-        private static Type CreateMethodHandleDelegateType(java.lang.invoke.MethodType type)
+        Type CreateMethodHandleDelegateType(java.lang.invoke.MethodType type)
         {
-            RuntimeJavaType[] args = new RuntimeJavaType[type.parameterCount()];
+            var args = new RuntimeJavaType[type.parameterCount()];
             for (int i = 0; i < args.Length; i++)
             {
                 args[i] = RuntimeJavaType.FromClass(type.parameterType(i));
                 args[i].Finish();
             }
-            RuntimeJavaType ret = RuntimeJavaType.FromClass(type.returnType());
+            var ret = RuntimeJavaType.FromClass(type.returnType());
             ret.Finish();
             return CreateMethodHandleDelegateType(args, ret);
         }
 
-        private static Type[] GetParameterTypes(MethodBase mb)
+        static Type[] GetParameterTypes(MethodBase mb)
         {
-            ParameterInfo[] pi = mb.GetParameters();
-            Type[] args = new Type[pi.Length];
+            var pi = mb.GetParameters();
+            var args = new Type[pi.Length];
             for (int i = 0; i < args.Length; i++)
-            {
                 args[i] = pi[i].ParameterType;
-            }
+
             return args;
         }
 
         internal static Type[] GetParameterTypes(Type thisType, MethodBase mb)
         {
-            ParameterInfo[] pi = mb.GetParameters();
-            Type[] args = new Type[pi.Length + 1];
+            var pi = mb.GetParameters();
+            var args = new Type[pi.Length + 1];
             args[0] = thisType;
             for (int i = 1; i < args.Length; i++)
-            {
                 args[i] = pi[i - 1].ParameterType;
-            }
+
             return args;
         }
 
-        internal static java.lang.invoke.MethodType GetDelegateMethodType(Type type)
+        internal java.lang.invoke.MethodType GetDelegateMethodType(Type type)
         {
             java.lang.Class[] types;
-            MethodInfo mi = GetDelegateInvokeMethod(type);
-            ParameterInfo[] pi = mi.GetParameters();
+            var mi = GetDelegateInvokeMethod(type);
+            var pi = mi.GetParameters();
             if (pi.Length > 0 && IsPackedArgsContainer(pi[pi.Length - 1].ParameterType))
             {
-                System.Collections.Generic.List<java.lang.Class> list = new System.Collections.Generic.List<java.lang.Class>();
+                var list = new System.Collections.Generic.List<java.lang.Class>();
                 for (int i = 0; i < pi.Length - 1; i++)
-                {
-                    list.Add(RuntimeClassLoaderFactory.GetWrapperFromType(pi[i].ParameterType).ClassObject);
-                }
-                Type[] args = pi[pi.Length - 1].ParameterType.GetGenericArguments();
+                    list.Add(context.ClassLoaderFactory.GetJavaTypeFromType(pi[i].ParameterType).ClassObject);
+
+                var args = pi[pi.Length - 1].ParameterType.GetGenericArguments();
                 while (IsPackedArgsContainer(args[args.Length - 1]))
                 {
                     for (int i = 0; i < args.Length - 1; i++)
-                    {
-                        list.Add(RuntimeClassLoaderFactory.GetWrapperFromType(args[i]).ClassObject);
-                    }
+                        list.Add(context.ClassLoaderFactory.GetJavaTypeFromType(args[i]).ClassObject);
+
                     args = args[args.Length - 1].GetGenericArguments();
                 }
+
                 for (int i = 0; i < args.Length; i++)
-                {
-                    list.Add(RuntimeClassLoaderFactory.GetWrapperFromType(args[i]).ClassObject);
-                }
+                    list.Add(context.ClassLoaderFactory.GetJavaTypeFromType(args[i]).ClassObject);
+
                 types = list.ToArray();
             }
             else
             {
                 types = new java.lang.Class[pi.Length];
                 for (int i = 0; i < types.Length; i++)
-                {
-                    types[i] = RuntimeClassLoaderFactory.GetWrapperFromType(pi[i].ParameterType).ClassObject;
-                }
+                    types[i] = context.ClassLoaderFactory.GetJavaTypeFromType(pi[i].ParameterType).ClassObject;
             }
-            return java.lang.invoke.MethodType.methodType(RuntimeClassLoaderFactory.GetWrapperFromType(mi.ReturnType).ClassObject, types);
+
+            return java.lang.invoke.MethodType.methodType(context.ClassLoaderFactory.GetJavaTypeFromType(mi.ReturnType).ClassObject, types);
         }
 
         internal sealed class DynamicMethodBuilder
         {
-            private readonly java.lang.invoke.MethodType type;
-            private readonly int firstArg;
-            private readonly Type delegateType;
-            private readonly object firstBoundValue;
-            private readonly object secondBoundValue;
-            private readonly Type container;
-            private readonly DynamicMethod dm;
-            private readonly CodeEmitter ilgen;
-            private readonly Type packedArgType;
-            private readonly int packedArgPos;
+
+            const string METHOD_HANDLE_FORM_FIELD = "form";
+            const string LAMBDA_FORM_VMENTRY_FIELD = "vmentry";
+            const string MEMBER_NAME_VMTARGET_FIELD = "vmtarget";
+
+            readonly RuntimeContext context;
+            readonly java.lang.invoke.MethodType type;
+            readonly int firstArg;
+            readonly Type delegateType;
+            readonly object firstBoundValue;
+            readonly object secondBoundValue;
+            readonly Type container;
+            readonly DynamicMethod dm;
+            readonly CodeEmitter ilgen;
+            readonly Type packedArgType;
+            readonly int packedArgPos;
 
             sealed class Container<T1, T2>
             {
+
                 public T1 target;
                 public T2 value;
 
@@ -141,179 +144,183 @@ namespace IKVM.Runtime
                     this.target = target;
                     this.value = value;
                 }
+
             }
 
-            private DynamicMethodBuilder(string name, java.lang.invoke.MethodType type, Type container, object target, object value, Type owner, bool useBasicTypes)
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="context"></param>
+            /// <param name="name"></param>
+            /// <param name="type"></param>
+            /// <param name="container"></param>
+            /// <param name="target"></param>
+            /// <param name="value"></param>
+            /// <param name="owner"></param>
+            /// <param name="useBasicTypes"></param>
+            /// <exception cref="ArgumentNullException"></exception>
+            DynamicMethodBuilder(RuntimeContext context, string name, java.lang.invoke.MethodType type, Type container, object target, object value, Type owner, bool useBasicTypes)
             {
+                this.context = context ?? throw new ArgumentNullException(nameof(context));
                 this.type = type;
-                this.delegateType = useBasicTypes ? GetMemberWrapperDelegateType(type) : GetDelegateTypeForInvokeExact(type);
-                this.firstBoundValue = target;
-                this.secondBoundValue = value;
                 this.container = container;
-                MethodInfo mi = GetDelegateInvokeMethod(delegateType);
+
+                delegateType = useBasicTypes ? context.MethodHandleUtil.GetMemberWrapperDelegateType(type) : context.MethodHandleUtil.GetDelegateTypeForInvokeExact(type);
+                firstBoundValue = target;
+                secondBoundValue = value;
+
+                var mi = context.MethodHandleUtil.GetDelegateInvokeMethod(delegateType);
+
                 Type[] paramTypes;
                 if (container != null)
                 {
-                    this.firstArg = 1;
+                    firstArg = 1;
                     paramTypes = GetParameterTypes(container, mi);
                 }
                 else if (target != null)
                 {
-                    this.firstArg = 1;
+                    firstArg = 1;
                     paramTypes = GetParameterTypes(target.GetType(), mi);
                 }
                 else
                 {
                     paramTypes = GetParameterTypes(mi);
                 }
+
                 if (!ReflectUtil.CanOwnDynamicMethod(owner))
-                {
                     owner = typeof(DynamicMethodBuilder);
-                }
-                this.dm = new DynamicMethod(name, mi.ReturnType, paramTypes, owner, true);
-                this.ilgen = CodeEmitter.Create(dm);
+
+                dm = new DynamicMethod(name, mi.ReturnType, paramTypes, owner, true);
+                ilgen = context.CodeEmitterFactory.Create(dm);
 
                 if (type.parameterCount() > MaxArity)
                 {
-                    ParameterInfo[] pi = mi.GetParameters();
-                    this.packedArgType = pi[pi.Length - 1].ParameterType;
-                    this.packedArgPos = pi.Length - 1 + firstArg;
+                    var pi = mi.GetParameters();
+                    packedArgType = pi[pi.Length - 1].ParameterType;
+                    packedArgPos = pi.Length - 1 + firstArg;
                 }
                 else
                 {
-                    this.packedArgPos = Int32.MaxValue;
+                    packedArgPos = int.MaxValue;
                 }
             }
 
-            internal static Delegate CreateVoidAdapter(global::java.lang.invoke.MethodType type)
+            internal static Delegate CreateVoidAdapter(RuntimeContext context, global::java.lang.invoke.MethodType type)
             {
-                DynamicMethodBuilder dm = new DynamicMethodBuilder("VoidAdapter", type.changeReturnType(global::java.lang.Void.TYPE), null, null, null, null, true);
-                Type targetDelegateType = GetMemberWrapperDelegateType(type);
+                var dm = new DynamicMethodBuilder(context, "VoidAdapter", type.changeReturnType(global::java.lang.Void.TYPE), null, null, null, null, true);
+                var targetDelegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(type);
                 dm.Ldarg(0);
-                dm.EmitCheckcast(CoreClasses.java.lang.invoke.MethodHandle.Wrapper);
-                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MethodHandle).GetField("form", BindingFlags.Instance | BindingFlags.NonPublic));
-                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.LambdaForm).GetField("vmentry", BindingFlags.Instance | BindingFlags.NonPublic));
-                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.EmitCheckcast(context.JavaBase.TypeOfJavaLangInvokeMethodHandle);
+                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MethodHandle).GetField(METHOD_HANDLE_FORM_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.LambdaForm).GetField(LAMBDA_FORM_VMENTRY_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MemberName).GetField(MEMBER_NAME_VMTARGET_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
                 dm.ilgen.Emit(OpCodes.Castclass, targetDelegateType);
                 for (int i = 0; i < type.parameterCount(); i++)
-                {
                     dm.Ldarg(i);
-                }
+
                 dm.CallDelegate(targetDelegateType);
                 dm.ilgen.Emit(OpCodes.Pop);
+
                 dm.Ret();
                 return dm.CreateDelegate();
             }
 
-            internal static DynamicMethod CreateInvokeExact(global::java.lang.invoke.MethodType type)
+            internal static DynamicMethod CreateInvokeExact(RuntimeContext context, global::java.lang.invoke.MethodType type)
             {
                 FinishTypes(type);
-                DynamicMethodBuilder dm = new DynamicMethodBuilder("InvokeExact", type, typeof(java.lang.invoke.MethodHandle), null, null, null, false);
-                Type targetDelegateType = GetMemberWrapperDelegateType(type.insertParameterTypes(0, CoreClasses.java.lang.invoke.MethodHandle.Wrapper.ClassObject));
+
+                var dm = new DynamicMethodBuilder(context, "InvokeExact", type, typeof(java.lang.invoke.MethodHandle), null, null, null, false);
+                var targetDelegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(type.insertParameterTypes(0, context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject));
                 dm.ilgen.Emit(OpCodes.Ldarg_0);
-                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MethodHandle).GetField("form", BindingFlags.Instance | BindingFlags.NonPublic));
-                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.LambdaForm).GetField("vmentry", BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MethodHandle).GetField(METHOD_HANDLE_FORM_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.LambdaForm).GetField(LAMBDA_FORM_VMENTRY_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
                 if (type.returnType() == java.lang.Void.TYPE)
-                {
-                    dm.ilgen.Emit(OpCodes.Call, typeof(MethodHandleUtil).GetMethod("GetVoidAdapter", BindingFlags.Static | BindingFlags.NonPublic));
-                }
+                    dm.ilgen.Emit(OpCodes.Call, typeof(MethodHandleUtil).GetMethod(nameof(GetVoidAdapter), BindingFlags.Static | BindingFlags.NonPublic));
                 else
-                {
-                    dm.ilgen.Emit(OpCodes.Ldfld, typeof(java.lang.invoke.MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic));
-                }
+                    dm.ilgen.Emit(OpCodes.Ldfld, typeof(java.lang.invoke.MemberName).GetField(MEMBER_NAME_VMTARGET_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
+
                 dm.ilgen.Emit(OpCodes.Castclass, targetDelegateType);
                 dm.ilgen.Emit(OpCodes.Ldarg_0);
                 for (int i = 0; i < type.parameterCount(); i++)
                 {
                     dm.Ldarg(i);
-                    RuntimeJavaType tw = RuntimeJavaType.FromClass(type.parameterType(i));
+                    var tw = RuntimeJavaType.FromClass(type.parameterType(i));
                     if (tw.IsNonPrimitiveValueType)
-                    {
                         tw.EmitBox(dm.ilgen);
-                    }
                     else if (tw.IsGhost)
-                    {
                         tw.EmitConvSignatureTypeToStackType(dm.ilgen);
-                    }
-                    else if (tw == RuntimePrimitiveJavaType.BYTE)
-                    {
+                    else if (tw == context.PrimitiveJavaTypeFactory.BYTE)
                         dm.ilgen.Emit(OpCodes.Conv_I1);
-                    }
                 }
                 dm.CallDelegate(targetDelegateType);
-                RuntimeJavaType retType = RuntimeJavaType.FromClass(type.returnType());
+
+                var retType = RuntimeJavaType.FromClass(type.returnType());
                 if (retType.IsNonPrimitiveValueType)
-                {
                     retType.EmitUnbox(dm.ilgen);
-                }
                 else if (retType.IsGhost)
-                {
                     retType.EmitConvStackTypeToSignatureType(dm.ilgen, null);
-                }
-                else if (!retType.IsPrimitive && retType != CoreClasses.java.lang.Object.Wrapper)
-                {
+                else if (!retType.IsPrimitive && retType != context.JavaBase.TypeOfJavaLangObject)
                     dm.EmitCheckcast(retType);
-                }
+
                 dm.Ret();
                 dm.ilgen.DoEmit();
                 return dm.dm;
             }
 
-            internal static Delegate CreateMethodHandleLinkTo(java.lang.invoke.MemberName mn)
+            internal static Delegate CreateMethodHandleLinkTo(RuntimeContext context, java.lang.invoke.MemberName mn)
             {
-                java.lang.invoke.MethodType type = mn.getMethodType();
-                Type delegateType = MethodHandleUtil.GetMemberWrapperDelegateType(type.dropParameterTypes(type.parameterCount() - 1, type.parameterCount()));
-                DynamicMethodBuilder dm = new DynamicMethodBuilder("DirectMethodHandle." + mn.getName() + type, type, null, null, null, null, true);
+                var type = mn.getMethodType();
+                var delegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(type.dropParameterTypes(type.parameterCount() - 1, type.parameterCount()));
+                var dm = new DynamicMethodBuilder(context, "DirectMethodHandle." + mn.getName() + type, type, null, null, null, null, true);
                 dm.Ldarg(type.parameterCount() - 1);
                 dm.ilgen.EmitCastclass(typeof(java.lang.invoke.MemberName));
-                dm.ilgen.Emit(OpCodes.Ldfld, typeof(java.lang.invoke.MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.ilgen.Emit(OpCodes.Ldfld, typeof(java.lang.invoke.MemberName).GetField(MEMBER_NAME_VMTARGET_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
                 dm.ilgen.Emit(OpCodes.Castclass, delegateType);
                 for (int i = 0, count = type.parameterCount() - 1; i < count; i++)
-                {
                     dm.Ldarg(i);
-                }
                 dm.CallDelegate(delegateType);
+
                 dm.Ret();
                 return dm.CreateDelegate();
             }
 
-            internal static Delegate CreateMethodHandleInvoke(java.lang.invoke.MemberName mn)
+            internal static Delegate CreateMethodHandleInvoke(RuntimeContext context, java.lang.invoke.MemberName mn)
             {
-                java.lang.invoke.MethodType type = mn.getMethodType().insertParameterTypes(0, mn.getDeclaringClass());
-                Type targetDelegateType = MethodHandleUtil.GetMemberWrapperDelegateType(type);
-                DynamicMethodBuilder dm = new DynamicMethodBuilder("DirectMethodHandle." + mn.getName() + type, type,
-                    typeof(Container<,>).MakeGenericType(typeof(object), typeof(IKVM.Runtime.InvokeCache<>).MakeGenericType(targetDelegateType)), null, null, null, true);
+                var type = mn.getMethodType().insertParameterTypes(0, mn.getDeclaringClass());
+                var targetDelegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(type);
+                var dm = new DynamicMethodBuilder(context, "DirectMethodHandle." + mn.getName() + type, type, typeof(Container<,>).MakeGenericType(typeof(object), typeof(IKVM.Runtime.InvokeCache<>).MakeGenericType(targetDelegateType)), null, null, null, true);
                 dm.Ldarg(0);
-                dm.EmitCheckcast(CoreClasses.java.lang.invoke.MethodHandle.Wrapper);
+                dm.EmitCheckcast(context.JavaBase.TypeOfJavaLangInvokeMethodHandle);
                 switch (mn.getName())
                 {
                     case "invokeExact":
-                        dm.Call(ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(targetDelegateType));
+                        dm.Call(context.ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(targetDelegateType));
                         break;
                     case "invoke":
                         dm.LoadValueAddress();
-                        dm.Call(ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(targetDelegateType));
+                        dm.Call(context.ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(targetDelegateType));
                         break;
                     case "invokeBasic":
-                        dm.Call(ByteCodeHelperMethods.GetDelegateForInvokeBasic.MakeGenericMethod(targetDelegateType));
+                        dm.Call(context.ByteCodeHelperMethods.GetDelegateForInvokeBasic.MakeGenericMethod(targetDelegateType));
                         break;
                     default:
                         throw new InvalidOperationException();
                 }
+
                 dm.Ldarg(0);
                 for (int i = 1, count = type.parameterCount(); i < count; i++)
-                {
                     dm.Ldarg(i);
-                }
                 dm.CallDelegate(targetDelegateType);
+
                 dm.Ret();
                 return dm.CreateDelegate();
             }
 
-            internal static Delegate CreateDynamicOnly(RuntimeJavaMethod mw, java.lang.invoke.MethodType type)
+            internal static Delegate CreateDynamicOnly(RuntimeContext context, RuntimeJavaMethod mw, java.lang.invoke.MethodType type)
             {
                 FinishTypes(type);
-                DynamicMethodBuilder dm = new DynamicMethodBuilder("CustomInvoke:" + mw.Name, type, null, mw, null, null, true);
+
+                var dm = new DynamicMethodBuilder(context, "CustomInvoke:" + mw.Name, type, null, mw, null, null, true);
                 dm.ilgen.Emit(OpCodes.Ldarg_0);
                 if (mw.IsStatic)
                 {
@@ -327,30 +334,21 @@ namespace IKVM.Runtime
                 }
                 dm.Callvirt(typeof(RuntimeJavaMethod).GetMethod("Invoke", BindingFlags.Instance | BindingFlags.NonPublic));
                 dm.UnboxReturnValue();
+
                 dm.Ret();
                 return dm.CreateDelegate();
             }
 
-            internal static Delegate CreateMemberName(RuntimeJavaMethod mw, global::java.lang.invoke.MethodType type, bool doDispatch)
+            internal static Delegate CreateMemberName(RuntimeContext context, RuntimeJavaMethod mw, global::java.lang.invoke.MethodType type, bool doDispatch)
             {
                 FinishTypes(type);
-                RuntimeJavaType tw = mw.DeclaringType;
-                Type owner = tw.TypeAsBaseType;
-#if NET_4_0
-			if (!doDispatch && !mw.IsStatic)
-			{
-				// on .NET 4 we can only do a non-virtual invocation of a virtual method if we skip verification,
-				// and to skip verification we need to inject the dynamic method in a critical assembly
 
-				// TODO instead of injecting in mscorlib, we should use DynamicMethodUtils.Create()
-				owner = typeof(object);
-			}
-#endif
-                DynamicMethodBuilder dm = new DynamicMethodBuilder("MemberName:" + mw.DeclaringType.Name + "::" + mw.Name + mw.Signature, type, null,
-                    mw.HasCallerID ? DynamicCallerIDProvider.Instance : null, null, owner, true);
+                var tw = mw.DeclaringType;
+                var owner = tw.TypeAsBaseType;
+                var dm = new DynamicMethodBuilder(context, "MemberName:" + mw.DeclaringType.Name + "::" + mw.Name + mw.Signature, type, null, mw.HasCallerID ? DynamicCallerIDProvider.Instance : null, null, owner, true);
                 for (int i = 0, count = type.parameterCount(); i < count; i++)
                 {
-                    if (i == 0 && !mw.IsStatic && (tw.IsGhost || tw.IsNonPrimitiveValueType || tw.IsRemapped) && (!mw.IsConstructor || tw != CoreClasses.java.lang.String.Wrapper))
+                    if (i == 0 && !mw.IsStatic && (tw.IsGhost || tw.IsNonPrimitiveValueType || tw.IsRemapped) && (!mw.IsConstructor || tw != context.JavaBase.TypeOfJavaLangString))
                     {
                         if (tw.IsGhost || tw.IsNonPrimitiveValueType)
                         {
@@ -359,26 +357,24 @@ namespace IKVM.Runtime
                         else
                         {
                             Debug.Assert(tw.IsRemapped);
+
                             // TODO this must be checked
                             dm.Ldarg(0);
                             if (mw.IsConstructor)
-                            {
                                 dm.EmitCastclass(tw.TypeAsBaseType);
-                            }
-                            else if (tw != CoreClasses.cli.System.Object.Wrapper)
-                            {
+                            else if (tw != context.JavaBase.TypeOfCliSystemObject)
                                 dm.EmitCheckcast(tw);
-                            }
                         }
                     }
                     else
                     {
                         dm.Ldarg(i);
-                        RuntimeJavaType argType = RuntimeJavaType.FromClass(type.parameterType(i));
+                        var argType = RuntimeJavaType.FromClass(type.parameterType(i));
                         if (!argType.IsPrimitive)
                         {
                             if (argType.IsUnloadable)
                             {
+
                             }
                             else if (argType.IsNonPrimitiveValueType)
                             {
@@ -395,10 +391,10 @@ namespace IKVM.Runtime
                         }
                     }
                 }
+
                 if (mw.HasCallerID)
-                {
                     dm.LoadCallerID();
-                }
+
                 // special case for Object.clone() and Object.finalize()
                 if (mw.IsFinalizeOrClone)
                 {
@@ -409,7 +405,7 @@ namespace IKVM.Runtime
                     else
                     {
                         // we can re-use the implementations from cli.System.Object (even though the object may not in-fact extend cli.System.Object)
-                        CoreClasses.cli.System.Object.Wrapper.GetMethodWrapper(mw.Name, mw.Signature, false).EmitCall(dm.ilgen);
+                        context.JavaBase.TypeOfCliSystemObject.GetMethodWrapper(mw.Name, mw.Signature, false).EmitCall(dm.ilgen);
                     }
                 }
                 else if (doDispatch && !mw.IsStatic)
@@ -420,9 +416,11 @@ namespace IKVM.Runtime
                 {
                     dm.Call(mw);
                 }
-                RuntimeJavaType retType = RuntimeJavaType.FromClass(type.returnType());
+
+                var retType = RuntimeJavaType.FromClass(type.returnType());
                 if (retType.IsUnloadable)
                 {
+
                 }
                 else if (retType.IsNonPrimitiveValueType)
                 {
@@ -432,10 +430,11 @@ namespace IKVM.Runtime
                 {
                     dm.BoxGhost(retType);
                 }
-                else if (retType == RuntimePrimitiveJavaType.BYTE)
+                else if (retType == context.PrimitiveJavaTypeFactory.BYTE)
                 {
                     dm.CastByte();
                 }
+
                 dm.Ret();
                 return dm.CreateDelegate();
             }
@@ -462,7 +461,7 @@ namespace IKVM.Runtime
 
             internal void CallDelegate(Type delegateType)
             {
-                EmitCallDelegateInvokeMethod(ilgen, delegateType);
+                context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
             }
 
             internal void LoadFirstArgAddress(RuntimeJavaType tw)
@@ -471,7 +470,7 @@ namespace IKVM.Runtime
                 if (tw.IsGhost)
                 {
                     tw.EmitConvStackTypeToSignatureType(ilgen, null);
-                    CodeEmitterLocal local = ilgen.DeclareLocal(tw.TypeAsSignatureType);
+                    var local = ilgen.DeclareLocal(tw.TypeAsSignatureType);
                     ilgen.Emit(OpCodes.Stloc, local);
                     ilgen.Emit(OpCodes.Ldloca, local);
                 }
@@ -487,13 +486,13 @@ namespace IKVM.Runtime
 
             internal void Ldarg(int i)
             {
-                LoadPackedArg(ilgen, i, firstArg, packedArgPos, packedArgType);
+                context.MethodHandleUtil.LoadPackedArg(ilgen, i, firstArg, packedArgPos, packedArgType);
             }
 
             internal void LoadCallerID()
             {
                 ilgen.Emit(OpCodes.Ldarg_0);
-                ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCallerID);
+                ilgen.Emit(OpCodes.Call, context.ByteCodeHelperMethods.DynamicCallerID);
             }
 
             internal void LoadValueAddress()
@@ -521,25 +520,24 @@ namespace IKVM.Runtime
             {
                 int paramCount = type.parameterCount();
                 ilgen.EmitLdc_I4(paramCount - start);
-                ilgen.Emit(OpCodes.Newarr, Types.Object);
+                ilgen.Emit(OpCodes.Newarr, context.Types.Object);
                 for (int i = start; i < paramCount; i++)
                 {
                     ilgen.Emit(OpCodes.Dup);
                     ilgen.EmitLdc_I4(i - start);
                     Ldarg(i);
-                    RuntimeJavaType tw = RuntimeJavaType.FromClass(type.parameterType(i));
+                    var tw = RuntimeJavaType.FromClass(type.parameterType(i));
                     if (tw.IsPrimitive)
-                    {
                         ilgen.Emit(OpCodes.Box, tw.TypeAsSignatureType);
-                    }
+
                     ilgen.Emit(OpCodes.Stelem_Ref);
                 }
             }
 
             internal void UnboxReturnValue()
             {
-                RuntimeJavaType tw = RuntimeJavaType.FromClass(type.returnType());
-                if (tw == RuntimePrimitiveJavaType.VOID)
+                var tw = RuntimeJavaType.FromClass(type.returnType());
+                if (tw == context.PrimitiveJavaTypeFactory.VOID)
                 {
                     ilgen.Emit(OpCodes.Pop);
                 }
@@ -607,85 +605,80 @@ namespace IKVM.Runtime
                 // so we have to finish the signature types
                 RuntimeJavaType.FromClass(type.returnType()).Finish();
                 for (int i = 0; i < type.parameterCount(); i++)
-                {
                     RuntimeJavaType.FromClass(type.parameterType(i)).Finish();
-                }
             }
         }
 
 #if DEBUG
         [System.Security.SecuritySafeCritical]
 #endif
-        private static Delegate ValidateDelegate(Delegate d)
+        static Delegate ValidateDelegate(Delegate d)
         {
 #if DEBUG
             try
             {
                 System.Runtime.CompilerServices.RuntimeHelpers.PrepareDelegate(d);
             }
-            catch (Exception x)
+            catch (Exception e)
             {
-                throw new InternalException("Delegate failed to JIT", x);
+                throw new InternalException("Delegate failed to JIT", e);
             }
 #endif
             return d;
         }
 
-        internal static Type GetDelegateTypeForInvokeExact(global::java.lang.invoke.MethodType type)
+        internal Type GetDelegateTypeForInvokeExact(global::java.lang.invoke.MethodType type)
         {
-            if (type._invokeExactDelegateType == null)
-            {
-                type._invokeExactDelegateType = CreateMethodHandleDelegateType(type);
-            }
+            type._invokeExactDelegateType ??= CreateMethodHandleDelegateType(type);
             return type._invokeExactDelegateType;
         }
 
-        internal static T GetDelegateForInvokeExact<T>(global::java.lang.invoke.MethodHandle mh)
-            where T : class
+        internal T GetDelegateForInvokeExact<T>(global::java.lang.invoke.MethodHandle mh)
+            where T : class, Delegate
         {
-            global::java.lang.invoke.MethodType type = mh.type();
+            var type = mh.type();
             if (mh._invokeExactDelegate == null)
             {
-                if (type._invokeExactDynamicMethod == null)
-                {
-                    type._invokeExactDynamicMethod = DynamicMethodBuilder.CreateInvokeExact(type);
-                }
+                type._invokeExactDynamicMethod ??= DynamicMethodBuilder.CreateInvokeExact(context, type);
                 mh._invokeExactDelegate = type._invokeExactDynamicMethod.CreateDelegate(GetDelegateTypeForInvokeExact(type), mh);
-                T del = mh._invokeExactDelegate as T;
+                var del = mh._invokeExactDelegate as T;
                 if (del != null)
-                {
                     return del;
-                }
             }
+
             throw java.lang.invoke.Invokers.newWrongMethodTypeException(GetDelegateMethodType(typeof(T)), type);
         }
 
-        // called from InvokeExact DynamicMethod and ByteCodeHelper.GetDelegateForInvokeBasic()
+        /// <summary>
+        /// Called from the InvokeExact DynamicMethod and BytecodeHelper.GetDelegateForInvokeBasic.
+        /// </summary>
+        /// <param name="mn"></param>
+        /// <returns></returns>
         internal static object GetVoidAdapter(java.lang.invoke.MemberName mn)
         {
-            global::java.lang.invoke.MethodType type = mn.getMethodType();
+            var type = mn.getMethodType();
             if (type.voidAdapter == null)
             {
                 if (type.returnType() == global::java.lang.Void.TYPE)
-                {
                     return mn.vmtarget;
-                }
-                type.voidAdapter = DynamicMethodBuilder.CreateVoidAdapter(type);
+
+                type.voidAdapter = DynamicMethodBuilder.CreateVoidAdapter(JVM.Context, type);
             }
+
             return type.voidAdapter;
         }
 
-        internal static void LoadPackedArg(CodeEmitter ilgen, int index, int firstArg, int packedArgPos, Type packedArgType)
+        internal void LoadPackedArg(CodeEmitter ilgen, int index, int firstArg, int packedArgPos, Type packedArgType)
         {
             index += firstArg;
             if (index >= packedArgPos)
             {
                 ilgen.EmitLdarga(packedArgPos);
-                int fieldPos = index - packedArgPos;
-                Type type = packedArgType;
+                var fieldPos = index - packedArgPos;
+                var type = packedArgType;
                 while (fieldPos >= MaxArity || (fieldPos == MaxArity - 1 && IsPackedArgsContainer(type.GetField("t8").FieldType)))
                 {
-                    FieldInfo field = type.GetField("t8");
+                    var field = type.GetField("t8");
                     type = field.FieldType;
                     ilgen.Emit(OpCodes.Ldflda, field);
                     fieldPos -= MaxArity - 1;

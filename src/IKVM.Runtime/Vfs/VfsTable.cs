@@ -17,15 +17,10 @@ namespace IKVM.Runtime.Vfs
     {
 
         /// <summary>
-        /// Gets the default mount table.
-        /// </summary>
-        public readonly static VfsTable Default = BuildDefaultTable(VfsRuntimeContext.Instance);
-
-        /// <summary>
         /// Builds the default IKVM mount table.
         /// </summary>
         /// <returns></returns>
-        static VfsTable BuildDefaultTable(VfsContext context)
+        public static VfsTable BuildDefaultTable(VfsContext context, string ikvmHome)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
@@ -33,7 +28,6 @@ namespace IKVM.Runtime.Vfs
             if (context is null)
                 throw new ArgumentNullException(nameof(context));
 
-            var ikvmHome = JVM.Properties.HomePath;
             if (Directory.Exists(ikvmHome) == false)
                 throw new DirectoryNotFoundException("Could not locate ikvm.home when establishing VFS.");
 
@@ -56,6 +50,11 @@ namespace IKVM.Runtime.Vfs
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
+
+        /// <summary>
+        /// Gets the <see cref="VfsContext"/> which hosts this table.
+        /// </summary>
+        public VfsContext Context => context;
 
         /// <summary>
         /// Gets the mounted virtual file systems.
@@ -168,9 +167,11 @@ namespace IKVM.Runtime.Vfs
         /// <summary>
         /// Gets the path within the virtual file system where the given assembly is mapped.
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="assembly"></param>
+        /// <param name="ikvmHome"></param>
         /// <returns></returns>
-        public string GetAssemblyClassesPath(Assembly assembly)
+        public static string GetAssemblyClassesPath(VfsContext context, Assembly assembly, string ikvmHome)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
@@ -178,20 +179,21 @@ namespace IKVM.Runtime.Vfs
             if (assembly is null)
                 throw new ArgumentNullException(nameof(assembly));
 
-            var ikvmHome = JVM.Properties.HomePath;
             if (Directory.Exists(ikvmHome) == false)
                 throw new DirectoryNotFoundException("Could not locate IkvmHome when finding VFS.");
 
-            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(ikvmHome, "assembly", GetAssemblyDirectoryName(assembly), "classes"));
+            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(ikvmHome, "assembly", GetAssemblyDirectoryName(context, assembly), "classes"));
 #endif
         }
 
         /// <summary>
         /// Gets the path within the default virtual file system where the given assembly resources are mapped.
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="assembly"></param>
+        /// <param name="ikvmHome"></param>
         /// <returns></returns>
-        public string GetAssemblyResourcesPath(Assembly assembly)
+        public static string GetAssemblyResourcesPath(VfsContext context, Assembly assembly, string ikvmHome)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
@@ -199,20 +201,20 @@ namespace IKVM.Runtime.Vfs
             if (assembly is null)
                 throw new ArgumentNullException(nameof(assembly));
 
-            var ikvmHome = JVM.Properties.HomePath;
             if (Directory.Exists(ikvmHome) == false)
                 throw new DirectoryNotFoundException("Could not locate IkvmHome when finding VFS.");
 
-            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(ikvmHome, "assembly", GetAssemblyDirectoryName(assembly), "resources"));
+            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(ikvmHome, "assembly", GetAssemblyDirectoryName(context, assembly), "resources"));
 #endif
         }
 
         /// <summary>
         /// Returns <c>true</c> if the assembly is loadable by name.
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        bool IsLoadableAssembly(Assembly assembly)
+        static bool IsLoadableAssembly(VfsContext context, Assembly assembly)
         {
             if (assembly.ReflectionOnly)
                 return false;
@@ -243,10 +245,10 @@ namespace IKVM.Runtime.Vfs
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        public string GetAssemblyDirectoryName(Assembly assembly)
+        public static string GetAssemblyDirectoryName(VfsContext context, Assembly assembly)
         {
             // if we can't load the assembly by name, then use the MVID as the directory
-            if (IsLoadableAssembly(assembly) == false)
+            if (IsLoadableAssembly(context, assembly) == false)
                 return assembly.ManifestModule.ModuleVersionId.ToString("N");
 
             var name = assembly.GetName();

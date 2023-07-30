@@ -22,6 +22,8 @@
   jeroen@frijters.net
   
 */
+using System;
+
 using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.sun.invoke.util
@@ -33,14 +35,18 @@ namespace IKVM.Java.Externs.sun.invoke.util
         // called from map.xml as a replacement for Class.getClassLoader() in sun.invoke.util.VerifyAccess.isTypeVisible()
         public static global::java.lang.ClassLoader Class_getClassLoader(global::java.lang.Class clazz)
         {
-            RuntimeJavaType tw = RuntimeJavaType.FromClass(clazz);
-            if (RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedNameFast(tw.Name) == tw)
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var tw = RuntimeJavaType.FromClass(clazz);
+            if (JVM.Context.ClassLoaderFactory.GetBootstrapClassLoader().TryLoadClassByName(tw.Name) == tw)
             {
                 // if a class is visible from the bootstrap class loader, we have to return null to allow the visibility check to succeed
                 return null;
             }
 
             return tw.GetClassLoader().GetJavaClassLoader();
+#endif
         }
 
     }

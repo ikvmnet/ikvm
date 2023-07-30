@@ -55,6 +55,7 @@ namespace IKVM.Runtime
 
         static readonly object flagsLock = new object();
 
+        readonly RuntimeContext context;
         readonly string name; // java name (e.g. java.lang.Object)
         readonly Modifiers modifiers;
         TypeFlags flags;
@@ -67,18 +68,25 @@ namespace IKVM.Runtime
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="flags"></param>
         /// <param name="modifiers"></param>
         /// <param name="name"></param>
         /// <exception cref="InternalException"></exception>
-        internal RuntimeJavaType(TypeFlags flags, Modifiers modifiers, string name)
+        internal RuntimeJavaType(RuntimeContext context, TypeFlags flags, Modifiers modifiers, string name)
         {
             Profiler.Count("TypeWrapper");
 
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
             this.flags = flags;
             this.modifiers = modifiers;
-            this.name = name == null ? null : String.Intern(name);
+            this.name = name == null ? null : string.Intern(name);
         }
+
+        /// <summary>
+        /// Gets a reference to the <see cref="RuntimeContext"/> this <see cref="RuntimeJavaType"/> is hosted within.
+        /// </summary>
+        public RuntimeContext Context => context;
 
 #if EMITTERS
 
@@ -86,7 +94,7 @@ namespace IKVM.Runtime
         {
             Debug.Assert(!this.IsPrimitive);
 
-            Type type = GetClassLiteralType();
+            var type = GetClassLiteralType();
 
             // note that this has to be the same check as in LazyInitClass
             if (!this.IsFastClassLiteralSafe || IsForbiddenTypeParameterType(type))
@@ -100,23 +108,18 @@ namespace IKVM.Runtime
                 if (rank == 0)
                 {
                     ilgen.Emit(OpCodes.Ldtoken, type);
-                    Compiler.getClassFromTypeHandle.EmitCall(ilgen);
+                    context.CompilerFactory.GetClassFromTypeHandle.EmitCall(ilgen);
                 }
                 else
                 {
                     ilgen.Emit(OpCodes.Ldtoken, type);
                     ilgen.EmitLdc_I4(rank);
-                    Compiler.getClassFromTypeHandle2.EmitCall(ilgen);
+                    context.CompilerFactory.GetClassFromTypeHandle2.EmitCall(ilgen);
                 }
             }
             else
             {
-#if IMPORTER
-                var classLiteralType = StaticCompiler.GetRuntimeType("IKVM.Runtime.ClassLiteral`1").MakeGenericType(type);
-#else
-                var classLiteralType = typeof(ClassLiteral<>).MakeGenericType(type);
-#endif
-
+                var classLiteralType = Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ClassLiteral`1").MakeGenericType(type);
                 ilgen.Emit(OpCodes.Call, classLiteralType.GetProperty("Value").GetMethod);
             }
         }
@@ -142,15 +145,15 @@ namespace IKVM.Runtime
             }
         }
 
-        private static bool IsForbiddenTypeParameterType(Type type)
+        bool IsForbiddenTypeParameterType(Type type)
         {
             // these are the types that may not be used as a type argument when instantiating a generic type
-            return type == Types.Void
+            return type == context.Types.Void
 #if NETFRAMEWORK
-                || type == JVM.Import(typeof(ArgIterator))
+                || type == context.Resolver.ResolveCoreType(typeof(ArgIterator).FullName)
 #endif
-                || type == JVM.Import(typeof(RuntimeArgumentHandle))
-                || type == JVM.Import(typeof(TypedReference))
+                || type == context.Resolver.ResolveCoreType(typeof(RuntimeArgumentHandle).FullName)
+                || type == context.Resolver.ResolveCoreType(typeof(TypedReference).FullName)
                 || type.ContainsGenericParameters
                 || type.IsByRef;
         }
@@ -184,39 +187,39 @@ namespace IKVM.Runtime
 
         private java.lang.Class GetPrimitiveClass()
         {
-            if (this == RuntimePrimitiveJavaType.BYTE)
+            if (this == context.PrimitiveJavaTypeFactory.BYTE)
             {
                 return java.lang.Byte.TYPE;
             }
-            else if (this == RuntimePrimitiveJavaType.CHAR)
+            else if (this == context.PrimitiveJavaTypeFactory.CHAR)
             {
                 return java.lang.Character.TYPE;
             }
-            else if (this == RuntimePrimitiveJavaType.DOUBLE)
+            else if (this == context.PrimitiveJavaTypeFactory.DOUBLE)
             {
                 return java.lang.Double.TYPE;
             }
-            else if (this == RuntimePrimitiveJavaType.FLOAT)
+            else if (this == context.PrimitiveJavaTypeFactory.FLOAT)
             {
                 return java.lang.Float.TYPE;
             }
-            else if (this == RuntimePrimitiveJavaType.INT)
+            else if (this == context.PrimitiveJavaTypeFactory.INT)
             {
                 return java.lang.Integer.TYPE;
             }
-            else if (this == RuntimePrimitiveJavaType.LONG)
+            else if (this == context.PrimitiveJavaTypeFactory.LONG)
             {
                 return java.lang.Long.TYPE;
             }
-            else if (this == RuntimePrimitiveJavaType.SHORT)
+            else if (this == context.PrimitiveJavaTypeFactory.SHORT)
             {
                 return java.lang.Short.TYPE;
             }
-            else if (this == RuntimePrimitiveJavaType.BOOLEAN)
+            else if (this == context.PrimitiveJavaTypeFactory.BOOLEAN)
             {
                 return java.lang.Boolean.TYPE;
             }
-            else if (this == RuntimePrimitiveJavaType.VOID)
+            else if (this == context.PrimitiveJavaTypeFactory.VOID)
             {
                 return java.lang.Void.TYPE;
             }
@@ -282,19 +285,19 @@ namespace IKVM.Runtime
 
 #if !FIRST_PASS
 
-        private static void ResolvePrimitiveTypeWrapperClasses()
+        private static void ResolvePrimitiveTypeWrapperClasses(RuntimeContext context)
         {
             // note that we're evaluating all ClassObject properties for the side effect
             // (to initialize and associate the ClassObject with the TypeWrapper)
-            if (RuntimePrimitiveJavaType.BYTE.ClassObject == null
-                || RuntimePrimitiveJavaType.CHAR.ClassObject == null
-                || RuntimePrimitiveJavaType.DOUBLE.ClassObject == null
-                || RuntimePrimitiveJavaType.FLOAT.ClassObject == null
-                || RuntimePrimitiveJavaType.INT.ClassObject == null
-                || RuntimePrimitiveJavaType.LONG.ClassObject == null
-                || RuntimePrimitiveJavaType.SHORT.ClassObject == null
-                || RuntimePrimitiveJavaType.BOOLEAN.ClassObject == null
-                || RuntimePrimitiveJavaType.VOID.ClassObject == null)
+            if (context.PrimitiveJavaTypeFactory.BYTE.ClassObject == null
+                || context.PrimitiveJavaTypeFactory.CHAR.ClassObject == null
+                || context.PrimitiveJavaTypeFactory.DOUBLE.ClassObject == null
+                || context.PrimitiveJavaTypeFactory.FLOAT.ClassObject == null
+                || context.PrimitiveJavaTypeFactory.INT.ClassObject == null
+                || context.PrimitiveJavaTypeFactory.LONG.ClassObject == null
+                || context.PrimitiveJavaTypeFactory.SHORT.ClassObject == null
+                || context.PrimitiveJavaTypeFactory.BOOLEAN.ClassObject == null
+                || context.PrimitiveJavaTypeFactory.VOID.ClassObject == null)
             {
                 throw new InvalidOperationException();
             }
@@ -313,14 +316,14 @@ namespace IKVM.Runtime
                 var type = clazz.type;
                 if (type == null)
                 {
-                    ResolvePrimitiveTypeWrapperClasses();
+                    ResolvePrimitiveTypeWrapperClasses(JVM.Context);
                     return FromClass(clazz);
                 }
 
-                if (type == typeof(void) || type.IsPrimitive || RuntimeClassLoaderFactory.IsRemappedType(type))
-                    tw = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(type);
+                if (type == typeof(void) || type.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(type))
+                    tw = JVM.Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(type);
                 else
-                    tw = RuntimeClassLoaderFactory.GetWrapperFromType(type);
+                    tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(type);
 
                 clazz.typeWrapper = tw;
             }
@@ -516,7 +519,7 @@ namespace IKVM.Runtime
         {
             get
             {
-                return this != RuntimeVerifierJavaType.Null && !IsPrimitive && !IsGhost && TypeAsTBD.IsValueType;
+                return this != context.VerifierJavaTypeFactory.Null && !IsPrimitive && !IsGhost && TypeAsTBD.IsValueType;
             }
         }
 
@@ -532,7 +535,7 @@ namespace IKVM.Runtime
         {
             get
             {
-                return this == RuntimePrimitiveJavaType.LONG || this == RuntimePrimitiveJavaType.DOUBLE;
+                return this == context.PrimitiveJavaTypeFactory.LONG || this == context.PrimitiveJavaTypeFactory.DOUBLE;
             }
         }
 
@@ -541,32 +544,32 @@ namespace IKVM.Runtime
             get
             {
                 return name == null &&
-                    (this == RuntimePrimitiveJavaType.BOOLEAN ||
-                    this == RuntimePrimitiveJavaType.BYTE ||
-                    this == RuntimePrimitiveJavaType.CHAR ||
-                    this == RuntimePrimitiveJavaType.SHORT ||
-                    this == RuntimePrimitiveJavaType.INT);
+                    (this == context.PrimitiveJavaTypeFactory.BOOLEAN ||
+                    this == context.PrimitiveJavaTypeFactory.BYTE ||
+                    this == context.PrimitiveJavaTypeFactory.CHAR ||
+                    this == context.PrimitiveJavaTypeFactory.SHORT ||
+                    this == context.PrimitiveJavaTypeFactory.INT);
             }
         }
 
-        private static bool IsJavaPrimitive(Type type)
+        private static bool IsJavaPrimitive(RuntimeContext context, Type type)
         {
-            return type == RuntimePrimitiveJavaType.BOOLEAN.TypeAsTBD
-                || type == RuntimePrimitiveJavaType.BYTE.TypeAsTBD
-                || type == RuntimePrimitiveJavaType.CHAR.TypeAsTBD
-                || type == RuntimePrimitiveJavaType.DOUBLE.TypeAsTBD
-                || type == RuntimePrimitiveJavaType.FLOAT.TypeAsTBD
-                || type == RuntimePrimitiveJavaType.INT.TypeAsTBD
-                || type == RuntimePrimitiveJavaType.LONG.TypeAsTBD
-                || type == RuntimePrimitiveJavaType.SHORT.TypeAsTBD
-                || type == RuntimePrimitiveJavaType.VOID.TypeAsTBD;
+            return type == context.PrimitiveJavaTypeFactory.BOOLEAN.TypeAsTBD
+                || type == context.PrimitiveJavaTypeFactory.BYTE.TypeAsTBD
+                || type == context.PrimitiveJavaTypeFactory.CHAR.TypeAsTBD
+                || type == context.PrimitiveJavaTypeFactory.DOUBLE.TypeAsTBD
+                || type == context.PrimitiveJavaTypeFactory.FLOAT.TypeAsTBD
+                || type == context.PrimitiveJavaTypeFactory.INT.TypeAsTBD
+                || type == context.PrimitiveJavaTypeFactory.LONG.TypeAsTBD
+                || type == context.PrimitiveJavaTypeFactory.SHORT.TypeAsTBD
+                || type == context.PrimitiveJavaTypeFactory.VOID.TypeAsTBD;
         }
 
         internal bool IsBoxedPrimitive
         {
             get
             {
-                return !IsPrimitive && IsJavaPrimitive(TypeAsSignatureType);
+                return !IsPrimitive && IsJavaPrimitive(Context, TypeAsSignatureType);
             }
         }
 
@@ -739,7 +742,7 @@ namespace IKVM.Runtime
                     if (methods == null)
                     {
 #if IMPORTER
-                        if (IsUnloadable || !CheckMissingBaseTypes(TypeAsBaseType))
+                        if (IsUnloadable || !CheckMissingBaseTypes(Context, TypeAsBaseType))
                             return methods = Array.Empty<RuntimeJavaMethod>();
 #endif
                         LazyPublishMethods();
@@ -763,7 +766,7 @@ namespace IKVM.Runtime
                     if (fields == null)
                     {
 #if IMPORTER
-                        if (IsUnloadable || !CheckMissingBaseTypes(TypeAsBaseType))
+                        if (IsUnloadable || !CheckMissingBaseTypes(Context, TypeAsBaseType))
                             return fields = Array.Empty<RuntimeJavaField>();
 #endif
 
@@ -776,19 +779,20 @@ namespace IKVM.Runtime
         }
 
 #if IMPORTER
-        private static bool CheckMissingBaseTypes(Type type)
+
+        private static bool CheckMissingBaseTypes(RuntimeContext context, Type type)
         {
             while (type != null)
             {
                 if (type.__ContainsMissingType)
                 {
-                    StaticCompiler.IssueMissingTypeMessage(type);
+                    context.StaticCompiler.IssueMissingTypeMessage(type);
                     return false;
                 }
                 bool ok = true;
                 foreach (Type iface in type.__GetDeclaredInterfaces())
                 {
-                    ok &= CheckMissingBaseTypes(iface);
+                    ok &= CheckMissingBaseTypes(context, iface);
                 }
                 if (!ok)
                 {
@@ -798,6 +802,7 @@ namespace IKVM.Runtime
             }
             return true;
         }
+
 #endif
 
         internal RuntimeJavaMethod GetMethodWrapper(string name, string sig, bool inherit)
@@ -942,11 +947,11 @@ namespace IKVM.Runtime
             {
                 if (IsUnloadable)
                 {
-                    return ((RuntimeUnloadableJavaType)this).MissingType ?? Types.Object;
+                    return ((RuntimeUnloadableJavaType)this).MissingType ?? context.Types.Object;
                 }
                 if (IsGhostArray)
                 {
-                    return RuntimeArrayJavaType.MakeArrayType(Types.Object, ArrayRank);
+                    return RuntimeArrayJavaType.MakeArrayType(context.Types.Object, ArrayRank);
                 }
                 return TypeAsTBD;
             }
@@ -974,7 +979,7 @@ namespace IKVM.Runtime
             {
                 if (IsUnloadable || IsGhost)
                 {
-                    return Types.Object;
+                    return context.Types.Object;
                 }
                 if (IsNonPrimitiveValueType)
                 {
@@ -983,7 +988,7 @@ namespace IKVM.Runtime
                 }
                 if (IsGhostArray)
                 {
-                    return RuntimeArrayJavaType.MakeArrayType(Types.Object, ArrayRank);
+                    return RuntimeArrayJavaType.MakeArrayType(context.Types.Object, ArrayRank);
                 }
                 return TypeAsTBD;
             }
@@ -996,11 +1001,11 @@ namespace IKVM.Runtime
             {
                 if (IsUnloadable || IsGhost)
                 {
-                    return Types.Object;
+                    return context.Types.Object;
                 }
                 if (IsGhostArray)
                 {
-                    return RuntimeArrayJavaType.MakeArrayType(Types.Object, ArrayRank);
+                    return RuntimeArrayJavaType.MakeArrayType(context.Types.Object, ArrayRank);
                 }
                 return TypeAsTBD;
             }
@@ -1012,7 +1017,7 @@ namespace IKVM.Runtime
             {
                 if (IsUnloadable)
                 {
-                    return Types.Exception;
+                    return context.Types.Exception;
                 }
                 return TypeAsTBD;
             }
@@ -1028,11 +1033,11 @@ namespace IKVM.Runtime
             get
             {
                 Debug.Assert(!this.IsUnloadable);
-                Debug.Assert(this == RuntimeVerifierJavaType.Null || this.IsArray);
+                Debug.Assert(this == context.VerifierJavaTypeFactory.Null || this.IsArray);
 
-                if (this == RuntimeVerifierJavaType.Null)
+                if (this == context.VerifierJavaTypeFactory.Null)
                 {
-                    return RuntimeVerifierJavaType.Null;
+                    return context.VerifierJavaTypeFactory.Null;
                 }
 
                 // TODO consider caching the element type
@@ -1041,27 +1046,27 @@ namespace IKVM.Runtime
                     case '[':
                         // NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
                         // (because the ultimate element type was already loaded when this type was created)
-                        return GetClassLoader().LoadClassByDottedNameFast(name.Substring(1));
+                        return GetClassLoader().TryLoadClassByName(name.Substring(1));
                     case 'L':
                         // NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
                         // (because the ultimate element type was already loaded when this type was created)
-                        return GetClassLoader().LoadClassByDottedNameFast(name.Substring(2, name.Length - 3));
+                        return GetClassLoader().TryLoadClassByName(name.Substring(2, name.Length - 3));
                     case 'Z':
-                        return RuntimePrimitiveJavaType.BOOLEAN;
+                        return context.PrimitiveJavaTypeFactory.BOOLEAN;
                     case 'B':
-                        return RuntimePrimitiveJavaType.BYTE;
+                        return context.PrimitiveJavaTypeFactory.BYTE;
                     case 'S':
-                        return RuntimePrimitiveJavaType.SHORT;
+                        return context.PrimitiveJavaTypeFactory.SHORT;
                     case 'C':
-                        return RuntimePrimitiveJavaType.CHAR;
+                        return context.PrimitiveJavaTypeFactory.CHAR;
                     case 'I':
-                        return RuntimePrimitiveJavaType.INT;
+                        return context.PrimitiveJavaTypeFactory.INT;
                     case 'J':
-                        return RuntimePrimitiveJavaType.LONG;
+                        return context.PrimitiveJavaTypeFactory.LONG;
                     case 'F':
-                        return RuntimePrimitiveJavaType.FLOAT;
+                        return context.PrimitiveJavaTypeFactory.FLOAT;
                     case 'D':
-                        return RuntimePrimitiveJavaType.DOUBLE;
+                        return context.PrimitiveJavaTypeFactory.DOUBLE;
                     default:
                         throw new InvalidOperationException(name);
                 }
@@ -1072,7 +1077,7 @@ namespace IKVM.Runtime
         {
             Debug.Assert(rank != 0);
             // NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
-            return GetClassLoader().LoadClassByDottedNameFast(new String('[', rank) + this.SigName);
+            return GetClassLoader().TryLoadClassByName(new String('[', rank) + this.SigName);
         }
 
         internal bool ImplementsInterface(RuntimeJavaType interfaceWrapper)
@@ -1115,7 +1120,7 @@ namespace IKVM.Runtime
                 return ImplementsInterface(baseType);
             }
             // NOTE this isn't just an optimization, it is also required when this is an interface
-            if (baseType == CoreClasses.java.lang.Object.Wrapper)
+            if (baseType == Context.JavaBase.TypeOfJavaLangObject)
             {
                 return true;
             }
@@ -1141,7 +1146,7 @@ namespace IKVM.Runtime
             {
                 return false;
             }
-            if (this == RuntimeVerifierJavaType.Null)
+            if (this == context.VerifierJavaTypeFactory.Null)
             {
                 return true;
             }
@@ -1179,7 +1184,7 @@ namespace IKVM.Runtime
             if (obj != null)
             {
                 RuntimeJavaType thisWrapper = this;
-                RuntimeJavaType objWrapper = IKVM.Java.Externs.ikvm.runtime.Util.GetTypeWrapperFromObject(obj);
+                RuntimeJavaType objWrapper = IKVM.Java.Externs.ikvm.runtime.Util.GetTypeWrapperFromObject(Context, obj);
                 return objWrapper.IsAssignableTo(thisWrapper);
             }
             return false;
@@ -1273,7 +1278,7 @@ namespace IKVM.Runtime
             if (IsUnloadable)
             {
             }
-            else if (this == RuntimePrimitiveJavaType.BYTE)
+            else if (this == context.PrimitiveJavaTypeFactory.BYTE)
             {
                 ilgen.Emit(OpCodes.Conv_I1);
             }
@@ -1351,7 +1356,7 @@ namespace IKVM.Runtime
                 }
                 ilgen.EmitLdc_I4(rank);
                 ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("CastArray"));
-                ilgen.Emit(OpCodes.Castclass, RuntimeArrayJavaType.MakeArrayType(Types.Object, rank));
+                ilgen.Emit(OpCodes.Castclass, RuntimeArrayJavaType.MakeArrayType(context.Types.Object, rank));
             }
             else
             {
@@ -1395,21 +1400,21 @@ namespace IKVM.Runtime
         /// <param name="il"></param>
         internal virtual void EmitLdind(CodeEmitter il)
         {
-            if (this == RuntimePrimitiveJavaType.BOOLEAN)
+            if (this == context.PrimitiveJavaTypeFactory.BOOLEAN)
                 il.Emit(OpCodes.Ldind_U1);
-            else if (this == RuntimePrimitiveJavaType.BYTE)
+            else if (this == context.PrimitiveJavaTypeFactory.BYTE)
                 il.Emit(OpCodes.Ldind_U1);
-            else if (this == RuntimePrimitiveJavaType.CHAR)
+            else if (this == context.PrimitiveJavaTypeFactory.CHAR)
                 il.Emit(OpCodes.Ldind_U2);
-            else if (this == RuntimePrimitiveJavaType.SHORT)
+            else if (this == context.PrimitiveJavaTypeFactory.SHORT)
                 il.Emit(OpCodes.Ldind_I2);
-            else if (this == RuntimePrimitiveJavaType.INT)
+            else if (this == context.PrimitiveJavaTypeFactory.INT)
                 il.Emit(OpCodes.Ldind_I4);
-            else if (this == RuntimePrimitiveJavaType.LONG)
+            else if (this == context.PrimitiveJavaTypeFactory.LONG)
                 il.Emit(OpCodes.Ldind_I8);
-            else if (this == RuntimePrimitiveJavaType.FLOAT)
+            else if (this == context.PrimitiveJavaTypeFactory.FLOAT)
                 il.Emit(OpCodes.Ldind_R4);
-            else if (this == RuntimePrimitiveJavaType.DOUBLE)
+            else if (this == context.PrimitiveJavaTypeFactory.DOUBLE)
                 il.Emit(OpCodes.Ldind_R8);
             else
                 il.Emit(OpCodes.Ldind_Ref);
@@ -1421,21 +1426,21 @@ namespace IKVM.Runtime
         /// <param name="il"></param>
         internal virtual void EmitStind(CodeEmitter il)
         {
-            if (this == RuntimePrimitiveJavaType.BOOLEAN)
+            if (this == context.PrimitiveJavaTypeFactory.BOOLEAN)
                 il.Emit(OpCodes.Stind_I1);
-            else if (this == RuntimePrimitiveJavaType.BYTE)
+            else if (this == context.PrimitiveJavaTypeFactory.BYTE)
                 il.Emit(OpCodes.Stind_I1);
-            else if (this == RuntimePrimitiveJavaType.CHAR)
+            else if (this == context.PrimitiveJavaTypeFactory.CHAR)
                 il.Emit(OpCodes.Stind_I2);
-            else if (this == RuntimePrimitiveJavaType.SHORT)
+            else if (this == context.PrimitiveJavaTypeFactory.SHORT)
                 il.Emit(OpCodes.Stind_I2);
-            else if (this == RuntimePrimitiveJavaType.INT)
+            else if (this == context.PrimitiveJavaTypeFactory.INT)
                 il.Emit(OpCodes.Stind_I4);
-            else if (this == RuntimePrimitiveJavaType.LONG)
+            else if (this == context.PrimitiveJavaTypeFactory.LONG)
                 il.Emit(OpCodes.Stind_I8);
-            else if (this == RuntimePrimitiveJavaType.FLOAT)
+            else if (this == context.PrimitiveJavaTypeFactory.FLOAT)
                 il.Emit(OpCodes.Stind_R4);
-            else if (this == RuntimePrimitiveJavaType.DOUBLE)
+            else if (this == context.PrimitiveJavaTypeFactory.DOUBLE)
                 il.Emit(OpCodes.Stind_R8);
             else
                 il.Emit(OpCodes.Stind_Ref);
@@ -1569,7 +1574,7 @@ namespace IKVM.Runtime
 
 #endif
 
-        protected static RuntimeJavaType[] GetImplementedInterfacesAsTypeWrappers(Type type)
+        protected static RuntimeJavaType[] GetImplementedInterfacesAsTypeWrappers(RuntimeContext context, Type type)
         {
             var interfaceTypes = GetInterfaces(type);
             var interfaces = new RuntimeJavaType[interfaceTypes.Length];
@@ -1577,14 +1582,14 @@ namespace IKVM.Runtime
             for (int i = 0; i < interfaceTypes.Length; i++)
             {
                 var decl = interfaceTypes[i].DeclaringType;
-                if (decl != null && AttributeHelper.IsGhostInterface(decl))
+                if (decl != null && context.AttributeHelper.IsGhostInterface(decl))
                 {
                     // we have to return the declaring type for ghost interfaces
-                    interfaces[i] = RuntimeClassLoaderFactory.GetWrapperFromType(decl);
+                    interfaces[i] = context.ClassLoaderFactory.GetJavaTypeFromType(decl);
                 }
                 else
                 {
-                    interfaces[i] = RuntimeClassLoaderFactory.GetWrapperFromType(interfaceTypes[i]);
+                    interfaces[i] = context.ClassLoaderFactory.GetJavaTypeFromType(interfaceTypes[i]);
                 }
             }
 
@@ -1594,7 +1599,7 @@ namespace IKVM.Runtime
                 {
                     // for remapped interfaces, we also return the original interface (Java types will ignore it, if it isn't listed in the ImplementsAttribute)
                     var twRemapped = interfaces[i];
-                    var tw = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(interfaceTypes[i]);
+                    var tw = context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(interfaceTypes[i]);
                     interfaces[i] = tw;
                     if (Array.IndexOf(interfaces, twRemapped) == -1)
                         interfaces = ArrayUtil.Concat(interfaces, twRemapped);
@@ -1609,7 +1614,7 @@ namespace IKVM.Runtime
             Debug.Assert(!IsPublic);
 
             if (IsUnloadable || IsInterface)
-                return CoreClasses.java.lang.Object.Wrapper;
+                return Context.JavaBase.TypeOfJavaLangObject;
 
             for (var tw = this; ; tw = tw.BaseTypeWrapper)
                 if (tw.IsPublic)
@@ -1621,7 +1626,7 @@ namespace IKVM.Runtime
         // return the constructor used for automagic .NET serialization
         internal virtual MethodBase GetSerializationConstructor()
         {
-            return TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { JVM.Import(typeof(System.Runtime.Serialization.SerializationInfo)), JVM.Import(typeof(System.Runtime.Serialization.StreamingContext)) }, null);
+            return TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.SerializationInfo).FullName), context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.StreamingContext).FullName) }, null);
         }
 
         internal virtual MethodBase GetBaseSerializationConstructor()

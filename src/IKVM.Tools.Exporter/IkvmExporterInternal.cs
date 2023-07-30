@@ -19,6 +19,67 @@ namespace IKVM.Tools.Exporter
     static class IkvmExporterInternal
     {
 
+        class ManagedResolver : IManagedTypeResolver
+        {
+
+            readonly StaticCompiler compiler;
+            readonly Assembly baseAssembly;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="compiler"></param>
+            /// <param name="baseAssembly"></param>
+            public ManagedResolver(StaticCompiler compiler, Assembly baseAssembly)
+            {
+                this.compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+                this.baseAssembly = baseAssembly;
+            }
+
+            /// <summary>
+            /// Attempts to resolve the base Java assembly.
+            /// </summary>
+            /// <returns></returns>
+            public Assembly ResolveBaseAssembly()
+            {
+                return baseAssembly;
+            }
+
+            /// <summary>
+            /// Attempts to resolve an assembly from one of the assembly sources.
+            /// </summary>
+            /// <param name="assemblyName"></param>
+            /// <returns></returns>
+            public Assembly ResolveAssembly(string assemblyName)
+            {
+                return compiler.Load(assemblyName);
+            }
+
+            /// <summary>
+            /// Attempts to resolve a type from one of the assembly sources.
+            /// </summary>
+            /// <param name="typeName"></param>
+            /// <returns></returns>
+            public Type ResolveCoreType(string typeName)
+            {
+                foreach (var assembly in compiler.Universe.GetAssemblies())
+                    if (assembly.GetType(typeName) is Type t)
+                        return t;
+
+                return null;
+            }
+
+            /// <summary>
+            /// Attempts to resolve a type from the IKVM runtime assembly.
+            /// </summary>
+            /// <param name="typeName"></param>
+            /// <returns></returns>
+            public Type ResolveRuntimeType(string typeName)
+            {
+                return compiler.GetRuntimeType(typeName);
+            }
+        }
+
         static ZipArchive zipFile;
         static Dictionary<string, string> done = new Dictionary<string, string>();
         static Dictionary<string, RuntimeJavaType> todo = new Dictionary<string, RuntimeJavaType>();
@@ -55,14 +116,17 @@ namespace IKVM.Tools.Exporter
                 references.Add(options.Assembly);
             }
 
-            StaticCompiler.Resolver.Warning += new AssemblyResolver.WarningEvent(Resolver_Warning);
-            StaticCompiler.Resolver.Init(StaticCompiler.Universe, options.NoStdLib, references, libpaths);
+            // build universe and resolver against universe and references
+            var universe = new Universe();
+            var assemblyResolver = new AssemblyResolver();
+            assemblyResolver.Warning += new AssemblyResolver.WarningEvent(Resolver_Warning);
+            assemblyResolver.Init(universe, options.NoStdLib, references, libpaths);
 
             var cache = new Dictionary<string, Assembly>();
             foreach (var reference in references)
             {
                 Assembly[] dummy = null;
-                if (!StaticCompiler.Resolver.ResolveReference(cache, ref dummy, reference))
+                if (assemblyResolver.ResolveReference(cache, ref dummy, reference) == false)
                 {
                     Console.Error.WriteLine("Error: reference not found {0}", reference);
                     return 1;
@@ -79,14 +143,19 @@ namespace IKVM.Tools.Exporter
                 Console.Error.WriteLine("Error: unable to load \"{0}\"\n  {1}", options.Assembly, x.Message);
                 return 1;
             }
+
             if (file != null && file.Exists)
             {
-                assembly = StaticCompiler.LoadFile(options.Assembly);
+                assembly = assemblyResolver.LoadFile(options.Assembly);
             }
             else
             {
-                assembly = StaticCompiler.Resolver.LoadWithPartialName(options.Assembly);
+                assembly = assemblyResolver.LoadWithPartialName(options.Assembly);
             }
+
+            StaticCompiler compiler;
+            RuntimeContext context;
+
             int rc = 0;
             if (assembly == null)
             {
@@ -95,37 +164,53 @@ namespace IKVM.Tools.Exporter
             }
             else
             {
-                if (options.Boostrap)
-                {
-                    StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(typeof(IkvmExporterTool).Assembly.Location);
-                    RuntimeClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader());
-                }
-                else
-                {
-                    StaticCompiler.LoadFile(typeof(IkvmExporterInternal).Assembly.Location);
+                Assembly runtimeAssembly = null;
+                Assembly baseAssembly = null;
 
+                if (options.Bootstrap)
+                {
                     var runtimeAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) == "IKVM.Runtime");
                     if (runtimeAssemblyPath != null)
-                        StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(runtimeAssemblyPath);
+                        runtimeAssembly = assemblyResolver.LoadFile(runtimeAssemblyPath);
 
-                    var baseAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) == "IKVM.Java");
-                    if (baseAssemblyPath != null)
-                        JVM.BaseAssembly = StaticCompiler.LoadFile(baseAssemblyPath);
-
-                    if (StaticCompiler.runtimeAssembly == null || StaticCompiler.runtimeAssembly.__IsMissing)
+                    if (runtimeAssembly == null || runtimeAssembly.__IsMissing)
                     {
                         Console.Error.WriteLine("Error: IKVM.Runtime not found.");
                         return 1;
                     }
 
-                    if (JVM.BaseAssembly == null || StaticCompiler.runtimeAssembly.__IsMissing)
+                    compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
+                    context = new RuntimeContext(new ManagedResolver(compiler, null), true, compiler);
+                    context.ClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader(context));
+                }
+                else
+                {
+
+                    var runtimeAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) == "IKVM.Runtime");
+                    if (runtimeAssemblyPath != null)
+                        runtimeAssembly = assemblyResolver.LoadFile(runtimeAssemblyPath);
+
+                    var baseAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) == "IKVM.Java");
+                    if (baseAssemblyPath != null)
+                        baseAssembly = assemblyResolver.LoadFile(baseAssemblyPath);
+
+                    if (runtimeAssembly == null || runtimeAssembly.__IsMissing)
+                    {
+                        Console.Error.WriteLine("Error: IKVM.Runtime not found.");
+                        return 1;
+                    }
+
+                    if (baseAssembly == null || runtimeAssembly.__IsMissing)
                     {
                         Console.Error.WriteLine("Error: IKVM.Java not found.");
                         return 1;
                     }
+
+                    compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
+                    context = new RuntimeContext(new ManagedResolver(compiler, baseAssembly), false, compiler);
                 }
 
-                if (AttributeHelper.IsJavaModule(assembly.ManifestModule))
+                if (context.AttributeHelper.IsJavaModule(assembly.ManifestModule))
                     Console.Error.WriteLine("Warning: Running ikvmstub on ikvmc compiled assemblies is not supported.");
 
                 if (options.Output == null)
@@ -141,18 +226,18 @@ namespace IKVM.Tools.Exporter
                             assemblies.Add(assembly);
 
                             if (options.Shared)
-                                LoadSharedClassLoaderAssemblies(assembly, assemblies);
+                                LoadSharedClassLoaderAssemblies(compiler, assembly, assemblies);
 
                             foreach (var asm in assemblies)
                             {
-                                if (ProcessTypes(options, asm.GetTypes()) != 0)
+                                if (ProcessTypes(context, options, asm.GetTypes()) != 0)
                                 {
                                     rc = 1;
                                     if (options.ContinueOnError == false)
                                         break;
                                 }
 
-                                if (options.Forwarders && ProcessTypes(options, asm.ManifestModule.__GetExportedTypes()) != 0)
+                                if (options.Forwarders && ProcessTypes(context, options, asm.ManifestModule.__GetExportedTypes()) != 0)
                                 {
                                     rc = 1;
                                     if (options.ContinueOnError == false)
@@ -189,7 +274,7 @@ namespace IKVM.Tools.Exporter
             }
         }
 
-        private static void LoadSharedClassLoaderAssemblies(Assembly assembly, List<Assembly> assemblies)
+        static void LoadSharedClassLoaderAssemblies(StaticCompiler compiler, Assembly assembly, List<Assembly> assemblies)
         {
             if (assembly.GetManifestResourceInfo("ikvm.exports") != null)
             {
@@ -209,7 +294,7 @@ namespace IKVM.Tools.Exporter
                             }
                             try
                             {
-                                assemblies.Add(StaticCompiler.Load(name));
+                                assemblies.Add(compiler.Load(name));
                             }
                             catch
                             {
@@ -227,7 +312,7 @@ namespace IKVM.Tools.Exporter
             entry.LastWriteTime = new DateTime(1980, 01, 01, 0, 0, 0, DateTimeKind.Utc);
             using Stream stream = entry.Open();
 
-            IKVM.StubGen.StubGenerator.WriteClass(stream, tw, options.IncludeNonPublicTypes, options.IncludeNonPublicInterfaces, options.IncludeNonPublicMembers, options.IncludeParameterNames, options.SerialVersionUID);
+            tw.Context.StubGenerator.WriteClass(stream, tw, options.IncludeNonPublicTypes, options.IncludeNonPublicInterfaces, options.IncludeNonPublicMembers, options.IncludeParameterNames, options.SerialVersionUID);
         }
 
         static bool ExportNamespace(IList<string> namespaces, Type type)
@@ -243,18 +328,18 @@ namespace IKVM.Tools.Exporter
             return false;
         }
 
-        private static int ProcessTypes(IkvmExporterOptions options, Type[] types)
+        private static int ProcessTypes(RuntimeContext context, IkvmExporterOptions options, Type[] types)
         {
             int rc = 0;
             foreach (var t in types)
             {
-                if ((t.IsPublic || options.IncludeNonPublicTypes) && ExportNamespace(options.Namespaces, t) && !t.IsGenericTypeDefinition && !AttributeHelper.IsHideFromJava(t) && (!t.IsGenericType || !AttributeHelper.IsJavaModule(t.Module)))
+                if ((t.IsPublic || options.IncludeNonPublicTypes) && ExportNamespace(options.Namespaces, t) && !t.IsGenericTypeDefinition && !context.AttributeHelper.IsHideFromJava(t) && (!t.IsGenericType || !context.AttributeHelper.IsJavaModule(t.Module)))
                 {
                     RuntimeJavaType c;
-                    if (RuntimeClassLoaderFactory.IsRemappedType(t) || t.IsPrimitive || t == Types.Void)
-                        c = RuntimeManagedJavaTypeFactory.GetWrapperFromDotNetType(t);
+                    if (context.ClassLoaderFactory.IsRemappedType(t) || t.IsPrimitive || t == context.Types.Void)
+                        c = context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(t);
                     else
-                        c = RuntimeClassLoaderFactory.GetWrapperFromType(t);
+                        c = context.ClassLoaderFactory.GetJavaTypeFromType(t);
 
                     if (c != null)
                         AddToExportList(c);

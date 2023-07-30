@@ -46,8 +46,8 @@ namespace IKVM.Runtime
         /// <param name="name"></param>
         /// <param name="baseWrapper"></param>
         /// <param name="remapped"></param>
-        internal RuntimeStubJavaType(Modifiers modifiers, string name, RuntimeJavaType baseWrapper, bool remapped)
-            : base(TypeFlags.None, modifiers, name)
+        internal RuntimeStubJavaType(RuntimeContext context, Modifiers modifiers, string name, RuntimeJavaType baseWrapper, bool remapped) :
+            base(context, TypeFlags.None, modifiers, name)
         {
             this.remapped = remapped;
             this.baseWrapper = baseWrapper;
@@ -60,7 +60,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeClassLoader GetClassLoader()
         {
-            return RuntimeClassLoaderFactory.GetBootstrapClassLoader();
+            return Context.ClassLoaderFactory.GetBootstrapClassLoader();
         }
 
         internal override Type TypeAsTBD

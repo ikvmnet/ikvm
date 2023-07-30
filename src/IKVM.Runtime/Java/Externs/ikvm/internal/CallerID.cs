@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+using System;
 using System.Reflection;
 
 using IKVM.Runtime;
@@ -33,17 +34,29 @@ namespace IKVM.Java.Externs.ikvm.@internal
 
         public static global::java.lang.Class GetClass(object obj)
         {
-            return RuntimeClassLoaderFactory.GetWrapperFromType(obj.GetType().DeclaringType).ClassObject;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(obj.GetType().DeclaringType).ClassObject;
+#endif
         }
 
         public static global::java.lang.ClassLoader GetClassLoader(object obj)
         {
-            return RuntimeClassLoaderFactory.GetWrapperFromType(obj.GetType().DeclaringType).GetClassLoader().GetJavaClassLoader();
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(obj.GetType().DeclaringType).GetClassLoader().GetJavaClassLoader();
+#endif
         }
 
         public static global::java.lang.ClassLoader GetAssemblyClassLoader(Assembly asm)
         {
-            return RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
+#endif
         }
 
     }

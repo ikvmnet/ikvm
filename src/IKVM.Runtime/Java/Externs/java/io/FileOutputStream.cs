@@ -43,9 +43,9 @@ namespace IKVM.Java.Externs.java.io
                 var fileMode = append ? FileMode.Append : FileMode.Create;
                 var fileAccess = FileAccess.Write;
 
-                if (VfsTable.Default.IsPath(name))
+                if (JVM.Vfs.IsPath(name))
                 {
-                    FileDescriptorAccessor.SetStream(fd, VfsTable.Default.Open(name, fileMode, fileAccess));
+                    FileDescriptorAccessor.SetStream(fd, JVM.Vfs.Open(name, fileMode, fileAccess));
                     return;
                 }
 

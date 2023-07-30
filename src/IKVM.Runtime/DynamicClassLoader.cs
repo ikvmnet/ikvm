@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
+using System.Collections.Concurrent;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -45,9 +46,9 @@ namespace IKVM.Runtime
 {
 
     /// <summary>
-    /// Provides access to dynamically emitted Java types.
+    /// Maintains instances of <see cref="DynamicClassLoader"/>.
     /// </summary>
-    sealed class DynamicClassLoader : RuntimeJavaTypeFactory
+    class DynamicClassLoaderFactory
     {
 
 #if NETFRAMEWORK
@@ -56,15 +57,155 @@ namespace IKVM.Runtime
         internal const string DynamicAssemblySuffixAndPublicKey = "-ikvm-runtime-injected";
 #endif
 
+        readonly RuntimeContext context;
+        internal readonly ConcurrentDictionary<string, RuntimeJavaType> dynamicTypes = new();
+        DynamicClassLoader instance;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public DynamicClassLoaderFactory(RuntimeContext context)
+        {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
+
+#if IMPORTER == false
+            // we attach to the AppDomain.TypeResolve event to be notified when the CLR cannot find a type, and we must provide it
+            AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
+
+            // exclude '<Module>' as a valie type name, as it overlaps with the pseudo-type for global fields and methods
+            dynamicTypes.TryAdd("<Module>", null);
+#endif
+        }
+
+#if IMPORTER == false
+
+        /// <summary>
+        /// Invoked when the runtime cannot load a type.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        Assembly OnTypeResolve(object sender, ResolveEventArgs args)
+        {
+            return Resolve(dynamicTypes, args.Name);
+        }
+
+        /// <summary>
+        /// Attempts to resolve the given type name from the specified dictionary.
+        /// </summary>
+        /// <param name="dict"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        Assembly Resolve(ConcurrentDictionary<string, RuntimeJavaType> dict, string name)
+        {
+            if (dict.TryGetValue(name, out var type))
+            {
+                try
+                {
+                    type.Finish();
+                    return type.TypeAsTBD.Assembly;
+                }
+                catch (RetargetableJavaException e)
+                {
+                    throw e.ToJava();
+                }
+            }
+
+            return null;
+        }
+
+#endif
+
+        /// <summary>
+        /// Gets the <see cref="DynamicClassLoader"/> instance which should be used for dynamic classes emitted by the given class loader.
+        /// </summary>
+        /// <param name="loader"></param>
+        /// <returns></returns>
+        [System.Security.SecuritySafeCritical]
+        public DynamicClassLoader GetOrCreate(RuntimeClassLoader loader)
+        {
+#if IMPORTER
+            // importer uses only one class loader, and we can just return a single dynamic class loader
+            return new DynamicClassLoader(context, ((CompilerClassLoader)loader).CreateModuleBuilder(), false);
+#else
+            // each assembly class loader gets its own dynamic class loader
+            if (loader is RuntimeAssemblyClassLoader acl)
+            {
+                var name = acl.MainAssembly.GetName().Name + DynamicAssemblySuffixAndPublicKey;
+                foreach (var attr in acl.MainAssembly.GetCustomAttributes<InternalsVisibleToAttribute>())
+                {
+                    if (attr.AssemblyName == name)
+                    {
+                        var n = new AssemblyName(name);
+#if NETFRAMEWORK
+                        n.KeyPair = DynamicClassLoader.ForgedKeyPair.Instance;
+#endif
+                        return new DynamicClassLoader(context, DynamicClassLoader.CreateModuleBuilder(context, n), true);
+                    }
+                }
+            }
+
+            return instance ??= new DynamicClassLoader(context, DynamicClassLoader.CreateModuleBuilder(context), false);
+#endif
+        }
+
+        /// <summary>
+        /// Reserves the given type name.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public bool ReserveName(string name)
+        {
+            return dynamicTypes.TryAdd(name, null);
+        }
+
+        /// <summary>
+        /// Associated the given Java type with the given type name, ensuring the actual stored name is unique.
+        /// </summary>
+        /// <param name="dict"></param>
+        /// <param name="name"></param>
+        /// <param name="javaType"></param>
+        /// <returns></returns>
+        public static string TypeNameMangleImpl(ConcurrentDictionary<string, RuntimeJavaType> dict, string name, RuntimeJavaType javaType)
+        {
+            // the CLR maximum type name length is 1023 characters, but we need to leave some room for the suffix that we may need to append to make the name unique
+            const int MaxLength = 1000;
+
+            if (name.Length > MaxLength)
+                name = name.Substring(0, MaxLength) + "/truncated";
+
+            var mangledTypeName = TypeNameUtil.ReplaceIllegalCharacters(name);
+            var baseTypeName = mangledTypeName;
+            int instanceId = 0;
+
+            // advance through unique type names until we find a free one
+            while (dict.TryAdd(mangledTypeName, javaType) == false)
+            {
+#if IMPORTER
+                Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
+#endif
+                mangledTypeName = baseTypeName + "/" + (++instanceId);
+            }
+
+            return mangledTypeName;
+        }
+
+    }
+
+
+    /// <summary>
+    /// Provides access to dynamically emitted Java types.
+    /// </summary>
+    internal sealed class DynamicClassLoader : RuntimeJavaTypeFactory
+    {
+
 #if !IMPORTER
         static AssemblyBuilder jniProxyAssemblyBuilder;
 #endif
 
-#if IMPORTER
-        readonly Dictionary<string, RuntimeJavaType> dynamicTypes = new Dictionary<string, RuntimeJavaType>();
-#else
-        static readonly Dictionary<string, RuntimeJavaType> dynamicTypes = new Dictionary<string, RuntimeJavaType>();
-#endif
+        readonly RuntimeContext context;
         readonly ModuleBuilder moduleBuilder;
         readonly bool hasInternalAccess;
 
@@ -77,128 +218,37 @@ namespace IKVM.Runtime
         TypeBuilder unloadableContainer;
         Type[] delegates;
 
-#if !IMPORTER
-        static DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder(), false);
-#endif
-
-        /// <summary>
-        /// Initializes the static instance.
-        /// </summary>
-        [System.Security.SecuritySafeCritical]
-        static DynamicClassLoader()
-        {
-#if !IMPORTER
-            // TODO AppDomain.TypeResolve requires ControlAppDomain permission, but if we don't have that,
-            // we should handle that by disabling dynamic class loading
-            AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
-            // Ref.Emit doesn't like the "<Module>" name for types
-            // (since it already defines a pseudo-type named <Module> for global methods and fields)
-            dynamicTypes.Add("<Module>", null);
-#endif // !IMPORTER
-        }
-
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="moduleBuilder"></param>
         /// <param name="hasInternalAccess"></param>
-        internal DynamicClassLoader(ModuleBuilder moduleBuilder, bool hasInternalAccess)
+        internal DynamicClassLoader(RuntimeContext context, ModuleBuilder moduleBuilder, bool hasInternalAccess)
         {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
             this.moduleBuilder = moduleBuilder;
             this.hasInternalAccess = hasInternalAccess;
-
-#if IMPORTER
-            // Ref.Emit doesn't like the "<Module>" name for types
-            // (since it already defines a pseudo-type named <Module> for global methods and fields)
-            dynamicTypes.Add("<Module>", null);
-#endif
         }
 
-#if !IMPORTER
-
-        static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
-        {
-            return Resolve(dynamicTypes, args.Name);
-        }
-
-        static Assembly Resolve(Dictionary<string, RuntimeJavaType> dict, string name)
-        {
-            RuntimeJavaType type;
-            lock (dict)
-                dict.TryGetValue(name, out type);
-
-            if (type == null)
-                return null;
-
-            try
-            {
-                type.Finish();
-            }
-            catch (RetargetableJavaException x)
-            {
-                throw x.ToJava();
-            }
-            // NOTE We used to remove the type from the hashtable here, but that creates a race condition if
-            // another thread also fires the OnTypeResolve event while we're baking the type.
-            // I really would like to remove the type from the hashtable, but at the moment I don't see
-            // any way of doing that that wouldn't cause this race condition.
-            // UPDATE since we now also use the dynamicTypes hashtable to keep track of type names that
-            // have been used already, we cannot remove the keys.
-            return type.TypeAsTBD.Assembly;
-        }
-
-#endif
-
+        /// <summary>
+        /// Attempts to preallocate a mangled type name.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         internal override bool ReserveName(string name)
         {
-            lock (dynamicTypes)
-            {
-                if (dynamicTypes.ContainsKey(name))
-                {
-                    return false;
-                }
-                dynamicTypes.Add(name, null);
-                return true;
-            }
+            return context.DynamicClassLoaderFactory.ReserveName(name);
         }
 
-        internal override string AllocMangledName(RuntimeByteCodeJavaType tw)
+        /// <summary>
+        /// Allocates a mangled name associated with the given Java type.
+        /// </summary>
+        /// <param name="javaType"></param>
+        /// <returns></returns>
+        internal override string AllocMangledName(RuntimeByteCodeJavaType javaType)
         {
-            lock (dynamicTypes)
-            {
-                return TypeNameMangleImpl(dynamicTypes, tw.Name, tw);
-            }
-        }
-
-        internal static string TypeNameMangleImpl(Dictionary<string, RuntimeJavaType> dict, string name, RuntimeJavaType tw)
-        {
-            // the CLR maximum type name length is 1023 characters,
-            // but we need to leave some room for the suffix that we
-            // may need to append to make the name unique
-            const int MaxLength = 1000;
-            if (name.Length > MaxLength)
-            {
-                name = name.Substring(0, MaxLength) + "/truncated";
-            }
-            string mangledTypeName = TypeNameUtil.ReplaceIllegalCharacters(name);
-            // FXBUG the CLR (both 1.1 and 2.0) doesn't like type names that end with a single period,
-            // it loses the trailing period in the name that gets passed in the TypeResolve event.
-            if (dict.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
-            {
-#if IMPORTER
-                Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
-#endif
-                // Java class names cannot contain slashes (since they are converted into periods),
-                // so we take advantage of that fact to create a unique name.
-                string baseName = mangledTypeName;
-                int instanceId = 0;
-                do
-                {
-                    mangledTypeName = baseName + "/" + (++instanceId);
-                } while (dict.ContainsKey(mangledTypeName));
-            }
-            dict.Add(mangledTypeName, tw);
-            return mangledTypeName;
+            return DynamicClassLoaderFactory.TypeNameMangleImpl(context.DynamicClassLoaderFactory.dynamicTypes, javaType.Name, javaType);
         }
 
         internal sealed override RuntimeJavaType DefineClassImpl(Dictionary<string, RuntimeJavaType> types, RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain protectionDomain)
@@ -242,8 +292,9 @@ namespace IKVM.Runtime
                     throw new LinkageError("duplicate class definition: " + f.Name);
                 }
             }
+
             return type;
-#endif // IMPORTER
+#endif
         }
 
 #if !IMPORTER && !FIRST_PASS
@@ -266,8 +317,8 @@ namespace IKVM.Runtime
             if (proxiesContainer == null)
             {
                 proxiesContainer = moduleBuilder.DefineType(TypeNameUtil.ProxiesContainer, TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Abstract);
-                AttributeHelper.HideFromJava(proxiesContainer);
-                AttributeHelper.SetEditorBrowsableNever(proxiesContainer);
+                context.AttributeHelper.HideFromJava(proxiesContainer);
+                context.AttributeHelper.SetEditorBrowsableNever(proxiesContainer);
                 proxies = new List<TypeBuilder>();
             }
             TypeBuilder tb = proxiesContainer.DefineNestedType(name, typeAttributes, parent, interfaces);
@@ -293,7 +344,7 @@ namespace IKVM.Runtime
                 if (unloadableContainer == null)
                 {
                     unloadableContainer = moduleBuilder.DefineType(RuntimeUnloadableJavaType.ContainerTypeName, TypeAttributes.Interface | TypeAttributes.Abstract);
-                    AttributeHelper.HideFromJava(unloadableContainer);
+                    context.AttributeHelper.HideFromJava(unloadableContainer);
                 }
                 type = unloadableContainer.DefineNestedType(TypeNameUtil.MangleNestedTypeName(name), TypeAttributes.NestedPrivate | TypeAttributes.Interface | TypeAttributes.Abstract);
                 unloadables.Add(name, type);
@@ -315,7 +366,7 @@ namespace IKVM.Runtime
                 {
                     return type;
                 }
-                TypeBuilder tb = moduleBuilder.DefineType(returnVoid ? "__<>NVIV`" + parameterCount : "__<>NVI`" + (parameterCount + 1), TypeAttributes.NotPublic | TypeAttributes.Sealed, Types.MulticastDelegate);
+                TypeBuilder tb = moduleBuilder.DefineType(returnVoid ? "__<>NVIV`" + parameterCount : "__<>NVI`" + (parameterCount + 1), TypeAttributes.NotPublic | TypeAttributes.Sealed, context.Types.MulticastDelegate);
                 string[] names = new string[parameterCount + (returnVoid ? 0 : 1)];
                 for (int i = 0; i < names.Length; i++)
                 {
@@ -332,9 +383,9 @@ namespace IKVM.Runtime
                     parameterTypes = new Type[genericParameters.Length - 1];
                     Array.Copy(genericParameters, parameterTypes, parameterTypes.Length);
                 }
-                tb.DefineMethod(ConstructorInfo.ConstructorName, MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, Types.Void, new Type[] { Types.Object, Types.IntPtr })
+                tb.DefineMethod(ConstructorInfo.ConstructorName, MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, context.Types.Void, new Type[] { context.Types.Object, context.Types.IntPtr })
                     .SetImplementationFlags(MethodImplAttributes.Runtime);
-                MethodBuilder mb = tb.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.NewSlot | MethodAttributes.Virtual, returnVoid ? Types.Void : genericParameters[genericParameters.Length - 1], parameterTypes);
+                MethodBuilder mb = tb.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.NewSlot | MethodAttributes.Virtual, returnVoid ? context.Types.Void : genericParameters[genericParameters.Length - 1], parameterTypes);
                 mb.SetImplementationFlags(MethodImplAttributes.Runtime);
                 type = tb.CreateType();
                 delegates[index] = type;
@@ -349,14 +400,16 @@ namespace IKVM.Runtime
 
         internal void FinishAll()
         {
-            Dictionary<RuntimeJavaType, RuntimeJavaType> done = new Dictionary<RuntimeJavaType, RuntimeJavaType>();
-            bool more = true;
+            var done = new Dictionary<RuntimeJavaType, RuntimeJavaType>();
+            var more = true;
+
             while (more)
             {
                 more = false;
-                List<RuntimeJavaType> l = new List<RuntimeJavaType>(dynamicTypes.Values);
-                foreach (RuntimeJavaType tw in l)
+                var l = context.DynamicClassLoaderFactory.dynamicTypes.ToArray();
+                foreach (var i in l)
                 {
+                    var tw = i.Value;
                     if (tw != null && !done.ContainsKey(tw))
                     {
                         more = true;
@@ -366,24 +419,24 @@ namespace IKVM.Runtime
                     }
                 }
             }
+
             if (unloadableContainer != null)
             {
                 unloadableContainer.CreateType();
-                foreach (TypeBuilder tb in unloadables.Values)
-                {
+                foreach (var tb in unloadables.Values)
                     tb.CreateType();
-                }
             }
+
 #if IMPORTER
             if (proxiesContainer != null)
             {
                 proxiesContainer.CreateType();
-                foreach (TypeBuilder tb in proxies)
-                {
+                foreach (var tb in proxies)
                     tb.CreateType();
-                }
             }
-#endif // IMPORTER
+
+#endif
+
         }
 
 #if !IMPORTER
@@ -400,38 +453,11 @@ namespace IKVM.Runtime
 
         internal sealed override ModuleBuilder ModuleBuilder => moduleBuilder;
 
-        [System.Security.SecuritySafeCritical]
-        internal static DynamicClassLoader Get(RuntimeClassLoader loader)
-        {
-#if IMPORTER
-            return new DynamicClassLoader(((CompilerClassLoader)loader).CreateModuleBuilder(), false);
-#else
-            var acl = loader as RuntimeAssemblyClassLoader;
-            if (acl != null)
-            {
-                var name = acl.MainAssembly.GetName().Name + DynamicAssemblySuffixAndPublicKey;
-                foreach (var attr in acl.MainAssembly.GetCustomAttributes<InternalsVisibleToAttribute>())
-                {
-                    if (attr.AssemblyName == name)
-                    {
-                        var n = new AssemblyName(name);
-#if NETFRAMEWORK
-                        n.KeyPair = ForgedKeyPair.Instance;
-#endif
-                        return new DynamicClassLoader(CreateModuleBuilder(n), true);
-                    }
-                }
-            }
-
-            return instance;
-#endif
-        }
-
 #if !IMPORTER
 
 #if NETFRAMEWORK
 
-        sealed class ForgedKeyPair : StrongNameKeyPair
+        internal sealed class ForgedKeyPair : StrongNameKeyPair
         {
 
             internal static readonly StrongNameKeyPair Instance;
@@ -465,8 +491,12 @@ namespace IKVM.Runtime
                 }
             }
 
-            private ForgedKeyPair(byte[] publicKey)
-                : base(ToInfo(publicKey), new StreamingContext())
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="publicKey"></param>
+            private ForgedKeyPair(byte[] publicKey) :
+                base(ToInfo(publicKey), new StreamingContext())
             {
 
             }
@@ -485,14 +515,14 @@ namespace IKVM.Runtime
 
 #endif
 
-        private static ModuleBuilder CreateModuleBuilder()
+        public static ModuleBuilder CreateModuleBuilder(RuntimeContext context)
         {
             AssemblyName name = new AssemblyName();
             name.Name = "ikvm_dynamic_assembly__" + (uint)Environment.TickCount;
-            return CreateModuleBuilder(name);
+            return CreateModuleBuilder(context, name);
         }
 
-        private static ModuleBuilder CreateModuleBuilder(AssemblyName name)
+        public static ModuleBuilder CreateModuleBuilder(RuntimeContext context, AssemblyName name)
         {
             DateTime now = DateTime.Now;
             name.Version = new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond);
@@ -505,7 +535,7 @@ namespace IKVM.Runtime
 #endif
 
             AssemblyBuilder assemblyBuilder = DefineDynamicAssembly(name, access, attribs);
-            AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
+            context.AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
             bool debug = JVM.EmitSymbols;
             CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });
             assemblyBuilder.SetCustomAttribute(debugAttr);

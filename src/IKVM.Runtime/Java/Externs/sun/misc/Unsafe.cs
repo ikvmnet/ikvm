@@ -1581,14 +1581,19 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static int ArrayIndexScale(RuntimeJavaType tw)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var context = tw.Context;
+
             var et = tw.ElementTypeWrapper;
-            if (et == RuntimePrimitiveJavaType.BYTE || et == RuntimePrimitiveJavaType.BOOLEAN)
+            if (et == context.PrimitiveJavaTypeFactory.BYTE || et == context.PrimitiveJavaTypeFactory.BOOLEAN)
                 return 1;
-            else if (et == RuntimePrimitiveJavaType.CHAR || et == RuntimePrimitiveJavaType.SHORT)
+            else if (et == context.PrimitiveJavaTypeFactory.CHAR || et == context.PrimitiveJavaTypeFactory.SHORT)
                 return 2;
-            else if (et == RuntimePrimitiveJavaType.INT || et == RuntimePrimitiveJavaType.FLOAT)
+            else if (et == context.PrimitiveJavaTypeFactory.INT || et == context.PrimitiveJavaTypeFactory.FLOAT)
                 return 4;
-            else if (et == RuntimePrimitiveJavaType.LONG || et == RuntimePrimitiveJavaType.DOUBLE)
+            else if (et == context.PrimitiveJavaTypeFactory.LONG || et == context.PrimitiveJavaTypeFactory.DOUBLE)
                 return 8;
             else if (et.IsPrimitive == false && et.IsNonPrimitiveValueType)
                 return Marshal.SizeOf(et.TypeAsTBD);
@@ -1596,6 +1601,7 @@ namespace IKVM.Java.Externs.sun.misc
                 return IntPtr.Size;
             else
                 return 1;
+#endif
         }
 
         /// <summary>
@@ -1663,7 +1669,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 var tw = RuntimeJavaType.FromClass(hostClass);
                 var cl = tw.GetClassLoader();
-                var cf = new ClassFile(ClassReader.Read(data), "<Unknown>", cl.ClassFileParseOptions, cpPatches);
+                var cf = new ClassFile(JVM.Context, ClassReader.Read(data), "<Unknown>", cl.ClassFileParseOptions, cpPatches);
                 if (cf.IKVMAssemblyAttribute != null)
                 {
                     // if this happens, the OpenJDK is probably trying to load an OpenJDK class file as a resource,
@@ -1857,7 +1863,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                return ((Func<object[], long, object>)arrayRefCache.GetValue(RuntimeClassLoaderFactory.GetWrapperFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatileGetter)(array, offset);
+                return ((Func<object[], long, object>)arrayRefCache.GetValue(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatileGetter)(array, offset);
             }
             catch (Exception e)
             {
@@ -1918,7 +1924,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                ((Action<object[], long, object>)arrayRefCache.GetValue(RuntimeClassLoaderFactory.GetWrapperFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatilePutter)(array, offset, value);
+                ((Action<object[], long, object>)arrayRefCache.GetValue(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatilePutter)(array, offset, value);
             }
             catch (Exception e)
             {
@@ -2457,7 +2463,11 @@ namespace IKVM.Java.Externs.sun.misc
         static object CompareAndSwapArray<T>(T[] o, long offset, T value, T comparand)
             where T : class
         {
-            return Interlocked.CompareExchange<T>(ref o[offset / ArrayIndexScale(RuntimeClassLoaderFactory.GetWrapperFromType(o.GetType()))], value, comparand);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return Interlocked.CompareExchange<T>(ref o[offset / ArrayIndexScale(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(o.GetType()))], value, comparand);
+#endif
         }
 
         /// <summary>
@@ -2477,7 +2487,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                return ((Func<object[], long, object, object, object>)arrayRefCache.GetValue(RuntimeClassLoaderFactory.GetWrapperFromType(o.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).CompareExchange)(o, offset, value, expected);
+                return ((Func<object[], long, object, object, object>)arrayRefCache.GetValue(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(o.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).CompareExchange)(o, offset, value, expected);
             }
             catch (Exception e)
             {

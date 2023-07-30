@@ -60,15 +60,16 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
 #else
 
-        private readonly java.lang.invoke.LambdaForm lambdaForm;
-        private readonly java.lang.invoke.MethodType invokerType;
-        private readonly Type delegateType;
-        private readonly DynamicMethod dm;
-        private readonly CodeEmitter ilgen;
-        private readonly int packedArgPos;
-        private readonly Type packedArgType;
-        private readonly CodeEmitterLocal[] locals;
-        private readonly List<object> constants = new List<object>();
+        readonly RuntimeContext context;
+        readonly java.lang.invoke.LambdaForm lambdaForm;
+        readonly java.lang.invoke.MethodType invokerType;
+        readonly Type delegateType;
+        readonly DynamicMethod dm;
+        readonly CodeEmitter ilgen;
+        readonly int packedArgPos;
+        readonly Type packedArgType;
+        readonly CodeEmitterLocal[] locals;
+        readonly List<object> constants = new List<object>();
 
         private enum Bailout
         {
@@ -92,20 +93,30 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
         }
 
-        private NativeInvokerBytecodeGenerator(java.lang.invoke.LambdaForm lambdaForm, global::java.lang.invoke.MethodType invokerType)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="lambdaForm"></param>
+        /// <param name="invokerType"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="BailoutException"></exception>
+        NativeInvokerBytecodeGenerator(RuntimeContext context, java.lang.invoke.LambdaForm lambdaForm, global::java.lang.invoke.MethodType invokerType)
         {
-            if (invokerType != invokerType.basicType())
-            {
-                throw new BailoutException(Bailout.NotBasicType, invokerType);
-            }
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
             this.lambdaForm = lambdaForm;
             this.invokerType = invokerType;
-            this.delegateType = MethodHandleUtil.GetMemberWrapperDelegateType(invokerType);
-            MethodInfo mi = MethodHandleUtil.GetDelegateInvokeMethod(delegateType);
-            Type[] paramTypes = MethodHandleUtil.GetParameterTypes(typeof(object[]), mi);
+
+            if (invokerType != invokerType.basicType())
+                throw new BailoutException(Bailout.NotBasicType, invokerType);
+
+            this.delegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(invokerType);
+            var mi = context.MethodHandleUtil.GetDelegateInvokeMethod(delegateType);
+            var paramTypes = MethodHandleUtil.GetParameterTypes(typeof(object[]), mi);
+
             // HACK the code we generate is not verifiable (known issue: locals aren't typed correctly), so we stick the DynamicMethod into mscorlib (a security critical assembly)
             this.dm = new DynamicMethod(lambdaForm.debugName, mi.ReturnType, paramTypes, typeof(object).Module, true);
-            this.ilgen = CodeEmitter.Create(this.dm);
+            this.ilgen = context.CodeEmitterFactory.Create(this.dm);
             if (invokerType.parameterCount() > MethodHandleUtil.MaxArity)
             {
                 this.packedArgType = paramTypes[paramTypes.Length - 1];
@@ -127,19 +138,19 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                 switch (name.typeChar())
                 {
                     case 'L':
-                        locals[i] = ilgen.DeclareLocal(Types.Object);
+                        locals[i] = ilgen.DeclareLocal(context.Types.Object);
                         break;
                     case 'I':
-                        locals[i] = ilgen.DeclareLocal(Types.Int32);
+                        locals[i] = ilgen.DeclareLocal(context.Types.Int32);
                         break;
                     case 'J':
-                        locals[i] = ilgen.DeclareLocal(Types.Int64);
+                        locals[i] = ilgen.DeclareLocal(context.Types.Int64);
                         break;
                     case 'F':
-                        locals[i] = ilgen.DeclareLocal(Types.Single);
+                        locals[i] = ilgen.DeclareLocal(context.Types.Single);
                         break;
                     case 'D':
-                        locals[i] = ilgen.DeclareLocal(Types.Double);
+                        locals[i] = ilgen.DeclareLocal(context.Types.Double);
                         break;
                     case 'V':
                         break;
@@ -201,7 +212,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             // [IKVM] we don't need the localsMap (it is used to correct for long/double taking two slots)
             if (locals[index] == null)
             {
-                MethodHandleUtil.LoadPackedArg(ilgen, index, 1, packedArgPos, packedArgType);
+                context.MethodHandleUtil.LoadPackedArg(ilgen, index, 1, packedArgPos, packedArgType);
             }
             else
             {
@@ -277,7 +288,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             switch (ptype.name())
             {
                 case "L_TYPE":
-                    if (VerifyType.isNullConversion(CoreClasses.java.lang.Object.Wrapper.ClassObject, pclass, false))
+                    if (VerifyType.isNullConversion(context.JavaBase.TypeOfJavaLangObject.ClassObject, pclass, false))
                     {
                         //if (PROFILE_LEVEL > 0)
                         //    emitReferenceCast(Object.class, arg);
@@ -299,27 +310,31 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             // [IKVM] not implemented
         }
 
-        private void emitReferenceCast(Class cls, object arg)
+        void emitReferenceCast(Class cls, object arg)
         {
             // [IKVM] handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
-            if (cls != CoreClasses.cli.System.Object.Wrapper.ClassObject)
+            if (cls != context.JavaBase.TypeOfCliSystemObject.ClassObject)
             {
                 RuntimeJavaType.FromClass(cls).EmitCheckcast(ilgen);
             }
         }
 
-        private sealed class AnonymousClass : RuntimeJavaType
+        sealed class AnonymousClass : RuntimeJavaType
         {
-            internal static readonly Class Instance = new AnonymousClass().ClassObject;
 
-            private AnonymousClass()
-                : base(TypeFlags.Anonymous, Modifiers.Super | Modifiers.Final, "java.lang.invoke.LambdaForm$MH")
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="context"></param>
+            public AnonymousClass(RuntimeContext context) :
+                base(context, TypeFlags.Anonymous, Modifiers.Super | Modifiers.Final, "java.lang.invoke.LambdaForm$MH")
             {
+
             }
 
             internal override RuntimeClassLoader GetClassLoader()
             {
-                return RuntimeClassLoaderFactory.GetBootstrapClassLoader();
+                return Context.ClassLoaderFactory.GetBootstrapClassLoader();
             }
 
             internal override Type TypeAsTBD
@@ -329,7 +344,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
             internal override RuntimeJavaType BaseTypeWrapper
             {
-                get { return CoreClasses.java.lang.Object.Wrapper; }
+                get { return Context.JavaBase.TypeOfJavaLangObject; }
             }
         }
 
@@ -341,11 +356,11 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             try
             {
                 java.lang.invoke.MemberName memberName = new java.lang.invoke.MemberName();
-                memberName._clazz(AnonymousClass.Instance);
+                memberName._clazz(JVM.Context.GetOrCreateSingleton(() => new AnonymousClass(JVM.Context)).ClassObject);
                 memberName._name(form.debugName);
                 memberName._type(invokerType);
                 memberName._flags(MethodHandleNatives.Constants.MN_IS_METHOD | MethodHandleNatives.Constants.ACC_STATIC | (MethodHandleNatives.Constants.REF_invokeStatic << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT));
-                memberName.vmtarget = new NativeInvokerBytecodeGenerator(form, invokerType).generateCustomizedCodeBytes();
+                memberName.vmtarget = new NativeInvokerBytecodeGenerator(JVM.Context, form, invokerType).generateCustomizedCodeBytes();
                 return memberName;
             }
 #if DEBUG
@@ -456,7 +471,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                 //assert(target != null) : name.exprString();
                 //mv.visitLdcInsn(constantPlaceholder(target));
                 EmitConstant(target);
-                emitReferenceCast(CoreClasses.java.lang.invoke.MethodHandle.Wrapper.ClassObject, target);
+                emitReferenceCast(context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject, target);
             }
             else
             {
@@ -477,13 +492,14 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             EmitInvokeBasic(type.basicType());
         }
 
-        static bool isStaticallyInvocable(java.lang.invoke.MemberName member)
+        bool isStaticallyInvocable(java.lang.invoke.MemberName member)
         {
             if (member == null) return false;
             if (member.isConstructor()) return false;
             Class cls = member.getDeclaringClass();
             if (cls.isArray() || cls.isPrimitive())
                 return false;  // FIXME
+
             /*
             if (cls.isAnonymousClass() || cls.isLocalClass())
                 return false;  // inner class of some sort
@@ -502,6 +518,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             if (member.isPublic() && isStaticallyNameable(cls))
                 return true;
             */
+
             if (member.isMethod())
             {
                 // [IKVM] If we can't call the method directly, invoke it via the invokeBasic infrastructure.
@@ -509,11 +526,13 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                     || IsMethodHandleInvokeBasic(member)
                     || IsStaticallyInvocable(GetMethodWrapper(member));
             }
+
             if (member.isField())
             {
                 // [IKVM] If we can't access the field directly, use the invokeBasic infrastructure.
                 return IsStaticallyInvocable(GetFieldWrapper(member));
             }
+
             return false;
         }
 
@@ -569,7 +588,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                     }
                     RuntimeJavaType ret = RuntimeJavaType.FromClass(mt.returnType());
                     ret.Finish();
-                    Compiler.MethodHandleMethodWrapper.EmitLinkToCall(ilgen, args, ret);
+                    Compiler.MethodHandleMethodWrapper.EmitLinkToCall(context, ilgen, args, ret);
                     ret.EmitConvSignatureTypeToStackType(ilgen);
                 }
                 else if (IsMethodHandleInvokeBasic(member))
@@ -599,7 +618,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                     if (mw.HasCallerID)
                     {
                         EmitConstant(DynamicCallerIDProvider.Instance);
-                        ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCallerID);
+                        ilgen.Emit(OpCodes.Call, context.ByteCodeHelperMethods.DynamicCallerID);
                     }
                     if (mw.IsStatic || member.getReferenceKind() == MethodHandleNatives.Constants.REF_invokeSpecial)
                     {
@@ -804,7 +823,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
             // [IKVM] map the exception and store it in a local and exit the handler
             ilgen.EmitLdc_I4(0);
-            ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.mapException.MakeGenericMethod(typeof(Exception)));
+            ilgen.Emit(OpCodes.Call, context.ByteCodeHelperMethods.MapException.MakeGenericMethod(typeof(Exception)));
             CodeEmitterLocal exception = ilgen.DeclareLocal(typeof(Exception));
             ilgen.Emit(OpCodes.Stloc, exception);
             ilgen.EmitLeave(L_handler);
@@ -815,7 +834,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             // load exception class
             emitPushArgument(invoker, 1);
             ilgen.Emit(OpCodes.Ldloc, exception);
-            CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("isInstance", "(Ljava.lang.Object;)Z", false).EmitCall(ilgen);
+            context.JavaBase.TypeOfJavaLangClass.GetMethodWrapper("isInstance", "(Ljava.lang.Object;)Z", false).EmitCall(ilgen);
             CodeEmitterLabel L_rethrow = ilgen.DefineLabel();
             ilgen.EmitBrfalse(L_rethrow);
 
@@ -824,7 +843,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             emitPushArgument(invoker, 2);
             ilgen.Emit(OpCodes.Ldloc, exception);
             emitPushArguments(args, 1); // skip 1st argument: method handle
-            MethodType catcherType = type.insertParameterTypes(0, CoreClasses.java.lang.Throwable.Wrapper.ClassObject);
+            MethodType catcherType = type.insertParameterTypes(0, context.JavaBase.TypeOfjavaLangThrowable.ClassObject);
             EmitInvokeBasic(catcherType.basicType());
             if (returnValue != null)
             {
@@ -834,7 +853,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
             ilgen.MarkLabel(L_rethrow);
             ilgen.Emit(OpCodes.Ldloc, exception);
-            ilgen.Emit(OpCodes.Call, Compiler.unmapExceptionMethod);
+            ilgen.Emit(OpCodes.Call, context.CompilerFactory.UnmapExceptionMethod);
             ilgen.Emit(OpCodes.Throw);
 
             ilgen.MarkLabel(L_done);
@@ -994,7 +1013,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                         case "FLOAT":
                             switch (to.name())
                             {
-                                case "LONG": ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.f2l); break;
+                                case "LONG": ilgen.Emit(OpCodes.Call, context.ByteCodeHelperMethods.f2l); break;
                                 case "DOUBLE": ilgen.Emit(OpCodes.Conv_R8); break;
                                 default: error = true; break;
                             }
@@ -1002,7 +1021,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                         case "DOUBLE":
                             switch (to.name())
                             {
-                                case "LONG": ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.d2l); break;
+                                case "LONG": ilgen.Emit(OpCodes.Call, context.ByteCodeHelperMethods.d2l); break;
                                 case "FLOAT": ilgen.Emit(OpCodes.Conv_R4); break;
                                 default: error = true; break;
                             }
@@ -1044,8 +1063,8 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             switch (type.name())
             {
                 case "LONG": ilgen.Emit(OpCodes.Conv_I4); break;
-                case "FLOAT": ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.f2i); break;
-                case "DOUBLE": ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.d2i); break;
+                case "FLOAT": ilgen.Emit(OpCodes.Call, context.ByteCodeHelperMethods.f2i); break;
+                case "DOUBLE": ilgen.Emit(OpCodes.Call, context.ByteCodeHelperMethods.d2i); break;
                 default: throw new BailoutException(Bailout.PreconditionViolated, "unknown type: " + type);
             }
         }
@@ -1078,7 +1097,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             }
             RuntimeJavaType ret = RuntimeJavaType.FromClass(mt.returnType());
             ret.Finish();
-            Compiler.MethodHandleMethodWrapper.EmitInvokeBasic(ilgen, args, ret, false);
+            Compiler.MethodHandleMethodWrapper.EmitInvokeBasic(JVM.Context, ilgen, args, ret, false);
         }
 
         private OpCode arrayLoadOpcode(byte tcode)
@@ -1107,24 +1126,22 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             }
         }
 
-        private static bool IsMethodHandleLinkTo(java.lang.invoke.MemberName member)
+        private bool IsMethodHandleLinkTo(java.lang.invoke.MemberName member)
         {
-            return member.getDeclaringClass() == CoreClasses.java.lang.invoke.MethodHandle.Wrapper.ClassObject
-                && member.getName().StartsWith("linkTo", StringComparison.Ordinal);
+            return member.getDeclaringClass() == context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject && member.getName().StartsWith("linkTo", StringComparison.Ordinal);
         }
 
-        private static bool IsMethodHandleInvokeBasic(java.lang.invoke.MemberName member)
+        private bool IsMethodHandleInvokeBasic(java.lang.invoke.MemberName member)
         {
-            return member.getDeclaringClass() == CoreClasses.java.lang.invoke.MethodHandle.Wrapper.ClassObject
-                && member.getName() == "invokeBasic";
+            return member.getDeclaringClass() == context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject && member.getName() == "invokeBasic";
         }
 
-        private static RuntimeJavaMethod GetMethodWrapper(java.lang.invoke.MemberName member)
+        private RuntimeJavaMethod GetMethodWrapper(java.lang.invoke.MemberName member)
         {
             return RuntimeJavaType.FromClass(member.getDeclaringClass()).GetMethodWrapper(member.getName(), member.getSignature().Replace('/', '.'), true);
         }
 
-        private static bool IsStaticallyInvocable(RuntimeJavaMethod mw)
+        private bool IsStaticallyInvocable(RuntimeJavaMethod mw)
         {
             if (mw == null || mw.DeclaringType.IsUnloadable || mw.DeclaringType.IsGhost || mw.DeclaringType.IsNonPrimitiveValueType || mw.IsFinalizeOrClone || mw.IsDynamicOnly)
             {
@@ -1144,12 +1161,12 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             return true;
         }
 
-        private static RuntimeJavaField GetFieldWrapper(java.lang.invoke.MemberName member)
+        private RuntimeJavaField GetFieldWrapper(java.lang.invoke.MemberName member)
         {
             return RuntimeJavaType.FromClass(member.getDeclaringClass()).GetFieldWrapper(member.getName(), member.getSignature().Replace('/', '.'));
         }
 
-        private static bool IsStaticallyInvocable(RuntimeJavaField fw)
+        private bool IsStaticallyInvocable(RuntimeJavaField fw)
         {
             return fw != null
                 && !fw.FieldTypeWrapper.IsUnloadable

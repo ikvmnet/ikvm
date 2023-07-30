@@ -28,6 +28,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
 
+using IKVM.Runtime;
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.java.io
@@ -70,6 +71,9 @@ namespace IKVM.Java.Externs.java.io
         /// <returns></returns>
         static string CanonicalizePath(string path)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 // begin by processing parent element
@@ -90,7 +94,7 @@ namespace IKVM.Java.Externs.java.io
 
                 try
                 {
-                    if (VfsTable.Default.IsPath(path) == false)
+                    if (JVM.Vfs.IsPath(path) == false)
                     {
                         // consult the file system for an actual node with the appropriate name
                         var all = Directory.EnumerateFileSystemEntries(parent, name);
@@ -127,6 +131,7 @@ namespace IKVM.Java.Externs.java.io
             }
 
             return path;
+#endif
         }
 
         public static string canonicalize0(object self, string path)
@@ -161,11 +166,14 @@ namespace IKVM.Java.Externs.java.io
 
         public static int getBooleanAttributes(object _this, global::java.io.File f)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 var path = GetPathFromFile(f);
-                if (VfsTable.Default.IsPath(path))
-                    return VfsTable.Default.GetBooleanAttributes(path);
+                if (JVM.Vfs.IsPath(path))
+                    return JVM.Vfs.GetBooleanAttributes(path);
 
                 FileAttributes attr = File.GetAttributes(path);
                 const int BA_EXISTS = 0x01;
@@ -209,6 +217,7 @@ namespace IKVM.Java.Externs.java.io
             }
 
             return 0;
+#endif
         }
 
         /// <summary>
@@ -220,12 +229,15 @@ namespace IKVM.Java.Externs.java.io
         /// <returns></returns>
         public static bool checkAccess(object _this, global::java.io.File f, int access)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             var path = GetPathFromFile(f);
 
             // check the VFS for the file
-            if (VfsTable.Default.IsPath(path))
+            if (JVM.Vfs.IsPath(path))
             {
-                return VfsTable.Default.GetEntry(path) switch
+                return JVM.Vfs.GetEntry(path) switch
                 {
                     VfsFile file => access == ACCESS_READ && file.CanOpen(FileMode.Open, FileAccess.Read),
                     VfsDirectory => true,
@@ -308,6 +320,7 @@ namespace IKVM.Java.Externs.java.io
             }
 
             return ok;
+#endif
         }
 
         /// <summary>
@@ -359,11 +372,14 @@ namespace IKVM.Java.Externs.java.io
 
         public static long getLength(object _this, global::java.io.File f)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 var path = GetPathFromFile(f);
-                if (VfsTable.Default.IsPath(path))
-                    return VfsTable.Default.GetEntry(path) is VfsFile file ? file.Size : 0;
+                if (JVM.Vfs.IsPath(path))
+                    return JVM.Vfs.GetEntry(path) is VfsFile file ? file.Size : 0;
 
                 return new FileInfo(path).Length;
             }
@@ -389,6 +405,7 @@ namespace IKVM.Java.Externs.java.io
             }
 
             return 0;
+#endif
         }
 
         public static bool setPermission(object _this, global::java.io.File f, int access, bool enable, bool owneronly)
@@ -515,12 +532,15 @@ namespace IKVM.Java.Externs.java.io
 
         public static string[] list(object _this, global::java.io.File f)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 var path = GetPathFromFile(f);
-                if (VfsTable.Default.IsPath(path))
+                if (JVM.Vfs.IsPath(path))
                 {
-                    if (VfsTable.Default.GetEntry(path) is VfsDirectory vfs)
+                    if (JVM.Vfs.GetEntry(path) is VfsDirectory vfs)
                         return vfs.List();
 
                     throw new DirectoryNotFoundException();
@@ -554,6 +574,7 @@ namespace IKVM.Java.Externs.java.io
             }
 
             return null;
+#endif
         }
 
         public static bool createDirectory(object _this, global::java.io.File f)

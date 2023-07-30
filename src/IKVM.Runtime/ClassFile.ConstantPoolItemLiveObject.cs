@@ -22,16 +22,21 @@
   
 */
 
+using System;
+
 namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile
     {
-        private sealed class ConstantPoolItemLiveObject : ConstantPoolItem
+
+        sealed class ConstantPoolItemLiveObject : ConstantPoolItem
         {
+
             internal readonly object Value;
 
-            internal ConstantPoolItemLiveObject(object value)
+            internal ConstantPoolItemLiveObject(RuntimeContext context, object value) :
+                base(context)
             {
                 this.Value = value;
             }
@@ -41,6 +46,7 @@ namespace IKVM.Runtime
                 return ConstantType.LiveObject;
             }
         }
+
     }
 
 }

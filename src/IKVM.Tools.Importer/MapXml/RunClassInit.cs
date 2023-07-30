@@ -60,7 +60,7 @@ namespace IKVM.Tools.Importer.MapXml
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
-            context.ClassLoader.LoadClassByDottedName(Class).EmitRunClassConstructor(ilgen);
+            context.ClassLoader.LoadClassByName(Class).EmitRunClassConstructor(ilgen);
         }
 
     }

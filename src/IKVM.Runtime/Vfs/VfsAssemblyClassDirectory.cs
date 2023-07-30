@@ -67,11 +67,11 @@ namespace IKVM.Runtime.Vfs
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            var acl = RuntimeAssemblyClassLoaderFactory.FromAssembly(assembly);
+            var acl = Context.Context.AssemblyClassLoaderFactory.FromAssembly(assembly);
 
             try
             {
-                return acl.LoadClassByDottedNameFast(className);
+                return acl.TryLoadClassByName(className);
             }
             catch
             {
@@ -124,7 +124,7 @@ namespace IKVM.Runtime.Vfs
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new PlatformNotSupportedException();
 #else
-            var acl = RuntimeAssemblyClassLoaderFactory.FromAssembly(assembly);
+            var acl = Context.Context.AssemblyClassLoaderFactory.FromAssembly(assembly);
             if (acl == null)
                 throw new InvalidOperationException("Could not locate assembly loader.");
 
@@ -162,7 +162,7 @@ namespace IKVM.Runtime.Vfs
 #else
             var lst = new HashSet<string>();
 
-            var acl = RuntimeAssemblyClassLoaderFactory.FromAssembly(assembly);
+            var acl = Context.Context.AssemblyClassLoaderFactory.FromAssembly(assembly);
             if (acl == null)
                 throw new InvalidOperationException("Could not locate assembly loader.");
 

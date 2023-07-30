@@ -33,6 +33,10 @@ using Type = IKVM.Reflection.Type;
 using IKVM.Tools.Importer;
 #endif
 
+#if EXPORTER
+using IKVM.Tools.Exporter;
+#endif
+
 namespace IKVM.Runtime
 {
 
@@ -47,13 +51,14 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="name"></param>
             /// <param name="delegateType"></param>
-            internal DelegateInnerClassJavaType(string name, Type delegateType) :
-                base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract, name, null)
+            internal DelegateInnerClassJavaType(RuntimeContext context, string name, Type delegateType) :
+                base(context, Modifiers.Public | Modifiers.Interface | Modifiers.Abstract, name, null)
             {
 #if IMPORTER || EXPORTER
-                this.fakeType = FakeTypes.GetDelegateType(delegateType);
+                this.fakeType = context.FakeTypes.GetDelegateType(delegateType);
 #elif !FIRST_PASS
                 this.fakeType = typeof(ikvm.@internal.DelegateInterface<>).MakeGenericType(delegateType);
 #endif
@@ -71,18 +76,18 @@ namespace IKVM.Runtime
                         flags |= MemberFlags.DelegateInvokeWithByRefParameter;
                         parameterType = RuntimeArrayJavaType.MakeArrayType(parameterType.GetElementType(), 1);
                     }
-                    argTypeWrappers[i] = RuntimeClassLoaderFactory.GetWrapperFromType(parameterType);
+                    argTypeWrappers[i] = Context.ClassLoaderFactory.GetJavaTypeFromType(parameterType);
                     sb.Append(argTypeWrappers[i].SigName);
                 }
 
-                var returnType = RuntimeClassLoaderFactory.GetWrapperFromType(invoke.ReturnType);
+                var returnType = Context.ClassLoaderFactory.GetJavaTypeFromType(invoke.ReturnType);
                 sb.Append(")").Append(returnType.SigName);
                 var invokeMethod = new DynamicOnlyJavaMethod(this, "Invoke", sb.ToString(), returnType, argTypeWrappers, flags);
                 SetMethods(new RuntimeJavaMethod[] { invokeMethod });
                 SetFields(Array.Empty<RuntimeJavaField>());
             }
 
-            internal override RuntimeJavaType DeclaringTypeWrapper => RuntimeClassLoaderFactory.GetWrapperFromType(fakeType.GetGenericArguments()[0]);
+            internal override RuntimeJavaType DeclaringTypeWrapper => Context.ClassLoaderFactory.GetJavaTypeFromType(fakeType.GetGenericArguments()[0]);
 
             internal override RuntimeClassLoader GetClassLoader()
             {

@@ -32,6 +32,8 @@ using IKVM.Runtime.Accessors.Java.Lang;
 
 using System.Runtime.CompilerServices;
 
+using IKVM.Runtime.Vfs;
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using Type = IKVM.Reflection.Type;
@@ -53,23 +55,27 @@ namespace IKVM.Runtime
 
 #if EXPORTER == false
         static int emitSymbols;
-#endif
-
-        /// <summary>
-        /// Reference to the 'java.base' assembly.
-        /// </summary>
-        static Assembly baseAssembly;
-
-#if EXPORTER == false
         internal static bool relaxedVerification = true;
         internal static bool AllowNonVirtualCalls;
         internal static readonly bool DisableEagerClassLoading = SafeGetEnvironmentVariable("IKVM_DISABLE_EAGER_CLASS_LOADING") != null;
 #endif
 
-
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
-        readonly static object initializedLock = new object();
+        static readonly RuntimeContext context = new RuntimeContext(new Resolver(), false);
+        static readonly VfsTable vfs = VfsTable.BuildDefaultTable(new VfsRuntimeContext(context), Properties.HomePath);
+
+        /// <summary>
+        /// Gets the current <see cref="RuntimeContext"/> of the JVM.
+        /// </summary>
+        public static RuntimeContext Context => context;
+
+        /// <summary>
+        /// Gets the current <see cref="VfsTable"/> of the JVM.
+        /// </summary>
+        public static VfsTable Vfs => vfs;
+
+        static readonly object initializedLock = new object();
         static bool initialized;
 
         static AccessorCache baseAccessors;
@@ -79,7 +85,7 @@ namespace IKVM.Runtime
         static Lazy<object> systemThreadGroup = new Lazy<object>(MakeSystemThreadGroup);
         static Lazy<object> mainThreadGroup = new Lazy<object>(MakeMainThreadGroup);
 
-        internal static AccessorCache BaseAccessors => AccessorCache.Get(ref baseAccessors, BaseAssembly);
+        internal static AccessorCache BaseAccessors => AccessorCache.Get(ref baseAccessors, context.Resolver.ResolveBaseAssembly());
 
         static ThreadGroupAccessor ThreadGroupAccessor => BaseAccessors.Get(ref threadGroupAccessor);
 
@@ -151,8 +157,8 @@ namespace IKVM.Runtime
                         RuntimeHelpers.RunClassConstructor(typeof(java.lang.Compiler).TypeHandle);
 
                         // initialize some JSR292 core classes to avoid deadlock during class loading
-                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.invoke.MethodHandle).TypeHandle);
                         RuntimeHelpers.RunClassConstructor(typeof(java.lang.invoke.MemberName).TypeHandle);
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.invoke.MethodHandle).TypeHandle);
                         RuntimeHelpers.RunClassConstructor(typeof(java.lang.invoke.MethodHandleNatives).TypeHandle);
                     }
                 }
@@ -200,28 +206,6 @@ namespace IKVM.Runtime
             catch (SecurityException)
             {
                 return null;
-            }
-        }
-
-        internal static Assembly BaseAssembly
-        {
-            get
-            {
-#if !IMPORTER && !EXPORTER
-                if (baseAssembly == null)
-                {
-#if FIRST_PASS
-                    throw new InvalidOperationException("This version of IKVM.Runtime.dll was compiled with FIRST_PASS defined.");
-#else
-                    baseAssembly = typeof(java.lang.Object).Assembly;
-#endif
-                }
-#endif
-                return baseAssembly;
-            }
-            set
-            {
-                baseAssembly = value;
             }
         }
 
@@ -305,25 +289,6 @@ namespace IKVM.Runtime
                 key ^= (key >> 12);
             }
             return (int)key;
-        }
-
-#if IMPORTER || EXPORTER
-		internal static Type LoadType(System.Type type)
-		{
-			return StaticCompiler.GetRuntimeType(type.FullName);
-		}
-#endif
-
-        // this method resolves types in IKVM.Runtime.dll
-        // (the version of IKVM.Runtime.dll that we're running
-        // with can be different from the one we're compiling against.)
-        internal static Type LoadType(Type type)
-        {
-#if IMPORTER || EXPORTER
-			return StaticCompiler.GetRuntimeType(type.FullName);
-#else
-            return type;
-#endif
         }
 
         internal static object Box(object val)
@@ -482,15 +447,6 @@ namespace IKVM.Runtime
         }
 
 #endif
-
-        internal static Type Import(System.Type type)
-        {
-#if IMPORTER || EXPORTER
-			return StaticCompiler.Universe.Import(type);
-#else
-            return type;
-#endif
-        }
 
     }
 

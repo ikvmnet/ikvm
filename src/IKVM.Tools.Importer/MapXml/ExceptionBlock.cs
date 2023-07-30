@@ -78,11 +78,11 @@ namespace IKVM.Tools.Importer.MapXml
                 Type type;
                 if (Catch.Type != null)
                 {
-                    type = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Catch.Type);
+                    type = context.ClassLoader.Context.StaticCompiler.GetTypeForMapXml(context.ClassLoader, Catch.Type);
                 }
                 else
                 {
-                    type = context.ClassLoader.LoadClassByDottedName(Catch.Class).TypeAsExceptionType;
+                    type = context.ClassLoader.LoadClassByName(Catch.Class).TypeAsExceptionType;
                 }
 
                 ilgen.BeginCatchBlock(type);

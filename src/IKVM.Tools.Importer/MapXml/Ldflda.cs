@@ -67,7 +67,7 @@ namespace IKVM.Tools.Importer.MapXml
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
-            ilgen.Emit(OpCodes.Ldflda, StaticCompiler.GetFieldForMapXml(context.ClassLoader, Class, Name, Sig).GetField());
+            ilgen.Emit(OpCodes.Ldflda, context.ClassLoader.Context.StaticCompiler.GetFieldForMapXml(context.ClassLoader, Class, Name, Sig).GetField());
         }
 
     }

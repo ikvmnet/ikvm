@@ -22,14 +22,25 @@
   
 */
 
-static class JRELocaleProviderAdapter
+using System;
+
+using IKVM.Runtime;
+
+namespace IKVM.Java.Externs.sun.util.locale.provider
 {
 
-    // the Java implementation is redirected via map.xml
-    internal static bool isNonENLangSupported()
+    static class JRELocaleProviderAdapter
     {
 
-        return IKVM.Runtime.RuntimeClassLoaderFactory.GetBootstrapClassLoader().LoadClassByDottedNameFast("sun.text.resources.nl.FormatData_nl") != null;
+        // the Java implementation is redirected via map.xml
+        internal static bool isNonENLangSupported()
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return JVM.Context.ClassLoaderFactory.GetBootstrapClassLoader().TryLoadClassByName("sun.text.resources.nl.FormatData_nl") != null;
+#endif
+        }
 
     }
 

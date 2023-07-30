@@ -54,9 +54,9 @@ namespace IKVM.Runtime
             /// <param name="declaringType"></param>
             /// <param name="iface"></param>
             internal DelegateJavaMethod(RuntimeJavaType declaringType, DelegateInnerClassJavaType iface) :
-                base(declaringType, "<init>", "(" + iface.SigName + ")V", null, RuntimePrimitiveJavaType.VOID, new RuntimeJavaType[] { iface }, Modifiers.Public, MemberFlags.Intrinsic)
+                base(declaringType, "<init>", "(" + iface.SigName + ")V", null, declaringType.Context.PrimitiveJavaTypeFactory.VOID, new RuntimeJavaType[] { iface }, Modifiers.Public, MemberFlags.Intrinsic)
             {
-                this.delegateConstructor = declaringType.TypeAsTBD.GetConstructor(new Type[] { Types.Object, Types.IntPtr });
+                this.delegateConstructor = declaringType.TypeAsTBD.GetConstructor(new Type[] { DeclaringType.Context.Types.Object, DeclaringType.Context.Types.IntPtr });
                 this.iface = iface;
             }
 
@@ -93,12 +93,12 @@ namespace IKVM.Runtime
 
                 var parameters = invoke.GetParameters();
                 var parameterTypes = new Type[parameters.Length + 1];
-                parameterTypes[0] = Types.Object;
+                parameterTypes[0] = DeclaringType.Context.Types.Object;
                 for (int i = 0; i < parameters.Length; i++)
                     parameterTypes[i + 1] = parameters[i].ParameterType;
 
                 var mb = context.Context.DefineDelegateInvokeErrorStub(invoke.ReturnType, parameterTypes);
-                var ilgen = CodeEmitter.Create(mb);
+                var ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mb);
                 ilgen.EmitThrow(isAbstract ? "java.lang.AbstractMethodError" : "java.lang.IllegalAccessError", targetType.Name + ".Invoke" + iface.GetMethods()[0].Signature);
                 ilgen.DoEmit();
                 return mb;
@@ -107,10 +107,10 @@ namespace IKVM.Runtime
             internal override void EmitNewobj(CodeEmitter ilgen)
             {
                 ilgen.Emit(OpCodes.Ldtoken, delegateConstructor.DeclaringType);
-                ilgen.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
+                ilgen.Emit(OpCodes.Call, DeclaringType.Context.CompilerFactory.GetTypeFromHandleMethod);
                 ilgen.Emit(OpCodes.Ldstr, GetDelegateInvokeStubName(DeclaringType.TypeAsTBD));
                 ilgen.Emit(OpCodes.Ldstr, iface.GetMethods()[0].Signature);
-                ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCreateDelegate);
+                ilgen.Emit(OpCodes.Call, DeclaringType.Context.ByteCodeHelperMethods.DynamicCreateDelegate);
                 ilgen.Emit(OpCodes.Castclass, delegateConstructor.DeclaringType);
             }
 
@@ -124,7 +124,7 @@ namespace IKVM.Runtime
 
                 // invoke the constructor, binding the delegate to the target delegate
                 ilgen.Emit(OpCodes.Dup);
-                ilgen.Emit(OpCodes.Ldvirtftn, MethodHandleUtil.GetDelegateInvokeMethod(delegateConstructor.DeclaringType));
+                ilgen.Emit(OpCodes.Ldvirtftn, DeclaringType.Context.MethodHandleUtil.GetDelegateInvokeMethod(delegateConstructor.DeclaringType));
                 ilgen.Emit(OpCodes.Call, delegateConstructor);
             }
 

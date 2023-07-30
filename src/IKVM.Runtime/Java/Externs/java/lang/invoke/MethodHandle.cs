@@ -29,47 +29,51 @@ namespace IKVM.Java.Externs.java.lang.invoke
     static class MethodHandle
     {
 
-        public static object invokeExact(global::java.lang.invoke.MethodHandle thisObject, object[] args)
+        public static object invokeExact(global::java.lang.invoke.MethodHandle self, object[] args)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
-            return IKVM.Runtime.ByteCodeHelper.GetDelegateForInvokeExact<IKVM.Runtime.MH<object[], object>>(thisObject)(args);
+            return self.invokeWithArguments(args);
 #endif
         }
 
-        public static object invoke(global::java.lang.invoke.MethodHandle thisObject, object[] args)
+        public static object invoke(global::java.lang.invoke.MethodHandle self, object[] args)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
-            return thisObject.invokeWithArguments(args);
+            return self.invokeWithArguments(args);
 #endif
         }
 
-        public static object invokeBasic(global::java.lang.invoke.MethodHandle thisObject, object[] args)
+        public static object invokeBasic(global::java.lang.invoke.MethodHandle self, object[] args)
         {
-            throw new InvalidOperationException();
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return self.invokeWithArguments(args);
+#endif
         }
 
         public static object linkToVirtual(object[] args)
         {
-            throw new InvalidOperationException();
+            throw new NotImplementedException();
         }
 
         public static object linkToStatic(object[] args)
         {
-            throw new InvalidOperationException();
+            throw new NotImplementedException();
         }
 
         public static object linkToSpecial(object[] args)
         {
-            throw new InvalidOperationException();
+            throw new NotImplementedException();
         }
 
         public static object linkToInterface(object[] args)
         {
-            throw new InvalidOperationException();
+            throw new NotImplementedException();
         }
 
     }

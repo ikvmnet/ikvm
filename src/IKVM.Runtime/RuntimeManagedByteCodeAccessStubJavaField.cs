@@ -75,7 +75,7 @@ namespace IKVM.Runtime
         /// <param name="field"></param>
         /// <param name="propertyType"></param>
         internal RuntimeManagedByteCodeAccessStubJavaField(RuntimeJavaType wrapper, PropertyInfo property, FieldInfo field, RuntimeJavaType propertyType) :
-            this(wrapper, property, field, propertyType, AttributeHelper.GetModifiersAttribute(property).Modifiers, MemberFlags.AccessStub)
+            this(wrapper, property, field, propertyType, wrapper.Context.AttributeHelper.GetModifiersAttribute(property).Modifiers, MemberFlags.AccessStub)
         {
 
         }

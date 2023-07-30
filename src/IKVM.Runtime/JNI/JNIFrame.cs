@@ -25,8 +25,6 @@ using System;
 using System.Diagnostics;
 using System.Text;
 
-using IKVM.Runtime;
-
 namespace IKVM.Runtime.JNI
 {
 
@@ -36,6 +34,11 @@ namespace IKVM.Runtime.JNI
         JNIEnv.ManagedJNIEnv env;
         JNIEnv.ManagedJNIEnv.FrameState prevFrameState;
 
+        /// <summary>
+        /// Enters the <see cref="JNIFrame"/> with a specified <see cref="RuntimeClassLoader"/> in scope.
+        /// </summary>
+        /// <param name="loader"></param>
+        /// <returns></returns>
         internal RuntimeClassLoader Enter(RuntimeClassLoader loader)
         {
             Enter((ikvm.@internal.CallerID)null);
@@ -44,35 +47,45 @@ namespace IKVM.Runtime.JNI
             return prev;
         }
 
+        /// <summary>
+        /// Leaves a <see cref="JNIFrame"/> previously entered.
+        /// </summary>
         internal void Leave(RuntimeClassLoader prev)
         {
             env.classLoader = prev;
             Leave();
         }
 
+        /// <summary>
+        /// Enters the <see cref="JNIFrame"/> with a specified <see cref="ikvm.@internal.CallerID"/> in scope.
+        /// </summary>
+        /// <param name="callerID"></param>
+        /// <returns></returns>
         public IntPtr Enter(ikvm.@internal.CallerID callerID)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             env = TlsHack.ManagedJNIEnv;
-            if (env == null)
-            {
-                env = JNIEnv.CreateJNIEnv()->GetManagedJNIEnv();
-            }
+            env ??= JNIEnv.CreateJNIEnv(JVM.Context)->GetManagedJNIEnv();
             prevFrameState = env.Enter(callerID);
             return (IntPtr)(void*)env.pJNIEnv;
+#endif
         }
 
+        /// <summary>
+        /// Leaves a <see cref="JNIFrame"/> previously entered.
+        /// </summary>
         public void Leave()
         {
-            Exception x = env.Leave(prevFrameState);
+            var x = env.Leave(prevFrameState);
             if (x != null)
-            {
                 throw x;
-            }
         }
 
         public static IntPtr GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
         {
-            RuntimeClassLoader loader = RuntimeClassLoader.FromCallerID(callerID);
+            var loader = RuntimeClassLoader.FromCallerID(callerID);
             int sp = 0;
             for (int i = 1; sig[i] != ')'; i++)
             {
@@ -107,11 +120,12 @@ namespace IKVM.Runtime.JNI
                         break;
                 }
             }
-            string mangledClass = JniMangle(clazz);
-            string mangledName = JniMangle(name);
-            string mangledSig = JniMangle(sig.Substring(1, sig.IndexOf(')') - 1));
-            string shortMethodName = $"Java_{mangledClass}_{mangledName}";
-            string longMethodName = $"Java_{mangledClass}_{mangledName}__{mangledSig}";
+
+            var mangledClass = JniMangle(clazz);
+            var mangledName = JniMangle(name);
+            var mangledSig = JniMangle(sig.Substring(1, sig.IndexOf(')') - 1));
+            var shortMethodName = $"Java_{mangledClass}_{mangledName}";
+            var longMethodName = $"Java_{mangledClass}_{mangledName}__{mangledSig}";
             Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, class loader = {3}, short = {4}, long = {5}, args = {6}", clazz, name, sig, loader, shortMethodName, longMethodName, sp + 2 * IntPtr.Size);
 
             lock (JNINativeLoader.SyncRoot)

@@ -40,7 +40,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
-            SetTag(obj, RuntimeClassLoaderFactory.GetWrapperFromType(Type.GetTypeFromHandle(typeHandle)));
+            SetTag(obj, JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(Type.GetTypeFromHandle(typeHandle)));
 #endif
         }
 
@@ -74,7 +74,7 @@ namespace IKVM.Runtime
             RuntimeJavaType tw1 = GhostTag.GetTag(obj);
             if (tw1 != null)
             {
-                RuntimeJavaType tw2 = RuntimeClassLoaderFactory.GetWrapperFromType(Type.GetTypeFromHandle(typeHandle)).MakeArrayType(rank);
+                RuntimeJavaType tw2 = tw1.Context.ClassLoaderFactory.GetJavaTypeFromType(Type.GetTypeFromHandle(typeHandle)).MakeArrayType(rank);
                 return tw1.IsAssignableTo(tw2);
             }
             return false;

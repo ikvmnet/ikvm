@@ -26,6 +26,7 @@ using System;
 using System.IO;
 using System.Security;
 
+using IKVM.Runtime;
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.sun.nio.fs
@@ -40,9 +41,9 @@ namespace IKVM.Java.Externs.sun.nio.fs
             return null;
 #else
             path = global::java.io.DefaultFileSystem.getFileSystem().canonicalize(path);
-            if (VfsTable.Default.IsPath(path))
+            if (JVM.Vfs.IsPath(path))
             {
-                if (VfsTable.Default.GetEntry(path) is VfsFile file)
+                if (JVM.Vfs.GetEntry(path) is VfsFile file)
                 {
                     if (file.CanOpen(FileMode.Open, FileAccess.Read) == false)
                         throw new global::java.nio.file.AccessDeniedException(path);
