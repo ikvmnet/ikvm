@@ -511,7 +511,6 @@ jobs:
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]}')[matrix.sys] }}
     steps:
-
     - name: Set Paths (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
