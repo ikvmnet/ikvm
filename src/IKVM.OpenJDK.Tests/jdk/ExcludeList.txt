@@ -3416,9 +3416,6 @@ com/sun/jdi/RedefineAddPrivateMethod.sh                                         
 # not implemented/not applicable
 javax/management/mxbean/MXBeanInteropTest1.java                                                                         generic-all
 
-# not distributing limited policy
-javax/crypto/CryptoPermission/TestUnlimited.java                                                                        generic-all
-
 # rogue.
 java/beans/Introspector/8159696/UnloadClassBeanInfo.java                                                                generic-all
 
@@ -3430,3 +3427,8 @@ sun/security/tools/keytool/keyalg.sh                                            
 
 # Class(-Loader) GC not supported
 javax/management/mxbean/MXBeanLoadingTest1.java                                                                         generic-all
+
+# These tests assume limited policy, reenable after integrating u161
+javax/crypto/CryptoPermission/TestUnlimited.java                                                                        generic-all
+com/sun/crypto/provider/Cipher/Blowfish/TestCipherBlowfish.java                                                         generic-all
+com/sun/crypto/provider/Cipher/PBE/PBESameBuffer/PBESameBuffer.java                                                     generic-all
