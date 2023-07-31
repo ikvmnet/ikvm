@@ -178,7 +178,7 @@ namespace IKVM.Tools.Importer
                 ? options.sharedclassloader[0].assemblyName
                 : assemblyName;
             if (!DisableDynamicBinding)
-                Context.AttributeHelper.SetInternalsVisibleToAttribute(assemblyBuilder, mainAssemblyName + DynamicClassLoaderFactory.DynamicAssemblySuffixAndPublicKey);
+                Context.AttributeHelper.SetInternalsVisibleToAttribute(assemblyBuilder, mainAssemblyName + Context.Options.DynamicAssemblySuffixAndPublicKey);
 
             return moduleBuilder;
         }

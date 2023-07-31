@@ -172,7 +172,7 @@ namespace IKVM.Tools.Importer
             var importer = new IkvmImporterInternal();
             var targets = new List<CompilerOptions>();
             var rootTarget = new CompilerOptions();
-            var context = new RuntimeContext(new ManagedResolver(compiler), argList.Contains("-bootstrap"), compiler);
+            var context = new RuntimeContext(new RuntimeContextOptions(), new ManagedResolver(compiler), argList.Contains("-bootstrap"), compiler);
 
             compiler.rootTarget = rootTarget;
             importer.ParseCommandLine(context, compiler, argList.GetEnumerator(), targets, rootTarget);
@@ -181,7 +181,6 @@ namespace IKVM.Tools.Importer
             resolver.Init(compiler.Universe, nostdlib, rootTarget.unresolvedReferences, libpaths);
             ResolveReferences(compiler, targets);
             ResolveStrongNameKeys(targets);
-
 
             if (targets.Count == 0)
             {

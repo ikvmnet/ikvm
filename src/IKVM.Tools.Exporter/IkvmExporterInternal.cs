@@ -191,7 +191,7 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new ManagedResolver(compiler, null), true, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), new ManagedResolver(compiler, null), true, compiler);
                     context.ClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader(context));
                 }
                 else
@@ -218,7 +218,7 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new ManagedResolver(compiler, baseAssembly), false, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), new ManagedResolver(compiler, baseAssembly), false, compiler);
                 }
 
                 if (context.AttributeHelper.IsJavaModule(assembly.ManifestModule))
