@@ -57,27 +57,12 @@ namespace IKVM.Tools.Runner
         /// <summary>
         /// Gets the path to executable for the given environment.
         /// </summary>
-        /// <param name="framework"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="NotImplementedException"></exception>
         public string GetToolExe()
         {
             return GetToolExe(GetOSPlatform(), RuntimeInformation.OSArchitecture);
-        }
-
-        /// <summary>
-        /// Gets the path to the reference assemblies for the given environment.
-        /// </summary>
-        /// <param name="framework"></param>
-        /// <param name="platform"></param>
-        /// <param name="architecture"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="NotImplementedException"></exception>
-        public string GetReferenceAssemblyDirectory()
-        {
-            return Path.Combine(toolPath, "refs");
         }
 
         /// <summary>

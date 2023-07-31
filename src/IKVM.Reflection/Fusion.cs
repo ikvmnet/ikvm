@@ -47,13 +47,14 @@ namespace IKVM.Reflection
         /// <summary>
         /// Native implementation of CompareAssemblyIdentity.
         /// </summary>
+        /// <param name="coreLibName"></param>
         /// <param name="assemblyIdentity1"></param>
         /// <param name="unified1"></param>
         /// <param name="assemblyIdentity2"></param>
         /// <param name="unified2"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-		internal static bool CompareAssemblyIdentityNative(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
+		internal static bool CompareAssemblyIdentityNative(string coreLibName, string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
         {
             Marshal.ThrowExceptionForHR(CompareAssemblyIdentity(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out var equivalent, out result));
             return equivalent;
@@ -65,6 +66,7 @@ namespace IKVM.Reflection
         /// <summary>
         /// Managed implementation of CompareAssemblyIdentity.
         /// </summary>
+        /// <param name="coreLibName"></param>
         /// <param name="assemblyIdentity1"></param>
         /// <param name="unified1"></param>
         /// <param name="assemblyIdentity2"></param>
@@ -73,7 +75,7 @@ namespace IKVM.Reflection
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="System.IO.FileLoadException"></exception>
-        internal static bool CompareAssemblyIdentityPure(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
+        internal static bool CompareAssemblyIdentityPure(string coreLibName, string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
         {
             ParsedAssemblyName name1;
             ParsedAssemblyName name2;
@@ -97,7 +99,7 @@ namespace IKVM.Reflection
                 throw new ArgumentException();
             }
 
-            if (name2.Name != null && name2.Name.Equals(Universe.CoreLibName, StringComparison.OrdinalIgnoreCase))
+            if (name2.Name != null && name2.Name.Equals(coreLibName, StringComparison.OrdinalIgnoreCase))
             {
                 if (name1.Name != null && name1.Name.Equals(name2.Name, StringComparison.OrdinalIgnoreCase))
                 {

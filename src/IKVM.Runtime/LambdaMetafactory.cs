@@ -940,14 +940,14 @@ namespace IKVM.Runtime
 
         private static bool MatchSignatures(RuntimeJavaMethod interfaceMethod, ClassFile.ConstantPoolItemMethodType samMethodType)
         {
-            return interfaceMethod.ReturnType == samMethodType.GetRetType()
-                && MatchTypes(interfaceMethod.GetParameters(), samMethodType.GetArgTypes());
+            return interfaceMethod.ReturnType == samMethodType.GetRetType() && MatchTypes(interfaceMethod.GetParameters(), samMethodType.GetArgTypes());
         }
 
         private static bool MatchSignatures(RuntimeJavaMethod mw1, RuntimeJavaMethod mw2)
         {
-            return mw1.ReturnType == mw2.ReturnType
-                && MatchTypes(mw1.GetParameters(), mw2.GetParameters());
+            mw1.Link();
+            mw2.Link();
+            return mw1.ReturnType == mw2.ReturnType && MatchTypes(mw1.GetParameters(), mw2.GetParameters());
         }
 
         private static bool MatchTypes(RuntimeJavaType[] ar1, RuntimeJavaType[] ar2)

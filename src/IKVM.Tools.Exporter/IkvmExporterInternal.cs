@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
+using System.Security.Cryptography.Xml;
 
 using IKVM.Reflection;
 using IKVM.Runtime;
@@ -116,8 +119,16 @@ namespace IKVM.Tools.Exporter
                 references.Add(options.Assembly);
             }
 
+            // discover the core lib from the references
+            var coreLibName = FindCoreLibName(references, libpaths);
+            if (coreLibName == null)
+            {
+                Console.Error.WriteLine("Error: core library not found");
+                return 1;
+            }
+
             // build universe and resolver against universe and references
-            var universe = new Universe();
+            var universe = new Universe(coreLibName);
             var assemblyResolver = new AssemblyResolver();
             assemblyResolver.Warning += new AssemblyResolver.WarningEvent(Resolver_Warning);
             assemblyResolver.Init(universe, options.NoStdLib, references, libpaths);
@@ -264,6 +275,57 @@ namespace IKVM.Tools.Exporter
             }
 
             return rc;
+        }
+
+        /// <summary>
+        /// Finds the first potential core library in the reference set.
+        /// </summary>
+        /// <param name="references"></param>
+        /// <param name="libpaths"></param>
+        /// <returns></returns>
+        static string FindCoreLibName(List<string> references, List<string> libpaths)
+        {
+            foreach (var reference in references)
+                if (GetAssemblyNameIfCoreLib(reference) is string coreLibName)
+                    return coreLibName;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given assembly is a core library.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        static string GetAssemblyNameIfCoreLib(string path)
+        {
+            if (File.Exists(path) == false)
+                return null;
+
+            using var st = File.OpenRead(path);
+            using var pe = new PEReader(st);
+            var mr = pe.GetMetadataReader();
+
+            foreach (var handle in mr.TypeDefinitions)
+                if (IsSystemObject(mr, handle))
+                    return mr.GetString(mr.GetAssemblyDefinition().Name);
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given type definition handle refers to "System.Object".
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="th"></param>
+        /// <returns></returns>
+        static bool IsSystemObject(MetadataReader reader, TypeDefinitionHandle th)
+        {
+            var td = reader.GetTypeDefinition(th);
+            var ns = reader.GetString(td.Namespace);
+            var nm = reader.GetString(td.Name);
+
+            return ns == "System" && nm == "Object";
         }
 
         static void Resolver_Warning(AssemblyResolver.WarningId warning, string message, string[] parameters)

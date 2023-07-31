@@ -565,9 +565,8 @@ namespace IKVM.Tools.Importer
                     {
                         string r = s.Substring(s.IndexOf(':') + 1);
                         if (r == "")
-                        {
                             throw new FatalCompilerErrorException(Message.MissingFileSpecification, s);
-                        }
+
                         ArrayAppend(ref options.unresolvedReferences, r);
                     }
                     else if (s.StartsWith("-recurse:"))
@@ -1098,6 +1097,7 @@ namespace IKVM.Tools.Importer
                     }
                 }
             }
+
             // verify that we didn't reference any secondary assemblies of a shared class loader group
             foreach (CompilerOptions target in targets)
             {

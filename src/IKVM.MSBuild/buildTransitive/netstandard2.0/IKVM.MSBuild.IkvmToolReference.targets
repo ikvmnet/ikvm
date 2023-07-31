@@ -116,14 +116,19 @@
     <PropertyGroup>
         <ResolveIkvmFrameworkReferencesDependsOn>
             $(ResolveIkvmFrameworkReferencesDependsOn);
-            ResolveIkvmCompiler;
+            GetFrameworkPaths;
+            GetReferenceAssemblyPaths;
+            PrepareForBuild;
+            ResolveSDKReferences;
+            ExpandSDKReferences;
+            ResolveTargetingPackAssets;
         </ResolveIkvmFrameworkReferencesDependsOn>
     </PropertyGroup>
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
     <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
         <ItemGroup>
-            <IkvmFrameworkReference Include="$(_IkvmCompilerPublishDir)refs\*.dll" />
+            <IkvmFrameworkReference Include="@(Reference)" />
         </ItemGroup>
     </Target>
 
