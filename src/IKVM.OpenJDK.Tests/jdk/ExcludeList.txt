@@ -3042,12 +3042,6 @@ sun/security/x509/AlgorithmId/ExtensibleAlgorithmId.java                        
 sun/text/resources/LocaleDataTest.java                                                                                  generic-all
 sun/tools/common/CommonTests.sh                                                                                         generic-all
 sun/tools/java/CFCTest.java                                                                                             generic-all
-sun/tools/jcmd/jcmd-Defaults.sh                                                                                         generic-all
-sun/tools/jcmd/jcmd-big-script.sh                                                                                       generic-all
-sun/tools/jcmd/jcmd-f.sh                                                                                                generic-all
-sun/tools/jcmd/jcmd-help-help.sh                                                                                        generic-all
-sun/tools/jcmd/jcmd-help.sh                                                                                             generic-all
-sun/tools/jcmd/jcmd-pid.sh                                                                                              generic-all
 sun/tools/jconsole/ResourceCheckTest.sh                                                                                 generic-all
 sun/tools/jhat/HatHeapDump1Test.java                                                                                    generic-all
 sun/tools/jhat/ParseTest.sh                                                                                             generic-all
@@ -3407,6 +3401,7 @@ sun/tools/jps/TestJpsSanity.java                                                
 
 # jcmd
 sun/tools/jcmd/TestJcmdDefaults.java                                                                                    generic-all
+sun/tools/jcmd/TestJcmdSanity.java                                                                                      generic-all
 
 # jdi
 com/sun/jdi/oom/OomDebugTest.java                                                                                       generic-all
@@ -3427,6 +3422,10 @@ sun/security/tools/keytool/keyalg.sh                                            
 
 # Class(-Loader) GC not supported
 javax/management/mxbean/MXBeanLoadingTest1.java                                                                         generic-all
+
+# krb5
+sun/security/krb5/auto/UnboundSSL.java                                                                                  generic-all
+sun/security/krb5/auto/UnboundSSLPrincipalProperty.java                                                                 generic-all
 
 # These tests assume limited policy, reenable after integrating u161
 javax/crypto/CryptoPermission/TestUnlimited.java                                                                        generic-all
