@@ -4,10 +4,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmc\net461\win7-x64\" TargetFramework="net461" RuntimeIdentifier="win7-x64" />
-        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmc\netcoreapp3.1\win7-x64\" TargetFramework="netcoreapp3.1" RuntimeIdentifier="win7-x64" />
-        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmstub\net461\win7-x64\" TargetFramework="net461" RuntimeIdentifier="win7-x64" />
-        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmstub\netcoreapp3.1\win7-x64\" TargetFramework="netcoreapp3.1" RuntimeIdentifier="win7-x64" />
+        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmc\net472\win7-x64\" TargetFramework="net472" RuntimeIdentifier="win7-x64" />
+        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmc\net6.0\win7-x64\" TargetFramework="net6.0" RuntimeIdentifier="win7-x64" />
+        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmstub\net472\win7-x64\" TargetFramework="net472" RuntimeIdentifier="win7-x64" />
+        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmstub\net6.0\win7-x64\" TargetFramework="net6.0" RuntimeIdentifier="win7-x64" />
     </ItemGroup>
 
 </Project>

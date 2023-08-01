@@ -22,24 +22,19 @@
         <TestTarget Include="IKVM.Tools.Tests|netcoreapp3.1" ProjectName="IKVM.Tools.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tools.Tests|net6.0" ProjectName="IKVM.Tools.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.Tools.Tests|net7.0" ProjectName="IKVM.Tools.Tests" TargetFramework="net7.0" />
-        <TestTarget Include="IKVM.Tools.Exporter.Tests|net461" ProjectName="IKVM.Tools.Exporter.Tests" TargetFramework="net461" />
-        <TestTarget Include="IKVM.Tools.Exporter.Tests|netcoreapp3.1" ProjectName="IKVM.Tools.Exporter.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.Tools.Exporter.Tests|net472" ProjectName="IKVM.Tools.Exporter.Tests" TargetFramework="net472" />
         <TestTarget Include="IKVM.Tools.Exporter.Tests|net6.0" ProjectName="IKVM.Tools.Exporter.Tests" TargetFramework="net6.0" />
-        <TestTarget Include="IKVM.Tools.Importer.Tests|net461" ProjectName="IKVM.Tools.Importer.Tests" TargetFramework="net461" />
-        <TestTarget Include="IKVM.Tools.Importer.Tests|netcoreapp3.1" ProjectName="IKVM.Tools.Importer.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.Tools.Importer.Tests|net472" ProjectName="IKVM.Tools.Importer.Tests" TargetFramework="net472" />
         <TestTarget Include="IKVM.Tools.Importer.Tests|net6.0" ProjectName="IKVM.Tools.Importer.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net472" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net472" />
-        <TestTarget Include="IKVM.MSBuild.Tasks.Tests|netcoreapp3.1" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net6.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net7.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net7.0" />
         <TestTarget Include="IKVM.MSBuild.Tests|net7.0" ProjectName="IKVM.MSBuild.Tests" TargetFramework="net7.0" />
         <TestTarget Include="IKVM.NET.Sdk.Tests|net7.0" ProjectName="IKVM.NET.Sdk.Tests" TargetFramework="net7.0" />
         <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net461" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net461" />
-        <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|netcoreapp3.1" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net6.0" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net7.0" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net7.0" />
         <TestTarget Include="IKVM.OpenJDK.Tests|net461" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net461" />
-        <TestTarget Include="IKVM.OpenJDK.Tests|netcoreapp3.1" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.OpenJDK.Tests|net6.0" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net6.0" />
     </ItemGroup>
 
