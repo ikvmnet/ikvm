@@ -3431,3 +3431,4 @@ sun/security/krb5/auto/UnboundSSLPrincipalProperty.java                         
 javax/crypto/CryptoPermission/TestUnlimited.java                                                                        generic-all
 com/sun/crypto/provider/Cipher/Blowfish/TestCipherBlowfish.java                                                         generic-all
 com/sun/crypto/provider/Cipher/PBE/PBESameBuffer/PBESameBuffer.java                                                     generic-all
+com/sun/crypto/provider/Cipher/PBE/TestCipherKeyWrapperPBEKey.java                                                      generic-all
