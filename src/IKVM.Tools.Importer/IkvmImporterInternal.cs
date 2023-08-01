@@ -176,7 +176,7 @@ namespace IKVM.Tools.Importer
 
             compiler.rootTarget = rootTarget;
             importer.ParseCommandLine(context, compiler, argList.GetEnumerator(), targets, rootTarget);
-            compiler.Init(nonDeterministicOutput);
+            compiler.Init(nonDeterministicOutput, libpaths);
             resolver.Warning += (warning, message, parameters) => loader_Warning(compiler, warning, message, parameters);
             resolver.Init(compiler.Universe, nostdlib, rootTarget.unresolvedReferences, libpaths);
             ResolveReferences(compiler, targets);

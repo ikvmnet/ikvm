@@ -39,6 +39,7 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer
 {
+
     class StaticCompiler
     {
 
@@ -52,14 +53,14 @@ namespace IKVM.Tools.Importer
 
         internal Universe Universe => universe;
 
-        internal void Init(bool nonDeterministicOutput)
+        internal void Init(bool nonDeterministicOutput, IList<string> libpaths)
         {
             var options = UniverseOptions.ResolveMissingMembers | UniverseOptions.EnableFunctionPointers;
             if (!nonDeterministicOutput)
                 options |= UniverseOptions.DeterministicOutput;
 
             // discover the core lib from the references
-            var coreLibName = FindCoreLibName(rootTarget.unresolvedReferences, null);
+            var coreLibName = FindCoreLibName(rootTarget.unresolvedReferences, libpaths);
             if (coreLibName == null)
                 Console.Error.WriteLine("Error: core library not found");
 
@@ -75,9 +76,16 @@ namespace IKVM.Tools.Importer
         /// <returns></returns>
         static string FindCoreLibName(IList<string> references, IList<string> libpaths)
         {
-            foreach (var reference in references)
-                if (GetAssemblyNameIfCoreLib(reference) is string coreLibName)
-                    return coreLibName;
+            if (references != null)
+                foreach (var reference in references)
+                    if (GetAssemblyNameIfCoreLib(reference) is string coreLibName)
+                        return coreLibName;
+
+            if (libpaths != null)
+                foreach (var libpath in libpaths)
+                    foreach (var dll in Directory.GetFiles(libpath, "*.dll"))
+                        if (GetAssemblyNameIfCoreLib(dll) is string coreLibName)
+                            return coreLibName;
 
             return null;
         }
