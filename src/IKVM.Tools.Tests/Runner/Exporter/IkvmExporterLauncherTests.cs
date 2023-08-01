@@ -26,10 +26,10 @@ namespace IKVM.Tools.Tests.Runner.Exporter
         public TestContext TestContext { get; set; }
 
         [DataTestMethod]
-        [DataRow("net472", "net461", ".NETFramework", "4.0")]
+        [DataRow("net472", "net461", ".NETFramework", "4.6.1")]
         [DataRow("net472", "netcoreapp3.1", ".NETCore", "3.1")]
         [DataRow("net472", "net6.0", ".NETCore", "6.0")]
-        [DataRow("net6.0", "net461", ".NETFramework", "4.0")]
+        [DataRow("net6.0", "net461", ".NETFramework", "4.6.1")]
         [DataRow("net6.0", "netcoreapp3.1", ".NETCore", "3.1")]
         [DataRow("net6.0", "net6.0", ".NETCore", "6.0")]
         public async System.Threading.Tasks.Task CanExportDll(string toolFramework, string tfm, string targetFrameworkIdentifier, string targetFrameworkVersion)
