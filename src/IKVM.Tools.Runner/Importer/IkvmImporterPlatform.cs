@@ -1,7 +1,7 @@
-﻿namespace IKVM.Tools.Runner.Compiler
+﻿namespace IKVM.Tools.Runner.Importer
 {
 
-    public enum IkvmCompilerPlatform
+    public enum IkvmImporterPlatform
     {
 
         AnyCPU,

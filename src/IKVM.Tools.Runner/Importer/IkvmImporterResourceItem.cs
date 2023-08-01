@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace IKVM.Tools.Runner.Compiler
+namespace IKVM.Tools.Runner.Importer
 {
 
     /// <summary>
     /// Describes a resource option.
     /// </summary>
-    public class IkvmCompilerResourceItem
+    public class IkvmImporterResourceItem
     {
 
         /// <summary>
@@ -16,7 +16,7 @@ namespace IKVM.Tools.Runner.Compiler
         /// </summary>
         /// <param name="filePath"></param>
         /// <param name="resourcePath"></param>
-        public IkvmCompilerResourceItem(string filePath, string resourcePath)
+        public IkvmImporterResourceItem(string filePath, string resourcePath)
         {
             if (string.IsNullOrEmpty(filePath))
                 throw new ArgumentException($"'{nameof(filePath)}' cannot be null or empty.", nameof(filePath));

@@ -91,6 +91,10 @@ namespace IKVM.Tools.Importer
                 if (appDomain != null)
                     AppDomain.Unload(appDomain);
             }
+            catch
+            {
+                // ignore
+            }
             finally
             {
                 appDomain = null;

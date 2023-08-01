@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 
 using IKVM.Tools.Runner;
-using IKVM.Tools.Runner.Compiler;
+using IKVM.Tools.Runner.Importer;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -31,11 +31,12 @@ namespace IKVM.Tests.Java.ikvm.runtime
         public async Task Setup()
         {
 #if NETCOREAPP
-            var tfm = "netcoreapp3.1";
+            var toolFramework = "net6.0";
 #else
-            var tfm = "net461";
+            var toolFramework = "net472";
 #endif
 
+            var refsDir = Path.Combine(Path.GetDirectoryName(typeof(AssemblyClassLoaderTests).Assembly.Location), "refs");
             var n = Guid.NewGuid().ToString("n");
             var p = Path.Combine(Path.GetTempPath(), n, $"helloworld_{n}.dll");
             Directory.CreateDirectory(Path.GetDirectoryName(p));
@@ -47,10 +48,10 @@ namespace IKVM.Tests.Java.ikvm.runtime
                 rid = "linux-x64";
 
             var e = new List<IkvmToolDiagnosticEvent>();
-            var l = new IkvmCompilerLauncher(Path.Combine(Path.GetDirectoryName(typeof(AssemblyClassLoaderTests).Assembly.Location), "ikvmc", tfm, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
-            var o = new IkvmCompilerOptions()
+            var l = new IkvmImporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(AssemblyClassLoaderTests).Assembly.Location), "ikvmc", toolFramework, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
+            var o = new IkvmImporterOptions()
             {
-                Runtime = Path.Combine("lib", tfm, "IKVM.Runtime.dll"),
+                Runtime = Path.Combine(refsDir, "IKVM.Runtime.dll"),
                 ResponseFile = $"{n}_ikvmc.rsp",
                 Input = { Path.Combine("helloworld", "helloworld-2.0.jar") },
                 Assembly = $"helloworld_{n}",
@@ -59,10 +60,8 @@ namespace IKVM.Tests.Java.ikvm.runtime
                 Output = p,
             };
 
-            o.References.Add(Path.Combine("lib", tfm, "IKVM.Java.dll"));
-            o.References.Add(Path.Combine("lib", tfm, "IKVM.Runtime.dll"));
-            foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory()))
-                o.References.Add(f);
+            foreach (var dll in Directory.GetFiles(refsDir, "*.dll"))
+                o.References.Add(dll);
 
             var exitCode = await l.ExecuteAsync(o);
             exitCode.Should().Be(0);

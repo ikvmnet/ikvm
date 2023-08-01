@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net7.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -12,6 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\IKVM.Tests.Util\IKVM.Tests.Util.csproj" />
         <ProjectReference Include="..\IKVM.Tools.Runner\IKVM.Tools.Runner.csproj" />
     </ItemGroup>
 

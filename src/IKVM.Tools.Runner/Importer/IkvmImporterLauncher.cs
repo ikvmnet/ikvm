@@ -10,13 +10,13 @@ using CliWrap;
 
 using IKVM.Tools.Runner.Internal;
 
-namespace IKVM.Tools.Runner.Compiler
+namespace IKVM.Tools.Runner.Importer
 {
 
     /// <summary>
     /// Provides methods to launch the IKVM compiler.
     /// </summary>
-    public class IkvmCompilerLauncher : IkvmToolLauncher
+    public class IkvmImporterLauncher : IkvmToolLauncher
     {
 
         static readonly string TOOLNAME = "ikvmc";
@@ -26,7 +26,7 @@ namespace IKVM.Tools.Runner.Compiler
         /// </summary>
         /// <param name="toolPath"></param>
         /// <param name="listener"></param>
-        public IkvmCompilerLauncher(string toolPath, IIkvmToolDiagnosticEventListener listener) :
+        public IkvmImporterLauncher(string toolPath, IIkvmToolDiagnosticEventListener listener) :
             base(TOOLNAME, toolPath, listener)
         {
 
@@ -36,8 +36,8 @@ namespace IKVM.Tools.Runner.Compiler
         /// Initializes a new instance.
         /// </summary>
         /// <param name="listener"></param>
-        public IkvmCompilerLauncher(IIkvmToolDiagnosticEventListener listener) :
-            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmCompilerLauncher).Assembly.Location), TOOLNAME), listener)
+        public IkvmImporterLauncher(IIkvmToolDiagnosticEventListener listener) :
+            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterLauncher).Assembly.Location), TOOLNAME), listener)
         {
 
         }
@@ -46,7 +46,7 @@ namespace IKVM.Tools.Runner.Compiler
         /// Initializes a new instance.
         /// </summary>
         /// <param name="toolPath"></param>
-        public IkvmCompilerLauncher(string toolPath) :
+        public IkvmImporterLauncher(string toolPath) :
             this(toolPath, new IkvmToolDelegateDiagnosticListener(evt => Task.CompletedTask))
         {
 
@@ -58,7 +58,7 @@ namespace IKVM.Tools.Runner.Compiler
         /// <param name="options"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task<int> ExecuteAsync(IkvmCompilerOptions options, CancellationToken cancellationToken = default)
+        public async Task<int> ExecuteAsync(IkvmImporterOptions options, CancellationToken cancellationToken = default)
         {
             if (options is null)
                 throw new ArgumentNullException(nameof(options));
@@ -78,16 +78,16 @@ namespace IKVM.Tools.Runner.Compiler
             {
                 switch (options.Target)
                 {
-                    case IkvmCompilerTarget.Library:
+                    case IkvmImporterTarget.Library:
                         w.WriteLine($"-target:library");
                         break;
-                    case IkvmCompilerTarget.Exe:
+                    case IkvmImporterTarget.Exe:
                         w.WriteLine($"-target:exe");
                         break;
-                    case IkvmCompilerTarget.WinExe:
+                    case IkvmImporterTarget.WinExe:
                         w.WriteLine($"-target:winexe");
                         break;
-                    case IkvmCompilerTarget.Module:
+                    case IkvmImporterTarget.Module:
                         w.WriteLine($"-target:module");
                         break;
                 }
