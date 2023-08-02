@@ -25,11 +25,6 @@
             <ProjectPackagePath>ikvm\net461\linux-musl-arm\bin</ProjectPackagePath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=linux-musl-arm</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvm\netcoreapp3.1\linux-musl-arm\bin</ProjectPackagePath>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-musl-arm</SetRuntimeIdentifier>
             <ProjectPackagePath>ikvm\net6.0\linux-musl-arm\bin</ProjectPackagePath>
