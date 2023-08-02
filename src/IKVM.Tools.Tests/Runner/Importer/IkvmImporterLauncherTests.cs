@@ -29,9 +29,12 @@ namespace IKVM.Tools.Tests.Runner.Importer
         [DataRow("net6.0", "net461", ".NETFramework", "4.6.1")]
         [DataRow("net6.0", "netcoreapp3.1", ".NETCore", "3.1")]
         [DataRow("net6.0", "net6.0", ".NETCore", "6.0")]
+        [DataRow("net6.0", "net7.0", ".NETCore", "7.0")]
         public async System.Threading.Tasks.Task CanImportJar(string toolFramework, string tfm, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
             if (toolFramework == "net472" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                return;
+            if (toolFramework == "netcoreapp3.1" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
                 return;
             if (targetFrameworkIdentifier == ".NETFramework" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
                 return;
