@@ -6,11 +6,12 @@ using System.Runtime.InteropServices;
 using FluentAssertions;
 
 using IKVM.Tests.Util;
+using IKVM.Tools.Runner;
 using IKVM.Tools.Runner.Importer;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Tools.Runner.Test.Importer
+namespace IKVM.Tools.Tests.Runner.Importer
 {
 
     [TestClass]
@@ -30,6 +31,8 @@ namespace IKVM.Tools.Runner.Test.Importer
         [DataRow("net6.0", "net6.0", ".NETCore", "6.0")]
         public async System.Threading.Tasks.Task CanImportJar(string toolFramework, string tfm, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
+            if (toolFramework == "net472" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                return;
             if (targetFrameworkIdentifier == ".NETFramework" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
                 return;
 

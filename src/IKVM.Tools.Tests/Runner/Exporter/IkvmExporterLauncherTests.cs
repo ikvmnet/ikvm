@@ -31,6 +31,8 @@ namespace IKVM.Tools.Tests.Runner.Exporter
         [DataRow("net6.0", "net6.0", ".NETCore", "6.0")]
         public async System.Threading.Tasks.Task CanExportDll(string toolFramework, string tfm, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
+            if (toolFramework == "net472" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                return;
             if (targetFrameworkIdentifier == ".NETFramework" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
                 return;
 
