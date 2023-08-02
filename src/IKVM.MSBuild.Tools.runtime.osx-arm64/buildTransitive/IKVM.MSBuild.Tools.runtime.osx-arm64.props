@@ -4,10 +4,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmc\net461\osx-x64\" TargetFramework="net461" RuntimeIdentifier="osx-x64" />
-        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmc\netcoreapp3.1\osx-x64\" TargetFramework="netcoreapp3.1" RuntimeIdentifier="osx-x64" />
-        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmstub\net461\osx-x64\" TargetFramework="net461" RuntimeIdentifier="osx-x64" />
-        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmstub\netcoreapp3.1\osx-x64\" TargetFramework="netcoreapp3.1" RuntimeIdentifier="osx-x64" />
+        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmc\net472\osx-arm64\" TargetFramework="net472" RuntimeIdentifier="osx-arm64" />
+        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmc\net6.0\osx-arm64\" TargetFramework="net6.0" RuntimeIdentifier="osx-arm64" />
+        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmstub\net472\osx-arm64\" TargetFramework="net472" RuntimeIdentifier="osx-arm64" />
+        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmstub\net6.0\osx-arm64\" TargetFramework="net6.0" RuntimeIdentifier="osx-arm64" />
     </ItemGroup>
-    
+
 </Project>
