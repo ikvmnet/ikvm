@@ -36,7 +36,7 @@ These tasks can be done **without porting source code** to .NET.
 
 ## Support
 
-- .NET Framework 4.6.1 and higher
+- .NET Framework 4.6.1 and higher (SDK-style projects)
 - .NET Core 3.1 and higher
 - .NET 5 and higher
 - Java SE 8
