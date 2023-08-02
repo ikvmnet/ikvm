@@ -26,7 +26,7 @@
         </PublishProjectReference>
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' != 'net461' ">
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
         <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
             <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-musl-arm64</SetRuntimeIdentifier>

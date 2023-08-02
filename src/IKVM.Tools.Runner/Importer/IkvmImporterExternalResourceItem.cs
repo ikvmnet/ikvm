@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace IKVM.Tools.Runner.Compiler
+namespace IKVM.Tools.Runner.Importer
 {
 
     /// <summary>
     /// Describes an external resource option.
     /// </summary>
-    public class IkvmCompilerExternalResourceItem
+    public class IkvmImporterExternalResourceItem
     {
 
         /// <summary>
@@ -15,7 +15,7 @@ namespace IKVM.Tools.Runner.Compiler
         /// <param name="filePath"></param>
         /// <param name="resourcePath"></param>
         /// <exception cref="ArgumentException"></exception>
-        public IkvmCompilerExternalResourceItem(string filePath, string resourcePath)
+        public IkvmImporterExternalResourceItem(string filePath, string resourcePath)
         {
             if (string.IsNullOrEmpty(filePath))
                 throw new ArgumentException($"'{nameof(filePath)}' cannot be null or empty.", nameof(filePath));

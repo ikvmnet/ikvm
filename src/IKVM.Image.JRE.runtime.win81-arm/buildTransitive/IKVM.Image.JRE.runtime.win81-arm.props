@@ -9,16 +9,11 @@
             <RuntimeIdentifier>win81-arm</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\netcoreapp3.1\win81-arm\**\*">
-            <TargetFramework>netcoreapp3.1</TargetFramework>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net6.0\win81-arm\**\*">
+            <TargetFramework>net6.0</TargetFramework>
             <RuntimeIdentifier>win81-arm</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
             </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\win81-arm\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>win81-arm</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
     </ItemGroup>
 
 </Project>

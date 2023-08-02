@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 using CliWrap;
 
-using IKVM.Tools.Runner.Compiler;
+using IKVM.Tools.Runner.Importer;
 using IKVM.Tools.Runner.Internal;
 
 namespace IKVM.Tools.Runner.Exporter
@@ -38,7 +38,7 @@ namespace IKVM.Tools.Runner.Exporter
         /// </summary>
         /// <param name="listener"></param>
         public IkvmExporterLauncher(IIkvmToolDiagnosticEventListener listener) :
-            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmCompilerLauncher).Assembly.Location), TOOLNAME), listener)
+            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterLauncher).Assembly.Location), TOOLNAME), listener)
         {
 
         }

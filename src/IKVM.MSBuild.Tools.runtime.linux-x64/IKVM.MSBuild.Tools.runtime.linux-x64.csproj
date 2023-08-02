@@ -32,14 +32,19 @@
             <ProjectPackagePath>ikvmc\net6.0\linux-x64</ProjectPackagePath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvmstub\net461\linux-x64</ProjectPackagePath>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
             <ProjectPackagePath>ikvmstub\net6.0\linux-x64</ProjectPackagePath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
+            <ProjectPackagePath>ikvmc\net472\linux-x64</ProjectPackagePath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
+            <ProjectPackagePath>ikvmstub\net472\linux-x64</ProjectPackagePath>
         </PublishProjectReference>
     </ItemGroup>
 

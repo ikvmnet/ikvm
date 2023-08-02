@@ -1,13 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFrameworks>net461;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <DefineConstants>$(DefineConstants);EXPORTER</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <ProduceReferenceAssembly></ProduceReferenceAssembly>
+        <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+        <PackageReference Include="System.Reflection.Metadata" Version="6.0.1" />
     </ItemGroup>
 
     <ItemGroup>
@@ -86,6 +88,7 @@
         <Compile Include="..\IKVM.Runtime\RuntimeManagedJavaType.*.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeManagedJavaTypeFactory.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeContext.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\RuntimeContextOptions.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\IManagedTypeResolver.cs" LinkBase="IKVM.Runtime" />
     </ItemGroup>
 

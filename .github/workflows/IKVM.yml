@@ -404,8 +404,8 @@ jobs:
         - IKVM.ByteCode.Tests
         - IKVM.Tests
         - IKVM.Java.Tests
-        - IKVM.Tools.Importer.Tests
         - IKVM.Tools.Exporter.Tests
+        - IKVM.Tools.Importer.Tests
         - IKVM.Tools.Tests
         - IKVM.JTReg.TestAdapter.Tests
         - IKVM.OpenJDK.Tests?TestPartition=0
@@ -419,7 +419,6 @@ jobs:
         tfm:
         - net461
         - net6.0
-        - net7.0
         sys:
         - windows
         - linux
@@ -429,69 +428,37 @@ jobs:
           sys: linux
         - tfm: net461
           sys: osx-x64
-        - run: IKVM.Java.Tests
-          tfm: net6.0
         - run: IKVM.Tools.Exporter.Tests
-          tfm: net6.0
+          tfm: net461
         - run: IKVM.Tools.Importer.Tests
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=0
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=1
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=2
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=3
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=4
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=5
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=6
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=7
-          tfm: net6.0
-        - run: IKVM.Java.Tests
-          tfm: net7.0
-        - run: IKVM.Tools.Exporter.Tests
-          tfm: net7.0
-        - run: IKVM.Tools.Importer.Tests
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=0
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=1
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=2
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=3
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=4
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=5
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=6
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=7
-          tfm: net7.0
+          tfm: net461
+        - run: IKVM.Tools.Tests
+          tfm: net461
         include:
+        - run: IKVM.ByteCode.Tests
+          tfm: netcoreapp3.1
+          sys: windows
+        - run: IKVM.ByteCode.Tests
+          tfm: netcoreapp3.1
+          sys: linux
+        - run: IKVM.Java.Tests
+          tfm: netcoreapp3.1
+          sys: windows
+        - run: IKVM.Java.Tests
+          tfm: netcoreapp3.1
+          sys: linux
+        - run: IKVM.JTReg.TestAdapter.Tests
+          tfm: net7.0
+          sys: windows
+        - run: IKVM.JTReg.TestAdapter.Tests
+          tfm: net7.0
+          sys: linux
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net472
           sys: windows
         - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net6.0
-          sys: windows
-        - run: IKVM.MSBuild.Tasks.Tests
           tfm: net7.0
           sys: windows
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net6.0
-          sys: linux
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net7.0
-          sys: linux
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net6.0
-          sys: osx-x64
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net7.0
           sys: osx-x64
@@ -510,15 +477,40 @@ jobs:
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
           sys: linux
-        - run: IKVM.NET.Sdk.Tests
+        - run: IKVM.Tests
           tfm: net7.0
-          sys: osx-x64
+          sys: windows
+        - run: IKVM.Tests
+          tfm: net7.0
+          sys: linux
+        - run: IKVM.Tools.Exporter.Tests
+          tfm: net472
+          sys: windows
+        - run: IKVM.Tools.Importer.Tests
+          tfm: net472
+          sys: windows
+        - run: IKVM.Tools.Tests
+          tfm: net472
+          sys: windows
+        - run: IKVM.Tools.Tests
+          tfm: net7.0
+          sys: windows
+        - run: IKVM.Tools.Tests
+          tfm: net7.0
+          sys: linux
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
     - build-ikvm
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
     steps:
+    - name: Free Disk Space (Linux)
+      if: runner.os == 'Linux'
+      uses: jlumbroso/free-disk-space@main
+      with:
+        dotnet: false
+        swap-storage: false
+        large-packages: false
     - name: Set Paths (Windows)
       if: runner.os == 'Windows'
       shell: pwsh

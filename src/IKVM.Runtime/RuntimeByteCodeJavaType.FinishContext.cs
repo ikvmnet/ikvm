@@ -869,34 +869,34 @@ namespace IKVM.Runtime
             private bool EmitInterlockedCompareAndSet(RuntimeJavaMethod method, string fieldName, CodeEmitter ilGenerator)
             {
                 if (method.ReturnType != context.PrimitiveJavaTypeFactory.BOOLEAN)
-                {
                     return false;
-                }
-                RuntimeJavaType[] parameters = method.GetParameters();
+
+                var parameters = method.GetParameters();
                 RuntimeJavaType target;
                 int firstValueIndex;
+
                 if (method.IsStatic)
                 {
                     if (parameters.Length != 3)
-                    {
                         return false;
-                    }
+
                     target = parameters[0];
                     firstValueIndex = 1;
                 }
                 else
                 {
                     if (parameters.Length != 2)
-                    {
                         return false;
-                    }
+
                     target = method.DeclaringType;
                     firstValueIndex = 0;
                 }
+
                 if (target.IsUnloadable || target.IsPrimitive || target.IsNonPrimitiveValueType || target.IsGhost)
                 {
                     return false;
                 }
+                
                 var fieldType = parameters[firstValueIndex];
                 if (fieldType != parameters[firstValueIndex + 1])
                 {
@@ -910,34 +910,32 @@ namespace IKVM.Runtime
                 {
                     return false;
                 }
+
                 RuntimeJavaField casField = null;
                 foreach (var fw in target.GetFields())
                 {
                     if (fw.Name == fieldName)
                     {
                         if (casField != null)
-                        {
                             return false;
-                        }
+
                         casField = fw;
                     }
                 }
+
                 if (casField == null)
-                {
                     return false;
-                }
+
                 if (casField.IsStatic)
-                {
                     return false;
-                }
+
+                casField.Link();
                 if (casField.FieldTypeWrapper != fieldType)
-                {
                     return false;
-                }
+
                 if (casField.IsPropertyAccessor)
-                {
                     return false;
-                }
+
                 if (casField.DeclaringType.TypeAsBaseType == typeBuilder.DeclaringType)
                 {
                     // allow access to fields in outer class
@@ -946,7 +944,7 @@ namespace IKVM.Runtime
                 {
                     return false;
                 }
-                casField.Link();
+
                 FieldInfo fi = casField.GetField();
                 if (fi == null)
                 {

@@ -45,11 +45,11 @@ namespace IKVM.Reflection
 
 #if NETCOREAPP3_1_OR_GREATER
 
-        public static readonly string CoreLibName = "System.Runtime";
+        public static readonly string DefaultCoreLibName = "System.Runtime";
 
 #elif NETFRAMEWORK
 
-        public static readonly string CoreLibName = "mscorlib";
+        public static readonly string DefaultCoreLibName = "mscorlib";
 
 #endif
 
@@ -61,6 +61,7 @@ namespace IKVM.Reflection
         internal static readonly bool CoreRuntime = true;
 #endif
 
+        readonly string coreLibName;
         readonly Dictionary<Type, Type> canonicalizedTypes = new Dictionary<Type, Type>();
         readonly List<AssemblyReader> assemblies = new List<AssemblyReader>();
         readonly List<AssemblyBuilder> dynamicAssemblies = new List<AssemblyBuilder>();
@@ -126,14 +127,25 @@ namespace IKVM.Reflection
         List<ResolveEventHandler> resolvers = new List<ResolveEventHandler>();
         Predicate<Type> missingTypeIsValueType;
 
-        public Universe()
-            : this(UniverseOptions.None)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="coreLibName"></param>
+        public Universe(string coreLibName = null) :
+            this(UniverseOptions.None, coreLibName)
         {
+
         }
 
-        public Universe(UniverseOptions options)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="coreLibName"></param>
+        public Universe(UniverseOptions options, string coreLibName = null)
         {
             this.options = options;
+            this.coreLibName = coreLibName ?? DefaultCoreLibName;
             enableFunctionPointers = (options & UniverseOptions.EnableFunctionPointers) != 0;
             useNativeFusion = (options & UniverseOptions.DisableFusion) == 0 && GetUseNativeFusion();
             returnPseudoCustomAttributes = (options & UniverseOptions.DisablePseudoCustomAttributeRetrieval) == 0;
@@ -153,10 +165,15 @@ namespace IKVM.Reflection
             }
         }
 
-        internal Assembly CoreLib
-        {
-            get { return Load(CoreLibName); }
-        }
+        /// <summary>
+        /// Gets the name of the core library.
+        /// </summary>
+        public string CoreLibName => coreLibName;
+
+        /// <summary>
+        /// Gets the core library.
+        /// </summary>
+        internal Assembly CoreLib => Load(coreLibName);
 
         /// <summary>
         /// Attempts to import the type from the core library.
@@ -233,11 +250,11 @@ namespace IKVM.Reflection
 
         internal Type System_Array => typeof_System_Array ??= ResolvePrimitive("Array");
 
-        internal Type System_DateTime => typeof_System_DateTime ?? (typeof_System_DateTime = ImportCoreLibType("System", "DateTime"));
+        internal Type System_DateTime => typeof_System_DateTime ??= ImportCoreLibType("System", "DateTime");
 
-        internal Type System_DBNull => typeof_System_DBNull ?? (typeof_System_DBNull = ImportCoreLibType("System", "DBNull"));
+        internal Type System_DBNull => typeof_System_DBNull ??= ImportCoreLibType("System", "DBNull");
 
-        internal Type System_Decimal => typeof_System_Decimal ?? (typeof_System_Decimal = ImportCoreLibType("System", "Decimal"));
+        internal Type System_Decimal => typeof_System_Decimal ??= ImportCoreLibType("System", "Decimal");
 
         internal Type System_AttributeUsageAttribute => typeof_System_AttributeUsageAttribute ??= ImportCoreLibType("System", "AttributeUsageAttribute");
 
@@ -294,7 +311,7 @@ namespace IKVM.Reflection
         /// </summary>
         internal bool HasCoreLib
         {
-            get { return GetLoadedAssembly(CoreLibName) != null; }
+            get { return GetLoadedAssembly(coreLibName) != null; }
         }
 
         /// <summary>
@@ -483,7 +500,7 @@ namespace IKVM.Reflection
                 var simpleName = GetSimpleAssemblyName(refname);
                 for (int i = 0; i < assemblies.Count; i++)
                 {
-                    if (simpleName.Equals(assemblies[i].Name, StringComparison.OrdinalIgnoreCase) && CompareAssemblyIdentity(refname, false, assemblies[i].FullName, false, out var result))
+                    if (simpleName.Equals(assemblies[i].Name, StringComparison.OrdinalIgnoreCase) && CompareAssemblyIdentity(coreLibName, refname, false, assemblies[i].FullName, false, out var result))
                     {
                         asm = assemblies[i];
                         assembliesByName.Add(refname, asm);
@@ -499,7 +516,7 @@ namespace IKVM.Reflection
         {
             var simpleName = GetSimpleAssemblyName(refname);
             foreach (var asm in dynamicAssemblies)
-                if (simpleName.Equals(asm.Name, StringComparison.OrdinalIgnoreCase) && CompareAssemblyIdentity(refname, false, asm.FullName, false, out var result))
+                if (simpleName.Equals(asm.Name, StringComparison.OrdinalIgnoreCase) && CompareAssemblyIdentity(coreLibName, refname, false, asm.FullName, false, out var result))
                     return asm;
 
             return null;
@@ -696,11 +713,11 @@ namespace IKVM.Reflection
             return array;
         }
 
-        public bool CompareAssemblyIdentity(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
+        public bool CompareAssemblyIdentity(string coreLibName,string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
         {
             return useNativeFusion
-                ? Fusion.CompareAssemblyIdentityNative(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result)
-                : Fusion.CompareAssemblyIdentityPure(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
+                ? Fusion.CompareAssemblyIdentityNative(coreLibName, assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result)
+                : Fusion.CompareAssemblyIdentityPure(coreLibName,assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
         }
 
         public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access)

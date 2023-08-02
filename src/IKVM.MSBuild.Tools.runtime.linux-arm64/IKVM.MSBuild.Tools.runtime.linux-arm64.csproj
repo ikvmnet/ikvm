@@ -22,24 +22,24 @@
 
     <ItemGroup Condition=" '$(TargetFramework)' == '' ">
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvmc\netcoreapp3.1\linux-arm64</ProjectPackagePath>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
             <ProjectPackagePath>ikvmc\net6.0\linux-arm64</ProjectPackagePath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvmstub\netcoreapp3.1\linux-arm64</ProjectPackagePath>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
             <ProjectPackagePath>ikvmstub\net6.0\linux-arm64</ProjectPackagePath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
+            <ProjectPackagePath>ikvmc\net472\linux-arm64</ProjectPackagePath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
+            <ProjectPackagePath>ikvmstub\net472\linux-arm64</ProjectPackagePath>
         </PublishProjectReference>
     </ItemGroup>
 

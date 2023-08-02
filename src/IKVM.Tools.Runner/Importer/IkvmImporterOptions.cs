@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 
-namespace IKVM.Tools.Runner.Compiler
+namespace IKVM.Tools.Runner.Importer
 {
 
     /// <summary>
-    /// Options available to the IKVM compiler tool.
+    /// Options available to the IKVM importer tool.
     /// </summary>
-    public class IkvmCompilerOptions
+    public class IkvmImporterOptions
     {
 
         /// <summary>
@@ -42,12 +42,12 @@ namespace IKVM.Tools.Runner.Compiler
         /// <summary>
         /// Target to build.
         /// </summary>
-        public IkvmCompilerTarget? Target { get; set; }
+        public IkvmImporterTarget? Target { get; set; }
 
         /// <summary>
         /// Platform to build.
         /// </summary>
-        public IkvmCompilerPlatform? Platform { get; set; }
+        public IkvmImporterPlatform? Platform { get; set; }
 
         /// <summary>
         /// Path to the key to use for strong name signing.
@@ -91,9 +91,9 @@ namespace IKVM.Tools.Runner.Compiler
         /// <summary>
         /// Set of resources to embed within the assembly.
         /// </summary>
-        public List<IkvmCompilerResourceItem> Resources { get; } = new List<IkvmCompilerResourceItem>();
+        public List<IkvmImporterResourceItem> Resources { get; } = new List<IkvmImporterResourceItem>();
 
-        public List<IkvmCompilerExternalResourceItem> ExternalResources { get; } = new List<IkvmCompilerExternalResourceItem>();
+        public List<IkvmImporterExternalResourceItem> ExternalResources { get; } = new List<IkvmImporterExternalResourceItem>();
 
         /// <summary>
         /// Whether resources should be compressed.
