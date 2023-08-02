@@ -3425,6 +3425,7 @@ javax/management/mxbean/MXBeanLoadingTest1.java                                 
 
 # krb5
 sun/security/krb5/auto/UnboundSSL.java                                                                                  generic-all
+sun/security/krb5/auto/UnboundSSLMultipleKeys.java                                                                      generic-all
 sun/security/krb5/auto/UnboundSSLPrincipalProperty.java                                                                 generic-all
 
 # RMI, fails, but works in Debug with attached Debugger
