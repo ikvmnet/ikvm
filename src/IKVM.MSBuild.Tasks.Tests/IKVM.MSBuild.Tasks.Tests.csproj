@@ -30,9 +30,9 @@
 
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <SetRuntimeIdentifier></SetRuntimeIdentifier>
-            <ProjectTargetPath>ikvmc\net461\any</ProjectTargetPath>
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmc\net472\win7-x64</ProjectTargetPath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
