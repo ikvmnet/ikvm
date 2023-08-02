@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net461;net6.0</TargetFrameworks>
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <DefineConstants>$(DefineConstants);IMPORTER;EMITTERS</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
