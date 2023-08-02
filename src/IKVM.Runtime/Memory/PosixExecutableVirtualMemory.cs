@@ -10,7 +10,7 @@ namespace IKVM.Runtime.JNI.Memory
     /// <summary>
     /// Maintains a reference to a region of memory allocated by VirtualAlloc.
     /// </summary>
-    class UnixExecutableVirtualMemory : ExecutableMemory
+    class PosixExecutableVirtualMemory : ExecutableMemory
     {
 
         /// <summary>
@@ -18,7 +18,7 @@ namespace IKVM.Runtime.JNI.Memory
         /// </summary>
         /// <param name="size"></param>
         /// <returns></returns>
-        public new static UnixExecutableVirtualMemory Allocate(int size)
+        public new static PosixExecutableVirtualMemory Allocate(int size)
         {
             if (size <= 0)
                 throw new ArgumentOutOfRangeException(nameof(size));
@@ -31,7 +31,7 @@ namespace IKVM.Runtime.JNI.Memory
             if (handle == IntPtr.Zero)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
-            return new UnixExecutableVirtualMemory(handle, size);
+            return new PosixExecutableVirtualMemory(handle, size);
         }
 
         /// <summary>
@@ -40,7 +40,7 @@ namespace IKVM.Runtime.JNI.Memory
         /// <param name="handle"></param>
         /// <param name="size"></param>
         /// <exception cref="Win32Exception"></exception>
-        public UnixExecutableVirtualMemory(IntPtr handle, int size) :
+        public PosixExecutableVirtualMemory(IntPtr handle, int size) :
             base(handle, size)
         {
 
@@ -52,7 +52,7 @@ namespace IKVM.Runtime.JNI.Memory
         /// <returns></returns>
         protected override bool ReleaseHandle()
         {
-            Stdlib.free(DangerousGetHandle());
+            Syscall.munmap(handle, (ulong)Size);
             return true;
         }
 
