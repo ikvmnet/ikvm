@@ -77,7 +77,7 @@ A standalone JDK distributable is available for download on the [Releases](https
 
 ## Usage
 
-IKVM supports integration with .NET SDK projects as well as low level tools for running compiled Java code directly or for advanced build scenarios. The 2 main entry points for integration with the .NET SDK are `IkvmReference` and `MavenReference`. .NET SDK projects can be built on the command line directly or using an IDE that supports them, such as recent versions [Visual Studio](https://visualstudio.microsoft.com/downloads/) or [JetBrains Rider](https://www.jetbrains.com/rider/).
+IKVM supports integration with .NET SDK-style projects as well as low level tools for running compiled Java code directly or for advanced build scenarios. The 2 main entry points for integration with the .NET SDK-style projects are `IkvmReference` and `MavenReference`. .NET SDK-style projects can be built on the command line directly or using an IDE that supports them, such as recent versions [Visual Studio](https://visualstudio.microsoft.com/downloads/) or [JetBrains Rider](https://www.jetbrains.com/rider/).
 
 ### IkvmReference
 
