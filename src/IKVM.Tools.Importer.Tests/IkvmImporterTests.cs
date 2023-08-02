@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-
 
 using FluentAssertions;
 
@@ -36,6 +34,9 @@ namespace IKVM.Tools.Importer.Tests
         [DataRow("net6.0", "net7.0", ".NETCore", "7.0")]
         public async Task CanImportSimpleTest(string ikvmFrameworkMoniker, string targetFrameworkMoniker, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
+            if (targetFrameworkIdentifier == ".NETFramework" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                return;
+
             var s = new StreamReader(typeof(IkvmImporterTests).Assembly.GetManifestResourceStream("IKVM.Tools.Importer.Tests.IkvmImporterTests.java")).ReadToEnd();
             var f = new InMemoryCodeUnit("ikvm.tools.importer.tests.IkvmImporterTests", s);
             var c = new InMemoryCompiler(new[] { f });

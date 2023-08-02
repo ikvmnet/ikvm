@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection.Metadata;
-using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 
 using FluentAssertions;
@@ -11,7 +9,6 @@ using IKVM.Tests.Util;
 using IKVM.Tools.Runner;
 using IKVM.Tools.Runner.Exporter;
 
-using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Tools.Tests.Runner.Exporter
@@ -34,6 +31,9 @@ namespace IKVM.Tools.Tests.Runner.Exporter
         [DataRow("net6.0", "net6.0", ".NETCore", "6.0")]
         public async System.Threading.Tasks.Task CanExportDll(string toolFramework, string tfm, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
+            if (targetFrameworkIdentifier == ".NETFramework" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                return;
+
             var ikvmLibs = Path.Combine(TESTBASE, "lib", tfm);
             var refsPath = DotNetSdkUtil.GetPathToReferenceAssemblies(tfm, targetFrameworkIdentifier, targetFrameworkVersion) ;
 

@@ -30,6 +30,9 @@ namespace IKVM.Tools.Runner.Test.Importer
         [DataRow("net6.0", "net6.0", ".NETCore", "6.0")]
         public async System.Threading.Tasks.Task CanImportJar(string toolFramework, string tfm, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
+            if (targetFrameworkIdentifier == ".NETFramework" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                return;
+
             var ikvmLibs = Path.Combine(TESTBASE, "lib", tfm);
             var refsPath = DotNetSdkUtil.GetPathToReferenceAssemblies(tfm, targetFrameworkIdentifier, targetFrameworkVersion);
 
