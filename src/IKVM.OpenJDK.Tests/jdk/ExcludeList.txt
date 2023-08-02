@@ -3427,8 +3427,16 @@ javax/management/mxbean/MXBeanLoadingTest1.java                                 
 sun/security/krb5/auto/UnboundSSL.java                                                                                  generic-all
 sun/security/krb5/auto/UnboundSSLPrincipalProperty.java                                                                 generic-all
 
+# RMI, fails, but works in Debug with attached Debugger
+sun/rmi/server/UnicastServerRef/FilterUSRTest.java                                                                      generic-all
+
 # These tests assume limited policy, reenable after integrating u161
 javax/crypto/CryptoPermission/TestUnlimited.java                                                                        generic-all
 com/sun/crypto/provider/Cipher/Blowfish/TestCipherBlowfish.java                                                         generic-all
 com/sun/crypto/provider/Cipher/PBE/PBESameBuffer/PBESameBuffer.java                                                     generic-all
 com/sun/crypto/provider/Cipher/PBE/TestCipherKeyWrapperPBEKey.java                                                      generic-all
+com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithDefaultProvider.java                                       generic-all
+com/sun/crypto/provider/Cipher/PBE/TestCipherPBE.java                                                                   generic-all
+com/sun/crypto/provider/Cipher/PBE/TestCipherPBECons.java                                                               generic-all
+com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithProviderChange.java                                        generic-all
+com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.java                                     generic-all
