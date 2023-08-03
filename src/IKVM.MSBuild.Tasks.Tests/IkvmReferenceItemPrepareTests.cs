@@ -313,7 +313,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             t1.Items = new[] { i1 };
             t1.Execute().Should().BeTrue();
 
-            var t2 = BuildTestTask("net461", "0.0.0");
+            var t2 = BuildTestTask("net472", "0.0.0");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
