@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
     <PropertyGroup>
-        <TargetFrameworks>net461;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM JDK Runtime Image</Description>

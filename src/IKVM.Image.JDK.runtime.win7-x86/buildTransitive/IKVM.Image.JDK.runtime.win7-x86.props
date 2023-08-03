@@ -4,8 +4,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net461\win7-x86\**\*">
-            <TargetFramework>net461</TargetFramework>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net472\win7-x86\**\*">
+            <TargetFramework>net472</TargetFramework>
             <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>

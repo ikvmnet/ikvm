@@ -259,9 +259,9 @@ namespace IKVM.MSBuild.Tasks.Tests
         }
 
         [TestMethod]
-        public void Should_assign_identity_to_jar_for_net461()
+        public void Should_assign_identity_to_jar_for_net472()
         {
-            var t = BuildTestTask("net461", "0.0.0");
+            var t = BuildTestTask("net472", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t.Items = new[] { i1 };
             t.Execute().Should().BeTrue();
@@ -288,14 +288,14 @@ namespace IKVM.MSBuild.Tasks.Tests
         }
 
         [TestMethod]
-        public void Should_assign_consistent_identity_to_jar_for_net461()
+        public void Should_assign_consistent_identity_to_jar_for_net472()
         {
-            var t1 = BuildTestTask("net461", "0.0.0");
+            var t1 = BuildTestTask("net472", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t1.Items = new[] { i1 };
             t1.Execute().Should().BeTrue();
 
-            var t2 = BuildTestTask("net461", "0.0.0");
+            var t2 = BuildTestTask("net472", "0.0.0");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();

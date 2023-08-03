@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
     <PropertyGroup>
-        <TargetFrameworks>net461;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM JRE Runtime Image</Description>
@@ -20,9 +20,9 @@
 
     <ItemGroup Condition=" '$(TargetFramework)' == '' ">
         <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win81-arm</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvm\net461\win81-arm\bin</ProjectPackagePath>
+            <ProjectPackagePath>ikvm\net472\win81-arm\bin</ProjectPackagePath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>

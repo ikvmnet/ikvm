@@ -33,12 +33,12 @@
 
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <IncludeTargetPath>lib\net461\</IncludeTargetPath>
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <IncludeTargetPath>lib\net472\</IncludeTargetPath>
         </IncludeProjectReference>
         <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <IncludeTargetPath>lib\net461\</IncludeTargetPath>
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <IncludeTargetPath>lib\net472\</IncludeTargetPath>
         </IncludeProjectReference>
         <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>

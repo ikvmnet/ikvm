@@ -45,10 +45,10 @@ namespace IKVM.Tests.Java.ikvm.runtime
             var ikvmLibs = Path.Combine(TESTBASE, "lib", "net6.0");
             var libPaths = DotNetSdkUtil.GetPathToReferenceAssemblies("net6.0", ".NETCore", "6.0");
 #endif
-#if NET461
+#if NET472
             var ikvmTool = "net472";
-            var ikvmLibs = Path.Combine(TESTBASE, "lib", "net461");
-            var libPaths = DotNetSdkUtil.GetPathToReferenceAssemblies("net461", ".NETFramework", "4.7.2");
+            var ikvmLibs = Path.Combine(TESTBASE, "lib", "net472");
+            var libPaths = DotNetSdkUtil.GetPathToReferenceAssemblies("net472", ".NETFramework", "4.7.2");
 #endif
 
             var n = Guid.NewGuid().ToString("n");

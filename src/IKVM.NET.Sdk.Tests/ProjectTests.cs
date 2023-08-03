@@ -108,9 +108,9 @@ namespace IKVM.NET.Sdk.Tests
 
             var targets = new[]
             {
-                ("net461",          "win7-x86"),
-                ("net461",          "win7-x64"),
-                ("net461",          "win81-arm"),
+                ("net472",          "win7-x86"),
+                ("net472",          "win7-x64"),
+                ("net472",          "win81-arm"),
                 ("netcoreapp3.1",   "win7-x86"),
                 ("netcoreapp3.1",   "win7-x64"),
                 ("netcoreapp3.1",   "win81-arm"),

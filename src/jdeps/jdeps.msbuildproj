@@ -5,7 +5,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFrameworks>net461;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <StartupObject>com.sun.tools.jdeps.Main</StartupObject>
         <RootNamespace>ikvm.tools.jdeps</RootNamespace>

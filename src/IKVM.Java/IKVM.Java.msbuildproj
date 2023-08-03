@@ -4,7 +4,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;netcoreapp3.1;net6.0</TargetFrameworks>
         <Bootstrap>true</Bootstrap>
     </PropertyGroup>
 

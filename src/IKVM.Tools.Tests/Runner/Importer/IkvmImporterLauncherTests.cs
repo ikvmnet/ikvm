@@ -23,12 +23,12 @@ namespace IKVM.Tools.Tests.Runner.Importer
         public TestContext TestContext { get; set; }
 
         [DataTestMethod]
-        [DataRow("net472", "net461", "net472", ".NETFramework", "4.7.2")]
-        [DataRow("net472", "net461", "net481", ".NETFramework", "4.8.1")]
+        [DataRow("net472", "net472", "net472", ".NETFramework", "4.7.2")]
+        [DataRow("net472", "net472", "net481", ".NETFramework", "4.8.1")]
         [DataRow("net472", "netcoreapp3.1", "netcoreapp3.1", ".NETCore", "3.1")]
         [DataRow("net472", "net6.0", "net6.0", ".NETCore", "6.0")]
-        [DataRow("net6.0", "net461", "net472", ".NETFramework", "4.7.2")]
-        [DataRow("net6.0", "net461", "net481", ".NETFramework", "4.8.1")]
+        [DataRow("net6.0", "net472", "net472", ".NETFramework", "4.7.2")]
+        [DataRow("net6.0", "net472", "net481", ".NETFramework", "4.8.1")]
         [DataRow("net6.0", "netcoreapp3.1", "netcoreapp3.1", ".NETCore", "3.1")]
         [DataRow("net6.0", "net6.0", "net6.0", ".NETCore", "6.0")]
         [DataRow("net6.0", "net6.0", "net7.0", ".NETCore", "7.0")]

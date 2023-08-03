@@ -10,14 +10,14 @@ file with contents like the following, using the latest version.
 ```
 <Project Sdk="IKVM.NET.Sdk/8.2.2">
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
     </PropertyGroup>
 </Project>
 ```
 
 ## Limitations
 
-As of now only `net461` and `netcoreapp3.1` target Frameworks are supported. Any other target frameworks will throw an error.
+As of now only `net472` and `netcoreapp3.1` target Frameworks are supported. Any other target frameworks will throw an error.
 
 Projects will not yet build on Linux.
 
