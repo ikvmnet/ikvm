@@ -22,7 +22,7 @@
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
     <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
-        <IkvmGetReferenceAssemblies ToolPath="$(IkvmCompilerToolPath)">
+        <IkvmGetReferenceAssemblies ToolPath="$(IkvmCompilerToolPath)" Condition=" '$(IkvmCompilerToolPath)' != '' ">
             <Output TaskParameter="ResolvedFrameworkReferences" ItemName="IkvmFrameworkReference" />
         </IkvmGetReferenceAssemblies>
     </Target>
