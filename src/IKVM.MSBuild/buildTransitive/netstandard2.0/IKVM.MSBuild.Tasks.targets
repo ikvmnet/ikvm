@@ -34,9 +34,11 @@
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
     <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
+
         <ItemGroup>
             <IkvmFrameworkReference Include="@(Reference)" />
         </ItemGroup>
+
     </Target>
     
 </Project>
