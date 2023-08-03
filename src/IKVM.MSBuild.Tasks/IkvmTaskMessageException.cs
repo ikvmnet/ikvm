@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 using IKVM.MSBuild.Tasks.Resources;
 
@@ -41,6 +42,18 @@ namespace IKVM.MSBuild.Tasks
         }
 
         /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
+        protected IkvmTaskMessageException(SerializationInfo info, StreamingContext context) :
+            base(info, context)
+        {
+            this.messageResourceName = info.GetString("MessageResourceName");
+            this.messageArgs = (object[])info.GetValue("MessageArgs", typeof(object[]));
+        }
+
+        /// <summary>
         /// Gets the resource name of the message.
         /// </summary>
         public string MessageResourceName => messageResourceName;
@@ -49,6 +62,17 @@ namespace IKVM.MSBuild.Tasks
         /// Gets the arguments of the message.
         /// </summary>
         public object[] MessageArgs => messageArgs;
+
+        /// <inheritdoc />
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            if (info == null)
+                throw new ArgumentNullException(nameof(info));
+
+            info.AddValue("MessageResourceName", MessageResourceName);
+            info.AddValue("MessageArgs", MessageArgs, typeof(object[]));
+            base.GetObjectData(info, context);
+        }
 
     }
 
