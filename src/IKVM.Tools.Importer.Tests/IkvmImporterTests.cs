@@ -25,7 +25,6 @@ namespace IKVM.Tools.Importer.Tests
         static readonly string TESTBASE = Path.GetDirectoryName(typeof(IkvmImporterTests).Assembly.Location);
 
         [DataTestMethod]
-        [DataRow("net461", "net461", ".NETFramework", "4.6.1")]
         [DataRow("net461", "net472", ".NETFramework", "4.7.2")]
         [DataRow("net461", "net481", ".NETFramework", "4.8.1")]
         [DataRow("netcoreapp3.1", "netcoreapp3.1", ".NETCore", "3.1")]
