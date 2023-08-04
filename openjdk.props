@@ -1696,6 +1696,9 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\java\net\**\*.java" PackagePath="java\net" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\util\prefs\WindowsPreferences.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\util\prefs\WindowsPreferencesFactory.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\macosx\classes\java\util\prefs\MacOSXPreferences.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\macosx\classes\java\util\prefs\MacOSXPreferencesFactory.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\macosx\classes\java\util\prefs\MacOSXPreferencesFile.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\awt\Win32ColorModel24.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\management\FileSystemImpl.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\management\OperatingSystemImpl.java" />

@@ -477,6 +477,9 @@ jobs:
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
           sys: linux
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net7.0
+          sys: osx-x64
         - run: IKVM.Tests
           tfm: net7.0
           sys: windows
