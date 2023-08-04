@@ -36,15 +36,14 @@ These tasks can be done **without porting source code** to .NET.
 
 ## Support
 
-- .NET Framework 4.6.1 and higher (SDK-style projects)
-- .NET Core 3.1 and higher
-- .NET 5 and higher
+- .NET Framework 4.7.2 and higher (SDK-style projects)
+- .NET 6 and higher
 - Java SE 8
 - Windows x86/x64/ARM/ARM64
 - Linux x64/ARM/ARM64 (GLIBC and MUSL)
-- Mac OS X x64/arm64 (with bugs)
+- Mac OS X x64/arm64
  
-Various differences exist between support for all of our different artifacts. For instance, there are some platforms we cannot distribute images for, and some platforms we cannot distribute tools for.
+Various differences exist between support for all of our different artifacts. For instance, there are some platforms we cannot distribute images for and some platforms we cannot distribute tools for.
 
 ## Installation
 
