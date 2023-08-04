@@ -526,6 +526,13 @@ jobs:
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
     steps:
+    - name: Free Disk Space (Linux)
+      if: runner.os == 'Linux'
+      uses: jlumbroso/free-disk-space@main
+      with:
+        dotnet: false
+        swap-storage: false
+        large-packages: false
     - name: Set Paths (Windows)
       if: runner.os == 'Windows'
       shell: pwsh

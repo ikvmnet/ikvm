@@ -195,7 +195,7 @@ namespace IKVM.Java.Externs.java.util.zip
             try
             {
                 var path = zipFile.getName();
-                if (VfsTable.Default.IsPath(path))
+                if (JVM.Vfs.IsPath(path))
                 {
                     var entry = (global::java.util.zip.ZipEntry)entries.get(JVM.JarClassList);
                     if (entry != null)

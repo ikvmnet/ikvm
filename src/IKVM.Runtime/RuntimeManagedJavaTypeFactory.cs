@@ -34,22 +34,34 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Runtime
 {
+
     /// <summary>
     /// Manages instances of <see cref="RuntimeManagedJavaType"/>.
     /// </summary>
-    static class RuntimeManagedJavaTypeFactory
+    class RuntimeManagedJavaTypeFactory
     {
 
-        static readonly ConditionalWeakTable<Type, RuntimeJavaType> cache = new ConditionalWeakTable<Type, RuntimeJavaType>();
+        readonly RuntimeContext context;
+        readonly ConditionalWeakTable<Type, RuntimeJavaType> cache = new ConditionalWeakTable<Type, RuntimeJavaType>();
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public RuntimeManagedJavaTypeFactory(RuntimeContext context)
+        {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
+        }
 
         /// <summary>
         /// Gets the <see cref="RuntimeJavaType"/> associated with the specified managed type, or creates one on demand.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static RuntimeJavaType GetJavaTypeFromManagedType(Type type)
+        public RuntimeJavaType GetJavaTypeFromManagedType(Type type)
         {
-            return cache.GetValue(type, _ => RuntimeAssemblyClassLoaderFactory.FromAssembly(type.Assembly).GetJavaTypeFromAssemblyType(_));
+            return cache.GetValue(type, _ => context.AssemblyClassLoaderFactory.FromAssembly(_.Assembly).GetJavaTypeFromAssemblyType(_));
         }
 
         /// <summary>
@@ -57,28 +69,28 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static RuntimeJavaType GetBaseJavaType(Type type)
+        public RuntimeJavaType GetBaseJavaType(Type type)
         {
             // interfaces have no base type
             if (type.IsInterface)
                 return null;
 
             // remapped types extend their alter ego (e.g. cli.System.Object must appear to be derived from java.lang.Object)
-            if (RuntimeClassLoaderFactory.IsRemappedType(type))
+            if (context.ClassLoaderFactory.IsRemappedType(type))
             {
                 // except when they're sealed.
                 if (type.IsSealed)
-                    return CoreClasses.java.lang.Object.Wrapper;
+                    return context.JavaBase.TypeOfJavaLangObject;
 
-                return RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
+                return context.ClassLoaderFactory.GetJavaTypeFromType(type);
             }
 
             // if base type is remapped, return java type of remapped base type
-            if (RuntimeClassLoaderFactory.IsRemappedType(type.BaseType))
+            if (context.ClassLoaderFactory.IsRemappedType(type.BaseType))
                 return GetJavaTypeFromManagedType(type.BaseType);
 
             // return java type of base type
-            return RuntimeClassLoaderFactory.GetJavaTypeFromType(type.BaseType);
+            return context.ClassLoaderFactory.GetJavaTypeFromType(type.BaseType);
         }
 
     }

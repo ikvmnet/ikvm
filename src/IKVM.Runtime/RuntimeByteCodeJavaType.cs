@@ -76,7 +76,7 @@ namespace IKVM.Runtime
         {
             // check for patched constant pool items
             var tw = clazz.GetClassType();
-            if (tw == null || tw == RuntimeVerifierJavaType.Null)
+            if (tw == null || tw == classLoader.Context.VerifierJavaTypeFactory.Null)
                 tw = classLoader.TryLoadClassByName(clazz.Name);
             if (tw == null)
                 throw new NoClassDefFoundError(clazz.Name);
@@ -118,9 +118,9 @@ namespace IKVM.Runtime
 #else
         internal RuntimeByteCodeJavaType(RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain pd)
 #endif
-            : base(f.IsInternal ? TypeFlags.InternalAccess : host != null ? TypeFlags.Anonymous : TypeFlags.None, f.Modifiers, f.Name)
+            : base(classLoader.Context, f.IsInternal ? TypeFlags.InternalAccess : host != null ? TypeFlags.Anonymous : TypeFlags.None, f.Modifiers, f.Name)
         {
-            Profiler.Count("DynamicTypeWrapper");
+            Profiler.Count("RuntimeByteCodeJavaType");
             this.classLoader = classLoader;
             this.sourceFileName = f.SourceFileAttribute;
             if (f.IsInterface)
@@ -130,7 +130,7 @@ namespace IKVM.Runtime
                 {
                     RuntimeJavaMethod mw;
                     if (method.IsVirtual
-                        && (mw = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(method.Name, method.Signature, false)) != null
+                        && (mw = Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(method.Name, method.Signature, false)) != null
                         && mw.IsVirtual
                         && mw.IsFinal)
                     {
@@ -153,12 +153,12 @@ namespace IKVM.Runtime
                 {
                     throw new IncompatibleClassChangeError("Class " + f.Name + " has interface " + BaseTypeWrapper.Name + " as superclass");
                 }
-                if (BaseTypeWrapper.TypeAsTBD == Types.Delegate)
+                if (BaseTypeWrapper.TypeAsTBD == Context.Types.Delegate)
                 {
                     throw new VerifyError(BaseTypeWrapper.Name + " cannot be used as a base class");
                 }
                 // NOTE defining value types, enums is not supported in IKVM v1
-                if (BaseTypeWrapper.TypeAsTBD == Types.ValueType || BaseTypeWrapper.TypeAsTBD == Types.Enum)
+                if (BaseTypeWrapper.TypeAsTBD == Context.Types.ValueType || BaseTypeWrapper.TypeAsTBD == Context.Types.Enum)
                 {
                     throw new VerifyError("Defining value types in Java is not implemented in IKVM v1");
                 }
@@ -306,7 +306,7 @@ namespace IKVM.Runtime
             get
             {
                 RuntimeJavaType baseTypeWrapper = BaseTypeWrapper;
-                return baseTypeWrapper != null && baseTypeWrapper.TypeAsTBD == Types.MulticastDelegate;
+                return baseTypeWrapper != null && baseTypeWrapper.TypeAsTBD == Context.Types.MulticastDelegate;
             }
         }
 
@@ -380,7 +380,7 @@ namespace IKVM.Runtime
         {
             get
             {
-                return this.IsSubTypeOf(CoreClasses.java.io.Serializable.Wrapper);
+                return this.IsSubTypeOf(Context.JavaBase.TypeOfJavaIoSerializable);
             }
         }
 
@@ -418,7 +418,7 @@ namespace IKVM.Runtime
 
             var stubargs = baseMethod.GetParameters();
             var targetArgs = targetMethod.GetParameters();
-            var ilgen = CodeEmitter.Create(overrideStub);
+            var ilgen = Context.CodeEmitterFactory.Create(overrideStub);
             ilgen.Emit(OpCodes.Ldarg_0);
 
             for (int i = 0; i < targetArgs.Length; i++)
@@ -671,7 +671,7 @@ namespace IKVM.Runtime
                             {
                                 foreach (IKVM.Tools.Importer.MapXml.Attribute attr in method.Attributes)
                                 {
-                                    if (StaticCompiler.GetType(classLoader, attr.Type) == JVM.Import(typeof(System.Runtime.InteropServices.DllImportAttribute)))
+                                    if (Context.StaticCompiler.GetType(classLoader, attr.Type) == Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.DllImportAttribute).FullName))
                                     {
                                         return true;
                                     }
@@ -979,7 +979,7 @@ namespace IKVM.Runtime
                     modopt[0] = GetModOptHelper(tw1);
                     for (int i = 1; i < modopt.Length; i++)
                     {
-                        modopt[i] = Types.Array;
+                        modopt[i] = tw.Context.Types.Array;
                     }
                 }
             }

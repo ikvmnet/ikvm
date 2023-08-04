@@ -38,8 +38,10 @@ namespace IKVM.Runtime
             /// <summary>
             /// initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="reader"></param>
-            internal ConstantPoolItemLong(LongConstantReader reader)
+            internal ConstantPoolItemLong(RuntimeContext context, LongConstantReader reader) :
+                base(context)
             {
                 l = reader.Value;
             }

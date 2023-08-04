@@ -28,6 +28,7 @@ namespace IKVM.Runtime
 
     sealed partial class RuntimeManagedJavaType
     {
+
         internal abstract class FakeJavaType : RuntimeJavaType
         {
 
@@ -36,11 +37,12 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="modifiers"></param>
             /// <param name="name"></param>
             /// <param name="baseWrapper"></param>
-            protected FakeJavaType(Modifiers modifiers, string name, RuntimeJavaType baseWrapper) :
-                base(TypeFlags.None, modifiers, name)
+            protected FakeJavaType(RuntimeContext context, Modifiers modifiers, string name, RuntimeJavaType baseWrapper) :
+                base(context, TypeFlags.None, modifiers, name)
             {
                 this.baseWrapper = baseWrapper;
             }

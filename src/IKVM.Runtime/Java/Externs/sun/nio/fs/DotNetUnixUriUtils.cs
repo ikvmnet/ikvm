@@ -1,4 +1,7 @@
-﻿using IKVM.Runtime.Vfs;
+﻿using System;
+
+using IKVM.Runtime;
+using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.sun.nio.fs
 {
@@ -16,7 +19,11 @@ namespace IKVM.Java.Externs.sun.nio.fs
         /// <returns></returns>
         public static bool isVfsDirectory(string path)
         {
-            return VfsTable.Default.GetEntry(path) is VfsDirectory;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return JVM.Vfs.GetEntry(path) is VfsDirectory;
+#endif
         }
 
     }

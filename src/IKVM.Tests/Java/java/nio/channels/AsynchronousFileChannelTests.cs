@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
+using IKVM.Runtime;
 using IKVM.Runtime.Vfs;
 
 using java.io;
@@ -397,13 +398,13 @@ namespace IKVM.Tests.Java.java.nio.channels
         }
 
         /// <summary>
-        /// Importan that the asynchronous APIs can read from the VFS.
+        /// Check that the asynchronous APIs can read from the VFS.
         /// </summary>
         /// <returns></returns>
         [TestMethod]
         public async Task CanReadVfsAssemblyClass()
         {
-            var f = new File(System.IO.Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly), "java", "lang", "Object.class"));
+            var f = new File(System.IO.Path.Combine(VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, typeof(global::java.lang.Object).Assembly, JVM.Properties.HomePath), "java", "lang", "Object.class"));
 
             using var c = AsynchronousFileChannel.open(f.toPath(), StandardOpenOption.READ);
             var b = ByteBuffer.allocate(512);

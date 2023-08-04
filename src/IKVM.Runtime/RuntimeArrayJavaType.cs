@@ -41,8 +41,7 @@ namespace IKVM.Runtime
     sealed class RuntimeArrayJavaType : RuntimeJavaType
     {
 
-        static volatile RuntimeJavaType[] interfaces;
-        static volatile MethodInfo clone;
+        volatile RuntimeJavaType[] interfaces;
         readonly RuntimeJavaType ultimateElementTypeWrapper;
         Type arrayType;
         bool finished;
@@ -50,10 +49,11 @@ namespace IKVM.Runtime
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="ultimateElementTypeWrapper"></param>
         /// <param name="name"></param>
-        internal RuntimeArrayJavaType(RuntimeJavaType ultimateElementTypeWrapper, string name) :
-            base(ultimateElementTypeWrapper.IsInternal ? TypeFlags.InternalAccess : TypeFlags.None, Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.Modifiers & Modifiers.Public), name)
+        internal RuntimeArrayJavaType(RuntimeContext context, RuntimeJavaType ultimateElementTypeWrapper, string name) :
+            base(context, ultimateElementTypeWrapper.IsInternal ? TypeFlags.InternalAccess : TypeFlags.None, Modifiers.Final | Modifiers.Abstract | (ultimateElementTypeWrapper.Modifiers & Modifiers.Public), name)
         {
             Debug.Assert(!ultimateElementTypeWrapper.IsArray);
             this.ultimateElementTypeWrapper = ultimateElementTypeWrapper;
@@ -61,7 +61,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeJavaType BaseTypeWrapper
         {
-            get { return CoreClasses.java.lang.Object.Wrapper; }
+            get { return Context.JavaBase.TypeOfJavaLangObject; }
         }
 
         internal override RuntimeClassLoader GetClassLoader()
@@ -69,20 +69,14 @@ namespace IKVM.Runtime
             return ultimateElementTypeWrapper.GetClassLoader();
         }
 
-        internal static MethodInfo CloneMethod
+        internal static MethodInfo GetCloneMethod(RuntimeContext context)
         {
-            get
-            {
-                if (clone == null)
-                    clone = Types.Array.GetMethod("Clone", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
-
-                return clone;
-            }
+            return context.Types.Array.GetMethod("Clone", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
         }
 
         protected override void LazyPublishMembers()
         {
-            var mw = new RuntimeSimpleCallJavaMethod(this, "clone", "()Ljava.lang.Object;", CloneMethod, CoreClasses.java.lang.Object.Wrapper, Array.Empty<RuntimeJavaType>(), Modifiers.Public, MemberFlags.HideFromReflection, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
+            var mw = new RuntimeSimpleCallJavaMethod(this, "clone", "()Ljava.lang.Object;", GetCloneMethod(Context), Context.JavaBase.TypeOfJavaLangObject, Array.Empty<RuntimeJavaType>(), Modifiers.Public, MemberFlags.HideFromReflection, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt);
             mw.Link();
             SetMethods(new RuntimeJavaMethod[] { mw });
             SetFields(Array.Empty<RuntimeJavaField>());
@@ -112,8 +106,8 @@ namespace IKVM.Runtime
                 if (interfaces == null)
                 {
                     RuntimeJavaType[] tw = new RuntimeJavaType[2];
-                    tw[0] = CoreClasses.java.lang.Cloneable.Wrapper;
-                    tw[1] = CoreClasses.java.io.Serializable.Wrapper;
+                    tw[0] = Context.JavaBase.TypeOfJavaLangCloneable;
+                    tw[1] = Context.JavaBase.TypeOfJavaIoSerializable;
                     interfaces = tw;
                 }
                 return interfaces;
@@ -201,9 +195,5 @@ namespace IKVM.Runtime
             return type;
         }
     }
-
-#if !IMPORTER && !EXPORTER
-
-#endif
 
 }

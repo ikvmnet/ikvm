@@ -24,16 +24,11 @@
 using System;
 
 #if IMPORTER || EXPORTER
-using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection.Emit;
-#endif
-
-#if IMPORTER
-using IKVM.Tools.Importer;
 #endif
 
 namespace IKVM.Runtime
@@ -48,16 +43,16 @@ namespace IKVM.Runtime
             sealed class MultipleAnnotationJavaType : AttributeAnnotationJavaTypeBase
             {
 
-                readonly Type fakeType;
+                readonly Type annotationType;
                 readonly AttributeAnnotationJavaType declaringType;
 
-                internal MultipleAnnotationJavaType(AttributeAnnotationJavaType declaringType)
-                    : base(declaringType.Name + AttributeAnnotationMultipleSuffix)
+                internal MultipleAnnotationJavaType(RuntimeContext context, AttributeAnnotationJavaType declaringType) :
+                    base(context, declaringType.Name + AttributeAnnotationMultipleSuffix)
                 {
 #if IMPORTER || EXPORTER
-                    this.fakeType = FakeTypes.GetAttributeMultipleType(declaringType.attributeType);
+                    this.annotationType = context.FakeTypes.GetAttributeMultipleType(declaringType.attributeType);
 #elif !FIRST_PASS
-                    this.fakeType = typeof(ikvm.@internal.AttributeAnnotationMultiple<>).MakeGenericType(declaringType.attributeType);
+                    this.annotationType = typeof(ikvm.@internal.AttributeAnnotationMultiple<>).MakeGenericType(declaringType.attributeType);
 #endif
                     this.declaringType = declaringType;
                 }
@@ -71,7 +66,7 @@ namespace IKVM.Runtime
 
                 internal override RuntimeJavaType DeclaringTypeWrapper => declaringType;
 
-                internal override Type TypeAsTBD => fakeType;
+                internal override Type TypeAsTBD => annotationType;
 
 #if !IMPORTER && !EXPORTER
                 internal override object[] GetDeclaredAnnotations()

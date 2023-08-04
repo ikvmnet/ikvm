@@ -21,31 +21,60 @@
   jeroen@frijters.net
   
 */
+using System;
+
 using IKVM.Reflection;
 using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
 
-static class StaticCompiler
+namespace IKVM.Tools.Exporter
 {
 
-    internal static readonly Universe Universe = new Universe(UniverseOptions.EnableFunctionPointers);
-    internal static readonly AssemblyResolver Resolver = new AssemblyResolver();
-    internal static Assembly runtimeAssembly;
-
-    internal static Type GetRuntimeType(string typeName)
+    /// <summary>
+    /// Holds the static compiler information.
+    /// </summary>
+    class StaticCompiler
     {
-        return runtimeAssembly.GetType(typeName, true);
-    }
 
-    internal static Assembly LoadFile(string fileName)
-    {
-        return Resolver.LoadFile(fileName);
-    }
+        readonly Universe universe;
+        readonly AssemblyResolver resolver;
+        readonly Assembly runtimeAssembly;
 
-    internal static Assembly Load(string name)
-    {
-        return Universe.Load(name);
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="universe"></param>
+        /// <param name="resolver"></param>
+        /// <param name="runtimeAssembly"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public StaticCompiler(Universe universe, AssemblyResolver resolver, Assembly runtimeAssembly)
+        {
+            this.universe = universe ?? throw new ArgumentNullException(nameof(universe));
+            this.resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
+            this.runtimeAssembly = runtimeAssembly ?? throw new ArgumentNullException(nameof(runtimeAssembly));
+        }
+
+        /// <summary>
+        /// Gets the universe.
+        /// </summary>
+        internal Universe Universe => universe;
+
+        internal Type GetRuntimeType(string typeName)
+        {
+            return runtimeAssembly.GetType(typeName, true);
+        }
+
+        internal Assembly LoadFile(string fileName)
+        {
+            return resolver.LoadFile(fileName);
+        }
+
+        internal Assembly Load(string name)
+        {
+            return universe.Load(name);
+        }
+
     }
 
 }

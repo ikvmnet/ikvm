@@ -102,7 +102,7 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorGet>__{Type.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), Array.Empty<Type>());
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             il.Emit(OpCodes.Ldsfld, Field);
             il.Emit(OpCodes.Ret);
@@ -123,7 +123,7 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorSet>__{Type.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(void), new[] { typeof(TField) });
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Stsfld, Field);
@@ -231,7 +231,7 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorGet>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), new[] { typeof(TObject) });
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Castclass, Type);
@@ -253,7 +253,7 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorSet>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(void), new[] { typeof(TObject), typeof(TField) });
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Castclass, Type);
@@ -276,7 +276,7 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorExchange>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), new[] { typeof(TObject), typeof(TField) });
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             il.EmitLdarg(0);
             il.Emit(OpCodes.Castclass, Type);
@@ -321,7 +321,7 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorCompareExchange>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), new[] { typeof(TObject), typeof(TField), typeof(TField) });
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             il.EmitLdarg(0);
             il.Emit(OpCodes.Castclass, Type);

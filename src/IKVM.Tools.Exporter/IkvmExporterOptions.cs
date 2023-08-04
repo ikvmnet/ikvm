@@ -65,7 +65,7 @@ namespace IKVM.Tools.Exporter
 
         public bool ContinueOnError { get; set; }
 
-        public bool Boostrap { get; set; }
+        public bool Bootstrap { get; set; }
 
         /// <summary>
         /// Paths to assembly to export.

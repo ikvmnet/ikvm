@@ -98,7 +98,7 @@ namespace IKVM.Java.Externs.java.lang
             throw new NotImplementedException();
 #else
             var stackTrace = new List<global::java.lang.StackTraceElement>();
-            ExceptionHelper.ExceptionInfoHelper.Append(stackTrace, stack, 0, true);
+            ExceptionHelper.ExceptionInfoHelper.Append(JVM.Context.ExceptionHelper, stackTrace, stack, 0, true);
             return stackTrace.ToArray();
 #endif
         }

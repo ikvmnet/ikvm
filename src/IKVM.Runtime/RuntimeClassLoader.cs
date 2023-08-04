@@ -59,6 +59,8 @@ namespace IKVM.Runtime
     class RuntimeClassLoader
     {
 
+        readonly RuntimeContext context;
+
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
 
         ClassLoaderAccessor classLoaderAccessor;
@@ -76,8 +78,15 @@ namespace IKVM.Runtime
         List<IntPtr> nativeLibraries;
         readonly CodeGenOptions codegenoptions;
 
-        internal RuntimeClassLoader(CodeGenOptions codegenoptions, object javaClassLoader)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="codegenoptions"></param>
+        /// <param name="javaClassLoader"></param>
+        internal RuntimeClassLoader(RuntimeContext context, CodeGenOptions codegenoptions, object javaClassLoader)
         {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
             this.codegenoptions = codegenoptions;
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
             this.javaClassLoader = (java.lang.ClassLoader)javaClassLoader;
@@ -91,13 +100,18 @@ namespace IKVM.Runtime
             lock (types)
                 types.Add(tw.Name, tw);
 
-            lock (RuntimeClassLoaderFactory.globalTypeToTypeWrapper)
-                RuntimeClassLoaderFactory.globalTypeToTypeWrapper.Add(type, tw);
+            lock (Context.ClassLoaderFactory.globalTypeToTypeWrapper)
+                context.ClassLoaderFactory.globalTypeToTypeWrapper.Add(type, tw);
 
-            RuntimeClassLoaderFactory.remappedTypes.Add(type, tw.Name);
+            context.ClassLoaderFactory.remappedTypes.Add(type, tw.Name);
         }
 
 #endif
+
+        /// <summary>
+        /// Gets a reference to the <see cref="RuntimeContext"/> that this <see cref="RuntimeClassLoader"/> is hosted within.
+        /// </summary>
+        public RuntimeContext Context => context;
 
         // return the TypeWrapper if it is already loaded, this exists for DynamicTypeWrapper.SetupGhosts
         // and implements ClassLoader.findLoadedClass()
@@ -286,7 +300,7 @@ namespace IKVM.Runtime
                 RuntimeClassLoader loader;
                 try
                 {
-                    loader = RuntimeClassLoaderFactory.GetAssemblyClassLoaderByName(dotnetAssembly);
+                    loader = Context.ClassLoaderFactory.GetAssemblyClassLoaderByName(dotnetAssembly);
                 }
                 catch (Exception x)
                 {
@@ -363,10 +377,7 @@ namespace IKVM.Runtime
                     }
                     finally
                     {
-                        if (factory == null)
-                        {
-                            factory = DynamicClassLoader.Get(this);
-                        }
+                        factory ??= context.DynamicClassLoaderFactory.GetOrCreate(this);
                     }
                 }
             }
@@ -420,7 +431,7 @@ namespace IKVM.Runtime
                     case LoadMode.ReturnNull:
                         return null;
                     case LoadMode.ReturnUnloadable:
-                        return new RuntimeUnloadableJavaType(name);
+                        return new RuntimeUnloadableJavaType(context, name);
                     case LoadMode.ThrowClassNotFound:
                         throw new ClassNotFoundException(name);
                     default:
@@ -496,14 +507,14 @@ namespace IKVM.Runtime
             // array of primitive type
             return name[pos] switch
             {
-                'B' => CreateArrayType(name, RuntimePrimitiveJavaType.BYTE, pos),
-                'C' => CreateArrayType(name, RuntimePrimitiveJavaType.CHAR, pos),
-                'D' => CreateArrayType(name, RuntimePrimitiveJavaType.DOUBLE, pos),
-                'F' => CreateArrayType(name, RuntimePrimitiveJavaType.FLOAT, pos),
-                'I' => CreateArrayType(name, RuntimePrimitiveJavaType.INT, pos),
-                'J' => CreateArrayType(name, RuntimePrimitiveJavaType.LONG, pos),
-                'S' => CreateArrayType(name, RuntimePrimitiveJavaType.SHORT, pos),
-                'Z' => CreateArrayType(name, RuntimePrimitiveJavaType.BOOLEAN, pos),
+                'B' => CreateArrayType(name, context.PrimitiveJavaTypeFactory.BYTE, pos),
+                'C' => CreateArrayType(name, context.PrimitiveJavaTypeFactory.CHAR, pos),
+                'D' => CreateArrayType(name, context.PrimitiveJavaTypeFactory.DOUBLE, pos),
+                'F' => CreateArrayType(name, context.PrimitiveJavaTypeFactory.FLOAT, pos),
+                'I' => CreateArrayType(name, context.PrimitiveJavaTypeFactory.INT, pos),
+                'J' => CreateArrayType(name, context.PrimitiveJavaTypeFactory.LONG, pos),
+                'S' => CreateArrayType(name, context.PrimitiveJavaTypeFactory.SHORT, pos),
+                'Z' => CreateArrayType(name, context.PrimitiveJavaTypeFactory.BOOLEAN, pos),
                 _ => null,
             };
         }
@@ -616,28 +627,28 @@ namespace IKVM.Runtime
                         tw.Finish();
                         break;
                     case 'Z':
-                        tw = RuntimePrimitiveJavaType.BOOLEAN;
+                        tw = context.PrimitiveJavaTypeFactory.BOOLEAN;
                         break;
                     case 'B':
-                        tw = RuntimePrimitiveJavaType.BYTE;
+                        tw = context.PrimitiveJavaTypeFactory.BYTE;
                         break;
                     case 'S':
-                        tw = RuntimePrimitiveJavaType.SHORT;
+                        tw = context.PrimitiveJavaTypeFactory.SHORT;
                         break;
                     case 'C':
-                        tw = RuntimePrimitiveJavaType.CHAR;
+                        tw = context.PrimitiveJavaTypeFactory.CHAR;
                         break;
                     case 'I':
-                        tw = RuntimePrimitiveJavaType.INT;
+                        tw = context.PrimitiveJavaTypeFactory.INT;
                         break;
                     case 'F':
-                        tw = RuntimePrimitiveJavaType.FLOAT;
+                        tw = context.PrimitiveJavaTypeFactory.FLOAT;
                         break;
                     case 'J':
-                        tw = RuntimePrimitiveJavaType.LONG;
+                        tw = context.PrimitiveJavaTypeFactory.LONG;
                         break;
                     case 'D':
-                        tw = RuntimePrimitiveJavaType.DOUBLE;
+                        tw = context.PrimitiveJavaTypeFactory.DOUBLE;
                         break;
                     default:
                         return null;
@@ -659,7 +670,7 @@ namespace IKVM.Runtime
                 return null;
             }
 
-            var wrapper = RuntimeClassLoaderFactory.GetJavaTypeFromType(type);
+            var wrapper = context.ClassLoaderFactory.GetJavaTypeFromType(type);
             if (wrapper != null && wrapper.Name != name)
             {
                 // the name specified was not in canonical form
@@ -758,7 +769,7 @@ namespace IKVM.Runtime
             Debug.Assert(!elementJavaType.IsUnloadable && !elementJavaType.IsVerifierType && !elementJavaType.IsArray);
             Debug.Assert(dimensions >= 1);
 
-            return elementJavaType.GetClassLoader().RegisterInitiatingLoader(new RuntimeArrayJavaType(elementJavaType, name));
+            return elementJavaType.GetClassLoader().RegisterInitiatingLoader(new RuntimeArrayJavaType(elementJavaType.Context, elementJavaType, name));
         }
 
 #if !IMPORTER && !EXPORTER
@@ -814,17 +825,17 @@ namespace IKVM.Runtime
             switch (signature[index++])
             {
                 case 'B':
-                    return RuntimePrimitiveJavaType.BYTE;
+                    return context.PrimitiveJavaTypeFactory.BYTE;
                 case 'C':
-                    return RuntimePrimitiveJavaType.CHAR;
+                    return context.PrimitiveJavaTypeFactory.CHAR;
                 case 'D':
-                    return RuntimePrimitiveJavaType.DOUBLE;
+                    return context.PrimitiveJavaTypeFactory.DOUBLE;
                 case 'F':
-                    return RuntimePrimitiveJavaType.FLOAT;
+                    return context.PrimitiveJavaTypeFactory.FLOAT;
                 case 'I':
-                    return RuntimePrimitiveJavaType.INT;
+                    return context.PrimitiveJavaTypeFactory.INT;
                 case 'J':
-                    return RuntimePrimitiveJavaType.LONG;
+                    return context.PrimitiveJavaTypeFactory.LONG;
                 case 'L':
                     {
                         int pos = index;
@@ -832,11 +843,11 @@ namespace IKVM.Runtime
                         return LoadClass(signature.Substring(pos, index - pos - 1), mode);
                     }
                 case 'S':
-                    return RuntimePrimitiveJavaType.SHORT;
+                    return context.PrimitiveJavaTypeFactory.SHORT;
                 case 'Z':
-                    return RuntimePrimitiveJavaType.BOOLEAN;
+                    return context.PrimitiveJavaTypeFactory.BOOLEAN;
                 case 'V':
-                    return RuntimePrimitiveJavaType.VOID;
+                    return context.PrimitiveJavaTypeFactory.VOID;
                 case '[':
                     {
                         // TODO this can be optimized
@@ -956,7 +967,7 @@ namespace IKVM.Runtime
             {
                 return "null";
             }
-            return string.Format("{0}@{1:X}", RuntimeClassLoaderFactory.GetJavaTypeFromType(javaClassLoader.GetType()).Name, javaClassLoader.GetHashCode());
+            return string.Format("{0}@{1:X}", Context.ClassLoaderFactory.GetJavaTypeFromType(javaClassLoader.GetType()).Name, javaClassLoader.GetHashCode());
         }
 
 #endif
@@ -975,7 +986,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             return null;
 #else
-            return RuntimeClassLoaderFactory.GetClassLoaderWrapper(callerID.getCallerClassLoader());
+            return JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(callerID.getCallerClassLoader());
 #endif
         }
 
@@ -986,7 +997,7 @@ namespace IKVM.Runtime
         {
             // it's not ideal when we end up here (because it means we're emitting a warning that is not associated with a specific output target),
             // but it happens when we're decoding something in a referenced assembly that either doesn't make sense or contains an unloadable type
-            StaticCompiler.IssueMessage(msgId, values);
+            Context.StaticCompiler.IssueMessage(msgId, values);
         }
 #endif
 
@@ -1008,7 +1019,7 @@ namespace IKVM.Runtime
                 var cfp = ClassFileParseOptions.LocalVariableTable;
                 if (EmitStackTraceInfo)
                     cfp |= ClassFileParseOptions.LineNumberTable;
-                if (RuntimeClassLoaderFactory.bootstrapClassLoader is CompilerClassLoader)
+                if (context.ClassLoaderFactory.bootstrapClassLoader is CompilerClassLoader)
                     cfp |= ClassFileParseOptions.TrustedAnnotations;
                 if (RemoveAsserts)
                     cfp |= ClassFileParseOptions.RemoveAssertions;
@@ -1019,7 +1030,7 @@ namespace IKVM.Runtime
                     cfp |= ClassFileParseOptions.LocalVariableTable;
                 if (RelaxedClassNameValidation)
                     cfp |= ClassFileParseOptions.RelaxedClassNameValidation;
-                if (this == RuntimeClassLoaderFactory.bootstrapClassLoader)
+                if (this == Context.ClassLoaderFactory.bootstrapClassLoader)
                     cfp |= ClassFileParseOptions.TrustedAnnotations;
 
                 return cfp;

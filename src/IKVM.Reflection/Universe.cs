@@ -45,7 +45,7 @@ namespace IKVM.Reflection
 
 #if NETCOREAPP3_1_OR_GREATER
 
-        public static readonly string CoreLibName = "netstandard";
+        public static readonly string CoreLibName = "System.Runtime";
 
 #elif NETFRAMEWORK
 
@@ -972,9 +972,8 @@ namespace IKVM.Reflection
         internal bool ResolveMissingTypeIsValueType(MissingType missingType)
         {
             if (missingTypeIsValueType != null)
-            {
                 return missingTypeIsValueType(missingType);
-            }
+
             throw new MissingMemberException(missingType);
         }
 

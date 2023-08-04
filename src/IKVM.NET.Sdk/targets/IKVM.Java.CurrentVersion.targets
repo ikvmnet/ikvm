@@ -67,11 +67,6 @@
         </ItemGroup>
     </Target>
 
-    <ItemGroup Condition="'$(_DebugSymbolsProduced)' == 'true' and '$(PdbFile)' != ''">
-        <_DebugSymbolsIntermediatePathTemporary Include="$(PdbFile)"/>
-        <_DebugSymbolsIntermediatePath Include="@(_DebugSymbolsIntermediatePathTemporary->'%(RootDir)%(Directory)%(Filename).pdb')"/>
-    </ItemGroup>
-
     <ItemGroup>
         <DocFileItem Include="$(DocumentationFile)" Condition=" '$(DocumentationFile)' != '' "/>
     </ItemGroup>

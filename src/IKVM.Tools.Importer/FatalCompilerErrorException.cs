@@ -23,6 +23,8 @@
 */
 using System;
 
+using IKVM.Runtime;
+
 namespace IKVM.Tools.Importer
 {
 
@@ -158,7 +160,7 @@ namespace IKVM.Tools.Importer
                 case IKVM.Tools.Importer.Message.GhostInterfaceMethodMissing:
                     return "Remapped class '{0}' does not implement ghost interface method\n\t({1}.{2}{3})";
                 default:
-                    return "Missing Error Message. Please file a bug.";
+                    return "Missing Error IKVM.Tools.Importer.Message. Please file a bug.";
             }
         }
     }

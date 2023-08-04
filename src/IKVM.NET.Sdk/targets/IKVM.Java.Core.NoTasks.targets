@@ -87,8 +87,8 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         </ItemGroup>
 
         <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
-        <Message Text="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Importance="low" Condition="!Exists('%(ReferenceExport.CachePath)')" />
-        <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" />
+        <Message Text="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" />
+        <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" ContinueOnError="false" />
         <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="Exists('%(ReferenceExport.StagePath)') And !Exists('%(ReferenceExport.CachePath)')" />
         <Touch Files="%(ReferenceExport.CachePath)" />
 
@@ -196,7 +196,8 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         <ItemGroup>
             <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
             <_IkvmCompilerArgs Include="-nologo" />
-            <_IkvmCompilerArgs Include="-debug" Condition=" '$(DebugType)' != 'none' " />
+            <_IkvmCompilerArgs Include="-bootstrap" Condition=" '$(Bootstrap)' == 'true' " />
+            <_IkvmCompilerArgs Include="-debug" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' " />
             <_IkvmCompilerArgs Include="-assembly:$(AssemblyName)" />
             <_IkvmCompilerArgs Include="-version:$(AssemblyVersion)" />
             <_IkvmCompilerArgs Include="-runtime:$(IkvmRuntimeAssembly)" />
@@ -234,7 +235,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         </CoreCompileDependsOn>
     </PropertyGroup>
 
-    <Target Name="_CoreCompile" DependsOnTargets="_CoreCompileResponseFile" Inputs="$(_IkvmCompilerResponseFile);$(_ExcludeFilePath);$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+    <Target Name="_CoreCompile" DependsOnTargets="_CoreCompileResponseFile" Inputs="$(_IkvmCompilerResponseFile);$(_ExcludeFilePath);$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly)">
         <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
         <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
         <Exec Command="chmod +x $(IkvmCompilerPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -243,11 +244,11 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         <RemoveDir Directories="$(_AssemblyTempPath)" Condition="Exists('$(_AssemblyTempPath)')" />
         <MakeDir Directories="$(_AssemblyTempPath)" />
         <Message Text="$(IkvmCompilerExec) @$(_IkvmCompilerResponseFile)" />
-        <Exec Command="$(IkvmCompilerExec) @$(_IkvmCompilerResponseFile)" />
+        <Exec Command="$(IkvmCompilerExec) @$(_IkvmCompilerResponseFile)" ContinueOnError="false" />
 
         <!-- Move temporary files in place of permanent files. -->
         <Move SourceFiles="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" DestinationFiles="@(IntermediateAssembly)" OverwriteReadOnlyFiles="true" />
-        <Move SourceFiles="$(_AssemblyTempPath)$(TargetName).pdb" DestinationFiles="@(_DebugSymbolsIntermediatePath)" OverwriteReadOnlyFiles="true" Condition="Exists('$(_AssemblyTempPath)$(TargetName).pdb')" />
+        <Move SourceFiles="$(_AssemblyTempPath)$(TargetName).pdb" DestinationFiles="@(_DebugSymbolsIntermediatePath)" OverwriteReadOnlyFiles="true" Condition=" '@(_DebugSymbolsIntermediatePath)' != '' And Exists('$(_AssemblyTempPath)$(TargetName).pdb')" />
 
         <ItemGroup>
             <FileWrites Include="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />

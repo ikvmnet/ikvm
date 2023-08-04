@@ -22,6 +22,7 @@
   jeroen@frijters.net
   
 */
+using System;
 using System.Reflection;
 
 using IKVM.Runtime;
@@ -29,18 +30,23 @@ using IKVM.Runtime;
 namespace IKVM.Java.Externs.sun.misc
 {
 
-	static class MiscHelper
-	{
+    static class MiscHelper
+    {
 
-		public static object getAssemblyClassLoader(Assembly asm, object extcl)
-		{
+        public static object getAssemblyClassLoader(Assembly asm, object extcl)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
 			if (extcl == null || asm.IsDefined(typeof(IKVM.Attributes.CustomAssemblyClassLoaderAttribute), false))
 			{
-				return RuntimeAssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
+				return JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
 			}
-			return null;
-		}
 
-	}
+			return null;
+#endif
+        }
+
+    }
 
 }

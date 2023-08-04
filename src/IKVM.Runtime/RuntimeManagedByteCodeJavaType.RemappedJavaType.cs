@@ -41,7 +41,7 @@ namespace IKVM.Runtime
     partial class RuntimeManagedByteCodeJavaType
     {
 
-        sealed class RemappedJavaType : RuntimeManagedByteCodeJavaType
+        internal sealed class RemappedJavaType : RuntimeManagedByteCodeJavaType
         {
 
             readonly Type remappedType;
@@ -49,13 +49,14 @@ namespace IKVM.Runtime
             /// <summary>
             /// initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="name"></param>
             /// <param name="type"></param>
             /// <exception cref="InvalidOperationException"></exception>
-            internal RemappedJavaType(string name, Type type) :
-                base(name, type)
+            internal RemappedJavaType(RuntimeContext context, string name, Type type) :
+                base(context, name, type)
             {
-                var attr = AttributeHelper.GetRemappedType(type) ?? throw new InvalidOperationException();
+                var attr = Context.AttributeHelper.GetRemappedType(type) ?? throw new InvalidOperationException();
                 remappedType = attr.Type;
             }
 
@@ -79,11 +80,11 @@ namespace IKVM.Runtime
                 if (remappedType.IsInterface)
                 {
                     var nestedHelper = type.GetNestedType("__Helper", BindingFlags.Public | BindingFlags.Static);
-                    foreach (var m in AttributeHelper.GetRemappedInterfaceMethods(type))
+                    foreach (var m in Context.AttributeHelper.GetRemappedInterfaceMethods(type))
                     {
                         var method = remappedType.GetMethod(m.MappedTo);
                         var mbHelper = method;
-                        var modifiers = AttributeHelper.GetModifiers(method, false);
+                        var modifiers = Context.AttributeHelper.GetModifiers(method, false);
                         var flags = MemberFlags.None;
 
                         GetNameSigFromMethodBase(method, out var name, out var sig, out var retType, out var paramTypes, ref flags);
@@ -105,7 +106,7 @@ namespace IKVM.Runtime
 
             private void AddMethod(List<RuntimeJavaMethod> list, MethodBase method)
             {
-                var flags = AttributeHelper.GetHideFromJavaFlags(method);
+                var flags = Context.AttributeHelper.GetHideFromJavaFlags(method);
                 if ((flags & HideFromJavaFlags.Code) == 0 && (remappedType.IsSealed || !method.Name.StartsWith("instancehelper_")) && (!remappedType.IsSealed || method.IsStatic))
                     list.Add(CreateRemappedMethodWrapper(method, flags));
             }
@@ -116,7 +117,7 @@ namespace IKVM.Runtime
                 var fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
                 foreach (var field in fields)
                 {
-                    HideFromJavaFlags hideFromJavaFlags = AttributeHelper.GetHideFromJavaFlags(field);
+                    HideFromJavaFlags hideFromJavaFlags = Context.AttributeHelper.GetHideFromJavaFlags(field);
                     if ((hideFromJavaFlags & HideFromJavaFlags.Code) == 0)
                         list.Add(CreateFieldWrapper(field, hideFromJavaFlags));
                 }
@@ -125,7 +126,7 @@ namespace IKVM.Runtime
 
             RuntimeJavaMethod CreateRemappedMethodWrapper(MethodBase mb, HideFromJavaFlags hideFromJavaflags)
             {
-                var modifiers = AttributeHelper.GetModifiers(mb, false);
+                var modifiers = Context.AttributeHelper.GetModifiers(mb, false);
                 var flags = MemberFlags.None;
                 GetNameSigFromMethodBase(mb, out var name, out var sig, out var retType, out var paramTypes, ref flags);
 

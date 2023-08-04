@@ -73,21 +73,19 @@ namespace IKVM.Tools.Importer.MapXml
 
         internal void Emit(RuntimeClassLoader loader, CodeEmitter ilgen)
         {
-            if (Type != "static" || Class == null || Name == null || Sig == null)
+            if (Type == null && Class == null)
+                throw new NotImplementedException();
+            if (Name == null || Sig == null)
                 throw new NotImplementedException();
 
-            Type[] redirParamTypes = loader.ArgTypeListFromSig(Sig);
+            var redirParamTypes = loader.ArgTypeListFromSig(Sig);
             for (int i = 0; i < redirParamTypes.Length; i++)
-            {
                 ilgen.EmitLdarg(i);
-            }
+
             // HACK if the class name contains a comma, we assume it is a .NET type
-            if (Class.IndexOf(',') >= 0)
+            if (Type != null)
             {
-#if NETCOREAPP
-				Class = Class.Replace("mscorlib", Universe.CoreLibName);
-#endif
-                var type = StaticCompiler.Universe.GetType(Class, true);
+                var type = loader.Context.Resolver.ResolveCoreType(Type);
                 var mi = type.GetMethod(Name, redirParamTypes);
                 if (mi == null)
                 {
@@ -106,6 +104,7 @@ namespace IKVM.Tools.Importer.MapXml
                 mw.Link();
                 mw.EmitCall(ilgen);
             }
+
             // TODO we may need a cast here (or a stack to return type conversion)
             ilgen.Emit(OpCodes.Ret);
         }

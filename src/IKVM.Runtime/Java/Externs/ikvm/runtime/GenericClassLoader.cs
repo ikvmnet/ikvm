@@ -21,6 +21,8 @@
   jeroen@frijters.net
   
 */
+using System;
+
 using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.ikvm.runtime
@@ -31,17 +33,29 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
         public static string toString(global::java.lang.ClassLoader _this)
         {
-            return ((RuntimeGenericClassLoader)RuntimeClassLoaderFactory.GetClassLoaderWrapper(_this)).GetName();
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return ((RuntimeGenericClassLoader)JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(_this)).GetName();
+#endif
         }
 
         public static global::java.util.Enumeration getResources(global::java.lang.ClassLoader _this, string name)
         {
-            return ((RuntimeGenericClassLoader)RuntimeClassLoaderFactory.GetClassLoaderWrapper(_this)).GetResources(name);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return ((RuntimeGenericClassLoader)JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(_this)).GetResources(name);
+#endif
         }
 
         public static global::java.net.URL findResource(global::java.lang.ClassLoader _this, string name)
         {
-            return ((RuntimeGenericClassLoader)RuntimeClassLoaderFactory.GetClassLoaderWrapper(_this)).FindResource(name);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return ((RuntimeGenericClassLoader)JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(_this)).FindResource(name);
+#endif
         }
     }
 

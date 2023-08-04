@@ -43,26 +43,27 @@ namespace IKVM.Runtime
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="type"></param>
-        internal RuntimeAnonymousJavaType(Type type) :
-            base(TypeFlags.Anonymous, Modifiers.Final | Modifiers.Synthetic, GetName(type))
+        internal RuntimeAnonymousJavaType(RuntimeContext context, Type type) :
+            base(context, TypeFlags.Anonymous, Modifiers.Final | Modifiers.Synthetic, GetName(context, type))
         {
             this.type = type;
         }
 
-        internal static bool IsAnonymous(Type type)
+        internal static bool IsAnonymous(RuntimeContext context, Type type)
         {
-            return type.IsSpecialName && type.Name.StartsWith(NestedTypeName.IntrinsifiedAnonymousClass, StringComparison.Ordinal) && AttributeHelper.IsJavaModule(type.Module);
+            return type.IsSpecialName && type.Name.StartsWith(NestedTypeName.IntrinsifiedAnonymousClass, StringComparison.Ordinal) && context.AttributeHelper.IsJavaModule(type.Module);
         }
 
-        private static string GetName(Type type)
+        private static string GetName(RuntimeContext context, Type type)
         {
-            return RuntimeClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).Name + type.Name.Replace(NestedTypeName.IntrinsifiedAnonymousClass, "$$Lambda$");
+            return context.ClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).Name + type.Name.Replace(NestedTypeName.IntrinsifiedAnonymousClass, "$$Lambda$");
         }
 
         internal override RuntimeClassLoader GetClassLoader()
         {
-            return RuntimeClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).GetClassLoader();
+            return Context.ClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).GetClassLoader();
         }
 
         internal override Type TypeAsTBD
@@ -72,19 +73,19 @@ namespace IKVM.Runtime
 
         internal override RuntimeJavaType BaseTypeWrapper
         {
-            get { return CoreClasses.java.lang.Object.Wrapper; }
+            get { return Context.JavaBase.TypeOfJavaLangObject; }
         }
 
         internal override RuntimeJavaType[] Interfaces
         {
             get
             {
-                var interfaces = GetImplementedInterfacesAsTypeWrappers(type);
+                var interfaces = GetImplementedInterfacesAsTypeWrappers(Context, type);
                 if (type.IsSerializable)
                 {
                     // we have to remove the System.Runtime.Serialization.ISerializable interface
                     var list = new List<RuntimeJavaType>(interfaces);
-                    list.RemoveAll(Serialization.IsISerializable);
+                    list.RemoveAll(Context.Serialization.IsISerializable);
                     return list.ToArray();
                 }
 
@@ -108,7 +109,7 @@ namespace IKVM.Runtime
                 }
                 else if (mi.Name == "writeReplace")
                 {
-                    methods.Add(new RuntimeTypicalJavaMethod(this, "writeReplace", "()Ljava.lang.Object;", mi, CoreClasses.java.lang.Object.Wrapper, Array.Empty<RuntimeJavaType>(), Modifiers.Private | Modifiers.Final, MemberFlags.None));
+                    methods.Add(new RuntimeTypicalJavaMethod(this, "writeReplace", "()Ljava.lang.Object;", mi, Context.JavaBase.TypeOfJavaLangObject, Array.Empty<RuntimeJavaType>(), Modifiers.Private | Modifiers.Final, MemberFlags.None));
                 }
             }
 
@@ -117,7 +118,7 @@ namespace IKVM.Runtime
             var fields = new List<RuntimeJavaField>();
             foreach (var fi in type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
-                var fieldType = RuntimeManagedByteCodeJavaType.GetFieldTypeWrapper(fi);
+                var fieldType = RuntimeManagedByteCodeJavaType.GetFieldTypeWrapper(Context, fi);
                 fields.Add(new RuntimeSimpleJavaField(this, fieldType, fi, fi.Name, fieldType.SigName, new ExModifiers(Modifiers.Private | Modifiers.Final, false)));
             }
 
@@ -126,13 +127,13 @@ namespace IKVM.Runtime
 
         void GetSig(MethodInfo mi, out RuntimeJavaType returnType, out RuntimeJavaType[] parameterTypes, out string signature)
         {
-            returnType = RuntimeManagedByteCodeJavaType.GetParameterTypeWrapper(mi.ReturnParameter);
+            returnType = RuntimeManagedByteCodeJavaType.GetParameterTypeWrapper(Context, mi.ReturnParameter);
             var parameters = mi.GetParameters();
             parameterTypes = new RuntimeJavaType[parameters.Length];
             var sb = new System.Text.StringBuilder("(");
             for (int i = 0; i < parameters.Length; i++)
             {
-                parameterTypes[i] = RuntimeManagedByteCodeJavaType.GetParameterTypeWrapper(parameters[i]);
+                parameterTypes[i] = RuntimeManagedByteCodeJavaType.GetParameterTypeWrapper(Context, parameters[i]);
                 sb.Append(parameterTypes[i].SigName);
             }
             sb.Append(')');

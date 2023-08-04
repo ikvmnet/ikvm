@@ -423,11 +423,11 @@ namespace IKVM.Runtime
                 // a serialVersionUID field must be static and final to be recognized (see ObjectStreamClass.getDeclaredSUID())
                 return (Modifiers & (Modifiers.Static | Modifiers.Final)) == (Modifiers.Static | Modifiers.Final)
                     && Name == "serialVersionUID"
-                    && (FieldTypeWrapper == RuntimePrimitiveJavaType.LONG
-                        || FieldTypeWrapper == RuntimePrimitiveJavaType.INT
-                        || FieldTypeWrapper == RuntimePrimitiveJavaType.CHAR
-                        || FieldTypeWrapper == RuntimePrimitiveJavaType.SHORT
-                        || FieldTypeWrapper == RuntimePrimitiveJavaType.BYTE);
+                    && (FieldTypeWrapper == DeclaringType.Context.PrimitiveJavaTypeFactory.LONG
+                        || FieldTypeWrapper == DeclaringType.Context.PrimitiveJavaTypeFactory.INT
+                        || FieldTypeWrapper == DeclaringType.Context.PrimitiveJavaTypeFactory.CHAR
+                        || FieldTypeWrapper == DeclaringType.Context.PrimitiveJavaTypeFactory.SHORT
+                        || FieldTypeWrapper == DeclaringType.Context.PrimitiveJavaTypeFactory.BYTE);
             }
         }
 
@@ -513,7 +513,7 @@ namespace IKVM.Runtime
 
             var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
             var dm = DynamicMethodUtil.Create($"__<UnsafeGet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD, true, ft, new[] { typeof(object) });
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)
                 il.Emit(OpCodes.Ldarg_0);
@@ -560,7 +560,7 @@ namespace IKVM.Runtime
 
             var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
             var dm = DynamicMethodUtil.Create($"__<UnsafeSet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD, true, typeof(void), new[] { typeof(object), ft });
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)
                 il.Emit(OpCodes.Ldarg_0);
@@ -605,7 +605,7 @@ namespace IKVM.Runtime
             ResolveField();
             var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
             var dm = new DynamicMethod($"__<UnsafeVolatileGet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", ft, new[] { typeof(object) }, DeclaringType.TypeAsTBD.Module, true);
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)
                 il.Emit(OpCodes.Ldarg_0);
@@ -650,7 +650,7 @@ namespace IKVM.Runtime
             ResolveField();
             var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
             var dm = DynamicMethodUtil.Create($"__<UnsafeVolatileSet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD, true, typeof(void), new[] { typeof(object), ft });
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)
                 il.Emit(OpCodes.Ldarg_0);
@@ -698,7 +698,7 @@ namespace IKVM.Runtime
             ResolveField();
             var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
             var dm = DynamicMethodUtil.Create($"__<UnsafeCompareAndSwap>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD, true, typeof(bool), new[] { typeof(object), ft, ft });
-            var il = CodeEmitter.Create(dm);
+            var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)
                 il.Emit(OpCodes.Ldarg_0);

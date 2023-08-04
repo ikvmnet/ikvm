@@ -42,8 +42,10 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="reader"></param>
-            internal ConstantPoolItemMethodHandle(MethodHandleConstantReader reader)
+            internal ConstantPoolItemMethodHandle(RuntimeContext context, MethodHandleConstantReader reader) :
+                base(context)
             {
                 this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
             }

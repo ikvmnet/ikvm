@@ -50,7 +50,7 @@ namespace IKVM.Runtime
 
             readonly Type type;
 
-            private static Modifiers GetModifiers(Type type)
+            static Modifiers GetModifiers(Type type)
             {
                 var modifiers = Modifiers.Abstract | Modifiers.Final;
                 if (type.IsInterface)
@@ -62,21 +62,22 @@ namespace IKVM.Runtime
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="context"></param>
             /// <param name="type"></param>
             /// <param name="name"></param>
-            internal OpenGenericJavaType(Type type, string name) :
-                base(TypeFlags.None, GetModifiers(type), name)
+            internal OpenGenericJavaType(RuntimeContext context, Type type, string name) :
+                base(context, TypeFlags.None, GetModifiers(type), name)
             {
                 this.type = type;
             }
 
-            internal override RuntimeJavaType BaseTypeWrapper => type.IsInterface ? null : CoreClasses.java.lang.Object.Wrapper;
+            internal override RuntimeJavaType BaseTypeWrapper => type.IsInterface ? null : Context.JavaBase.TypeOfJavaLangObject;
 
             internal override Type TypeAsTBD => type;
 
             internal override RuntimeClassLoader GetClassLoader()
             {
-                return RuntimeAssemblyClassLoaderFactory.FromAssembly(type.Assembly);
+                return Context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly);
             }
 
             protected override void LazyPublishMembers()

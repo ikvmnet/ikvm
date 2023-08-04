@@ -288,11 +288,11 @@
             </constructor>
             <constructor sig="(Ljava.lang.String;)V" modifiers="public">
                 <parameter name="original" />
-                <redirect class="System.String, mscorlib" name="Copy" type="static" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+                <redirect class="cli.System.String" name="Copy" sig="(Ljava.lang.String;)Ljava.lang.String;" />
             </constructor>
             <constructor sig="(Ljava.lang.StringBuffer;)V" modifiers="public">
                 <parameter name="buffer" />
-                <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="(Ljava.lang.StringBuffer;)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" name="NewString" sig="(Ljava.lang.StringBuffer;)Ljava.lang.String;" />
             </constructor>
             <constructor sig="(Ljava.lang.StringBuilder;)V" modifiers="public">
                 <parameter name="builder" />
@@ -308,19 +308,19 @@
             </constructor>
             <constructor sig="([B)V" modifiers="public">
                 <parameter name="bytes" />
-                <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([B)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" name="NewString" sig="([B)Ljava.lang.String;" />
             </constructor>
             <constructor sig="([BI)V" modifiers="public">
                 <parameter name="ascii" />
                 <parameter name="hibyte" />
                 <attribute type="System.ObsoleteAttribute" sig="()V" />
-                <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BI)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" name="NewString" sig="([BI)Ljava.lang.String;" />
             </constructor>
             <constructor sig="([BII)V" modifiers="public">
                 <parameter name="bytes" />
                 <parameter name="offset" />
                 <parameter name="length" />
-                <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BII)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" name="NewString" sig="([BII)Ljava.lang.String;" />
             </constructor>
             <constructor sig="([BIII)V" modifiers="public">
                 <parameter name="ascii" />
@@ -328,13 +328,13 @@
                 <parameter name="offset" />
                 <parameter name="count" />
                 <attribute type="System.ObsoleteAttribute" sig="()V" />
-                <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIII)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" name="NewString" sig="([BIII)Ljava.lang.String;" />
             </constructor>
             <constructor sig="([BLjava.lang.String;)V" modifiers="public">
                 <parameter name="bytes" />
                 <parameter name="charsetName" />
                 <throws class="java.io.UnsupportedEncodingException" />
-                <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BLjava.lang.String;)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" name="NewString" sig="([BLjava.lang.String;)Ljava.lang.String;" />
             </constructor>
             <constructor sig="([BIILjava.lang.String;)V" modifiers="public">
                 <parameter name="bytes" />
@@ -342,28 +342,28 @@
                 <parameter name="length" />
                 <parameter name="charsetName" />
                 <throws class="java.io.UnsupportedEncodingException" />
-                <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIILjava.lang.String;)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" name="NewString" sig="([BIILjava.lang.String;)Ljava.lang.String;" />
             </constructor>
             <constructor sig="([III)V" modifiers="public">
                 <parameter name="codePoints" />
                 <parameter name="offset" />
                 <parameter name="count" />
-                <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([III)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" name="NewString" sig="([III)Ljava.lang.String;" />
             </constructor>
             <constructor sig="([BIILjava.nio.charset.Charset;)V" modifiers="public">
                 <parameter name="bytes" />
                 <parameter name="offset" />
                 <parameter name="length" />
                 <parameter name="charset" />
-                <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BIILjava.nio.charset.Charset;)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" name="NewString" sig="([BIILjava.nio.charset.Charset;)Ljava.lang.String;" />
             </constructor>
             <constructor sig="([BLjava.nio.charset.Charset;)V" modifiers="public">
                 <parameter name="bytes" />
                 <parameter name="charset" />
-                <redirect class="java.lang.StringHelper" name="NewString" type="static" sig="([BLjava.nio.charset.Charset;)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" name="NewString" sig="([BLjava.nio.charset.Charset;)Ljava.lang.String;" />
             </constructor>
             <method name="hashCode" sig="()I" modifiers="public">
-                <redirect class="java.lang.StringHelper" name="hashCode" type="static" sig="(Lcli.System.String;)I" />
+                <redirect class="java.lang.StringHelper" name="hashCode" sig="(Lcli.System.String;)I" />
             </method>
             <!-- we have a toString here to make sure that it shows up as a declared method in reflection -->
             <method name="toString" sig="()Ljava.lang.String;" modifiers="public" />
@@ -440,29 +440,29 @@
             <method name="substring" sig="(II)Ljava.lang.String;" modifiers="public">
                 <parameter name="beginIndex" />
                 <parameter name="endIndex" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" sig="(Lcli.System.String;II)Ljava.lang.String;" />
             </method>
             <method name="indexOf" sig="(I)I" modifiers="public">
                 <parameter name="ch" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;I)I" />
+                <redirect class="java.lang.StringHelper" sig="(Lcli.System.String;I)I" />
             </method>
             <method name="indexOf" sig="(II)I" modifiers="public" nonullcheck="true">
                 <parameter name="ch" />
                 <parameter name="fromIndex" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II)I" />
+                <redirect class="java.lang.StringHelper" sig="(Lcli.System.String;II)I" />
             </method>
             <method name="indexOf" sig="(Ljava.lang.String;)I" modifiers="public">
                 <parameter name="str" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
             </method>
             <method name="indexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
                 <parameter name="str" />
                 <parameter name="fromIndex" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
             </method>
             <!-- These methods are package private and used by (Abstract)StringBuilder/Buffer -->
             <method name="getChars" sig="([CI)V" modifiers="">
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;[CI)V" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;[CI)V" />
             </method>
             <method name="indexOf" sig="([CII[CIII)I" modifiers="static">
                 <redirect class="java.lang.StringHelper" />
@@ -479,21 +479,21 @@
             <!-- end of package private methods used by (Abstract)StringBuilder/Buffer -->
             <method name="lastIndexOf" sig="(I)I" modifiers="public">
                 <parameter name="ch" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;I)I" />
+                <redirect class="java.lang.StringHelper" sig="(Lcli.System.String;I)I" />
             </method>
             <method name="lastIndexOf" sig="(II)I" modifiers="public">
                 <parameter name="ch" />
                 <parameter name="fromIndex" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II)I" />
+                <redirect class="java.lang.StringHelper" sig="(Lcli.System.String;II)I" />
             </method>
             <method name="lastIndexOf" sig="(Ljava.lang.String;)I" modifiers="public">
                 <parameter name="str" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
             </method>
             <method name="lastIndexOf" sig="(Ljava.lang.String;I)I" modifiers="public">
                 <parameter name="str" />
                 <parameter name="fromIndex" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.lang.String;I)I" />
             </method>
             <method name="toCharArray" sig="()[C" modifiers="public">
                 <redirect name="ToCharArray" />
@@ -503,7 +503,7 @@
                 <parameter name="srcEnd" />
                 <parameter name="dst" />
                 <parameter name="dstBegin" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Lcli.System.String;II[CI)V" />
+                <redirect class="java.lang.StringHelper" sig="(Lcli.System.String;II[CI)V" />
             </method>
             <method name="startsWith" sig="(Ljava.lang.String;)Z" modifiers="public" nonullcheck="true">
                 <parameter name="prefix" />
@@ -673,33 +673,33 @@
                 </body>
             </method>
             <method name="toUpperCase" sig="()Ljava.lang.String;" modifiers="public">
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;)Ljava.lang.String;" />
             </method>
             <method name="toUpperCase" sig="(Ljava.util.Locale;)Ljava.lang.String;" modifiers="public">
                 <parameter name="locale" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.util.Locale;)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.util.Locale;)Ljava.lang.String;" />
             </method>
             <method name="toLowerCase" sig="()Ljava.lang.String;" modifiers="public">
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;)Ljava.lang.String;" />
             </method>
             <method name="toLowerCase" sig="(Ljava.util.Locale;)Ljava.lang.String;" modifiers="public">
                 <parameter name="locale" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.util.Locale;)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.util.Locale;)Ljava.lang.String;" />
             </method>
             <method name="compareToIgnoreCase" sig="(Ljava.lang.String;)I" modifiers="public">
                 <parameter name="str" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
             </method>
             <method name="equalsIgnoreCase" sig="(Ljava.lang.String;)Z" modifiers="public">
                 <parameter name="anotherString" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)Z" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.lang.String;)Z" />
             </method>
             <method name="intern" sig="()Ljava.lang.String;" modifiers="public">
-                <redirect type="static" name="Intern" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+                <redirect type="System.String" name="Intern" sig="(Ljava.lang.String;)Ljava.lang.String;" />
             </method>
             <method name="compareTo" sig="(Ljava.lang.String;)I" modifiers="public">
                 <parameter name="anotherString" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
             </method>
             <method name="compareTo" sig="(Ljava.lang.Object;)I" modifiers="public bridge synthetic">
                 <parameter name="o" />
@@ -717,20 +717,20 @@
                 <redirect name="Replace" />
             </method>
             <method name="getBytes" sig="()[B" modifiers="public">
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;)[B" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;)[B" />
             </method>
             <method name="getBytes" sig="(Ljava.lang.String;)[B" modifiers="public">
                 <parameter name="charsetName" />
                 <throws class="java.io.UnsupportedEncodingException" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)[B" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.lang.String;)[B" />
             </method>
             <method name="subSequence" sig="(II)Ljava.lang.CharSequence;" modifiers="public">
                 <parameter name="beginIndex" />
                 <parameter name="endIndex" />
-                <redirect class="java.lang.StringHelper" type="static" name="substring" sig="(Lcli.System.String;II)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" name="substring" sig="(Lcli.System.String;II)Ljava.lang.String;" />
             </method>
             <method name="trim" sig="()Ljava.lang.String;" modifiers="public">
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;)Ljava.lang.String;" />
             </method>
             <method name="regionMatches" sig="(ZILjava.lang.String;II)Z" modifiers="public">
                 <parameter name="ignoreCase" />
@@ -738,14 +738,14 @@
                 <parameter name="other" />
                 <parameter name="ooffset" />
                 <parameter name="len" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;ZILjava.lang.String;II)Z" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;ZILjava.lang.String;II)Z" />
             </method>
             <method name="regionMatches" sig="(ILjava.lang.String;II)Z" modifiers="public">
                 <parameter name="toffset" />
                 <parameter name="other" />
                 <parameter name="ooffset" />
                 <parameter name="len" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;ILjava.lang.String;II)Z" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;ILjava.lang.String;II)Z" />
             </method>
             <method name="getBytes" sig="(II[BI)V" modifiers="public">
                 <parameter name="srcBegin" />
@@ -753,37 +753,37 @@
                 <parameter name="dst" />
                 <parameter name="dstBegin" />
                 <attribute type="System.ObsoleteAttribute" sig="()V" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;II[BI)V" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;II[BI)V" />
             </method>
             <method name="concat" sig="(Ljava.lang.String;)Ljava.lang.String;" modifiers="public">
                 <parameter name="str" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;" />
             </method>
             <method name="contains" sig="(Ljava.lang.CharSequence;)Z" modifiers="public">
                 <parameter name="s" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.CharSequence;)Z" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.lang.CharSequence;)Z" />
             </method>
             <method name="codePointAt" sig="(I)I" modifiers="public">
                 <parameter name="index" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;I)I" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;I)I" />
             </method>
             <method name="codePointBefore" sig="(I)I" modifiers="public">
                 <parameter name="index" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;I)I" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;I)I" />
             </method>
             <method name="codePointCount" sig="(II)I" modifiers="public">
                 <parameter name="beginIndex" />
                 <parameter name="endIndex" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;II)I" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;II)I" />
             </method>
             <method name="offsetByCodePoints" sig="(II)I" modifiers="public">
                 <parameter name="index" />
                 <parameter name="codePointOffset" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;II)I" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;II)I" />
             </method>
             <method name="contentEquals" sig="(Ljava.lang.CharSequence;)Z" modifiers="public">
                 <parameter name="cs" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.CharSequence;)Z" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.lang.CharSequence;)Z" />
             </method>
             <method name="contentEquals" sig="(Ljava.lang.StringBuffer;)Z" modifiers="public">
                 <parameter name="sb" />
@@ -798,7 +798,7 @@
             <method name="replace" sig="(Ljava.lang.CharSequence;Ljava.lang.CharSequence;)Ljava.lang.String;" modifiers="public">
                 <parameter name="target" />
                 <parameter name="replacement" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.CharSequence;Ljava.lang.CharSequence;)Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.lang.CharSequence;Ljava.lang.CharSequence;)Ljava.lang.String;" />
             </method>
             <method name="matches" sig="(Ljava.lang.String;)Z" modifiers="public">
                 <parameter name="regex" />
@@ -848,7 +848,7 @@
             <method name="split" sig="(Ljava.lang.String;I)[Ljava.lang.String;" modifiers="public">
                 <parameter name="regex" />
                 <parameter name="limit" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;I)[Ljava.lang.String;" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.lang.String;I)[Ljava.lang.String;" />
             </method>
             <method name="copyValueOf" sig="([C)Ljava.lang.String;" modifiers="public static">
                 <parameter name="data" />
@@ -900,7 +900,7 @@
             </method>
             <method name="getBytes" sig="(Ljava.nio.charset.Charset;)[B" modifiers="public">
                 <parameter name="charset" />
-                <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.nio.charset.Charset;)[B" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;Ljava.nio.charset.Charset;)[B" />
             </method>
             <method name="join" sig="(Ljava.lang.CharSequence;[Ljava.lang.CharSequence;)Ljava.lang.String;" modifiers="public static">
                 <parameter name="delimiter" />
@@ -919,10 +919,10 @@
             </method>
             <!-- default interface methods we should interherit from CharSequence (currently this isn't done automatically) -->
             <method name="chars" sig="()Ljava.util.stream.IntStream;" modifiers="public">
-                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;)Ljava.util.stream.IntStream;" type="static" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;)Ljava.util.stream.IntStream;" />
             </method>
             <method name="codePoints" sig="()Ljava.util.stream.IntStream;" modifiers="public">
-                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;)Ljava.util.stream.IntStream;" type="static" />
+                <redirect class="java.lang.StringHelper" sig="(Ljava.lang.String;)Ljava.util.stream.IntStream;" />
             </method>
             <field name="CASE_INSENSITIVE_ORDER" sig="Ljava.util.Comparator;" modifiers="public static final">
                 <attribute type="IKVM.Attributes.SignatureAttribute" sig="(Ljava.lang.String;)V">
@@ -958,7 +958,7 @@
             <field name="suppressedExceptions" sig="Ljava.util.List;" />
             <clinit>
                 <body>
-                    <call type="IKVM.Runtime.ExceptionHelper" name="getPersistentFields" sig="()[Ljava.io.ObjectStreamField;" />
+                    <call type="IKVM.Runtime.ExceptionHelper" name="GetPersistentFields" sig="()[Ljava.io.ObjectStreamField;" />
                     <stsfld class="java.lang.Throwable" name="serialPersistentFields" sig="[Ljava.io.ObjectStreamField;" />
                     <ldc_i4_0 />
                     <newarr sig="Ljava.lang.StackTraceElement;" />
@@ -1016,7 +1016,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="readObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectInputStream;)V" />
+                    <call type="IKVM.Runtime.ExceptionHelper" name="ReadObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectInputStream;)V" />
                     <ret />
                 </body>
             </method>
@@ -1025,7 +1025,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="writeObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectOutputStream;)V" />
+                    <call type="IKVM.Runtime.ExceptionHelper" name="WriteObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectOutputStream;)V" />
                     <ret />
                 </body>
             </method>
@@ -1226,15 +1226,15 @@
                 </body>
             </constructor>
             <method name="printStackTrace" sig="()V" modifiers="public">
-                <redirect class="java.lang.ThrowableHelper" sig="(Ljava.lang.Throwable;)V" type="static" />
+                <redirect class="java.lang.ThrowableHelper" sig="(Ljava.lang.Throwable;)V" />
             </method>
             <method name="printStackTrace" sig="(Ljava.io.PrintStream;)V" modifiers="public">
                 <parameter name="s" />
-                <redirect class="java.lang.ThrowableHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintStream;)V" type="static" />
+                <redirect class="java.lang.ThrowableHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintStream;)V" />
             </method>
             <method name="printStackTrace" sig="(Ljava.io.PrintWriter;)V" modifiers="public">
                 <parameter name="s" />
-                <redirect class="java.lang.ThrowableHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintWriter;)V" type="static" />
+                <redirect class="java.lang.ThrowableHelper" sig="(Ljava.lang.Throwable;Ljava.io.PrintWriter;)V" />
             </method>
             <method name="getMessage" sig="()Ljava.lang.String;" modifiers="public">
                 <body>
@@ -1249,7 +1249,7 @@
                 </alternateBody>
             </method>
             <method name="getLocalizedMessage" sig="()Ljava.lang.String;" modifiers="public">
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
+                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="GetLocalizedMessage" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
             </method>
             <method name="fillInStackTrace" sig="()Ljava.lang.Throwable;" modifiers="public">
                 <body>
@@ -1290,7 +1290,7 @@
                 </body>
                 <alternateBody>
                     <ldarg_0 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="fillInStackTrace" sig="(Ljava.lang.Throwable;)V" />
+                    <call type="IKVM.Runtime.ExceptionHelper" name="FillInStackTrace" sig="(Ljava.lang.Throwable;)V" />
                     <ldarg_0 />
                     <ret />
                 </alternateBody>
@@ -1306,7 +1306,7 @@
                             <ldarg_0 />
                             <ldfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
                             <ldarg_1 />
-                            <call type="IKVM.Runtime.ExceptionHelper" name="checkInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
+                            <call type="IKVM.Runtime.ExceptionHelper" name="CheckInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
                             <ldarg_0 />
                             <ldarg_1 />
                             <stfld class="java.lang.Throwable" name="cause" sig="Ljava.lang.Throwable;" />
@@ -1327,7 +1327,7 @@
                     <ldarg_0 />
                     <ldnull />
                     <ldnull />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="checkInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
+                    <call type="IKVM.Runtime.ExceptionHelper" name="CheckInitCause" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
                     <ldarg_0 />
                     <ret />
                 </alternateBody>
@@ -1335,7 +1335,7 @@
             <method name="getCause" sig="()Ljava.lang.Throwable;" modifiers="public">
                 <body>
                     <ldarg_0 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="getCause" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
+                    <call type="IKVM.Runtime.ExceptionHelper" name="GetCause" sig="(Ljava.lang.Throwable;)Ljava.lang.Throwable;" />
                     <ret />
                 </body>
                 <alternateBody>
@@ -1347,21 +1347,21 @@
             <method name="getStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="public">
                 <body>
                     <ldarg_0 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="getOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
+                    <call type="IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
                     <callvirt type="System.Array" name="Clone" sig="()Ljava.lang.Object;" />
                     <castclass class="[Ljava.lang.StackTraceElement;" />
                     <ret />
                 </body>
             </method>
             <method name="getOurStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="private">
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="getOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
+                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
             </method>
             <method name="setStackTrace" sig="([Ljava.lang.StackTraceElement;)V" modifiers="public">
                 <parameter name="stackTrace" />
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="setStackTrace" sig="(Ljava.lang.Throwable;[Ljava.lang.StackTraceElement;)V" />
+                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="SetStackTrace" sig="(Ljava.lang.Throwable;[Ljava.lang.StackTraceElement;)V" />
             </method>
             <method name="toString" sig="()Ljava.lang.String;" modifiers="public">
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
+                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="ToString" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
             </method>
             <method name="GetObjectData" sig="(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V" modifiers="public">
                 <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
@@ -1395,23 +1395,23 @@
             </constructor>
             <method name="addSuppressed" sig="(Ljava.lang.Throwable;)V" modifiers="public final">
                 <parameter name="exception" />
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="addSuppressed" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
+                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="AddSuppressed" sig="(Ljava.lang.Throwable;Ljava.lang.Throwable;)V" />
             </method>
             <method name="getSuppressed" sig="()[Ljava.lang.Throwable;" modifiers="public final">
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="getSuppressed" sig="(Ljava.lang.Throwable;)[Ljava.lang.Throwable;" />
+                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="GetSuppressed" sig="(Ljava.lang.Throwable;)[Ljava.lang.Throwable;" />
             </method>
             <method name="getStackTraceDepth" sig="()I" modifiers="">
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="getStackTraceDepth" sig="(Ljava.lang.Throwable;)I" />
+                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="GetStackTraceDepth" sig="(Ljava.lang.Throwable;)I" />
             </method>
             <method name="getStackTraceElement" sig="(I)Ljava.lang.StackTraceElement;" modifiers="">
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="getStackTraceElement" sig="(Ljava.lang.Throwable;I)Ljava.lang.StackTraceElement;" />
+                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="GetStackTraceElement" sig="(Ljava.lang.Throwable;I)Ljava.lang.StackTraceElement;" />
             </method>
         </class>
         <class name="java.lang.ThrowableHelper">
             <method name="getOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;">
                 <body>
                     <ldarg_0 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="getOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
+                    <call type="IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
                     <ret />
                 </body>
             </method>
@@ -1821,21 +1821,21 @@
         <class name="java.lang.Byte">
             <implements class="cli.System.IFormattable">
                 <method name="ToString" sig="(Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;">
-                    <redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Byte;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
+                    <redirect class="ikvm.internal.Formatter" name="ToString" sig="(Ljava.lang.Byte;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
                 </method>
             </implements>
         </class>
         <class name="java.lang.Short">
             <implements class="cli.System.IFormattable">
                 <method name="ToString" sig="(Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;">
-                    <redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Short;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
+                    <redirect class="ikvm.internal.Formatter" name="ToString" sig="(Ljava.lang.Short;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
                 </method>
             </implements>
         </class>
         <class name="java.lang.Integer">
             <implements class="cli.System.IFormattable">
                 <method name="ToString" sig="(Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;">
-                    <redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Integer;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
+                    <redirect class="ikvm.internal.Formatter" name="ToString" sig="(Ljava.lang.Integer;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
                 </method>
             </implements>
             <method name="compareUnsigned" sig="(II)I">
@@ -1876,7 +1876,7 @@
         <class name="java.lang.Long">
             <implements class="cli.System.IFormattable">
                 <method name="ToString" sig="(Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;">
-                    <redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Long;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
+                    <redirect class="ikvm.internal.Formatter" name="ToString" sig="(Ljava.lang.Long;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
                 </method>
             </implements>
             <method name="compareUnsigned" sig="(JJ)I">
@@ -1917,14 +1917,14 @@
         <class name="java.lang.Float">
             <implements class="cli.System.IFormattable">
                 <method name="ToString" sig="(Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;">
-                    <redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Float;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
+                    <redirect class="ikvm.internal.Formatter" name="ToString" sig="(Ljava.lang.Float;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
                 </method>
             </implements>
         </class>
         <class name="java.lang.Double">
             <implements class="cli.System.IFormattable">
                 <method name="ToString" sig="(Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;">
-                    <redirect class="ikvm.internal.Formatter" type="static" name="ToString" sig="(Ljava.lang.Double;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
+                    <redirect class="ikvm.internal.Formatter" name="ToString" sig="(Ljava.lang.Double;Ljava.lang.String;Lcli.System.IFormatProvider;)Ljava.lang.String;" />
                 </method>
             </implements>
         </class>
@@ -2676,7 +2676,7 @@
             <!-- We replace this method, because it looks for %JAVA_HOME%/lib/ext/localedata.jar and we don't have that -->
             <method name="isNonENLangSupported" sig="()Z">
                 <body>
-                    <call type="JRELocaleProviderAdapter" name="isNonENLangSupported" sig="()Z" />
+                    <call type="IKVM.Java.Externs.sun.util.locale.provider.JRELocaleProviderAdapter" name="isNonENLangSupported" sig="()Z" />
                     <ret />
                 </body>
             </method>
