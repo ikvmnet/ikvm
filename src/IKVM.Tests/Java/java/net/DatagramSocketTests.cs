@@ -20,7 +20,7 @@ namespace IKVM.Tests.Java.java.net
     {
 
         [TestMethod]
-        public void Can_listen_on_any()
+        public void CanListenOnAny()
         {
             using var s = new global::java.net.DatagramSocket(0);
             s.isClosed().Should().BeFalse();
@@ -33,7 +33,7 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
-        public void Can_listen_on_specific()
+        public void CanListenOnPort()
         {
             using var s = new global::java.net.DatagramSocket(42343);
             s.isClosed().Should().BeFalse();
@@ -46,7 +46,7 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
-        public void Can_listen_on_wildcard()
+        public void CanListenOnWildcard()
         {
             using var s = new global::java.net.DatagramSocket(40104, global::java.net.InetAddress.getByName("0.0.0.0"));
             s.isClosed().Should().BeFalse();
@@ -229,7 +229,7 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
-        public void ShouldAbortCancelWhenClosed()
+        public void ShouldThrowWhenClosedOnReceive()
         {
             using var ds = new DatagramSocket(0);
             var ex = (SocketException)null;
@@ -239,6 +239,34 @@ namespace IKVM.Tests.Java.java.net
                 try
                 {
                     var p = new DatagramPacket(new byte[100], 100);
+                    ds.receive(p);
+                }
+                catch (SocketException e)
+                {
+                    ex = e;
+                }
+            });
+
+            global::java.lang.Thread.sleep(1000);
+            ds.close();
+            global::java.lang.Thread.sleep(1000);
+            task.Wait();
+
+            ex.Should().BeAssignableTo<SocketException>();
+        }
+
+        [TestMethod]
+        public void ShouldThrowWhenClosedOnReceiveWithTimeout()
+        {
+            using var ds = new DatagramSocket(0);
+            var ex = (SocketException)null;
+
+            var task = Task.Run(() =>
+            {
+                try
+                {
+                    var p = new DatagramPacket(new byte[100], 100);
+                    ds.setSoTimeout(5000);
                     ds.receive(p);
                 }
                 catch (SocketException e)

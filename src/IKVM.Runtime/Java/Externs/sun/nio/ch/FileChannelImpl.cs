@@ -239,6 +239,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         };
                     }
 
+                    // if destination is a file, advance its current position by the amount read
+                    if (FileDescriptorAccessor.GetStream(dst) is FileStream f2)
+                        f2.Seek(result, SeekOrigin.Current);
+
                     return result;
                 }
             }
@@ -483,7 +487,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                 // inform the OS we will likely need this data shortly
                 if (Syscall.posix_fadvise((int)fs.SafeFileHandle.DangerousGetHandle(), position, length, PosixFadviseAdvice.POSIX_FADV_WILLNEED) is int e and not 0)
-                        throw new global::java.io.IOException("File mapping failed.", new UnixIOException(e));
+                    throw new global::java.io.IOException("File mapping failed.", new UnixIOException(e));
 
                 var i = Syscall.mmap(IntPtr.Zero, (ulong)length, p, f, (int)fs.SafeFileHandle.DangerousGetHandle(), position);
                 if (i == Syscall.MAP_FAILED)
