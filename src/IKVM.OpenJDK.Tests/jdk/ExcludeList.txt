@@ -3400,3 +3400,21 @@ sun/nio/ch/SelProvider.java                                                     
 java/nio/channels/FileChannel/Size.java                                                                                 macosx-all
 java/nio/channels/SocketChannel/AdaptSocket.java                                                                        macosx-all
 java/nio/channels/SocketChannel/Shutdown.java                                                                           macosx-all
+
+demo/zipfs/ZFSTests.java                                                                                                macosx-all
+java/awt/FontClass/HelvLtOblTest.java                                                                                   macosx-all
+java/io/FileInputStream/LargeFileAvailable.java                                                                         macosx-all
+java/net/MulticastSocket/B6427403.java                                                                                  macosx-all
+java/net/Socket/asyncClose/AsyncClose.java                                                                              macosx-all
+java/nio/channels/DatagramChannel/ThereCanBeOnlyOne.java                                                                macosx-all
+java/nio/channels/DatagramChannel/IsConnected.java                                                                      macosx-all
+java/nio/channels/FileChannel/MapOverEnd.java                                                                           macosx-all
+java/nio/channels/ServerSocketChannel/SocketOptionTests.java                                                            macosx-all
+java/nio/charset/coders/Check.java                                                                                      macosx-all
+java/nio/file/Path/MacPathTest.java                                                                                     macosx-all
+java/nio/channels/FileChannel/Release.java                                                                              macosx-all
+java/util/prefs/AddNodeChangeListener.java                                                                              macosx-all
+java/util/prefs/CommentsInXml.java                                                                                      macosx-all
+java/util/prefs/ConflictInFlush.java                                                                                    macosx-all
+jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
+tools/jar/UpdateJar.java                                                                                                macosx-all
