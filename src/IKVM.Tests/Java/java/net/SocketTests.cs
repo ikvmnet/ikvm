@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -79,6 +80,79 @@ namespace IKVM.Tests.Java.java.net
             server.close();
             using var client = new Socket();
             client.connect(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), port), 8888);
+        }
+
+        [TestMethod]
+        public void ShouldThrowSocketExceptionWhenClosedDuringRead()
+        {
+            var b = false;
+
+            var ss = new ServerSocket(0);
+            var lh = InetAddress.getLocalHost();
+            var s = new Socket();
+            s.connect(new InetSocketAddress(lh, ss.getLocalPort()));
+
+            var s2 = ss.accept();
+            var t = Task.Run(() =>
+            {
+                try
+                {
+                    var i = s.getInputStream();
+                    var n = i.read();
+                    throw new System.Exception();
+                }
+                catch (SocketException)
+                {
+                    b = true;
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+            });
+
+            Thread.sleep(1000);
+            s.close();
+            Thread.sleep(1000);
+            b.Should().BeTrue();
+            t.Wait();
+        }
+
+        [TestMethod]
+        public void ShouldThrowSocketExceptionWhenClosedDuringReadWithTimeout()
+        {
+            var b = false;
+
+            var ss = new ServerSocket(0);
+            var lh = InetAddress.getLocalHost();
+            var s = new Socket();
+            s.connect(new InetSocketAddress(lh, ss.getLocalPort()));
+
+            var s2 = ss.accept();
+            var t = Task.Run(() =>
+            {
+                try
+                {
+                    s.setSoTimeout(5000);
+                    var i = s.getInputStream();
+                    var n = i.read();
+                    throw new System.Exception();
+                }
+                catch (SocketException)
+                {
+                    b = true;
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+            });
+
+            Thread.sleep(1000);
+            s.close();
+            Thread.sleep(1000);
+            b.Should().BeTrue();
+            t.Wait();
         }
 
     }

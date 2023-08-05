@@ -73,6 +73,10 @@ namespace IKVM.Java.Externs.java.net
                         socket.SendTimeout = 0;
                         socket.Send(data, off, Math.Min(len, data.Length - off), SocketFlags.None);
                     }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                    {
+                        throw new global::java.net.SocketException("Socket closed.");
+                    }
                     finally
                     {
                         socket.Blocking = prevBlocking;
