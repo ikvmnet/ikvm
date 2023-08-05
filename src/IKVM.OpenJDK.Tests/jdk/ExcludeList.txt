@@ -3396,3 +3396,7 @@ javax/imageio/EmptyFileTest.java                                                
 java/net/Inet6Address/B6558853.java                                                                                     macosx-all
 sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh                                                               macosx-all
 sun/nio/ch/SelProvider.java                                                                                             macosx-all
+
+java/nio/channels/FileChannel/Size.java                                                                                 macosx-all
+java/nio/channels/SocketChannel/AdaptSocket.java                                                                        macosx-all
+java/nio/channels/SocketChannel/Shutdown.java                                                                           macosx-all
