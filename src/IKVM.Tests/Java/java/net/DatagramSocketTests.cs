@@ -231,56 +231,28 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void ShouldThrowWhenClosedOnReceive()
         {
-            using var ds = new DatagramSocket(0);
-            var ex = (SocketException)null;
-
-            var task = Task.Run(() =>
-            {
-                try
-                {
-                    var p = new DatagramPacket(new byte[100], 100);
-                    ds.receive(p);
-                }
-                catch (SocketException e)
-                {
-                    ex = e;
-                }
-            });
+            using var s = new DatagramSocket(0);
+            var p = new DatagramPacket(new byte[1024], 1024);
+            var task = Task.Run(() => s.receive(p));
 
             global::java.lang.Thread.sleep(1000);
-            ds.close();
+            s.close();
             global::java.lang.Thread.sleep(1000);
-            task.Wait();
-
-            ex.Should().BeAssignableTo<SocketException>();
+            task.Invoking(t => t.Wait()).Should().Throw<SocketException>();
         }
 
         [TestMethod]
         public void ShouldThrowWhenClosedOnReceiveWithTimeout()
         {
-            using var ds = new DatagramSocket(0);
-            var ex = (SocketException)null;
-
-            var task = Task.Run(() =>
-            {
-                try
-                {
-                    var p = new DatagramPacket(new byte[100], 100);
-                    ds.setSoTimeout(5000);
-                    ds.receive(p);
-                }
-                catch (SocketException e)
-                {
-                    ex = e;
-                }
-            });
+            using var s = new DatagramSocket(0);
+            s.setSoTimeout(5000);
+            var p = new DatagramPacket(new byte[1024], 1024);
+            var task = Task.Run(() => s.receive(p));
 
             global::java.lang.Thread.sleep(1000);
-            ds.close();
+            s.close();
             global::java.lang.Thread.sleep(1000);
-            task.Wait();
-
-            ex.Should().BeAssignableTo<SocketException>();
+            task.Invoking(t => t.Wait()).Should().Throw<SocketException>();
         }
 
         [TestMethod]
