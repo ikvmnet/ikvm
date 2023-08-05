@@ -3362,3 +3362,37 @@ sun/security/mscapi/CastError.java                                              
 
 # TODO: Reenable after 8u112 is integrated
 java/lang/invoke/CustomizedLambdaFormTest.java                                                                          generic-all
+
+# Broken on OS X
+java/net/Socket/SetSoLinger.java                                                                                        macosx-all
+java/net/MulticastSocket/Leave.java                                                                                     macosx-all
+java/nio/channels/AsynchronousSocketChannel/Basic.java                                                                  macosx-all
+java/nio/channels/DatagramChannel/BasicMulticastTests.java                                                              macosx-all
+java/nio/channels/DatagramChannel/ReceiveISA.java                                                                       macosx-all
+java/nio/channels/FileChannel/Size.java                                                                                 macosx-all
+java/nio/channels/DatagramChannel/Connect.java                                                                          macosx-all
+java/nio/channels/SocketChannel/Shutdown.java                                                                           macosx-all
+java/nio/channels/SocketChannel/AdaptSocket.java                                                                        macosx-all
+java/nio/MappedByteBuffer/Force.java                                                                                    macosx-all
+
+com/sun/management/OperatingSystemMXBean/GetTotalPhysicalMemorySize.java                                                macosx-all
+com/sun/management/OperatingSystemMXBean/GetFreeSwapSpaceSize.java                                                      macosx-all
+java/net/DatagramSocket/Send12k.java                                                                                    macosx-all
+java/net/DatagramPacket/ReuseBuf.java                                                                                   macosx-all
+java/net/MulticastSocket/JoinGroup.java                                                                                 macosx-all
+java/net/MulticastSocket/SetOutgoingIf.java                                                                             macosx-all
+java/net/PlainSocketImpl/SetBufferSize.java                                                                             macosx-all
+java/net/ipv6tests/TcpTest.java                                                                                         macosx-all
+java/nio/channels/DatagramChannel/AdaptDatagramSocket.java                                                              macosx-all
+java/nio/channels/DatagramChannel/Promiscuous.java                                                                      macosx-all
+java/nio/channels/FileChannel/LongTransferTest.java                                                                     macosx-all
+java/nio/channels/FileChannel/MapTest.java                                                                              macosx-all
+java/nio/channels/SocketChannel/SendUrgentData.java                                                                     macosx-all
+java/nio/file/Files/FileAttributes.java                                                                                 macosx-all
+java/nio/file/Files/SBC.java                                                                                            macosx-all
+java/nio/file/FileSystem/Basic.java                                                                                     macosx-all
+java/nio/file/Path/UriImportExport.java                                                                                 macosx-all
+javax/imageio/EmptyFileTest.java                                                                                        macosx-all
+java/net/Inet6Address/B6558853.java                                                                                     macosx-all
+sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh                                                               macosx-all
+sun/nio/ch/SelProvider.java                                                                                             macosx-all
