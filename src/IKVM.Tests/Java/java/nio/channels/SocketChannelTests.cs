@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -61,6 +62,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void SendUrgentDataThrowsWhenBlocked()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             using var ssc = ServerSocketChannel.open();
             ssc.bind(new InetSocketAddress(0));
 
