@@ -573,9 +573,24 @@ namespace IKVM.Java.Externs.java.net
                             // read and error states
                             if (RuntimeUtil.IsWindows)
                             {
-                                // wait for data to be available
-                                if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
+                                try
+                                {
+                                    // wait for data to be available
+                                    if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
+                                        throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                }
+                                catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                                {
                                     throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                }
+                                catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                                {
+                                    throw new global::java.net.SocketException("Socket closed.");
+                                }
+                                catch
+                                {
+                                    throw;
+                                }
                             }
                             else
                             {
@@ -590,6 +605,14 @@ namespace IKVM.Java.Externs.java.net
                                 catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
                                 {
                                     throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                }
+                                catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                                {
+                                    throw new global::java.net.SocketException("Socket closed.");
+                                }
+                                catch
+                                {
+                                    throw;
                                 }
                             }
                         }

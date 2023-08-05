@@ -784,6 +784,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
             int pos = dst.position();
             int lim = dst.limit();
             int rem = pos <= lim ? lim - pos : 0;
+            if (rem == 0)
+                return Task.FromResult<Integer>(new Integer(0));
             if (pos > lim)
                 return Task.FromException<Integer>(new global::java.lang.IllegalArgumentException("Position after limit."));
 
@@ -845,13 +847,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         var mem = mgr.Memory.Slice(pos, rem);
                         var n = await stream.ReadAsync(mem, cancellationToken);
                         dst.position(pos + n);
-                        return new global::java.lang.Integer(n);
+                        return new Integer(n);
                     }
                     else
                     {
                         var n = await stream.ReadAsync(dst.array(), dst.arrayOffset() + pos, rem, cancellationToken);
                         dst.position(pos + n);
-                        return new global::java.lang.Integer(n);
+                        return new Integer(n);
                     }
 #endif
                 }
@@ -905,22 +907,22 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 throw new global::java.lang.IllegalArgumentException("Negative position");
 
             if (IsOpen(self) == false)
-                return Task.FromException<global::java.lang.Integer>(new global::java.nio.channels.ClosedChannelException());
+                return Task.FromException<Integer>(new global::java.nio.channels.ClosedChannelException());
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
-                return Task.FromException<global::java.lang.Integer>(new global::java.nio.channels.ClosedChannelException());
+                return Task.FromException<Integer>(new global::java.nio.channels.ClosedChannelException());
             if (stream.CanWrite == false)
-                return Task.FromException<global::java.lang.Integer>(new global::java.io.IOException("Stream does not support writing."));
+                return Task.FromException<Integer>(new global::java.io.IOException("Stream does not support writing."));
 
             // check buffer
             int pos = src.position();
             int lim = src.limit();
             int rem = pos <= lim ? lim - pos : 0;
             if (rem == 0)
-                return Task.FromResult<global::java.lang.Integer>(new global::java.lang.Integer(0));
+                return Task.FromResult<Integer>(new global::java.lang.Integer(0));
             if (pos > lim)
-                return Task.FromException<global::java.lang.Integer>(new global::java.lang.IllegalArgumentException("Position after limit."));
+                return Task.FromException<Integer>(new global::java.lang.IllegalArgumentException("Position after limit."));
 
             if (cancellationToken.IsCancellationRequested)
                 return null;
@@ -980,13 +982,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         var mem = mgr.Memory.Slice(pos, rem);
                         await stream.WriteAsync(mem, cancellationToken);
                         src.position(pos + rem);
-                        return new global::java.lang.Integer(rem);
+                        return new Integer(rem);
                     }
                     else
                     {
                         await stream.WriteAsync(src.array(), src.arrayOffset() + pos, rem, cancellationToken);
                         src.position(pos + rem);
-                        return new global::java.lang.Integer(rem);
+                        return new Integer(rem);
                     }
 #endif
                 }
