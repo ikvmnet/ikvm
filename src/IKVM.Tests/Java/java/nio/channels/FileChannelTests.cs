@@ -181,6 +181,8 @@ namespace IKVM.Tests.Java.java.nio.channels
             using var dstChannel = dstStream.getChannel();
 
             var n = dstChannel.transferFrom(srcChannel, 0, int.MaxValue);
+            n.Should().Be(1024);
+            srcChannel.position().Should().Be(1024);
 
             var f1 = Files.readAllBytes(srcPath.toPath());
             var f2 = Files.readAllBytes(dstPath.toPath());
@@ -204,6 +206,8 @@ namespace IKVM.Tests.Java.java.nio.channels
             using var dstChannel = dstStream.getChannel();
 
             var n = srcChannel.transferTo(0, int.MaxValue, dstChannel);
+            n.Should().Be(1024);
+            dstChannel.position().Should().Be(1024);
 
             var f1 = Files.readAllBytes(srcPath.toPath());
             var f2 = Files.readAllBytes(dstPath.toPath());
@@ -227,6 +231,8 @@ namespace IKVM.Tests.Java.java.nio.channels
             using var dstChannel = dstStream.getChannel();
 
             var n = srcChannel.transferTo(0, int.MaxValue, dstChannel);
+            n.Should().Be(1024);
+            dstChannel.position().Should().Be(1024);
 
             var f1 = Files.readAllBytes(srcPath.toPath());
             var f2 = Files.readAllBytes(dstPath.toPath());
@@ -250,6 +256,8 @@ namespace IKVM.Tests.Java.java.nio.channels
             using var dstChannel = dstFile.getChannel();
 
             var n = srcChannel.transferTo(0, int.MaxValue, dstChannel);
+            n.Should().Be(1024);
+            dstChannel.position().Should().Be(1024);
 
             var f1 = Files.readAllBytes(srcPath.toPath());
             var f2 = Files.readAllBytes(dstPath.toPath());
@@ -273,6 +281,8 @@ namespace IKVM.Tests.Java.java.nio.channels
             using var dstChannel = dstFile.getChannel();
 
             var n = srcChannel.transferTo(0, int.MaxValue, dstChannel);
+            n.Should().Be(1024);
+            dstChannel.position().Should().Be(1024);
 
             var f1 = Files.readAllBytes(srcPath.toPath());
             var f2 = Files.readAllBytes(dstPath.toPath());
