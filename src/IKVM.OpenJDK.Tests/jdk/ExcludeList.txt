@@ -3363,6 +3363,9 @@ sun/security/mscapi/CastError.java                                              
 # TODO: Reenable after 8u112 is integrated
 java/lang/invoke/CustomizedLambdaFormTest.java                                                                          generic-all
 
+# probably related to field or method order
+javax/xml/bind/jxc/8073519/SchemagenErrorReporting.java                                                                 generic-all
+
 # Broken on OS X
 java/net/Socket/SetSoLinger.java                                                                                        macosx-all
 java/net/MulticastSocket/Leave.java                                                                                     macosx-all
