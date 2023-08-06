@@ -24,8 +24,13 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Pipelines;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
+using System.Security.Cryptography.Xml;
 
 using IKVM.Reflection;
 using IKVM.Runtime;
@@ -34,6 +39,7 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer
 {
+
     class StaticCompiler
     {
 
@@ -45,23 +51,79 @@ namespace IKVM.Tools.Importer
         internal CompilerOptions rootTarget;
         internal int errorCount;
 
-        internal Universe Universe
-        {
-            get
-            {
-                Debug.Assert(universe != null);
-                return universe;
-            }
-        }
+        internal Universe Universe => universe;
 
-        internal void Init(bool nonDeterministicOutput)
+        internal void Init(bool nonDeterministicOutput, IList<string> libpaths)
         {
             var options = UniverseOptions.ResolveMissingMembers | UniverseOptions.EnableFunctionPointers;
             if (!nonDeterministicOutput)
                 options |= UniverseOptions.DeterministicOutput;
 
-            universe = new Universe(options);
+            // discover the core lib from the references
+            var coreLibName = FindCoreLibName(rootTarget.unresolvedReferences, libpaths);
+            if (coreLibName == null)
+                Console.Error.WriteLine("Error: core library not found");
+
+            universe = new Universe(options, coreLibName);
             universe.ResolvedMissingMember += ResolvedMissingMember;
+        }
+
+        /// <summary>
+        /// Finds the first potential core library in the reference set.
+        /// </summary>
+        /// <param name="references"></param>
+        /// <param name="libpaths"></param>
+        /// <returns></returns>
+        static string FindCoreLibName(IList<string> references, IList<string> libpaths)
+        {
+            if (references != null)
+                foreach (var reference in references)
+                    if (GetAssemblyNameIfCoreLib(reference) is string coreLibName)
+                        return coreLibName;
+
+            if (libpaths != null)
+                foreach (var libpath in libpaths)
+                    foreach (var dll in Directory.GetFiles(libpath, "*.dll"))
+                        if (GetAssemblyNameIfCoreLib(dll) is string coreLibName)
+                            return coreLibName;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given assembly is a core library.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        static string GetAssemblyNameIfCoreLib(string path)
+        {
+            if (File.Exists(path) == false)
+                return null;
+
+            using var st = File.OpenRead(path);
+            using var pe = new PEReader(st);
+            var mr = pe.GetMetadataReader();
+
+            foreach (var handle in mr.TypeDefinitions)
+                if (IsSystemObject(mr, handle))
+                    return mr.GetString(mr.GetAssemblyDefinition().Name);
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given type definition handle refers to "System.Object".
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="th"></param>
+        /// <returns></returns>
+        static bool IsSystemObject(MetadataReader reader, TypeDefinitionHandle th)
+        {
+            var td = reader.GetTypeDefinition(th);
+            var ns = reader.GetString(td.Namespace);
+            var nm = reader.GetString(td.Name);
+
+            return ns == "System" && nm == "Object";
         }
 
         void ResolvedMissingMember(Module requestingModule, MemberInfo member)

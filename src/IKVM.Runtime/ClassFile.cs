@@ -293,7 +293,7 @@ namespace IKVM.Runtime
                 for (int i = 0; i < reader.Attributes.Count; i++)
                 {
                     var attribute = reader.Attributes[i];
-
+                    
                     switch (GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.NameIndex))
                     {
                         case "Deprecated":

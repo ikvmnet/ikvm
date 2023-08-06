@@ -4,13 +4,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net461\linux-musl-arm64\**\*">
-            <TargetFramework>net461</TargetFramework>
-            <RuntimeIdentifier>linux-musl-arm64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\netcoreapp3.1\linux-musl-arm64\**\*">
-            <TargetFramework>netcoreapp3.1</TargetFramework>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net6.0\linux-musl-arm64\**\*">
+            <TargetFramework>net6.0</TargetFramework>
             <RuntimeIdentifier>linux-musl-arm64</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>

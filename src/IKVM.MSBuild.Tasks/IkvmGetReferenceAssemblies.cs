@@ -1,8 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-
-using IKVM.Tools.Runner.Compiler;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -44,11 +41,7 @@ namespace IKVM.MSBuild.Tasks
         /// <returns></returns>
         IEnumerable<string> GetReferenceAssemblies()
         {
-            var l = new IkvmCompilerLauncher(ToolPath);
-
-            // gets the reference assemblies
-            foreach (var path in Directory.GetFiles(l.GetReferenceAssemblyDirectory(), "*.dll"))
-                yield return path;
+            yield break;
         }
 
     }

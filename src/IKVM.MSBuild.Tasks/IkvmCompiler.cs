@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using IKVM.Tools.Runner;
-using IKVM.Tools.Runner.Compiler;
+using IKVM.Tools.Runner.Importer;
 
 using Microsoft.Build.Framework;
 
@@ -146,7 +146,7 @@ namespace IKVM.MSBuild.Tasks
                 Debug = false;
             }
 
-            var options = new IkvmCompilerOptions();
+            var options = new IkvmImporterOptions();
             options.ResponseFile = GetAbsolutePathIfNotNull(ResponseFile);
             options.Output = GetAbsolutePathIfNotNull(Output);
             options.Assembly = Assembly;
@@ -155,22 +155,22 @@ namespace IKVM.MSBuild.Tasks
             options.Target = Target?.ToLowerInvariant() switch
             {
                 null => null,
-                "library" => IkvmCompilerTarget.Library,
-                "exe" => IkvmCompilerTarget.Exe,
-                "winexe" => IkvmCompilerTarget.WinExe,
-                "module" => IkvmCompilerTarget.Module,
+                "library" => IkvmImporterTarget.Library,
+                "exe" => IkvmImporterTarget.Exe,
+                "winexe" => IkvmImporterTarget.WinExe,
+                "module" => IkvmImporterTarget.Module,
                 _ => throw new NotImplementedException(),
             };
 
             options.Platform = Platform?.ToLowerInvariant() switch
             {
                 null => null,
-                "anycpu" => IkvmCompilerPlatform.AnyCPU,
-                "anycpu32bitpreferred" => IkvmCompilerPlatform.AnyCPU32BitPreferred,
-                "x86" => IkvmCompilerPlatform.X86,
-                "x64" => IkvmCompilerPlatform.X64,
-                "arm" => IkvmCompilerPlatform.ARM,
-                "arm64" => IkvmCompilerPlatform.ARM64,
+                "anycpu" => IkvmImporterPlatform.AnyCPU,
+                "anycpu32bitpreferred" => IkvmImporterPlatform.AnyCPU32BitPreferred,
+                "x86" => IkvmImporterPlatform.X86,
+                "x64" => IkvmImporterPlatform.X64,
+                "arm" => IkvmImporterPlatform.ARM,
+                "arm64" => IkvmImporterPlatform.ARM64,
                 _ => throw new NotImplementedException(),
             };
 
@@ -194,11 +194,11 @@ namespace IKVM.MSBuild.Tasks
 
             if (Resources is not null)
                 foreach (var resource in Resources)
-                    options.Resources.Add(new IkvmCompilerResourceItem(GetAbsolutePathIfNotNull(resource.ItemSpec), resource.GetMetadata("ResourcePath")));
+                    options.Resources.Add(new IkvmImporterResourceItem(GetAbsolutePathIfNotNull(resource.ItemSpec), resource.GetMetadata("ResourcePath")));
 
             if (ExternalResources is not null)
                 foreach (var resource in ExternalResources)
-                    options.ExternalResources.Add(new IkvmCompilerExternalResourceItem(GetAbsolutePathIfNotNull(resource.ItemSpec), resource.GetMetadata("ResourcePath")));
+                    options.ExternalResources.Add(new IkvmImporterExternalResourceItem(GetAbsolutePathIfNotNull(resource.ItemSpec), resource.GetMetadata("ResourcePath")));
 
             options.CompressResources = CompressResources;
             options.Debug = Debug;
@@ -274,7 +274,7 @@ namespace IKVM.MSBuild.Tasks
                     options.Input.Add(GetAbsolutePathIfNotNull(i.ItemSpec));
 
             // kick off the launcher with the configured options
-            return await new IkvmCompilerLauncher(ToolPath, writer).ExecuteAsync(options, cancellationToken) == 0;
+            return await new IkvmImporterLauncher(ToolPath, writer).ExecuteAsync(options, cancellationToken) == 0;
         }
 
     }

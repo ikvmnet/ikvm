@@ -172,16 +172,15 @@ namespace IKVM.Tools.Importer
             var importer = new IkvmImporterInternal();
             var targets = new List<CompilerOptions>();
             var rootTarget = new CompilerOptions();
-            var context = new RuntimeContext(new ManagedResolver(compiler), argList.Contains("-bootstrap"), compiler);
+            var context = new RuntimeContext(new RuntimeContextOptions(), new ManagedResolver(compiler), argList.Contains("-bootstrap"), compiler);
 
             compiler.rootTarget = rootTarget;
             importer.ParseCommandLine(context, compiler, argList.GetEnumerator(), targets, rootTarget);
-            compiler.Init(nonDeterministicOutput);
+            compiler.Init(nonDeterministicOutput, libpaths);
             resolver.Warning += (warning, message, parameters) => loader_Warning(compiler, warning, message, parameters);
             resolver.Init(compiler.Universe, nostdlib, rootTarget.unresolvedReferences, libpaths);
             ResolveReferences(compiler, targets);
             ResolveStrongNameKeys(targets);
-
 
             if (targets.Count == 0)
             {
@@ -565,9 +564,8 @@ namespace IKVM.Tools.Importer
                     {
                         string r = s.Substring(s.IndexOf(':') + 1);
                         if (r == "")
-                        {
                             throw new FatalCompilerErrorException(Message.MissingFileSpecification, s);
-                        }
+
                         ArrayAppend(ref options.unresolvedReferences, r);
                     }
                     else if (s.StartsWith("-recurse:"))
@@ -1098,6 +1096,7 @@ namespace IKVM.Tools.Importer
                     }
                 }
             }
+
             // verify that we didn't reference any secondary assemblies of a shared class loader group
             foreach (CompilerOptions target in targets)
             {
