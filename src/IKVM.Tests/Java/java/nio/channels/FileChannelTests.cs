@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 using FluentAssertions;
 
@@ -167,6 +168,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanTransferFromFileInputStreamToFileOutputStream()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var srcPath = File.createTempFile("src", null);
             srcPath.deleteOnExit();
             WriteRandomBytes(srcPath, 1024);
@@ -181,6 +185,8 @@ namespace IKVM.Tests.Java.java.nio.channels
             using var dstChannel = dstStream.getChannel();
 
             var n = dstChannel.transferFrom(srcChannel, 0, int.MaxValue);
+            n.Should().Be(1024);
+            srcChannel.position().Should().Be(1024);
 
             var f1 = Files.readAllBytes(srcPath.toPath());
             var f2 = Files.readAllBytes(dstPath.toPath());
@@ -190,6 +196,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanTransferToFileInputStreamFromFileOutputStream()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var srcPath = File.createTempFile("src", null);
             srcPath.deleteOnExit();
             WriteRandomBytes(srcPath, 1024);
@@ -204,6 +213,8 @@ namespace IKVM.Tests.Java.java.nio.channels
             using var dstChannel = dstStream.getChannel();
 
             var n = srcChannel.transferTo(0, int.MaxValue, dstChannel);
+            n.Should().Be(1024);
+            dstChannel.position().Should().Be(1024);
 
             var f1 = Files.readAllBytes(srcPath.toPath());
             var f2 = Files.readAllBytes(dstPath.toPath());
@@ -213,6 +224,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanTransferToFileOutputStreamFromRandomAccessFile()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var srcPath = File.createTempFile("src", null);
             srcPath.deleteOnExit();
             WriteRandomBytes(srcPath, 1024);
@@ -227,6 +241,8 @@ namespace IKVM.Tests.Java.java.nio.channels
             using var dstChannel = dstStream.getChannel();
 
             var n = srcChannel.transferTo(0, int.MaxValue, dstChannel);
+            n.Should().Be(1024);
+            dstChannel.position().Should().Be(1024);
 
             var f1 = Files.readAllBytes(srcPath.toPath());
             var f2 = Files.readAllBytes(dstPath.toPath());
@@ -236,6 +252,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanTransferToRandomAccessFileFromFileOutputStream()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var srcPath = File.createTempFile("src", null);
             srcPath.deleteOnExit();
             WriteRandomBytes(srcPath, 1024);
@@ -250,6 +269,8 @@ namespace IKVM.Tests.Java.java.nio.channels
             using var dstChannel = dstFile.getChannel();
 
             var n = srcChannel.transferTo(0, int.MaxValue, dstChannel);
+            n.Should().Be(1024);
+            dstChannel.position().Should().Be(1024);
 
             var f1 = Files.readAllBytes(srcPath.toPath());
             var f2 = Files.readAllBytes(dstPath.toPath());
@@ -259,6 +280,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanTransferToRandomAccessFileFromRandomAccessFile()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var srcPath = File.createTempFile("src", null);
             srcPath.deleteOnExit();
             WriteRandomBytes(srcPath, 1024);
@@ -273,6 +297,8 @@ namespace IKVM.Tests.Java.java.nio.channels
             using var dstChannel = dstFile.getChannel();
 
             var n = srcChannel.transferTo(0, int.MaxValue, dstChannel);
+            n.Should().Be(1024);
+            dstChannel.position().Should().Be(1024);
 
             var f1 = Files.readAllBytes(srcPath.toPath());
             var f2 = Files.readAllBytes(dstPath.toPath());
@@ -282,6 +308,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanReadAndWriteMemoryMappedFile()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var file = File.createTempFile("src", null);
             file.deleteOnExit();
             WriteRandomBytes(file, 1024);

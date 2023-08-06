@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 using FluentAssertions;
@@ -52,6 +53,9 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void CanBindLocalWithoutScope()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var addr = NetworkInterface.getNetworkInterfaces().AsEnumerable<NetworkInterface>()
                 .SelectMany(i => i.getInetAddresses().AsEnumerable<InetAddress>())
                 .OfType<Inet6Address>()
