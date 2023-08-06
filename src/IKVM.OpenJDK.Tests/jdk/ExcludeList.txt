@@ -3364,4 +3364,4 @@ sun/security/mscapi/CastError.java                                              
 java/lang/invoke/CustomizedLambdaFormTest.java                                                                          generic-all
 
 # probably related to field or method order
-javax/xml/bind/jxc/8073519.SchemagenErrorReporting                                                                      generic-all
+javax/xml/bind/jxc/8073519/SchemagenErrorReporting.java                                                                 generic-all
