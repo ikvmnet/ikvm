@@ -95,6 +95,7 @@ namespace IKVM.Runtime
                             ilgen.Emit(OpCodes.Stelem, elemType);
                         }
                     }
+
                     ilgen.BeginExceptionBlock();
                     ilgen.Emit(OpCodes.Ldarg_0);
                     for (int i = 0; i < parameters.Length; i++)

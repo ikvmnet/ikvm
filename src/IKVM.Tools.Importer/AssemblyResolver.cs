@@ -71,19 +71,11 @@ namespace IKVM.Tools.Importer
             // (note that, unlike the C# compiler, we don't add the CLR directory if -nostdlib has been specified)
             libpath.Add(Environment.CurrentDirectory);
 
-            if (!nostdlib)
-            {
-                //#if NETCOREAPP3_1
-                //				libpath.Add(Universe.ReferenceAssembliesDirectory);
-                //#else
+            if (nostdlib == false)
                 libpath.Add(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
-                //#endif
-            }
 
-            foreach (string str in userLibPaths)
-            {
+            foreach (var str in userLibPaths)
                 AddLibraryPaths(str, true);
-            }
 
             AddLibraryPaths(Environment.GetEnvironmentVariable("LIB") ?? "", false);
 
@@ -93,7 +85,7 @@ namespace IKVM.Tools.Importer
             }
             else
             {
-                coreLibVersion = universe.Load(Universe.CoreLibName).GetName().Version;
+                coreLibVersion = universe.Load(universe.CoreLibName).GetName().Version;
             }
 
 #if IMPORTER
@@ -115,7 +107,7 @@ namespace IKVM.Tools.Importer
                         // to avoid problems (i.e. weird exceptions), we don't allow assemblies to load that reference a newer version of mscorlib
                         foreach (AssemblyName asmref in module.GetReferencedAssemblies())
                         {
-                            if (asmref.Name == Universe.CoreLibName && asmref.Version > coreLibVersion)
+                            if (asmref.Name == universe.CoreLibName && asmref.Version > coreLibVersion)
                             {
                                 Console.Error.WriteLine("Error: unable to load assembly '{0}' as it depends on a higher version of mscorlib than the one currently loaded", path);
                                 Environment.Exit(1);
@@ -339,11 +331,11 @@ namespace IKVM.Tools.Importer
         {
             if (references != null)
             {
-                foreach (string r in references)
+                foreach (var r in references)
                 {
                     try
                     {
-                        if (AssemblyName.GetAssemblyName(r).Name == Universe.CoreLibName)
+                        if (AssemblyName.GetAssemblyName(r).Name == universe.CoreLibName)
                         {
                             return LoadFile(r);
                         }
@@ -355,10 +347,10 @@ namespace IKVM.Tools.Importer
                 }
             }
 
-            foreach (string coreLib in FindAssemblyPath(Universe.CoreLibName + ".dll"))
+            foreach (var coreLib in FindAssemblyPath(universe.CoreLibName + ".dll"))
                 return LoadFile(coreLib);
 
-            Console.Error.WriteLine($"Error: unable to find '{Universe.CoreLibName}.dll'.");
+            Console.Error.WriteLine($"Error: unable to find '{universe.CoreLibName}.dll'.");
             Environment.Exit(1);
             return null;
         }

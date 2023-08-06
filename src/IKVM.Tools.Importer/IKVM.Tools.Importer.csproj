@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <DefineConstants>$(DefineConstants);IMPORTER;EMITTERS</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
@@ -13,6 +13,7 @@
 
     <ItemGroup>
         <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+        <PackageReference Include="System.Reflection.Metadata" Version="6.0.1" />
     </ItemGroup>
 
     <ItemGroup>

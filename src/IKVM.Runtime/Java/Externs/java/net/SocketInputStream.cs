@@ -41,6 +41,10 @@ namespace IKVM.Java.Externs.java.net
                             return socket.Receive(b, off, len, SocketFlags.None);
                         }
                     }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                    {
+                        throw new global::java.net.SocketException("Socket closed.");
+                    }
                     finally
                     {
                         socket.Blocking = previousBlocking;

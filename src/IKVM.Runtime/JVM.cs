@@ -62,7 +62,7 @@ namespace IKVM.Runtime
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
-        static readonly RuntimeContext context = new RuntimeContext(new Resolver(), false);
+        static readonly RuntimeContext context = new RuntimeContext(new RuntimeContextOptions(), new Resolver(), false);
         static readonly VfsTable vfs = VfsTable.BuildDefaultTable(new VfsRuntimeContext(context), Properties.HomePath);
 
         /// <summary>

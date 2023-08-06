@@ -9,13 +9,8 @@
             <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\netcoreapp3.1\win7-x86\**\*">
-            <TargetFramework>netcoreapp3.1</TargetFramework>
-            <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\win7-x86\**\*">
-            <TargetFramework>any</TargetFramework>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net6.0\win7-x86\**\*">
+            <TargetFramework>net6.0</TargetFramework>
             <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>

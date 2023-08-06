@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <PreserveCompilationContext>true</PreserveCompilationContext>
     </PropertyGroup>
 
@@ -20,6 +20,33 @@
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
         <ProjectReference Include="..\IKVM.Tools.Exporter\IKVM.Tools.Exporter.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
+        <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <IncludeTargetPath>lib\net461\</IncludeTargetPath>
+        </IncludeProjectReference>
+        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <IncludeTargetPath>lib\net461\</IncludeTargetPath>
+        </IncludeProjectReference>
+        <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
+        </IncludeProjectReference>
+        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
+        </IncludeProjectReference>
+        <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <IncludeTargetPath>lib\net6.0\</IncludeTargetPath>
+        </IncludeProjectReference>
+        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <IncludeTargetPath>lib\net6.0\</IncludeTargetPath>
+        </IncludeProjectReference>
     </ItemGroup>
 
 </Project>

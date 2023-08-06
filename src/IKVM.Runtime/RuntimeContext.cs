@@ -22,6 +22,7 @@ namespace IKVM.Runtime
     class RuntimeContext
     {
 
+        readonly RuntimeContextOptions options;
         readonly IManagedTypeResolver resolver;
         readonly bool bootstrap;
         readonly ConcurrentDictionary<Type, object> singletons = new ConcurrentDictionary<Type, object>();
@@ -73,8 +74,9 @@ namespace IKVM.Runtime
         /// <param name="resolver"></param>
         /// <param name="bootstrap"></param>
         /// <param name="staticCompiler"></param>
-        public RuntimeContext(IManagedTypeResolver resolver, bool bootstrap, StaticCompiler staticCompiler)
+        public RuntimeContext(RuntimeContextOptions options, IManagedTypeResolver resolver, bool bootstrap, StaticCompiler staticCompiler)
         {
+            this.options = options ?? throw new ArgumentNullException(nameof(options));
             this.resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
             this.bootstrap = bootstrap;
             this.staticCompiler = staticCompiler;
@@ -85,10 +87,12 @@ namespace IKVM.Runtime
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
+        /// <param name="options"></param>
         /// <param name="resolver"></param>
         /// <param name="bootstrap"></param>
-        public RuntimeContext(IManagedTypeResolver resolver, bool bootstrap)
+        public RuntimeContext(RuntimeContextOptions options, IManagedTypeResolver resolver, bool bootstrap)
         {
+            this.options = options ?? throw new ArgumentNullException(nameof(options));
             this.resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
             this.bootstrap = bootstrap;
         }
@@ -102,6 +106,11 @@ namespace IKVM.Runtime
         /// <param name="create"></param>
         /// <returns></returns>
         public T GetOrCreateSingleton<T>(Func<T> create) => (T)singletons.GetOrAdd(typeof(T), _ => create());
+
+        /// <summary>
+        /// Gets the <see cref="RuntimeContextOptions"/> associated with this instance of the runtime.
+        /// </summary>
+        public RuntimeContextOptions Options => options;
 
         /// <summary>
         /// Gets the <see cref="IManagedTypeResolver"/> associated with this instance of the runtime.
