@@ -3386,7 +3386,6 @@ java/nio/channels/FileChannel/LongTransferTest.java                             
 java/nio/channels/FileChannel/MapTest.java                                                                              macosx-all
 java/nio/channels/SocketChannel/SendUrgentData.java                                                                     macosx-all
 java/net/Inet6Address/B6558853.java                                                                                     macosx-all
-sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh                                                               macosx-all
 
 demo/zipfs/ZFSTests.java                                                                                                macosx-all
 java/awt/FontClass/HelvLtOblTest.java                                                                                   macosx-all
