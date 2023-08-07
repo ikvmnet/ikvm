@@ -176,7 +176,7 @@ com/sun/management/HotSpotDiagnosticMXBean/GetDiagnosticOptions.java            
 com/sun/management/HotSpotDiagnosticMXBean/GetVMOption.java                                                             generic-all
 com/sun/management/HotSpotDiagnosticMXBean/SetAllVMOptions.java                                                         generic-all
 com/sun/management/HotSpotDiagnosticMXBean/SetVMOption.java                                                             generic-all
-com/sun/management/OperatingSystemMXBean/TestTotalSwap.sh                                                               generic-all
+com/sun/management/OperatingSystemMXBean/TestTotalSwap.java                                                             generic-all
 com/sun/management/ThreadMXBean/ThreadAllocatedMemory.java                                                              generic-all
 com/sun/management/ThreadMXBean/ThreadAllocatedMemoryArray.java                                                         generic-all
 com/sun/management/ThreadMXBean/ThreadCpuTimeArray.java                                                                 generic-all
@@ -1417,7 +1417,7 @@ java/nio/file/Files/delete_on_close.sh                                          
 java/nio/file/Files/walkFileTree/find.sh                                                                                generic-all
 java/nio/file/Path/Misc.java                                                                                            linux-all
 java/nio/file/Path/PathOps.java                                                                                         windows-all
-java/nio/file/WatchService/Basic.java                                                                                   linux-all
+java/nio/file/WatchService/Basic.java                                                                                   linux-all,macosx-all
 java/rmi/Naming/DefaultRegistryPort.java                                                                                generic-all
 java/rmi/Naming/LookupIPv6.java                                                                                         generic-all
 java/rmi/Naming/LookupNameWithColon.java                                                                                generic-all
@@ -3249,7 +3249,7 @@ sun/tools/native2ascii/Permission.java                                          
 tools/jar/UpdateJar.java                                                                                                linux-all
 
 # uses System.Drawing, not available on Linux
-javax/imageio/plugins/png/MergeStdCommentTest.java                                                                      linux-all
+javax/imageio/plugins/png/MergeStdCommentTest.java                                                                      linux-all,macosx-all
 javax/imageio/EmptyFileTest.java                                                                                        linux-all,macosx-all
 sun/java2d/cmm/ColorConvertOp/InvalidRenderIntentTest.java                                                              linux-all
 
@@ -3402,3 +3402,11 @@ jdk/net/Sockets/SupportedOptions.java                                           
 tools/jar/UpdateJar.java                                                                                                macosx-all
 
 sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
+java/net/DatagramSocket/SendSize.java                                                                                   macosx-all
+java/net/InetAddress/CheckJNI.java                                                                                      macosx-all
+java/net/Socket/TrafficClass.java                                                                                       macosx-all
+java/nio/channels/DatagramChannel/NoSender.java                                                                         macosx-all
+java/nio/channels/DatagramChannel/SRTest.java                                                                           macosx-all
+java/nio/channels/DatagramChannel/Sender.java                                                                           macosx-all
+java/util/prefs/ExportNode.java                                                                                         macosx-all
+java/util/prefs/RemoveUnregedListener.java                                                                              macosx-all
