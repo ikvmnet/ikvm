@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace IKVM.MSBuild.Tasks
 {
@@ -6,6 +7,7 @@ namespace IKVM.MSBuild.Tasks
     /// <summary>
     /// Generic IKVM task exception.
     /// </summary>
+    [Serializable]
     class IkvmTaskException : Exception
     {
 
