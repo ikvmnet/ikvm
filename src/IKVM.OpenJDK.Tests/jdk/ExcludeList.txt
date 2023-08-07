@@ -3401,3 +3401,5 @@ java/util/prefs/CommentsInXml.java                                              
 java/util/prefs/ConflictInFlush.java                                                                                    macosx-all
 jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
 tools/jar/UpdateJar.java                                                                                                macosx-all
+
+sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
