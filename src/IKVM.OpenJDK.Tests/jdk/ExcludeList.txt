@@ -3155,7 +3155,7 @@ com/sun/management/OperatingSystemMXBean/GetTotalPhysicalMemorySize.java        
 demo/zipfs/ZFSTests.java                                                                                                linux-all
 
 java/io/FileDescriptor/Sharing.java                                                                                     linux-all
-java/io/FileInputStream/LargeFileAvailable.java                                                                         linux-all
+java/io/FileInputStream/LargeFileAvailable.java                                                                         linux-all,macosx-all
 java/io/pathNames/GeneralSolaris.java                                                                                   linux-all
 java/io/RandomAccessFile/ReadWritePrimitives.java                                                                       linux-all
 java/io/FileOutputStream/FileOpen.sh                                                                                    linux-all
@@ -3389,7 +3389,6 @@ java/net/Inet6Address/B6558853.java                                             
 
 demo/zipfs/ZFSTests.java                                                                                                macosx-all
 java/awt/FontClass/HelvLtOblTest.java                                                                                   macosx-all
-java/io/FileInputStream/LargeFileAvailable.java                                                                         macosx-all
 java/net/MulticastSocket/B6427403.java                                                                                  macosx-all
 java/nio/channels/DatagramChannel/ThereCanBeOnlyOne.java                                                                macosx-all
 java/nio/channels/DatagramChannel/IsConnected.java                                                                      macosx-all
