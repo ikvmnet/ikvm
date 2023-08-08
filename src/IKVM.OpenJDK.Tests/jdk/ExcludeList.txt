@@ -3417,5 +3417,4 @@ java/util/prefs/RemoveReadOnlyNode.java                                         
 java/util/prefs/RemoveUnregedListener.java                                                                              macosx-all
 jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
 sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
-sun/tools/native2ascii/Permission.java                                                                                  macosx-all
 com/sun/crypto/provider/Cipher/CTR/CounterMode.java                                                                     macosx-all
