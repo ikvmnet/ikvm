@@ -3423,3 +3423,7 @@ java/nio/channels/DatagramChannel/ConnectedSend.java                            
 java/nio/channels/FileChannel/Transfers.java                                                                            macosx-all
 java/nio/file/WatchService/LotsOfEvents.java                                                                            macosx-all
 java/nio/file/WatchService/LotsOfCancels.java                                                                           macosx-all
+com/sun/corba/transport/KeepAliveSockets.java                                                                           macosx-all
+com/sun/crypto/provider/Cipher/AES/TestISO10126Padding.java                                                             macosx-all
+com/sun/crypto/provider/Cipher/Blowfish/BlowfishTestVector.java                                                         macosx-all
+com/sun/net/httpserver/bugs/B6393710.java                                                                               macosx-all
