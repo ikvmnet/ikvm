@@ -308,8 +308,10 @@ Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjvm", "src\libjvm\libjvm
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "targets", "targets", "{F63A2815-ABCA-442F-BE92-CD2802F3EA0A}"
 	ProjectSection(SolutionItems) = preProject
+		targets\ClangOSXCodeSign.targets = targets\ClangOSXCodeSign.targets
 		targets\ClangProjectReference.targets = targets\ClangProjectReference.targets
 		targets\lib.props = targets\lib.props
+		targets\DotNetOSXCodeSign.targets = targets\DotNetOSXCodeSign.targets
 		targets\lib.targets = targets\lib.targets
 		targets\openjdk.lib.props = targets\openjdk.lib.props
 		targets\openjdk.lib.targets = targets\openjdk.lib.targets

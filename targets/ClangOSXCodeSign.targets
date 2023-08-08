@@ -1,0 +1,23 @@
+﻿<!--
+
+    ClangOSXCodeSign.targets
+    
+    Uses the rcodesign utility to sign the resulting dylib.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <EnableOSXCodeSign Condition=" '$(EnableOSXCodeSign)' == ''  And $(TargetTriple.Contains('-apple-'))">true</EnableOSXCodeSign>
+    </PropertyGroup>
+
+    <Target Name="OSXCodeSign" AfterTargets="CoreLink" Condition=" '$(EnableOSXCodeSign)' == 'true' And Exists('$(IntermediateOutputPath)$(TargetFileName)')">
+        <Message Text="rcodesign sign $(IntermediateOutputPath)$(TargetFileName)" />
+        <Exec Command="rcodesign sign $(IntermediateOutputPath)$(TargetFileName)" />
+    </Target>
+
+</Project>

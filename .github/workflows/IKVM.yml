@@ -166,6 +166,10 @@ jobs:
         targetPath: ${{ env.WORKPATH }}\ikvm
         useConfigFile: true
         configFilePath: ${{ env.WORKPATH }}\ikvm\GitVersion.yml
+    - uses: actions-rs/install@v0.1
+      with:
+        crate: apple-codesign
+        version: latest
     - name: Cache NuGet
       uses: actions/cache@v3
       with:

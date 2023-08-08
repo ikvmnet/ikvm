@@ -18,6 +18,7 @@ Prerequisites for building the project:
   * The Linux SDK contains a version for all of the required platforms. These are required to cross compile to each supported platform. They must all be present.
 * LLVM installed with `clang` available on the path. LLVM is shipped with Visual Studio, but you will need to update your PATH to include the relevant bin directory (typically: `C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\Llvm\bin`) or you can install a [standalone distribution of LLVM](https://releases.llvm.org/). If building on Windows, ensure you do not build within the Visual Studio Developer Command Prompt as clang is unable to properly discover the Windows SDK when this is applied.
 * 200GB of free disk space
+* If building the OS X libraries or binaries (on by default) the 'rcodesign' utility is required for ad-hoc signing. This utility allows one to sign executables for Mac OS X from within Windows or Linux. It is available from the Rust crate named 'apple-codesign'. For more information, see https://gregoryszorc.com/docs/apple-codesign/0.22.0/.
  
  Once the prerequisites are in place, to build IKVM from the command line you will use the following commands:
 
