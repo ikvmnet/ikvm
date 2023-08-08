@@ -1408,7 +1408,7 @@ java/nio/charset/coders/CheckSJISMappingProp.sh                                 
 java/nio/charset/spi/basic.sh                                                                                           generic-all
 java/nio/file/DirectoryStream/Basic.java                                                                                generic-all
 java/nio/file/Files/CheckPermissions.java                                                                               generic-all
-java/nio/file/Files/CopyAndMove.java                                                                                    linux-all
+java/nio/file/Files/CopyAndMove.java                                                                                    linux-all,macosx-all
 java/nio/file/Files/InterruptCopy.java                                                                                  generic-all
 java/nio/file/Files/Misc.java                                                                                           linux-all
 java/nio/file/Files/NameLimits.java                                                                                     generic-all
@@ -3187,13 +3187,13 @@ java/net/URLConnection/Responses.java                                           
 java/net/URLConnection/6212146/test.sh                                                                                  linux-all
 
 java/nio/channels/AsynchronousChannelGroup/Unbounded.java                                                               linux-all
-java/nio/channels/AsynchronousServerSocketChannel/Basic.java                                                            linux-all
+java/nio/channels/AsynchronousServerSocketChannel/Basic.java                                                            linux-all,macosx-all
 java/nio/channels/AsynchronousSocketChannel/DieBeforeComplete.java                                                      linux-all
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java                                                         linux-all
 java/nio/channels/Channels/Basic2.java                                                                                  linux-all
 java/nio/channels/DatagramChannel/EmptyBuffer.java                                                                      linux-all,macosx-all
 java/nio/channels/DatagramChannel/Promiscuous.java                                                                      linux-all,macosx-all
-java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     linux-all
+java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     linux-all,macosx-all
 java/nio/channels/FileChannel/Release.java                                                                              linux-all,macosx-all
 java/nio/channels/FileChannel/TryLock.java                                                                              linux-all,macosx-all
 java/nio/channels/Selector/Alias.java                                                                                   linux-all
@@ -3418,3 +3418,8 @@ java/util/prefs/RemoveUnregedListener.java                                      
 jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
 sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
 com/sun/crypto/provider/Cipher/CTR/CounterMode.java                                                                     macosx-all
+java/net/MulticastSocket/Promiscuous.java                                                                               macosx-all
+java/nio/channels/DatagramChannel/ConnectedSend.java                                                                    macosx-all
+java/nio/channels/FileChannel/Transfers.java                                                                            macosx-all
+java/nio/file/WatchService/LotsOfEvents.java                                                                            macosx-all
+java/nio/file/WatchService/LotsOfCancels.java                                                                           macosx-all
