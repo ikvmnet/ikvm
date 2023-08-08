@@ -3202,7 +3202,7 @@ java/nio/channels/Selector/BasicConnect.java                                    
 java/nio/channels/Selector/CloseWhenKeyIdle.java                                                                        linux-all,macosx-all
 java/nio/channels/Selector/Connect.java                                                                                 linux-all
 java/nio/channels/SocketChannel/AdaptSocket.java                                                                        linux-all,macosx-all
-java/nio/channels/SocketChannel/AsyncCloseChannel.java                                                                  linux-all
+java/nio/channels/SocketChannel/AsyncCloseChannel.java                                                                  linux-all,macosx-all
 java/nio/channels/SocketChannel/Basic.java                                                                              linux-all
 java/nio/channels/SocketChannel/CloseDuringWrite.java                                                                   linux-all
 java/nio/channels/SocketChannel/Shutdown.java                                                                           linux-all,macosx-all
@@ -3418,3 +3418,4 @@ java/util/prefs/RemoveUnregedListener.java                                      
 jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
 sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
 sun/tools/native2ascii/Permission.java                                                                                  macosx-all
+com/sun/crypto/provider/Cipher/CTR/CounterMode.java                                                                     macosx-all
