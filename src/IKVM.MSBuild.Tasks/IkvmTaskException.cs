@@ -31,6 +31,18 @@ namespace IKVM.MSBuild.Tasks
 
         }
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
+        public IkvmTaskException(SerializationInfo info, StreamingContext context) :
+            base(info, context)
+        {
+
+        }
+
+
     }
 
 }

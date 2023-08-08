@@ -43,6 +43,17 @@ namespace IKVM.MSBuild.Tasks
         }
 
         /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
+        public IkvmTaskMessageException(SerializationInfo info, StreamingContext context) :
+            base(info, context)
+        {
+
+        }
+
+        /// <summary>
         /// Gets the resource name of the message.
         /// </summary>
         public string MessageResourceName => messageResourceName;
