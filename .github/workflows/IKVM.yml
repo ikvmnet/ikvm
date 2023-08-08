@@ -486,6 +486,9 @@ jobs:
         - run: IKVM.Tests
           tfm: net7.0
           sys: linux
+        - run: IKVM.Tests
+          tfm: net7.0
+          sys: osx-x64
         - run: IKVM.Tools.Exporter.Tests
           tfm: net472
           sys: windows
@@ -501,6 +504,9 @@ jobs:
         - run: IKVM.Tools.Tests
           tfm: net7.0
           sys: linux
+        - run: IKVM.Tools.Tests
+          tfm: net7.0
+          sys: osx-x64
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
     - build-ikvm
