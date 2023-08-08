@@ -1371,7 +1371,7 @@ java/net/URLPermission/OpenURL.java                                             
 java/net/URLPermission/nstest/lookup.sh                                                                                 generic-all
 java/nio/Buffer/Chew.java                                                                                               generic-all
 java/nio/Buffer/LimitDirectMemory.sh                                                                                    generic-all
-java/nio/MappedByteBuffer/Truncate.java                                                                                 linux-all
+java/nio/MappedByteBuffer/Truncate.java                                                                                 linux-all,macosx-all
 java/nio/channels/AsyncCloseAndInterrupt.java                                                                           generic-all
 java/nio/channels/AsynchronousChannelGroup/Basic.java                                                                   generic-all
 java/nio/channels/AsynchronousChannelGroup/GroupOfOne.java                                                              generic-all
@@ -1410,7 +1410,7 @@ java/nio/file/DirectoryStream/Basic.java                                        
 java/nio/file/Files/CheckPermissions.java                                                                               generic-all
 java/nio/file/Files/CopyAndMove.java                                                                                    linux-all,macosx-all
 java/nio/file/Files/InterruptCopy.java                                                                                  generic-all
-java/nio/file/Files/Misc.java                                                                                           linux-all
+java/nio/file/Files/Misc.java                                                                                           linux-all,macosx-all
 java/nio/file/Files/NameLimits.java                                                                                     generic-all
 java/nio/file/Files/SBC.java                                                                                            linux-all,macosx-all
 java/nio/file/Files/delete_on_close.sh                                                                                  generic-all
@@ -3156,7 +3156,7 @@ demo/zipfs/ZFSTests.java                                                        
 
 java/io/FileDescriptor/Sharing.java                                                                                     linux-all,macosx-all
 java/io/FileInputStream/LargeFileAvailable.java                                                                         linux-all,macosx-all
-java/io/pathNames/GeneralSolaris.java                                                                                   linux-all
+java/io/pathNames/GeneralSolaris.java                                                                                   linux-all,macosx-all
 java/io/RandomAccessFile/ReadWritePrimitives.java                                                                       linux-all
 java/io/FileOutputStream/FileOpen.sh                                                                                    linux-all
 
@@ -3169,7 +3169,7 @@ java/lang/Runtime/exec/ExecWithInput.java                                       
 java/lang/Runtime/exec/Status.java                                                                                      linux-all
 
 java/net/BindException/Test.java                                                                                        linux-all
-java/net/ipv6tests/B6521014.java                                                                                        linux-all
+java/net/ipv6tests/B6521014.java                                                                                        linux-all,macosx-all
 java/net/InetAddress/IsReachable.java                                                                                   linux-all
 java/net/Inet4Address/PingThis.java                                                                                     linux-all
 java/net/PortUnreachableException/Concurrent.java                                                                       linux-all
@@ -3215,7 +3215,7 @@ java/nio/charset/Charset/AvailableCharsetNames.java                             
 # COMPOUND_TEXT is compiled in all cases, but only available on !Windows, which breaks tests on Windows
 java/nio/charset/Charset/NIOCharsetAvailabilityTest.java                                                                windows-all
 
-java/nio/file/attribute/DosFileAttributeView/Basic.java                                                                 linux-all
+java/nio/file/attribute/DosFileAttributeView/Basic.java                                                                 linux-all,macosx-all
 java/nio/file/Files/FileAttributes.java                                                                                 linux-all,macosx-all
 java/nio/file/FileStore/Basic.java                                                                                      linux-all,macosx-all
 # posix isn't supported on IKVM
@@ -3241,7 +3241,7 @@ sun/nio/ch/SelProvider.java                                                     
 
 sun/rmi/rmic/extraCompilation/run.sh                                                                                    linux-all
 
-sun/security/krb5/ccache/DefaultFile.java                                                                               linux-all
+sun/security/krb5/ccache/DefaultFile.java                                                                               linux-all,macosx-all
 sun/security/provider/PolicyFile/CanonPath.java                                                                         linux-all
 sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                                    linux-all
 
@@ -3251,7 +3251,7 @@ tools/jar/UpdateJar.java                                                        
 # uses System.Drawing, not available on Linux
 javax/imageio/plugins/png/MergeStdCommentTest.java                                                                      linux-all,macosx-all
 javax/imageio/EmptyFileTest.java                                                                                        linux-all,macosx-all
-sun/java2d/cmm/ColorConvertOp/InvalidRenderIntentTest.java                                                              linux-all
+sun/java2d/cmm/ColorConvertOp/InvalidRenderIntentTest.java                                                              linux-all,macosx-all
 
 # uses Win32 specific stuff, not available on Linux
 javax/print/PrintServiceLookup/CountPrintServices.java                                                                  linux-all
@@ -3385,7 +3385,9 @@ java/net/MulticastSocket/JoinGroup.java                                         
 java/net/MulticastSocket/Leave.java                                                                                     macosx-all
 java/net/MulticastSocket/Promiscuous.java                                                                               macosx-all
 java/net/MulticastSocket/SetOutgoingIf.java                                                                             macosx-all
+java/net/NetworkInterface/UniqueMacAddressesTest.java                                                                   macosx-all
 java/net/PlainSocketImpl/SetBufferSize.java                                                                             macosx-all
+java/net/Socket/LinkLocal.java                                                                                          macosx-all
 java/net/Socket/SetSoLinger.java                                                                                        macosx-all
 java/net/Socket/TrafficClass.java                                                                                       macosx-all
 java/net/ipv6tests/TcpTest.java                                                                                         macosx-all
@@ -3399,15 +3401,19 @@ java/nio/channels/DatagramChannel/Connect.java                                  
 java/nio/channels/DatagramChannel/ConnectedSend.java                                                                    macosx-all
 java/nio/channels/DatagramChannel/IsConnected.java                                                                      macosx-all
 java/nio/channels/DatagramChannel/NoSender.java                                                                         macosx-all
+java/nio/channels/DatagramChannel/NotBound.java                                                                         macosx-all
 java/nio/channels/DatagramChannel/ReceiveISA.java                                                                       macosx-all
 java/nio/channels/DatagramChannel/Refused.java                                                                          macosx-all
 java/nio/channels/DatagramChannel/SRTest.java                                                                           macosx-all
 java/nio/channels/DatagramChannel/Sender.java                                                                           macosx-all
 java/nio/channels/DatagramChannel/ThereCanBeOnlyOne.java                                                                macosx-all
+java/nio/channels/FileChannel/ExpandingMap                                                                              macosx-all
 java/nio/channels/FileChannel/LongTransferTest.java                                                                     macosx-all
 java/nio/channels/FileChannel/MapTest.java                                                                              macosx-all
 java/nio/channels/FileChannel/Transfer.java                                                                             macosx-all
+java/nio/channels/FileChannel/TransferToChannel.java                                                                    macosx-all
 java/nio/channels/FileChannel/Transfers.java                                                                            macosx-all
+java/nio/channels/Selector/RacyDeregister.java                                                                          macosx-all
 java/nio/channels/ServerSocketChannel/NonBlockingAccept.java                                                            macosx-all
 java/nio/channels/ServerSocketChannel/SocketOptionTests.java                                                            macosx-all
 java/nio/channels/SocketChannel/SendUrgentData.java                                                                     macosx-all
