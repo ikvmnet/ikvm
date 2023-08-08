@@ -3367,6 +3367,11 @@ java/lang/invoke/CustomizedLambdaFormTest.java                                  
 javax/xml/bind/jxc/8073519/SchemagenErrorReporting.java                                                                 generic-all
 
 # Broken on OS X
+com/sun/corba/transport/KeepAliveSockets.java                                                                           macosx-all
+com/sun/crypto/provider/Cipher/AES/TestISO10126Padding.java                                                             macosx-all
+com/sun/crypto/provider/Cipher/Blowfish/BlowfishTestVector.java                                                         macosx-all
+com/sun/crypto/provider/Cipher/CTR/CounterMode.java                                                                     macosx-all
+com/sun/net/httpserver/bugs/B6393710.java                                                                               macosx-all
 java/awt/FontClass/HelvLtOblTest.java                                                                                   macosx-all
 java/net/DatagramPacket/ReuseBuf.java                                                                                   macosx-all
 java/net/DatagramSocket/PortUnreachable.java                                                                            macosx-all
@@ -3378,6 +3383,7 @@ java/net/InetAddress/CheckJNI.java                                              
 java/net/MulticastSocket/B6427403.java                                                                                  macosx-all
 java/net/MulticastSocket/JoinGroup.java                                                                                 macosx-all
 java/net/MulticastSocket/Leave.java                                                                                     macosx-all
+java/net/MulticastSocket/Promiscuous.java                                                                               macosx-all
 java/net/MulticastSocket/SetOutgoingIf.java                                                                             macosx-all
 java/net/PlainSocketImpl/SetBufferSize.java                                                                             macosx-all
 java/net/Socket/SetSoLinger.java                                                                                        macosx-all
@@ -3390,6 +3396,7 @@ java/nio/channels/AsynchronousSocketChannel/Basic.java                          
 java/nio/channels/DatagramChannel/AdaptDatagramSocket.java                                                              macosx-all
 java/nio/channels/DatagramChannel/BasicMulticastTests.java                                                              macosx-all
 java/nio/channels/DatagramChannel/Connect.java                                                                          macosx-all
+java/nio/channels/DatagramChannel/ConnectedSend.java                                                                    macosx-all
 java/nio/channels/DatagramChannel/IsConnected.java                                                                      macosx-all
 java/nio/channels/DatagramChannel/NoSender.java                                                                         macosx-all
 java/nio/channels/DatagramChannel/ReceiveISA.java                                                                       macosx-all
@@ -3400,12 +3407,15 @@ java/nio/channels/DatagramChannel/ThereCanBeOnlyOne.java                        
 java/nio/channels/FileChannel/LongTransferTest.java                                                                     macosx-all
 java/nio/channels/FileChannel/MapTest.java                                                                              macosx-all
 java/nio/channels/FileChannel/Transfer.java                                                                             macosx-all
+java/nio/channels/FileChannel/Transfers.java                                                                            macosx-all
 java/nio/channels/ServerSocketChannel/NonBlockingAccept.java                                                            macosx-all
 java/nio/channels/ServerSocketChannel/SocketOptionTests.java                                                            macosx-all
 java/nio/channels/SocketChannel/SendUrgentData.java                                                                     macosx-all
 java/nio/channels/SocketChannel/VectorParams.java                                                                       macosx-all
 java/nio/charset/coders/Check.java                                                                                      macosx-all
 java/nio/file/Path/MacPathTest.java                                                                                     macosx-all
+java/nio/file/WatchService/LotsOfCancels.java                                                                           macosx-all
+java/nio/file/WatchService/LotsOfEvents.java                                                                            macosx-all
 java/nio/file/WatchService/MayFlies.java                                                                                macosx-all
 java/util/prefs/AddNodeChangeListener.java                                                                              macosx-all
 java/util/prefs/CommentsInXml.java                                                                                      macosx-all
@@ -3417,13 +3427,3 @@ java/util/prefs/RemoveReadOnlyNode.java                                         
 java/util/prefs/RemoveUnregedListener.java                                                                              macosx-all
 jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
 sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
-com/sun/crypto/provider/Cipher/CTR/CounterMode.java                                                                     macosx-all
-java/net/MulticastSocket/Promiscuous.java                                                                               macosx-all
-java/nio/channels/DatagramChannel/ConnectedSend.java                                                                    macosx-all
-java/nio/channels/FileChannel/Transfers.java                                                                            macosx-all
-java/nio/file/WatchService/LotsOfEvents.java                                                                            macosx-all
-java/nio/file/WatchService/LotsOfCancels.java                                                                           macosx-all
-com/sun/corba/transport/KeepAliveSockets.java                                                                           macosx-all
-com/sun/crypto/provider/Cipher/AES/TestISO10126Padding.java                                                             macosx-all
-com/sun/crypto/provider/Cipher/Blowfish/BlowfishTestVector.java                                                         macosx-all
-com/sun/net/httpserver/bugs/B6393710.java                                                                               macosx-all
