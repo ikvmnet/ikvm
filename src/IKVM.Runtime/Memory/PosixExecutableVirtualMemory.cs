@@ -28,7 +28,7 @@ namespace IKVM.Runtime.JNI.Memory
                 throw new PlatformNotSupportedException();
 
             var handle = Syscall.mmap(IntPtr.Zero, (ulong)size, MmapProts.PROT_READ | MmapProts.PROT_WRITE | MmapProts.PROT_EXEC, MmapFlags.MAP_PRIVATE | MmapFlags.MAP_ANON, -1, 0);
-            if (handle == IntPtr.Zero)
+            if (handle == (IntPtr)(-1))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
             return new PosixExecutableVirtualMemory(handle, size);
