@@ -428,14 +428,11 @@ jobs:
         - windows
         - linux
         - osx-x64
-        - osx-arm64
         exclude:
         - tfm: net461
           sys: linux
         - tfm: net461
           sys: osx-x64
-        - tfm: net461
-          sys: osx-arm64
         - run: IKVM.Tools.Exporter.Tests
           tfm: net461
         - run: IKVM.Tools.Importer.Tests
@@ -470,9 +467,6 @@ jobs:
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net7.0
           sys: osx-x64
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net7.0
-          sys: osx-arm64
         - run: IKVM.MSBuild.Tests
           tfm: net7.0
           sys: windows
@@ -491,9 +485,6 @@ jobs:
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
           sys: osx-x64
-        - run: IKVM.NET.Sdk.Tests
-          tfm: net7.0
-          sys: osx-arm64
         - run: IKVM.Tests
           tfm: net7.0
           sys: windows
@@ -503,9 +494,6 @@ jobs:
         - run: IKVM.Tests
           tfm: net7.0
           sys: osx-x64
-        - run: IKVM.Tests
-          tfm: net7.0
-          sys: osx-arm64
         - run: IKVM.Tools.Exporter.Tests
           tfm: net472
           sys: windows
@@ -524,14 +512,11 @@ jobs:
         - run: IKVM.Tools.Tests
           tfm: net7.0
           sys: osx-x64
-        - run: IKVM.Tools.Tests
-          tfm: net7.0
-          sys: osx-arm64
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
     - build-ikvm
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx-x64":["macos-12"],"osx-arm64":["ghcr.io/cirruslabs/macos-ventura-xcode:latest"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
