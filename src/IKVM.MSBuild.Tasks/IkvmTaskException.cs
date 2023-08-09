@@ -7,6 +7,7 @@ namespace IKVM.MSBuild.Tasks
     /// <summary>
     /// Generic IKVM task exception.
     /// </summary>
+    [Serializable]
     class IkvmTaskException : Exception
     {
 
