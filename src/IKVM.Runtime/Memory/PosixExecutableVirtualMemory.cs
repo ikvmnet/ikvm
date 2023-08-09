@@ -28,7 +28,7 @@ namespace IKVM.Runtime.JNI.Memory
                 RuntimeInformation.IsOSPlatform(OSPlatform.OSX) == false)
                 throw new PlatformNotSupportedException();
 
-            var handle = Syscall.mmap(IntPtr.Zero, (ulong)size, MmapProts.PROT_READ | MmapProts.PROT_WRITE | MmapProts.PROT_EXEC, MmapFlags.MAP_PRIVATE | MmapFlags.MAP_ANON, -1, 0);
+            var handle = Syscall.mmap(IntPtr.Zero, (ulong)size, MmapProts.PROT_READ | MmapProts.PROT_WRITE, MmapFlags.MAP_PRIVATE | MmapFlags.MAP_ANON, -1, 0);
             if (handle == (IntPtr)(-1))
                 UnixMarshal.ThrowExceptionForError(Stdlib.GetLastError());
 
@@ -45,6 +45,16 @@ namespace IKVM.Runtime.JNI.Memory
             base(handle, size)
         {
 
+        }
+
+        /// <summary>
+        /// Sets the memory region to executable.
+        /// </summary>
+        public override void SetExecutable()
+        {
+            var r = Syscall.mprotect(handle, (ulong)Size, MmapProts.PROT_READ | MmapProts.PROT_EXEC);
+            if (r == -1)
+                UnixMarshal.ThrowExceptionForError(Stdlib.GetLastError());
         }
 
         /// <summary>
