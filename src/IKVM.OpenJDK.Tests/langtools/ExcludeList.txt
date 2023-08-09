@@ -114,3 +114,6 @@ tools/javac/file/zip/T6836682.java                                              
 # it did work previously, by accident, as far as I can tell
 tools/javac/lambda/MostSpecific09.java                                                                                  generic-all
 tools/javac/lambda/8019480/T8019480.java                                                                                generic-all
+
+# Broken on OS X
+tools/javac/lambda/T8031967.java                                                                                        macosx-all

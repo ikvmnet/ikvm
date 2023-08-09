@@ -156,6 +156,11 @@ jobs:
       with:
         version: "16.0"
         cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+    - name: Install apple-codesign
+      uses: actions-rs/install@v0.1
+      with:
+        crate: apple-codesign
+        version: latest
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0
       with:
@@ -166,10 +171,6 @@ jobs:
         targetPath: ${{ env.WORKPATH }}\ikvm
         useConfigFile: true
         configFilePath: ${{ env.WORKPATH }}\ikvm\GitVersion.yml
-    - uses: actions-rs/install@v0.1
-      with:
-        crate: apple-codesign
-        version: latest
     - name: Cache NuGet
       uses: actions/cache@v3
       with:
