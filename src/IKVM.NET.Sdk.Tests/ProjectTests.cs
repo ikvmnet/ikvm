@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Xml.Linq;
 
@@ -121,7 +120,8 @@ namespace IKVM.NET.Sdk.Tests
                 ("net6.0",          "osx-arm64"),
             };
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
+                RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 targets = new[]
                 {

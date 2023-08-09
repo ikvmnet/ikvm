@@ -11,4 +11,6 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
+    <Import Project="$(MSBuildThisFileDirectory)ClangOSXCodeSign.targets"/>
+
 </Project>

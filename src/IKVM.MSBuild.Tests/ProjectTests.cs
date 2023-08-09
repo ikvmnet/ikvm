@@ -127,7 +127,8 @@ namespace IKVM.MSBuild.Tests
                 ("net6.0",          "osx-arm64"),
             };
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
+                RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 targets = new[]
                 {
