@@ -72,7 +72,7 @@ namespace IKVM.Runtime.JNI.Memory
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
                 throw new PlatformNotSupportedException();
 
-            var handle = VirtualAlloc(IntPtr.Zero, (IntPtr)size, AllocationType.Commit | AllocationType.Reserve, MemoryProtection.ReadOnly);
+            var handle = VirtualAlloc(IntPtr.Zero, (IntPtr)size, AllocationType.Commit | AllocationType.Reserve, MemoryProtection.ReadWrite);
             if (handle == IntPtr.Zero)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
@@ -97,7 +97,7 @@ namespace IKVM.Runtime.JNI.Memory
         /// <exception cref="Win32Exception"></exception>
         public override void SetExecutable()
         {
-            var r = VirtualProtect(IntPtr.Zero, (IntPtr)Size, MemoryProtection.ExecuteRead, out _);
+            var r = VirtualProtect(handle, (IntPtr)Size, MemoryProtection.ExecuteRead, out _);
             if (r == 0)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
         }
@@ -108,7 +108,7 @@ namespace IKVM.Runtime.JNI.Memory
         /// <returns></returns>
         protected override bool ReleaseHandle()
         {
-            return VirtualFree(DangerousGetHandle(), (IntPtr)Size, FreeType.MEM_RELEASE) == 0;
+            return VirtualFree(DangerousGetHandle(), IntPtr.Zero, FreeType.MEM_RELEASE) != 0;
         }
 
     }
