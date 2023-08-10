@@ -91,6 +91,7 @@ namespace IKVM.Runtime.JNI.Trampolines
 
             var m = ExecutableMemory.Allocate(code.Length);
             Marshal.Copy(code, 0, m.DangerousGetHandle(), m.Size);
+            m.SetExecutable();
             return m;
         }
 
