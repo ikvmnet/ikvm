@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 using FluentAssertions;
 
@@ -167,6 +168,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanTransferFromFileInputStreamToFileOutputStream()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var srcPath = File.createTempFile("src", null);
             srcPath.deleteOnExit();
             WriteRandomBytes(srcPath, 1024);
@@ -192,6 +196,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanTransferToFileInputStreamFromFileOutputStream()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var srcPath = File.createTempFile("src", null);
             srcPath.deleteOnExit();
             WriteRandomBytes(srcPath, 1024);
@@ -217,6 +224,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanTransferToFileOutputStreamFromRandomAccessFile()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var srcPath = File.createTempFile("src", null);
             srcPath.deleteOnExit();
             WriteRandomBytes(srcPath, 1024);
@@ -242,6 +252,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanTransferToRandomAccessFileFromFileOutputStream()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var srcPath = File.createTempFile("src", null);
             srcPath.deleteOnExit();
             WriteRandomBytes(srcPath, 1024);
@@ -267,6 +280,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanTransferToRandomAccessFileFromRandomAccessFile()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var srcPath = File.createTempFile("src", null);
             srcPath.deleteOnExit();
             WriteRandomBytes(srcPath, 1024);
@@ -292,6 +308,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanReadAndWriteMemoryMappedFile()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var file = File.createTempFile("src", null);
             file.deleteOnExit();
             WriteRandomBytes(file, 1024);

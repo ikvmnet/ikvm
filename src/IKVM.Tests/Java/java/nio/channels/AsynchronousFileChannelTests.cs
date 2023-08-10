@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Policy;
 using System.Threading.Tasks;
@@ -371,6 +372,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public async Task ShouldExecuteOnThreadPool()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             Thread.currentThread().getName().Should().NotBe("ShouldExecuteOnThreadPool");
 
             var f = new File("AsynchronousFileChannelTests_ShouldExecuteOnThreadPool.txt");

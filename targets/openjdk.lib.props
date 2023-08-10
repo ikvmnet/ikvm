@@ -39,6 +39,7 @@
     <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
         <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_ALLBSD_SOURCE;_DARWIN_UNLIMITED_SELECT</PreprocessorDefinitions>
+        <EnableOSXCodeSign Condition=" '$(EnableOSXCodeSign)' == '' ">true</EnableOSXCodeSign>
     </PropertyGroup>
 
     <!-- standard OpenJDK includes -->
