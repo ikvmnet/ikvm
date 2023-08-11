@@ -48,11 +48,6 @@
         </When>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">
             <PropertyGroup>
-                <_IkvmImageTargetFramework>netcoreapp3.1</_IkvmImageTargetFramework>
-            </PropertyGroup>
-        </When>
-        <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">
-            <PropertyGroup>
                 <_IkvmImageTargetFramework>net6.0</_IkvmImageTargetFramework>
             </PropertyGroup>
         </When>
