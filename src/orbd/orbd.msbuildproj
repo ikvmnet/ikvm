@@ -7,6 +7,7 @@
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
+        <PublishReadyToRun>true</PublishReadyToRun>
         <StartupObject>com.sun.corba.se.impl.activation.ORBD</StartupObject>
         <RootNamespace>ikvm.tools.orbd</RootNamespace>
     </PropertyGroup>

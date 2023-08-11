@@ -7,6 +7,7 @@
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
+        <PublishReadyToRun>true</PublishReadyToRun>
         <StartupObject>com.sun.tools.internal.ws.WsGen</StartupObject>
         <RootNamespace>ikvm.tools.wsgen</RootNamespace>
     </PropertyGroup>

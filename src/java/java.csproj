@@ -3,6 +3,7 @@
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
+        <PublishReadyToRun>true</PublishReadyToRun>
         <RootNamespace>ikvm.tools.java</RootNamespace>
     </PropertyGroup>
 

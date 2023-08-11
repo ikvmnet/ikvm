@@ -17,7 +17,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Provides support for resolving managed types from the current JVM environment.
         /// </summary>
-        public class Resolver : IManagedTypeResolver
+        internal class Resolver : IManagedTypeResolver
         {
 
             /// <summary>

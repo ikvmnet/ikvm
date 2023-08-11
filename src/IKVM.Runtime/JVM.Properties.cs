@@ -28,7 +28,9 @@ namespace IKVM.Runtime
             static readonly Lazy<string> homePath = new Lazy<string>(GetHomePath);
 
             /// <summary>
-            /// Gets the set of properties that are set by the user before initialization.
+            /// Gets the set of properties that are set by the user before initialization. Modification of values in this
+            /// dictionary must happen early in the program's initialization before any Java code has been accessed or
+            /// run.
             /// </summary>
             public static IDictionary<string, string> User => user;
 
