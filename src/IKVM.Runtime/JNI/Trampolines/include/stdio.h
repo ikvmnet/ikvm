@@ -1,1 +1,0 @@
-// fake header, jni doesn't actually use anything in stdio

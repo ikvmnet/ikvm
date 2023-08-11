@@ -22,6 +22,7 @@
   
 */
 
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -39,8 +40,10 @@ namespace IKVM.Runtime.JNI
         /// <summary>
         /// Native methods available in libjvm.
         /// </summary>
-        static class LibJvm
+        internal static class LibJvm
         {
+
+            internal static nint Handle;
 
             public delegate int JNI_GetDefaultJavaVMInitArgsDelegate(void* vm_args);
             public delegate int JNI_GetCreatedJavaVMs(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
@@ -59,10 +62,10 @@ namespace IKVM.Runtime.JNI
             /// </summary>
             static LibJvm()
             {
-                var p = NativeLibrary.Load("jvm");
-                set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>(NativeLibrary.GetExport(p, "Set_JNI_GetDefaultJavaVMInitArgs", 1));
-                set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>(NativeLibrary.GetExport(p, "Set_JNI_GetCreatedJavaVMs", 1));
-                set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(NativeLibrary.GetExport(p, "Set_JNI_CreateJavaVM", 1));
+                Handle = NativeLibrary.Load("jvm");
+                set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_GetDefaultJavaVMInitArgs", 1));
+                set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_GetCreatedJavaVMs", 1));
+                set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_CreateJavaVM", 1));
             }
 
             public static void Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgsDelegate func) => set_JNI_GetDefaultJavaVMInitArgs(func);
