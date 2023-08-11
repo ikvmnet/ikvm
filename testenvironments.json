@@ -10,6 +10,12 @@
             "name": "Debian",
             "type": "wsl",
             "wslDistribution": "Debian"
+        },
+        {
+            "name": "linux-arm64",
+            "type": "ssh",
+            "remoteUri": "ssh://sysadmin@172.178.57.57:22/",
+            "localRoot": "/home/sysadmin/vs/"
         }
     ]
 }
