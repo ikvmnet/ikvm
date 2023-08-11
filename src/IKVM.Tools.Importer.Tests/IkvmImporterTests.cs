@@ -25,15 +25,12 @@ namespace IKVM.Tools.Importer.Tests
         static readonly string TESTBASE = Path.GetDirectoryName(typeof(IkvmImporterTests).Assembly.Location);
 
         [DataTestMethod]
-        [DataRow("net461", "net472", ".NETFramework", "4.7.2")]
-        [DataRow("net461", "net481", ".NETFramework", "4.8.1")]
-        [DataRow("netcoreapp3.1", "netcoreapp3.1", ".NETCore", "3.1")]
+        [DataRow("net472", "net472", ".NETFramework", "4.7.2")]
+        [DataRow("net472", "net481", ".NETFramework", "4.8.1")]
         [DataRow("net6.0", "net6.0", ".NETCore", "6.0")]
         [DataRow("net6.0", "net7.0", ".NETCore", "7.0")]
         public async Task CanImportSimpleTest(string ikvmFramework, string targetFramework, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
-            if (targetFramework == "netcoreapp3.1" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
-                return;
             if (targetFrameworkIdentifier == ".NETFramework" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
                 return;
 
