@@ -45,8 +45,12 @@
     <!-- standard OpenJDK includes -->
     <PropertyGroup Condition=" '$(TargetTriple)' != '' ">
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\common</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)build\linux-x86_64-normal-server-release\jdk\gensrc_headers</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common</IncludeDirectories>
+    </PropertyGroup>
+
+    <!-- standard OpenJDK includes -->
+    <PropertyGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)build\linux-x86_64-normal-server-release\jdk\gensrc_headers</IncludeDirectories>
     </PropertyGroup>
 
 </Project>

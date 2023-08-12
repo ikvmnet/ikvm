@@ -3314,142 +3314,97 @@ int jio_printf(const char* fmt, ...) {
 //JVM_END
 //
 //
-//// Networking library support ////////////////////////////////////////////////////////////////////
-//
-//JVM_LEAF(jint, JVM_InitializeSocketLibrary())
-//JVMWrapper("JVM_InitializeSocketLibrary");
-//return 0;
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Socket(jint domain, jint type, jint protocol))
-//JVMWrapper("JVM_Socket");
-//return os::socket(domain, type, protocol);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_SocketClose(jint fd))
-//JVMWrapper2("JVM_SocketClose (0x%x)", fd);
-////%note jvm_r6
-//return os::socket_close(fd);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_SocketShutdown(jint fd, jint howto))
-//JVMWrapper2("JVM_SocketShutdown (0x%x)", fd);
-////%note jvm_r6
-//return os::socket_shutdown(fd, howto);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Recv(jint fd, char* buf, jint nBytes, jint flags))
-//JVMWrapper2("JVM_Recv (0x%x)", fd);
-////%note jvm_r6
-//return os::recv(fd, buf, (size_t)nBytes, (uint)flags);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Send(jint fd, char* buf, jint nBytes, jint flags))
-//JVMWrapper2("JVM_Send (0x%x)", fd);
-////%note jvm_r6
-//return os::send(fd, buf, (size_t)nBytes, (uint)flags);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Timeout(int fd, long timeout))
-//JVMWrapper2("JVM_Timeout (0x%x)", fd);
-////%note jvm_r6
-//return os::timeout(fd, timeout);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Listen(jint fd, jint count))
-//JVMWrapper2("JVM_Listen (0x%x)", fd);
-////%note jvm_r6
-//return os::listen(fd, count);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Connect(jint fd, struct sockaddr* him, jint len))
-//JVMWrapper2("JVM_Connect (0x%x)", fd);
-////%note jvm_r6
-//return os::connect(fd, him, (socklen_t)len);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Bind(jint fd, struct sockaddr* him, jint len))
-//JVMWrapper2("JVM_Bind (0x%x)", fd);
-////%note jvm_r6
-//return os::bind(fd, him, (socklen_t)len);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Accept(jint fd, struct sockaddr* him, jint * len))
-//JVMWrapper2("JVM_Accept (0x%x)", fd);
-////%note jvm_r6
-//socklen_t socklen = (socklen_t)(*len);
-//jint result = os::accept(fd, him, &socklen);
-//*len = (jint)socklen;
-//return result;
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_RecvFrom(jint fd, char* buf, int nBytes, int flags, struct sockaddr* from, int* fromlen))
-//JVMWrapper2("JVM_RecvFrom (0x%x)", fd);
-////%note jvm_r6
-//socklen_t socklen = (socklen_t)(*fromlen);
-//jint result = os::recvfrom(fd, buf, (size_t)nBytes, (uint)flags, from, &socklen);
-//*fromlen = (int)socklen;
-//return result;
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_GetSockName(jint fd, struct sockaddr* him, int* len))
-//JVMWrapper2("JVM_GetSockName (0x%x)", fd);
-////%note jvm_r6
-//socklen_t socklen = (socklen_t)(*len);
-//jint result = os::get_sock_name(fd, him, &socklen);
-//*len = (int)socklen;
-//return result;
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_SendTo(jint fd, char* buf, int len, int flags, struct sockaddr* to, int tolen))
-//JVMWrapper2("JVM_SendTo (0x%x)", fd);
-////%note jvm_r6
-//return os::sendto(fd, buf, (size_t)len, (uint)flags, to, (socklen_t)tolen);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_SocketAvailable(jint fd, jint * pbytes))
-//JVMWrapper2("JVM_SocketAvailable (0x%x)", fd);
-////%note jvm_r6
-//return os::socket_available(fd, pbytes);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_GetSockOpt(jint fd, int level, int optname, char* optval, int* optlen))
-//JVMWrapper2("JVM_GetSockOpt (0x%x)", fd);
-////%note jvm_r6
-//socklen_t socklen = (socklen_t)(*optlen);
-//jint result = os::get_sock_opt(fd, level, optname, optval, &socklen);
-//*optlen = (int)socklen;
-//return result;
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_SetSockOpt(jint fd, int level, int optname, const char* optval, int optlen))
-//JVMWrapper2("JVM_GetSockOpt (0x%x)", fd);
-////%note jvm_r6
-//return os::set_sock_opt(fd, level, optname, optval, (socklen_t)optlen);
-//JVM_END
-//
-//
-//JVM_LEAF(int, JVM_GetHostName(char* name, int namelen))
-//JVMWrapper("JVM_GetHostName");
-//return os::get_host_name(name, namelen);
-//JVM_END
-//
+
+jint JNICALL JVM_InitializeSocketLibrary()
+{
+    return 0;
+}
+
+jint JNICALL JVM_Socket(jint domain, jint type, jint protocol)
+{
+    return 0;
+}
+
+jint JNICALL JVM_SocketClose(jint fd)
+{
+    return 0;
+}
+
+jint JNICALL JVM_SocketShutdown(jint fd, jint howto)
+{
+    return 0;
+}
+
+jint JNICALL JVM_Recv(jint fd, char* buf, jint nBytes, jint flags)
+{
+    return 0;
+}
+
+jint JNICALL JVM_Send(jint fd, char* buf, jint nBytes, jint flags)
+{
+    return 0;
+}
+
+jint JNICALL JVM_Timeout(int fd, long timeout)
+{
+    return 0;
+}
+
+jint JNICALL JVM_Listen(jint fd, jint count)
+{
+    return 0;
+}
+
+jint JNICALL JVM_Connect(jint fd, struct sockaddr* him, jint len)
+{
+    return 0;
+}
+
+jint JNICALL JVM_Bind(jint fd, struct sockaddr* him, jint len)
+{
+    return 0;
+}
+
+jint JNICALL JVM_Accept(jint fd, struct sockaddr* him, jint* len)
+{
+    return 0;
+}
+
+jint JNICALL JVM_RecvFrom(jint fd, char* buf, int nBytes, int flags, struct sockaddr* from, int* fromlen)
+{
+    return 0;
+}
+
+jint JNICALL JVM_GetSockName(jint fd, struct sockaddr* him, int* len)
+{
+    return 0;
+}
+
+jint JNICALL JVM_SendTo(jint fd, char* buf, int len, int flags, struct sockaddr* to, int tolen)
+{
+    return 0;
+}
+
+jint JNICALL JVM_SocketAvailable(jint fd, jint* pbytes)
+{
+    return 0;
+}
+
+jint JNICALL JVM_GetSockOpt(jint fd, int level, int optname, char* optval, int* optlen)
+{
+    return 0;
+}
+
+jint JNICALL JVM_SetSockOpt(jint fd, int level, int optname, const char* optval, int optlen)
+{
+    return 0;
+}
+
+int JNICALL JVM_GetHostName(char* name, int namelen)
+{
+    return 0;
+}
+
 //
 //// Library support ///////////////////////////////////////////////////////////////////////////
 //
@@ -3486,10 +3441,14 @@ int jio_printf(const char* fmt, ...) {
 //JVM_END
 //
 //
-//JVM_LEAF(void*, JVM_FindLibraryEntry(void* handle, const char* name))
-//JVMWrapper2("JVM_FindLibraryEntry (%s)", name);
-//return os::dll_lookup(handle, name);
-//JVM_END
+// 
+// 
+
+void* JNICALL JVM_FindLibraryEntry(void* handle, const char* name)
+{
+    return 0;
+}
+
 //
 //
 //// Floating point support ////////////////////////////////////////////////////////////////////
