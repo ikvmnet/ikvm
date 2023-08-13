@@ -458,7 +458,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="cmd"></param>
         /// <param name="lock"></param>
         /// <returns></returns>
-        [DllImport("libc", SetLastError = true, EntryPoint = "fcntl")]
+        [DllImport("c", SetLastError = true, EntryPoint = "fcntl")]
         static extern int OSX_fcntl(int fd, OSX_FcntlCommand cmd, ref OSX_Flock @lock);
 
         /// <summary>
