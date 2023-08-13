@@ -49,8 +49,10 @@ namespace IKVM.Tools.Tests.Runner.Importer
                 rid = "win7-x64";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 rid = "linux-x64";
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && RuntimeInformation.ProcessArchitecture == Architecture.X64)
                 rid = "osx-x64";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                rid = "osx-arm64";
 
             var e = new List<IkvmToolDiagnosticEvent>();
             var l = new IkvmImporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterLauncherTests).Assembly.Location), "ikvmc", toolFramework, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));

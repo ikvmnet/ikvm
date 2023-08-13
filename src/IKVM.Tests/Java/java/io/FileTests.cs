@@ -55,6 +55,8 @@ namespace IKVM.Tests.Java.java.io
                 new global::java.io.File(@"C:\Windows\.\System32").getCanonicalPath().Should().Be(@"C:\Windows\System32");
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 new global::java.io.File(@"/usr/./lib").getCanonicalPath().Should().Be(@"/usr/lib");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                new global::java.io.File(@"/usr/./lib").getCanonicalPath().Should().Be(@"/usr/lib");
         }
 
         [TestMethod]
@@ -64,6 +66,8 @@ namespace IKVM.Tests.Java.java.io
                 new global::java.io.File(@"C:\Windows\..\Windows\System32").getCanonicalPath().Should().Be(@"C:\Windows\System32");
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 new global::java.io.File(@"/usr/../usr/lib").getCanonicalPath().Should().Be(@"/usr/lib");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                new global::java.io.File(@"/usr/../usr/lib").getCanonicalPath().Should().Be(@"/usr/lib");
         }
 
         [TestMethod]
@@ -72,6 +76,8 @@ namespace IKVM.Tests.Java.java.io
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 global::java.io.File.pathSeparator.Should().Be(";");
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                global::java.io.File.pathSeparator.Should().Be(":");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 global::java.io.File.pathSeparator.Should().Be(":");
         }
 

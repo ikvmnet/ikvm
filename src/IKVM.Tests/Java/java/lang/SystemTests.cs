@@ -20,6 +20,8 @@ namespace IKVM.Tests.Java.java.lang
                 global::java.lang.System.getProperty("os.name").Should().StartWith("Windows");
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 global::java.lang.System.getProperty("os.name").Should().StartWith("Linux");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                global::java.lang.System.getProperty("os.name").Should().StartWith("Mac OS X");
         }
 
         [TestMethod]
