@@ -48,7 +48,7 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
-    internal static partial class JVM
+    public static partial class JVM
     {
 
         internal const string JarClassList = "--ikvm-classes--/";
@@ -68,12 +68,12 @@ namespace IKVM.Runtime
         /// <summary>
         /// Gets the current <see cref="RuntimeContext"/> of the JVM.
         /// </summary>
-        public static RuntimeContext Context => context;
+        internal static RuntimeContext Context => context;
 
         /// <summary>
         /// Gets the current <see cref="VfsTable"/> of the JVM.
         /// </summary>
-        public static VfsTable Vfs => vfs;
+        internal static VfsTable Vfs => vfs;
 
         static readonly object initializedLock = new object();
         static bool initialized;
@@ -94,19 +94,19 @@ namespace IKVM.Runtime
         /// <summary>
         /// Gets the 'system' thread group.
         /// </summary>
-        public static object SystemThreadGroup => systemThreadGroup.Value;
+        internal static object SystemThreadGroup => systemThreadGroup.Value;
 
         /// <summary>
         /// Gets the 'main' thread group.
         /// </summary>
-        public static object MainThreadGroup => mainThreadGroup.Value;
+        internal static object MainThreadGroup => mainThreadGroup.Value;
 
 #endif
 
         /// <summary>
         /// Ensures the JVM is initialized.
         /// </summary>
-        public static void EnsureInitialized()
+        internal static void EnsureInitialized()
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();

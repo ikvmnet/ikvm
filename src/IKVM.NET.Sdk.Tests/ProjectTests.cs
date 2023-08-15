@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Xml.Linq;
 
@@ -108,29 +107,32 @@ namespace IKVM.NET.Sdk.Tests
 
             var targets = new[]
             {
-                ("net461",          "win7-x86"),
-                ("net461",          "win7-x64"),
-                ("net461",          "win81-arm"),
-                ("netcoreapp3.1",   "win7-x86"),
-                ("netcoreapp3.1",   "win7-x64"),
-                ("netcoreapp3.1",   "win81-arm"),
-                ("netcoreapp3.1",   "linux-x64"),
-                ("netcoreapp3.1",   "linux-arm"),
-                ("netcoreapp3.1",   "linux-arm64"),
-                ("netcoreapp3.1",   "osx-x64"),
+                ("net472",          "win7-x86"),
+                ("net472",          "win7-x64"),
+                ("net472",          "win81-arm"),
+                ("net6.0",          "win7-x86"),
+                ("net6.0",          "win7-x64"),
+                ("net6.0",          "win81-arm"),
+                ("net6.0",          "linux-x64"),
+                ("net6.0",          "linux-arm"),
+                ("net6.0",          "linux-arm64"),
+                ("net6.0",          "osx-x64"),
+                ("net6.0",          "osx-arm64"),
             };
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
+                RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 targets = new[]
                 {
-                    ("netcoreapp3.1",   "win7-x86"),
-                    ("netcoreapp3.1",   "win7-x64"),
-                    ("netcoreapp3.1",   "win81-arm"),
-                    ("netcoreapp3.1",   "linux-x64"),
-                    ("netcoreapp3.1",   "linux-arm"),
-                    ("netcoreapp3.1",   "linux-arm64"),
-                    ("netcoreapp3.1",   "osx-x64"),
+                    ("net6.0",          "win7-x86"),
+                    ("net6.0",          "win7-x64"),
+                    ("net6.0",          "win81-arm"),
+                    ("net6.0",          "linux-x64"),
+                    ("net6.0",          "linux-arm"),
+                    ("net6.0",          "linux-arm64"),
+                    ("net6.0",          "osx-x64"),
+                    ("net6.0",          "osx-arm64"),
                 };
             }
 

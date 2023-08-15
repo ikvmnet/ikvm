@@ -762,6 +762,65 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         [DllImport("kernel32", SetLastError = true)]
         static extern unsafe int UnlockFileEx(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, NativeOverlapped* lpOverlapped);
+        /// <summary>
+        /// Record locking flags for OS X.
+        /// </summary>
+        enum OSX_LockType : short
+        {
+
+            F_RDLCK = 1,
+            F_UNLCK = 2,
+            F_WRLCK = 3,
+
+        }
+
+        /// <summary>
+        /// Flock structure on OSX. Fields are in a different order than Mono.Posix.
+        /// </summary>
+        struct OSX_Flock
+        {
+
+            public long l_start;
+            public long l_len;
+            public int l_pid;
+            public OSX_LockType l_type;
+            public SeekFlags l_whence;
+
+        }
+
+        /// <summary>
+        /// 'fcntl' command values for OS X.
+        /// </summary>
+        enum OSX_FcntlCommand
+        {
+
+            F_GETLK = 7,
+            F_SETLK = 8,
+            F_SETLKW = 9,
+
+        }
+
+        /// <summary>
+        /// 'errno' values for OS X.
+        /// </summary>
+        enum OSX_Errno
+        {
+
+            EAGAIN = 35,
+            EACCES = 13,
+            EINTR = 4,
+
+        }
+
+        /// <summary>
+        /// Invokes the 'fcntl' function on OS X.
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <param name="cmd"></param>
+        /// <param name="lock"></param>
+        /// <returns></returns>
+        [DllImport("c", SetLastError = true, EntryPoint = "fcntl")]
+        static extern int OSX_fcntl(int fd, OSX_FcntlCommand cmd, ref OSX_Flock @lock);
 
         /// <summary>
         /// Implements the native method 'lock'.
@@ -827,7 +886,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         Overlapped.Free(optr);
                     }
                 }
-                else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
+                else if (RuntimeUtil.IsLinux)
                 {
                     var fl = new Flock();
                     fl.l_whence = SeekFlags.SEEK_SET;
@@ -846,6 +905,29 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             return FileDispatcher.INTERRUPTED;
 
                         UnixMarshal.ThrowExceptionForError(errno);
+                    }
+
+                    return FileDispatcher.LOCKED;
+                }
+                else if (RuntimeUtil.IsOSX)
+                {
+                    var fl = new OSX_Flock();
+                    fl.l_whence = SeekFlags.SEEK_SET;
+                    fl.l_len = size == long.MaxValue ? 0 : size;
+                    fl.l_start = pos;
+                    fl.l_type = shared ? OSX_LockType.F_RDLCK : OSX_LockType.F_WRLCK;
+                    var cmd = blocking ? OSX_FcntlCommand.F_SETLKW : OSX_FcntlCommand.F_SETLK;
+
+                    var r = OSX_fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), cmd, ref fl);
+                    if (r == -1)
+                    {
+                        var errno = (OSX_Errno)Stdlib.GetLastError();
+                        if ((cmd == OSX_FcntlCommand.F_SETLK) && (errno == OSX_Errno.EAGAIN || errno == OSX_Errno.EACCES))
+                            return FileDispatcher.NO_LOCK;
+                        if (errno == OSX_Errno.EINTR)
+                            return FileDispatcher.INTERRUPTED;
+
+                        UnixMarshal.ThrowExceptionForError((Errno)(int)errno);
                     }
 
                     return FileDispatcher.LOCKED;
@@ -924,7 +1006,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             Overlapped.Free(optr);
                     }
                 }
-                else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
+                else if (RuntimeUtil.IsLinux)
                 {
                     var fl = new Flock();
                     fl.l_whence = SeekFlags.SEEK_SET;
@@ -933,6 +1015,18 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     fl.l_type = LockType.F_UNLCK;
 
                     var r = Syscall.fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), FcntlCommand.F_SETLK, ref fl);
+                    if (r == -1)
+                        UnixMarshal.ThrowExceptionForLastErrorIf(r);
+                }
+                else if (RuntimeUtil.IsOSX)
+                {
+                    var fl = new OSX_Flock();
+                    fl.l_whence = SeekFlags.SEEK_SET;
+                    fl.l_len = size == long.MaxValue ? 0 : size;
+                    fl.l_start = pos;
+                    fl.l_type = OSX_LockType.F_UNLCK;
+
+                    var r = OSX_fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), OSX_FcntlCommand.F_SETLK, ref fl);
                     if (r == -1)
                         UnixMarshal.ThrowExceptionForLastErrorIf(r);
                 }

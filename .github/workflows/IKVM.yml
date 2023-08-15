@@ -156,6 +156,11 @@ jobs:
       with:
         version: "16.0"
         cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+    - name: Install apple-codesign
+      uses: actions-rs/install@v0.1
+      with:
+        crate: apple-codesign
+        version: latest
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0
       with:
@@ -422,9 +427,12 @@ jobs:
         sys:
         - windows
         - linux
+        - osx-x64
         exclude:
         - tfm: net461
           sys: linux
+        - tfm: net461
+          sys: osx-x64
         - run: IKVM.Tools.Exporter.Tests
           tfm: net461
         - run: IKVM.Tools.Importer.Tests
@@ -458,25 +466,34 @@ jobs:
           sys: windows
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net7.0
-          sys: linux
+          sys: osx-x64
         - run: IKVM.MSBuild.Tests
           tfm: net7.0
           sys: windows
         - run: IKVM.MSBuild.Tests
           tfm: net7.0
           sys: linux
+        - run: IKVM.MSBuild.Tests
+          tfm: net7.0
+          sys: osx-x64
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
           sys: windows
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
           sys: linux
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net7.0
+          sys: osx-x64
         - run: IKVM.Tests
           tfm: net7.0
           sys: windows
         - run: IKVM.Tests
           tfm: net7.0
           sys: linux
+        - run: IKVM.Tests
+          tfm: net7.0
+          sys: osx-x64
         - run: IKVM.Tools.Exporter.Tests
           tfm: net472
           sys: windows
@@ -492,11 +509,14 @@ jobs:
         - run: IKVM.Tools.Tests
           tfm: net7.0
           sys: linux
+        - run: IKVM.Tools.Tests
+          tfm: net7.0
+          sys: osx-x64
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
     - build-ikvm
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
@@ -517,8 +537,8 @@ jobs:
         Add-Content $env:GITHUB_ENV "`nIKVMPATH=$dir\ikvm"
         Add-Content $env:GITHUB_ENV "`nTMP=$dir\temp`nTEMP=$dir\temp`nTMPDIR=$dir\temp"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir\dotnet"
-    - name: Set Paths (Linux)
-      if: runner.os == 'Linux'
+    - name: Set Paths (Linux/OS X)
+      if: runner.os == 'Linux' || runner.os == 'macOS'
       shell: pwsh
       run: |
         $dir="${{ runner.temp }}/w"
@@ -530,6 +550,7 @@ jobs:
         Add-Content $env:GITHUB_ENV "`nTMP=$dir/temp`nTEMP=$dir/temp`nTMPDIR=$dir/temp"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir/dotnet"
     - name: Setup .NET 3.1
+      if: matrix.sys != 'osx-arm64'
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 3.1.x

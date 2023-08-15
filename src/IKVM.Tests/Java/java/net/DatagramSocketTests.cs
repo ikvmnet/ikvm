@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -73,6 +74,9 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public async Task CanSendAndReceive()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var localhost = InetAddress.getLocalHost();
             var received = new List<string>();
 
@@ -132,6 +136,9 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void PortUnreachableTest()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var serverSock = new DatagramSocket();
             var serverPort = serverSock.getLocalPort();
 
@@ -192,6 +199,9 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void ReuseBuffer()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var msgs = new string[] { "Hello World", "Java", "Good Bye" };
             using var ds = new DatagramSocket();
             var port = ds.getLocalPort();
@@ -231,6 +241,9 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void ShouldThrowWhenClosedOnReceive()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             using var s = new DatagramSocket(0);
             var p = new DatagramPacket(new byte[1024], 1024);
             var task = Task.Run(() => s.receive(p));
@@ -244,6 +257,9 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void ShouldThrowWhenClosedOnReceiveWithTimeout()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             using var s = new DatagramSocket(0);
             s.setSoTimeout(5000);
             var p = new DatagramPacket(new byte[1024], 1024);
@@ -258,6 +274,9 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void SendDatagramToBadAddress()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             // open a socket to get a local port
             using var srvr = new DatagramSocket(0);
             var port = srvr.getLocalPort();

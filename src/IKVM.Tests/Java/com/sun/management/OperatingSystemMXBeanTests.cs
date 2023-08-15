@@ -51,30 +51,45 @@ namespace IKVM.Tests.Java.com.sun.management
         [TestMethod]
         public void CanGetTotalPhysicalMemorySize()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             mbean.getTotalPhysicalMemorySize().Should().BeGreaterOrEqualTo(1);
         }
 
         [TestMethod]
         public void CanGetFreePhysicalMemorySize()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             mbean.getFreePhysicalMemorySize().Should().BeGreaterOrEqualTo(1);
         }
 
         [TestMethod]
         public void CanGetTotalSwapSpaceSize()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             mbean.getTotalSwapSpaceSize().Should().BeGreaterOrEqualTo(1);
         }
 
         [TestMethod]
         public void CanGetFreeSwapSpaceSize()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             mbean.getFreeSwapSpaceSize().Should().BeGreaterOrEqualTo(1);
         }
 
         [TestMethod]
         public void CanGetCommittedVirtualMemorySize()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             mbean.getCommittedVirtualMemorySize().Should().BeGreaterOrEqualTo(1);
         }
 

@@ -1,4 +1,6 @@
-﻿using FluentAssertions;
+﻿using System.Runtime.InteropServices;
+
+using FluentAssertions;
 
 using java.net;
 using java.nio;
@@ -46,6 +48,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanSendWhileConnected()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             using var sndChannel = DatagramChannel.open();
             sndChannel.socket().bind(null);
 

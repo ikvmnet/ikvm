@@ -61,6 +61,11 @@ namespace IKVM.Runtime.JNI.Memory
         /// </summary>
         public override bool IsInvalid => handle == IntPtr.Zero;
 
+        /// <summary>
+        /// Sets the memory region to executable.
+        /// </summary>
+        public abstract void SetExecutable();
+
     }
 
 }

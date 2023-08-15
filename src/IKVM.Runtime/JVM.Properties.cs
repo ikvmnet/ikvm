@@ -28,7 +28,9 @@ namespace IKVM.Runtime
             static readonly Lazy<string> homePath = new Lazy<string>(GetHomePath);
 
             /// <summary>
-            /// Gets the set of properties that are set by the user before initialization.
+            /// Gets the set of properties that are set by the user before initialization. Modification of values in this
+            /// dictionary must happen early in the program's initialization before any Java code has been accessed or
+            /// run.
             /// </summary>
             public static IDictionary<string, string> User => user;
 
@@ -525,11 +527,10 @@ namespace IKVM.Runtime
                 }
                 else if (RuntimeUtil.IsOSX)
                 {
-                    osname = "Mac OS X";
-                    osversion = "10.15";
-
                     // OpenJDK collects the version from a number of different places
                     // we should do that in the future
+                    osname = "Mac OS X";
+                    osversion = "10.15";
                 }
 
                 osname ??= Environment.OSVersion.ToString();
@@ -624,6 +625,28 @@ namespace IKVM.Runtime
 
                 if (RuntimeUtil.IsOSX)
                 {
+                    var home = SafeGetEnvironmentVariable("HOME");
+                    if (home != null)
+                        libraryPath.Add(Path.Combine(home, "Library/Java/Extensions"));
+
+                    libraryPath.Add("/Library/Java/Extensions");
+                    libraryPath.Add("/Network/Library/Java/Extensions");
+                    libraryPath.Add("/System/Library/Java/Extensions");
+                    libraryPath.Add("/usr/lib/java");
+
+                    // prefix with JAVA_LIBRARY_PATH
+                    var javaLibraryPath = SafeGetEnvironmentVariable("JAVA_LIBRARY_PATH");
+                    if (javaLibraryPath != null)
+                        libraryPath.Add(javaLibraryPath);
+
+                    // prefix with DYLD_LIBRARY_PATH
+                    var dyldLibraryPath = SafeGetEnvironmentVariable("DYLD_LIBRARY_PATH");
+                    if (dyldLibraryPath != null)
+                        libraryPath.Add(dyldLibraryPath);
+
+                    if (home != null)
+                        libraryPath.Add(home);
+
                     libraryPath.Add(".");
                 }
 

@@ -9,14 +9,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ImageTarget Include="net461|win7-x64" TargetFramework="net461" RuntimeIdentifier="win7-x64" Condition="$(_EnabledImageRuntimes.Contains(';win7-x64;'))" />
-        <ImageTarget Include="net461|win7-x86" TargetFramework="net461" RuntimeIdentifier="win7-x86" Condition="$(_EnabledImageRuntimes.Contains(';win7-x86;'))" />
-        <ImageTarget Include="net461|win81-arm" TargetFramework="net461" RuntimeIdentifier="win81-arm" Condition="$(_EnabledImageRuntimes.Contains(';win81-arm;'))" />
-        <ImageTarget Include="net461|linux-x64" TargetFramework="net461" RuntimeIdentifier="linux-x64" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))" />
-        <ImageTarget Include="net461|linux-arm" TargetFramework="net461" RuntimeIdentifier="linux-arm" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm;'))" />
-        <ImageTarget Include="net461|linux-musl-x64" TargetFramework="net461" RuntimeIdentifier="linux-musl-x64" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-x64;'))" />
-        <ImageTarget Include="net461|linux-musl-arm" TargetFramework="net461" RuntimeIdentifier="linux-musl-arm" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm;'))" />
-        <ImageTarget Include="net461|osx-x64" TargetFramework="net461" RuntimeIdentifier="osx-x64" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))" />
+        <ImageTarget Include="net472|win7-x64" TargetFramework="net472" RuntimeIdentifier="win7-x64" Condition="$(_EnabledImageRuntimes.Contains(';win7-x64;'))" />
+        <ImageTarget Include="net472|win7-x86" TargetFramework="net472" RuntimeIdentifier="win7-x86" Condition="$(_EnabledImageRuntimes.Contains(';win7-x86;'))" />
+        <ImageTarget Include="net472|win81-arm" TargetFramework="net472" RuntimeIdentifier="win81-arm" Condition="$(_EnabledImageRuntimes.Contains(';win81-arm;'))" />
+        <ImageTarget Include="net472|linux-x64" TargetFramework="net472" RuntimeIdentifier="linux-x64" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))" />
+        <ImageTarget Include="net472|linux-arm" TargetFramework="net472" RuntimeIdentifier="linux-arm" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm;'))" />
+        <ImageTarget Include="net472|linux-musl-x64" TargetFramework="net472" RuntimeIdentifier="linux-musl-x64" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-x64;'))" />
+        <ImageTarget Include="net472|linux-musl-arm" TargetFramework="net472" RuntimeIdentifier="linux-musl-arm" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm;'))" />
+        <ImageTarget Include="net472|osx-x64" TargetFramework="net472" RuntimeIdentifier="osx-x64" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))" />
         <ImageTarget Include="net6.0|win7-x64" TargetFramework="net6.0" RuntimeIdentifier="win7-x64" Condition="$(_EnabledImageRuntimes.Contains(';win7-x64;'))" />
         <ImageTarget Include="net6.0|win7-x86" TargetFramework="net6.0" RuntimeIdentifier="win7-x86" Condition="$(_EnabledImageRuntimes.Contains(';win7-x86;'))" />
         <ImageTarget Include="net6.0|win81-arm" TargetFramework="net6.0" RuntimeIdentifier="win81-arm" Condition="$(_EnabledImageRuntimes.Contains(';win81-arm;'))" />

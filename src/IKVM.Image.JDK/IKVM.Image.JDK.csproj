@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
     <PropertyGroup>
-        <TargetFrameworks>net461;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM JDK Runtime Image</Description>
@@ -46,6 +46,9 @@
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
         <ProjectReference Include="..\IKVM.Image.JDK.runtime.osx-x64\IKVM.Image.JDK.runtime.osx-x64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.osx-arm64\IKVM.Image.JDK.runtime.osx-arm64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
     </ItemGroup>

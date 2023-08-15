@@ -11,5 +11,5 @@ branches:
   develop:
     regex: ^develop$
     tag: dev
-    increment: Patch
+    increment: Minor
     

@@ -23,20 +23,12 @@
 
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <IncludeTargetPath>lib\net461\</IncludeTargetPath>
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <IncludeTargetPath>lib\net472\</IncludeTargetPath>
         </IncludeProjectReference>
         <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <IncludeTargetPath>lib\net461\</IncludeTargetPath>
-        </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
-        </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <IncludeTargetPath>lib\net472\</IncludeTargetPath>
         </IncludeProjectReference>
         <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
@@ -92,6 +84,17 @@
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
             <ProjectTargetPath>ikvmstub\net6.0\osx-x64</ProjectTargetPath>
+        </PublishProjectReference>
+
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-arm64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmc\net6.0\osx-arm64</ProjectTargetPath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-arm64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmstub\net6.0\osx-arm64</ProjectTargetPath>
         </PublishProjectReference>
 
     </ItemGroup>
