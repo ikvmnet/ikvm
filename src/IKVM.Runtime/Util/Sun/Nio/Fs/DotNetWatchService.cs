@@ -132,6 +132,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Fs
 
             public WatchServiceHandler(object fs, object key)
             {
+                this.fs = fs;
                 this.key = key;
                 ErrorHandler = OnError;
                 EventHandler = OnEvent;
