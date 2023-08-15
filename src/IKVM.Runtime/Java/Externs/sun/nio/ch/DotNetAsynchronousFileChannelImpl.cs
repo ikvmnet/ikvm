@@ -417,6 +417,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Flock structure on OSX. Fields are in a different order than Mono.Posix.
         /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
         struct OSX_Flock
         {
 
@@ -448,6 +449,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             EAGAIN = 35,
             EACCES = 13,
+            EINTR = 4,
+            EDEADLK = 11,
 
         }
 
