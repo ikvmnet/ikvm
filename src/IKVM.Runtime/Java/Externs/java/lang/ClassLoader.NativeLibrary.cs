@@ -65,8 +65,6 @@ namespace IKVM.Java.Externs.java.lang
             switch (name)
             {
                 case "jvm":
-                case "net":
-                case "nio":
                 case "jaas_nt":
                 case "awt":
                 case "splashscreen":

@@ -408,15 +408,15 @@ public class Net {
         throws IOException {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
-        return socket0(preferIPv6, stream, false, fastLoopback);
+        return IOUtil.newFD(socket0(preferIPv6, stream, false, fastLoopback));
     }
 
     static FileDescriptor serverSocket(boolean stream) {
-        return socket0(isIPv6Available(), stream, true, fastLoopback);
+        return IOUtil.newFD(socket0(isIPv6Available(), stream, true, fastLoopback));
     }
 
     // Due to oddities SO_REUSEADDR on windows reuse is ignored
-    private static native FileDescriptor socket0(boolean preferIPv6, boolean stream, boolean reuse,
+    private static native int socket0(boolean preferIPv6, boolean stream, boolean reuse,
                                       boolean fastLoopback);
 
     public static void bind(FileDescriptor fd, InetAddress addr, int port)

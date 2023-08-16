@@ -44,13 +44,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'read'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="address"></param>
         /// <param name="len"></param>
         /// <returns></returns>
         /// <exception cref="global::java.io.IOException"></exception>
-        public static unsafe int read(object self, object fd, long address, int len)
+        public static unsafe int read0(object fd, long address, int len)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -103,24 +102,19 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.io.IOException("Read failed.", e);
             }
-            finally
-            {
-                GC.KeepAlive(self);
-            }
 #endif
         }
 
         /// <summary>
         /// Implements the native method 'pread'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="address"></param>
         /// <param name="len"></param>
         /// <param name="position"></param>
         /// <returns></returns>
         /// <exception cref="global::java.io.IOException"></exception>
-        public static unsafe int pread(object self, object fd, long address, int len, long position)
+        public static unsafe int pread0(object fd, long address, int len, long position)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -139,30 +133,23 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             if (RuntimeUtil.IsLinux && stream is FileStream fs)
             {
-                try
+                if (fs.SafeFileHandle.IsInvalid)
+                    return IOStatus.UNAVAILABLE;
+
+                var n = Syscall.pread((int)fs.SafeFileHandle.DangerousGetHandle(), (IntPtr)address, (ulong)len, position);
+                if (n == -1)
                 {
-                    if (fs.SafeFileHandle.IsInvalid)
+                    // translate return values
+                    var errno = Stdlib.GetLastError();
+                    if (errno == Errno.EAGAIN)
                         return IOStatus.UNAVAILABLE;
+                    if (errno == Errno.EINTR)
+                        return IOStatus.INTERRUPTED;
 
-                    var n = Syscall.pread((int)fs.SafeFileHandle.DangerousGetHandle(), (IntPtr)address, (ulong)len, position);
-                    if (n == -1)
-                    {
-                        // translate return values
-                        var errno = Stdlib.GetLastError();
-                        if (errno == Errno.EAGAIN)
-                            return IOStatus.UNAVAILABLE;
-                        if (errno == Errno.EINTR)
-                            return IOStatus.INTERRUPTED;
-
-                        throw new global::java.io.IOException("Read failed.", new UnixIOException(errno));
-                    }
-
-                    return n > 0 ? (int)n : IOStatus.EOF;
+                    throw new global::java.io.IOException("Read failed.", new UnixIOException(errno));
                 }
-                finally
-                {
-                    GC.KeepAlive(self);
-                }
+
+                return n > 0 ? (int)n : IOStatus.EOF;
             }
             else
             {
@@ -228,10 +215,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     throw new global::java.io.IOException("Read failed.", e);
                 }
-                finally
-                {
-                    GC.KeepAlive(self);
-                }
             }
 #endif
         }
@@ -239,12 +222,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'readv'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="address"></param>
         /// <param name="len"></param>
         /// <returns></returns>
-        public static unsafe long readv(object self, object fd, long address, int len)
+        public static unsafe long readv0(object fd, long address, int len)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -310,24 +292,19 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.io.IOException("Read failed.", e);
             }
-            finally
-            {
-                GC.KeepAlive(self);
-            }
 #endif
         }
 
         /// <summary>
         /// Implements the native method 'write'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="address"></param>
         /// <param name="len"></param>
         /// <param name="append"></param>
         /// <returns></returns>
         /// <exception cref="global::java.io.IOException"></exception>
-        public static unsafe int write0(object self, object fd, long address, int len, bool append)
+        public static unsafe int write0(object fd, long address, int len, bool append)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -405,24 +382,19 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.io.IOException("Write failed.", e);
             }
-            finally
-            {
-                GC.KeepAlive(self);
-            }
 #endif
         }
 
         /// <summary>
         /// Implements the native method 'pwrite'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="address"></param>
         /// <param name="len"></param>
         /// <param name="position"></param>
         /// <returns></returns>
         /// <exception cref="global::java.io.IOException"></exception>
-        public static unsafe int pwrite(object self, object fd, long address, int len, long position)
+        public static unsafe int pwrite0(object fd, long address, int len, long position)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -441,29 +413,22 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             if (RuntimeUtil.IsLinux && stream is FileStream fs)
             {
-                try
+                if (fs.SafeFileHandle.IsInvalid)
+                    return IOStatus.UNAVAILABLE;
+
+                var n = Syscall.pwrite((int)fs.SafeFileHandle.DangerousGetHandle(), (void*)(IntPtr)address, (ulong)len, position);
+                if (n == -1)
                 {
-                    if (fs.SafeFileHandle.IsInvalid)
+                    var errno = Stdlib.GetLastError();
+                    if (errno == Errno.EAGAIN)
                         return IOStatus.UNAVAILABLE;
+                    if (errno == Errno.EINTR)
+                        return IOStatus.INTERRUPTED;
 
-                    var n = Syscall.pwrite((int)fs.SafeFileHandle.DangerousGetHandle(), (void*)(IntPtr)address, (ulong)len, position);
-                    if (n == -1)
-                    {
-                        var errno = Stdlib.GetLastError();
-                        if (errno == Errno.EAGAIN)
-                            return IOStatus.UNAVAILABLE;
-                        if (errno == Errno.EINTR)
-                            return IOStatus.INTERRUPTED;
-
-                        throw new global::java.io.IOException("Write failed.", new UnixIOException(errno));
-                    }
-
-                    return (int)n;
+                    throw new global::java.io.IOException("Write failed.", new UnixIOException(errno));
                 }
-                finally
-                {
-                    GC.KeepAlive(self);
-                }
+
+                return (int)n;
             }
             else
             {
@@ -527,10 +492,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     throw new global::java.io.IOException("Write failed.", e);
                 }
-                finally
-                {
-                    GC.KeepAlive(self);
-                }
             }
 #endif
         }
@@ -538,13 +499,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'writev0'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="address"></param>
         /// <param name="len"></param>
         /// <param name="append"></param>
         /// <returns></returns>
-        public static unsafe long writev0(object self, object fd, long address, int len, bool append)
+        public static unsafe long writev0(object fd, long address, int len, bool append)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -633,10 +593,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.io.IOException("Write failed.", e);
             }
-            finally
-            {
-                GC.KeepAlive(self);
-            }
 #endif
         }
 
@@ -647,7 +603,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="fd"></param>
         /// <param name="metaData"></param>
         /// <returns></returns>
-        public static int force(object self, object fd, bool metaData)
+        public static int force0(object fd, bool metaData)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -660,11 +616,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'truncate'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public static int truncate(object self, object fd, long size)
+        public static int truncate0(object fd, long size)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -703,10 +658,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'size'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <returns></returns>
-        public static long size(object self, object fd)
+        public static long size0(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -766,14 +720,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'lock'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="blocking"></param>
         /// <param name="pos"></param>
         /// <param name="size"></param>
         /// <param name="shared"></param>
         /// <returns></returns>
-        public static unsafe int @lock(object self, object fd, bool blocking, long pos, long size, bool shared)
+        public static unsafe int lock0(object fd, bool blocking, long pos, long size, bool shared)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -879,12 +832,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'release'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="pos"></param>
         /// <param name="size"></param>
         /// <exception cref="NotImplementedException"></exception>
-        public static unsafe void release(object self, object fd, long pos, long size)
+        public static unsafe void release0(object fd, long pos, long size)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -955,9 +907,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'close'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
-        public static void close(object self, object fd)
+        public static void close0(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();

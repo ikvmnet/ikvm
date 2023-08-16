@@ -111,7 +111,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         public static void setfdVal(global::java.io.FileDescriptor fd, int value)
         {
-            throw new NotSupportedException();
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            FileDescriptorAccessor.SetFd(fd, value);
+#endif
         }
 
         /// <summary>

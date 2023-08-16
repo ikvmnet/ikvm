@@ -62,7 +62,7 @@
             </_ClangProjectReferencesToTarget>
         </ItemGroup>
         <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="Build" BuildInParallel="False" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" />
-        <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="GetTargetItem" BuildInParallel="False" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" RebaseOutputs="true">
+        <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="GetClangTargetItem" BuildInParallel="False" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" ItemName="_ResolvedClangProjectReferenceTargetOutput" />
         </MSBuild>
         <ItemGroup>

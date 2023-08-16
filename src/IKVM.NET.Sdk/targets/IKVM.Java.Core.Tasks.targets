@@ -55,6 +55,8 @@
 
         <RemoveDir Directories="$(ClassOutputPath)" />
         <MakeDir Directories="$(ClassOutputPath)" />
+        <RemoveDir Directories="$(HeaderOutputPath)" />
+        <MakeDir Directories="$(HeaderOutputPath)" />
         <IkvmJavaCompiler
             Debug="$(_JavaCompilerDebug)"
             NoWarn="true"
@@ -62,6 +64,7 @@
             Source="$(LangVersion)"
             Target="$(JavaVersion)"
             Destination="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))"
+            HeaderDestination="$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))"
             Verbose="true"
             Sources="@(Compile)" />
 
@@ -69,8 +72,10 @@
         <ItemGroup>
             <_CompileJavaClassFiles Remove="@(_CompileJavaClassFiles)" />
             <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
+            <_CompileJavaClassFiles Remove="@(_CompileJavaHeaderFiles)" />
+            <_CompileJavaClassFiles Include="$(HeaderOutputPath)**\*.h" />
             <_CompileJavaStaleFiles Remove="@(_CompileJavaStaleFiles)" />
-            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles)" Condition="$([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime)" />
+            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles);@(_CompileJavaHeaderFiles)" Condition="$([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime)" />
         </ItemGroup>
         <Delete Files="@(_CompileJavaStaleFiles)" />
 

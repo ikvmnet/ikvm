@@ -68,15 +68,19 @@ public final class FileDescriptor {
         return socket;
     }
     
-    @ikvm.lang.Property(get = "getFd")
+    @ikvm.lang.Property(get = "getFd", set = "setFd")
     private int fd;
 
     private native int getFd();
 
-    @ikvm.lang.Property(get = "getHandle")
+    private native void setFd(int fd);
+
+    @ikvm.lang.Property(get = "getHandle", set = "setHandle")
     private long handle;
 
     private native long getHandle();
+
+    private native void setHandle(long handle);
 
     private Closeable parent;
     private List<Closeable> otherParents;

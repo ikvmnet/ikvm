@@ -9,6 +9,7 @@
 
     <PropertyGroup>
         <ClassOutputPath>$(IntermediateOutputPath)classes\</ClassOutputPath>
+        <HeaderOutputPath>$(IntermediateOutputPath)headers\</HeaderOutputPath>
     </PropertyGroup>
 
     <!-- References may be derived from various sources: ProjectReference or IkvmReference. In each case, compilation of the Java
@@ -17,6 +18,13 @@
     <Target Name="GetReferenceClasspath" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences" AfterTargets="ExportReferences">
         <ItemGroup>
             <Classpath Include="%(ReferencePathWithRefAssemblies.JavaClasspath)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' And '%(ReferencePathWithRefAssemblies.JavaClasspath)' != '' And '%(Filename)' != 'IKVM.Java' " />
+        </ItemGroup>
+    </Target>
+
+    <!-- Makes the generated header files available to Clang project types. -->
+    <Target Name="GetClangIncludeDirectories" Returns="@(GetClangIncludeDirectories)">
+        <ItemGroup>
+            <GetClangIncludeDirectories Include="$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))" />
         </ItemGroup>
     </Target>
 
@@ -131,6 +139,7 @@ Files = files.ToArray();
     <Target Name="CompileJava" DependsOnTargets="$(CompileJavaDependsOn)">
         <ItemGroup>
             <Convert Include="$(ClassOutputPath)**\*.class" />
+            <Header Include="$(HeaderOutputPath)**\*.h)" />
         </ItemGroup>
     </Target>
 
@@ -138,7 +147,9 @@ Files = files.ToArray();
         <Delete Files="$(_CompileJavaCoreStampFile)" />
         <Delete Files="$(_CompileJavaCoreJavacArgFile)" />
         <Delete Files="$(ClassOutputPath)\**\*.class" />
+        <Delete Files="$(HeaderOutputPath)\**\*.h" />
         <RemoveDir Directories="$(ClassOutputPath)" />
+        <RemoveDir Directories="$(HeaderOutputPath)" />
     </Target>
 
     <PropertyGroup>

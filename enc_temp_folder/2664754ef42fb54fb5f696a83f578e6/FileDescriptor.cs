@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
 using IKVM.Runtime;
@@ -90,7 +89,6 @@ namespace IKVM.Java.Externs.java.io
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            new Socket()
             throw new NotImplementedException();
 #endif
         }

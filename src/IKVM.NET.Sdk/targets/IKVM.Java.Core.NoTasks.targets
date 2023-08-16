@@ -128,6 +128,8 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
             <_JavaCompilerArgs Include="$(JavaVersion)" />
             <_JavaCompilerArgs Include="-d" />
             <_JavaCompilerArgs Include="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />
+            <_JavaCompilerArgs Include="-h" />
+            <_JavaCompilerArgs Include="$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))" />
             <!--<_JavaCompilerArgs Include="-verbose" />-->
             <_JavaCompilerArgs Include="@(_JavaCompilerArgsCompile->'%(FullPath)')" />
         </ItemGroup>
@@ -148,6 +150,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
             <_CompileJavaStartTime>$([System.DateTime]::Now.Ticks)</_CompileJavaStartTime>
         </PropertyGroup>
 
+        <MakeDir Directories="$(HeaderOutputPath)" />
         <MakeDir Directories="$(ClassOutputPath)" />
         <Message Text="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
         <Exec Command="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
@@ -155,7 +158,8 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         <!-- Remove files that were not modified by this compilation. -->
         <ItemGroup>
             <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
-            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles)" Condition=" '%(ModifiedTime)' == '' Or $([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime) " />
+            <_CompileJavaHeaderFiles Include="$(ClassOutputPath)**\*.h" />
+            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles);@(_CompileJavaHeaderFiles)" Condition=" '%(ModifiedTime)' == '' Or $([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime) " />
         </ItemGroup>
 
         <Delete Files="@(_CompileJavaStaleFiles)" />
