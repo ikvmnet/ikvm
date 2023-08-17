@@ -6,7 +6,6 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>nio</TargetName>
-        <TargetIdentifiers>win7-x64;win7-x86;win10-arm64;linux-x64;linux-arm;linux-arm64;osx-x64;osx-arm64</TargetIdentifiers>
         <LanguageStandard>c99</LanguageStandard>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\nio\ch</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\io</IncludeDirectories>
@@ -17,7 +16,7 @@
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
         <ProjectReference Include="..\libjava\libjava.clangproj" />
         <ProjectReference Include="..\libnet\libnet.clangproj" />
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" Properties="TargetFramework=net6.0" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
         <Dependencies Include="ws2_32;advapi32" />

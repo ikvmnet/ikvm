@@ -19,11 +19,6 @@
             <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\win81-arm\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>win81-arm</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
         <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\win10-arm64\**\*">
             <TargetFramework>any</TargetFramework>
             <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>

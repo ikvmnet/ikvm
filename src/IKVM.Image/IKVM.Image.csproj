@@ -92,13 +92,6 @@
         </IkvmImageItem>
 
         <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\win81-arm\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>win81-arm</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-
-        <!-- files directly part of this project -->
         <IkvmImageItem Include="ikvm\any\win10-arm64\**\*">
             <TargetFramework>any</TargetFramework>
             <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>

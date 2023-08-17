@@ -6,7 +6,6 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>net</TargetName>
-        <TargetIdentifiers>win7-x64;win7-x86;win10-arm64;linux-x64;linux-arm;linux-arm64;osx-x64;osx-arm64</TargetIdentifiers>
         <LanguageStandard>c99</LanguageStandard>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\net</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net</IncludeDirectories>
@@ -15,13 +14,18 @@
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
         <ProjectReference Include="..\libjava\libjava.clangproj" />
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" Properties="TargetFramework=net6.0" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
         <Dependencies Include="ws2_32;secur32;iphlpapi;delayimp;advapi32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        <Dependencies Include="pthread" />
+        <!--<Dependencies Include="pthread" />-->
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetTriple.Contains('musl'))">
+        <PreprocessorDefinitions Include="__SIGRTMIN=32" />
+        <PreprocessorDefinitions Include="__SIGRTMAX=(_NSIG-1)" />
+        <IncludeDirectories Include="musl" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\net\**\*.c" />
