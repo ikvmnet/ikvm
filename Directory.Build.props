@@ -16,10 +16,6 @@
         
         <SupportedImageRuntimes>win7-x64;win7-x86;win81-arm;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedImageRuntimes>
         <EnabledImageRuntimes Condition=" '$(EnabledImageRuntimes)' == '' ">$(SupportedImageRuntimes)</EnabledImageRuntimes>
-
-        <EnabledRuntimes>win7-x64;linux-x64</EnabledRuntimes>
-        <EnabledToolRuntimes>win7-x64;linux-x64</EnabledToolRuntimes>
-        <EnabledImageRuntimes>win7-x64;linux-x64</EnabledImageRuntimes>
     </PropertyGroup>
 
     <PropertyGroup>
