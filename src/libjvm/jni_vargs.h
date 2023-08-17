@@ -62,12 +62,12 @@ JNIEXPORT type JNICALL __JNI_Call##Type##Method(JNIEnv* pEnv, jobject obj, jmeth
 	va_end(args);\
 	return ret;\
 }\
-JNIEXPORT type JNICALL JNI_Call##Type##MethodV(JNIEnv* pEnv, jobject obj, jmethodID methodID, va_list args)\
+JNIEXPORT type JNICALL __JNI_Call##Type##MethodV(JNIEnv* pEnv, jobject obj, jmethodID methodID, va_list args)\
 {\
 	MAKE_ARG_ARRAY(pEnv, args);\
 	return (*pEnv)->Call##Type##MethodA(pEnv, obj, methodID, argv);\
 }\
-JNIEXPORT type JNICALL JNI_CallNonvirtual##Type##Method(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, ...)\
+JNIEXPORT type JNICALL __JNI_CallNonvirtual##Type##Method(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, ...)\
 {\
 	va_list args;\
 	va_start(args, methodID);\

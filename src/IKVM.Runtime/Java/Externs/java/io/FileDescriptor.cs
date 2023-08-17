@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
@@ -22,6 +24,11 @@ namespace IKVM.Java.Externs.java.io
 
 #endif
 
+        /// <summary>
+        /// Invokes the Win32 method 'GetStdHandle'.
+        /// </summary>
+        /// <param name="nStdHandle"></param>
+        /// <returns></returns>
         [DllImport("kernel32")]
         static extern IntPtr GetStdHandle(int nStdHandle);
 
@@ -80,18 +87,109 @@ namespace IKVM.Java.Externs.java.io
         }
 
         /// <summary>
+        /// Invokes the Win32 method 'WSADuplicateSocket'.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="dwProcessId"></param>
+        /// <param name="lpProtocolInfo"></param>
+        /// <returns></returns>
+        [DllImport("ws2_32", SetLastError = true)]
+        unsafe static extern int WSADuplicateSocket(IntPtr s, int dwProcessId, WSAPROTOCOL_INFOW* lpProtocolInfo);
+
+        /// <summary>
+        /// Invokes the Win32 method 'closesocket'.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        [DllImport("ws2_32", SetLastError = true)]
+        static extern int closesocket(IntPtr s);
+
+        /// <summary>
+        /// Invokes teh Win32 method 'WSAGetLastError'.
+        /// </summary>
+        [DllImport("ws2_32", SetLastError = true)]
+        static extern int WSAGetLastError();
+
+        public const int SO_PROTOCOL_INFOW = 0x2005;
+
+        /// <summary>
+        /// Implementation of the Win32 'WSAPROTOCOL_INFOW' structure.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        unsafe struct WSAPROTOCOL_INFOW
+        {
+
+            internal const int WSAPROTOCOL_LEN = 255;
+
+            internal uint dwServiceFlags1;
+            internal uint dwServiceFlags2;
+            internal uint dwServiceFlags3;
+            internal uint dwServiceFlags4;
+            internal uint dwProviderFlags;
+            internal Guid ProviderId;
+            internal uint dwCatalogEntryId;
+            internal WSAPROTOCOLCHAIN ProtocolChain;
+            internal int iVersion;
+            internal AddressFamily iAddressFamily;
+            internal int iMaxSockAddr;
+            internal int iMinSockAddr;
+            internal SocketType iSocketType;
+            internal ProtocolType iProtocol;
+            internal int iProtocolMaxOffset;
+            internal int iNetworkByteOrder;
+            internal int iSecurityScheme;
+            internal uint dwMessageSize;
+            internal uint dwProviderReserved;
+            internal fixed char szProtocol[WSAPROTOCOL_LEN + 1];
+
+        }
+
+        /// <summary>
+        /// Implementation of the Win32 'WSAPROTOCOLCHAIN' structure.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        unsafe struct WSAPROTOCOLCHAIN
+        {
+
+            internal const int MAX_PROTOCOL_CHAIN = 7;
+
+            internal int ChainLen;
+            internal fixed uint ChainEntries[MAX_PROTOCOL_CHAIN];
+
+        }
+
+        /// <summary>
         /// Implements the native method 'setFd'.
         /// </summary>
         /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <exception cref="NotImplementedException"></exception>
-        public static void setFd(object self, int fd)
+        /// <exception cref="PlatformNotSupportedException"></exception>
+        public static unsafe void setFd(object self, int fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            new Socket()
-            throw new NotImplementedException();
+#if NETFRAMEWORK
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var protocolInfo = new byte[sizeof(WSAPROTOCOL_INFOW)];
+                fixed (byte* protocolInfoPtr = protocolInfo)
+                {
+                    var result = WSADuplicateSocket((IntPtr)fd, Process.GetCurrentProcess().Id, (WSAPROTOCOL_INFOW*)protocolInfoPtr);
+                    if (result != 0)
+                        throw new Win32Exception(WSAGetLastError());
+                }
+
+                FileDescriptorAccessor.SetSocket(self, new Socket(new SocketInformation() { ProtocolInformation = protocolInfo }));
+                closesocket((IntPtr)fd);
+                return;
+            }
+
+            throw new PlatformNotSupportedException();
+#else
+            FileDescriptorAccessor.SetSocket(self, new Socket(new SafeSocketHandle((IntPtr)fd, true)));
+#endif
 #endif
         }
 
