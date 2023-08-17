@@ -22,7 +22,6 @@
         <Dependencies Include="ws2_32;advapi32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        <Dependencies Include="pthread" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
         <Dependencies Include="pthread" />
