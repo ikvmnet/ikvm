@@ -12,8 +12,6 @@ namespace IKVM.Runtime
     static class NativeLibrary
     {
 
-#if NETFRAMEWORK
-
         const int LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR = 0x00000100;
         const int LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000;
 
@@ -84,8 +82,6 @@ namespace IKVM.Runtime
         /// <returns></returns>
         [DllImport("dl", EntryPoint = "dlsym")]
         static extern nint dlsym(nint handle, string symbol);
-
-#endif
 
         /// <summary>
         /// Invokes the Windows GetProcAddress function, handling 32-bit mangled names.
@@ -167,14 +163,10 @@ namespace IKVM.Runtime
         /// <exception cref="PlatformNotSupportedException"></exception>
         static nint LoadImpl(string nameOrPath)
         {
-#if NETFRAMEWORK
             if (RuntimeUtil.IsWindows)
                 return LoadLibraryEx(nameOrPath, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
             else
                 return dlopen(nameOrPath, RTLD_NOW | RTLD_GLOBAL);
-#else
-            return System.Runtime.InteropServices.NativeLibrary.TryLoad(nameOrPath, typeof(NativeLibrary).Assembly, DllImportSearchPath.SafeDirectories | DllImportSearchPath.UseDllDirectoryForDependencies, out var h) ? h : 0;
-#endif
         }
 
         /// <summary>
