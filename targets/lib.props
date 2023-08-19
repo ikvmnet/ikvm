@@ -49,7 +49,7 @@
 
     <!-- known global values -->
     <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetTriple.Contains('-windows-'))">
-        <SystemIncludeDirectories>$(SystemIncludeDirectories);$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\crt\include\'))</SystemIncludeDirectories>
+        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\crt\include\</SystemIncludeDirectories>
         <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\sdk\include\shared\</SystemIncludeDirectories>
         <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\sdk\include\ucrt\</SystemIncludeDirectories>
         <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\sdk\include\um\</SystemIncludeDirectories>

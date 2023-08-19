@@ -48,9 +48,4 @@
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common</IncludeDirectories>
     </PropertyGroup>
 
-    <!-- standard OpenJDK includes -->
-    <PropertyGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        
-    </PropertyGroup>
-
 </Project>
