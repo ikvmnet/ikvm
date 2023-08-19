@@ -19,7 +19,7 @@
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libjvm\libjvm.clangproj " />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libfdlibm\libfdlibm.clangproj " />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libverify\libverify.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libjava\libjava.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libikvm\libikvm.clangproj" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libnet\libnet.clangproj" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libnio\libnio.clangproj" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libunpack\libunpack.clangproj" />

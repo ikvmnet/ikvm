@@ -50,7 +50,7 @@
 
     <!-- standard OpenJDK includes -->
     <PropertyGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)build\linux-x86_64-normal-server-release\jdk\gensrc_headers</IncludeDirectories>
+        
     </PropertyGroup>
 
 </Project>

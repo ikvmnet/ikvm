@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -20,8 +21,8 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        [DllImport("kernel32.dll", EntryPoint = "LoadLibraryEx", SetLastError = true)]
-        static extern nint LoadLibraryEx(string path, nint hFile, int dwFlags);
+        [DllImport("kernel32.dll", EntryPoint = "LoadLibraryExW", CharSet = CharSet.Unicode, SetLastError = true)]
+        static extern nint LoadLibraryExW(string path, nint hFile, int dwFlags);
 
         /// <summary>
         /// Invokes the Windows FreeLibrary function.
@@ -132,9 +133,9 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static string MapLibraryName(string libname)
         {
-            if (RuntimeUtil.IsWindows)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return libname + ".dll";
-            else if (RuntimeUtil.IsOSX)
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 return "lib" + libname + ".dylib";
             else
                 return "lib" + libname + ".so";
@@ -160,11 +161,10 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="nameOrPath"></param>
         /// <returns></returns>
-        /// <exception cref="PlatformNotSupportedException"></exception>
         static nint LoadImpl(string nameOrPath)
         {
-            if (RuntimeUtil.IsWindows)
-                return LoadLibraryEx(nameOrPath, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return LoadLibraryExW(nameOrPath, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
             else
                 return dlopen(nameOrPath, RTLD_NOW | RTLD_GLOBAL);
         }
@@ -174,17 +174,12 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="handle"></param>
         /// <returns></returns>
-        /// <exception cref="PlatformNotSupportedException"></exception>
         public static void Free(nint handle)
         {
-#if NETFRAMEWORK
-            if (RuntimeUtil.IsWindows)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 FreeLibrary(handle);
             else
                 dlclose(handle);
-#else
-            System.Runtime.InteropServices.NativeLibrary.Free(handle);
-#endif
         }
 
         /// <summary>
@@ -199,22 +194,10 @@ namespace IKVM.Runtime
         {
             try
             {
-#if NETFRAMEWORK
-                if (RuntimeUtil.IsWindows)
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                     return Environment.Is64BitProcess == false ? GetProcAddress32(handle, name, argl) : GetProcAddress(handle, name);
                 else
                     return dlsym(handle, name);
-#else
-                nint h = 0;
-
-                if (RuntimeUtil.IsWindows)
-                    if (Environment.Is64BitProcess == false && GetWin32ExportName(name, argl) is string n)
-                        if (System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, n, out h))
-                            return h;
-
-                if (System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, name, out h))
-                    return h;
-#endif
             }
             catch (EntryPointNotFoundException)
             {

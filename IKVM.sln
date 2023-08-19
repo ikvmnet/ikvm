@@ -305,8 +305,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "targets", "targets", "{F63A
 		targets\openjdk.lib.targets = targets\openjdk.lib.targets
 	EndProjectSection
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjava", "src\libjava\libjava.clangproj", "{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}"
-EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libfdlibm", "src\libfdlibm\libfdlibm.clangproj", "{4941997B-ACD9-4A29-88C3-36CEB5ED9C6D}"
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libverify", "src\libverify\libverify.clangproj", "{61AD88EF-3D77-4BBE-94F9-6506428263D7}"
@@ -320,6 +318,8 @@ EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libnio", "src\libnio\libnio.clangproj", "{65D283A5-61F4-4E99-AB7D-51C27DAE7A70}"
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libnet", "src\libnet\libnet.clangproj", "{9A35E758-5859-4749-AA85-C788A30173BE}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libikvm", "src\libikvm\libikvm.clangproj", "{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -679,10 +679,6 @@ Global
 		{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4941997B-ACD9-4A29-88C3-36CEB5ED9C6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4941997B-ACD9-4A29-88C3-36CEB5ED9C6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4941997B-ACD9-4A29-88C3-36CEB5ED9C6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -711,6 +707,10 @@ Global
 		{9A35E758-5859-4749-AA85-C788A30173BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9A35E758-5859-4749-AA85-C788A30173BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9A35E758-5859-4749-AA85-C788A30173BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
