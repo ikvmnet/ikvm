@@ -119,6 +119,10 @@ namespace IKVM.Runtime
                     {
                         initialized = true;
 
+                        // preload internal native libraries
+                        NativeLibrary.Load("jvm");
+                        NativeLibrary.Load("ikvm");
+
                         // always required
                         RuntimeHelpers.RunClassConstructor(typeof(java.lang.String).TypeHandle);
 
@@ -429,20 +433,6 @@ namespace IKVM.Runtime
                 // TODO this shouldn't be here
                 return null;
             }
-#endif
-        }
-
-#endif
-
-#if !IMPORTER && !EXPORTER
-
-        // helper for JNI (which doesn't have access to core library internals)
-        internal static object NewDirectByteBuffer(long address, int capacity)
-        {
-#if FIRST_PASS
-            return null;
-#else
-            return java.nio.DirectByteBuffer.__new(address, capacity);
 #endif
         }
 

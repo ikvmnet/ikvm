@@ -112,7 +112,7 @@ namespace IKVM.Runtime.JNI
 #else
             if (pAttachArgs != null)
             {
-                if (!JNIVM.IsSupportedJniVersion(pAttachArgs->version) || pAttachArgs->version == JNIEnv.JNI_VERSION_1_1)
+                if (!JNIVM.IsSupportedJNIVersion(pAttachArgs->version) || pAttachArgs->version == JNIEnv.JNI_VERSION_1_1)
                 {
                     *penv = null;
                     return JNIEnv.JNI_EVERSION;
@@ -178,7 +178,7 @@ namespace IKVM.Runtime.JNI
 
         internal static jint GetEnv(JavaVM* pJVM, void** penv, jint version)
         {
-            if (JNIVM.IsSupportedJniVersion(version))
+            if (JNIVM.IsSupportedJNIVersion(version))
             {
                 var env = TlsHack.ManagedJNIEnv;
                 if (env != null)

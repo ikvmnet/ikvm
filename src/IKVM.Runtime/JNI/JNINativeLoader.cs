@@ -116,7 +116,7 @@ namespace IKVM.Runtime.JNI
                                 f.Leave(w);
                             }
 
-                            if (JNIVM.IsSupportedJniVersion(v) == false)
+                            if (JNIVM.IsSupportedJNIVersion(v) == false)
                             {
                                 var msg = $"Unsupported JNI version 0x{v:X} required by {filename}";
                                 Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", msg);

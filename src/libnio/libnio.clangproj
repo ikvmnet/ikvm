@@ -28,6 +28,10 @@
         <AdditionalLinkOptions Include="-framework CoreFoundation" />
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="**\*.c" />
+        <Compile Include="**\*.cpp" />
+    </ItemGroup>
+    <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\DatagramChannelImpl.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\DatagramDispatcher.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\FileChannelImpl.c" />
