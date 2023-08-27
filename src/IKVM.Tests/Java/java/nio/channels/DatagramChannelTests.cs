@@ -2,6 +2,7 @@
 
 using FluentAssertions;
 
+using java.lang;
 using java.net;
 using java.nio;
 using java.nio.channels;
@@ -14,6 +15,27 @@ namespace IKVM.Tests.Java.java.nio.channels
     [TestClass]
     public class DatagramChannelTests
     {
+
+        [TestMethod]
+        public void CanBindNull()
+        {
+            using var dc = DatagramChannel.open();
+            dc.bind(null);
+        }
+
+        [TestMethod]
+        public void CanBindNullIPv4()
+        {
+            using var dc = DatagramChannel.open(StandardProtocolFamily.INET);
+            dc.bind(null);
+        }
+
+        [TestMethod]
+        public void CanBindNullIPv6()
+        {
+            using var dc = DatagramChannel.open(StandardProtocolFamily.INET6);
+            dc.bind(null);
+        }
 
         [TestMethod]
         public void ReuseAddressShouldSet()
@@ -81,6 +103,19 @@ namespace IKVM.Tests.Java.java.nio.channels
 
             rcvChannel.close();
             sndChannel.close();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(IllegalArgumentException))]
+        public void ShouldFailAdhocSendWhenConnected()
+        {
+            var dc = DatagramChannel.open().bind(new InetSocketAddress(0));
+            var sa = new InetSocketAddress("127.0.0.1", 14121);
+            dc.connect(sa);
+
+            var bd = new InetSocketAddress("127.0.0.1", 14122);
+            var bb = ByteBuffer.allocateDirect(256);
+            dc.send(bb, bd);
         }
 
     }

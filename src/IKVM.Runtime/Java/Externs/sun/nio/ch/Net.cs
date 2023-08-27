@@ -245,38 +245,38 @@ namespace IKVM.Java.Externs.sun.nio.ch
             return false;
         }
 
-//        /// <summary>
-//        /// Implements the native method for 'socket0'.
-//        /// </summary>
-//        /// <param name="preferIPv6"></param>
-//        /// <param name="stream"></param>
-//        /// <param name="reuse"></param>
-//        /// <param name="fastLoopback"></param>
-//        /// <returns></returns>
-//        public static object socket0(bool preferIPv6, bool stream, bool reuse, bool fastLoopback)
-//        {
-//#if FIRST_PASS
-//            throw new NotImplementedException();
-//#else
-//            return InvokeFunc(() =>
-//            {
-//                var addressFamily = preferIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
-//                var socketType = stream ? SocketType.Stream : SocketType.Dgram;
-//                var protocolType = stream ? ProtocolType.Tcp : ProtocolType.Udp;
-//                var socket = new Socket(addressFamily, socketType, protocolType);
+        //        /// <summary>
+        //        /// Implements the native method for 'socket0'.
+        //        /// </summary>
+        //        /// <param name="preferIPv6"></param>
+        //        /// <param name="stream"></param>
+        //        /// <param name="reuse"></param>
+        //        /// <param name="fastLoopback"></param>
+        //        /// <returns></returns>
+        //        public static object socket0(bool preferIPv6, bool stream, bool reuse, bool fastLoopback)
+        //        {
+        //#if FIRST_PASS
+        //            throw new NotImplementedException();
+        //#else
+        //            return InvokeFunc(() =>
+        //            {
+        //                var addressFamily = preferIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
+        //                var socketType = stream ? SocketType.Stream : SocketType.Dgram;
+        //                var protocolType = stream ? ProtocolType.Tcp : ProtocolType.Udp;
+        //                var socket = new Socket(addressFamily, socketType, protocolType);
 
-//                if (preferIPv6)
-//                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, 0);
+        //                if (preferIPv6)
+        //                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, 0);
 
-//                if (stream == false)
-//                    SetConnectionReset(socket, false);
+        //                if (stream == false)
+        //                    SetConnectionReset(socket, false);
 
-//                var fd = new global::java.io.FileDescriptor();
-//                FileDescriptorAccessor.SetSocket(fd, socket);
-//                return fd;
-//            });
-//#endif
-//        }
+        //                var fd = new global::java.io.FileDescriptor();
+        //                FileDescriptorAccessor.SetSocket(fd, socket);
+        //                return fd;
+        //            });
+        //#endif
+        //        }
 
         /// <summary>
         /// Implements the native method for 'bind0'.
@@ -939,14 +939,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
         }
 
-        /// <summary>
-        /// Implements the native method for 'initIDs'.
-        /// </summary>
-        /// <returns></returns>
-        public static void initIDs()
-        {
+        ///// <summary>
+        ///// Implements the native method for 'initIDs'.
+        ///// </summary>
+        ///// <returns></returns>
+        //public static void initIDs()
+        //{
 
-        }
+        //}
 
         /// <summary>
         /// Implements the native method 'pollinValue'.
