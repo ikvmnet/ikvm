@@ -2,6 +2,22 @@
 #include <jvm.h>
 #include "jvm.h"
 
+#if defined WIN32
+#include <winsock2.h>
+#endif
+
+#if defined LINUX | MACOSX
+#include <unistd.h>
+#include <pthread.h>
+#include <errno.h>
+#include <dlfcn.h>
+#include <sys/socket.h>
+#endif
+
+#if defined LINUX | MACOSX
+static pthread_mutex_t dl_mutex;
+#endif
+
 jint JNICALL JVM_GetInterfaceVersion()
 {
     return 0;
@@ -3322,17 +3338,21 @@ jint JNICALL JVM_InitializeSocketLibrary()
 
 jint JNICALL JVM_Socket(jint domain, jint type, jint protocol)
 {
-    return 0;
+    return socket(domain, type, protocol);
 }
 
 jint JNICALL JVM_SocketClose(jint fd)
 {
-    return 0;
+#ifdef WIN32
+    return closesocket(fd);
+#else
+    return close(fd);
+#endif
 }
 
 jint JNICALL JVM_SocketShutdown(jint fd, jint howto)
 {
-    return 0;
+    return shutdown(fd, howto);
 }
 
 jint JNICALL JVM_Recv(jint fd, char* buf, jint nBytes, jint flags)
@@ -3410,19 +3430,25 @@ void* JNICALL JVM_LoadLibrary(const char* name)
     return 0;
 }
 
-//
-//JVM_LEAF(void, JVM_UnloadLibrary(void* handle))
-//JVMWrapper("JVM_UnloadLibrary");
-//os::dll_unload(handle);
-//JVM_END
-//
-//
-// 
-// 
+void JNICALL JVM_UnloadLibrary(void* handle)
+{
+#if WIN32
+    FreeLibrary((HMODULE)handle);
+#else
+    dlclose(handle);
+#endif
+}
 
 void* JNICALL JVM_FindLibraryEntry(void* handle, const char* name)
 {
-    return 0;
+#if WIN32
+    return (void*)::GetProcAddress((HMODULE)handle, name);
+#else
+    pthread_mutex_lock(&dl_mutex);
+    void* res = dlsym(handle, name);
+    pthread_mutex_unlock(&dl_mutex);
+    return res;
+#endif
 }
 
 //

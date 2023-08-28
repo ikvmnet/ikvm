@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 using System.Runtime.InteropServices;
 
 using FluentAssertions;
@@ -1656,6 +1655,10 @@ namespace IKVM.Tests.Java.sun.misc
         [TestMethod]
         public void CanCompareAndSwapLongInIntArrayUnaligned()
         {
+            if (RuntimeInformation.OSArchitecture == Architecture.Arm ||
+                RuntimeInformation.OSArchitecture == Architecture.Arm64)
+                return;
+
             var a = new int[16];
             for (int i = 0; i < 4; i++)
             {

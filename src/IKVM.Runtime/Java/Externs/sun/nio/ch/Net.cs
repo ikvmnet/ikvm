@@ -209,14 +209,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
 #endif
 
-        /// <summary>
-        /// Implements the native method for 'isIPv6Available0'.
-        /// </summary>
-        /// <returns></returns>
-        public static bool isIPv6Available0()
-        {
-            return Socket.OSSupportsIPv6;
-        }
+        ///// <summary>
+        ///// Implements the native method for 'isIPv6Available0'.
+        ///// </summary>
+        ///// <returns></returns>
+        //public static bool isIPv6Available0()
+        //{
+        //    return Socket.OSSupportsIPv6;
+        //}
 
         /// <summary>
         /// Implements the native method for 'isExclusiveBindAvailable'.
