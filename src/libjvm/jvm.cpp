@@ -3427,7 +3427,11 @@ int JNICALL JVM_GetHostName(char* name, int namelen)
 
 void* JNICALL JVM_LoadLibrary(const char* name)
 {
-    return 0;
+#ifdef WIN32
+    return LoadLibraryEx(name, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+#else
+    return dlopen(name, RTLD_NOW | RTLD_GLOBAL);
+#endif
 }
 
 void JNICALL JVM_UnloadLibrary(void* handle)

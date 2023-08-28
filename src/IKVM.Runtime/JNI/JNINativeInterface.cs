@@ -545,8 +545,8 @@ namespace IKVM.Runtime.JNI
             handle->EnsureLocalCapacity = (void*)Marshal.GetFunctionPointerForDelegate(EnsureLocalCapacityDelegate);
             
             handle->AllocObject = (void*)Marshal.GetFunctionPointerForDelegate(AllocObjectDelegate);
-            handle->NewObject = (void*)NativeLibrary.GetExport(libjvm, "__JNI_NewObject", 0);
-            handle->NewObjectV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_NewObjectV", 0);
+            handle->NewObject = (void*)NativeLibrary.GetExport(libjvm, "__JNI_NewObject");
+            handle->NewObjectV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_NewObjectV");
             handle->NewObjectA = (void*)Marshal.GetFunctionPointerForDelegate(NewObjectADelegate);
 
             handle->GetObjectClass = (void*)Marshal.GetFunctionPointerForDelegate(GetObjectClassDelegate);
@@ -554,84 +554,84 @@ namespace IKVM.Runtime.JNI
 
             handle->GetMethodID = (void*)Marshal.GetFunctionPointerForDelegate(GetMethodIDDelegate);
 
-            handle->CallObjectMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallObjectMethod", 0);
-            handle->CallObjectMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallObjectMethodV", 0);
+            handle->CallObjectMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallObjectMethod");
+            handle->CallObjectMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallObjectMethodV");
             handle->CallObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallObjectMethodADelegate);
 
-            handle->CallBooleanMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallBooleanMethod", 0);
-            handle->CallBooleanMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallBooleanMethodV", 0);
+            handle->CallBooleanMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallBooleanMethod");
+            handle->CallBooleanMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallBooleanMethodV");
             handle->CallBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallBooleanMethodADelegate);
 
-            handle->CallByteMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallByteMethod", 0);
-            handle->CallByteMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallByteMethodV", 0);
+            handle->CallByteMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallByteMethod");
+            handle->CallByteMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallByteMethodV");
             handle->CallByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallByteMethodADelegate);
 
-            handle->CallCharMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallCharMethod", 0);
-            handle->CallCharMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallCharMethodV", 0);
+            handle->CallCharMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallCharMethod");
+            handle->CallCharMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallCharMethodV");
             handle->CallCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallCharMethodADelegate);
 
-            handle->CallShortMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallShortMethod", 0);
-            handle->CallShortMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallShortMethodV", 0);
+            handle->CallShortMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallShortMethod");
+            handle->CallShortMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallShortMethodV");
             handle->CallShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallShortMethodADelegate);
 
-            handle->CallIntMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallIntMethod", 0);
-            handle->CallIntMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallIntMethodV", 0);
+            handle->CallIntMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallIntMethod");
+            handle->CallIntMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallIntMethodV");
             handle->CallIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallIntMethodADelegate);
 
-            handle->CallLongMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallLongMethod", 0);
-            handle->CallLongMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallLongMethodV", 0);
+            handle->CallLongMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallLongMethod");
+            handle->CallLongMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallLongMethodV");
             handle->CallLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallLongMethodADelegate);
 
-            handle->CallFloatMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallFloatMethod", 0);
-            handle->CallFloatMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallFloatMethodV", 0);
+            handle->CallFloatMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallFloatMethod");
+            handle->CallFloatMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallFloatMethodV");
             handle->CallFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallFloatMethodADelegate);
 
-            handle->CallDoubleMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallDoubleMethod", 0);
-            handle->CallDoubleMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallDoubleMethodV", 0);
+            handle->CallDoubleMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallDoubleMethod");
+            handle->CallDoubleMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallDoubleMethodV");
             handle->CallDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallDoubleMethodADelegate);
 
-            handle->CallVoidMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallVoidMethod", 0);
-            handle->CallVoidMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallVoidMethodV", 0);
+            handle->CallVoidMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallVoidMethod");
+            handle->CallVoidMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallVoidMethodV");
             handle->CallVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallVoidMethodADelegate);
 
-            handle->CallNonvirtualObjectMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualObjectMethod", 0);
-            handle->CallNonvirtualObjectMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualObjectMethodV", 0);
+            handle->CallNonvirtualObjectMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualObjectMethod");
+            handle->CallNonvirtualObjectMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualObjectMethodV");
             handle->CallNonvirtualObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualObjectMethodADelegate);
 
-            handle->CallNonvirtualBooleanMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualBooleanMethod", 0);
-            handle->CallNonvirtualBooleanMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualBooleanMethodV", 0);
+            handle->CallNonvirtualBooleanMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualBooleanMethod");
+            handle->CallNonvirtualBooleanMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualBooleanMethodV");
             handle->CallNonvirtualBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualBooleanMethodADelegate);
 
-            handle->CallNonvirtualByteMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualByteMethod", 0);
-            handle->CallNonvirtualByteMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualByteMethodV", 0);
+            handle->CallNonvirtualByteMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualByteMethod");
+            handle->CallNonvirtualByteMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualByteMethodV");
             handle->CallNonvirtualByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualByteMethodADelegate);
 
-            handle->CallNonvirtualCharMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualCharMethod", 0);
-            handle->CallNonvirtualCharMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualCharMethodV", 0);
+            handle->CallNonvirtualCharMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualCharMethod");
+            handle->CallNonvirtualCharMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualCharMethodV");
             handle->CallNonvirtualCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualCharMethodADelegate);
 
-            handle->CallNonvirtualShortMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualShortMethod", 0);
-            handle->CallNonvirtualShortMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualShortMethodV", 0);
+            handle->CallNonvirtualShortMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualShortMethod");
+            handle->CallNonvirtualShortMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualShortMethodV");
             handle->CallNonvirtualShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualShortMethodADelegate);
 
-            handle->CallNonvirtualIntMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualIntMethod", 0);
-            handle->CallNonvirtualIntMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualIntMethodV", 0);
+            handle->CallNonvirtualIntMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualIntMethod");
+            handle->CallNonvirtualIntMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualIntMethodV");
             handle->CallNonvirtualIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualIntMethodADelegate);
 
-            handle->CallNonvirtualLongMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualLongMethod", 0);
-            handle->CallNonvirtualLongMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualLongMethodV", 0);
+            handle->CallNonvirtualLongMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualLongMethod");
+            handle->CallNonvirtualLongMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualLongMethodV");
             handle->CallNonvirtualLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualLongMethodADelegate);
 
-            handle->CallNonvirtualFloatMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualFloatMethod", 0);
-            handle->CallNonvirtualFloatMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualFloatMethodV", 0);
+            handle->CallNonvirtualFloatMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualFloatMethod");
+            handle->CallNonvirtualFloatMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualFloatMethodV");
             handle->CallNonvirtualFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualFloatMethodADelegate);
 
-            handle->CallNonvirtualDoubleMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualDoubleMethod", 0);
-            handle->CallNonvirtualDoubleMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualDoubleMethodV", 0);
+            handle->CallNonvirtualDoubleMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualDoubleMethod");
+            handle->CallNonvirtualDoubleMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualDoubleMethodV");
             handle->CallNonvirtualDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualDoubleMethodADelegate);
 
-            handle->CallNonvirtualVoidMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualVoidMethod", 0);
-            handle->CallNonvirtualVoidMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualVoidMethodV", 0);
+            handle->CallNonvirtualVoidMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualVoidMethod");
+            handle->CallNonvirtualVoidMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallNonvirtualVoidMethodV");
             handle->CallNonvirtualVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualVoidMethodADelegate);
 
             handle->GetFieldID = (void*)Marshal.GetFunctionPointerForDelegate(GetFieldIDDelegate);
@@ -658,44 +658,44 @@ namespace IKVM.Runtime.JNI
 
             handle->GetStaticMethodID = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticMethodIDDelegate);
 
-            handle->CallStaticObjectMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticObjectMethod", 0);
-            handle->CallStaticObjectMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticObjectMethodV", 0);
+            handle->CallStaticObjectMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticObjectMethod");
+            handle->CallStaticObjectMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticObjectMethodV");
             handle->CallStaticObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticObjectMethodADelegate);
 
-            handle->CallStaticBooleanMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticBooleanMethod", 0);
-            handle->CallStaticBooleanMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticBooleanMethodV", 0);
+            handle->CallStaticBooleanMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticBooleanMethod");
+            handle->CallStaticBooleanMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticBooleanMethodV");
             handle->CallStaticBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticBooleanMethodADelegate);
 
-            handle->CallStaticByteMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticByteMethod", 0);
-            handle->CallStaticByteMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticByteMethodV", 0);
+            handle->CallStaticByteMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticByteMethod");
+            handle->CallStaticByteMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticByteMethodV");
             handle->CallStaticByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticByteMethodADelegate);
 
-            handle->CallStaticCharMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticCharMethod", 0);
-            handle->CallStaticCharMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticCharMethodV", 0);
+            handle->CallStaticCharMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticCharMethod");
+            handle->CallStaticCharMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticCharMethodV");
             handle->CallStaticCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticCharMethodADelegate);
 
-            handle->CallStaticShortMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticShortMethod", 0);
-            handle->CallStaticShortMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticShortMethodV", 0);
+            handle->CallStaticShortMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticShortMethod");
+            handle->CallStaticShortMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticShortMethodV");
             handle->CallStaticShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticShortMethodADelegate);
 
-            handle->CallStaticIntMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticIntMethod", 0);
-            handle->CallStaticIntMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticIntMethodV", 0);
+            handle->CallStaticIntMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticIntMethod");
+            handle->CallStaticIntMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticIntMethodV");
             handle->CallStaticIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticIntMethodADelegate);
 
-            handle->CallStaticLongMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticLongMethod", 0);
-            handle->CallStaticLongMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticLongMethodV", 0);
+            handle->CallStaticLongMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticLongMethod");
+            handle->CallStaticLongMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticLongMethodV");
             handle->CallStaticLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticLongMethodADelegate);
 
-            handle->CallStaticFloatMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticFloatMethod", 0);
-            handle->CallStaticFloatMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticFloatMethodV", 0);
+            handle->CallStaticFloatMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticFloatMethod");
+            handle->CallStaticFloatMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticFloatMethodV");
             handle->CallStaticFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticFloatMethodADelegate);
 
-            handle->CallStaticDoubleMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticDoubleMethod", 0);
-            handle->CallStaticDoubleMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticDoubleMethodV", 0);
+            handle->CallStaticDoubleMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticDoubleMethod");
+            handle->CallStaticDoubleMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticDoubleMethodV");
             handle->CallStaticDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticDoubleMethodADelegate);
 
-            handle->CallStaticVoidMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticVoidMethod", 0);
-            handle->CallStaticVoidMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticVoidMethodV", 0);
+            handle->CallStaticVoidMethod = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticVoidMethod");
+            handle->CallStaticVoidMethodV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_CallStaticVoidMethodV");
             handle->CallStaticVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticVoidMethodADelegate);
 
             handle->GetStaticFieldID = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticFieldIDDelegate);
