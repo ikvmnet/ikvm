@@ -17,6 +17,9 @@
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
         <Dependencies Include="shell32;delayimp;advapi32;version" />
     </ItemGroup>
+    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <Dependencies Include="c" />
+    </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
         <AdditionalLinkOptions Include="-framework CoreFoundation" />
         <AdditionalLinkOptions Include="-framework Foundation" />

@@ -20,7 +20,7 @@
         <Dependencies Include="ws2_32;secur32;iphlpapi;delayimp;advapi32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        <!--<Dependencies Include="pthread" />-->
+        <Dependencies Include="c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('musl'))">
         <PreprocessorDefinitions Include="__SIGRTMIN=32" />

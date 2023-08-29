@@ -15,6 +15,9 @@
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
         <Dependencies Include="ws2_32" />
     </ItemGroup>
+    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <Dependencies Include="c" />
+    </ItemGroup>
     <ItemGroup>
         <Compile Include="**\*.c" LanguageStandard="c99" />
         <Compile Include="**\*.cpp" LanguageStandard="c++11" />

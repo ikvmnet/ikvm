@@ -1,6 +1,8 @@
 #include <jni.h>
 #include <jvm.h>
 #include "jvm.h"
+#include <stdio.h>
+#include <string.h>
 
 #if defined WIN32
 #include <winsock2.h>
@@ -383,7 +385,54 @@ jstring JNICALL JVM_GetTemporaryDirectory(JNIEnv* env)
 
 jint JNICALL JVM_GetLastErrorString(char* buf, int len)
 {
+#if WIN32
+    DWORD errval;
+
+    if ((errval = GetLastError()) != 0) {
+        // DOS error
+        size_t n = (size_t)FormatMessage(
+            FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL,
+            errval,
+            0,
+            buf,
+            (DWORD)len,
+            NULL);
+        if (n > 3) {
+            // Drop final '.', CR, LF
+            if (buf[n - 1] == '\n') n--;
+            if (buf[n - 1] == '\r') n--;
+            if (buf[n - 1] == '.') n--;
+            buf[n] = '\0';
+        }
+        return n;
+    }
+
+    if (errno != 0) {
+        // C runtime error that has no corresponding DOS error code
+        const char* s = strerror(errno);
+        size_t n = strlen(s);
+        if (n >= len) n = len - 1;
+        strncpy(buf, s, n);
+        buf[n] = '\0';
+        return n;
+    }
+
     return 0;
+#else
+    if (errno == 0)
+        return 0;
+
+    const char* s = ::strerror(errno);
+    size_t n = ::strlen(s);
+    if (n >= len) {
+        n = len - 1;
+    }
+
+    ::strncpy(buf, s, n);
+    buf[n] = '\0';
+    return n;
+#endif
 }
 
 //
@@ -2371,57 +2420,7 @@ jboolean JNICALL JVM_IsSameClassPackage(JNIEnv* env, jclass class1, jclass class
 //JVM_END
 //
 //
-//// Printing support //////////////////////////////////////////////////
-extern "C" {
 
-int jio_vsnprintf(char* str, size_t count, const char* fmt, va_list args)
-{
-    // Reject count values that are negative signed values converted to
-    // unsigned; see bug 4399518, 4417214
-    if ((intptr_t)count <= 0) return -1;
-
-    int result = vsnprintf(str, count, fmt, args);
-    if (result > 0 && (size_t)result >= count) {
-        result = -1;
-    }
-
-    return result;
-}
-
-int jio_snprintf(char* str, size_t count, const char* fmt, ...) {
-    va_list args;
-    int len;
-    va_start(args, fmt);
-    len = jio_vsnprintf(str, count, fmt, args);
-    va_end(args);
-    return len;
-}
-
-int jio_fprintf(FILE* f, const char* fmt, ...) {
-    int len;
-    va_list args;
-    va_start(args, fmt);
-    len = jio_vfprintf(f, fmt, args);
-    va_end(args);
-    return len;
-}
- 
-
-int jio_vfprintf(FILE* f, const char* fmt, va_list args)
-{
-    return vfprintf(f, fmt, args);
-}
-
-int jio_printf(const char* fmt, ...) {
-    int len;
-    va_list args;
-    va_start(args, fmt);
-    len = jio_vfprintf(stdout, fmt, args);
-    va_end(args);
-    return len;
-}
-
-} // Extern C
 
 //
 //// java.lang.Thread //////////////////////////////////////////////////////////////////////////////
@@ -3446,12 +3445,12 @@ void JNICALL JVM_UnloadLibrary(void* handle)
 void* JNICALL JVM_FindLibraryEntry(void* handle, const char* name)
 {
 #if WIN32
-    return (void*)::GetProcAddress((HMODULE)handle, name);
+    return (void*)GetProcAddress((HMODULE)handle, name);
 #else
     pthread_mutex_lock(&dl_mutex);
-    void* res = dlsym(handle, name);
+    void* result = dlsym(handle, name);
     pthread_mutex_unlock(&dl_mutex);
-    return res;
+    return result;
 #endif
 }
 
@@ -4034,3 +4033,57 @@ void* JNICALL JVM_FindLibraryEntry(void* handle, const char* name)
 //    info->is_attachable = AttachListener::is_attach_supported();
 //}
 //JVM_END
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+    int jio_vsnprintf(char* str, size_t count, const char* fmt, va_list args)
+    {
+        // Reject count values that are negative signed values converted to
+        // unsigned; see bug 4399518, 4417214
+        if ((intptr_t)count <= 0) return -1;
+
+        int result = vsnprintf(str, count, fmt, args);
+        if (result > 0 && (size_t)result >= count) {
+            result = -1;
+        }
+
+        return result;
+    }
+
+    int jio_snprintf(char* str, size_t count, const char* fmt, ...) {
+        va_list args;
+        int len;
+        va_start(args, fmt);
+        len = jio_vsnprintf(str, count, fmt, args);
+        va_end(args);
+        return len;
+    }
+
+    int jio_fprintf(FILE* f, const char* fmt, ...) {
+        int len;
+        va_list args;
+        va_start(args, fmt);
+        len = jio_vfprintf(f, fmt, args);
+        va_end(args);
+        return len;
+    }
+
+    int jio_vfprintf(FILE* f, const char* fmt, va_list args)
+    {
+        return vfprintf(f, fmt, args);
+    }
+
+    int jio_printf(const char* fmt, ...) {
+        int len;
+        va_list args;
+        va_start(args, fmt);
+        len = jio_vfprintf(stdout, fmt, args);
+        va_end(args);
+        return len;
+    }
+
+#ifdef __cplusplus
+}
+#endif

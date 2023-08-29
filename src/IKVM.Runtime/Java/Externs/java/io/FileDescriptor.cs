@@ -42,45 +42,16 @@ namespace IKVM.Java.Externs.java.io
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (RuntimeUtil.IsWindows)
-            {
-                if (FileDescriptorAccessor.GetStream(self) is FileStream fs)
-                {
-                    return fs.SafeFileHandle.DangerousGetHandle().ToInt32();
-                }
-                else if (self == FileDescriptorAccessor.GetIn())
-                {
-                    return GetStdHandle(-10).ToInt32();
-                }
-                else if (self == FileDescriptorAccessor.GetOut())
-                {
-                    return GetStdHandle(-11).ToInt32();
-                }
-                else if (self == FileDescriptorAccessor.GetErr())
-                {
-                    return GetStdHandle(-12).ToInt32();
-                }
-            }
-            else
-            {
-
-                if (FileDescriptorAccessor.GetStream(self) is FileStream fs)
-                {
-                    return fs.SafeFileHandle.DangerousGetHandle().ToInt32();
-                }
-                else if (self == FileDescriptorAccessor.GetIn())
-                {
-                    return 0;
-                }
-                else if (self == FileDescriptorAccessor.GetOut())
-                {
-                    return 1;
-                }
-                else if (self == FileDescriptorAccessor.GetErr())
-                {
-                    return 2;
-                }
-            }
+            if (FileDescriptorAccessor.GetStream(self) is FileStream fs)
+                return fs.SafeFileHandle.DangerousGetHandle().ToInt32();
+            if (FileDescriptorAccessor.GetSocket(self) is Socket ss)
+                return ss.Handle.ToInt32();
+            if (self == FileDescriptorAccessor.GetIn())
+                return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? GetStdHandle(-10).ToInt32() : 0;
+            if (self == FileDescriptorAccessor.GetOut())
+                return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? GetStdHandle(-11).ToInt32() : 1;
+            if (self == FileDescriptorAccessor.GetErr())
+                return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? GetStdHandle(-12).ToInt32() : 2;
 
             return -1;
 #endif

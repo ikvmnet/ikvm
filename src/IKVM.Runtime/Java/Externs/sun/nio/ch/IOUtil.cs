@@ -24,13 +24,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
         static readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
 
-        /// <summary>
-        /// Implements the native method 'initIDs'.
-        /// </summary>
-        public static void initIDs()
-        {
+        ///// <summary>
+        ///// Implements the native method 'initIDs'.
+        ///// </summary>
+        //public static void initIDs()
+        //{
 
-        }
+        //}
 
         /// <summary>
         /// Implements the native method 'randomBytes'.
@@ -126,21 +126,21 @@ namespace IKVM.Java.Externs.sun.nio.ch
             throw new NotSupportedException();
         }
 
-        /// <summary>
-        /// Implements the native method 'iovMax'.
-        /// </summary>
-        public static int iovMax()
-        {
-            return 16;
-        }
+        ///// <summary>
+        ///// Implements the native method 'iovMax'.
+        ///// </summary>
+        //public static int iovMax()
+        //{
+        //    return 16;
+        //}
 
-        /// <summary>
-        /// Implements the native method 'load'.
-        /// </summary>
-        public static void load()
-        {
+        ///// <summary>
+        ///// Implements the native method 'load'.
+        ///// </summary>
+        //public static void load()
+        //{
 
-        }
+        //}
 
     }
 
