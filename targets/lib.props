@@ -98,6 +98,7 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetTriple.Contains('-apple-'))">
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);MACOSX</PreprocessorDefinitions>
         <IncludeSystemRootDirectories>$(IncludeSystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx</IncludeSystemRootDirectories>
         <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx\usr\lib</LibraryDirectories>
     </PropertyGroup>

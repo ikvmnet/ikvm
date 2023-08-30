@@ -1,0 +1,19 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>41254d0c-f8bf-4e1b-8c28-b0f7d91d3cc3</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>ikvm</TargetName>
+    </PropertyGroup>
+    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <Dependencies Include="c" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="**\*.c" />
+        <Compile Include="**\*.cpp" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\lib.targets" />
+</Project>
