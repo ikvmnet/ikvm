@@ -17,7 +17,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        [DllImport("jvm", EntryPoint = "JVM_LoadLibrary")]
+        [DllImport("jvm", EntryPoint = "JVM_LoadLibrary", SetLastError = false)]
         static extern nint JVM_LoadLibrary(string path);
 
         /// <summary>
@@ -26,7 +26,7 @@ namespace IKVM.Runtime
         /// <param name="handle"></param>
         /// <param name="symbol"></param>
         /// <returns></returns>
-        [DllImport("jvm", EntryPoint = "JVM_FindLibraryEntry")]
+        [DllImport("jvm", EntryPoint = "JVM_FindLibraryEntry", SetLastError = false)]
         static extern nint JVM_FindLibraryEntry(nint handle, string symbol);
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="handle"></param>
         /// <returns></returns>
-        [DllImport("jvm", EntryPoint = "JVM_UnloadLibrary")]
+        [DllImport("jvm", EntryPoint = "JVM_UnloadLibrary", SetLastError = false)]
         static extern void JVM_UnloadLibrary(nint handle);
 
         /// <summary>
