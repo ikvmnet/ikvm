@@ -11,7 +11,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
-        <ProjectReference Include="..\libikvm\libikvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
     </ItemGroup>
     <ItemGroup>

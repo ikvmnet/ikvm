@@ -317,7 +317,7 @@ Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libnio", "src\libnio\libnio
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libnet", "src\libnet\libnet.clangproj", "{9A35E758-5859-4749-AA85-C788A30173BE}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libikvm", "src\libikvm\libikvm.clangproj", "{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}"
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libiava", "src\libiava\libiava.clangproj", "{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

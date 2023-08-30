@@ -5,7 +5,7 @@
         <ProjectGuid>55cbf630-905a-4b2b-a812-b4cb9ff19af5</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetName>ikvm</TargetName>
+        <TargetName>iava</TargetName>
         <LanguageStandard>c99</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
