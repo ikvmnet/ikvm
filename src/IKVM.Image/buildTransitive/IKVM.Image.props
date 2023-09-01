@@ -9,61 +9,6 @@
             <RuntimeIdentifier>any</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(Filename)%(Extension)</ImagePath>
         </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\win7-x64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\win7-x86\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\win10-arm64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\linux-x64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\linux-arm\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\linux-arm64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\linux-musl-x64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>linux-musl-x64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\linux-musl-arm\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>linux-musl-arm</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\linux-musl-arm64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>linux-musl-arm64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\osx-x64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\osx-arm64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
     </ItemGroup>
 
 </Project>

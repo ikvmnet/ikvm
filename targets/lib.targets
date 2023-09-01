@@ -12,12 +12,7 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);MACOSX;</PreprocessorDefinitions>
-        <DebugSymbols>false</DebugSymbols>
-        <Dependencies>$(Dependencies);c++</Dependencies>
-        <AdditionalLinkOptions>$(AdditionalLinkOptions);-t;-mmacosx-version-min=10.15</AdditionalLinkOptions>
         <AdditionalLinkOptions>$(AdditionalLinkOptions);-Wl,-install_name,@loader_path/lib$(TargetName).dylib</AdditionalLinkOptions>
-        <EnableOSXCodeSign>true</EnableOSXCodeSign>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)ClangOSXCodeSign.targets"/>

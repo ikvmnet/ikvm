@@ -1,0 +1,32 @@
+<Project>
+    <ItemGroup>
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libikvm\libikvm.clangproj " />
+    </ItemGroup>
+
+    <Target Name="GetClangProjectReferencesByRuntime" Inputs="@(_ReferencedClangProjects)" Outputs="%(_ReferencedClangProjects.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">
+        <PropertyGroup>
+            <__SupportedRuntimes>%(_ReferencedClangProjects.SupportedRuntimes)</__SupportedRuntimes>
+            <__SupportedRuntimes Condition=" '$(__SupportedRuntimes)' == '' ">$(SupportedRuntimes)</__SupportedRuntimes>
+        </PropertyGroup>
+        <ItemGroup>
+            <__SupportedRuntimes Include="$(__SupportedRuntimes)" />
+        </ItemGroup>
+        <ItemGroup>
+            <_ReferencedClangProjectReference Remove="@(_ReferencedClangProjectReference)" />
+            <_ReferencedClangProjectReference Include="@(_ReferencedClangProjects)">
+                <RuntimeIdentifier>%(__SupportedRuntimes.Identity)</RuntimeIdentifier>
+            </_ReferencedClangProjectReference>
+            <ClangProjectReference Include="@(_ReferencedClangProjectReference)" Condition="$(_EnabledRuntimes.Contains(';%(RuntimeIdentifier);'))">
+                <RuntimeIdentifier>%(RuntimeIdentifier)</RuntimeIdentifier>
+            </ClangProjectReference>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GetClangProjectReferencesDependsOn>
+            $(GetClangProjectReferencesDependsOn);
+            GetClangProjectReferencesByRuntime;
+        </GetClangProjectReferencesDependsOn>
+    </PropertyGroup>
+
+</Project>

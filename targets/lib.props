@@ -105,8 +105,18 @@
 
     <PropertyGroup Condition="$(TargetTriple.Contains('-linux-'))">
         <PreprocessorDefinitions>$(PreprocessorDefinitions);LINUX;__linux__</PreprocessorDefinitions>
+        <Dependencies>$(Dependencies);c</Dependencies>
         <PositionIndependentCode>true</PositionIndependentCode>
         <AdditionalCompileOptions>$(AdditionalCompileOptions)</AdditionalCompileOptions>
         <AdditionalLinkOptions>$(AdditionalLinkOptions);-nostdlib;-Wl,-rpath,$ORIGIN;-Wl</AdditionalLinkOptions>
     </PropertyGroup>
+
+    <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);MACOSX;</PreprocessorDefinitions>
+        <DebugSymbols>false</DebugSymbols>
+        <Dependencies>$(Dependencies);c++</Dependencies>
+        <AdditionalLinkOptions>$(AdditionalLinkOptions);-t;-mmacosx-version-min=10.15</AdditionalLinkOptions>
+        <EnableOSXCodeSign>true</EnableOSXCodeSign>
+    </PropertyGroup>
+    
 </Project>

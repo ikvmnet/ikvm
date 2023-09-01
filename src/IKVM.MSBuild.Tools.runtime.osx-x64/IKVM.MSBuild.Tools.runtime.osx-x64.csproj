@@ -11,35 +11,44 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="..\..\README.md" Pack="true" PackagePath="." />
         <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
         <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
-        <None Include="..\..\README.md" Pack="true" PackagePath="." />
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == '' ">
-        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvmc\net6.0\osx-x64</ProjectPackagePath>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvmstub\net6.0\osx-x64</ProjectPackagePath>
-        </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvmc\net472\osx-x64</ProjectPackagePath>
+            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net472' ">ikvmc\net472\osx-x64</PublishTargetPath>
+            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net472' ">PreserveNewest</CopyToOutputDirectory>
+            <PublishPackagePath>ikvmc\net472\osx-x64</PublishPackagePath>
+            <Pack>true</Pack>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvmstub\net472\osx-x64</ProjectPackagePath>
+            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net472' ">ikvmstub\net472\osx-x64\bin</PublishTargetPath>
+            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net472' ">PreserveNewest</CopyToOutputDirectory>
+            <PublishPackagePath>ikvmstub\net472\osx-x64</PublishPackagePath>
+            <Pack>true</Pack>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
+            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net6.0' ">ikvmc\net6.0\osx-x64</PublishTargetPath>
+            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net6.0' ">PreserveNewest</CopyToOutputDirectory>
+            <PublishPackagePath>ikvmc\net6.0\osx-x64</PublishPackagePath>
+            <Pack>true</Pack>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
+            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net6.0' ">ikvmstub\net6.0\osx-x64</PublishTargetPath>
+            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net6.0' ">PreserveNewest</CopyToOutputDirectory>
+            <PublishPackagePath>ikvmstub\net6.0\osx-x64</PublishPackagePath>
+            <Pack>true</Pack>
         </PublishProjectReference>
     </ItemGroup>
 

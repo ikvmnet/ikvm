@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace IKVM.Runtime
 {
@@ -42,63 +39,9 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="nameOrPath"></param>
         /// <returns></returns>
-        /// <exception cref="PlatformNotSupportedException"></exception>
         public static nint Load(string nameOrPath)
         {
-            // always resolve full paths without modification
-            if (Path.IsPathRooted(nameOrPath))
-                return IKVM_dlopen(nameOrPath);
-
-            // not a path, map the name to local OS convention
-            var mappedLibraryName = nameOrPath;
-            if (mappedLibraryName.Contains(Path.PathSeparator.ToString()) == false)
-                mappedLibraryName = MapLibraryName(mappedLibraryName);
-
-            // scan runtime native paths first
-            foreach (var i in GetNativePaths())
-                if (IKVM_dlopen(Path.Combine(i, mappedLibraryName)) is nint h1 and not 0)
-                    return h1;
-
-            // let loader have a chance at the raw name, which may scan OS specific things
-            if (IKVM_dlopen(nameOrPath) is nint h2 and not 0)
-                return h2;
-
-            // let loader have a chance at the mapped name, which may be more accurate
-            if (IKVM_dlopen(mappedLibraryName) is nint h3 and not 0)
-                return h3;
-
-            return 0;
-        }
-
-        /// <summary>
-        /// Implements the native method 'mapLibraryName'.
-        /// </summary>
-        /// <returns></returns>
-        static string MapLibraryName(string libname)
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return $"{libname}.dll";
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                return $"lib{libname}.so";
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                return $"lib{libname}.dylib";
-
-            throw new PlatformNotSupportedException();
-        }
-
-        /// <summary>
-        /// Gets the boot library paths.
-        /// </summary>
-        /// <returns></returns>
-        static IEnumerable<string> GetNativePaths()
-        {
-            var self = Directory.GetParent(typeof(NativeLibrary).Assembly.Location)?.FullName;
-            if (self == null)
-                yield break;
-
-            // search in runtime specific directories
-            foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
-                yield return Path.Combine(self, "runtimes", rid, "native");
+            return IKVM_dlopen(nameOrPath);
         }
 
         /// <summary>

@@ -33,6 +33,7 @@ using IKVM.Runtime.Accessors.Java.Lang;
 using System.Runtime.CompilerServices;
 
 using IKVM.Runtime.Vfs;
+using IKVM.Runtime.Accessors.Ikvm.Internal;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -81,6 +82,7 @@ namespace IKVM.Runtime
         static AccessorCache baseAccessors;
         static ThreadGroupAccessor threadGroupAccessor;
         static SystemAccessor systemAccessor;
+        static CallerIDAccessor callerIDAccessor;
 
         static Lazy<object> systemThreadGroup = new Lazy<object>(MakeSystemThreadGroup);
         static Lazy<object> mainThreadGroup = new Lazy<object>(MakeMainThreadGroup);
@@ -90,6 +92,8 @@ namespace IKVM.Runtime
         static ThreadGroupAccessor ThreadGroupAccessor => BaseAccessors.Get(ref threadGroupAccessor);
 
         static SystemAccessor SystemAccessor => BaseAccessors.Get(ref systemAccessor);
+
+        static CallerIDAccessor CallerIDAccessor => BaseAccessors.Get(ref callerIDAccessor);
 
         /// <summary>
         /// Gets the 'system' thread group.
@@ -118,10 +122,6 @@ namespace IKVM.Runtime
                     if (initialized == false)
                     {
                         initialized = true;
-
-                        // preload internal native libraries
-                        NativeLibrary.Load("jvm");
-                        NativeLibrary.Load("ikvm");
 
                         // always required
                         RuntimeHelpers.RunClassConstructor(typeof(java.lang.String).TypeHandle);
@@ -164,6 +164,10 @@ namespace IKVM.Runtime
                         RuntimeHelpers.RunClassConstructor(typeof(java.lang.invoke.MemberName).TypeHandle);
                         RuntimeHelpers.RunClassConstructor(typeof(java.lang.invoke.MethodHandle).TypeHandle);
                         RuntimeHelpers.RunClassConstructor(typeof(java.lang.invoke.MethodHandleNatives).TypeHandle);
+
+                        // preload native JVM libraries
+                        SystemAccessor.InvokeLoadLibrary("jvm", CallerIDAccessor.InvokeCreate(SystemAccessor.Type.TypeHandle));
+                        SystemAccessor.InvokeLoadLibrary("java", CallerIDAccessor.InvokeCreate(SystemAccessor.Type.TypeHandle));
                     }
                 }
             }
