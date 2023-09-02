@@ -47,32 +47,34 @@
 
             <!-- files directly part of this project -->
             <ContentWithTargetPath Include="@(_ContentFromProject)">
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(_ContentFromProject.RecursiveDir)%(_ContentFromProject.Filename)%(_ContentFromProject.Extension)</TargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </ContentWithTargetPath>
 
             <!-- solution level files -->
             <ContentWithTargetPath Include="@(_ContentFromSolution)">
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(_ContentFromSolution.RecursiveDir)%(_ContentFromSolution.Filename)%(_ContentFromSolution.Extension)</TargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </ContentWithTargetPath>
 
             <!-- openjdk contents -->
             <ContentWithTargetPath Include="@(OpenJdkImageContent)">
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(OpenJdkImageContent.ImagePath)</TargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </ContentWithTargetPath>
 
             <!-- output of binary projects -->
             <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
                 <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
-                <ProjectTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\bin</ProjectTargetPath>
+                <PublishTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\bin</PublishTargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </PublishProjectReference>
             <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
                 <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
-                <ProjectTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\bin</ProjectTargetPath>
+                <PublishTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\bin</PublishTargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </PublishProjectReference>
         </ItemGroup>
     </Target>

@@ -43,12 +43,14 @@
             <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
                 <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
-                <ProjectTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)</ProjectTargetPath>
+                <PublishTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)</PublishTargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </PublishProjectReference>
             <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
                 <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
-                <ProjectTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)</ProjectTargetPath>
+                <PublishTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)</PublishTargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </PublishProjectReference>
         </ItemGroup>
     </Target>
