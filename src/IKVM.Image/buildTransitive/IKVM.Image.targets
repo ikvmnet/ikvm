@@ -187,16 +187,11 @@
             <Code Type="Fragment" Language="cs">
                 <![CDATA[
                 var targetPathHash = new HashSet<string>();
-                var packagePathHash = new HashSet<string>();
                 foreach (var item in Items)
                 {
                     var targetPath = item.GetMetadata("TargetPath");
                     if (!string.IsNullOrEmpty(targetPath) && targetPathHash.Add(targetPath) == false)
                         item.SetMetadata("CopyToOutputDirectory", "Never");
-                        
-                    var packagePath = item.GetMetadata("PackagePath");
-                    if (!string.IsNullOrEmpty(packagePath) && packagePathHash.Add(packagePath) == false)
-                        item.SetMetadata("Pack", "false");
                 }
                 ]]>
             </Code>
@@ -209,7 +204,6 @@
                 <Pack Condition=" '%(_IkvmImageItem.Pack)' == '' ">false</Pack>
                 <CopyToOutputDirectory Condition=" '%(_IkvmImageItem.CopyToOutputDirectory)' == '' ">PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.ImagePath)</TargetPath>
-                <DestinationSubDirectory Condition=" '%(_IkvmImageItem.Pack)' == 'true' ">$([System.IO.Path]::GetDirectoryName('ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.ImagePath)'))</DestinationSubDirectory>
                 <Private Condition=" '%(_IkvmImageItem.Private)' == '' ">true</Private>
                 <Link>ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.ImagePath)</Link>
             </__IkvmImageItem>

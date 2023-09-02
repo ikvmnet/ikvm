@@ -39,14 +39,6 @@ namespace IKVM.Runtime.JNI
     static unsafe class JNINativeLoader
     {
 
-        /// <summary>
-        /// Initializes the static instance.
-        /// </summary>
-        static JNINativeLoader()
-        {
-            RuntimeHelpers.RunClassConstructor(typeof(JNIVM).TypeHandle);
-        }
-
         delegate jint JNI_OnLoadFunc(JavaVM* vm, void* reserved);
         delegate void JNI_OnUnloadFunc(JavaVM* vm, void* reserved);
 

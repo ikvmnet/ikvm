@@ -36,6 +36,7 @@
             <IkvmImageItem Include="@(PublishIkvmImageBinItem)">
                 <ImagePath>bin\%(PublishIkvmImageBinItem.PublishItemPath)</ImagePath>
                 <PackagePath>ikvm\%(PublishIkvmImageBinItem.TargetFramework)\%(PublishIkvmImageBinItem.RuntimeIdentifier)\bin\%(PublishIkvmImageBinItem.PublishItemPath)</PackagePath>
+                <DestinationSubDirectory>$([System.IO.Path]::GetDirectoryName('ikvm\%(PublishIkvmImageBinItem.TargetFramework)\%(PublishIkvmImageBinItem.RuntimeIdentifier)\bin\%(PublishIkvmImageBinItem.PublishItemPath)'))</DestinationSubDirectory>
                 <Pack>true</Pack>
             </IkvmImageItem>
         </ItemGroup>

@@ -63,7 +63,7 @@ namespace IKVM.Runtime.JNI
             pJavaVM->vtable = &pJavaVM->firstVtableEntry;
             for (int i = 0; i < vtableDelegates.Length; i++)
             {
-                if(null != vtableDelegates[i])
+                if (null != vtableDelegates[i])
                 {
                     pJavaVM->vtable[i] = (void*)Marshal.GetFunctionPointerForDelegate(vtableDelegates[i]);
                 }

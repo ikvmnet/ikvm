@@ -22,7 +22,7 @@ static pthread_mutex_t dl_mutex;
 
 jint JNICALL JVM_GetInterfaceVersion()
 {
-    return 0;
+    return JVM_INTERFACE_VERSION;
 }
 
 jlong JNICALL JVM_CurrentTimeMillis(JNIEnv* env, jclass ignored)

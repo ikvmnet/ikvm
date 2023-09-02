@@ -29,7 +29,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using IKVM.ByteCode.Text;
-using IKVM.Runtime;
 
 namespace IKVM.Runtime.JNI
 {
@@ -92,14 +91,6 @@ namespace IKVM.Runtime.JNI
         GCHandle* pinHandles;
         int pinHandleMaxCount;
         int pinHandleInUseCount;
-
-        /// <summary>
-        /// Initializes the static instance.
-        /// </summary>
-        static JNIEnv()
-        {
-            RuntimeHelpers.RunClassConstructor(typeof(JNIVM).TypeHandle);
-        }
 
         internal ManagedJNIEnv GetManagedJNIEnv()
         {

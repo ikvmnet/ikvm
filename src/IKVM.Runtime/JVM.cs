@@ -166,8 +166,8 @@ namespace IKVM.Runtime
                         RuntimeHelpers.RunClassConstructor(typeof(java.lang.invoke.MethodHandleNatives).TypeHandle);
 
                         // preload native JVM libraries
-                        SystemAccessor.InvokeLoadLibrary("jvm", CallerIDAccessor.InvokeCreate(SystemAccessor.Type.TypeHandle));
-                        SystemAccessor.InvokeLoadLibrary("java", CallerIDAccessor.InvokeCreate(SystemAccessor.Type.TypeHandle));
+                        foreach (var i in new[] { "jvm", "iava" })
+                            SystemAccessor.InvokeLoadLibrary(i, CallerIDAccessor.InvokeCreate(SystemAccessor.Type.TypeHandle));
                     }
                 }
             }
