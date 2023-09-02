@@ -22,7 +22,7 @@
         <ProjectReference Include="..\IKVM.Tools.Exporter\IKVM.Tools.Exporter.csproj" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
+    <ItemGroup>
         <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <IncludeTargetPath>lib\net472\</IncludeTargetPath>

@@ -21,11 +21,11 @@
         </None>
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
+    <ItemGroup>
         <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <IncludeTargetPath>lib\net472\</IncludeTargetPath>
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </IncludeProjectReference>
         <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
@@ -44,7 +44,7 @@
         </IncludeProjectReference>
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
+    <ItemGroup>
 
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win7-x64;'))">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>

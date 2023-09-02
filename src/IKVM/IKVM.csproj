@@ -9,6 +9,7 @@
         <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);GetProjectReferenceBuildOutputInPackage</TargetsForTfmSpecificBuildOutput>
         <TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificDebugSymbolsInPackage);GetProjectReferenceDebugSymbolsInPackage</TargetsForTfmSpecificDebugSymbolsInPackage>
         <NoWarn>NU5118</NoWarn>
+        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
 
     <PropertyGroup>
