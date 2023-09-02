@@ -81,6 +81,10 @@ namespace IKVM.Runtime
                 // preload only required on non-Mono, which cannot use dllmap files
                 if (RuntimeUtil.IsMono == false)
                 {
+                    // give native loader a chance to load the library
+                    if (LoadLibrary("ikvm") is nint h1 and not 0)
+                        return h1;
+
                     // start looking at assembly path, or path given by environmental variable
                     var asml = typeof(NativeLibrary).Assembly.Location is string s ? Path.GetDirectoryName(s) : null;
                     var root = Environment.GetEnvironmentVariable("IKVM_LIBRARY_PATH") ?? asml;
@@ -88,8 +92,8 @@ namespace IKVM.Runtime
                     // scan supported RIDs for current platform
                     foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
                         if (Path.Combine(root, "runtimes", rid, "native", "ikvm.dll") is string lib)
-                            if (File.Exists(lib))
-                                return LoadLibrary(lib);
+                            if (File.Exists(lib) && LoadLibrary(lib) is nint h2 and not 0)
+                                return h2;
                 }
 
                 return 0;
@@ -133,19 +137,32 @@ namespace IKVM.Runtime
 #endif
 
         /// <summary>
+        /// Invokes the appropriate method to simulate dlopen.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        static nint dlopen(string path)
+        {
+#if NETFRAMEWORK
+            return libikvm.dlopen(path);
+#else
+            return System.Runtime.InteropServices.NativeLibrary.TryLoad(nameOrPath, out nint h) ? h : 0;
+#endif
+        }
+
+        /// <summary>
         /// Loads the given library in a platform dependent manner.
         /// </summary>
         /// <param name="nameOrPath"></param>
         /// <returns></returns>
         public static nint Load(string nameOrPath)
         {
-#if NETFRAMEWORK
             if (Path.IsPathRooted(nameOrPath))
-                return libikvm.dlopen(nameOrPath);
-            
+                return dlopen(nameOrPath);
+
             // give native loader a chance to load the library
-            if (libikvm.dlopen(nameOrPath) is nint h and not 0)
-                return h;
+            if (dlopen(nameOrPath) is nint h1 and not 0)
+                return h1;
 
             // start looking at assembly path, or path given by environmental variable
             var asml = typeof(NativeLibrary).Assembly.Location is string s ? Path.GetDirectoryName(s) : null;
@@ -154,13 +171,10 @@ namespace IKVM.Runtime
             // scan supported RIDs for current platform
             foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
                 if (Path.Combine(root, "runtimes", rid, "native", nameOrPath) is string lib)
-                    if (File.Exists(lib))
-                        return libikvm.dlopen(lib);
+                    if (File.Exists(lib) && dlopen(lib) is nint h2 and not 0)
+                        return h2;
 
             return 0;
-#else
-            return System.Runtime.InteropServices.NativeLibrary.TryLoad(nameOrPath, out nint h) ? h : 0;
-#endif
         }
 
         /// <summary>
