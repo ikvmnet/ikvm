@@ -8,12 +8,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <IkvmImageItem Include="ikvm\any\any\**\*" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\any\any" />
-        <IkvmImageItem Include="ikvm\any\$(ImageRuntimeIdentifier)\**\*" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\any\$(ImageRuntimeIdentifier)" />
-        <IkvmImageItem Include="ikvm\net472\any\**\*" TargetFramework="net472" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\net472\any" />
-        <IkvmImageItem Include="ikvm\net472\$(ImageRuntimeIdentifier)\**\*" TargetFramework="net472" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\net472\$(ImageRuntimeIdentifier)" />
-        <IkvmImageItem Include="ikvm\net6.0\any\**\*" TargetFramework="net6.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\net6.0\any" />
-        <IkvmImageItem Include="ikvm\net6.0\$(ImageRuntimeIdentifier)\**\*" TargetFramework="net6.0" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\net6.0\$(ImageRuntimeIdentifier)" />
+        <IkvmImageItem Include="ikvm\any\any\**\*" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\any\any\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\any\$(ImageRuntimeIdentifier)\**\*" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\any\$(ImageRuntimeIdentifier)\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net472\any\**\*" TargetFramework="net472" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\net472\any\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net472\$(ImageRuntimeIdentifier)\**\*" TargetFramework="net472" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\net472\$(ImageRuntimeIdentifier)\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net6.0\any\**\*" TargetFramework="net6.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\net6.0\any\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net6.0\$(ImageRuntimeIdentifier)\**\*" TargetFramework="net6.0" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\net6.0\$(ImageRuntimeIdentifier)\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>

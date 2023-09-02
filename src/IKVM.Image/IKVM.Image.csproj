@@ -53,19 +53,17 @@
         <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
         <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
         <Content Include="ikvm.properties" Pack="true" CopyToOutputDirectory="PreserveNewest" />
-        <None Include="ikvm\**\*" Pack="true" PackagePath="ikvm\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="@(OpenJdkImageContent)" Pack="true" PackagePath="ikvm\any\any\%(ImagePath)" Link="ikvm\any\any\%(ImagePath)">
-            <PackagePath Condition="!$([System.IO.Path]::HasExtension('%(ImagePath)'))">$([System.IO.Path]::GetDirectoryName('ikvm\any\any\%(ImagePath)'))</PackagePath>
-        </None>
     </ItemGroup>
 
     <!-- items to output -->
     <ItemGroup>
-        <IkvmImageItem Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(Filename)%(Extension)" />
-        <IkvmImageItem Include="ikvm\any\any\**\*" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(FileName)%(Extension)" />
-        <IkvmImageItem Include="@(OpenJdkImageContent)" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(ImagePath)" />
+        <IkvmImageItem Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\any\any\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\any\any\**\*" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\any\any\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net472\any\**\*" TargetFramework="net472" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\net472\any\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net6.0\any\**\*" TargetFramework="net6.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\net6.0\any\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="@(OpenJdkImageContent)" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(ImagePath)" Pack="true" PackagePath="ikvm\any\any\%(ImagePath)" />
     </ItemGroup>
 
+    <Import Project="buildTransitive\IKVM.Image.targets" />
     <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
-    <Import Project="$(MSBuildThisFileDirectory)buildTransitive\IKVM.Image.targets" />
 </Project>
