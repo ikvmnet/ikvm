@@ -31,6 +31,8 @@ using IKVM.ByteCode.Text;
 namespace IKVM.Runtime.JNI
 {
 
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+
     using jsize = System.Int32;
 
     public sealed unsafe class JNIVM
@@ -197,5 +199,7 @@ namespace IKVM.Runtime.JNI
         }
 
     }
+
+#endif
 
 }

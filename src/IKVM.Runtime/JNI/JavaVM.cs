@@ -29,6 +29,8 @@ using IKVM.ByteCode.Text;
 namespace IKVM.Runtime.JNI
 {
 
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+
     using jint = System.Int32;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -107,9 +109,6 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         internal static jint AttachCurrentThreadImpl(JavaVM* pJVM, void** penv, JavaVMAttachArgs* pAttachArgs, bool asDaemon)
         {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
             if (pAttachArgs != null)
             {
                 if (!JNIVM.IsSupportedJNIVersion(pAttachArgs->version) || pAttachArgs->version == JNIEnv.JNI_VERSION_1_1)
@@ -154,7 +153,6 @@ namespace IKVM.Runtime.JNI
 
             *penv = JNIEnv.CreateJNIEnv(JVM.Context);
             return JNIEnv.JNI_OK;
-#endif
         }
 
         /// <summary>
@@ -201,5 +199,7 @@ namespace IKVM.Runtime.JNI
         }
 
     }
+
+#endif
 
 }

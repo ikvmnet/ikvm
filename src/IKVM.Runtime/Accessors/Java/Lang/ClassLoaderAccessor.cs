@@ -12,6 +12,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     {
 
         Type javaLangClass;
+        Type javaLangClassLoader;
         Type javaSecurityProtectionDomain;
 
         FieldAccessor<object> scl;
@@ -20,6 +21,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         MethodAccessor<Action<object, object, object>> checkPackageAccess;
         MethodAccessor<Func<object, string, object>> loadClassInternal;
         MethodAccessor<Func<object, string, bool>> checkName;
+        MethodAccessor<Func<object, string, long>> findNative;
 
         /// <summary>
         /// Initializes a new instance.
@@ -32,6 +34,8 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         }
 
         Type JavaLangClass => Resolve(ref javaLangClass, "java.lang.Class");
+
+        Type JavaLangClassLoader => Resolve(ref javaLangClassLoader, "java.lang.ClassLoader");
 
         Type JavaSecurityProtectionDomain => Resolve(ref javaSecurityProtectionDomain, "java.security.ProtectionDomain");
 
@@ -69,6 +73,14 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// Invokes the 'loadClassInternal' method.
         /// </summary>
         public object InvokeLoadClassInternal(object self, string name) => GetMethod(ref loadClassInternal, nameof(loadClassInternal), JavaLangClass, typeof(string)).Invoker(self, name);
+
+        /// <summary>
+        /// Invokes the 'findNatve' method.
+        /// </summary>
+        /// <param name="loader"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public long InvokeFindNative(object loader, string name) => GetMethod(ref findNative, nameof(findNative), typeof(long), JavaLangClassLoader, typeof(string)).Invoker(loader, name);
 
     }
 

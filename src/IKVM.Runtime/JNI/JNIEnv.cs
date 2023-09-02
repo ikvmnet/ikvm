@@ -60,6 +60,8 @@ namespace IKVM.Runtime.JNI
     using jthrowable = System.IntPtr;
     using jweak = System.IntPtr;
 
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+
     [StructLayout(LayoutKind.Sequential)]
     unsafe partial struct JNIEnv
     {
@@ -2691,5 +2693,7 @@ namespace IKVM.Runtime.JNI
         }
 
     }
+
+#endif
 
 }

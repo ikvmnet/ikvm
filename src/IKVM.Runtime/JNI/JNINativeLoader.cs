@@ -31,6 +31,8 @@ using IKVM.Runtime;
 namespace IKVM.Runtime.JNI
 {
 
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+
     using jint = System.Int32;
 
     /// <summary>
@@ -185,5 +187,7 @@ namespace IKVM.Runtime.JNI
         }
 
     }
+
+#endif
 
 }

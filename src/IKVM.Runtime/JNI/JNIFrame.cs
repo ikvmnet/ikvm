@@ -31,8 +31,13 @@ namespace IKVM.Runtime.JNI
     public unsafe struct JNIFrame
     {
 
+#if FIRST_PASS || IMPORTER || EXPORTER
+#else
+
         JNIEnv.ManagedJNIEnv env;
         JNIEnv.ManagedJNIEnv.FrameState prevFrameState;
+
+#endif
 
         /// <summary>
         /// Enters the <see cref="JNIFrame"/> with a specified <see cref="RuntimeClassLoader"/> in scope.
@@ -41,10 +46,14 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         internal RuntimeClassLoader Enter(RuntimeClassLoader loader)
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             Enter((ikvm.@internal.CallerID)null);
             RuntimeClassLoader prev = env.classLoader;
             env.classLoader = loader;
             return prev;
+#endif
         }
 
         /// <summary>
@@ -52,8 +61,12 @@ namespace IKVM.Runtime.JNI
         /// </summary>
         internal void Leave(RuntimeClassLoader prev)
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             env.classLoader = prev;
             Leave();
+#endif
         }
 
         /// <summary>
@@ -63,7 +76,7 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         public IntPtr Enter(ikvm.@internal.CallerID callerID)
         {
-#if FIRST_PASS
+#if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
             env = TlsHack.ManagedJNIEnv;
@@ -78,13 +91,20 @@ namespace IKVM.Runtime.JNI
         /// </summary>
         public void Leave()
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             var x = env.Leave(prevFrameState);
             if (x != null)
                 throw x;
+#endif
         }
 
         public static IntPtr GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             var loader = RuntimeClassLoader.FromCallerID(callerID);
             int sp = 0;
             for (int i = 1; sig[i] != ')'; i++)
@@ -150,6 +170,7 @@ namespace IKVM.Runtime.JNI
             var msg = $"{clazz}.{name}{sig}";
             Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", msg);
             throw new java.lang.UnsatisfiedLinkError(msg);
+#endif
         }
 
         static string JniMangle(string name)
@@ -188,12 +209,20 @@ namespace IKVM.Runtime.JNI
 
         public nint MakeLocalRef(object obj)
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             return env.MakeLocalRef(obj);
+#endif
         }
 
         public object UnwrapLocalRef(nint p)
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             return JNIEnv.UnwrapRef(env, p);
+#endif
         }
 
     }
