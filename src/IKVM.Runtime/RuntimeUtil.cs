@@ -168,23 +168,34 @@ namespace IKVM.Runtime
         /// <summary>
         /// Recurses into the runtimes graph and attempts to resolve the RID and all RIDs it imports.
         /// </summary>
-        /// <param name="runtimes"></param>
         /// <param name="rid"></param>
         /// <returns></returns>
         static IEnumerable<string> GetRuntimeIdentifierIterator(string rid)
         {
-            if (RuntimeJson.TryGetProperty(rid, out var n) == false)
+            if (RuntimeJson.TryGetProperty(rid, out var node) == false)
                 yield break;
 
-            // current RID was found
-            yield return rid;
+            // initiate a breadth first search across runtime.json from specified RID
+            var v = new HashSet<string>();
+            var q = new Queue<(string, JsonElement)>();
+            v.Add(rid);
+            q.Enqueue((rid, node));
 
-            // check whether this runtime imports any others
-            if (n.TryGetProperty("#import", out var import))
-                foreach (var i in import.EnumerateArray())
-                    if (i.GetString() is string s && string.IsNullOrWhiteSpace(s) == false)
-                        foreach (var r in GetRuntimeIdentifierIterator(s))
-                            yield return r;
+            // continue until end is reached
+            while (q.Count > 0)
+            {
+                // dequeue next item and yield
+                var (thisRid, thisNode) = q.Dequeue();
+                yield return thisRid;
+
+                // enqueue referenced rids
+                if (thisNode.TryGetProperty("#import", out var import))
+                    foreach (var imports in import.EnumerateArray())
+                        if (imports.GetString() is string nextRid && string.IsNullOrWhiteSpace(nextRid) == false)
+                            if (v.Add(nextRid))
+                                if (RuntimeJson.TryGetProperty(nextRid, out var nextNode))
+                                    q.Enqueue((nextRid, nextNode));
+            }
         }
 
         /// <summary>
