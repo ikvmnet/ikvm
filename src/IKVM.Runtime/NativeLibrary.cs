@@ -71,7 +71,7 @@ namespace IKVM.Runtime
             /// <summary>
             /// Holds an internal handle to the 'ikvm' library.
             /// </summary>
-            readonly nint handle = PreLoad();
+            nint handle = PreLoad();
 
             /// <summary>
             /// Loads the 'ikvm' library.
@@ -127,7 +127,10 @@ namespace IKVM.Runtime
             ~LibIkvm()
             {
                 if (handle != 0)
+                {
                     FreeLibrary(handle);
+                    handle = 0;
+                }
             }
 
         }

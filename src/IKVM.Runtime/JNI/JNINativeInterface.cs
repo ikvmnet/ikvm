@@ -48,15 +48,30 @@ namespace IKVM.Runtime.JNI
             /// <summary>
             /// Gets the handle to the JVM library.
             /// </summary>
-            public nint Handle = NativeLibrary.Load("jvm");
+            public nint Handle { get; private set; } = Load();
+
+            /// <summary>
+            /// Loads the library.
+            /// </summary>
+            static nint Load()
+            {
+                var h = NativeLibrary.Load("jvm");
+                if (h == 0)
+                    throw new DllNotFoundException("Could not preload JVM library.");
+
+                return h;
+            }
 
             /// <summary>
             /// Disposes of the instance.
             /// </summary>
             ~LibJvm()
             {
-                NativeLibrary.Free(Handle);
-                Handle = 0;
+                if (Handle != 0)
+                {
+                    NativeLibrary.Free(Handle);
+                    Handle = 0;
+                }
             }
 
         }
