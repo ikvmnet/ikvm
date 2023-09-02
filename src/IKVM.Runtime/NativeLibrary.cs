@@ -146,7 +146,7 @@ namespace IKVM.Runtime
 #if NETFRAMEWORK
             return libikvm.dlopen(path);
 #else
-            return System.Runtime.InteropServices.NativeLibrary.TryLoad(path, out nint h) ? h : 0;
+            return System.Runtime.InteropServices.NativeLibrary.TryLoad(path, typeof(NativeLibrary).Assembly, DllImportSearchPath.SafeDirectories | DllImportSearchPath.UseDllDirectoryForDependencies, out nint h) ? h : 0;
 #endif
         }
 
