@@ -15,6 +15,6 @@
         </ProjectReference>
     </ItemGroup>
 
-    <Import Project="ikvm.libs.targets" />
+    <Import Project="IKVM.libs.targets" />
 
 </Project>

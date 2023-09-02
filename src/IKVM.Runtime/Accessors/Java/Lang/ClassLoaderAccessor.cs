@@ -16,8 +16,10 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         Type javaSecurityProtectionDomain;
 
         FieldAccessor<object> scl;
+        FieldAccessor<object> systemNativeLibraries;
 
         FieldAccessor<object, object> parent;
+        FieldAccessor<object, object> nativeLibraries;
         MethodAccessor<Action<object, object, object>> checkPackageAccess;
         MethodAccessor<Func<object, string, object>> loadClassInternal;
         MethodAccessor<Func<object, string, bool>> checkName;
@@ -47,17 +49,34 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <summary>
         /// Sets the value for the 'scl' field.
         /// </summary>
+        /// <param name="value"></param>
         public void SetScl(object value) => GetField(ref scl, nameof(scl)).SetValue(value);
+
+        /// <summary>
+        /// Gets the value for the 'systemNativeLibraries' field.
+        /// </summary>
+        public object GetSystemNativeLibraries() => GetField(ref systemNativeLibraries, nameof(systemNativeLibraries)).GetValue();
 
         /// <summary>
         /// Gets the value for the 'parent' field.
         /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
         public object GetParent(object self) => GetField(ref parent, nameof(parent)).GetValue(self);
 
         /// <summary>
         /// Sets the value for the 'parent' field.
         /// </summary>
+        /// <param name="self"></param>
+        /// <param name="value"></param>
         public void SetParent(object self, object value) => GetField(ref parent, nameof(parent)).SetValue(self, value);
+
+        /// <summary>
+        /// Gets the value for the 'nativeLibraries' field.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public object GetNativeLibraries(object self) => GetField(ref nativeLibraries, nameof(nativeLibraries)).GetValue(self);
 
         /// <summary>
         /// Invokes the 'checkPackageAccess' method.

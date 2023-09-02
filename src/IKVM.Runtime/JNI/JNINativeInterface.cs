@@ -1,7 +1,10 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
 
+using IKVM.Runtime.Accessors.Ikvm.Internal;
 using IKVM.Runtime.Accessors.Java.Lang;
+using IKVM.Runtime.Accessors.Java.Util;
 
 namespace IKVM.Runtime.JNI
 {
@@ -282,22 +285,68 @@ namespace IKVM.Runtime.JNI
         #endregion
 
         static ClassLoaderAccessor classLoaderAccessor;
+        static ClassLoaderNativeLibraryAccessor classLoaderNativeLibraryAccessor;
+        static SystemAccessor systemAccessor;
+        static CallerIDAccessor callerIDAccessor;
+        static IterableAccessor iterableAccessor;
+        static IteratorAccessor iteratorAccessor;
 
         static ClassLoaderAccessor ClassLoaderAccessor => JVM.BaseAccessors.Get(ref classLoaderAccessor);
+
+        static ClassLoaderNativeLibraryAccessor ClassLoaderNativeLibraryAccessor => JVM.BaseAccessors.Get(ref classLoaderNativeLibraryAccessor);
+
+        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+
+        static CallerIDAccessor CallerIDAccessor  => JVM.BaseAccessors.Get(ref callerIDAccessor);
+
+        static IterableAccessor IterableAccessor => JVM.BaseAccessors.Get(ref iterableAccessor);
+
+        static IteratorAccessor IteratorAccessor => JVM.BaseAccessors.Get(ref iteratorAccessor);
+
+
+        /// <summary>
+        /// Takes a mapped library name and returns the unmapped verison.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        static string GetUnmappedLibraryName(string name)
+        {
+            if (name == null)
+                return null;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return Path.GetFileNameWithoutExtension(name);
+            }
+            else
+            {
+                if (name.StartsWith("lib"))
+                    return Path.GetFileNameWithoutExtension(name).Substring(3);
+                else
+                    return Path.GetFileNameWithoutExtension(name);
+            }
+        }
 
         /// <summary>
         /// Finds the loaded JVM native library.
         /// </summary>
         /// <returns></returns>
-        /// <exception cref="DllNotFoundException"></exception>
+        /// <exception cref="InternalException"></exception>
         static nint FindLibJvm()
         {
-            var l = RuntimeJavaType.FromClass((java.lang.Class)ClassLoaderAccessor.Type).GetClassLoader().GetJavaClassLoader();
-            var h = (nint)ClassLoaderAccessor.InvokeFindNative(l, "jvm");
-            if (h == 0)
-                throw new DllNotFoundException("Could not find preloaded JVM native library.");
+            // preload native JVM library
+            SystemAccessor.InvokeLoadLibrary("jvm", CallerIDAccessor.InvokeCreate(SystemAccessor.Type.TypeHandle));
 
-            return h;
+            // we scan the nativeLibraries Vector on the system ClassLoader for a handle to the existing loaded library
+            var iter = IterableAccessor.InvokeIterator(ClassLoaderAccessor.GetSystemNativeLibraries());
+            while (IteratorAccessor.InvokeHasNext(iter))
+            {
+                var lib = IteratorAccessor.InvokeNext(iter);
+                if (GetUnmappedLibraryName(ClassLoaderNativeLibraryAccessor.GetName(lib)) == "jvm")
+                    return (nint)ClassLoaderNativeLibraryAccessor.GetHandle(lib);
+            }
+
+            throw new InternalException("Could not locate preloaded JVM native library.");
         }
 
         static readonly JNINativeInterfaceMemory memory = new();
@@ -565,7 +614,7 @@ namespace IKVM.Runtime.JNI
 
             handle->NewLocalRef = (void*)Marshal.GetFunctionPointerForDelegate(NewLocalRefDelegate);
             handle->EnsureLocalCapacity = (void*)Marshal.GetFunctionPointerForDelegate(EnsureLocalCapacityDelegate);
-            
+
             handle->AllocObject = (void*)Marshal.GetFunctionPointerForDelegate(AllocObjectDelegate);
             handle->NewObject = (void*)NativeLibrary.GetExport(libjvm, "__JNI_NewObject");
             handle->NewObjectV = (void*)NativeLibrary.GetExport(libjvm, "__JNI_NewObjectV");
