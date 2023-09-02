@@ -159,7 +159,7 @@ namespace IKVM.Runtime
 
             return 0;
 #else
-            return System.Runtime.InteropServices.NativeLibrary.Load(nameOrPath);
+            return System.Runtime.InteropServices.NativeLibrary.TryLoad(nameOrPath, out nint h) ? h : 0;
 #endif
         }
 
