@@ -8,6 +8,7 @@ using IKVM.Runtime.Accessors.Java.Util;
 
 namespace IKVM.Runtime.JNI
 {
+
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
     using jarray = System.IntPtr;
