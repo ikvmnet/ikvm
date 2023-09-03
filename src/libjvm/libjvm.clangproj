@@ -18,6 +18,11 @@
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
         <Dependencies Include="c" />
     </ItemGroup>
+    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
+        <Dependencies Include="c" />
+        <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path/." />
+        <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path/.." />
+    </ItemGroup>
     <ItemGroup>
         <Compile Include="**\*.c" LanguageStandard="c99" />
         <Compile Include="**\*.cpp" LanguageStandard="c++11" />

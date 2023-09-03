@@ -23,14 +23,9 @@
 */
 
 using System.Collections.Generic;
-using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 
 using IKVM.ByteCode.Text;
-using IKVM.Runtime.Accessors.Ikvm.Internal;
-using IKVM.Runtime.Accessors.Java.Lang;
-using IKVM.Runtime.Accessors.Java.Util;
 
 namespace IKVM.Runtime.JNI
 {
@@ -39,36 +34,8 @@ namespace IKVM.Runtime.JNI
 
     using jsize = System.Int32;
 
-    public sealed unsafe class JNIVM
+    public sealed unsafe partial class JNIVM
     {
-
-        /// <summary>
-        /// Native methods available in libjvm.
-        /// </summary>
-        internal static class LibJvm
-        {
-
-            public delegate int JNI_GetDefaultJavaVMInitArgsDelegate(void* vm_args);
-            public delegate int JNI_GetCreatedJavaVMsDelegate(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
-            public delegate int JNI_CreateJavaVMDelegate(JavaVM** p_vm, void** p_env, void* vm_args);
-
-            [DllImport("jvm")]
-            public static extern void Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgsDelegate func);
-
-            [DllImport("jvm")]
-            public static extern void Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMsDelegate func);
-
-            [DllImport("jvm")]
-            public static extern void Set_JNI_CreateJavaVM(JNI_CreateJavaVMDelegate func);
-
-        }
-
-        static SystemAccessor systemAccessor;
-        static CallerIDAccessor callerIDAccessor;
-
-        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
-
-        static CallerIDAccessor CallerIDAccessor => JVM.BaseAccessors.Get(ref callerIDAccessor);
 
         static readonly MUTF8Encoding MUTF8 = MUTF8Encoding.GetMUTF8(52);
 
@@ -81,19 +48,18 @@ namespace IKVM.Runtime.JNI
         static readonly Encoding platformEncoding = CodePagesEncodingProvider.Instance.GetEncoding(0);
 #endif
 
-        static readonly LibJvm.JNI_GetDefaultJavaVMInitArgsDelegate JNI_GetDefaultJavaVMInitArgs = GetDefaultJavaVMInitArgs;
-        static readonly LibJvm.JNI_GetCreatedJavaVMsDelegate JNI_GetCreatedJavaVMs = GetCreatedJavaVMs;
-        static readonly LibJvm.JNI_CreateJavaVMDelegate JNI_CreateJavaVM = CreateJavaVM;
+        static readonly LibJVM.JNI_GetDefaultJavaVMInitArgsDelegate JNI_GetDefaultJavaVMInitArgs = GetDefaultJavaVMInitArgs;
+        static readonly LibJVM.JNI_GetCreatedJavaVMsDelegate JNI_GetCreatedJavaVMs = GetCreatedJavaVMs;
+        static readonly LibJVM.JNI_CreateJavaVMDelegate JNI_CreateJavaVM = CreateJavaVM;
 
         /// <summary>
         /// Initializes the static instance.
         /// </summary>
         static JNIVM()
         {
-            SystemAccessor.InvokeLoadLibrary("jvm", CallerIDAccessor.InvokeCreate(SystemAccessor.Type.TypeHandle));
-            LibJvm.Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs);
-            LibJvm.Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs);
-            LibJvm.Set_JNI_CreateJavaVM(JNI_CreateJavaVM);
+            LibJVM.Instance.Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs);
+            LibJVM.Instance.Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs);
+            LibJVM.Instance.Set_JNI_CreateJavaVM(JNI_CreateJavaVM);
         }
 
         internal static bool IsSupportedJNIVersion(int version)

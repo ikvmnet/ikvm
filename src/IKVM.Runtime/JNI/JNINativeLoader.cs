@@ -23,10 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-
-using IKVM.Runtime;
 
 namespace IKVM.Runtime.JNI
 {
@@ -45,7 +42,7 @@ namespace IKVM.Runtime.JNI
         delegate void JNI_OnUnloadFunc(JavaVM* vm, void* reserved);
 
         public static readonly object SyncRoot = new object();
-        static readonly List<nint> loaded = new List<nint>();
+        static readonly List<nint> loaded = new();
 
         /// <summary>
         /// Initiates a load of the given JNI library by the specified class loader.
@@ -64,7 +61,7 @@ namespace IKVM.Runtime.JNI
                 try
                 {
                     // attempt to load the native library
-                    if ((p = NativeLibrary.Load(filename)) == 0)
+                    if ((p = LibJVM.Instance.JVM_LoadLibrary(filename)) == 0)
                     {
                         Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', message = {2}", filename, "NULL handle returned.");
                         return 0;
@@ -93,7 +90,7 @@ namespace IKVM.Runtime.JNI
 
                     try
                     {
-                        var onload = NativeLibrary.GetExport(p, "JNI_OnLoad");
+                        var onload = LibJVM.Instance.JVM_FindLibraryEntry(p, "JNI_OnLoad");
                         if (onload != 0)
                         {
                             Tracer.Info(Tracer.Jni, "Calling JNI_OnLoad on: {0}", filename);
@@ -157,7 +154,7 @@ namespace IKVM.Runtime.JNI
 
                 try
                 {
-                    var onunload = NativeLibrary.GetExport(p, "JNI_OnUnload");
+                    var onunload = LibJVM.Instance.JVM_FindLibraryEntry(p, "JNI_OnUnload");
                     if (onunload != 0)
                     {
                         Tracer.Info(Tracer.Jni, "Calling JNI_OnUnload on: handle = 0x{0:X}", handle);
@@ -182,7 +179,7 @@ namespace IKVM.Runtime.JNI
                 // remove record of native library
                 loaded.Remove(p);
                 loader.UnregisterNativeLibrary(p);
-                NativeLibrary.Free(p);
+                LibJVM.Instance.JVM_UnloadLibrary(p);
             }
         }
 

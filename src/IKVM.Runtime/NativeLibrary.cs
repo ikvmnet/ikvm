@@ -6,7 +6,7 @@ namespace IKVM.Runtime
 {
 
     /// <summary>
-    /// Provides methods to load a library.
+    /// Provides methods to load libraries from standard .NET search locations.
     /// </summary>
     static class NativeLibrary
     {
@@ -57,7 +57,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="lpLibFileName"></param>
             /// <returns></returns>
-            [DllImport("kernel32")]
+            [DllImport("kernel32", SetLastError = false)]
             static extern nint LoadLibrary(string lpLibFileName);
 
             /// <summary>
@@ -65,7 +65,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="handle"></param>
             /// <returns></returns>
-            [DllImport("kernel32")]
+            [DllImport("kernel32", SetLastError = false)]
             static extern nint FreeLibrary(nint handle);
 
             /// <summary>
@@ -89,9 +89,13 @@ namespace IKVM.Runtime
                     var asml = typeof(NativeLibrary).Assembly.Location is string s ? Path.GetDirectoryName(s) : null;
                     var root = Environment.GetEnvironmentVariable("IKVM_LIBRARY_PATH") ?? asml;
 
+                    // assembly possible loaded in memory: we have no available search path
+                    if (string.IsNullOrEmpty(root))
+                        return 0;
+
                     // scan supported RIDs for current platform
                     foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
-                        if (Path.Combine(root, "runtimes", rid, "native", "ikvm.dll") is string lib)
+                        if (Path.Combine(root, "runtimes", rid, "native", MapLibraryName("ikvm")) is string lib)
                             if (File.Exists(lib) && LoadLibrary(lib) is nint h2 and not 0)
                                 return h2;
                 }
@@ -154,6 +158,26 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
+        /// Returns a version of the library name with the OS specific prefix and suffix.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static string MapLibraryName(string name)
+        {
+            if (name == null)
+                return null;
+            if (Path.HasExtension(name))
+                return name;
+
+            if (RuntimeUtil.IsWindows)
+                return name + ".dll";
+            else if (RuntimeUtil.IsOSX)
+                return "lib" + name + ".dylib";
+            else
+                return "lib" + name + ".so";
+        }
+
+        /// <summary>
         /// Loads the given library in a platform dependent manner.
         /// </summary>
         /// <param name="nameOrPath"></param>
@@ -171,9 +195,13 @@ namespace IKVM.Runtime
             var asml = typeof(NativeLibrary).Assembly.Location is string s ? Path.GetDirectoryName(s) : null;
             var root = Environment.GetEnvironmentVariable("IKVM_LIBRARY_PATH") ?? asml;
 
+            // assembly possible loaded in memory: we have no available search path
+            if (string.IsNullOrEmpty(root))
+                return 0;
+
             // scan supported RIDs for current platform
             foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
-                if (Path.Combine(root, "runtimes", rid, "native", nameOrPath) is string lib)
+                if (Path.Combine(root, "runtimes", rid, "native", MapLibraryName(nameOrPath)) is string lib)
                     if (File.Exists(lib) && dlopen(lib) is nint h2 and not 0)
                         return h2;
 
