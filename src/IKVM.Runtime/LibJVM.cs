@@ -1,33 +1,11 @@
-﻿/*
-  Copyright (C) 2002-2014 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-
-using System.IO;
+﻿using System.IO;
 using System.Runtime.InteropServices;
+
+using IKVM.Runtime.JNI;
 
 using jsize = System.Int32;
 
-namespace IKVM.Runtime.JNI
+namespace IKVM.Runtime
 {
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
@@ -38,85 +16,79 @@ namespace IKVM.Runtime.JNI
     internal unsafe class LibJVM
     {
 
-        /// <summary>
-        /// Holds the extern methods to prevent early loading.
-        /// </summary>
-        static class Externs
-        {
-
-            [DllImport("jvm", SetLastError = false)]
-            public static extern void Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgsDelegate func);
-
-            [DllImport("jvm", SetLastError = false)]
-            public static extern void Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMsDelegate func);
-
-            [DllImport("jvm", SetLastError = false)]
-            public static extern void Set_JNI_CreateJavaVM(JNI_CreateJavaVMDelegate func);
-
-            [DllImport("jvm", SetLastError = false)]
-            public static extern nint JVM_LoadLibrary(string name);
-
-            [DllImport("jvm", SetLastError = false)]
-            public static extern nint JVM_UnloadLibrary(nint handle);
-
-            [DllImport("jvm", SetLastError = false)]
-            public static extern nint JVM_FindLibraryEntry(nint handle, string name);
-
-        }
-
-        /// <summary>
-        /// Gets the default instance.
-        /// </summary>
-        public static LibJVM Instance = new LibJVM();
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        LibJVM()
-        {
-
-        }
-
-        /// <summary>
-        /// Gets a handle to the loaded libjvm library.
-        /// </summary>
-        public nint Handle { get; private set; } = NativeLibrary.Load(Path.Combine(JVM.Properties.HomePath, "bin", NativeLibrary.MapLibraryName("jvm")));
+        delegate void Set_JNI_GetDefaultJavaVMInitArgsDelegate(JNI_GetDefaultJavaVMInitArgsDelegate func);
+        delegate void Set_JNI_GetCreatedJavaVMsDelegate(JNI_GetCreatedJavaVMsDelegate func);
+        delegate void Set_JNI_CreateJavaVMDelegate(JNI_CreateJavaVMDelegate func);
+        delegate nint JVM_LoadLibraryDelegate(string name);
+        delegate nint JVM_UnloadLibraryDelegate(nint handle);
+        delegate nint JVM_FindLibraryEntryDelegate(nint handle, string name);
 
         public delegate int JNI_GetDefaultJavaVMInitArgsDelegate(void* vm_args);
         public delegate int JNI_GetCreatedJavaVMsDelegate(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
         public delegate int JNI_CreateJavaVMDelegate(JavaVM** p_vm, void** p_env, void* vm_args);
 
         /// <summary>
+        /// Gets the default instance.
+        /// </summary>
+        public static LibJVM Instance = new LibJVM();
+
+        readonly Set_JNI_GetDefaultJavaVMInitArgsDelegate _Set_JNI_GetDefaultJavaVMInitArgs;
+        readonly Set_JNI_GetCreatedJavaVMsDelegate _Set_JNI_GetCreatedJavaVMs;
+        readonly Set_JNI_CreateJavaVMDelegate _Set_JNI_CreateJavaVM;
+        readonly JVM_LoadLibraryDelegate _JVM_LoadLibrary;
+        readonly JVM_UnloadLibraryDelegate _JVM_UnloadLibrary;
+        readonly JVM_FindLibraryEntryDelegate _JVM_FindLibraryEntry;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        LibJVM()
+        {
+            Handle = NativeLibrary.Load(Path.Combine(JVM.Properties.HomePath, "bin", NativeLibrary.MapLibraryName("jvm")));
+            _Set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_GetDefaultJavaVMInitArgs"));
+            _Set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_GetCreatedJavaVMs"));
+            _Set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_CreateJavaVM"));
+            _JVM_LoadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_LoadLibraryDelegate>(NativeLibrary.GetExport(Handle, "JVM_LoadLibrary"));
+            _JVM_UnloadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_UnloadLibraryDelegate>(NativeLibrary.GetExport(Handle, "JVM_UnloadLibrary"));
+            _JVM_FindLibraryEntry = Marshal.GetDelegateForFunctionPointer<JVM_FindLibraryEntryDelegate>(NativeLibrary.GetExport(Handle, "JVM_FindLibraryEntry"));
+        }
+
+        /// <summary>
+        /// Gets a handle to the loaded libjvm library.
+        /// </summary>
+        public readonly nint Handle;
+
+        /// <summary>
         /// Invokes the 'Set_JNI_GetDefaultJavaVMInitArgs' method from libjvm.
         /// </summary>
         /// <param name="func"></param>
-        public void Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgsDelegate func) => Externs.Set_JNI_GetDefaultJavaVMInitArgs(func);
+        public void Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgsDelegate func) => _Set_JNI_GetDefaultJavaVMInitArgs(func);
 
         /// <summary>
         /// Invokes the 'Set_JNI_GetCreatedJavaVMs' method from libjvm.
         /// </summary>
         /// <param name="func"></param>
-        public void Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMsDelegate func) => Externs.Set_JNI_GetCreatedJavaVMs(func);
+        public void Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMsDelegate func) => _Set_JNI_GetCreatedJavaVMs(func);
 
         /// <summary>
         /// Invokes the 'Set_JNI_CreateJavaVM' method from libjvm.
         /// </summary>
         /// <param name="func"></param>
-        public void Set_JNI_CreateJavaVM(JNI_CreateJavaVMDelegate func) => Externs.Set_JNI_CreateJavaVM(func);
+        public void Set_JNI_CreateJavaVM(JNI_CreateJavaVMDelegate func) => _Set_JNI_CreateJavaVM(func);
 
         /// <summary>
         /// Invokes the 'JVM_LoadLibrary' method from libjvm.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public nint JVM_LoadLibrary(string name) => Externs.JVM_LoadLibrary(name);
+        public nint JVM_LoadLibrary(string name) => _JVM_LoadLibrary(name);
 
         /// <summary>
         /// Invokes the 'JVM_UnloadLibrary' method from libjvm.
         /// </summary>
         /// <param name="handle"></param>
         /// <returns></returns>
-        public nint JVM_UnloadLibrary(nint handle) => Externs.JVM_UnloadLibrary(handle);
+        public nint JVM_UnloadLibrary(nint handle) => _JVM_UnloadLibrary(handle);
 
         /// <summary>
         /// Invokes the 'JVM_FindLibraryEntry' method from libjvm.
@@ -124,7 +96,7 @@ namespace IKVM.Runtime.JNI
         /// <param name="handle"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public nint JVM_FindLibraryEntry(nint handle, string name) => Externs.JVM_FindLibraryEntry(handle, name);
+        public nint JVM_FindLibraryEntry(nint handle, string name) => _JVM_FindLibraryEntry(handle, name);
 
         /// <summary>
         /// Finalizes the instance.
@@ -132,10 +104,7 @@ namespace IKVM.Runtime.JNI
         ~LibJVM()
         {
             if (Handle != 0)
-            {
                 NativeLibrary.Free(Handle);
-                Handle = 0;
-            }
         }
 
     }

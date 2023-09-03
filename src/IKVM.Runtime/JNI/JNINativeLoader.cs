@@ -72,7 +72,7 @@ namespace IKVM.Runtime.JNI
                     {
                         if (h == p)
                         {
-                            NativeLibrary.Free(p);
+                            LibJVM.Instance.JVM_UnloadLibrary(p);
                             Tracer.Warning(Tracer.Jni, "Library was already loaded, returning same reference.", filename);
                             return p;
                         }
@@ -133,7 +133,7 @@ namespace IKVM.Runtime.JNI
                 catch (Exception e)
                 {
                     Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', error = {1}, message = {2}", filename, "Exception", e.Message);
-                    NativeLibrary.Free(p);
+                    LibJVM.Instance.JVM_UnloadLibrary(p);
                     throw;
                 }
             }
