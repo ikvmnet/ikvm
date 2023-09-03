@@ -8,7 +8,6 @@ using IKVM.Runtime.Accessors.Java.Util;
 
 namespace IKVM.Runtime.JNI
 {
-
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
     using jarray = System.IntPtr;
@@ -297,7 +296,7 @@ namespace IKVM.Runtime.JNI
 
         static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
 
-        static CallerIDAccessor CallerIDAccessor  => JVM.BaseAccessors.Get(ref callerIDAccessor);
+        static CallerIDAccessor CallerIDAccessor => JVM.BaseAccessors.Get(ref callerIDAccessor);
 
         static IterableAccessor IterableAccessor => JVM.BaseAccessors.Get(ref iterableAccessor);
 
@@ -314,17 +313,13 @@ namespace IKVM.Runtime.JNI
             if (name == null)
                 return null;
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return Path.GetFileNameWithoutExtension(name);
-            }
-            else
-            {
-                if (name.StartsWith("lib"))
-                    return Path.GetFileNameWithoutExtension(name).Substring(3);
-                else
-                    return Path.GetFileNameWithoutExtension(name);
-            }
+            name = Path.GetFileNameWithoutExtension(name);
+
+            // strip lib prefix on Unix
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false && name.StartsWith("lib"))
+                name = name.Substring(3);
+
+            return name;
         }
 
         /// <summary>
@@ -338,12 +333,19 @@ namespace IKVM.Runtime.JNI
             SystemAccessor.InvokeLoadLibrary("jvm", CallerIDAccessor.InvokeCreate(SystemAccessor.Type.TypeHandle));
 
             // we scan the nativeLibraries Vector on the system ClassLoader for a handle to the existing loaded library
-            var iter = IterableAccessor.InvokeIterator(ClassLoaderAccessor.GetSystemNativeLibraries());
-            while (IteratorAccessor.InvokeHasNext(iter))
+            var libs = ClassLoaderAccessor.GetSystemNativeLibraries();
+            if (libs != null)
             {
-                var lib = IteratorAccessor.InvokeNext(iter);
-                if (GetUnmappedLibraryName(ClassLoaderNativeLibraryAccessor.GetName(lib)) == "jvm")
-                    return (nint)ClassLoaderNativeLibraryAccessor.GetHandle(lib);
+                lock (libs)
+                {
+                    for (var i = IterableAccessor.InvokeIterator(libs); IteratorAccessor.InvokeHasNext(i);)
+                    {
+                        var l = IteratorAccessor.InvokeNext(i);
+                        var n = GetUnmappedLibraryName(ClassLoaderNativeLibraryAccessor.GetName(l));
+                        if (n == "jvm")
+                            return (nint)ClassLoaderNativeLibraryAccessor.GetHandle(l);
+                    }
+                }
             }
 
             throw new InternalException("Could not locate preloaded JVM native library.");
