@@ -21,7 +21,6 @@ namespace IKVM.Tests.JNI
         {
             // compile the java test code on the fly
             var source = new StreamReader(typeof(JniTests).Assembly.GetManifestResourceStream("IKVM.Tests.JNI.JniTests.java")).ReadToEnd();
-            source = source.Replace("@@IKVM_TESTS_NATIVE@@", Native.GetLibraryPath().Replace(@"\", @"\\"));
             var unit = new InMemoryCodeUnit("ikvm.tests.jni.JniTests", source);
             var compiler = new InMemoryCompiler(new[] { unit });
             compiler.Compile();

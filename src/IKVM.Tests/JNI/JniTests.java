@@ -5,7 +5,7 @@ public class JniTests
 
 	static
 	{
-		System.load("@@IKVM_TESTS_NATIVE@@");
+		System.loadLibrary("ikvm-tests");
 	}
 
 	public native void getVersionTest();

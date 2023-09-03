@@ -23,10 +23,14 @@
 */
 
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
 using IKVM.ByteCode.Text;
+using IKVM.Runtime.Accessors.Ikvm.Internal;
+using IKVM.Runtime.Accessors.Java.Lang;
+using IKVM.Runtime.Accessors.Java.Util;
 
 namespace IKVM.Runtime.JNI
 {
@@ -59,6 +63,13 @@ namespace IKVM.Runtime.JNI
 
         }
 
+        static SystemAccessor systemAccessor;
+        static CallerIDAccessor callerIDAccessor;
+
+        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+
+        static CallerIDAccessor CallerIDAccessor => JVM.BaseAccessors.Get(ref callerIDAccessor);
+
         static readonly MUTF8Encoding MUTF8 = MUTF8Encoding.GetMUTF8(52);
 
         internal static volatile bool jvmCreated;
@@ -70,8 +81,6 @@ namespace IKVM.Runtime.JNI
         static readonly Encoding platformEncoding = CodePagesEncodingProvider.Instance.GetEncoding(0);
 #endif
 
-#if FIRST_PASS == false
-
         static readonly LibJvm.JNI_GetDefaultJavaVMInitArgsDelegate JNI_GetDefaultJavaVMInitArgs = GetDefaultJavaVMInitArgs;
         static readonly LibJvm.JNI_GetCreatedJavaVMsDelegate JNI_GetCreatedJavaVMs = GetCreatedJavaVMs;
         static readonly LibJvm.JNI_CreateJavaVMDelegate JNI_CreateJavaVM = CreateJavaVM;
@@ -81,12 +90,11 @@ namespace IKVM.Runtime.JNI
         /// </summary>
         static JNIVM()
         {
+            SystemAccessor.InvokeLoadLibrary("jvm", CallerIDAccessor.InvokeCreate(SystemAccessor.Type.TypeHandle));
             LibJvm.Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs);
             LibJvm.Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs);
             LibJvm.Set_JNI_CreateJavaVM(JNI_CreateJavaVM);
         }
-
-#endif
 
         internal static bool IsSupportedJNIVersion(int version)
         {

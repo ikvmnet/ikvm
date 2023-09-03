@@ -303,7 +303,6 @@ namespace IKVM.Runtime.JNI
 
         static IteratorAccessor IteratorAccessor => JVM.BaseAccessors.Get(ref iteratorAccessor);
 
-
         /// <summary>
         /// Takes a mapped library name and returns the unmapped verison.
         /// </summary>
