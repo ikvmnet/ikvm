@@ -351,6 +351,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     Marshal.Copy((IntPtr)address, buf, 0, len);
                     stream.Write(buf, 0, len);
+                    stream.Flush();
                 }
                 finally
                 {
@@ -358,6 +359,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
 #else
                 stream.Write(new ReadOnlySpan<byte>((byte*)(IntPtr)address, len));
+                stream.Flush();
 #endif
 
                 return len;
@@ -460,6 +462,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     {
                         Marshal.Copy((IntPtr)address, buf, 0, len);
                         stream.Write(buf, 0, len);
+                        stream.Flush();
                     }
                     finally
                     {
@@ -467,6 +470,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     }
 #else
                     stream.Write(new ReadOnlySpan<byte>((byte*)(IntPtr)address, len));
+                    stream.Flush();
 #endif
 
                     stream.Seek(p, SeekOrigin.Begin);
@@ -558,6 +562,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     {
                         Marshal.Copy(vecs[i].iov_base, buf, 0, vecs[i].iov_len);
                         stream.Write(buf, 0, vecs[i].iov_len);
+                        stream.Flush();
                         length += vecs[i].iov_len;
 
                     }
@@ -567,6 +572,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     }
 #else
                     stream.Write(new ReadOnlySpan<byte>((byte*)vecs[i].iov_base, vecs[i].iov_len));
+                    stream.Flush();
                     length += vecs[i].iov_len;
 #endif
                 }
