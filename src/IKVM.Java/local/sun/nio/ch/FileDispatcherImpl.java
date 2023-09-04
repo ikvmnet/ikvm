@@ -110,8 +110,10 @@ class FileDispatcherImpl extends FileDispatcher {
     }
 
     boolean transferToDirectlyNeedsPositionLock() {
-        return true;
+        return transferToDirectlyNeedsPositionLock0();
     }
+
+    static native boolean transferToDirectlyNeedsPositionLock0();
 
     static boolean isFastFileTransferRequested() {
         String fileTransferProp = java.security.AccessController.doPrivileged(new PrivilegedAction<String>() {

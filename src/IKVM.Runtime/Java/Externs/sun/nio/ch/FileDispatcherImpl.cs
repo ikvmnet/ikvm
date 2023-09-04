@@ -714,6 +714,19 @@ namespace IKVM.Java.Externs.sun.nio.ch
         }
 
         /// <summary>
+        /// Implements the native method 'transferToDirectlyNeedsPositionLock0'.
+        /// </summary>
+        /// <returns></returns>
+        public static bool transferToDirectlyNeedsPositionLock0()
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return RuntimeUtil.IsWindows;
+#endif
+        }
+
+        /// <summary>
         /// Implements the native method 'duplicateForMapping'.
         /// </summary>
         /// <param name="self"></param>

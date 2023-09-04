@@ -25,86 +25,30 @@ using System;
 using System.Diagnostics;
 using System.Text;
 
+using IKVM.Runtime.Accessors.Java.Lang;
+
 namespace IKVM.Runtime.JNI
 {
 
     public unsafe struct JNIFrame
     {
 
-#if FIRST_PASS || IMPORTER || EXPORTER
-#else
-
-        JNIEnv.ManagedJNIEnv env;
-        JNIEnv.ManagedJNIEnv.FrameState prevFrameState;
-
-#endif
-
         /// <summary>
-        /// Enters the <see cref="JNIFrame"/> with a specified <see cref="RuntimeClassLoader"/> in scope.
-        /// </summary>
-        /// <param name="loader"></param>
-        /// <returns></returns>
-        internal RuntimeClassLoader Enter(RuntimeClassLoader loader)
-        {
-#if FIRST_PASS || IMPORTER || EXPORTER
-            throw new NotImplementedException();
-#else
-            Enter((ikvm.@internal.CallerID)null);
-            RuntimeClassLoader prev = env.classLoader;
-            env.classLoader = loader;
-            return prev;
-#endif
-        }
-
-        /// <summary>
-        /// Leaves a <see cref="JNIFrame"/> previously entered.
-        /// </summary>
-        internal void Leave(RuntimeClassLoader prev)
-        {
-#if FIRST_PASS || IMPORTER || EXPORTER
-            throw new NotImplementedException();
-#else
-            env.classLoader = prev;
-            Leave();
-#endif
-        }
-
-        /// <summary>
-        /// Enters the <see cref="JNIFrame"/> with a specified <see cref="ikvm.@internal.CallerID"/> in scope.
+        /// Invoked by managed code to acquire a function pointer to a native JNI method.
         /// </summary>
         /// <param name="callerID"></param>
+        /// <param name="clazz"></param>
+        /// <param name="name"></param>
+        /// <param name="sig"></param>
         /// <returns></returns>
-        public IntPtr Enter(ikvm.@internal.CallerID callerID)
-        {
-#if FIRST_PASS || IMPORTER || EXPORTER
-            throw new NotImplementedException();
-#else
-            env = TlsHack.ManagedJNIEnv;
-            env ??= JNIEnv.CreateJNIEnv(JVM.Context)->GetManagedJNIEnv();
-            prevFrameState = env.Enter(callerID);
-            return (IntPtr)(void*)env.pJNIEnv;
-#endif
-        }
-
-        /// <summary>
-        /// Leaves a <see cref="JNIFrame"/> previously entered.
-        /// </summary>
-        public void Leave()
-        {
-#if FIRST_PASS || IMPORTER || EXPORTER
-            throw new NotImplementedException();
-#else
-            var x = env.Leave(prevFrameState);
-            if (x != null)
-                throw x;
-#endif
-        }
-
+        /// <exception cref="java.lang.UnsatisfiedLinkError"></exception>
         public static IntPtr GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
+            JVM.EnsureLibJavaLoaded();
+
             var loader = RuntimeClassLoader.FromCallerID(callerID);
             int sp = 0;
             for (int i = 1; sig[i] != ')'; i++)
@@ -205,6 +149,75 @@ namespace IKVM.Runtime.JNI
             }
 
             return sb.ToString();
+        }
+
+#if FIRST_PASS || IMPORTER || EXPORTER
+#else
+
+        JNIEnv.ManagedJNIEnv env;
+        JNIEnv.ManagedJNIEnv.FrameState prevFrameState;
+
+#endif
+
+        /// <summary>
+        /// Enters the <see cref="JNIFrame"/> with a specified <see cref="RuntimeClassLoader"/> in scope.
+        /// </summary>
+        /// <param name="loader"></param>
+        /// <returns></returns>
+        internal RuntimeClassLoader Enter(RuntimeClassLoader loader)
+        {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            Enter((ikvm.@internal.CallerID)null);
+            RuntimeClassLoader prev = env.classLoader;
+            env.classLoader = loader;
+            return prev;
+#endif
+        }
+
+        /// <summary>
+        /// Leaves a <see cref="JNIFrame"/> previously entered.
+        /// </summary>
+        internal void Leave(RuntimeClassLoader prev)
+        {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            env.classLoader = prev;
+            Leave();
+#endif
+        }
+
+        /// <summary>
+        /// Enters the <see cref="JNIFrame"/> with a specified <see cref="ikvm.@internal.CallerID"/> in scope.
+        /// </summary>
+        /// <param name="callerID"></param>
+        /// <returns></returns>
+        public IntPtr Enter(ikvm.@internal.CallerID callerID)
+        {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            env = TlsHack.ManagedJNIEnv;
+            env ??= JNIEnv.CreateJNIEnv(JVM.Context)->GetManagedJNIEnv();
+            prevFrameState = env.Enter(callerID);
+            return (IntPtr)(void*)env.pJNIEnv;
+#endif
+        }
+
+        /// <summary>
+        /// Leaves a <see cref="JNIFrame"/> previously entered.
+        /// </summary>
+        public void Leave()
+        {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            var x = env.Leave(prevFrameState);
+            if (x != null)
+                throw x;
+#endif
         }
 
         public nint MakeLocalRef(object obj)

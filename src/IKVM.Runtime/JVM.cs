@@ -170,6 +170,34 @@ namespace IKVM.Runtime
 #endif
         }
 
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+
+        static object libJavaLock = new();
+        static bool libJavaLoaded = false;
+
+        /// <summary>
+        /// Loads the libjava library.
+        /// </summary>
+        static void LoadLibJava()
+        {
+            EnsureInitialized();
+            SystemAccessor.InvokeLoadLibrary("iava", CallerIDAccessor.InvokeCreate(SystemAccessor.Type.TypeHandle));
+            libJavaLoaded = true;
+        }
+
+        /// <summary>
+        /// Ensures libjava is loaded.
+        /// </summary>
+        public static void EnsureLibJavaLoaded()
+        {
+            if (libJavaLoaded == false)
+                lock (libJavaLock)
+                    if (libJavaLoaded == false)
+                        LoadLibJava();
+        }
+
+#endif
+
         /// <summary>
         /// Creates the 'system' thread group.
         /// </summary>

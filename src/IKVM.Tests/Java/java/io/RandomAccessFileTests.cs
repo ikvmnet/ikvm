@@ -40,6 +40,25 @@ namespace IKVM.Tests.Java.java.io
         }
 
         [TestMethod]
+        public void CanLock()
+        {
+            // generate temporary file
+            var p = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
+            var c = new byte[1024];
+            RandomNumberGenerator.Create().GetBytes(c);
+            System.IO.File.WriteAllBytes(p, c);
+
+            var r = new RandomAccessFile(p, "rw");
+            var l = r.getChannel().@lock();
+            l.Should().NotBeNull();
+            l.isValid().Should().BeTrue();
+            l.isShared().Should().BeFalse();
+            l.position().Should().Be(0);
+            l.size().Should().Be(long.MaxValue);
+            l.close();
+        }
+
+        [TestMethod]
         public void CanLockRangeExclusive()
         {
             // generate temporary file

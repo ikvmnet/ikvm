@@ -93,6 +93,10 @@ public final class FileDescriptor {
         
     }
 
+    static {
+        initIDs();
+    }
+
     /**
      * A handle to the standard input stream. Usually, this file
      * descriptor is not used directly, but rather via the input stream
@@ -159,6 +163,9 @@ public final class FileDescriptor {
      * @since     JDK1.1
      */
     public native void sync() throws SyncFailedException;
+
+    /* This routine initializes JNI field offsets for the class */
+    private static native void initIDs();
 
     private static native FileDescriptor standardStream(int fd);
 

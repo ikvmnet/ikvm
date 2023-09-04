@@ -31,70 +31,69 @@ namespace IKVM.Java.Externs.java.io
         const int O_SYNC = 4;
         const int O_DSYNC = 8;
 
-        /// <summary>
-        /// Implements the native method 'open0'.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <param name="name"></param>
-        /// <param name="mode"></param>
-        public static void open0(object self, string name, int mode)
-        {
-#if FIRST_PASS 
-            throw new NotImplementedException();
-#else
-            var fd = RandomAccessFileAccessor.GetFd(self);
-            if (fd == null)
-                throw new global::java.io.IOException("Stream closed.");
+//        /// <summary>
+//        /// Implements the native method 'open0'.
+//        /// </summary>
+//        /// <param name="self"></param>
+//        /// <param name="name"></param>
+//        /// <param name="mode"></param>
+//        public static void open0(object self, string name, int mode)
+//        {
+//#if FIRST_PASS 
+//            throw new NotImplementedException();
+//#else
+//            var fd = RandomAccessFileAccessor.GetFd(self);
+//            if (fd == null)
+//                throw new global::java.io.IOException("Stream closed.");
 
-            try
-            {
-                var fileMode = (FileMode)0;
-                if ((mode & O_RDONLY) == O_RDONLY)
-                    fileMode |= FileMode.Open;
-                if ((mode & O_RDWR) == O_RDWR)
-                    fileMode |= FileMode.OpenOrCreate;
+//            try
+//            {
+//                var fileMode = (FileMode)0;
+//                if ((mode & O_RDONLY) == O_RDONLY)
+//                    fileMode |= FileMode.Open;
+//                if ((mode & O_RDWR) == O_RDWR)
+//                    fileMode |= FileMode.OpenOrCreate;
 
-                var fileAccess = (FileAccess)0;
-                if ((mode & O_RDONLY) == O_RDONLY)
-                    fileAccess |= FileAccess.Read;
-                if ((mode & O_RDWR) == O_RDWR)
-                    fileAccess |= FileAccess.ReadWrite;
+//                var fileAccess = (FileAccess)0;
+//                if ((mode & O_RDONLY) == O_RDONLY)
+//                    fileAccess |= FileAccess.Read;
+//                if ((mode & O_RDWR) == O_RDWR)
+//                    fileAccess |= FileAccess.ReadWrite;
 
+//                if (JVM.Vfs.IsPath(name))
+//                {
+//                    FileDescriptorAccessor.SetStream(fd, JVM.Vfs.Open(name, fileMode, fileAccess));
+//                    return;
+//                }
 
-                if (JVM.Vfs.IsPath(name))
-                {
-                    FileDescriptorAccessor.SetStream(fd, JVM.Vfs.Open(name, fileMode, fileAccess));
-                    return;
-                }
-
-                FileDescriptorAccessor.SetStream(fd, new FileStream(name, fileMode, fileAccess, FileShare.ReadWrite, 1, false));
-            }
-            catch (ObjectDisposedException e)
-            {
-                throw new global::java.io.IOException(e.Message);
-            }
-            catch (ArgumentException e)
-            {
-                throw new global::java.io.FileNotFoundException(e.Message);
-            }
-            catch (SecurityException e)
-            {
-                throw new global::java.lang.SecurityException(e.Message);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                throw new global::java.io.FileNotFoundException(name + " (Access is denied)");
-            }
-            catch (IOException e)
-            {
-                throw new global::java.io.FileNotFoundException(e.Message);
-            }
-            catch (NotSupportedException e)
-            {
-                throw new global::java.io.FileNotFoundException(e.Message);
-            }
-#endif
-        }
+//                FileDescriptorAccessor.SetStream(fd, new FileStream(name, fileMode, fileAccess, FileShare.ReadWrite, 1, false));
+//            }
+//            catch (ObjectDisposedException e)
+//            {
+//                throw new global::java.io.IOException(e.Message);
+//            }
+//            catch (ArgumentException e)
+//            {
+//                throw new global::java.io.FileNotFoundException(e.Message);
+//            }
+//            catch (SecurityException e)
+//            {
+//                throw new global::java.lang.SecurityException(e.Message);
+//            }
+//            catch (UnauthorizedAccessException)
+//            {
+//                throw new global::java.io.FileNotFoundException(name + " (Access is denied)");
+//            }
+//            catch (IOException e)
+//            {
+//                throw new global::java.io.FileNotFoundException(e.Message);
+//            }
+//            catch (NotSupportedException e)
+//            {
+//                throw new global::java.io.FileNotFoundException(e.Message);
+//            }
+//#endif
+//        }
 
         /// <summary>
         /// Implements the native method 'read0'.
@@ -463,14 +462,6 @@ namespace IKVM.Java.Externs.java.io
                 throw new global::java.io.IOException(e.Message);
             }
 #endif
-        }
-
-        /// <summary>
-        /// Implements the native method 'initIDs'.
-        /// </summary>
-        public static void initIDs()
-        {
-
         }
 
     }

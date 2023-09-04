@@ -7,6 +7,8 @@
     <PropertyGroup>
         <TargetName>iava</TargetName>
         <LanguageStandard>c99</LanguageStandard>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\io</IncludeDirectories>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io</IncludeDirectories>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libfdlibm\libfdlibm.clangproj" />
@@ -20,6 +22,9 @@
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
         <Dependencies Include="c" />
     </ItemGroup>
+    <ItemGroup Condition="$(TargetTriple.Contains('musl'))">
+        <PreprocessorDefinitions Include="isnanf=isnan" />
+    </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
         <AdditionalLinkOptions Include="-framework CoreFoundation" />
         <AdditionalLinkOptions Include="-framework Foundation" />
@@ -30,8 +35,9 @@
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\*.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\share\native\common\check_code.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\share\native\common\check_format.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\io\**\*.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common\*.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io\canonicalize_md.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io\**\*.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\util\locale\**\*.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\provider\**\*.c" />
     </ItemGroup>
