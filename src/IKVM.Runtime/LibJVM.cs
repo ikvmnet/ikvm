@@ -13,7 +13,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Required native methods available in libjvm.
     /// </summary>
-    internal unsafe class LibJVM
+    internal unsafe class LibJvm
     {
 
         delegate void Set_JNI_GetDefaultJavaVMInitArgsDelegate(JNI_GetDefaultJavaVMInitArgsDelegate func);
@@ -30,7 +30,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Gets the default instance.
         /// </summary>
-        public static LibJVM Instance = new LibJVM();
+        public static LibJvm Instance = new();
 
         readonly Set_JNI_GetDefaultJavaVMInitArgsDelegate _Set_JNI_GetDefaultJavaVMInitArgs;
         readonly Set_JNI_GetCreatedJavaVMsDelegate _Set_JNI_GetCreatedJavaVMs;
@@ -42,9 +42,12 @@ namespace IKVM.Runtime
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        LibJVM()
+        LibJvm()
         {
-            Handle = NativeLibrary.Load(Path.Combine(JVM.Properties.HomePath, "bin", NativeLibrary.MapLibraryName("jvm")));
+            // load libjvm through IKVM native library functionality
+            if ((Handle = NativeLibrary.Load(Path.Combine(JVM.Properties.HomePath, "bin", NativeLibrary.MapLibraryName("jvm")))) == 0)
+                throw new InternalException("Could not load libjvm.");
+
             _Set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_GetDefaultJavaVMInitArgs"));
             _Set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_GetCreatedJavaVMs"));
             _Set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_CreateJavaVM"));
@@ -101,7 +104,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Finalizes the instance.
         /// </summary>
-        ~LibJVM()
+        ~LibJvm()
         {
             if (Handle != 0)
                 NativeLibrary.Free(Handle);

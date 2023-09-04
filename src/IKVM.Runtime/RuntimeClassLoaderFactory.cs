@@ -129,7 +129,7 @@ namespace IKVM.Runtime
 #endif
         {
             lock (wrapperLock)
-                return bootstrapClassLoader ??= new BootstrapClassLoader(context);
+                return bootstrapClassLoader ??= new RuntimeBootstrapClassLoader(context);
         }
 
 #if !IMPORTER && !EXPORTER

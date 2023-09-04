@@ -11,7 +11,7 @@ namespace IKVM.Runtime
     /// Holds a reference to the 'ikvm' native library. This class cannot depend on NativeLibrary as that class can
     /// potentially use libikvm on down-level platforms.
     /// </summary>
-    class LibIkvm
+    internal class LibIkvm
     {
 
         /// <summary>
@@ -80,7 +80,7 @@ namespace IKVM.Runtime
         static extern nint FreeLibrary(nint handle);
 
         /// <summary>
-        /// Implements the native OS load functionality.
+        /// Implements the native OS load functionality for 'libikvm'.
         /// </summary>
         /// <param name="nameOrPath"></param>
         /// <returns></returns>
@@ -93,10 +93,12 @@ namespace IKVM.Runtime
             }
             else
             {
+                // on Linux, on Framework (Mono) we need to find a way to load libraries without using P/Invoke to
+                // libdl, since libdl in later Linux versions does not exist
                 throw new NotImplementedException();
             }
 #else
-            return System.Runtime.InteropServices.NativeLibrary.TryLoad("ikvm", out var h) ? h : 0;
+            return System.Runtime.InteropServices.NativeLibrary.TryLoad(nameOrPath, out var h) ? h : 0;
 #endif
         }
 
@@ -127,17 +129,19 @@ namespace IKVM.Runtime
         public static readonly LibIkvm Instance = new();
 
         /// <summary>
+        /// Holds an internal handle to the 'ikvm' library.
+        /// </summary>
+        public readonly nint Handle;
+
+        /// <summary>
         /// Initializes a new instance.
         /// </summary>
         LibIkvm()
         {
-
+            Handle = Load();
+            if (Handle == 0)
+                throw new InternalException("Could not load libjvm.");
         }
-
-        /// <summary>
-        /// Holds an internal handle to the 'ikvm' library.
-        /// </summary>
-        readonly nint handle = Load();
 
         /// <summary>
         /// Loads the 'ikvm' library.
@@ -211,20 +215,8 @@ namespace IKVM.Runtime
         /// </summary>
         ~LibIkvm()
         {
-#if NETFRAMEWORK
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                if (handle != 0)
-                    FreeLibrary(handle);
-            }
-            else
-            {
-                throw new PlatformNotSupportedException();
-            }
-#else
-            if (handle != 0)
-                System.Runtime.InteropServices.NativeLibrary.Free(handle);
-#endif
+            if (Handle != 0)
+                FreeImpl(Handle);
         }
 
     }

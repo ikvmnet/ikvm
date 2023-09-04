@@ -47,8 +47,6 @@ namespace IKVM.Runtime.JNI
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            JVM.EnsureLibJavaLoaded();
-
             var loader = RuntimeClassLoader.FromCallerID(callerID);
             int sp = 0;
             for (int i = 1; sig[i] != ')'; i++)
@@ -88,25 +86,24 @@ namespace IKVM.Runtime.JNI
             var mangledClass = JniMangle(clazz);
             var mangledName = JniMangle(name);
             var mangledSig = JniMangle(sig.Substring(1, sig.IndexOf(')') - 1));
-            var shortMethodName = $"Java_{mangledClass}_{mangledName}";
+            var methodName = $"Java_{mangledClass}_{mangledName}";
             var longMethodName = $"Java_{mangledClass}_{mangledName}__{mangledSig}";
-            Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, class loader = {3}, short = {4}, long = {5}, args = {6}", clazz, name, sig, loader, shortMethodName, longMethodName, sp + 2 * IntPtr.Size);
+            Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, class loader = {3}, short = {4}, long = {5}, args = {6}", clazz, name, sig, loader, methodName, longMethodName, sp + 2 * IntPtr.Size);
 
             lock (JNINativeLoader.SyncRoot)
             {
                 foreach (var p in loader.GetNativeLibraries())
                 {
-                    var pfunc = LibJVM.Instance.JVM_FindLibraryEntry(p, shortMethodName);
-                    if (pfunc != IntPtr.Zero)
+                    if (LibJvm.Instance.JVM_FindLibraryEntry(p, methodName) is nint h1 and not 0)
                     {
                         Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (short)", clazz, name, sig, p);
-                        return pfunc;
+                        return h1;
                     }
-                    pfunc = LibJVM.Instance.JVM_FindLibraryEntry(p, longMethodName);
-                    if (pfunc != IntPtr.Zero)
+
+                    if (LibJvm.Instance.JVM_FindLibraryEntry(p, longMethodName) is nint h2 and not 0)
                     {
                         Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (long)", clazz, name, sig, p);
-                        return pfunc;
+                        return h2;
                     }
                 }
             }

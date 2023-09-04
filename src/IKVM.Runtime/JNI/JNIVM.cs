@@ -48,18 +48,18 @@ namespace IKVM.Runtime.JNI
         static readonly Encoding platformEncoding = CodePagesEncodingProvider.Instance.GetEncoding(0);
 #endif
 
-        static readonly LibJVM.JNI_GetDefaultJavaVMInitArgsDelegate JNI_GetDefaultJavaVMInitArgs = GetDefaultJavaVMInitArgs;
-        static readonly LibJVM.JNI_GetCreatedJavaVMsDelegate JNI_GetCreatedJavaVMs = GetCreatedJavaVMs;
-        static readonly LibJVM.JNI_CreateJavaVMDelegate JNI_CreateJavaVM = CreateJavaVM;
+        static readonly LibJvm.JNI_GetDefaultJavaVMInitArgsDelegate JNI_GetDefaultJavaVMInitArgs = GetDefaultJavaVMInitArgs;
+        static readonly LibJvm.JNI_GetCreatedJavaVMsDelegate JNI_GetCreatedJavaVMs = GetCreatedJavaVMs;
+        static readonly LibJvm.JNI_CreateJavaVMDelegate JNI_CreateJavaVM = CreateJavaVM;
 
         /// <summary>
         /// Initializes the static instance.
         /// </summary>
         static JNIVM()
         {
-            LibJVM.Instance.Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs);
-            LibJVM.Instance.Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs);
-            LibJVM.Instance.Set_JNI_CreateJavaVM(JNI_CreateJavaVM);
+            LibJvm.Instance.Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs);
+            LibJvm.Instance.Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs);
+            LibJvm.Instance.Set_JNI_CreateJavaVM(JNI_CreateJavaVM);
         }
 
         internal static bool IsSupportedJNIVersion(int version)

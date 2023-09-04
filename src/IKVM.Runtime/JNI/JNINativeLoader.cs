@@ -61,7 +61,7 @@ namespace IKVM.Runtime.JNI
                 try
                 {
                     // attempt to load the native library
-                    if ((p = LibJVM.Instance.JVM_LoadLibrary(filename)) == 0)
+                    if ((p = LibJvm.Instance.JVM_LoadLibrary(filename)) == 0)
                     {
                         Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', message = {2}", filename, "NULL handle returned.");
                         return 0;
@@ -72,7 +72,7 @@ namespace IKVM.Runtime.JNI
                     {
                         if (h == p)
                         {
-                            LibJVM.Instance.JVM_UnloadLibrary(p);
+                            LibJvm.Instance.JVM_UnloadLibrary(p);
                             Tracer.Warning(Tracer.Jni, "Library was already loaded, returning same reference.", filename);
                             return p;
                         }
@@ -90,7 +90,7 @@ namespace IKVM.Runtime.JNI
 
                     try
                     {
-                        var onload = LibJVM.Instance.JVM_FindLibraryEntry(p, "JNI_OnLoad");
+                        var onload = LibJvm.Instance.JVM_FindLibraryEntry(p, "JNI_OnLoad");
                         if (onload != 0)
                         {
                             Tracer.Info(Tracer.Jni, "Calling JNI_OnLoad on: {0}", filename);
@@ -133,7 +133,7 @@ namespace IKVM.Runtime.JNI
                 catch (Exception e)
                 {
                     Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', error = {1}, message = {2}", filename, "Exception", e.Message);
-                    LibJVM.Instance.JVM_UnloadLibrary(p);
+                    LibJvm.Instance.JVM_UnloadLibrary(p);
                     throw;
                 }
             }
@@ -154,7 +154,7 @@ namespace IKVM.Runtime.JNI
 
                 try
                 {
-                    var onunload = LibJVM.Instance.JVM_FindLibraryEntry(p, "JNI_OnUnload");
+                    var onunload = LibJvm.Instance.JVM_FindLibraryEntry(p, "JNI_OnUnload");
                     if (onunload != 0)
                     {
                         Tracer.Info(Tracer.Jni, "Calling JNI_OnUnload on: handle = 0x{0:X}", handle);
@@ -179,7 +179,7 @@ namespace IKVM.Runtime.JNI
                 // remove record of native library
                 loaded.Remove(p);
                 loader.UnregisterNativeLibrary(p);
-                LibJVM.Instance.JVM_UnloadLibrary(p);
+                LibJvm.Instance.JVM_UnloadLibrary(p);
             }
         }
 

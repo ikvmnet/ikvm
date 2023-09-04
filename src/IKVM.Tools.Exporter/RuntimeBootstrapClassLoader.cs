@@ -26,7 +26,7 @@ using System;
 using IKVM.Attributes;
 using IKVM.Runtime;
 
-namespace IKVM.Tools.Exporter
+namespace IKVM.Runtime
 {
 
     sealed class RuntimeBootstrapClassLoader : RuntimeClassLoader
