@@ -117,7 +117,7 @@ namespace IKVM.Runtime
             {
                 // Mono (Framework on non-Windows), just P/Invoke, we can remap with dllmap
                 // this should be a secondary reference, as the DllImports should own the primary
-                return Externs.IKVM_dl_close(handle);
+                Externs.IKVM_dl_close(handle);
             }
 #else
             System.Runtime.InteropServices.NativeLibrary.Free(handle);
