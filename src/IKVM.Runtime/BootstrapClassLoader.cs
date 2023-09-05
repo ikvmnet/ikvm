@@ -28,28 +28,21 @@ using System.Collections.Generic;
 using IKVM.Reflection;
 
 using Type = IKVM.Reflection.Type;
-#else
-#endif
-
-#if IMPORTER
-using IKVM.Tools.Importer;
 #endif
 
 namespace IKVM.Runtime
 {
 
-#if EXPORTER == false
-
     /// <summary>
     /// Represents the bootstrap class loader of the system, containing only built-in .NET assemblies.
     /// </summary>
-    sealed class RuntimeBootstrapClassLoader : RuntimeAssemblyClassLoader
+    sealed class BootstrapClassLoader : RuntimeAssemblyClassLoader
     {
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        internal RuntimeBootstrapClassLoader(RuntimeContext context) :
+        internal BootstrapClassLoader(RuntimeContext context) :
             base(context, context.Resolver.ResolveBaseAssembly(), new string[] { typeof(object).Assembly.FullName, typeof(Uri).Assembly.FullName })
         {
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
@@ -109,7 +102,5 @@ namespace IKVM.Runtime
 #endif
 
     }
-
-#endif
 
 }

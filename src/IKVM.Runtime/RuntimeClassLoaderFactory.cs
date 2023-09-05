@@ -25,6 +25,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using IKVM.Runtime;
+
 #if NETCOREAPP
 using System.Runtime.Loader;
 #endif
@@ -129,7 +131,7 @@ namespace IKVM.Runtime
 #endif
         {
             lock (wrapperLock)
-                return bootstrapClassLoader ??= new RuntimeBootstrapClassLoader(context);
+                return bootstrapClassLoader ??= new BootstrapClassLoader(context);
         }
 
 #if !IMPORTER && !EXPORTER
