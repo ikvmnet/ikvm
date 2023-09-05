@@ -1,6 +1,6 @@
 <Project>
     <ItemGroup>
-        <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.47">
+        <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.49">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

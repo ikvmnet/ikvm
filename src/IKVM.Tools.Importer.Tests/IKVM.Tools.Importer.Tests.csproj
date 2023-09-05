@@ -56,4 +56,5 @@
         </IncludeProjectReference>
     </ItemGroup>
 
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
 </Project>
