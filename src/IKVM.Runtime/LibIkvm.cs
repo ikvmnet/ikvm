@@ -131,15 +131,14 @@ namespace IKVM.Runtime
         /// <summary>
         /// Holds an internal handle to the 'ikvm' library.
         /// </summary>
-        public readonly nint Handle;
+        public nint Handle { get; private set; }
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         LibIkvm()
         {
-            Handle = Load();
-            if (Handle == 0)
+            if ((Handle = Load()) == 0)
                 throw new InternalException("Could not load libjvm.");
         }
 
@@ -216,7 +215,11 @@ namespace IKVM.Runtime
         ~LibIkvm()
         {
             if (Handle != 0)
-                FreeImpl(Handle);
+            {
+                var h = Handle;
+                Handle = 0;
+                FreeImpl(h);
+            }
         }
 
     }

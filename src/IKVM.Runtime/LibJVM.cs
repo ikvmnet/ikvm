@@ -32,6 +32,13 @@ namespace IKVM.Runtime
         /// </summary>
         public static LibJvm Instance = new();
 
+        readonly NativeLibraryExport Set_JNI_GetDefaultJavaVMInitArgs_Ptr;
+        readonly NativeLibraryExport Set_JNI_GetCreatedJavaVMs_Ptr;
+        readonly NativeLibraryExport Set_JNI_CreateJavaVM_Ptr;
+        readonly NativeLibraryExport JVM_LoadLibrary_Ptr;
+        readonly NativeLibraryExport JVM_UnloadLibrary_Ptr;
+        readonly NativeLibraryExport JVM_FindLibraryEntry_Ptr;
+
         readonly Set_JNI_GetDefaultJavaVMInitArgsDelegate _Set_JNI_GetDefaultJavaVMInitArgs;
         readonly Set_JNI_GetCreatedJavaVMsDelegate _Set_JNI_GetCreatedJavaVMs;
         readonly Set_JNI_CreateJavaVMDelegate _Set_JNI_CreateJavaVM;
@@ -45,21 +52,21 @@ namespace IKVM.Runtime
         LibJvm()
         {
             // load libjvm through IKVM native library functionality
-            if ((Handle = NativeLibrary.Load(Path.Combine(JVM.Properties.HomePath, "bin", NativeLibrary.MapLibraryName("jvm")))) == 0)
+            if ((Handle = NativeLibrary.Load(Path.Combine(JVM.Properties.HomePath, "bin", NativeLibrary.MapLibraryName("jvm")))) == null)
                 throw new InternalException("Could not load libjvm.");
 
-            _Set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_GetDefaultJavaVMInitArgs"));
-            _Set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_GetCreatedJavaVMs"));
-            _Set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_CreateJavaVM"));
-            _JVM_LoadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_LoadLibraryDelegate>(NativeLibrary.GetExport(Handle, "JVM_LoadLibrary"));
-            _JVM_UnloadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_UnloadLibraryDelegate>(NativeLibrary.GetExport(Handle, "JVM_UnloadLibrary"));
-            _JVM_FindLibraryEntry = Marshal.GetDelegateForFunctionPointer<JVM_FindLibraryEntryDelegate>(NativeLibrary.GetExport(Handle, "JVM_FindLibraryEntry"));
+            _Set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>((Set_JNI_GetDefaultJavaVMInitArgs_Ptr = Handle.GetExport("Set_JNI_GetDefaultJavaVMInitArgs")).Handle);
+            _Set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>((Set_JNI_GetCreatedJavaVMs_Ptr = Handle.GetExport("Set_JNI_GetCreatedJavaVMs")).Handle);
+            _Set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>((Set_JNI_CreateJavaVM_Ptr = Handle.GetExport("Set_JNI_CreateJavaVM")).Handle);
+            _JVM_LoadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_LoadLibraryDelegate>((JVM_LoadLibrary_Ptr = Handle.GetExport("JVM_LoadLibrary")).Handle);
+            _JVM_UnloadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_UnloadLibraryDelegate>((JVM_UnloadLibrary_Ptr = Handle.GetExport("JVM_UnloadLibrary")).Handle);
+            _JVM_FindLibraryEntry = Marshal.GetDelegateForFunctionPointer<JVM_FindLibraryEntryDelegate>((JVM_FindLibraryEntry_Ptr = Handle.GetExport("JVM_FindLibraryEntry")).Handle);
         }
 
         /// <summary>
         /// Gets a handle to the loaded libjvm library.
         /// </summary>
-        public readonly nint Handle;
+        public NativeLibraryHandle Handle { get; private set; }
 
         /// <summary>
         /// Invokes the 'Set_JNI_GetDefaultJavaVMInitArgs' method from libjvm.
@@ -100,15 +107,6 @@ namespace IKVM.Runtime
         /// <param name="name"></param>
         /// <returns></returns>
         public nint JVM_FindLibraryEntry(nint handle, string name) => _JVM_FindLibraryEntry(handle, name);
-
-        /// <summary>
-        /// Finalizes the instance.
-        /// </summary>
-        ~LibJvm()
-        {
-            if (Handle != 0)
-                NativeLibrary.Free(Handle);
-        }
 
     }
 

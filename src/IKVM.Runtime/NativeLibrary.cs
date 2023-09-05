@@ -42,13 +42,15 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        static nint LoadImpl(string path)
+        static NativeLibraryHandle LoadImpl(string path)
         {
 #if NETFRAMEWORK
-            return libikvm.dl_open(path);
+            var h = libikvm.dl_open(path);
 #else
-            return System.Runtime.InteropServices.NativeLibrary.TryLoad(path, typeof(NativeLibrary).Assembly, DllImportSearchPath.SafeDirectories | DllImportSearchPath.UseDllDirectoryForDependencies, out nint h) ? h : 0;
+            System.Runtime.InteropServices.NativeLibrary.TryLoad(path, typeof(NativeLibrary).Assembly, DllImportSearchPath.SafeDirectories | DllImportSearchPath.UseDllDirectoryForDependencies, out nint h);
 #endif
+
+            return h != IntPtr.Zero ? new NativeLibraryHandle(h) : null;
         }
 
         /// <summary>
@@ -56,13 +58,13 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="nameOrPath"></param>
         /// <returns></returns>
-        public static nint Load(string nameOrPath)
+        public static NativeLibraryHandle Load(string nameOrPath)
         {
             if (Path.IsPathRooted(nameOrPath))
                 return LoadImpl(nameOrPath);
 
             // give native loader a chance to load the library
-            if (LoadImpl(nameOrPath) is nint h1 and not 0)
+            if (LoadImpl(nameOrPath) is NativeLibraryHandle h1)
                 return h1;
 
             // start looking at assembly path, or path given by environmental variable
@@ -71,20 +73,20 @@ namespace IKVM.Runtime
 
             // assembly possible loaded in memory: we have no available search path
             if (string.IsNullOrEmpty(root))
-                return 0;
+                return null;
 
             // check in root directory
             if (Path.Combine(root, MapLibraryName(nameOrPath)) is string lib1)
-                if (File.Exists(lib1) && LoadImpl(lib1) is nint h2 and not 0)
+                if (File.Exists(lib1) && LoadImpl(lib1) is NativeLibraryHandle h2)
                     return h2;
 
             // scan supported RIDs for current platform
             foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
                 if (Path.Combine(root, "runtimes", rid, "native", MapLibraryName(nameOrPath)) is string lib2)
-                    if (File.Exists(lib2) && LoadImpl(lib2) is nint h3 and not 0)
+                    if (File.Exists(lib2) && LoadImpl(lib2) is NativeLibraryHandle h3)
                         return h3;
 
-            return 0;
+            return null;
         }
 
         /// <summary>
@@ -92,7 +94,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="handle"></param>
         /// <returns></returns>
-        public static void Free(nint handle)
+        internal static void Free(nint handle)
         {
 #if NETFRAMEWORK
             libikvm.dl_close(handle);
@@ -107,7 +109,7 @@ namespace IKVM.Runtime
         /// <param name="handle"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static nint GetExport(nint handle, string name)
+        internal static nint GetExport(nint handle, string name)
         {
 #if NETFRAMEWORK
             return libikvm.dl_sym(handle, name);
