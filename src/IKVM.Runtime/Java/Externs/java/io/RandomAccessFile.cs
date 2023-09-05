@@ -442,6 +442,10 @@ namespace IKVM.Java.Externs.java.io
             {
                 throw new global::java.io.IOException(e.Message);
             }
+            catch (UnauthorizedAccessException e)
+            {
+                throw new global::java.io.IOException(e.Message);
+            }
             catch (IOException e)
             {
                 throw new global::java.io.IOException(e.Message);

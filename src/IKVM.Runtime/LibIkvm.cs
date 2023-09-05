@@ -93,9 +93,8 @@ namespace IKVM.Runtime
             }
             else
             {
-                // on Linux, on Framework (Mono) we need to find a way to load libraries without using P/Invoke to
-                // libdl, since libdl in later Linux versions does not exist
-                throw new NotImplementedException();
+                // Mono (Framework on non-Windows), just P/Invoke, we can remap with dllmap
+                return Externs.IKVM_dl_open(nameOrPath);
             }
 #else
             return System.Runtime.InteropServices.NativeLibrary.TryLoad(nameOrPath, out var h) ? h : 0;
@@ -116,7 +115,9 @@ namespace IKVM.Runtime
             }
             else
             {
-                throw new NotImplementedException();
+                // Mono (Framework on non-Windows), just P/Invoke, we can remap with dllmap
+                // this should be a secondary reference, as the DllImports should own the primary
+                return Externs.IKVM_dl_close(nameOrPath);
             }
 #else
             System.Runtime.InteropServices.NativeLibrary.Free(handle);

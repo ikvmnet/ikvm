@@ -37,6 +37,8 @@ namespace IKVM.Tests.Java.java.io
 
             if (n != -1)
                 throw new RuntimeException("Expected -1 for EOF, got " + n);
+
+            System.IO.File.Delete(p);
         }
 
         [TestMethod]
@@ -48,7 +50,7 @@ namespace IKVM.Tests.Java.java.io
             RandomNumberGenerator.Create().GetBytes(c);
             System.IO.File.WriteAllBytes(p, c);
 
-            var r = new RandomAccessFile(p, "rw");
+            using var r = new RandomAccessFile(p, "rw");
             var l = r.getChannel().@lock();
             l.Should().NotBeNull();
             l.isValid().Should().BeTrue();
@@ -56,6 +58,7 @@ namespace IKVM.Tests.Java.java.io
             l.position().Should().Be(0);
             l.size().Should().Be(long.MaxValue);
             l.close();
+            System.IO.File.Delete(p);
         }
 
         [TestMethod]
@@ -67,7 +70,7 @@ namespace IKVM.Tests.Java.java.io
             RandomNumberGenerator.Create().GetBytes(c);
             System.IO.File.WriteAllBytes(p, c);
 
-            var r = new RandomAccessFile(p, "rw");
+            using var r = new RandomAccessFile(p, "rw");
             var l = r.getChannel().@lock(0, 512, false);
             l.Should().NotBeNull();
             l.isValid().Should().BeTrue();
@@ -75,6 +78,7 @@ namespace IKVM.Tests.Java.java.io
             l.position().Should().Be(0);
             l.size().Should().Be(512);
             l.close();
+            System.IO.File.Delete(p);
         }
 
         [TestMethod]
@@ -86,7 +90,7 @@ namespace IKVM.Tests.Java.java.io
             RandomNumberGenerator.Create().GetBytes(c);
             System.IO.File.WriteAllBytes(p, c);
 
-            var r = new RandomAccessFile(p, "rw");
+            using var r = new RandomAccessFile(p, "rw");
             var l = r.getChannel().@lock(0, 512, true);
             l.Should().NotBeNull();
             l.isValid().Should().BeTrue();
@@ -95,6 +99,39 @@ namespace IKVM.Tests.Java.java.io
             l.size().Should().Be(512);
             l.close();
             r.close();
+            System.IO.File.Delete(p);
+        }
+
+        [TestMethod]
+        public void CanSetLength()
+        {
+            // generate temporary file
+            var p = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
+            var c = new byte[1024];
+            RandomNumberGenerator.Create().GetBytes(c);
+            System.IO.File.WriteAllBytes(p, c);
+
+            using var r = new RandomAccessFile(p, "rw");
+            r.setLength(2048);
+            r.length().Should().Be(2048);
+            r.getFilePointer().Should().Be(2048);
+            new System.IO.FileInfo(p).Length.Should().Be(2048);
+            System.IO.File.Delete(p);
+
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(IOException))]
+        public void SetLengthShouldThrowOnReadOnly()
+        {
+            // generate temporary file
+            var p = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
+            var c = new byte[1024];
+            RandomNumberGenerator.Create().GetBytes(c);
+            System.IO.File.WriteAllBytes(p, c);
+
+            using var r = new RandomAccessFile(p, "r");
+            r.setLength(2048);
         }
 
     }
