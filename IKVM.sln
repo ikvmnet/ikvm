@@ -348,6 +348,8 @@ Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libawt", "src\libawt\libawt
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libw2k_lsa_auth", "src\libw2k_lsa_auth\libw2k_lsa_auth.clangproj", "{78A745D7-706A-4B33-9D21-0EB7B5144C42}"
 EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libosxkrb5", "src\libosxkrb5\libosxkrb5.clangproj", "{F2969046-1672-4685-AE8D-53AED942DAE9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -790,6 +792,10 @@ Global
 		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2969046-1672-4685-AE8D-53AED942DAE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2969046-1672-4685-AE8D-53AED942DAE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2969046-1672-4685-AE8D-53AED942DAE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2969046-1672-4685-AE8D-53AED942DAE9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
