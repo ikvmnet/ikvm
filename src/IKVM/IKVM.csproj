@@ -24,6 +24,16 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Remove="IKVM.Runtime.dll.config" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="IKVM.Runtime.dll.config">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
         <None Include="..\..\README.md" Pack="true" PackagePath="." />
         <None Include="..\..\ikvm.snk" Pack="true" PackagePath="." />
