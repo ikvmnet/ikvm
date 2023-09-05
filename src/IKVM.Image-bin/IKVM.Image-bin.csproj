@@ -16,6 +16,7 @@
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libsunec\libsunec.clangproj" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="win7-x64;win7-x86;win10-arm64" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libawt\libawt.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libw2k_lsa_auth\libw2k_lsa_auth.clangproj" SupportedRuntimes="win7-x64;win7-x86;win10-arm64" />
     </ItemGroup>
 
     <Target Name="GetClangProjectReferencesByRuntime" Inputs="@(_ReferencedClangProjects)" Outputs="%(_ReferencedClangProjects.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">

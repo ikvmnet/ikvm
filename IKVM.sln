@@ -346,6 +346,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.runtime.win7-x86
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libawt", "src\libawt\libawt.clangproj", "{93B43F23-23B1-4968-951E-DC9A447D6F0E}"
 EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libw2k_lsa_auth", "src\libw2k_lsa_auth\libw2k_lsa_auth.clangproj", "{78A745D7-706A-4B33-9D21-0EB7B5144C42}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -784,6 +786,10 @@ Global
 		{93B43F23-23B1-4968-951E-DC9A447D6F0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{93B43F23-23B1-4968-951E-DC9A447D6F0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{93B43F23-23B1-4968-951E-DC9A447D6F0E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
