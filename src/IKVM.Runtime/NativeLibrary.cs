@@ -15,7 +15,11 @@ namespace IKVM.Runtime
     static partial class NativeLibrary
     {
 
+#if NETFRAMEWORK
+
         readonly static LibIkvm libikvm = LibIkvm.Instance;
+
+#endif
 
         /// <summary>
         /// Returns a version of the library name with the OS specific prefix and suffix.
