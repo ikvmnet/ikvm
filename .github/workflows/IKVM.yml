@@ -429,9 +429,9 @@ jobs:
         - linux
         - osx-x64
         exclude:
-        - tfm: net461
+        - tfm: net472
           sys: linux
-        - tfm: net461
+        - tfm: net472
           sys: osx-x64
         include:
         - run: IKVM.ByteCode.Tests
