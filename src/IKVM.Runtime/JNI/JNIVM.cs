@@ -45,13 +45,18 @@ namespace IKVM.Runtime.JNI
 
             internal static nint Handle;
 
-            public delegate int JNI_GetDefaultJavaVMInitArgsDelegate(void* vm_args);
-            public delegate int JNI_GetCreatedJavaVMs(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
-            public delegate int JNI_CreateJavaVM(JavaVM** p_vm, void** p_env, void* vm_args);
+            [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+            public delegate int JNI_GetDefaultJavaVMInitArgsFunc(void* vm_args);
 
-            delegate void Set_JNI_GetDefaultJavaVMInitArgsDelegate(JNI_GetDefaultJavaVMInitArgsDelegate func);
-            delegate void Set_JNI_GetCreatedJavaVMsDelegate(JNI_GetCreatedJavaVMs func);
-            delegate void Set_JNI_CreateJavaVMDelegate(JNI_CreateJavaVM func);
+            [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+            public delegate int JNI_GetCreatedJavaVMsFunc(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
+
+            [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+            public delegate int JNI_CreateJavaVMFunc(JavaVM** p_vm, void** p_env, void* vm_args);
+
+            delegate void Set_JNI_GetDefaultJavaVMInitArgsDelegate(JNI_GetDefaultJavaVMInitArgsFunc func);
+            delegate void Set_JNI_GetCreatedJavaVMsDelegate(JNI_GetCreatedJavaVMsFunc func);
+            delegate void Set_JNI_CreateJavaVMDelegate(JNI_CreateJavaVMFunc func);
 
             readonly static Set_JNI_GetDefaultJavaVMInitArgsDelegate set_JNI_GetDefaultJavaVMInitArgs;
             readonly static Set_JNI_GetCreatedJavaVMsDelegate set_JNI_GetCreatedJavaVMs;
@@ -68,11 +73,11 @@ namespace IKVM.Runtime.JNI
                 set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_CreateJavaVM", 1));
             }
 
-            public static void Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgsDelegate func) => set_JNI_GetDefaultJavaVMInitArgs(func);
+            public static void Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgsFunc func) => set_JNI_GetDefaultJavaVMInitArgs(func);
 
-            public static void Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs func) => set_JNI_GetCreatedJavaVMs(func);
+            public static void Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMsFunc func) => set_JNI_GetCreatedJavaVMs(func);
 
-            public static void Set_JNI_CreateJavaVM(JNI_CreateJavaVM func) => set_JNI_CreateJavaVM(func);
+            public static void Set_JNI_CreateJavaVM(JNI_CreateJavaVMFunc func) => set_JNI_CreateJavaVM(func);
 
         }
 
@@ -89,9 +94,9 @@ namespace IKVM.Runtime.JNI
 
 #if FIRST_PASS == false
 
-        static readonly LibJvm.JNI_GetDefaultJavaVMInitArgsDelegate jni_GetDefaultJavaVMInitArgsDelegate = GetDefaultJavaVMInitArgs;
-        static readonly LibJvm.JNI_GetCreatedJavaVMs jni_GetCreatedJavaVMs = GetCreatedJavaVMs;
-        static readonly LibJvm.JNI_CreateJavaVM jni_CreateJavaVM = CreateJavaVM;
+        static readonly LibJvm.JNI_GetDefaultJavaVMInitArgsFunc jni_GetDefaultJavaVMInitArgsDelegate = GetDefaultJavaVMInitArgs;
+        static readonly LibJvm.JNI_GetCreatedJavaVMsFunc jni_GetCreatedJavaVMs = GetCreatedJavaVMs;
+        static readonly LibJvm.JNI_CreateJavaVMFunc jni_CreateJavaVM = CreateJavaVM;
 
         /// <summary>
         /// Initializes the static instance.
