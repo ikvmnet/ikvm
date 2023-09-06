@@ -3395,6 +3395,7 @@ java/net/ipv6tests/UdpTest.java                                                 
 java/nio/MappedByteBuffer/Basic.java                                                                                    macosx-all
 java/nio/MappedByteBuffer/Force.java                                                                                    macosx-all
 java/nio/channels/AsynchronousSocketChannel/Basic.java                                                                  macosx-all
+java/nio/channels/AsynchronousFileChannel/Basic.java                                                                    macosx-all
 java/nio/channels/DatagramChannel/AdaptDatagramSocket.java                                                              macosx-all
 java/nio/channels/DatagramChannel/BasicMulticastTests.java                                                              macosx-all
 java/nio/channels/DatagramChannel/Connect.java                                                                          macosx-all
