@@ -48,6 +48,7 @@ namespace IKVM.Runtime.JNI
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
             public delegate int JNI_GetDefaultJavaVMInitArgsFunc(void* vm_args);
 
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
             public delegate int JNI_GetCreatedJavaVMsFunc(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
 
