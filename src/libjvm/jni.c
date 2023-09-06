@@ -8,17 +8,17 @@ static JNI_GetDefaultJavaVMInitArgs_Func *JNI_GetDefaultJavaVMInitArgs_Ptr;
 static JNI_GetCreatedJavaVMs_Func *JNI_GetCreatedJavaVMs_Ptr;
 static JNI_CreateJavaVM_Func *JNI_CreateJavaVM_Ptr;
 
-JNIEXPORT void Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs_Func *func)
+JNIEXPORT void JNICALL Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs_Func *func)
 {
     JNI_GetDefaultJavaVMInitArgs_Ptr = func;
 }
 
-JNIEXPORT void Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs_Func *func)
+JNIEXPORT void JNICALL Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs_Func *func)
 {
     JNI_GetCreatedJavaVMs_Ptr = func;
 }
 
-JNIEXPORT void Set_JNI_CreateJavaVM(JNI_CreateJavaVM_Func *func)
+JNIEXPORT void JNICALL Set_JNI_CreateJavaVM(JNI_CreateJavaVM_Func *func)
 {
     JNI_CreateJavaVM_Ptr = func;
 }
