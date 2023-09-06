@@ -422,7 +422,7 @@ jobs:
         - IKVM.OpenJDK.Tests?TestPartition=6
         - IKVM.OpenJDK.Tests?TestPartition=7
         tfm:
-        - net461
+        - net472
         - net6.0
         sys:
         - windows
@@ -433,12 +433,6 @@ jobs:
           sys: linux
         - tfm: net461
           sys: osx-x64
-        - run: IKVM.Tools.Exporter.Tests
-          tfm: net461
-        - run: IKVM.Tools.Importer.Tests
-          tfm: net461
-        - run: IKVM.Tools.Tests
-          tfm: net461
         include:
         - run: IKVM.ByteCode.Tests
           tfm: netcoreapp3.1
@@ -494,15 +488,6 @@ jobs:
         - run: IKVM.Tests
           tfm: net7.0
           sys: osx-x64
-        - run: IKVM.Tools.Exporter.Tests
-          tfm: net472
-          sys: windows
-        - run: IKVM.Tools.Importer.Tests
-          tfm: net472
-          sys: windows
-        - run: IKVM.Tools.Tests
-          tfm: net472
-          sys: windows
         - run: IKVM.Tools.Tests
           tfm: net7.0
           sys: windows
@@ -549,11 +534,6 @@ jobs:
         Add-Content $env:GITHUB_ENV "`nIKVMPATH=$dir/ikvm"
         Add-Content $env:GITHUB_ENV "`nTMP=$dir/temp`nTEMP=$dir/temp`nTMPDIR=$dir/temp"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir/dotnet"
-    - name: Setup .NET 3.1
-      if: matrix.sys != 'osx-arm64'
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 3.1.x
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v3
       with:
