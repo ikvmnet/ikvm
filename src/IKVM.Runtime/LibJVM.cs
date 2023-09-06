@@ -16,13 +16,6 @@ namespace IKVM.Runtime
     internal unsafe class LibJvm
     {
 
-        delegate void Set_JNI_GetDefaultJavaVMInitArgsDelegate(JNI_GetDefaultJavaVMInitArgsFunc func);
-        delegate void Set_JNI_GetCreatedJavaVMsDelegate(JNI_GetCreatedJavaVMsFunc func);
-        delegate void Set_JNI_CreateJavaVMDelegate(JNI_CreateJavaVMFunc func);
-        delegate nint JVM_LoadLibraryDelegate(string name);
-        delegate nint JVM_UnloadLibraryDelegate(nint handle);
-        delegate nint JVM_FindLibraryEntryDelegate(nint handle, string name);
-
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate int JNI_GetDefaultJavaVMInitArgsFunc(void* vm_args);
 
@@ -32,17 +25,17 @@ namespace IKVM.Runtime
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate int JNI_CreateJavaVMFunc(JavaVM** p_vm, void** p_env, void* vm_args);
 
+        delegate void Set_JNI_GetDefaultJavaVMInitArgsDelegate(JNI_GetDefaultJavaVMInitArgsFunc func);
+        delegate void Set_JNI_GetCreatedJavaVMsDelegate(JNI_GetCreatedJavaVMsFunc func);
+        delegate void Set_JNI_CreateJavaVMDelegate(JNI_CreateJavaVMFunc func);
+        delegate nint JVM_LoadLibraryDelegate(string name);
+        delegate nint JVM_UnloadLibraryDelegate(nint handle);
+        delegate nint JVM_FindLibraryEntryDelegate(nint handle, string name);
+
         /// <summary>
         /// Gets the default instance.
         /// </summary>
         public static LibJvm Instance = new();
-
-        readonly NativeLibraryExport Set_JNI_GetDefaultJavaVMInitArgs_Ptr;
-        readonly NativeLibraryExport Set_JNI_GetCreatedJavaVMs_Ptr;
-        readonly NativeLibraryExport Set_JNI_CreateJavaVM_Ptr;
-        readonly NativeLibraryExport JVM_LoadLibrary_Ptr;
-        readonly NativeLibraryExport JVM_UnloadLibrary_Ptr;
-        readonly NativeLibraryExport JVM_FindLibraryEntry_Ptr;
 
         readonly Set_JNI_GetDefaultJavaVMInitArgsDelegate _Set_JNI_GetDefaultJavaVMInitArgs;
         readonly Set_JNI_GetCreatedJavaVMsDelegate _Set_JNI_GetCreatedJavaVMs;
@@ -60,12 +53,12 @@ namespace IKVM.Runtime
             if ((Handle = NativeLibrary.Load(Path.Combine(JVM.Properties.HomePath, "bin", NativeLibrary.MapLibraryName("jvm")))) == null)
                 throw new InternalException("Could not load libjvm.");
 
-            _Set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>((Set_JNI_GetDefaultJavaVMInitArgs_Ptr = Handle.GetExport("Set_JNI_GetDefaultJavaVMInitArgs")).Handle);
-            _Set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>((Set_JNI_GetCreatedJavaVMs_Ptr = Handle.GetExport("Set_JNI_GetCreatedJavaVMs")).Handle);
-            _Set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>((Set_JNI_CreateJavaVM_Ptr = Handle.GetExport("Set_JNI_CreateJavaVM")).Handle);
-            _JVM_LoadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_LoadLibraryDelegate>((JVM_LoadLibrary_Ptr = Handle.GetExport("JVM_LoadLibrary")).Handle);
-            _JVM_UnloadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_UnloadLibraryDelegate>((JVM_UnloadLibrary_Ptr = Handle.GetExport("JVM_UnloadLibrary")).Handle);
-            _JVM_FindLibraryEntry = Marshal.GetDelegateForFunctionPointer<JVM_FindLibraryEntryDelegate>((JVM_FindLibraryEntry_Ptr = Handle.GetExport("JVM_FindLibraryEntry")).Handle);
+            _Set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>(Handle.GetExport("Set_JNI_GetDefaultJavaVMInitArgs").Handle);
+            _Set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>(Handle.GetExport("Set_JNI_GetCreatedJavaVMs").Handle);
+            _Set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(Handle.GetExport("Set_JNI_CreateJavaVM").Handle);
+            _JVM_LoadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_LoadLibraryDelegate>(Handle.GetExport("JVM_LoadLibrary").Handle);
+            _JVM_UnloadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_UnloadLibraryDelegate>(Handle.GetExport("JVM_UnloadLibrary").Handle);
+            _JVM_FindLibraryEntry = Marshal.GetDelegateForFunctionPointer<JVM_FindLibraryEntryDelegate>((Handle.GetExport("JVM_FindLibraryEntry")).Handle);
         }
 
         /// <summary>
