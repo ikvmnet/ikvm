@@ -64,7 +64,7 @@
             </ContentWithTargetPath>
 
             <!-- output of binary projects -->
-            <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image.JRE.csproj">
+            <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
                 <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
                 <PublishTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\bin</PublishTargetPath>
