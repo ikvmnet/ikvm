@@ -16,16 +16,21 @@ namespace IKVM.Runtime
     internal unsafe class LibJvm
     {
 
-        delegate void Set_JNI_GetDefaultJavaVMInitArgsDelegate(JNI_GetDefaultJavaVMInitArgsDelegate func);
-        delegate void Set_JNI_GetCreatedJavaVMsDelegate(JNI_GetCreatedJavaVMsDelegate func);
-        delegate void Set_JNI_CreateJavaVMDelegate(JNI_CreateJavaVMDelegate func);
+        delegate void Set_JNI_GetDefaultJavaVMInitArgsDelegate(JNI_GetDefaultJavaVMInitArgsFunc func);
+        delegate void Set_JNI_GetCreatedJavaVMsDelegate(JNI_GetCreatedJavaVMsFunc func);
+        delegate void Set_JNI_CreateJavaVMDelegate(JNI_CreateJavaVMFunc func);
         delegate nint JVM_LoadLibraryDelegate(string name);
         delegate nint JVM_UnloadLibraryDelegate(nint handle);
         delegate nint JVM_FindLibraryEntryDelegate(nint handle, string name);
 
-        public delegate int JNI_GetDefaultJavaVMInitArgsDelegate(void* vm_args);
-        public delegate int JNI_GetCreatedJavaVMsDelegate(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
-        public delegate int JNI_CreateJavaVMDelegate(JavaVM** p_vm, void** p_env, void* vm_args);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate int JNI_GetDefaultJavaVMInitArgsFunc(void* vm_args);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate int JNI_GetCreatedJavaVMsFunc(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate int JNI_CreateJavaVMFunc(JavaVM** p_vm, void** p_env, void* vm_args);
 
         /// <summary>
         /// Gets the default instance.
@@ -72,19 +77,19 @@ namespace IKVM.Runtime
         /// Invokes the 'Set_JNI_GetDefaultJavaVMInitArgs' method from libjvm.
         /// </summary>
         /// <param name="func"></param>
-        public void Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgsDelegate func) => _Set_JNI_GetDefaultJavaVMInitArgs(func);
+        public void Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgsFunc func) => _Set_JNI_GetDefaultJavaVMInitArgs(func);
 
         /// <summary>
         /// Invokes the 'Set_JNI_GetCreatedJavaVMs' method from libjvm.
         /// </summary>
         /// <param name="func"></param>
-        public void Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMsDelegate func) => _Set_JNI_GetCreatedJavaVMs(func);
+        public void Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMsFunc func) => _Set_JNI_GetCreatedJavaVMs(func);
 
         /// <summary>
         /// Invokes the 'Set_JNI_CreateJavaVM' method from libjvm.
         /// </summary>
         /// <param name="func"></param>
-        public void Set_JNI_CreateJavaVM(JNI_CreateJavaVMDelegate func) => _Set_JNI_CreateJavaVM(func);
+        public void Set_JNI_CreateJavaVM(JNI_CreateJavaVMFunc func) => _Set_JNI_CreateJavaVM(func);
 
         /// <summary>
         /// Invokes the 'JVM_LoadLibrary' method from libjvm.

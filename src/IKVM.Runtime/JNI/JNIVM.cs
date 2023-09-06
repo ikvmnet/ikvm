@@ -48,9 +48,9 @@ namespace IKVM.Runtime.JNI
         static readonly Encoding platformEncoding = CodePagesEncodingProvider.Instance.GetEncoding(0);
 #endif
 
-        static readonly LibJvm.JNI_GetDefaultJavaVMInitArgsDelegate JNI_GetDefaultJavaVMInitArgs = GetDefaultJavaVMInitArgs;
-        static readonly LibJvm.JNI_GetCreatedJavaVMsDelegate JNI_GetCreatedJavaVMs = GetCreatedJavaVMs;
-        static readonly LibJvm.JNI_CreateJavaVMDelegate JNI_CreateJavaVM = CreateJavaVM;
+        static readonly LibJvm.JNI_GetDefaultJavaVMInitArgsFunc JNI_GetDefaultJavaVMInitArgs = GetDefaultJavaVMInitArgs;
+        static readonly LibJvm.JNI_GetCreatedJavaVMsFunc JNI_GetCreatedJavaVMs = GetCreatedJavaVMs;
+        static readonly LibJvm.JNI_CreateJavaVMFunc JNI_CreateJavaVM = CreateJavaVM;
 
         /// <summary>
         /// Initializes the static instance.
