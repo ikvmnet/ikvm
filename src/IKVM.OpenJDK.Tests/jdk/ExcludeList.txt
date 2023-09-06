@@ -3436,3 +3436,4 @@ java/util/prefs/RemoveUnregedListener.java                                      
 jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
 sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
 tools/javac/StringsInSwitch/OneCaseSwitches.java                                                                        macosx-all
+sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java                                        macosx-all
