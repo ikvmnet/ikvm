@@ -139,6 +139,7 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 return stream.ReadByte();
             }
             catch (ObjectDisposedException e)
@@ -190,7 +191,9 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 var n = stream.Read(b, off, len);
+                stream.Flush();
                 if (n == 0)
                     n = -1;
 
@@ -233,6 +236,7 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 stream.WriteByte((byte)b);
                 stream.Flush();
             }
@@ -278,6 +282,7 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 stream.Write(b, off, len);
                 stream.Flush();
             }
@@ -317,6 +322,7 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 return stream.Position;
             }
             catch (ObjectDisposedException e)
@@ -354,7 +360,9 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 stream.Position = pos;
+                stream.Flush();
             }
             catch (ObjectDisposedException e)
             {
@@ -395,6 +403,7 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 return stream.Length;
             }
             catch (ObjectDisposedException e)
@@ -430,24 +439,31 @@ namespace IKVM.Java.Externs.java.io
             if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var p = stream.Position;
+
             try
             {
                 stream.SetLength(newLength);
+                stream.Flush();
             }
             catch (ObjectDisposedException e)
             {
+                stream.Position = p;
                 throw new global::java.io.IOException(e.Message);
             }
             catch (NotSupportedException e)
             {
+                stream.Position = p;
                 throw new global::java.io.IOException(e.Message);
             }
             catch (UnauthorizedAccessException e)
             {
+                stream.Position = p;
                 throw new global::java.io.IOException(e.Message);
             }
             catch (IOException e)
             {
+                stream.Position = p;
                 throw new global::java.io.IOException(e.Message);
             }
 #endif
