@@ -6,6 +6,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>Java SE 8 Virtual Machine for .NET</Description>
         <IncludeBuildOutput>true</IncludeBuildOutput>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.config</AllowedOutputExtensionsInPackageBuildOutputFolder>
         <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);GetProjectReferenceBuildOutputInPackage</TargetsForTfmSpecificBuildOutput>
         <TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificDebugSymbolsInPackage);GetProjectReferenceDebugSymbolsInPackage</TargetsForTfmSpecificDebugSymbolsInPackage>
         <NoWarn>NU5118</NoWarn>
@@ -21,16 +22,6 @@
 
     <ItemGroup>
         <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Remove="IKVM.Runtime.dll.config" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Content Include="IKVM.Runtime.dll.config">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
     </ItemGroup>
 
     <ItemGroup>
