@@ -105,26 +105,30 @@ namespace IKVM.Runtime
         /// <exception cref="PlatformNotSupportedException"></exception>
         public static nint Load(string nameOrPath)
         {
-            // always resolve full paths without modification
             if (Path.IsPathRooted(nameOrPath))
                 return LoadImpl(nameOrPath);
 
-            // let default loader have a chance at it
-            var h = LoadImpl(nameOrPath);
-            if (h != 0)
-                return h;
+            // give native loader a chance to load the library
+            if (LoadImpl(nameOrPath) is nint h1 and not 0)
+                return h1;
 
-            // not a path, map the name to local OS convention
-            if (nameOrPath.Contains(Path.PathSeparator.ToString()) == false)
-                nameOrPath = MapLibraryName(nameOrPath);
+            // start looking at assembly path, or path given by environmental variable
+            var root = typeof(NativeLibrary).Assembly.Location is string s ? Path.GetDirectoryName(s) : null;
 
-            // manually scan known paths
-            foreach (var i in GetPaths())
-            {
-                h = LoadImpl(Path.Combine(i, nameOrPath));
-                if (h != 0)
-                    return h;
-            }
+            // assembly possible loaded in memory: we have no available search path
+            if (string.IsNullOrEmpty(root))
+                return 0;
+
+            // check in root directory
+            if (Path.Combine(root, MapLibraryName(nameOrPath)) is string lib1)
+                if (File.Exists(lib1) && LoadImpl(lib1) is nint h2 and not 0)
+                    return h2;
+
+            // scan supported RIDs for current platform
+            foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
+                if (Path.Combine(root, "runtimes", rid, "native", MapLibraryName(nameOrPath)) is string lib2)
+                    if (File.Exists(lib2) && LoadImpl(lib2) is nint h3 and not 0)
+                        return h3;
 
             return 0;
         }
@@ -141,21 +145,6 @@ namespace IKVM.Runtime
                 return "lib" + libname + ".dylib";
             else
                 return "lib" + libname + ".so";
-        }
-
-        /// <summary>
-        /// Gets the boot library paths.
-        /// </summary>
-        /// <returns></returns>
-        static IEnumerable<string> GetPaths()
-        {
-            var self = Directory.GetParent(typeof(NativeLibrary).Assembly.Location)?.FullName;
-            if (self == null)
-                yield break;
-
-            // search in runtime specific directories
-            foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
-                yield return Path.Combine(self, "runtimes", rid, "native");
         }
 
         /// <summary>
