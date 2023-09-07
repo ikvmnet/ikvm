@@ -14,162 +14,56 @@
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
     </PropertyGroup>
 
-    <!-- items to package -->
     <ItemGroup>
-        <None Include="buildTransitive\**\*">
-            <Pack>true</Pack>
-            <PackagePath>buildTransitive\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-        </None>
-        
-        <None Include="README.md;..\..\LICENSE.md">
-            <Pack>true</Pack>
-            <PackagePath>.</PackagePath>
-        </None>
+        <ProjectReference Include="..\IKVM.Image.runtime.win7-x64\IKVM.Image.runtime.win7-x64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win7-x64;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.runtime.win7-x86\IKVM.Image.runtime.win7-x86.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win7-x86;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-x64\IKVM.Image.runtime.linux-x64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-arm\IKVM.Image.runtime.linux-arm.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-arm64\IKVM.Image.runtime.linux-arm64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm64;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-musl-x64\IKVM.Image.runtime.linux-musl-x64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-x64;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-musl-arm\IKVM.Image.runtime.linux-musl-arm.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-musl-arm64\IKVM.Image.runtime.linux-musl-arm64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm64;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.runtime.osx-x64\IKVM.Image.runtime.osx-x64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.runtime.osx-arm64\IKVM.Image.runtime.osx-arm64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+    </ItemGroup>
 
-        <!-- solution level files -->
-        <None Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK">
-            <Pack>true</Pack>
-            <PackagePath>ikvm\any\any\</PackagePath>
-            <Visible>false</Visible>
-        </None>
-
-        <!-- default IKVM properties -->
-        <None Include="ikvm.properties">
-            <Pack>true</Pack>
-            <PackagePath>content\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-            <Visible>false</Visible>
-        </None>
-
-        <!-- files directly part of this project -->
-        <None Include="ikvm\**\*">
-            <Pack>true</Pack>
-            <PackagePath>ikvm\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-        </None>
-
-        <!-- openjdk contents -->
-        <None Include="@(OpenJdkImageContent)">
-            <Pack>true</Pack>
-            <PackagePath>ikvm\any\any\%(ImagePath)</PackagePath>
-            <PackagePath Condition="!$([System.IO.Path]::HasExtension('%(ImagePath)'))">$([System.IO.Path]::GetDirectoryName('ikvm\any\any\%(ImagePath)'))</PackagePath>
-            <Link>ikvm\any\any\%(ImagePath)</Link>
-        </None>
+    <ItemGroup>
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="README.md" Pack="true" PackagePath="." />
+        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Content Include="ikvm.properties" Pack="true" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
     <!-- items to output -->
     <ItemGroup>
-
-        <!-- default IKVM properties -->
-        <None Include="ikvm.properties">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        
-        <!-- solution level files -->
-        <IkvmImageItem Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>any</RuntimeIdentifier>
-            <ImagePath>%(Filename)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        
-        <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\any\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>any</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-
-        <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\win7-x64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-
-        <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\win7-x86\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-
-        <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\win81-arm\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>win81-arm</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-
-        <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\win10-arm64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-
-        <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\linux-x64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-
-        <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\linux-musl-arm\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-
-        <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\linux-musl-arm64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-
-        <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\linux-musl-x64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>linux-musl-x64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-
-        <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\linux-musl-arm\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>linux-musl-arm</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-
-        <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\linux-musl-arm64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>linux-musl-arm64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-
-        <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\osx-x64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-
-        <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\osx-arm64\**\*">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
-        
-        <!-- openjdk contents -->
-        <IkvmImageItem Include="@(OpenJdkImageContent)" Link="">
-            <TargetFramework>any</TargetFramework>
-            <RuntimeIdentifier>any</RuntimeIdentifier>
-            <ImagePath>%(ImagePath)</ImagePath>
-        </IkvmImageItem>
-    
+        <IkvmImageItem Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\any\any\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\any\any\**\*" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\any\any\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net472\any\**\*" TargetFramework="net472" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\net472\any\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net6.0\any\**\*" TargetFramework="net6.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="ikvm\net6.0\any\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="@(OpenJdkImageContent)" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(ImagePath)" Pack="true" PackagePath="ikvm\any\any\%(ImagePath)" />
     </ItemGroup>
 
+    <Import Project="buildTransitive\IKVM.Image.targets" />
     <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
-    <Import Project="$(MSBuildThisFileDirectory)buildTransitive\IKVM.Image.targets" />
 </Project>

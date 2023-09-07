@@ -209,74 +209,74 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
 #endif
 
-        /// <summary>
-        /// Implements the native method for 'isIPv6Available0'.
-        /// </summary>
-        /// <returns></returns>
-        public static bool isIPv6Available0()
-        {
-            return Socket.OSSupportsIPv6;
-        }
+        ///// <summary>
+        ///// Implements the native method for 'isIPv6Available0'.
+        ///// </summary>
+        ///// <returns></returns>
+        //public static bool isIPv6Available0()
+        //{
+        //    return Socket.OSSupportsIPv6;
+        //}
 
-        /// <summary>
-        /// Implements the native method for 'isExclusiveBindAvailable'.
-        /// </summary>
-        /// <returns></returns>
-        public static int isExclusiveBindAvailable()
-        {
-            return RuntimeUtil.IsWindows ? 1 : -1;
-        }
+        ///// <summary>
+        ///// Implements the native method for 'isExclusiveBindAvailable'.
+        ///// </summary>
+        ///// <returns></returns>
+        //public static int isExclusiveBindAvailable()
+        //{
+        //    return RuntimeUtil.IsWindows ? 1 : -1;
+        //}
 
-        /// <summary>
-        /// Implements the native method for 'canIPv6SocketJoinIPv4Group0'.
-        /// </summary>
-        /// <returns></returns>
-        public static bool canIPv6SocketJoinIPv4Group0()
-        {
-            return false;
-        }
+        ///// <summary>
+        ///// Implements the native method for 'canIPv6SocketJoinIPv4Group0'.
+        ///// </summary>
+        ///// <returns></returns>
+        //public static bool canIPv6SocketJoinIPv4Group0()
+        //{
+        //    return false;
+        //}
 
-        /// <summary>
-        /// Implements the native method for 'canJoin6WithIPv4Group0'.
-        /// </summary>
-        /// <returns></returns>
-        public static bool canJoin6WithIPv4Group0()
-        {
-            return false;
-        }
+        ///// <summary>
+        ///// Implements the native method for 'canJoin6WithIPv4Group0'.
+        ///// </summary>
+        ///// <returns></returns>
+        //public static bool canJoin6WithIPv4Group0()
+        //{
+        //    return false;
+        //}
 
-        /// <summary>
-        /// Implements the native method for 'socket0'.
-        /// </summary>
-        /// <param name="preferIPv6"></param>
-        /// <param name="stream"></param>
-        /// <param name="reuse"></param>
-        /// <param name="fastLoopback"></param>
-        /// <returns></returns>
-        public static object socket0(bool preferIPv6, bool stream, bool reuse, bool fastLoopback)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return InvokeFunc(() =>
-            {
-                var addressFamily = preferIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
-                var socketType = stream ? SocketType.Stream : SocketType.Dgram;
-                var protocolType = stream ? ProtocolType.Tcp : ProtocolType.Udp;
-                var socket = new Socket(addressFamily, socketType, protocolType);
+        //        /// <summary>
+        //        /// Implements the native method for 'socket0'.
+        //        /// </summary>
+        //        /// <param name="preferIPv6"></param>
+        //        /// <param name="stream"></param>
+        //        /// <param name="reuse"></param>
+        //        /// <param name="fastLoopback"></param>
+        //        /// <returns></returns>
+        //        public static object socket0(bool preferIPv6, bool stream, bool reuse, bool fastLoopback)
+        //        {
+        //#if FIRST_PASS
+        //            throw new NotImplementedException();
+        //#else
+        //            return InvokeFunc(() =>
+        //            {
+        //                var addressFamily = preferIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
+        //                var socketType = stream ? SocketType.Stream : SocketType.Dgram;
+        //                var protocolType = stream ? ProtocolType.Tcp : ProtocolType.Udp;
+        //                var socket = new Socket(addressFamily, socketType, protocolType);
 
-                if (preferIPv6)
-                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, 0);
+        //                if (preferIPv6)
+        //                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, 0);
 
-                if (stream == false)
-                    SetConnectionReset(socket, false);
+        //                if (stream == false)
+        //                    SetConnectionReset(socket, false);
 
-                var fd = new global::java.io.FileDescriptor();
-                FileDescriptorAccessor.SetSocket(fd, socket);
-                return fd;
-            });
-#endif
-        }
+        //                var fd = new global::java.io.FileDescriptor();
+        //                FileDescriptorAccessor.SetSocket(fd, socket);
+        //                return fd;
+        //            });
+        //#endif
+        //        }
 
         /// <summary>
         /// Implements the native method for 'bind0'.
@@ -590,363 +590,363 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
         }
 
-        /// <summary>
-        /// Implements the native method for 'joinOrDrop4'.
-        /// </summary>
-        /// <param name="join"></param>
-        /// <param name="fd"></param>
-        /// <param name="group"></param>
-        /// <param name="interf"></param>
-        /// <param name="source"></param>
-        /// <returns></returns>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public unsafe static int joinOrDrop4(bool join, object fd, int group, int interf, int source)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return InvokeFunc(() =>
-            {
-                return InvokeWithSocket(fd, socket =>
-                {
-                    if (source == 0)
-                    {
-                        socket.SetSocketOption(SocketOptionLevel.IP, join ? SocketOptionName.AddMembership : SocketOptionName.DropMembership, new MulticastOption(new IPAddress(IPAddress.HostToNetworkOrder(group) & 0xFFFFFFFFL), new IPAddress(IPAddress.HostToNetworkOrder(interf) & 0xFFFFFFFFL)));
-                    }
-                    else
-                    {
-                        var imrMultiAddr = IPAddress.HostToNetworkOrder(group);
-                        var imrSourceAddr = IPAddress.HostToNetworkOrder(source);
-                        var imrInterface = IPAddress.HostToNetworkOrder(interf);
+//        /// <summary>
+//        /// Implements the native method for 'joinOrDrop4'.
+//        /// </summary>
+//        /// <param name="join"></param>
+//        /// <param name="fd"></param>
+//        /// <param name="group"></param>
+//        /// <param name="interf"></param>
+//        /// <param name="source"></param>
+//        /// <returns></returns>
+//        /// <exception cref="global::java.net.SocketException"></exception>
+//        public unsafe static int joinOrDrop4(bool join, object fd, int group, int interf, int source)
+//        {
+//#if FIRST_PASS
+//            throw new NotImplementedException();
+//#else
+//            return InvokeFunc(() =>
+//            {
+//                return InvokeWithSocket(fd, socket =>
+//                {
+//                    if (source == 0)
+//                    {
+//                        socket.SetSocketOption(SocketOptionLevel.IP, join ? SocketOptionName.AddMembership : SocketOptionName.DropMembership, new MulticastOption(new IPAddress(IPAddress.HostToNetworkOrder(group) & 0xFFFFFFFFL), new IPAddress(IPAddress.HostToNetworkOrder(interf) & 0xFFFFFFFFL)));
+//                    }
+//                    else
+//                    {
+//                        var imrMultiAddr = IPAddress.HostToNetworkOrder(group);
+//                        var imrSourceAddr = IPAddress.HostToNetworkOrder(source);
+//                        var imrInterface = IPAddress.HostToNetworkOrder(interf);
 
-                        var optionValue = new ip_mreq_source();
-                        optionValue.imr_multiaddr = Unsafe.As<int, in_addr>(ref imrMultiAddr);
-                        optionValue.imr_sourceaddr = Unsafe.As<int, in_addr>(ref imrSourceAddr);
-                        optionValue.imr_interface = Unsafe.As<int, in_addr>(ref imrInterface);
+//                        var optionValue = new ip_mreq_source();
+//                        optionValue.imr_multiaddr = Unsafe.As<int, in_addr>(ref imrMultiAddr);
+//                        optionValue.imr_sourceaddr = Unsafe.As<int, in_addr>(ref imrSourceAddr);
+//                        optionValue.imr_interface = Unsafe.As<int, in_addr>(ref imrInterface);
 
-                        if (RuntimeUtil.IsWindows)
-                        {
-                            var v = ArrayPool<byte>.Shared.Rent(sizeof(ip_mreq_source));
+//                        if (RuntimeUtil.IsWindows)
+//                        {
+//                            var v = ArrayPool<byte>.Shared.Rent(sizeof(ip_mreq_source));
 
-                            try
-                            {
-                                fixed (byte* vptr = v)
-                                    Buffer.MemoryCopy(&optionValue, vptr, v.Length, sizeof(ip_mreq_source));
+//                            try
+//                            {
+//                                fixed (byte* vptr = v)
+//                                    Buffer.MemoryCopy(&optionValue, vptr, v.Length, sizeof(ip_mreq_source));
 
-                                socket.SetSocketOption(SocketOptionLevel.IP, join ? SocketOptionName.AddSourceMembership : SocketOptionName.DropSourceMembership, v);
-                            }
-                            finally
-                            {
-                                ArrayPool<byte>.Shared.Return(v);
-                            }
-                        }
-                        else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
-                        {
-#if NETCOREAPP
-                            if (setsockopt(socket.SafeHandle, IPPROTO_IP, join ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP, &optionValue, sizeof(ip_mreq_source)) != 0)
-                                throw new SocketException(Marshal.GetLastWin32Error());
-#else
-                            throw new PlatformNotSupportedException();
-#endif
-                        }
-                        else
-                        {
-                            throw new global::java.net.SocketException("Invalid option.");
-                        }
-                    }
+//                                socket.SetSocketOption(SocketOptionLevel.IP, join ? SocketOptionName.AddSourceMembership : SocketOptionName.DropSourceMembership, v);
+//                            }
+//                            finally
+//                            {
+//                                ArrayPool<byte>.Shared.Return(v);
+//                            }
+//                        }
+//                        else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
+//                        {
+//#if NETCOREAPP
+//                            if (setsockopt(socket.SafeHandle, IPPROTO_IP, join ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP, &optionValue, sizeof(ip_mreq_source)) != 0)
+//                                throw new SocketException(Marshal.GetLastWin32Error());
+//#else
+//                            throw new PlatformNotSupportedException();
+//#endif
+//                        }
+//                        else
+//                        {
+//                            throw new global::java.net.SocketException("Invalid option.");
+//                        }
+//                    }
 
-                    return 0;
-                });
-            });
-#endif
-        }
+//                    return 0;
+//                });
+//            });
+//#endif
+//        }
 
-        /// <summary>
-        /// Implements the native method for 'blockOrUnblock4'.
-        /// </summary>
-        /// <param name="block"></param>
-        /// <param name="fd"></param>
-        /// <param name="group"></param>
-        /// <param name="interf"></param>
-        /// <param name="source"></param>
-        /// <returns></returns>
-        public static unsafe int blockOrUnblock4(bool block, object fd, int group, int interf, int source)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return InvokeFunc(() =>
-            {
-                return InvokeWithSocket(fd, socket =>
-                {
-                    var imrMultiAddr = IPAddress.HostToNetworkOrder(group);
-                    var imrSourceAddr = IPAddress.HostToNetworkOrder(source);
-                    var imrInterface = IPAddress.HostToNetworkOrder(interf);
+//        /// <summary>
+//        /// Implements the native method for 'blockOrUnblock4'.
+//        /// </summary>
+//        /// <param name="block"></param>
+//        /// <param name="fd"></param>
+//        /// <param name="group"></param>
+//        /// <param name="interf"></param>
+//        /// <param name="source"></param>
+//        /// <returns></returns>
+//        public static unsafe int blockOrUnblock4(bool block, object fd, int group, int interf, int source)
+//        {
+//#if FIRST_PASS
+//            throw new NotImplementedException();
+//#else
+//            return InvokeFunc(() =>
+//            {
+//                return InvokeWithSocket(fd, socket =>
+//                {
+//                    var imrMultiAddr = IPAddress.HostToNetworkOrder(group);
+//                    var imrSourceAddr = IPAddress.HostToNetworkOrder(source);
+//                    var imrInterface = IPAddress.HostToNetworkOrder(interf);
 
-                    var optionValue = new ip_mreq_source();
-                    optionValue.imr_multiaddr = Unsafe.As<int, in_addr>(ref imrMultiAddr);
-                    optionValue.imr_sourceaddr = Unsafe.As<int, in_addr>(ref imrSourceAddr);
-                    optionValue.imr_interface = Unsafe.As<int, in_addr>(ref imrInterface);
+//                    var optionValue = new ip_mreq_source();
+//                    optionValue.imr_multiaddr = Unsafe.As<int, in_addr>(ref imrMultiAddr);
+//                    optionValue.imr_sourceaddr = Unsafe.As<int, in_addr>(ref imrSourceAddr);
+//                    optionValue.imr_interface = Unsafe.As<int, in_addr>(ref imrInterface);
 
-                    var v = ArrayPool<byte>.Shared.Rent(sizeof(ip_mreq_source));
+//                    var v = ArrayPool<byte>.Shared.Rent(sizeof(ip_mreq_source));
 
-                    try
-                    {
-                        fixed (byte* vptr = v)
-                            Buffer.MemoryCopy(&optionValue, vptr, v.Length, sizeof(ip_mreq_source));
+//                    try
+//                    {
+//                        fixed (byte* vptr = v)
+//                            Buffer.MemoryCopy(&optionValue, vptr, v.Length, sizeof(ip_mreq_source));
 
-                        socket.SetSocketOption(SocketOptionLevel.IP, block ? SocketOptionName.BlockSource : SocketOptionName.UnblockSource, v);
-                        return 0;
-                    }
-                    finally
-                    {
-                        ArrayPool<byte>.Shared.Return(v);
-                    }
-                });
-            });
-#endif
-        }
+//                        socket.SetSocketOption(SocketOptionLevel.IP, block ? SocketOptionName.BlockSource : SocketOptionName.UnblockSource, v);
+//                        return 0;
+//                    }
+//                    finally
+//                    {
+//                        ArrayPool<byte>.Shared.Return(v);
+//                    }
+//                });
+//            });
+//#endif
+//        }
 
-        /// <summary>
-        /// Implements the native method for 'joinOrDrop6'.
-        /// </summary>
-        /// <param name="join"></param>
-        /// <param name="fd"></param>
-        /// <param name="group"></param>
-        /// <param name="index"></param>
-        /// <param name="source"></param>
-        /// <returns></returns>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static unsafe int joinOrDrop6(bool join, object fd, byte[] group, int index, byte[] source)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return InvokeFunc(() =>
-            {
-                return InvokeWithSocket(fd, socket =>
-                {
-                    if (source == null)
-                    {
-                        socket.SetSocketOption(SocketOptionLevel.IPv6, join ? SocketOptionName.AddMembership : SocketOptionName.DropMembership, new IPv6MulticastOption(new IPAddress(group), index));
-                    }
-                    else
-                    {
-                        var groupSockAddr = new sockaddr_in6();
-                        groupSockAddr.sin6_family = AF_INET6;
-#if NETCOREAPP
-                        groupSockAddr.sin6_addr = MemoryMarshal.AsRef<in6_addr>(group);
-#else
-                        fixed (byte* groupBufPtr = group)
-                            groupSockAddr.sin6_addr = Marshal.PtrToStructure<in6_addr>((IntPtr)groupBufPtr);
-#endif
+//        /// <summary>
+//        /// Implements the native method for 'joinOrDrop6'.
+//        /// </summary>
+//        /// <param name="join"></param>
+//        /// <param name="fd"></param>
+//        /// <param name="group"></param>
+//        /// <param name="index"></param>
+//        /// <param name="source"></param>
+//        /// <returns></returns>
+//        /// <exception cref="global::java.net.SocketException"></exception>
+//        public static unsafe int joinOrDrop6(bool join, object fd, byte[] group, int index, byte[] source)
+//        {
+//#if FIRST_PASS
+//            throw new NotImplementedException();
+//#else
+//            return InvokeFunc(() =>
+//            {
+//                return InvokeWithSocket(fd, socket =>
+//                {
+//                    if (source == null)
+//                    {
+//                        socket.SetSocketOption(SocketOptionLevel.IPv6, join ? SocketOptionName.AddMembership : SocketOptionName.DropMembership, new IPv6MulticastOption(new IPAddress(group), index));
+//                    }
+//                    else
+//                    {
+//                        var groupSockAddr = new sockaddr_in6();
+//                        groupSockAddr.sin6_family = AF_INET6;
+//#if NETCOREAPP
+//                        groupSockAddr.sin6_addr = MemoryMarshal.AsRef<in6_addr>(group);
+//#else
+//                        fixed (byte* groupBufPtr = group)
+//                            groupSockAddr.sin6_addr = Marshal.PtrToStructure<in6_addr>((IntPtr)groupBufPtr);
+//#endif
 
-                        var sourceSockAddr = new sockaddr_in6();
-                        sourceSockAddr.sin6_family = AF_INET6;
-#if NETCOREAPP
-                        sourceSockAddr.sin6_addr = MemoryMarshal.AsRef<in6_addr>(source);
-#else
-                        fixed (byte* sourceBufPtr = source)
-                            sourceSockAddr.sin6_addr = Marshal.PtrToStructure<in6_addr>((IntPtr)sourceBufPtr);
-#endif
+//                        var sourceSockAddr = new sockaddr_in6();
+//                        sourceSockAddr.sin6_family = AF_INET6;
+//#if NETCOREAPP
+//                        sourceSockAddr.sin6_addr = MemoryMarshal.AsRef<in6_addr>(source);
+//#else
+//                        fixed (byte* sourceBufPtr = source)
+//                            sourceSockAddr.sin6_addr = Marshal.PtrToStructure<in6_addr>((IntPtr)sourceBufPtr);
+//#endif
 
-                        var groupSourceReq = new group_source_req();
-                        groupSourceReq.gsr_interface = (uint)index;
-                        groupSourceReq.gsr_group = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref groupSockAddr);
-                        groupSourceReq.gsr_source = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref sourceSockAddr);
+//                        var groupSourceReq = new group_source_req();
+//                        groupSourceReq.gsr_interface = (uint)index;
+//                        groupSourceReq.gsr_group = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref groupSockAddr);
+//                        groupSourceReq.gsr_source = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref sourceSockAddr);
 
-                        if (RuntimeUtil.IsWindows)
-                        {
-                            var v = ArrayPool<byte>.Shared.Rent(sizeof(group_source_req));
+//                        if (RuntimeUtil.IsWindows)
+//                        {
+//                            var v = ArrayPool<byte>.Shared.Rent(sizeof(group_source_req));
 
-                            try
-                            {
-                                fixed (byte* vptr = v)
-                                    Buffer.MemoryCopy(&groupSourceReq, vptr, v.Length, sizeof(group_source_req));
+//                            try
+//                            {
+//                                fixed (byte* vptr = v)
+//                                    Buffer.MemoryCopy(&groupSourceReq, vptr, v.Length, sizeof(group_source_req));
 
-                                socket.SetSocketOption(SocketOptionLevel.IPv6, join ? (SocketOptionName)MCAST_JOIN_SOURCE_GROUP : (SocketOptionName)MCAST_LEAVE_SOURCE_GROUP, v);
-                            }
-                            finally
-                            {
-                                ArrayPool<byte>.Shared.Return(v);
-                            }
-                        }
-                        else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
-                        {
-#if NETCOREAPP
-                            if (setsockopt(socket.SafeHandle, IPPROTO_IPV6, join ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP, &groupSourceReq, sizeof(group_source_req)) != 0)
-                                throw new SocketException(Marshal.GetLastWin32Error());
-#else
-                            throw new PlatformNotSupportedException();
-#endif
-                        }
-                        else
-                        {
-                            throw new global::java.net.SocketException("Invalid option.");
-                        }
-                    }
+//                                socket.SetSocketOption(SocketOptionLevel.IPv6, join ? (SocketOptionName)MCAST_JOIN_SOURCE_GROUP : (SocketOptionName)MCAST_LEAVE_SOURCE_GROUP, v);
+//                            }
+//                            finally
+//                            {
+//                                ArrayPool<byte>.Shared.Return(v);
+//                            }
+//                        }
+//                        else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
+//                        {
+//#if NETCOREAPP
+//                            if (setsockopt(socket.SafeHandle, IPPROTO_IPV6, join ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP, &groupSourceReq, sizeof(group_source_req)) != 0)
+//                                throw new SocketException(Marshal.GetLastWin32Error());
+//#else
+//                            throw new PlatformNotSupportedException();
+//#endif
+//                        }
+//                        else
+//                        {
+//                            throw new global::java.net.SocketException("Invalid option.");
+//                        }
+//                    }
 
-                    return 0;
-                });
-            });
-#endif
-        }
+//                    return 0;
+//                });
+//            });
+//#endif
+//        }
 
-        /// <summary>
-        /// Implements the native method for 'blockOrUnblock6'.
-        /// </summary>
-        /// <param name="block"></param>
-        /// <param name="fd"></param>
-        /// <param name="group"></param>
-        /// <param name="index"></param>
-        /// <param name="source"></param>
-        /// <returns></returns>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static unsafe int blockOrUnblock6(bool block, object fd, byte[] group, int index, byte[] source)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return InvokeFunc(() =>
-            {
-                return InvokeWithSocket(fd, socket =>
-                {
-                    // group_source_req
-                    var groupSockAddr = new sockaddr_in6();
-                    groupSockAddr.sin6_family = AF_INET6;
-#if NETCOREAPP
-                    groupSockAddr.sin6_addr = MemoryMarshal.AsRef<in6_addr>(group);
-#else
-                    fixed (byte* groupBufPtr = group)
-                        groupSockAddr.sin6_addr = Marshal.PtrToStructure<in6_addr>((IntPtr)groupBufPtr);
-#endif
+//        /// <summary>
+//        /// Implements the native method for 'blockOrUnblock6'.
+//        /// </summary>
+//        /// <param name="block"></param>
+//        /// <param name="fd"></param>
+//        /// <param name="group"></param>
+//        /// <param name="index"></param>
+//        /// <param name="source"></param>
+//        /// <returns></returns>
+//        /// <exception cref="global::java.net.SocketException"></exception>
+//        public static unsafe int blockOrUnblock6(bool block, object fd, byte[] group, int index, byte[] source)
+//        {
+//#if FIRST_PASS
+//            throw new NotImplementedException();
+//#else
+//            return InvokeFunc(() =>
+//            {
+//                return InvokeWithSocket(fd, socket =>
+//                {
+//                    // group_source_req
+//                    var groupSockAddr = new sockaddr_in6();
+//                    groupSockAddr.sin6_family = AF_INET6;
+//#if NETCOREAPP
+//                    groupSockAddr.sin6_addr = MemoryMarshal.AsRef<in6_addr>(group);
+//#else
+//                    fixed (byte* groupBufPtr = group)
+//                        groupSockAddr.sin6_addr = Marshal.PtrToStructure<in6_addr>((IntPtr)groupBufPtr);
+//#endif
 
-                    var sourceSockAddr = new sockaddr_in6();
-                    sourceSockAddr.sin6_family = AF_INET6;
-#if NETCOREAPP
-                    sourceSockAddr.sin6_addr = MemoryMarshal.AsRef<in6_addr>(source);
-#else
-                    fixed (byte* sourceBufPtr = source)
-                        sourceSockAddr.sin6_addr = Marshal.PtrToStructure<in6_addr>((IntPtr)sourceBufPtr);
-#endif
+//                    var sourceSockAddr = new sockaddr_in6();
+//                    sourceSockAddr.sin6_family = AF_INET6;
+//#if NETCOREAPP
+//                    sourceSockAddr.sin6_addr = MemoryMarshal.AsRef<in6_addr>(source);
+//#else
+//                    fixed (byte* sourceBufPtr = source)
+//                        sourceSockAddr.sin6_addr = Marshal.PtrToStructure<in6_addr>((IntPtr)sourceBufPtr);
+//#endif
 
-                    var groupSourceReq = new group_source_req();
-                    groupSourceReq.gsr_interface = (uint)index;
-                    groupSourceReq.gsr_group = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref groupSockAddr);
-                    groupSourceReq.gsr_source = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref sourceSockAddr);
+//                    var groupSourceReq = new group_source_req();
+//                    groupSourceReq.gsr_interface = (uint)index;
+//                    groupSourceReq.gsr_group = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref groupSockAddr);
+//                    groupSourceReq.gsr_source = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref sourceSockAddr);
 
-                    var v = ArrayPool<byte>.Shared.Rent(sizeof(group_source_req));
+//                    var v = ArrayPool<byte>.Shared.Rent(sizeof(group_source_req));
 
-                    try
-                    {
-                        fixed (byte* vptr = v)
-                            Buffer.MemoryCopy(&groupSourceReq, vptr, v.Length, sizeof(group_source_req));
+//                    try
+//                    {
+//                        fixed (byte* vptr = v)
+//                            Buffer.MemoryCopy(&groupSourceReq, vptr, v.Length, sizeof(group_source_req));
 
-                        socket.SetSocketOption(SocketOptionLevel.IPv6, block ? SocketOptionName.BlockSource : SocketOptionName.UnblockSource, v);
-                    }
-                    finally
-                    {
-                        ArrayPool<byte>.Shared.Return(v);
-                    }
+//                        socket.SetSocketOption(SocketOptionLevel.IPv6, block ? SocketOptionName.BlockSource : SocketOptionName.UnblockSource, v);
+//                    }
+//                    finally
+//                    {
+//                        ArrayPool<byte>.Shared.Return(v);
+//                    }
 
-                    return 0;
-                });
-            });
-#endif
-        }
+//                    return 0;
+//                });
+//            });
+//#endif
+//        }
 
-        /// <summary>
-        /// Implements the native method for 'setInterface4'.
-        /// </summary>
-        /// <param name="fd"></param>
-        /// <param name="interf"></param>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static void setInterface4(object fd, int interf)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            InvokeAction(() =>
-            {
-                InvokeWithSocket(fd, socket =>
-                {
-                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface, IPAddress.HostToNetworkOrder(interf));
-                });
-            });
-#endif
-        }
+//        /// <summary>
+//        /// Implements the native method for 'setInterface4'.
+//        /// </summary>
+//        /// <param name="fd"></param>
+//        /// <param name="interf"></param>
+//        /// <exception cref="global::java.net.SocketException"></exception>
+//        public static void setInterface4(object fd, int interf)
+//        {
+//#if FIRST_PASS
+//            throw new NotImplementedException();
+//#else
+//            InvokeAction(() =>
+//            {
+//                InvokeWithSocket(fd, socket =>
+//                {
+//                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface, IPAddress.HostToNetworkOrder(interf));
+//                });
+//            });
+//#endif
+//        }
 
-        /// <summary>
-        /// Implements the native method for 'getInterface4'.
-        /// </summary>
-        /// <param name="fd"></param>
-        /// <returns></returns>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static int getInterface4(object fd)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return InvokeFunc(() =>
-            {
-                return InvokeWithSocket(fd, socket =>
-                {
-                    return IPAddress.NetworkToHostOrder((int)socket.GetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface));
-                });
-            });
-#endif
-        }
+//        /// <summary>
+//        /// Implements the native method for 'getInterface4'.
+//        /// </summary>
+//        /// <param name="fd"></param>
+//        /// <returns></returns>
+//        /// <exception cref="global::java.net.SocketException"></exception>
+//        public static int getInterface4(object fd)
+//        {
+//#if FIRST_PASS
+//            throw new NotImplementedException();
+//#else
+//            return InvokeFunc(() =>
+//            {
+//                return InvokeWithSocket(fd, socket =>
+//                {
+//                    return IPAddress.NetworkToHostOrder((int)socket.GetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface));
+//                });
+//            });
+//#endif
+//        }
 
-        /// <summary>
-        /// Implements the native method for 'setInterface6'.
-        /// </summary>
-        /// <param name="fd"></param>
-        /// <param name="index"></param>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static void setInterface6(object fd, int index)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            InvokeAction(() =>
-            {
-                InvokeWithSocket(fd, socket =>
-                {
-                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface, index);
-                });
-            });
-#endif
-        }
+//        /// <summary>
+//        /// Implements the native method for 'setInterface6'.
+//        /// </summary>
+//        /// <param name="fd"></param>
+//        /// <param name="index"></param>
+//        /// <exception cref="global::java.net.SocketException"></exception>
+//        public static void setInterface6(object fd, int index)
+//        {
+//#if FIRST_PASS
+//            throw new NotImplementedException();
+//#else
+//            InvokeAction(() =>
+//            {
+//                InvokeWithSocket(fd, socket =>
+//                {
+//                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface, index);
+//                });
+//            });
+//#endif
+//        }
 
-        /// <summary>
-        /// Implements the native method for 'getInterface6'.
-        /// </summary>
-        /// <param name="fd"></param>
-        /// <returns></returns>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static int getInterface6(object fd)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return InvokeFunc(() =>
-            {
-                return InvokeWithSocket(fd, socket =>
-                {
-                    return (int)socket.GetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface);
-                });
-            });
-#endif
-        }
+//        /// <summary>
+//        /// Implements the native method for 'getInterface6'.
+//        /// </summary>
+//        /// <param name="fd"></param>
+//        /// <returns></returns>
+//        /// <exception cref="global::java.net.SocketException"></exception>
+//        public static int getInterface6(object fd)
+//        {
+//#if FIRST_PASS
+//            throw new NotImplementedException();
+//#else
+//            return InvokeFunc(() =>
+//            {
+//                return InvokeWithSocket(fd, socket =>
+//                {
+//                    return (int)socket.GetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface);
+//                });
+//            });
+//#endif
+//        }
 
-        /// <summary>
-        /// Implements the native method for 'initIDs'.
-        /// </summary>
-        /// <returns></returns>
-        public static void initIDs()
-        {
+        ///// <summary>
+        ///// Implements the native method for 'initIDs'.
+        ///// </summary>
+        ///// <returns></returns>
+        //public static void initIDs()
+        //{
 
-        }
+        //}
 
         /// <summary>
         /// Implements the native method 'pollinValue'.

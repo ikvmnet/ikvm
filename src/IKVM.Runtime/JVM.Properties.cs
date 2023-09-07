@@ -652,7 +652,14 @@ namespace IKVM.Runtime
 
                 try
                 {
-                    libraryPath.Insert(0, Path.GetDirectoryName(Context.Resolver.ResolveBaseAssembly().Location));
+                    // append relative .NET search paths from IKVM.Java assembly
+                    var s = Path.GetDirectoryName(Context.Resolver.ResolveBaseAssembly().Location);
+                    var l = new List<string>() { s };
+
+                    foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
+                        l.Add(Path.Combine(s, "runtimes", rid, "native"));
+
+                    libraryPath.InsertRange(0, l);
                 }
                 catch (Exception)
                 {
@@ -672,16 +679,7 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static IEnumerable<string> GetBootLibraryPathsIter()
             {
-                var self = Directory.GetParent(typeof(JVM).Assembly.Location)?.FullName;
-                if (self == null)
-                    yield break;
-
-                // implicitly include native libraries along side application (publish)
-                yield return self;
-
-                // search in runtime specific directories
-                foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
-                    yield return Path.Combine(self, "runtimes", rid, "native");
+                yield return Path.Combine(HomePath, "bin");
             }
 
             /// <summary>

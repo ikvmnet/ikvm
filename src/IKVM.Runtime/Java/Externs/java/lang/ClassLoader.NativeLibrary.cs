@@ -23,7 +23,6 @@
 */
 using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Threading;
@@ -62,24 +61,9 @@ namespace IKVM.Java.Externs.java.lang
         /// <returns></returns>
         static bool IsBuiltinLib(string name)
         {
-            switch (name)
-            {
-                case "jvm":
-                case "net":
-                case "nio":
-                case "jaas_nt":
-                case "awt":
-                case "splashscreen":
-                case "jit":
-                case "w2k_lsa_auth":
-                case "osxkrb5":
-                case "osx":
-                case "management":
-                case "zip":
-                    return true;
-                default:
-                    return false;
-            }
+            // a built-in library is one who's symbols are directly on the process module
+            // IKVM includes no such libraries
+            return false;
         }
 
         /// <summary>
@@ -107,14 +91,6 @@ namespace IKVM.Java.Externs.java.lang
 
         internal static class NativeLibrary
         {
-
-            /// <summary>
-            /// Initializes the static instance.
-            /// </summary>
-            static NativeLibrary()
-            {
-                RuntimeHelpers.RunClassConstructor(typeof(JNIVM).TypeHandle);
-            }
 
             /// <summary>
             /// Implements the backing for the native 'load' method.

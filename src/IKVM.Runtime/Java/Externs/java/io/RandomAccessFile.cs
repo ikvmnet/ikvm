@@ -1,10 +1,11 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Security;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
-using IKVM.Runtime.Vfs;
+using IKVM.Runtime.JNI;
 
 namespace IKVM.Java.Externs.java.io
 {
@@ -12,7 +13,7 @@ namespace IKVM.Java.Externs.java.io
     /// <summary>
     /// Implements the native methods for 'RandomAccessFile'.
     /// </summary>
-    static class RandomAccessFile
+    static unsafe class RandomAccessFile
     {
 
 #if FIRST_PASS == false
@@ -31,6 +32,9 @@ namespace IKVM.Java.Externs.java.io
         const int O_SYNC = 4;
         const int O_DSYNC = 8;
 
+        delegate void __jniDelegate__open0(IntPtr jniEnv, IntPtr self, IntPtr name, int mode);
+        static __jniDelegate__open0 __jniPtr__open0;
+
         /// <summary>
         /// Implements the native method 'open0'.
         /// </summary>
@@ -48,26 +52,23 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
-                var fileMode = (FileMode)0;
-                if ((mode & O_RDONLY) == O_RDONLY)
-                    fileMode |= FileMode.Open;
-                if ((mode & O_RDWR) == O_RDWR)
-                    fileMode |= FileMode.OpenOrCreate;
-
-                var fileAccess = (FileAccess)0;
-                if ((mode & O_RDONLY) == O_RDONLY)
-                    fileAccess |= FileAccess.Read;
-                if ((mode & O_RDWR) == O_RDWR)
-                    fileAccess |= FileAccess.ReadWrite;
-
-
                 if (JVM.Vfs.IsPath(name))
                 {
+                    var fileMode = (FileMode)0;
+                    if ((mode & O_RDONLY) == O_RDONLY)
+                        fileMode |= FileMode.Open;
+                    if ((mode & O_RDWR) == O_RDWR)
+                        fileMode |= FileMode.OpenOrCreate;
+
+                    var fileAccess = (FileAccess)0;
+                    if ((mode & O_RDONLY) == O_RDONLY)
+                        fileAccess |= FileAccess.Read;
+                    if ((mode & O_RDWR) == O_RDWR)
+                        fileAccess |= FileAccess.ReadWrite;
+
                     FileDescriptorAccessor.SetStream(fd, JVM.Vfs.Open(name, fileMode, fileAccess));
                     return;
                 }
-
-                FileDescriptorAccessor.SetStream(fd, new FileStream(name, fileMode, fileAccess, FileShare.ReadWrite, 1, false));
             }
             catch (ObjectDisposedException e)
             {
@@ -92,6 +93,26 @@ namespace IKVM.Java.Externs.java.io
             catch (NotSupportedException e)
             {
                 throw new global::java.io.FileNotFoundException(e.Message);
+            }
+
+            __jniPtr__open0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__open0>(JNIFrame.GetFuncPtr((global::ikvm.@internal.CallerID)RandomAccessFileAccessor.InvokeGetCallerID(), "java/io/RandomAccessFile", nameof(open0), "(Ljava/lang/String;I)V"));
+            var jniFrm = new JNIFrame();
+            var jniEnv = jniFrm.Enter((global::ikvm.@internal.CallerID)RandomAccessFileAccessor.InvokeGetCallerID());
+            try
+            {
+                var selfRef = jniFrm.MakeLocalRef(self);
+                var nameRef = jniFrm.MakeLocalRef(name);
+                __jniPtr__open0(jniEnv, selfRef, nameRef, mode);
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine("*** exception in native code ***");
+                System.Console.WriteLine(ex);
+                throw;
+            }
+            finally
+            {
+                jniFrm.Leave();
             }
 #endif
         }
@@ -118,6 +139,7 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 return stream.ReadByte();
             }
             catch (ObjectDisposedException e)
@@ -169,7 +191,9 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 var n = stream.Read(b, off, len);
+                stream.Flush();
                 if (n == 0)
                     n = -1;
 
@@ -212,6 +236,7 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 stream.WriteByte((byte)b);
                 stream.Flush();
             }
@@ -257,6 +282,7 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 stream.Write(b, off, len);
                 stream.Flush();
             }
@@ -296,6 +322,7 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 return stream.Position;
             }
             catch (ObjectDisposedException e)
@@ -333,7 +360,9 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 stream.Position = pos;
+                stream.Flush();
             }
             catch (ObjectDisposedException e)
             {
@@ -374,6 +403,7 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
+                stream.Flush();
                 return stream.Length;
             }
             catch (ObjectDisposedException e)
@@ -409,20 +439,31 @@ namespace IKVM.Java.Externs.java.io
             if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var p = stream.Position;
+
             try
             {
                 stream.SetLength(newLength);
+                stream.Flush();
             }
             catch (ObjectDisposedException e)
             {
+                stream.Position = p;
                 throw new global::java.io.IOException(e.Message);
             }
             catch (NotSupportedException e)
             {
+                stream.Position = p;
+                throw new global::java.io.IOException(e.Message);
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                stream.Position = p;
                 throw new global::java.io.IOException(e.Message);
             }
             catch (IOException e)
             {
+                stream.Position = p;
                 throw new global::java.io.IOException(e.Message);
             }
 #endif
@@ -463,14 +504,6 @@ namespace IKVM.Java.Externs.java.io
                 throw new global::java.io.IOException(e.Message);
             }
 #endif
-        }
-
-        /// <summary>
-        /// Implements the native method 'initIDs'.
-        /// </summary>
-        public static void initIDs()
-        {
-
         }
 
     }

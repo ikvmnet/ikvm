@@ -929,9 +929,7 @@ namespace IKVM.Runtime
                 }
                 finally
                 {
-                    if (nativeLibraries == null)
-                        nativeLibraries = new List<IntPtr>();
-
+                    nativeLibraries ??= new List<IntPtr>();
                     nativeLibraries.Add(p);
                 }
             }
@@ -962,12 +960,11 @@ namespace IKVM.Runtime
 
         public override string ToString()
         {
-            object javaClassLoader = GetJavaClassLoader();
+            var javaClassLoader = GetJavaClassLoader();
             if (javaClassLoader == null)
-            {
                 return "null";
-            }
-            return string.Format("{0}@{1:X}", Context.ClassLoaderFactory.GetJavaTypeFromType(javaClassLoader.GetType()).Name, javaClassLoader.GetHashCode());
+            else
+                return string.Format("{0}@{1:X}", Context.ClassLoaderFactory.GetJavaTypeFromType(javaClassLoader.GetType()).Name, javaClassLoader.GetHashCode());
         }
 
 #endif

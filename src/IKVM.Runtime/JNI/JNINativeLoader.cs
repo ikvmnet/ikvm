@@ -23,13 +23,12 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-
-using IKVM.Runtime;
 
 namespace IKVM.Runtime.JNI
 {
+
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
     using jint = System.Int32;
 
@@ -39,19 +38,11 @@ namespace IKVM.Runtime.JNI
     static unsafe class JNINativeLoader
     {
 
-        /// <summary>
-        /// Initializes the static instance.
-        /// </summary>
-        static JNINativeLoader()
-        {
-            RuntimeHelpers.RunClassConstructor(typeof(JNIVM).TypeHandle);
-        }
-
         delegate jint JNI_OnLoadFunc(JavaVM* vm, void* reserved);
         delegate void JNI_OnUnloadFunc(JavaVM* vm, void* reserved);
 
         public static readonly object SyncRoot = new object();
-        static readonly List<nint> loaded = new List<nint>();
+        static readonly List<nint> loaded = new();
 
         /// <summary>
         /// Initiates a load of the given JNI library by the specified class loader.
@@ -70,7 +61,7 @@ namespace IKVM.Runtime.JNI
                 try
                 {
                     // attempt to load the native library
-                    if ((p = NativeLibrary.Load(filename)) == 0)
+                    if ((p = LibJvm.Instance.JVM_LoadLibrary(filename)) == 0)
                     {
                         Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', message = {2}", filename, "NULL handle returned.");
                         return 0;
@@ -81,7 +72,7 @@ namespace IKVM.Runtime.JNI
                     {
                         if (h == p)
                         {
-                            NativeLibrary.Free(p);
+                            LibJvm.Instance.JVM_UnloadLibrary(p);
                             Tracer.Warning(Tracer.Jni, "Library was already loaded, returning same reference.", filename);
                             return p;
                         }
@@ -99,7 +90,7 @@ namespace IKVM.Runtime.JNI
 
                     try
                     {
-                        var onload = NativeLibrary.GetExport(p, "JNI_OnLoad", sizeof(nint) * 2);
+                        var onload = LibJvm.Instance.JVM_FindLibraryEntry(p, "JNI_OnLoad");
                         if (onload != 0)
                         {
                             Tracer.Info(Tracer.Jni, "Calling JNI_OnLoad on: {0}", filename);
@@ -116,7 +107,7 @@ namespace IKVM.Runtime.JNI
                                 f.Leave(w);
                             }
 
-                            if (JNIVM.IsSupportedJniVersion(v) == false)
+                            if (JNIVM.IsSupportedJNIVersion(v) == false)
                             {
                                 var msg = $"Unsupported JNI version 0x{v:X} required by {filename}";
                                 Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", msg);
@@ -142,7 +133,7 @@ namespace IKVM.Runtime.JNI
                 catch (Exception e)
                 {
                     Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', error = {1}, message = {2}", filename, "Exception", e.Message);
-                    NativeLibrary.Free(p);
+                    LibJvm.Instance.JVM_UnloadLibrary(p);
                     throw;
                 }
             }
@@ -163,7 +154,7 @@ namespace IKVM.Runtime.JNI
 
                 try
                 {
-                    var onunload = NativeLibrary.GetExport(p, "JNI_OnUnload", sizeof(nint) * 2);
+                    var onunload = LibJvm.Instance.JVM_FindLibraryEntry(p, "JNI_OnUnload");
                     if (onunload != 0)
                     {
                         Tracer.Info(Tracer.Jni, "Calling JNI_OnUnload on: handle = 0x{0:X}", handle);
@@ -188,10 +179,12 @@ namespace IKVM.Runtime.JNI
                 // remove record of native library
                 loaded.Remove(p);
                 loader.UnregisterNativeLibrary(p);
-                NativeLibrary.Free(p);
+                LibJvm.Instance.JVM_UnloadLibrary(p);
             }
         }
 
     }
+
+#endif
 
 }

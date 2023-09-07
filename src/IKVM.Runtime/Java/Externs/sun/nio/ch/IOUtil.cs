@@ -24,13 +24,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
         static readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
 
-        /// <summary>
-        /// Implements the native method 'initIDs'.
-        /// </summary>
-        public static void initIDs()
-        {
+        ///// <summary>
+        ///// Implements the native method 'initIDs'.
+        ///// </summary>
+        //public static void initIDs()
+        //{
 
-        }
+        //}
 
         /// <summary>
         /// Implements the native method 'randomBytes'.
@@ -111,7 +111,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         public static void setfdVal(global::java.io.FileDescriptor fd, int value)
         {
-            throw new NotSupportedException();
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            FileDescriptorAccessor.SetFd(fd, value);
+#endif
         }
 
         /// <summary>
@@ -122,21 +126,21 @@ namespace IKVM.Java.Externs.sun.nio.ch
             throw new NotSupportedException();
         }
 
-        /// <summary>
-        /// Implements the native method 'iovMax'.
-        /// </summary>
-        public static int iovMax()
-        {
-            return 16;
-        }
+        ///// <summary>
+        ///// Implements the native method 'iovMax'.
+        ///// </summary>
+        //public static int iovMax()
+        //{
+        //    return 16;
+        //}
 
-        /// <summary>
-        /// Implements the native method 'load'.
-        /// </summary>
-        public static void load()
-        {
+        ///// <summary>
+        ///// Implements the native method 'load'.
+        ///// </summary>
+        //public static void load()
+        //{
 
-        }
+        //}
 
     }
 

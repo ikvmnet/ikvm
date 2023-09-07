@@ -4,7 +4,7 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
-        <RuntimeIdentifiers>win7-x86;win7-x64;win81-arm;linux-x64;linux-arm;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
+        <RuntimeIdentifiers>win7-x86;win7-x64;linux-x64;linux-arm;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
         <RootNamespace>project.exe</RootNamespace>
         <StartupObject>project.exe.Main</StartupObject>
     </PropertyGroup>

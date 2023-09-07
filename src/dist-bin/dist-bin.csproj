@@ -3,6 +3,7 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
 
     <ItemGroup>
@@ -25,7 +26,8 @@
         <ItemGroup>
             <PublishProjectReference Include="$(_ProjectFile)">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
-                <ProjectTargetPath>$(_TargetFramework)</ProjectTargetPath>
+                <PublishTargetPath>$(_TargetFramework)</PublishTargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </PublishProjectReference>
         </ItemGroup>
     </Target>

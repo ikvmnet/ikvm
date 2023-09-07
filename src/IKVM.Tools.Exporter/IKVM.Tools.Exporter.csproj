@@ -21,6 +21,7 @@
         <Compile Include="..\IKVM.Runtime\Syntax\**\*.cs" LinkBase="IKVM.Runtime\Syntax" />
         <Compile Include="..\IKVM.Runtime\InternalException.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeAssemblyClassLoader.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\BootstrapClassLoader.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeAssemblyClassLoaderFactory.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\Attributes\**\*.cs" LinkBase="IKVM.Runtime\Attributes" />
         <Compile Include="..\IKVM.Runtime\RuntimeClassLoader.cs" LinkBase="IKVM.Runtime" />

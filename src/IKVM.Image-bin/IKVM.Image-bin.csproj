@@ -1,0 +1,51 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets">
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
+        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libjvm\libjvm.clangproj " />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libfdlibm\libfdlibm.clangproj " />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libverify\libverify.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libiava\libiava.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libnet\libnet.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libnio\libnio.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libunpack\libunpack.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libsunec\libsunec.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="win7-x64;win7-x86;win10-arm64" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libawt\libawt.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libmanagement\libmanagement.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libw2k_lsa_auth\libw2k_lsa_auth.clangproj" SupportedRuntimes="win7-x64;win7-x86;win10-arm64" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libosx\libosx.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libosxkrb5\libosxkrb5.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
+    </ItemGroup>
+
+    <Target Name="GetClangProjectReferencesByRuntime" Inputs="@(_ReferencedClangProjects)" Outputs="%(_ReferencedClangProjects.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">
+        <PropertyGroup>
+            <__SupportedRuntimes>%(_ReferencedClangProjects.SupportedRuntimes)</__SupportedRuntimes>
+            <__SupportedRuntimes Condition=" '$(__SupportedRuntimes)' == '' ">$(SupportedRuntimes)</__SupportedRuntimes>
+        </PropertyGroup>
+        <ItemGroup>
+            <__SupportedRuntimes Include="$(__SupportedRuntimes)" />
+        </ItemGroup>
+        <ItemGroup>
+            <_ReferencedClangProjectReference Remove="@(_ReferencedClangProjectReference)" />
+            <_ReferencedClangProjectReference Include="@(_ReferencedClangProjects)">
+                <RuntimeIdentifier>%(__SupportedRuntimes.Identity)</RuntimeIdentifier>
+            </_ReferencedClangProjectReference>
+            <ClangProjectReference Include="@(_ReferencedClangProjectReference)" Condition="$(_EnabledRuntimes.Contains(';%(RuntimeIdentifier);'))">
+                <RuntimeIdentifier>%(RuntimeIdentifier)</RuntimeIdentifier>
+            </ClangProjectReference>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GetClangProjectReferencesDependsOn>
+            $(GetClangProjectReferencesDependsOn);
+            GetClangProjectReferencesByRuntime;
+        </GetClangProjectReferencesDependsOn>
+    </PropertyGroup>
+
+</Project>

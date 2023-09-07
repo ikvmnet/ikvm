@@ -33,6 +33,7 @@ using IKVM.Runtime.Accessors.Java.Lang;
 using System.Runtime.CompilerServices;
 
 using IKVM.Runtime.Vfs;
+using IKVM.Runtime.Accessors.Ikvm.Internal;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -81,6 +82,7 @@ namespace IKVM.Runtime
         static AccessorCache baseAccessors;
         static ThreadGroupAccessor threadGroupAccessor;
         static SystemAccessor systemAccessor;
+        static CallerIDAccessor callerIDAccessor;
 
         static Lazy<object> systemThreadGroup = new Lazy<object>(MakeSystemThreadGroup);
         static Lazy<object> mainThreadGroup = new Lazy<object>(MakeMainThreadGroup);
@@ -90,6 +92,8 @@ namespace IKVM.Runtime
         static ThreadGroupAccessor ThreadGroupAccessor => BaseAccessors.Get(ref threadGroupAccessor);
 
         static SystemAccessor SystemAccessor => BaseAccessors.Get(ref systemAccessor);
+
+        static CallerIDAccessor CallerIDAccessor => BaseAccessors.Get(ref callerIDAccessor);
 
         /// <summary>
         /// Gets the 'system' thread group.
@@ -429,20 +433,6 @@ namespace IKVM.Runtime
                 // TODO this shouldn't be here
                 return null;
             }
-#endif
-        }
-
-#endif
-
-#if !IMPORTER && !EXPORTER
-
-        // helper for JNI (which doesn't have access to core library internals)
-        internal static object NewDirectByteBuffer(long address, int capacity)
-        {
-#if FIRST_PASS
-            return null;
-#else
-            return java.nio.DirectByteBuffer.__new(address, capacity);
 #endif
         }
 

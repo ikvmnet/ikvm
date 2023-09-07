@@ -123,7 +123,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
 
                 // NOTE we use async connect to work around the issue that the .NET Socket class disallows sync Connect after the socket has received WSAECONNRESET
-                socket.EndConnect(socket.BeginConnect(new IPEndPoint(IPAddress.IPv6Any, 0), null, null));
+                var any = socket.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any;
+                socket.EndConnect(socket.BeginConnect(new IPEndPoint(any, 0), null, null));
 
                 // disable WSAECONNRESET errors as socket is no longer connected
                 if (RuntimeUtil.IsWindows)

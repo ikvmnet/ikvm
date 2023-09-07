@@ -22,9 +22,7 @@
   
 */
 
-using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Text;
 
 using IKVM.ByteCode.Text;
@@ -32,55 +30,12 @@ using IKVM.ByteCode.Text;
 namespace IKVM.Runtime.JNI
 {
 
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+
     using jsize = System.Int32;
 
-    public sealed unsafe class JNIVM
+    public sealed unsafe partial class JNIVM
     {
-
-        /// <summary>
-        /// Native methods available in libjvm.
-        /// </summary>
-        internal static class LibJvm
-        {
-
-            internal static nint Handle;
-
-            [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-            public delegate int JNI_GetDefaultJavaVMInitArgsFunc(void* vm_args);
-
-
-            [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-            public delegate int JNI_GetCreatedJavaVMsFunc(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
-
-            [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-            public delegate int JNI_CreateJavaVMFunc(JavaVM** p_vm, void** p_env, void* vm_args);
-
-            delegate void Set_JNI_GetDefaultJavaVMInitArgsDelegate(JNI_GetDefaultJavaVMInitArgsFunc func);
-            delegate void Set_JNI_GetCreatedJavaVMsDelegate(JNI_GetCreatedJavaVMsFunc func);
-            delegate void Set_JNI_CreateJavaVMDelegate(JNI_CreateJavaVMFunc func);
-
-            readonly static Set_JNI_GetDefaultJavaVMInitArgsDelegate set_JNI_GetDefaultJavaVMInitArgs;
-            readonly static Set_JNI_GetCreatedJavaVMsDelegate set_JNI_GetCreatedJavaVMs;
-            readonly static Set_JNI_CreateJavaVMDelegate set_JNI_CreateJavaVM;
-
-            /// <summary>
-            /// Initializes the static instance.
-            /// </summary>
-            static LibJvm()
-            {
-                Handle = NativeLibrary.Load("jvm");
-                set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_GetDefaultJavaVMInitArgs", 1));
-                set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_GetCreatedJavaVMs", 1));
-                set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(NativeLibrary.GetExport(Handle, "Set_JNI_CreateJavaVM", 1));
-            }
-
-            public static void Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgsFunc func) => set_JNI_GetDefaultJavaVMInitArgs(func);
-
-            public static void Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMsFunc func) => set_JNI_GetCreatedJavaVMs(func);
-
-            public static void Set_JNI_CreateJavaVM(JNI_CreateJavaVMFunc func) => set_JNI_CreateJavaVM(func);
-
-        }
 
         static readonly MUTF8Encoding MUTF8 = MUTF8Encoding.GetMUTF8(52);
 
@@ -93,25 +48,21 @@ namespace IKVM.Runtime.JNI
         static readonly Encoding platformEncoding = CodePagesEncodingProvider.Instance.GetEncoding(0);
 #endif
 
-#if FIRST_PASS == false
-
-        static readonly LibJvm.JNI_GetDefaultJavaVMInitArgsFunc jni_GetDefaultJavaVMInitArgsDelegate = GetDefaultJavaVMInitArgs;
-        static readonly LibJvm.JNI_GetCreatedJavaVMsFunc jni_GetCreatedJavaVMs = GetCreatedJavaVMs;
-        static readonly LibJvm.JNI_CreateJavaVMFunc jni_CreateJavaVM = CreateJavaVM;
+        static readonly LibJvm.JNI_GetDefaultJavaVMInitArgsFunc JNI_GetDefaultJavaVMInitArgs = GetDefaultJavaVMInitArgs;
+        static readonly LibJvm.JNI_GetCreatedJavaVMsFunc JNI_GetCreatedJavaVMs = GetCreatedJavaVMs;
+        static readonly LibJvm.JNI_CreateJavaVMFunc JNI_CreateJavaVM = CreateJavaVM;
 
         /// <summary>
         /// Initializes the static instance.
         /// </summary>
         static JNIVM()
         {
-            LibJvm.Set_JNI_GetDefaultJavaVMInitArgs(jni_GetDefaultJavaVMInitArgsDelegate);
-            LibJvm.Set_JNI_GetCreatedJavaVMs(jni_GetCreatedJavaVMs);
-            LibJvm.Set_JNI_CreateJavaVM(jni_CreateJavaVM);
+            LibJvm.Instance.Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs);
+            LibJvm.Instance.Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs);
+            LibJvm.Instance.Set_JNI_CreateJavaVM(JNI_CreateJavaVM);
         }
 
-#endif
-
-        internal static bool IsSupportedJniVersion(int version)
+        internal static bool IsSupportedJNIVersion(int version)
         {
             return version == JNIEnv.JNI_VERSION_1_1
                 || version == JNIEnv.JNI_VERSION_1_2
@@ -144,7 +95,7 @@ namespace IKVM.Runtime.JNI
             var pInitArgs = (JavaVMInitArgs*)vm_args;
 
             // we don't support the JDK 1.1 JavaVMInitArgs
-            if (!IsSupportedJniVersion(pInitArgs->version) || pInitArgs->version == JNIEnv.JNI_VERSION_1_1)
+            if (!IsSupportedJNIVersion(pInitArgs->version) || pInitArgs->version == JNIEnv.JNI_VERSION_1_1)
                 return JNIEnv.JNI_EVERSION;
 
             // JVM is already created, only one allowed at a time
@@ -222,5 +173,7 @@ namespace IKVM.Runtime.JNI
         }
 
     }
+
+#endif
 
 }

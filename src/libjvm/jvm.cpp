@@ -1,10 +1,28 @@
 #include <jni.h>
 #include <jvm.h>
 #include "jvm.h"
+#include <stdio.h>
+#include <string.h>
+
+#if defined WIN32
+#include <winsock2.h>
+#endif
+
+#if defined LINUX | MACOSX
+#include <unistd.h>
+#include <pthread.h>
+#include <errno.h>
+#include <dlfcn.h>
+#include <sys/socket.h>
+#endif
+
+#if defined LINUX | MACOSX
+static pthread_mutex_t dl_mutex;
+#endif
 
 jint JNICALL JVM_GetInterfaceVersion()
 {
-    return 0;
+    return JVM_INTERFACE_VERSION;
 }
 
 jlong JNICALL JVM_CurrentTimeMillis(JNIEnv* env, jclass ignored)
@@ -367,7 +385,54 @@ jstring JNICALL JVM_GetTemporaryDirectory(JNIEnv* env)
 
 jint JNICALL JVM_GetLastErrorString(char* buf, int len)
 {
+#if WIN32
+    DWORD errval;
+
+    if ((errval = GetLastError()) != 0) {
+        // DOS error
+        size_t n = (size_t)FormatMessage(
+            FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL,
+            errval,
+            0,
+            buf,
+            (DWORD)len,
+            NULL);
+        if (n > 3) {
+            // Drop final '.', CR, LF
+            if (buf[n - 1] == '\n') n--;
+            if (buf[n - 1] == '\r') n--;
+            if (buf[n - 1] == '.') n--;
+            buf[n] = '\0';
+        }
+        return n;
+    }
+
+    if (errno != 0) {
+        // C runtime error that has no corresponding DOS error code
+        const char* s = strerror(errno);
+        size_t n = strlen(s);
+        if (n >= len) n = len - 1;
+        strncpy(buf, s, n);
+        buf[n] = '\0';
+        return n;
+    }
+
     return 0;
+#else
+    if (errno == 0)
+        return 0;
+
+    const char* s = ::strerror(errno);
+    size_t n = ::strlen(s);
+    if (n >= len) {
+        n = len - 1;
+    }
+
+    ::strncpy(buf, s, n);
+    buf[n] = '\0';
+    return n;
+#endif
 }
 
 //
@@ -2355,57 +2420,7 @@ jboolean JNICALL JVM_IsSameClassPackage(JNIEnv* env, jclass class1, jclass class
 //JVM_END
 //
 //
-//// Printing support //////////////////////////////////////////////////
-extern "C" {
 
-int jio_vsnprintf(char* str, size_t count, const char* fmt, va_list args)
-{
-    // Reject count values that are negative signed values converted to
-    // unsigned; see bug 4399518, 4417214
-    if ((intptr_t)count <= 0) return -1;
-
-    int result = vsnprintf(str, count, fmt, args);
-    if (result > 0 && (size_t)result >= count) {
-        result = -1;
-    }
-
-    return result;
-}
-
-int jio_snprintf(char* str, size_t count, const char* fmt, ...) {
-    va_list args;
-    int len;
-    va_start(args, fmt);
-    len = jio_vsnprintf(str, count, fmt, args);
-    va_end(args);
-    return len;
-}
-
-int jio_fprintf(FILE* f, const char* fmt, ...) {
-    int len;
-    va_list args;
-    va_start(args, fmt);
-    len = jio_vfprintf(f, fmt, args);
-    va_end(args);
-    return len;
-}
- 
-
-int jio_vfprintf(FILE* f, const char* fmt, va_list args)
-{
-    return vfprintf(f, fmt, args);
-}
-
-int jio_printf(const char* fmt, ...) {
-    int len;
-    va_list args;
-    va_start(args, fmt);
-    len = jio_vfprintf(stdout, fmt, args);
-    va_end(args);
-    return len;
-}
-
-} // Extern C
 
 //
 //// java.lang.Thread //////////////////////////////////////////////////////////////////////////////
@@ -3314,182 +3329,131 @@ int jio_printf(const char* fmt, ...) {
 //JVM_END
 //
 //
-//// Networking library support ////////////////////////////////////////////////////////////////////
-//
-//JVM_LEAF(jint, JVM_InitializeSocketLibrary())
-//JVMWrapper("JVM_InitializeSocketLibrary");
-//return 0;
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Socket(jint domain, jint type, jint protocol))
-//JVMWrapper("JVM_Socket");
-//return os::socket(domain, type, protocol);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_SocketClose(jint fd))
-//JVMWrapper2("JVM_SocketClose (0x%x)", fd);
-////%note jvm_r6
-//return os::socket_close(fd);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_SocketShutdown(jint fd, jint howto))
-//JVMWrapper2("JVM_SocketShutdown (0x%x)", fd);
-////%note jvm_r6
-//return os::socket_shutdown(fd, howto);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Recv(jint fd, char* buf, jint nBytes, jint flags))
-//JVMWrapper2("JVM_Recv (0x%x)", fd);
-////%note jvm_r6
-//return os::recv(fd, buf, (size_t)nBytes, (uint)flags);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Send(jint fd, char* buf, jint nBytes, jint flags))
-//JVMWrapper2("JVM_Send (0x%x)", fd);
-////%note jvm_r6
-//return os::send(fd, buf, (size_t)nBytes, (uint)flags);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Timeout(int fd, long timeout))
-//JVMWrapper2("JVM_Timeout (0x%x)", fd);
-////%note jvm_r6
-//return os::timeout(fd, timeout);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Listen(jint fd, jint count))
-//JVMWrapper2("JVM_Listen (0x%x)", fd);
-////%note jvm_r6
-//return os::listen(fd, count);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Connect(jint fd, struct sockaddr* him, jint len))
-//JVMWrapper2("JVM_Connect (0x%x)", fd);
-////%note jvm_r6
-//return os::connect(fd, him, (socklen_t)len);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Bind(jint fd, struct sockaddr* him, jint len))
-//JVMWrapper2("JVM_Bind (0x%x)", fd);
-////%note jvm_r6
-//return os::bind(fd, him, (socklen_t)len);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_Accept(jint fd, struct sockaddr* him, jint * len))
-//JVMWrapper2("JVM_Accept (0x%x)", fd);
-////%note jvm_r6
-//socklen_t socklen = (socklen_t)(*len);
-//jint result = os::accept(fd, him, &socklen);
-//*len = (jint)socklen;
-//return result;
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_RecvFrom(jint fd, char* buf, int nBytes, int flags, struct sockaddr* from, int* fromlen))
-//JVMWrapper2("JVM_RecvFrom (0x%x)", fd);
-////%note jvm_r6
-//socklen_t socklen = (socklen_t)(*fromlen);
-//jint result = os::recvfrom(fd, buf, (size_t)nBytes, (uint)flags, from, &socklen);
-//*fromlen = (int)socklen;
-//return result;
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_GetSockName(jint fd, struct sockaddr* him, int* len))
-//JVMWrapper2("JVM_GetSockName (0x%x)", fd);
-////%note jvm_r6
-//socklen_t socklen = (socklen_t)(*len);
-//jint result = os::get_sock_name(fd, him, &socklen);
-//*len = (int)socklen;
-//return result;
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_SendTo(jint fd, char* buf, int len, int flags, struct sockaddr* to, int tolen))
-//JVMWrapper2("JVM_SendTo (0x%x)", fd);
-////%note jvm_r6
-//return os::sendto(fd, buf, (size_t)len, (uint)flags, to, (socklen_t)tolen);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_SocketAvailable(jint fd, jint * pbytes))
-//JVMWrapper2("JVM_SocketAvailable (0x%x)", fd);
-////%note jvm_r6
-//return os::socket_available(fd, pbytes);
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_GetSockOpt(jint fd, int level, int optname, char* optval, int* optlen))
-//JVMWrapper2("JVM_GetSockOpt (0x%x)", fd);
-////%note jvm_r6
-//socklen_t socklen = (socklen_t)(*optlen);
-//jint result = os::get_sock_opt(fd, level, optname, optval, &socklen);
-//*optlen = (int)socklen;
-//return result;
-//JVM_END
-//
-//
-//JVM_LEAF(jint, JVM_SetSockOpt(jint fd, int level, int optname, const char* optval, int optlen))
-//JVMWrapper2("JVM_GetSockOpt (0x%x)", fd);
-////%note jvm_r6
-//return os::set_sock_opt(fd, level, optname, optval, (socklen_t)optlen);
-//JVM_END
-//
-//
-//JVM_LEAF(int, JVM_GetHostName(char* name, int namelen))
-//JVMWrapper("JVM_GetHostName");
-//return os::get_host_name(name, namelen);
-//JVM_END
-//
-//
-//// Library support ///////////////////////////////////////////////////////////////////////////
-//
-//JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name))
-////%note jvm_ct
-//JVMWrapper2("JVM_LoadLibrary (%s)", name);
-//char ebuf[1024];
-//void* load_result;
-//{
-//    ThreadToNativeFromVM ttnfvm(thread);
-//    load_result = os::dll_load(name, ebuf, sizeof ebuf);
-//}
-//if (load_result == NULL) {
-//    char msg[1024];
-//    jio_snprintf(msg, sizeof msg, "%s: %s", name, ebuf);
-//    // Since 'ebuf' may contain a string encoded using
-//    // platform encoding scheme, we need to pass
-//    // Exceptions::unsafe_to_utf8 to the new_exception method
-//    // as the last argument. See bug 6367357.
-//    Handle h_exception =
-//        Exceptions::new_exception(thread,
-//            vmSymbols::java_lang_UnsatisfiedLinkError(),
-//            msg, Exceptions::unsafe_to_utf8);
-//
-//    THROW_HANDLE_0(h_exception);
-//}
-//return load_result;
-//JVM_END
-//
-//
-//JVM_LEAF(void, JVM_UnloadLibrary(void* handle))
-//JVMWrapper("JVM_UnloadLibrary");
-//os::dll_unload(handle);
-//JVM_END
-//
-//
-//JVM_LEAF(void*, JVM_FindLibraryEntry(void* handle, const char* name))
-//JVMWrapper2("JVM_FindLibraryEntry (%s)", name);
-//return os::dll_lookup(handle, name);
-//JVM_END
+
+jint JNICALL JVM_InitializeSocketLibrary()
+{
+    return 0;
+}
+
+jint JNICALL JVM_Socket(jint domain, jint type, jint protocol)
+{
+    return socket(domain, type, protocol);
+}
+
+jint JNICALL JVM_SocketClose(jint fd)
+{
+#ifdef WIN32
+    return closesocket(fd);
+#else
+    return close(fd);
+#endif
+}
+
+jint JNICALL JVM_SocketShutdown(jint fd, jint howto)
+{
+    return shutdown(fd, howto);
+}
+
+jint JNICALL JVM_Recv(jint fd, char* buf, jint nBytes, jint flags)
+{
+    return 0;
+}
+
+jint JNICALL JVM_Send(jint fd, char* buf, jint nBytes, jint flags)
+{
+    return 0;
+}
+
+jint JNICALL JVM_Timeout(int fd, long timeout)
+{
+    return 0;
+}
+
+jint JNICALL JVM_Listen(jint fd, jint count)
+{
+    return 0;
+}
+
+jint JNICALL JVM_Connect(jint fd, struct sockaddr* him, jint len)
+{
+    return 0;
+}
+
+jint JNICALL JVM_Bind(jint fd, struct sockaddr* him, jint len)
+{
+    return 0;
+}
+
+jint JNICALL JVM_Accept(jint fd, struct sockaddr* him, jint* len)
+{
+    return 0;
+}
+
+jint JNICALL JVM_RecvFrom(jint fd, char* buf, int nBytes, int flags, struct sockaddr* from, int* fromlen)
+{
+    return 0;
+}
+
+jint JNICALL JVM_GetSockName(jint fd, struct sockaddr* him, int* len)
+{
+    return 0;
+}
+
+jint JNICALL JVM_SendTo(jint fd, char* buf, int len, int flags, struct sockaddr* to, int tolen)
+{
+    return 0;
+}
+
+jint JNICALL JVM_SocketAvailable(jint fd, jint* pbytes)
+{
+    return 0;
+}
+
+jint JNICALL JVM_GetSockOpt(jint fd, int level, int optname, char* optval, int* optlen)
+{
+    return 0;
+}
+
+jint JNICALL JVM_SetSockOpt(jint fd, int level, int optname, const char* optval, int optlen)
+{
+    return 0;
+}
+
+int JNICALL JVM_GetHostName(char* name, int namelen)
+{
+    return 0;
+}
+
+void* JNICALL JVM_LoadLibrary(const char* name)
+{
+#ifdef WIN32
+    return LoadLibraryEx(name, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+#else
+    return dlopen(name, RTLD_NOW | RTLD_GLOBAL);
+#endif
+}
+
+void JNICALL JVM_UnloadLibrary(void* handle)
+{
+#if WIN32
+    FreeLibrary((HMODULE)handle);
+#else
+    dlclose(handle);
+#endif
+}
+
+void* JNICALL JVM_FindLibraryEntry(void* handle, const char* name)
+{
+#if WIN32
+    return (void*)GetProcAddress((HMODULE)handle, name);
+#else
+    pthread_mutex_lock(&dl_mutex);
+    void* result = dlsym(handle, name);
+    pthread_mutex_unlock(&dl_mutex);
+    return result;
+#endif
+}
+
 //
 //
 //// Floating point support ////////////////////////////////////////////////////////////////////
@@ -4069,3 +4033,57 @@ int jio_printf(const char* fmt, ...) {
 //    info->is_attachable = AttachListener::is_attach_supported();
 //}
 //JVM_END
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+    int jio_vsnprintf(char* str, size_t count, const char* fmt, va_list args)
+    {
+        // Reject count values that are negative signed values converted to
+        // unsigned; see bug 4399518, 4417214
+        if ((intptr_t)count <= 0) return -1;
+
+        int result = vsnprintf(str, count, fmt, args);
+        if (result > 0 && (size_t)result >= count) {
+            result = -1;
+        }
+
+        return result;
+    }
+
+    int jio_snprintf(char* str, size_t count, const char* fmt, ...) {
+        va_list args;
+        int len;
+        va_start(args, fmt);
+        len = jio_vsnprintf(str, count, fmt, args);
+        va_end(args);
+        return len;
+    }
+
+    int jio_fprintf(FILE* f, const char* fmt, ...) {
+        int len;
+        va_list args;
+        va_start(args, fmt);
+        len = jio_vfprintf(f, fmt, args);
+        va_end(args);
+        return len;
+    }
+
+    int jio_vfprintf(FILE* f, const char* fmt, va_list args)
+    {
+        return vfprintf(f, fmt, args);
+    }
+
+    int jio_printf(const char* fmt, ...) {
+        int len;
+        va_list args;
+        va_start(args, fmt);
+        len = jio_vfprintf(stdout, fmt, args);
+        va_end(args);
+        return len;
+    }
+
+#ifdef __cplusplus
+}
+#endif

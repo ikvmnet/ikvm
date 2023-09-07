@@ -109,10 +109,8 @@ namespace IKVM.NET.Sdk.Tests
             {
                 ("net472",          "win7-x86"),
                 ("net472",          "win7-x64"),
-                ("net472",          "win81-arm"),
                 ("net6.0",          "win7-x86"),
                 ("net6.0",          "win7-x64"),
-                ("net6.0",          "win81-arm"),
                 ("net6.0",          "linux-x64"),
                 ("net6.0",          "linux-arm"),
                 ("net6.0",          "linux-arm64"),
@@ -127,7 +125,6 @@ namespace IKVM.NET.Sdk.Tests
                 {
                     ("net6.0",          "win7-x86"),
                     ("net6.0",          "win7-x64"),
-                    ("net6.0",          "win81-arm"),
                     ("net6.0",          "linux-x64"),
                     ("net6.0",          "linux-arm"),
                     ("net6.0",          "linux-arm64"),

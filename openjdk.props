@@ -1474,7 +1474,6 @@
         <OpeNJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\AbstractPollSelectorImpl.java" />
         <OpeNJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\PollSelectorProvider.java" />
         <OpeNJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\SimpleAsynchronousFileChannelImpl.java" />
-        <OpeNJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\Net.java" />
 
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\cs\**\*.java" PackagePath="sun\nio\cs" />
 

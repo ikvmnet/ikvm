@@ -1,4 +1,6 @@
-﻿namespace IKVM.Runtime.Accessors.Java.Io
+﻿using System;
+
+namespace IKVM.Runtime.Accessors.Java.Io
 {
 
 #if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
@@ -9,7 +11,10 @@
     internal sealed class RandomAccessFileAccessor : Accessor<object>
     {
 
+        Type ikvmInternalCallerID;
+
         FieldAccessor<object, object> fd;
+        MethodAccessor<Func<object>> ___getCallerID_;
 
         /// <summary>
         /// Initializes a new instance.
@@ -20,6 +25,8 @@
         {
 
         }
+
+        Type IkvmInternalCallerID => Resolve(ref ikvmInternalCallerID, "ikvm.internal.CallerID");
 
         /// <summary>
         /// Gets the value of the 'fd' field.
@@ -35,6 +42,12 @@
         /// <param name="value"></param>
         /// <returns></returns>
         public void SetFd(object self, object value) => GetField(ref fd, nameof(fd)).SetValue(self, value);
+
+        /// <summary>
+        /// Invokes the '__<GetCallerID>' method.
+        /// </summary>
+        /// <returns></returns>
+        public object InvokeGetCallerID() => GetMethod(ref ___getCallerID_, "__<GetCallerID>", IkvmInternalCallerID).Invoker();
 
     }
 

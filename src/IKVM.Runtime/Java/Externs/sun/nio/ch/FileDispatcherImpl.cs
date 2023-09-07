@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Buffers;
-using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
-
-using Microsoft.Win32.SafeHandles;
 
 using Mono.Unix;
 using Mono.Unix.Native;
@@ -44,13 +40,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'read'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="address"></param>
         /// <param name="len"></param>
         /// <returns></returns>
         /// <exception cref="global::java.io.IOException"></exception>
-        public static unsafe int read(object self, object fd, long address, int len)
+        public static unsafe int read0(object fd, long address, int len)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -103,24 +98,19 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.io.IOException("Read failed.", e);
             }
-            finally
-            {
-                GC.KeepAlive(self);
-            }
 #endif
         }
 
         /// <summary>
         /// Implements the native method 'pread'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="address"></param>
         /// <param name="len"></param>
         /// <param name="position"></param>
         /// <returns></returns>
         /// <exception cref="global::java.io.IOException"></exception>
-        public static unsafe int pread(object self, object fd, long address, int len, long position)
+        public static unsafe int pread0(object fd, long address, int len, long position)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -139,30 +129,23 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             if (RuntimeUtil.IsLinux && stream is FileStream fs)
             {
-                try
+                if (fs.SafeFileHandle.IsInvalid)
+                    return IOStatus.UNAVAILABLE;
+
+                var n = Syscall.pread((int)fs.SafeFileHandle.DangerousGetHandle(), (IntPtr)address, (ulong)len, position);
+                if (n == -1)
                 {
-                    if (fs.SafeFileHandle.IsInvalid)
+                    // translate return values
+                    var errno = Stdlib.GetLastError();
+                    if (errno == Errno.EAGAIN)
                         return IOStatus.UNAVAILABLE;
+                    if (errno == Errno.EINTR)
+                        return IOStatus.INTERRUPTED;
 
-                    var n = Syscall.pread((int)fs.SafeFileHandle.DangerousGetHandle(), (IntPtr)address, (ulong)len, position);
-                    if (n == -1)
-                    {
-                        // translate return values
-                        var errno = Stdlib.GetLastError();
-                        if (errno == Errno.EAGAIN)
-                            return IOStatus.UNAVAILABLE;
-                        if (errno == Errno.EINTR)
-                            return IOStatus.INTERRUPTED;
-
-                        throw new global::java.io.IOException("Read failed.", new UnixIOException(errno));
-                    }
-
-                    return n > 0 ? (int)n : IOStatus.EOF;
+                    throw new global::java.io.IOException("Read failed.", new UnixIOException(errno));
                 }
-                finally
-                {
-                    GC.KeepAlive(self);
-                }
+
+                return n > 0 ? (int)n : IOStatus.EOF;
             }
             else
             {
@@ -228,10 +211,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     throw new global::java.io.IOException("Read failed.", e);
                 }
-                finally
-                {
-                    GC.KeepAlive(self);
-                }
             }
 #endif
         }
@@ -239,12 +218,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'readv'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="address"></param>
         /// <param name="len"></param>
         /// <returns></returns>
-        public static unsafe long readv(object self, object fd, long address, int len)
+        public static unsafe long readv0(object fd, long address, int len)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -310,24 +288,19 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.io.IOException("Read failed.", e);
             }
-            finally
-            {
-                GC.KeepAlive(self);
-            }
 #endif
         }
 
         /// <summary>
         /// Implements the native method 'write'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="address"></param>
         /// <param name="len"></param>
         /// <param name="append"></param>
         /// <returns></returns>
         /// <exception cref="global::java.io.IOException"></exception>
-        public static unsafe int write0(object self, object fd, long address, int len, bool append)
+        public static unsafe int write0(object fd, long address, int len, bool append)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -378,6 +351,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     Marshal.Copy((IntPtr)address, buf, 0, len);
                     stream.Write(buf, 0, len);
+                    stream.Flush();
                 }
                 finally
                 {
@@ -385,6 +359,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
 #else
                 stream.Write(new ReadOnlySpan<byte>((byte*)(IntPtr)address, len));
+                stream.Flush();
 #endif
 
                 return len;
@@ -405,24 +380,19 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.io.IOException("Write failed.", e);
             }
-            finally
-            {
-                GC.KeepAlive(self);
-            }
 #endif
         }
 
         /// <summary>
         /// Implements the native method 'pwrite'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="address"></param>
         /// <param name="len"></param>
         /// <param name="position"></param>
         /// <returns></returns>
         /// <exception cref="global::java.io.IOException"></exception>
-        public static unsafe int pwrite(object self, object fd, long address, int len, long position)
+        public static unsafe int pwrite0(object fd, long address, int len, long position)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -441,29 +411,22 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             if (RuntimeUtil.IsLinux && stream is FileStream fs)
             {
-                try
+                if (fs.SafeFileHandle.IsInvalid)
+                    return IOStatus.UNAVAILABLE;
+
+                var n = Syscall.pwrite((int)fs.SafeFileHandle.DangerousGetHandle(), (void*)(IntPtr)address, (ulong)len, position);
+                if (n == -1)
                 {
-                    if (fs.SafeFileHandle.IsInvalid)
+                    var errno = Stdlib.GetLastError();
+                    if (errno == Errno.EAGAIN)
                         return IOStatus.UNAVAILABLE;
+                    if (errno == Errno.EINTR)
+                        return IOStatus.INTERRUPTED;
 
-                    var n = Syscall.pwrite((int)fs.SafeFileHandle.DangerousGetHandle(), (void*)(IntPtr)address, (ulong)len, position);
-                    if (n == -1)
-                    {
-                        var errno = Stdlib.GetLastError();
-                        if (errno == Errno.EAGAIN)
-                            return IOStatus.UNAVAILABLE;
-                        if (errno == Errno.EINTR)
-                            return IOStatus.INTERRUPTED;
-
-                        throw new global::java.io.IOException("Write failed.", new UnixIOException(errno));
-                    }
-
-                    return (int)n;
+                    throw new global::java.io.IOException("Write failed.", new UnixIOException(errno));
                 }
-                finally
-                {
-                    GC.KeepAlive(self);
-                }
+
+                return (int)n;
             }
             else
             {
@@ -499,6 +462,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     {
                         Marshal.Copy((IntPtr)address, buf, 0, len);
                         stream.Write(buf, 0, len);
+                        stream.Flush();
                     }
                     finally
                     {
@@ -506,6 +470,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     }
 #else
                     stream.Write(new ReadOnlySpan<byte>((byte*)(IntPtr)address, len));
+                    stream.Flush();
 #endif
 
                     stream.Seek(p, SeekOrigin.Begin);
@@ -527,10 +492,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     throw new global::java.io.IOException("Write failed.", e);
                 }
-                finally
-                {
-                    GC.KeepAlive(self);
-                }
             }
 #endif
         }
@@ -538,13 +499,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'writev0'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="address"></param>
         /// <param name="len"></param>
         /// <param name="append"></param>
         /// <returns></returns>
-        public static unsafe long writev0(object self, object fd, long address, int len, bool append)
+        public static unsafe long writev0(object fd, long address, int len, bool append)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -602,6 +562,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     {
                         Marshal.Copy(vecs[i].iov_base, buf, 0, vecs[i].iov_len);
                         stream.Write(buf, 0, vecs[i].iov_len);
+                        stream.Flush();
                         length += vecs[i].iov_len;
 
                     }
@@ -611,6 +572,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     }
 #else
                     stream.Write(new ReadOnlySpan<byte>((byte*)vecs[i].iov_base, vecs[i].iov_len));
+                    stream.Flush();
                     length += vecs[i].iov_len;
 #endif
                 }
@@ -633,10 +595,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.io.IOException("Write failed.", e);
             }
-            finally
-            {
-                GC.KeepAlive(self);
-            }
 #endif
         }
 
@@ -647,7 +605,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="fd"></param>
         /// <param name="metaData"></param>
         /// <returns></returns>
-        public static int force(object self, object fd, bool metaData)
+        public static int force0(object fd, bool metaData)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -660,11 +618,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'truncate'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public static int truncate(object self, object fd, long size)
+        public static int truncate0(object fd, long size)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -703,10 +660,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'size'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
         /// <returns></returns>
-        public static long size(object self, object fd)
+        public static long size0(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -739,322 +695,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
         }
 
         /// <summary>
-        /// Invokes the LOCKFILEEX Win32 function.
-        /// </summary>
-        /// <param name="hFile"></param>
-        /// <param name="dwFlags"></param>
-        /// <param name="dwReserved"></param>
-        /// <param name="nNumberOfBytesToLockLow"></param>
-        /// <param name="nNumberOfBytesToLockHigh"></param>
-        /// <param name="lpOverlapped"></param>
-        /// <returns></returns>
-        [DllImport("kernel32", SetLastError = true)]
-        static extern unsafe int LockFileEx(SafeFileHandle hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, NativeOverlapped* lpOverlapped);
-
-        /// <summary>
-        /// Invokes the UNLOCKFILEEX Win32 function.
-        /// </summary>
-        /// <param name="hFile"></param>
-        /// <param name="dwReserved"></param>
-        /// <param name="nNumberOfBytesToUnlockLow"></param>
-        /// <param name="nNumberOfBytesToUnlockHigh"></param>
-        /// <param name="lpOverlapped"></param>
-        /// <returns></returns>
-        [DllImport("kernel32", SetLastError = true)]
-        static extern unsafe int UnlockFileEx(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, NativeOverlapped* lpOverlapped);
-
-        /// <summary>
-        /// Record locking flags for OS X.
-        /// </summary>
-        enum OSX_LockType : short
-        {
-
-            F_RDLCK = 1,
-            F_UNLCK = 2,
-            F_WRLCK = 3,
-
-        }
-
-        /// <summary>
-        /// Flock structure on OSX. Fields are in a different order than Mono.Posix.
-        /// </summary>
-        [StructLayout(LayoutKind.Sequential)]
-        struct OSX_Flock
-        {
-
-            public long l_start;
-            public long l_len;
-            public int l_pid;
-            public OSX_LockType l_type;
-            public SeekFlags l_whence;
-
-        }
-
-        /// <summary>
-        /// 'fcntl' command values for OS X.
-        /// </summary>
-        enum OSX_FcntlCommand
-        {
-
-            F_GETLK = 7,
-            F_SETLK = 8,
-            F_SETLKW = 9,
-
-        }
-
-        /// <summary>
-        /// 'errno' values for OS X.
-        /// </summary>
-        enum OSX_Errno
-        {
-
-            EAGAIN = 35,
-            EACCES = 13,
-            EINTR = 4,
-            EDEADLK = 11,
-
-        }
-
-        /// <summary>
-        /// Invokes the 'fcntl' function on OS X.
-        /// </summary>
-        /// <param name="fd"></param>
-        /// <param name="cmd"></param>
-        /// <param name="lock"></param>
-        /// <returns></returns>
-        [DllImport("c", SetLastError = true, EntryPoint = "fcntl")]
-        static extern int OSX_fcntl(int fd, OSX_FcntlCommand cmd, ref OSX_Flock @lock);
-
-        /// <summary>
-        /// Implements the native method 'lock'.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <param name="fd"></param>
-        /// <param name="blocking"></param>
-        /// <param name="pos"></param>
-        /// <param name="size"></param>
-        /// <param name="shared"></param>
-        /// <returns></returns>
-        public static unsafe int @lock(object self, object fd, bool blocking, long pos, long size, bool shared)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            var s = FileDescriptorAccessor.GetStream(fd);
-            if (s == null)
-                throw new global::java.io.IOException("Stream closed.");
-            if (s is not FileStream fs)
-                throw new global::java.io.IOException("Not supported on non-file.");
-
-            try
-            {
-                if (RuntimeUtil.IsWindows)
-                {
-                    NativeOverlapped* optr = null;
-
-                    try
-                    {
-                        const int LOCKFILE_FAIL_IMMEDIATELY = 1;
-                        const int LOCKFILE_EXCLUSIVE_LOCK = 2;
-                        const int ERROR_LOCK_VIOLATION = 33;
-
-                        var o = new Overlapped();
-                        o.OffsetLow = (int)pos;
-                        o.OffsetHigh = (int)(pos >> 32);
-
-                        int flags = 0;
-                        if (blocking == false)
-                            flags |= LOCKFILE_FAIL_IMMEDIATELY;
-                        if (shared == false)
-                            flags |= LOCKFILE_EXCLUSIVE_LOCK;
-
-                        optr = o.Pack(null, null);
-                        int result = LockFileEx(fs.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), optr);
-                        if (result == 0)
-                        {
-                            var error = Marshal.GetLastWin32Error();
-                            if (error != ERROR_LOCK_VIOLATION)
-                                throw new Win32Exception(error);
-
-                            if ((flags & LOCKFILE_FAIL_IMMEDIATELY) != 0)
-                                return FileDispatcher.NO_LOCK;
-
-                            throw new Win32Exception(error);
-                        }
-
-                        return FileDispatcher.LOCKED;
-                    }
-                    finally
-                    {
-                        Overlapped.Free(optr);
-                    }
-                }
-                else if (RuntimeUtil.IsLinux)
-                {
-                    var fl = new Flock();
-                    fl.l_whence = SeekFlags.SEEK_SET;
-                    fl.l_len = size == long.MaxValue ? 0 : size;
-                    fl.l_start = pos;
-                    fl.l_type = shared ? LockType.F_RDLCK : LockType.F_WRLCK;
-                    var cmd = blocking ? FcntlCommand.F_SETLKW : FcntlCommand.F_SETLK;
-
-                    var r = Syscall.fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), cmd, ref fl);
-                    if (r == -1)
-                    {
-                        var errno = Stdlib.GetLastError();
-                        if ((cmd == FcntlCommand.F_SETLK) && (errno == Errno.EAGAIN || errno == Errno.EACCES))
-                            return FileDispatcher.NO_LOCK;
-                        if (errno == Errno.EINTR)
-                            return FileDispatcher.INTERRUPTED;
-
-                        UnixMarshal.ThrowExceptionForError(errno);
-                    }
-
-                    return FileDispatcher.LOCKED;
-                }
-                else if (RuntimeUtil.IsOSX)
-                {
-                    var fl = new OSX_Flock();
-                    fl.l_whence = SeekFlags.SEEK_SET;
-                    fl.l_len = size == long.MaxValue ? 0 : size;
-                    fl.l_start = pos;
-                    fl.l_type = shared ? OSX_LockType.F_RDLCK : OSX_LockType.F_WRLCK;
-                    var cmd = blocking ? OSX_FcntlCommand.F_SETLKW : OSX_FcntlCommand.F_SETLK;
-
-                    var r = OSX_fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), cmd, ref fl);
-                    if (r == -1)
-                    {
-                        var errno = (OSX_Errno)Stdlib.GetLastError();
-                        if ((cmd == OSX_FcntlCommand.F_SETLK) && (errno == OSX_Errno.EAGAIN || errno == OSX_Errno.EACCES))
-                            return FileDispatcher.NO_LOCK;
-                        if (errno == OSX_Errno.EINTR)
-                            return FileDispatcher.INTERRUPTED;
-
-                        UnixMarshal.ThrowExceptionForError((Errno)(int)errno);
-                    }
-
-                    return FileDispatcher.LOCKED;
-                }
-                else
-                {
-                    // fallback to .NET version for non-Windows
-                    fs.Lock(pos, size);
-                    return shared ? FileDispatcher.RET_EX_LOCK : FileDispatcher.LOCKED;
-                }
-            }
-            catch (EndOfStreamException)
-            {
-                return IOStatus.EOF;
-            }
-            catch (NotSupportedException)
-            {
-                return IOStatus.UNSUPPORTED;
-            }
-            catch (ObjectDisposedException)
-            {
-                return IOStatus.UNAVAILABLE;
-            }
-            catch (Exception e)
-            {
-                throw new global::java.io.IOException("Lock failed.", e);
-            }
-#endif
-        }
-
-        /// <summary>
-        /// Implements the native method 'release'.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <param name="fd"></param>
-        /// <param name="pos"></param>
-        /// <param name="size"></param>
-        /// <exception cref="NotImplementedException"></exception>
-        public static unsafe void release(object self, object fd, long pos, long size)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            var s = FileDescriptorAccessor.GetStream(fd);
-            if (s == null)
-                throw new global::java.io.IOException("Stream closed.");
-            if (s is not FileStream fs)
-                throw new global::java.io.IOException("Not supported on non-file.");
-
-            try
-            {
-                if (RuntimeUtil.IsWindows)
-                {
-                    NativeOverlapped* optr = null;
-
-                    try
-                    {
-                        const int ERROR_NOT_LOCKED = 158;
-
-                        var o = new Overlapped();
-                        o.OffsetLow = (int)pos;
-                        o.OffsetHigh = (int)(pos >> 32);
-
-                        optr = o.Pack(null, null);
-                        int result = UnlockFileEx(fs.SafeFileHandle, 0, (int)size, (int)(size >> 32), optr);
-                        if (result == 0)
-                        {
-                            var error = Marshal.GetLastWin32Error();
-                            if (error != ERROR_NOT_LOCKED)
-                                throw new Win32Exception(error);
-                        }
-                    }
-                    finally
-                    {
-                        if (optr != null)
-                            Overlapped.Free(optr);
-                    }
-                }
-                else if (RuntimeUtil.IsLinux)
-                {
-                    var fl = new Flock();
-                    fl.l_whence = SeekFlags.SEEK_SET;
-                    fl.l_len = size == long.MaxValue ? 0 : size;
-                    fl.l_start = pos;
-                    fl.l_type = LockType.F_UNLCK;
-
-                    var r = Syscall.fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), FcntlCommand.F_SETLK, ref fl);
-                    if (r == -1)
-                        UnixMarshal.ThrowExceptionForLastErrorIf(r);
-                }
-                else if (RuntimeUtil.IsOSX)
-                {
-                    var fl = new OSX_Flock();
-                    fl.l_whence = SeekFlags.SEEK_SET;
-                    fl.l_len = size == long.MaxValue ? 0 : size;
-                    fl.l_start = pos;
-                    fl.l_type = OSX_LockType.F_UNLCK;
-
-                    var r = OSX_fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), OSX_FcntlCommand.F_SETLK, ref fl);
-                    if (r == -1)
-                        UnixMarshal.ThrowExceptionForLastErrorIf(r);
-                }
-                else
-                {
-                    fs.Unlock(pos, size);
-                }
-            }
-            catch (System.IO.IOException e) when (NotLockedHack.IsErrorNotLocked(e) == false)
-            {
-                throw new global::java.io.IOException("Release failed.", e);
-            }
-            catch (Exception e)
-            {
-                throw new global::java.io.IOException("Release failed.", e);
-            }
-#endif
-        }
-
-        /// <summary>
         /// Implements the native method 'close'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="fd"></param>
-        public static void close(object self, object fd)
+        public static void close0(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -1072,6 +716,19 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
 
             }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'transferToDirectlyNeedsPositionLock0'.
+        /// </summary>
+        /// <returns></returns>
+        public static bool transferToDirectlyNeedsPositionLock0()
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return RuntimeUtil.IsWindows;
 #endif
         }
 

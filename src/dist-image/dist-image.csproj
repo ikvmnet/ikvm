@@ -11,7 +11,6 @@
     <ItemGroup>
         <ImageTarget Include="net472|win7-x64" TargetFramework="net472" RuntimeIdentifier="win7-x64" Condition="$(_EnabledImageRuntimes.Contains(';win7-x64;'))" />
         <ImageTarget Include="net472|win7-x86" TargetFramework="net472" RuntimeIdentifier="win7-x86" Condition="$(_EnabledImageRuntimes.Contains(';win7-x86;'))" />
-        <ImageTarget Include="net472|win81-arm" TargetFramework="net472" RuntimeIdentifier="win81-arm" Condition="$(_EnabledImageRuntimes.Contains(';win81-arm;'))" />
         <ImageTarget Include="net472|linux-x64" TargetFramework="net472" RuntimeIdentifier="linux-x64" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))" />
         <ImageTarget Include="net472|linux-arm" TargetFramework="net472" RuntimeIdentifier="linux-arm" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm;'))" />
         <ImageTarget Include="net472|linux-musl-x64" TargetFramework="net472" RuntimeIdentifier="linux-musl-x64" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-x64;'))" />
@@ -19,7 +18,6 @@
         <ImageTarget Include="net472|osx-x64" TargetFramework="net472" RuntimeIdentifier="osx-x64" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))" />
         <ImageTarget Include="net6.0|win7-x64" TargetFramework="net6.0" RuntimeIdentifier="win7-x64" Condition="$(_EnabledImageRuntimes.Contains(';win7-x64;'))" />
         <ImageTarget Include="net6.0|win7-x86" TargetFramework="net6.0" RuntimeIdentifier="win7-x86" Condition="$(_EnabledImageRuntimes.Contains(';win7-x86;'))" />
-        <ImageTarget Include="net6.0|win81-arm" TargetFramework="net6.0" RuntimeIdentifier="win81-arm" Condition="$(_EnabledImageRuntimes.Contains(';win81-arm;'))" />
         <ImageTarget Include="net6.0|linux-x64" TargetFramework="net6.0" RuntimeIdentifier="linux-x64" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))" />
         <ImageTarget Include="net6.0|linux-arm" TargetFramework="net6.0" RuntimeIdentifier="linux-arm" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm;'))" />
         <ImageTarget Include="net6.0|linux-arm64" TargetFramework="net6.0" RuntimeIdentifier="linux-arm64" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm64;'))" />
@@ -49,32 +47,40 @@
 
             <!-- files directly part of this project -->
             <ContentWithTargetPath Include="@(_ContentFromProject)">
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(_ContentFromProject.RecursiveDir)%(_ContentFromProject.Filename)%(_ContentFromProject.Extension)</TargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </ContentWithTargetPath>
 
             <!-- solution level files -->
             <ContentWithTargetPath Include="@(_ContentFromSolution)">
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(_ContentFromSolution.RecursiveDir)%(_ContentFromSolution.Filename)%(_ContentFromSolution.Extension)</TargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </ContentWithTargetPath>
 
             <!-- openjdk contents -->
             <ContentWithTargetPath Include="@(OpenJdkImageContent)">
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(OpenJdkImageContent.ImagePath)</TargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </ContentWithTargetPath>
 
             <!-- output of binary projects -->
+            <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj">
+                <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
+                <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
+                <PublishTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\bin</PublishTargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            </PublishProjectReference>
             <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
                 <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
-                <ProjectTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\bin</ProjectTargetPath>
+                <PublishTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\bin</PublishTargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </PublishProjectReference>
             <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
                 <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
-                <ProjectTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\bin</ProjectTargetPath>
+                <PublishTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\bin</PublishTargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </PublishProjectReference>
         </ItemGroup>
     </Target>
