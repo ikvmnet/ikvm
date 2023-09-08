@@ -42,22 +42,6 @@ namespace IKVM.Runtime
         [DllImport("kernel32.dll", EntryPoint = "GetProcAddress", SetLastError = true)]
         static extern nint GetProcAddress(nint handle, string name);
 
-        /// <summary>
-        /// Invokes the Windows GetProcAddress function, handling 32-bit mangled names.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <param name="name"></param>
-        /// <param name="argl"></param>
-        /// <returns></returns>
-        static nint GetProcAddress32(nint handle, string name, int argl)
-        {
-            var h = GetWin32ExportName(name, argl) is string n ? GetProcAddress(handle, n) : 0;
-            if (h == 0)
-                h = GetProcAddress(handle, name);
-
-            return h;
-        }
-
         const int RTLD_NOW = 2;
         const int RTLD_GLOBAL = 8;
 
@@ -65,6 +49,7 @@ namespace IKVM.Runtime
         /// Invokes the native 'dlopen' function.
         /// </summary>
         /// <param name="path"></param>
+        /// <param name="flags"></param>
         /// <returns></returns>
         [DllImport("dl", EntryPoint = "dlopen")]
         static extern nint dlopen(string path, int flags);
@@ -72,7 +57,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Invokes the native 'dlclose' function.
         /// </summary>
-        /// <param name="path"></param>
+        /// <param name="handle"></param>
         /// <returns></returns>
         [DllImport("dl", EntryPoint = "dlclose")]
         static extern int dlclose(nint handle);
@@ -80,23 +65,13 @@ namespace IKVM.Runtime
         /// <summary>
         /// Invokes the naive 'dlsym' function.
         /// </summary>
-        /// <param name="path"></param>
+        /// <param name="handle"></param>
+        /// <param name="symbol"></param>
         /// <returns></returns>
         [DllImport("dl", EntryPoint = "dlsym")]
         static extern nint dlsym(nint handle, string symbol);
 
 #endif
-
-        /// <summary>
-        /// Invokes the Windows GetProcAddress function, handling 32-bit mangled names.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="argl"></param>
-        /// <returns></returns>
-        static string GetWin32ExportName(string name, int argl)
-        {
-            return name.Length <= 512 - 11 ? "_" + name + "@" + argl : null;
-        }
 
         /// <summary>
         /// Loads the given library in a platform dependent manner.
@@ -157,7 +132,7 @@ namespace IKVM.Runtime
         static nint LoadImpl(string nameOrPath)
         {
 #if NETFRAMEWORK
-            if (RuntimeUtil.IsWindows)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return LoadLibraryEx(nameOrPath, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
             else
                 return dlopen(nameOrPath, RTLD_NOW | RTLD_GLOBAL);
@@ -175,7 +150,7 @@ namespace IKVM.Runtime
         public static void Free(nint handle)
         {
 #if NETFRAMEWORK
-            if (RuntimeUtil.IsWindows)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 FreeLibrary(handle);
             else
                 dlclose(handle);
@@ -189,27 +164,19 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="handle"></param>
         /// <param name="name"></param>
-        /// <param name="argl"></param>
         /// <returns></returns>
         /// <exception cref="PlatformNotSupportedException"></exception>
-        public static unsafe nint GetExport(nint handle, string name, int argl)
+        public static unsafe nint GetExport(nint handle, string name)
         {
             try
             {
 #if NETFRAMEWORK
-                if (RuntimeUtil.IsWindows)
-                    return Environment.Is64BitProcess == false ? GetProcAddress32(handle, name, argl) : GetProcAddress(handle, name);
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    return GetProcAddress(handle, name);
                 else
                     return dlsym(handle, name);
 #else
-                nint h = 0;
-
-                if (RuntimeUtil.IsWindows)
-                    if (Environment.Is64BitProcess == false && GetWin32ExportName(name, argl) is string n)
-                        if (System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, n, out h))
-                            return h;
-
-                if (System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, name, out h))
+                if (System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, name, out var h))
                     return h;
 #endif
             }
