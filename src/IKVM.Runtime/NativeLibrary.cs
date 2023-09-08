@@ -14,6 +14,7 @@ namespace IKVM.Runtime
 
 #if NETFRAMEWORK
 
+        const int LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000;
         const int LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR = 0x00000100;
 
         /// <summary>
@@ -157,7 +158,7 @@ namespace IKVM.Runtime
         {
 #if NETFRAMEWORK
             if (RuntimeUtil.IsWindows)
-                return LoadLibraryEx(nameOrPath, 0, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+                return LoadLibraryEx(nameOrPath, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
             else
                 return dlopen(nameOrPath, RTLD_NOW | RTLD_GLOBAL);
 #else

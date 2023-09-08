@@ -66,6 +66,9 @@ namespace IKVM.Runtime.JNI
             static LibJvm()
             {
                 var p = NativeLibrary.Load("jvm");
+                if (p == 0)
+                    throw new InternalException("Could not locate JVM library.");
+
                 set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>(NativeLibrary.GetExport(p, "Set_JNI_GetDefaultJavaVMInitArgs", 1));
                 set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>(NativeLibrary.GetExport(p, "Set_JNI_GetCreatedJavaVMs", 1));
                 set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(NativeLibrary.GetExport(p, "Set_JNI_CreateJavaVM", 1));
