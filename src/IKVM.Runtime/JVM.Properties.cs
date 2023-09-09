@@ -559,11 +559,9 @@ namespace IKVM.Runtime
                 {
                     return RuntimeInformation.ProcessArchitecture switch
                     {
-                        Architecture.X64 => "amd64",
                         Architecture.X86 => "i386",
-                        Architecture.Arm => "arm",
-                        Architecture.Arm64 => "aarch64",
-                        _ => "unknown",
+                        Architecture.X64 => "amd64",
+                        _ => Mono.Unix.Native.Syscall.uname(out var utsname) == 0 ? utsname.machine : "unknown",
                     };
                 }
 
