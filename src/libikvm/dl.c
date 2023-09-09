@@ -1,7 +1,9 @@
 #ifdef WIN32
-#define EXPORT __declspec(dllexport)
+#define NETEXPORT __declspec(dllexport)
+#define NETCALL __stdcall
 #else
-#define EXPORT
+#define NETEXPORT
+#define NETCALL
 #endif
 
 #if defined WIN32
@@ -18,7 +20,7 @@
 static pthread_mutex_t dl_mutex;
 #endif
 
-EXPORT void* IKVM_dl_open(const char* name)
+NETEXPORT void* NETCALL IKVM_dl_open(const char* name)
 {
 #ifdef WIN32
     return LoadLibraryEx(name, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
@@ -27,7 +29,7 @@ EXPORT void* IKVM_dl_open(const char* name)
 #endif
 }
 
-EXPORT void IKVM_dl_close(void* handle)
+NETEXPORT void NETCALL IKVM_dl_close(void* handle)
 {
 #ifdef WIN32
     FreeLibrary((HMODULE)handle);
@@ -36,7 +38,7 @@ EXPORT void IKVM_dl_close(void* handle)
 #endif
 }
 
-EXPORT void* IKVM_dl_sym(void* handle, const char* name)
+NETEXPORT void* NETCALL IKVM_dl_sym(void* handle, const char* name)
 {
 #ifdef WIN32
     return (void*)GetProcAddress((HMODULE)handle, name);

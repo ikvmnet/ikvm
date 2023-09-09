@@ -353,7 +353,8 @@ EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libosx", "src\libosx\libosx.clangproj", "{55F3F094-CE8E-4734-B14E-7DD5DFE7E4F3}"
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libmanagement", "src\libmanagement\libmanagement.clangproj", "{9CE0434D-A6B9-4708-850C-CA83E26851B2}"
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.ConsoleApp", "src\IKVM.ConsoleApp\IKVM.ConsoleApp.csproj", "{E194D482-DAF3-43F3-9A76-D57F24403F89}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.ConsoleApp", "src\IKVM.ConsoleApp\IKVM.ConsoleApp.csproj", "{53319A2F-AC22-4040-8DF9-77587FDC9910}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -809,10 +810,10 @@ Global
 		{9CE0434D-A6B9-4708-850C-CA83E26851B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9CE0434D-A6B9-4708-850C-CA83E26851B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9CE0434D-A6B9-4708-850C-CA83E26851B2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E194D482-DAF3-43F3-9A76-D57F24403F89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E194D482-DAF3-43F3-9A76-D57F24403F89}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E194D482-DAF3-43F3-9A76-D57F24403F89}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E194D482-DAF3-43F3-9A76-D57F24403F89}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53319A2F-AC22-4040-8DF9-77587FDC9910}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53319A2F-AC22-4040-8DF9-77587FDC9910}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53319A2F-AC22-4040-8DF9-77587FDC9910}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53319A2F-AC22-4040-8DF9-77587FDC9910}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

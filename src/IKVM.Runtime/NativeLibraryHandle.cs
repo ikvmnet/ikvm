@@ -36,8 +36,9 @@ namespace IKVM.Runtime
         /// Gets a reference to the given export.
         /// </summary>
         /// <param name="name"></param>
+        /// <param name="argl"></param>
         /// <returns></returns>
-        public NativeLibraryExport GetExport(string name) => NativeLibrary.GetExport(handle, name) is nint h and not 0 ? new NativeLibraryExport(this, h) : null;
+        public NativeLibraryExport GetExport(string name, int argl = -1) => NativeLibrary.GetExport(handle, name, argl) is nint h and not 0 ? new NativeLibraryExport(this, h) : null;
 
     }
 

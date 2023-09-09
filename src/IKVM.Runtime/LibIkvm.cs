@@ -140,7 +140,7 @@ namespace IKVM.Runtime
         LibIkvm()
         {
             if ((Handle = Load()) == 0)
-                throw new InternalException("Could not load libjvm.");
+                throw new InternalException("Could not load ikvm native library.");
         }
 
         /// <summary>

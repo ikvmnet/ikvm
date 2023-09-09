@@ -53,12 +53,12 @@ namespace IKVM.Runtime
             if ((Handle = NativeLibrary.Load(Path.Combine(JVM.Properties.HomePath, "bin", NativeLibrary.MapLibraryName("jvm")))) == null)
                 throw new InternalException("Could not load libjvm.");
 
-            _Set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>(Handle.GetExport("Set_JNI_GetDefaultJavaVMInitArgs").Handle);
-            _Set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>(Handle.GetExport("Set_JNI_GetCreatedJavaVMs").Handle);
-            _Set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(Handle.GetExport("Set_JNI_CreateJavaVM").Handle);
-            _JVM_LoadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_LoadLibraryDelegate>(Handle.GetExport("JVM_LoadLibrary").Handle);
-            _JVM_UnloadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_UnloadLibraryDelegate>(Handle.GetExport("JVM_UnloadLibrary").Handle);
-            _JVM_FindLibraryEntry = Marshal.GetDelegateForFunctionPointer<JVM_FindLibraryEntryDelegate>((Handle.GetExport("JVM_FindLibraryEntry")).Handle);
+            _Set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>(Handle.GetExport("Set_JNI_GetDefaultJavaVMInitArgs", sizeof(nint)).Handle);
+            _Set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>(Handle.GetExport("Set_JNI_GetCreatedJavaVMs", sizeof(nint)).Handle);
+            _Set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(Handle.GetExport("Set_JNI_CreateJavaVM", sizeof(nint)).Handle);
+            _JVM_LoadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_LoadLibraryDelegate>(Handle.GetExport("JVM_LoadLibrary", sizeof(nint)).Handle);
+            _JVM_UnloadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_UnloadLibraryDelegate>(Handle.GetExport("JVM_UnloadLibrary", sizeof(nint)).Handle);
+            _JVM_FindLibraryEntry = Marshal.GetDelegateForFunctionPointer<JVM_FindLibraryEntryDelegate>((Handle.GetExport("JVM_FindLibraryEntry", sizeof(nint) + sizeof(nint))).Handle);
         }
 
         /// <summary>

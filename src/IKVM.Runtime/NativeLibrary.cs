@@ -125,7 +125,7 @@ namespace IKVM.Runtime
         /// <param name="name"></param>
         /// <param name="argl"></param>
         /// <returns></returns>
-        static string MangleExportName(string name, int argl)
+        internal static string MangleExportName(string name, int argl)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
                 return MangleWin32ExportName(name, argl);
