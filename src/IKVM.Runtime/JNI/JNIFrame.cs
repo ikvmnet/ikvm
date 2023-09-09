@@ -27,6 +27,33 @@ using System.Text;
 
 using IKVM.Internal;
 
+using jarray = System.IntPtr;
+using jboolean = System.SByte;
+using jbooleanArray = System.IntPtr;
+using jbyte = System.SByte;
+using jbyteArray = System.IntPtr;
+using jchar = System.UInt16;
+using jcharArray = System.IntPtr;
+using jclass = System.IntPtr;
+using jdouble = System.Double;
+using jdoubleArray = System.IntPtr;
+using jfieldID = System.IntPtr;
+using jfloat = System.Single;
+using jfloatArray = System.IntPtr;
+using jint = System.Int32;
+using jintArray = System.IntPtr;
+using jlong = System.Int64;
+using jlongArray = System.IntPtr;
+using jmethodID = System.IntPtr;
+using jobject = System.IntPtr;
+using jobjectArray = System.IntPtr;
+using jshort = System.Int16;
+using jshortArray = System.IntPtr;
+using jsize = System.Int32;
+using jstring = System.IntPtr;
+using jthrowable = System.IntPtr;
+using jweak = System.IntPtr;
+
 namespace IKVM.Runtime.JNI
 {
 
@@ -70,62 +97,72 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        public static IntPtr GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
+        public static nint GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
         {
-            ClassLoaderWrapper loader = ClassLoaderWrapper.FromCallerID(callerID);
+            var loader = ClassLoaderWrapper.FromCallerID(callerID);
             int sp = 0;
             for (int i = 1; sig[i] != ')'; i++)
             {
                 switch (sig[i])
                 {
                     case '[':
-                        sp += IntPtr.Size;
+                        sp += sizeof(jarray);
                         while (sig[++i] == '[') ;
                         if (sig[i] == 'L')
-                        {
                             while (sig[++i] != ';') ;
-                        }
                         break;
                     case 'L':
-                        sp += IntPtr.Size;
+                        sp += sizeof(jobject);
                         while (sig[++i] != ';') ;
                         break;
                     case 'J':
+                        sp += sizeof(jlong);
+                        break;
                     case 'D':
-                        sp += 8;
+                        sp += sizeof(jdouble);
                         break;
                     case 'F':
+                        sp += sizeof(jfloat);
+                        break;
                     case 'I':
+                        sp += sizeof(jint);
+                        break;
                     case 'C':
+                        sp += sizeof(jchar);
+                        break;
                     case 'Z':
+                        sp += sizeof(jboolean);
+                        break;
                     case 'S':
+                        sp += sizeof(jshort);
+                        break;
                     case 'B':
-                        sp += 4;
+                        sp += sizeof(jbyte);
                         break;
                     default:
-                        Debug.Assert(false);
-                        break;
+                        throw new InternalException("Invalid JNI method signature.");
                 }
             }
+
             string mangledClass = JniMangle(clazz);
             string mangledName = JniMangle(name);
             string mangledSig = JniMangle(sig.Substring(1, sig.IndexOf(')') - 1));
             string shortMethodName = $"Java_{mangledClass}_{mangledName}";
             string longMethodName = $"Java_{mangledClass}_{mangledName}__{mangledSig}";
-            Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, class loader = {3}, short = {4}, long = {5}, args = {6}", clazz, name, sig, loader, shortMethodName, longMethodName, sp + 2 * IntPtr.Size);
+            Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, class loader = {3}, short = {4}, long = {5}, args = {6}", clazz, name, sig, loader, shortMethodName, longMethodName, sp + sizeof(nint) + sizeof(nint));
 
             lock (JNINativeLoader.SyncRoot)
             {
                 foreach (var p in loader.GetNativeLibraries())
                 {
-                    var pfunc = NativeLibrary.GetExport(p, shortMethodName);
-                    if (pfunc != IntPtr.Zero)
+                    var pfunc = NativeLibrary.GetExport(p, shortMethodName, sp + sizeof(nint) + sizeof(nint));
+                    if (pfunc != 0)
                     {
                         Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (short)", clazz, name, sig, p);
                         return pfunc;
                     }
-                    pfunc = NativeLibrary.GetExport(p, longMethodName);
-                    if (pfunc != IntPtr.Zero)
+                    pfunc = NativeLibrary.GetExport(p, longMethodName, sp + sizeof(nint) + sizeof(nint));
+                    if (pfunc != 0)
                     {
                         Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (long)", clazz, name, sig, p);
                         return pfunc;

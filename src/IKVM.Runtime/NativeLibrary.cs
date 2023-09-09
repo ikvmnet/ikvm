@@ -38,7 +38,7 @@ namespace IKVM.Runtime
         /// <param name="handle"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        [DllImport("kernel32.dll", EntryPoint = "GetProcAddress", SetLastError = true)]
+        [DllImport("kernel32.dll", EntryPoint = "GetProcAddress", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
         static extern nint GetProcAddress(nint handle, string name);
 
         const int RTLD_NOW = 2;
@@ -159,14 +159,42 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
+        /// Returns the Win32 mangled procedure name.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="argl"></param>
+        /// <returns></returns>
+        static string MangleWin32ExportName(string name, int argl)
+        {
+            return argl == -1 ? name : $"_{name}@{argl}";
+        }
+
+        /// <summary>
+        /// Returns the mangled procedure name.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="argl"></param>
+        /// <returns></returns>
+        static string MangleExportName(string name, int argl)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
+                return MangleWin32ExportName(name, argl);
+            else
+                return name;
+        }
+
+        /// <summary>
         /// Gets a function pointer to the given named function.
         /// </summary>
         /// <param name="handle"></param>
         /// <param name="name"></param>
+        /// <param name="argl"></param>
         /// <returns></returns>
         /// <exception cref="PlatformNotSupportedException"></exception>
-        public static unsafe nint GetExport(nint handle, string name)
+        public static unsafe nint GetExport(nint handle, string name, int argl = -1)
         {
+            name = MangleExportName(name, argl);
+
             try
             {
 #if NETFRAMEWORK
@@ -175,8 +203,7 @@ namespace IKVM.Runtime
                 else
                     return dlsym(handle, name);
 #else
-                if (System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, name, out var h))
-                    return h;
+                return System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, name, out var h) ? h : 0;
 #endif
             }
             catch (EntryPointNotFoundException)

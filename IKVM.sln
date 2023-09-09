@@ -321,6 +321,8 @@ Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libfdlibm", "src\libfdlibm\
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libverify", "src\libverify\libverify.clangproj", "{61AD88EF-3D77-4BBE-94F9-6506428263D7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.ConsoleApp", "src\IKVM.ConsoleApp\IKVM.ConsoleApp.csproj", "{E194D482-DAF3-43F3-9A76-D57F24403F89}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -699,6 +701,10 @@ Global
 		{61AD88EF-3D77-4BBE-94F9-6506428263D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{61AD88EF-3D77-4BBE-94F9-6506428263D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{61AD88EF-3D77-4BBE-94F9-6506428263D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E194D482-DAF3-43F3-9A76-D57F24403F89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E194D482-DAF3-43F3-9A76-D57F24403F89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E194D482-DAF3-43F3-9A76-D57F24403F89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E194D482-DAF3-43F3-9A76-D57F24403F89}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

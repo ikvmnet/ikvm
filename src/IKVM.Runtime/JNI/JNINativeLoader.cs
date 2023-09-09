@@ -99,7 +99,7 @@ namespace IKVM.Runtime.JNI
 
                     try
                     {
-                        var onload = NativeLibrary.GetExport(p, "JNI_OnLoad");
+                        var onload = NativeLibrary.GetExport(p, "JNI_OnLoad", sizeof(nint) + sizeof(nint));
                         if (onload != 0)
                         {
                             Tracer.Info(Tracer.Jni, "Calling JNI_OnLoad on: {0}", filename);
@@ -163,7 +163,7 @@ namespace IKVM.Runtime.JNI
 
                 try
                 {
-                    var onunload = NativeLibrary.GetExport(p, "JNI_OnUnload");
+                    var onunload = NativeLibrary.GetExport(p, "JNI_OnUnload", sizeof(nint) + sizeof(nint));
                     if (onunload != 0)
                     {
                         Tracer.Info(Tracer.Jni, "Calling JNI_OnUnload on: handle = 0x{0:X}", handle);
