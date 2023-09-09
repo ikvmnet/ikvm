@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net481;net6.0</TargetFrameworks>
+        <LangVersion>11</LangVersion>
+        <PlatformTarget>x86</PlatformTarget>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj" />
+        <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
+        <ProjectReference Include="..\IKVM.Tests.Util\IKVM.Tests.Util.csproj" />
+        <ProjectReference Include="..\IKVM.Tools.Runner\IKVM.Tools.Runner.csproj" />
+        <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" />
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
+</Project>

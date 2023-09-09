@@ -90,7 +90,7 @@ namespace IKVM.Runtime.JNI
 
                     try
                     {
-                        var onload = LibJvm.Instance.JVM_FindLibraryEntry(p, "JNI_OnLoad");
+                        var onload = LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.ManagleExportName("JNI_OnLoad", sizeof(nint) + sizeof(nint));
                         if (onload != 0)
                         {
                             Tracer.Info(Tracer.Jni, "Calling JNI_OnLoad on: {0}", filename);
@@ -154,7 +154,7 @@ namespace IKVM.Runtime.JNI
 
                 try
                 {
-                    var onunload = LibJvm.Instance.JVM_FindLibraryEntry(p, "JNI_OnUnload");
+                    var onunload = LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName("JNI_OnUnload", sizeof(nint) + sizeof(nint));
                     if (onunload != 0)
                     {
                         Tracer.Info(Tracer.Jni, "Calling JNI_OnUnload on: handle = 0x{0:X}", handle);
