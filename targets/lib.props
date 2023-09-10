@@ -18,7 +18,7 @@
         <TargetIdentifiers>$(_SupportedRuntimes)</TargetIdentifiers>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'win7-x64' ">x86_64-pc-windows-msvc</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'win7-x86' ">i686-pc-windows-msvc</TargetTriple>
-        <TargetTriple Condition=" '$(TargetIdentifier)' == 'win10-arm64' ">aarch64-pc-windows-msvc</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'win-arm64' ">aarch64-pc-windows-msvc</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-x64' ">x86_64-unknown-linux-gnu</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-arm64' ">aarch64-unknown-linux-gnu</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-arm' " >arm-unknown-linux-gnueabihf</TargetTriple>
