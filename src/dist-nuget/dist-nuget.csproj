@@ -48,6 +48,9 @@
         <PackageProjectReference Include="..\IKVM.Image.runtime.win7-x86\IKVM.Image.runtime.win7-x86.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win7-x86;'))">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.Image.runtime.win-arm64\IKVM.Image.runtime.win-arm64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.Image.runtime.linux-x64\IKVM.Image.runtime.linux-x64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
@@ -81,6 +84,9 @@
         <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.win7-x86\IKVM.Image.JRE.runtime.win7-x86.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win7-x86;'))">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.win-arm64\IKVM.Image.JRE.runtime.win-arm64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.linux-x64\IKVM.Image.JRE.runtime.linux-x64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
@@ -112,6 +118,9 @@
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.win7-x86\IKVM.Image.JDK.runtime.win7-x86.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win7-x86;'))">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.win-arm64\IKVM.Image.JDK.runtime.win-arm64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.linux-x64\IKVM.Image.JDK.runtime.linux-x64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))">
