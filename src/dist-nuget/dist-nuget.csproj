@@ -15,6 +15,9 @@
         <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win7-x64\IKVM.MSBuild.Tools.runtime.win7-x64.csproj" Condition="$(_EnabledToolRuntimes.Contains(';win7-x64;'))">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win-arm64\IKVM.MSBuild.Tools.runtime.win-arm64.csproj" Condition="$(_EnabledToolRuntimes.Contains(';win-arm64;'))">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj" Condition="$(_EnabledToolRuntimes.Contains(';linux-x64;'))">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>

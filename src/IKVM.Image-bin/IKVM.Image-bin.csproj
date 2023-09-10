@@ -14,10 +14,10 @@
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libnio\libnio.clangproj" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libunpack\libunpack.clangproj" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libsunec\libsunec.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="win7-x64;win7-x86;win10-arm64" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="win7-x64;win7-x86;win-arm64" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libawt\libawt.clangproj" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libmanagement\libmanagement.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libw2k_lsa_auth\libw2k_lsa_auth.clangproj" SupportedRuntimes="win7-x64;win7-x86;win10-arm64" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libw2k_lsa_auth\libw2k_lsa_auth.clangproj" SupportedRuntimes="win7-x64;win7-x86;win-arm64" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libosx\libosx.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libosxkrb5\libosxkrb5.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
     </ItemGroup>

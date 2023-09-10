@@ -356,6 +356,14 @@ Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libmanagement", "src\libman
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.ConsoleApp", "src\IKVM.ConsoleApp\IKVM.ConsoleApp.csproj", "{53319A2F-AC22-4040-8DF9-77587FDC9910}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.win-arm64", "src\IKVM.MSBuild.Tools.runtime.win-arm64\IKVM.MSBuild.Tools.runtime.win-arm64.csproj", "{ABB1BDE9-4CDF-434C-823D-D90E74034BA5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.win-arm64", "src\IKVM.Image.JDK.runtime.win-arm64\IKVM.Image.JDK.runtime.win-arm64.csproj", "{D0DAB716-6BAB-40A3-989F-17FFB318E80A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.win-arm64", "src\IKVM.Image.JRE.runtime.win-arm64\IKVM.Image.JRE.runtime.win-arm64.csproj", "{13C6F1ED-9FE4-465E-8AE1-FC99A7FEEAE1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.runtime.win-arm64", "src\IKVM.Image.runtime.win-arm64\IKVM.Image.runtime.win-arm64.csproj", "{17BEF771-60D5-4C32-81F8-75D64BC49537}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -814,6 +822,22 @@ Global
 		{53319A2F-AC22-4040-8DF9-77587FDC9910}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{53319A2F-AC22-4040-8DF9-77587FDC9910}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{53319A2F-AC22-4040-8DF9-77587FDC9910}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABB1BDE9-4CDF-434C-823D-D90E74034BA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABB1BDE9-4CDF-434C-823D-D90E74034BA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABB1BDE9-4CDF-434C-823D-D90E74034BA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABB1BDE9-4CDF-434C-823D-D90E74034BA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0DAB716-6BAB-40A3-989F-17FFB318E80A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0DAB716-6BAB-40A3-989F-17FFB318E80A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0DAB716-6BAB-40A3-989F-17FFB318E80A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0DAB716-6BAB-40A3-989F-17FFB318E80A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13C6F1ED-9FE4-465E-8AE1-FC99A7FEEAE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13C6F1ED-9FE4-465E-8AE1-FC99A7FEEAE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13C6F1ED-9FE4-465E-8AE1-FC99A7FEEAE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13C6F1ED-9FE4-465E-8AE1-FC99A7FEEAE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17BEF771-60D5-4C32-81F8-75D64BC49537}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17BEF771-60D5-4C32-81F8-75D64BC49537}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17BEF771-60D5-4C32-81F8-75D64BC49537}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17BEF771-60D5-4C32-81F8-75D64BC49537}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

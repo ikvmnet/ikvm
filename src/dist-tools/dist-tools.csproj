@@ -19,6 +19,7 @@
         <ToolTarget Include="net472|osx-arm64" TargetFramework="net472" RuntimeIdentifier="osx-arm64" Condition="$(_EnabledToolRuntimes.Contains(';osx-arm64;'))" />
         <ToolTarget Include="net6.0|win7-x64" TargetFramework="net6.0" RuntimeIdentifier="win7-x64" Condition="$(_EnabledToolRuntimes.Contains(';win7-x64;'))" />
         <ToolTarget Include="net6.0|win7-x86" TargetFramework="net6.0" RuntimeIdentifier="win7-x86" Condition="$(_EnabledToolRuntimes.Contains(';win7-x86;'))" />
+        <ToolTarget Include="net6.0|win-arm64" TargetFramework="net6.0" RuntimeIdentifier="win-arm64" Condition="$(_EnabledToolRuntimes.Contains(';win-arm64;'))" />
         <ToolTarget Include="net6.0|linux-x64" TargetFramework="net6.0" RuntimeIdentifier="linux-x64" Condition="$(_EnabledToolRuntimes.Contains(';linux-x64;'))" />
         <ToolTarget Include="net6.0|linux-arm" TargetFramework="net6.0" RuntimeIdentifier="linux-arm" Condition="$(_EnabledToolRuntimes.Contains(';linux-arm;'))" />
         <ToolTarget Include="net6.0|linux-arm64" TargetFramework="net6.0" RuntimeIdentifier="linux-arm64" Condition="$(_EnabledToolRuntimes.Contains(';linux-arm64;'))" />

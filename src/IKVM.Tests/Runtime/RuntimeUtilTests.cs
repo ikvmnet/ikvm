@@ -29,7 +29,7 @@ namespace IKVM.Tests.Runtime
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.Arm)
                 RuntimeUtil.SupportedRuntimeIdentifiers.Should().Contain("win81-arm");
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-                RuntimeUtil.SupportedRuntimeIdentifiers.Should().Contain("win10-arm64");
+                RuntimeUtil.SupportedRuntimeIdentifiers.Should().Contain("win-arm64");
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.X64)
                 RuntimeUtil.SupportedRuntimeIdentifiers.Should().Contain("linux-x64");
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.Arm)

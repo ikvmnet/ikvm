@@ -5,7 +5,7 @@
         <ProjectGuid>78a745d7-706a-4b33-9d21-0eb7b5144c42</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>win7-x64;win7-x86;win10-arm64</TargetIdentifiers>
+        <TargetIdentifiers>win7-x64;win7-x86;win-arm64</TargetIdentifiers>
         <TargetName>w2k_lsa_auth</TargetName>
     </PropertyGroup>
     <ItemGroup>
