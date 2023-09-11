@@ -25,66 +25,55 @@ using System;
 using System.Diagnostics;
 using System.Text;
 
+using IKVM.Runtime.Accessors.Java.Lang;
+
+using jarray = System.IntPtr;
+using jboolean = System.SByte;
+using jbooleanArray = System.IntPtr;
+using jbyte = System.SByte;
+using jbyteArray = System.IntPtr;
+using jchar = System.UInt16;
+using jcharArray = System.IntPtr;
+using jclass = System.IntPtr;
+using jdouble = System.Double;
+using jdoubleArray = System.IntPtr;
+using jfieldID = System.IntPtr;
+using jfloat = System.Single;
+using jfloatArray = System.IntPtr;
+using jint = System.Int32;
+using jintArray = System.IntPtr;
+using jlong = System.Int64;
+using jlongArray = System.IntPtr;
+using jmethodID = System.IntPtr;
+using jobject = System.IntPtr;
+using jobjectArray = System.IntPtr;
+using jshort = System.Int16;
+using jshortArray = System.IntPtr;
+using jsize = System.Int32;
+using jstring = System.IntPtr;
+using jthrowable = System.IntPtr;
+using jweak = System.IntPtr;
+
 namespace IKVM.Runtime.JNI
 {
 
     public unsafe struct JNIFrame
     {
 
-        JNIEnv.ManagedJNIEnv env;
-        JNIEnv.ManagedJNIEnv.FrameState prevFrameState;
-
         /// <summary>
-        /// Enters the <see cref="JNIFrame"/> with a specified <see cref="RuntimeClassLoader"/> in scope.
-        /// </summary>
-        /// <param name="loader"></param>
-        /// <returns></returns>
-        internal RuntimeClassLoader Enter(RuntimeClassLoader loader)
-        {
-            Enter((ikvm.@internal.CallerID)null);
-            RuntimeClassLoader prev = env.classLoader;
-            env.classLoader = loader;
-            return prev;
-        }
-
-        /// <summary>
-        /// Leaves a <see cref="JNIFrame"/> previously entered.
-        /// </summary>
-        internal void Leave(RuntimeClassLoader prev)
-        {
-            env.classLoader = prev;
-            Leave();
-        }
-
-        /// <summary>
-        /// Enters the <see cref="JNIFrame"/> with a specified <see cref="ikvm.@internal.CallerID"/> in scope.
+        /// Invoked by managed code to acquire a function pointer to a native JNI method.
         /// </summary>
         /// <param name="callerID"></param>
+        /// <param name="clazz"></param>
+        /// <param name="name"></param>
+        /// <param name="sig"></param>
         /// <returns></returns>
-        public IntPtr Enter(ikvm.@internal.CallerID callerID)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            env = TlsHack.ManagedJNIEnv;
-            env ??= JNIEnv.CreateJNIEnv(JVM.Context)->GetManagedJNIEnv();
-            prevFrameState = env.Enter(callerID);
-            return (IntPtr)(void*)env.pJNIEnv;
-#endif
-        }
-
-        /// <summary>
-        /// Leaves a <see cref="JNIFrame"/> previously entered.
-        /// </summary>
-        public void Leave()
-        {
-            var x = env.Leave(prevFrameState);
-            if (x != null)
-                throw x;
-        }
-
+        /// <exception cref="java.lang.UnsatisfiedLinkError"></exception>
         public static IntPtr GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             var loader = RuntimeClassLoader.FromCallerID(callerID);
             int sp = 0;
             for (int i = 1; sig[i] != ')'; i++)
@@ -92,57 +81,65 @@ namespace IKVM.Runtime.JNI
                 switch (sig[i])
                 {
                     case '[':
-                        sp += IntPtr.Size;
+                        sp += sizeof(jarray);
                         while (sig[++i] == '[') ;
                         if (sig[i] == 'L')
-                        {
                             while (sig[++i] != ';') ;
-                        }
                         break;
                     case 'L':
-                        sp += IntPtr.Size;
+                        sp += sizeof(jobject);
                         while (sig[++i] != ';') ;
                         break;
                     case 'J':
+                        sp += sizeof(jlong);
+                        break;
                     case 'D':
-                        sp += 8;
+                        sp += sizeof(jdouble);
                         break;
                     case 'F':
+                        sp += sizeof(jfloat);
+                        break;
                     case 'I':
+                        sp += sizeof(jint);
+                        break;
                     case 'C':
+                        sp += sizeof(jchar);
+                        break;
                     case 'Z':
+                        sp += sizeof(jboolean);
+                        break;
                     case 'S':
+                        sp += sizeof(jshort);
+                        break;
                     case 'B':
-                        sp += 4;
+                        sp += sizeof(jbyte);
                         break;
                     default:
-                        Debug.Assert(false);
-                        break;
+                        throw new InternalException("Invalid JNI method signature.");
                 }
             }
 
             var mangledClass = JniMangle(clazz);
             var mangledName = JniMangle(name);
             var mangledSig = JniMangle(sig.Substring(1, sig.IndexOf(')') - 1));
-            var shortMethodName = $"Java_{mangledClass}_{mangledName}";
+            var methodName = $"Java_{mangledClass}_{mangledName}";
             var longMethodName = $"Java_{mangledClass}_{mangledName}__{mangledSig}";
-            Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, class loader = {3}, short = {4}, long = {5}, args = {6}", clazz, name, sig, loader, shortMethodName, longMethodName, sp + 2 * IntPtr.Size);
+            Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, class loader = {3}, short = {4}, long = {5}, args = {6}", clazz, name, sig, loader, methodName, longMethodName, sp + sizeof(nint) + sizeof(nint));
 
             lock (JNINativeLoader.SyncRoot)
             {
                 foreach (var p in loader.GetNativeLibraries())
                 {
-                    var pfunc = NativeLibrary.GetExport(p, shortMethodName, sp + 2 * IntPtr.Size);
-                    if (pfunc != IntPtr.Zero)
+                    if (LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName(methodName, sp + sizeof(nint) + sizeof(nint))) is nint h1 and not 0)
                     {
                         Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (short)", clazz, name, sig, p);
-                        return pfunc;
+                        return h1;
                     }
-                    pfunc = NativeLibrary.GetExport(p, longMethodName, sp + 2 * IntPtr.Size);
-                    if (pfunc != IntPtr.Zero)
+
+                    if (LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName(longMethodName, sp + sizeof(nint) + sizeof(nint))) is nint h2 and not 0)
                     {
                         Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (long)", clazz, name, sig, p);
-                        return pfunc;
+                        return h2;
                     }
                 }
             }
@@ -150,6 +147,7 @@ namespace IKVM.Runtime.JNI
             var msg = $"{clazz}.{name}{sig}";
             Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", msg);
             throw new java.lang.UnsatisfiedLinkError(msg);
+#endif
         }
 
         static string JniMangle(string name)
@@ -186,14 +184,91 @@ namespace IKVM.Runtime.JNI
             return sb.ToString();
         }
 
+#if FIRST_PASS || IMPORTER || EXPORTER
+#else
+
+        JNIEnv.ManagedJNIEnv env;
+        JNIEnv.ManagedJNIEnv.FrameState prevFrameState;
+
+#endif
+
+        /// <summary>
+        /// Enters the <see cref="JNIFrame"/> with a specified <see cref="RuntimeClassLoader"/> in scope.
+        /// </summary>
+        /// <param name="loader"></param>
+        /// <returns></returns>
+        internal RuntimeClassLoader Enter(RuntimeClassLoader loader)
+        {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            Enter((ikvm.@internal.CallerID)null);
+            RuntimeClassLoader prev = env.classLoader;
+            env.classLoader = loader;
+            return prev;
+#endif
+        }
+
+        /// <summary>
+        /// Leaves a <see cref="JNIFrame"/> previously entered.
+        /// </summary>
+        internal void Leave(RuntimeClassLoader prev)
+        {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            env.classLoader = prev;
+            Leave();
+#endif
+        }
+
+        /// <summary>
+        /// Enters the <see cref="JNIFrame"/> with a specified <see cref="ikvm.@internal.CallerID"/> in scope.
+        /// </summary>
+        /// <param name="callerID"></param>
+        /// <returns></returns>
+        public IntPtr Enter(ikvm.@internal.CallerID callerID)
+        {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            env = TlsHack.ManagedJNIEnv;
+            env ??= JNIEnv.CreateJNIEnv(JVM.Context)->GetManagedJNIEnv();
+            prevFrameState = env.Enter(callerID);
+            return (IntPtr)(void*)env.pJNIEnv;
+#endif
+        }
+
+        /// <summary>
+        /// Leaves a <see cref="JNIFrame"/> previously entered.
+        /// </summary>
+        public void Leave()
+        {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            var x = env.Leave(prevFrameState);
+            if (x != null)
+                throw x;
+#endif
+        }
+
         public nint MakeLocalRef(object obj)
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             return env.MakeLocalRef(obj);
+#endif
         }
 
         public object UnwrapLocalRef(nint p)
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             return JNIEnv.UnwrapRef(env, p);
+#endif
         }
 
     }

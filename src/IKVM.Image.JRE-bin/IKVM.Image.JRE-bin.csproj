@@ -16,7 +16,8 @@
         <PublishProjectReference Include="@(BinProject)" Condition=" '$(TargetFramework)' != '' And '$(RuntimeIdentifier)' != '' ">
             <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=$(RuntimeIdentifier)</SetRuntimeIdentifier>
-            <ProjectTargetPath>.</ProjectTargetPath>
+            <PublishTargetPath>.</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
     </ItemGroup>
 

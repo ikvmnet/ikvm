@@ -49,7 +49,8 @@
         <ItemGroup>
             <PublishProjectReference Include="$(_ProjectFile)">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
-                <ProjectTargetPath>$(_ProjectName)\$(_TargetFramework)</ProjectTargetPath>
+                <PublishTargetPath>$(_ProjectName)\$(_TargetFramework)</PublishTargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </PublishProjectReference>
         </ItemGroup>
     </Target>

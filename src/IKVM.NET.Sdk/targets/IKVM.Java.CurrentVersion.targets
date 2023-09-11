@@ -102,6 +102,7 @@
         <ItemGroup>
             <TargetPathWithTargetPlatformMoniker Update="@(TargetPathWithTargetPlatformMoniker)">
                 <JavaClasspath>$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))</JavaClasspath>
+                <HeaderPath>$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))</HeaderPath>
             </TargetPathWithTargetPlatformMoniker>
         </ItemGroup>
     </Target>

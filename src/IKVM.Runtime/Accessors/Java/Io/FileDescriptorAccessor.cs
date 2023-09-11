@@ -85,9 +85,19 @@ namespace IKVM.Runtime.Accessors.Java.Io
         public int GetFd(object self) => GetProperty(ref fd, nameof(fd)).GetValue(self);
 
         /// <summary>
+        /// Sets the value for the 'fd' property.
+        /// </summary>
+        public void SetFd(object self, int value) => GetProperty(ref fd, nameof(fd)).SetValue(self, value);
+
+        /// <summary>
         /// Gets the value for the 'handle' property.
         /// </summary>
         public long GetHandle(object self) => GetField(ref handle, nameof(handle)).GetValue(self);
+
+        /// <summary>
+        /// Sets the value for the 'handle' property.
+        /// </summary>
+        public void SetHandle(object self, long value) => GetField(ref handle, nameof(handle)).SetValue(self, value);
 
         /// <summary>
         /// Gets the value of the 'task' field.

@@ -3395,6 +3395,7 @@ java/net/ipv6tests/UdpTest.java                                                 
 java/nio/MappedByteBuffer/Basic.java                                                                                    macosx-all
 java/nio/MappedByteBuffer/Force.java                                                                                    macosx-all
 java/nio/channels/AsynchronousSocketChannel/Basic.java                                                                  macosx-all
+java/nio/channels/AsynchronousFileChannel/Basic.java                                                                    macosx-all
 java/nio/channels/DatagramChannel/AdaptDatagramSocket.java                                                              macosx-all
 java/nio/channels/DatagramChannel/BasicMulticastTests.java                                                              macosx-all
 java/nio/channels/DatagramChannel/Connect.java                                                                          macosx-all
@@ -3413,6 +3414,7 @@ java/nio/channels/FileChannel/MapTest.java                                      
 java/nio/channels/FileChannel/Transfer.java                                                                             macosx-all
 java/nio/channels/FileChannel/TransferToChannel.java                                                                    macosx-all
 java/nio/channels/FileChannel/Transfers.java                                                                            macosx-all
+java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java                                                               macosx-all
 java/nio/channels/Selector/RacyDeregister.java                                                                          macosx-all
 java/nio/channels/ServerSocketChannel/NonBlockingAccept.java                                                            macosx-all
 java/nio/channels/ServerSocketChannel/SocketOptionTests.java                                                            macosx-all
@@ -3433,3 +3435,4 @@ java/util/prefs/RemoveReadOnlyNode.java                                         
 java/util/prefs/RemoveUnregedListener.java                                                                              macosx-all
 jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
 sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
+sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java                                        macosx-all

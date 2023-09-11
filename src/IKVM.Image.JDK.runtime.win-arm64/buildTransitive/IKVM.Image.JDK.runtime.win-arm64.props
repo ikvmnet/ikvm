@@ -1,0 +1,14 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net6.0\win-arm64\**\*">
+            <TargetFramework>net6.0</TargetFramework>
+            <RuntimeIdentifier>win-arm64</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+        </IkvmImageItem>
+    </ItemGroup>
+
+</Project>

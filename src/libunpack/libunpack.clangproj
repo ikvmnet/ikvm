@@ -11,7 +11,8 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
-        <ProjectReference Include="..\libjava\libjava.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\**\*.cpp" Exclude="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\main.cpp;$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\jni.cpp" LanguageStandard="c++11" />

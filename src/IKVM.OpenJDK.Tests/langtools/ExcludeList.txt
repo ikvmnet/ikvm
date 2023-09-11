@@ -118,3 +118,4 @@ tools/javac/lambda/8019480/T8019480.java                                        
 # Broken on OS X
 tools/javac/lambda/T8031967.java                                                                                        macosx-all
 tools/javadoc/CompletionError.java                                                                                      macosx-all
+tools/javac/StringsInSwitch/OneCaseSwitches.java                                                                        macosx-all

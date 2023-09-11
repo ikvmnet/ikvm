@@ -593,10 +593,10 @@ jobs:
         if ($tests) {
             if ($qry -ne "" -and $qry -ne $null) {
                 Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst-$qry--$tfm--$sys"
-                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" --filter "$qry" $tests
+                dotnet test -f $tfm --blame --blame-hang --blame-hang-timeout 30m -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" --filter "$qry" $tests
             } else {
                 Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst--$tfm--$sys"
-                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" $tests
+                dotnet test -f $tfm --blame --blame-hang --blame-hang-timeout 30m -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" $tests
             }
         }
       working-directory: ${{ env.IKVMPATH }}

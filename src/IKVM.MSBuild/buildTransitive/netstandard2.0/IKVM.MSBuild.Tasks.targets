@@ -13,7 +13,6 @@
         <IkvmExporterToolPath>@(IkvmExporterToolPath->WithMetadataValue('TargetFramework', '$(IkvmToolFramework)')->WithMetadataValue('RuntimeIdentifier', '$(IkvmToolRuntime)'))</IkvmExporterToolPath>
     </PropertyGroup>
 
-    <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
     <UsingTask TaskName="IkvmReferenceItemPrepare" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
     <UsingTask TaskName="IkvmReferenceExportItemPrepare" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
     <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
@@ -34,11 +33,9 @@
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
     <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
-
         <ItemGroup>
             <IkvmFrameworkReference Include="@(Reference)" />
         </ItemGroup>
-
     </Target>
     
 </Project>

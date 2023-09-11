@@ -68,15 +68,19 @@ public final class FileDescriptor {
         return socket;
     }
     
-    @ikvm.lang.Property(get = "getFd")
+    @ikvm.lang.Property(get = "getFd", set = "setFd")
     private int fd;
 
     private native int getFd();
 
-    @ikvm.lang.Property(get = "getHandle")
+    private native void setFd(int fd);
+
+    @ikvm.lang.Property(get = "getHandle", set = "setHandle")
     private long handle;
 
     private native long getHandle();
+
+    private native void setHandle(long handle);
 
     private Closeable parent;
     private List<Closeable> otherParents;
@@ -87,6 +91,10 @@ public final class FileDescriptor {
 
     public FileDescriptor() {
         
+    }
+
+    static {
+        initIDs();
     }
 
     /**
@@ -155,6 +163,9 @@ public final class FileDescriptor {
      * @since     JDK1.1
      */
     public native void sync() throws SyncFailedException;
+
+    /* This routine initializes JNI field offsets for the class */
+    private static native void initIDs();
 
     private static native FileDescriptor standardStream(int fd);
 

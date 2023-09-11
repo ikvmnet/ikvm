@@ -6,9 +6,11 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>Java SE 8 Virtual Machine for .NET</Description>
         <IncludeBuildOutput>true</IncludeBuildOutput>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.config</AllowedOutputExtensionsInPackageBuildOutputFolder>
         <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);GetProjectReferenceBuildOutputInPackage</TargetsForTfmSpecificBuildOutput>
         <TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificDebugSymbolsInPackage);GetProjectReferenceDebugSymbolsInPackage</TargetsForTfmSpecificDebugSymbolsInPackage>
         <NoWarn>NU5118</NoWarn>
+        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
 
     <PropertyGroup>

@@ -12,6 +12,7 @@
         <PackageReference Include="Microsoft.Build" Version="16.9.0" PrivateAssets="All" />
         <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.9.0" PrivateAssets="All" />
         <PackageReference Include="System.Reflection.Metadata" Version="6.0.1" />
+        <PackageReference Include="Microsoft.NETCore.Platforms" Version="8.0.0-preview.7.23375.6" GeneratePathProperty="true" />
     </ItemGroup>
 
     <ItemGroup>
@@ -19,6 +20,10 @@
         <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
         <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" />
         <ProjectReference Include="..\IKVM.Tools.Runner\IKVM.Tools.Runner.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_Platforms)\runtime.json" LogicalName="runtime.json" Link="runtime.json" />
     </ItemGroup>
 
     <ItemGroup>

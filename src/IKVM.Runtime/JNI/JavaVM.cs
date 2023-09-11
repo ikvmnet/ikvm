@@ -29,6 +29,8 @@ using IKVM.ByteCode.Text;
 namespace IKVM.Runtime.JNI
 {
 
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+
     using jint = System.Int32;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -63,7 +65,7 @@ namespace IKVM.Runtime.JNI
             pJavaVM->vtable = &pJavaVM->firstVtableEntry;
             for (int i = 0; i < vtableDelegates.Length; i++)
             {
-                if(null != vtableDelegates[i])
+                if (null != vtableDelegates[i])
                 {
                     pJavaVM->vtable[i] = (void*)Marshal.GetFunctionPointerForDelegate(vtableDelegates[i]);
                 }
@@ -107,12 +109,9 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         internal static jint AttachCurrentThreadImpl(JavaVM* pJVM, void** penv, JavaVMAttachArgs* pAttachArgs, bool asDaemon)
         {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
             if (pAttachArgs != null)
             {
-                if (!JNIVM.IsSupportedJniVersion(pAttachArgs->version) || pAttachArgs->version == JNIEnv.JNI_VERSION_1_1)
+                if (!JNIVM.IsSupportedJNIVersion(pAttachArgs->version) || pAttachArgs->version == JNIEnv.JNI_VERSION_1_1)
                 {
                     *penv = null;
                     return JNIEnv.JNI_EVERSION;
@@ -154,7 +153,6 @@ namespace IKVM.Runtime.JNI
 
             *penv = JNIEnv.CreateJNIEnv(JVM.Context);
             return JNIEnv.JNI_OK;
-#endif
         }
 
         /// <summary>
@@ -178,7 +176,7 @@ namespace IKVM.Runtime.JNI
 
         internal static jint GetEnv(JavaVM* pJVM, void** penv, jint version)
         {
-            if (JNIVM.IsSupportedJniVersion(version))
+            if (JNIVM.IsSupportedJNIVersion(version))
             {
                 var env = TlsHack.ManagedJNIEnv;
                 if (env != null)
@@ -201,5 +199,7 @@ namespace IKVM.Runtime.JNI
         }
 
     }
+
+#endif
 
 }

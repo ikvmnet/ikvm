@@ -1,0 +1,20 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>55f3f094-ce8e-4734-b14e-7dd5dfe7e4f3</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
+        <TargetName>osx</TargetName>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="**\*.cpp" />
+        <Compile Include="**\*.c" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

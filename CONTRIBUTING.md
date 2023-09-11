@@ -81,3 +81,29 @@ IKVM uses the Semantic Versioning specification, with a unique twist. Since the 
 Semantic Versioning is accomplished automatically by GitVersion in Mainline mode. The `main` branch functions as the release branch. Every commit to main results in an increment of the patch version and a release. The `develop` branch represents a prerelease staging area. Builds within the `develop` branch inherit the NEXT version number of the `main` branch, with a prerelease tag followed by the number of commit separating develop from the last release.
 
 Increases in the major and minor version are accomplished manually by introducing a commit with a message containing a line such as `+semver: major` or `+semver: minor`. The process of creating a new major or minor release is simply to bump the version with the introduction of a commit message. The GitHub Actions should automatically generate the git tag and GitHub release, and publish the proper NuGet packages to the proper places.
+
+# Package Layout
+
+The main IKVM package is 'IKVM'. This package contains the IKVM.ByteCode, IKVM.Runtime, IKVM.Java assemblies, and the
+libikvm native library. This is the minimal set of files required to begin bootstrapping the JVM. However, the JVM
+itself requires additional files which are present in the IKVM.Image package hierarchy.
+
+The IKVM.Image set of packages contains per-TFM and per-RID Java Runtime Image files. These include what you would
+normally expect to see an a JVM distribution: a bin/ directory with binaries, native libraries, etc; as well as a
+lib/ directory with various security and property files. The IKVM Runtime Image packages are RID specific, and named
+with the convention IKVM.Image.*.runtime.RID, much like Microsoft RID specific packages are named.
+
+These packages deliver the additional IKVM Image directory into the output of the user's project. They do this with a
+special targets file provided by IKVM.Image. Each runtime package contains a MSBuild script which appends to a
+IkvmImageItem ItemGroup, where each item has a TargetFramework and RuntimeIdentifier property. The primary build script
+then selects from this ItemGroup to match the current build configuration. Only files selected for the current TFM are
+output. If a RID specific build is underway, only files matching that RID are selected. This populates the ikvm/{rid}
+directory in the user output based on the current build or publish being done, and attempts to minimize the size of
+that output.
+
+Three levels of packages are at play: IKVM.Image.runtime.RID, IKVM.Image.JRE.runtime.RID, IKVM.Image.JDK.runtime.RID.
+The first includes primary requirements of IKVM itself: native libraries, configuration files. The JRE image merges in
+the executables for a JRE image (java.exe, etc). While the JDK image merges in additional executables that would be
+present in a JDK: (javac.exe, etc). IKVM contains a direct dependency to IKVM.Image. However, IKVM.Image.JRE and
+IKVM.Image.JDK are optional.
+

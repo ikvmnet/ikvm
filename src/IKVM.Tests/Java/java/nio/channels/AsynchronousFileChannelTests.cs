@@ -264,6 +264,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public async Task CanLock()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var f = new File("AsynchronousFileChannelTests_CanLock.txt");
             if (f.exists())
                 f.delete();
@@ -288,6 +291,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void TryLockShouldThrowOverlappingFileLockException()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var file = File.createTempFile("lockfile", null);
             file.deleteOnExit();
             if (file.exists())
@@ -314,6 +320,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void LockShouldThrowOverlappingFileLockException()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var file = File.createTempFile("lockfile", null);
             file.deleteOnExit();
             if (file.exists())

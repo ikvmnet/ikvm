@@ -29,7 +29,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using IKVM.ByteCode.Text;
-using IKVM.Runtime;
 
 namespace IKVM.Runtime.JNI
 {
@@ -60,6 +59,8 @@ namespace IKVM.Runtime.JNI
     using jstring = System.IntPtr;
     using jthrowable = System.IntPtr;
     using jweak = System.IntPtr;
+
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
     [StructLayout(LayoutKind.Sequential)]
     unsafe partial struct JNIEnv
@@ -92,14 +93,6 @@ namespace IKVM.Runtime.JNI
         GCHandle* pinHandles;
         int pinHandleMaxCount;
         int pinHandleInUseCount;
-
-        /// <summary>
-        /// Initializes the static instance.
-        /// </summary>
-        static JNIEnv()
-        {
-            RuntimeHelpers.RunClassConstructor(typeof(JNIVM).TypeHandle);
-        }
 
         internal ManagedJNIEnv GetManagedJNIEnv()
         {
@@ -2600,6 +2593,9 @@ namespace IKVM.Runtime.JNI
 
         internal static jobject NewDirectByteBuffer(JNIEnv* pEnv, IntPtr address, jlong capacity)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 if (capacity < 0 || capacity > int.MaxValue)
@@ -2607,13 +2603,15 @@ namespace IKVM.Runtime.JNI
                     SetPendingException(pEnv, new java.lang.IllegalArgumentException("capacity"));
                     return IntPtr.Zero;
                 }
-                return pEnv->MakeLocalRef(JVM.NewDirectByteBuffer(address.ToInt64(), (int)capacity));
+
+                return pEnv->MakeLocalRef(global::java.nio.DirectByteBuffer.__new(address.ToInt64(), (int)capacity));
             }
             catch (Exception x)
             {
                 SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
                 return IntPtr.Zero;
             }
+#endif
         }
 
         internal static void* GetDirectBufferAddress(JNIEnv* pEnv, jobject buf)
@@ -2695,5 +2693,7 @@ namespace IKVM.Runtime.JNI
         }
 
     }
+
+#endif
 
 }
