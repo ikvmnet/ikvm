@@ -15,9 +15,13 @@
         <EnableOSXCodeSign Condition=" '$(EnableOSXCodeSign)' == ''  And $(TargetTriple.Contains('-apple-'))">true</EnableOSXCodeSign>
     </PropertyGroup>
 
-    <Target Name="OSXCodeSign" AfterTargets="CoreLink" Condition=" '$(EnableOSXCodeSign)' == 'true' And Exists('$(IntermediateOutputPath)$(TargetFileName)')">
+    <Target Name="OSXCodeSign" Condition=" '$(EnableOSXCodeSign)' == 'true' And Exists('$(IntermediateOutputPath)$(TargetFileName)')">
         <Message Text="rcodesign sign $(IntermediateOutputPath)$(TargetFileName)" />
         <Exec Command="rcodesign sign $(IntermediateOutputPath)$(TargetFileName)" />
     </Target>
+
+    <PropertyGroup>
+        <TargetsTriggeredByLinking>$(TargetsTriggeredByLinking);OSXCodeSign</TargetsTriggeredByLinking>
+    </PropertyGroup>
 
 </Project>
