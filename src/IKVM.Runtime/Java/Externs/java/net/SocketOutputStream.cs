@@ -35,14 +35,6 @@ namespace IKVM.Java.Externs.java.net
     {
 
         /// <summary>
-        /// Implements the native method for 'init'.
-        /// </summary>
-        public static void init()
-        {
-
-        }
-
-        /// <summary>
         /// Implements the native method for 'socketWrite0'.
         /// </summary>
         /// <param name="this_"></param>
@@ -69,6 +61,7 @@ namespace IKVM.Java.Externs.java.net
 
                     try
                     {
+                        socket.Blocking = false;
                         socket.Blocking = true;
                         socket.SendTimeout = 0;
                         socket.Send(data, off, Math.Min(len, data.Length - off), SocketFlags.None);
@@ -76,6 +69,10 @@ namespace IKVM.Java.Externs.java.net
                     catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
                     {
                         throw new global::java.net.SocketException("Socket closed.");
+                    }
+                    catch (SocketException)
+                    {
+                        throw;
                     }
                     finally
                     {

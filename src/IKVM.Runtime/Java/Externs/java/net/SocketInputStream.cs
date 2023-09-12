@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 
 using static IKVM.Java.Externs.java.net.SocketImplUtil;
 
@@ -8,11 +10,6 @@ namespace IKVM.Java.Externs.java.net
 
     static class SocketInputStream
     {
-
-        public static void init()
-        {
-
-        }
 
         public static int socketRead0(object this_, global::java.io.FileDescriptor fd, byte[] b, int off, int len, int timeout)
         {
@@ -23,32 +20,68 @@ namespace IKVM.Java.Externs.java.net
             {
                 return InvokeFuncWithSocket(fd, socket =>
                 {
-                    var previousBlocking = socket.Blocking;
-                    var previousReceiveTimeout = socket.ReceiveTimeout;
-
-                    try
+                    if (timeout > 0)
                     {
-                        if (timeout > 0)
+                        // Windows Poll method reports errors as readable, however, Linux reports it as errored, so
+                        // we can use Poll on Windows for both errors, but must use Select on Linux to trap both
+                        // read and error states
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                         {
-                            socket.Blocking = true;
-                            socket.ReceiveTimeout = timeout;
-                            return socket.Receive(b, off, len, SocketFlags.None);
+                            try
+                            {
+                                // wait for data to be available
+                                if (socket.Poll(timeout * 1000L > int.MaxValue ? int.MaxValue : timeout * 1000, SelectMode.SelectRead) == false)
+                                    throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                            }
+                            catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                            {
+                                throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                            }
+                            catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                            {
+                                throw new global::java.net.SocketException("Socket closed.");
+                            }
+                            catch
+                            {
+                                throw;
+                            }
                         }
                         else
                         {
-                            socket.Blocking = true;
-                            socket.ReceiveTimeout = 0;
-                            return socket.Receive(b, off, len, SocketFlags.None);
+                            try
+                            {
+                                var rl = new List<Socket>() { socket };
+                                var el = new List<Socket>() { socket };
+                                Socket.Select(rl, null, el, timeout * 1000L > int.MaxValue ? int.MaxValue : timeout * 1000);
+                                if (rl.Count == 0 && el.Count == 0)
+                                    throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                            }
+                            catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                            {
+                                throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                            }
+                            catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                            {
+                                throw new global::java.net.SocketException("Socket closed.");
+                            }
+                            catch
+                            {
+                                throw;
+                            }
                         }
+                    }
+
+                    try
+                    {
+                        return socket.EndReceive(socket.BeginReceive(b, off, len, SocketFlags.None, null, null));
                     }
                     catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
                     {
                         throw new global::java.net.SocketException("Socket closed.");
                     }
-                    finally
+                    catch (SocketException)
                     {
-                        socket.Blocking = previousBlocking;
-                        socket.ReceiveTimeout = previousReceiveTimeout;
+                        throw;
                     }
                 });
             });

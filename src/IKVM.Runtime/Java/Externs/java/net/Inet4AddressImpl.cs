@@ -22,129 +22,13 @@
   
 */
 
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
-using System.Security;
-
 namespace IKVM.Java.Externs.java.net
 {
 
     static class Inet4AddressImpl
     {
 
-        public static string getLocalHostName(object self)
-        {
-#if FIRST_PASS
-            throw new NotSupportedException();
-#else
-            try
-            {
-                return Dns.GetHostName();
-            }
-            catch (SocketException)
-            {
 
-            }
-            catch (SecurityException)
-            {
-
-            }
-
-            return "localhost";
-#endif
-        }
-
-        public static object lookupAllHostAddr(object self, string hostname)
-        {
-#if FIRST_PASS
-            throw new NotSupportedException();
-#else
-            try
-            {
-                var addr = Dns.GetHostAddresses(hostname);
-                var addresses = new List<global::java.net.InetAddress>();
-                for (int i = 0; i < addr.Length; i++)
-                {
-                    var b = addr[i].GetAddressBytes();
-                    if (b.Length == 4)
-                        addresses.Add(global::java.net.InetAddress.getByAddress(hostname, b));
-                }
-
-                if (addresses.Count == 0)
-                    throw new global::java.net.UnknownHostException(hostname);
-
-                return addresses.ToArray();
-            }
-            catch (ArgumentException x)
-            {
-                throw new global::java.net.UnknownHostException(x.Message);
-            }
-            catch (SocketException x)
-            {
-                throw new global::java.net.UnknownHostException(x.Message);
-            }
-#endif
-        }
-
-        public static string getHostByAddr(object self, byte[] addr)
-        {
-#if FIRST_PASS
-            throw new NotSupportedException();
-#else
-            try
-            {
-                return Dns.GetHostEntry(new IPAddress(addr)).HostName;
-            }
-            catch (ArgumentException x)
-            {
-                throw new global::java.net.UnknownHostException(x.Message);
-            }
-            catch (SocketException x)
-            {
-                throw new global::java.net.UnknownHostException(x.Message);
-            }
-#endif
-        }
-
-        public static bool isReachable0(object self, byte[] addr, int timeout, byte[] ifaddr, int ttl)
-        {
-            // like the JDK, we don't use Ping, but we try a TCP connection to the echo port
-            // (.NET 2.0 has a System.Net.NetworkInformation.Ping class, but that doesn't provide the option of binding to a specific interface)
-            try
-            {
-                using var sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-                if (ifaddr != null)
-                    sock.Bind(new IPEndPoint(((ifaddr[3] << 24) + (ifaddr[2] << 16) + (ifaddr[1] << 8) + ifaddr[0]) & 0xFFFFFFFFL, 0));
-
-                if (ttl > 0)
-                    sock.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.IpTimeToLive, ttl);
-
-                var ep = new IPEndPoint(((addr[3] << 24) + (addr[2] << 16) + (addr[1] << 8) + addr[0]) & 0xFFFFFFFFL, 7);
-                var res = sock.BeginConnect(ep, null, null);
-                if (res.AsyncWaitHandle.WaitOne(timeout, false))
-                {
-                    try
-                    {
-                        sock.EndConnect(res);
-                        return true;
-                    }
-                    catch (SocketException x)
-                    {
-                        if (x.SocketErrorCode == SocketError.ConnectionRefused)
-                            return true;
-                    }
-                }
-            }
-            catch (SocketException)
-            {
-
-            }
-
-            return false;
-        }
 
     }
 

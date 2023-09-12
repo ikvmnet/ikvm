@@ -31,10 +31,7 @@ namespace IKVM.Java.Externs.java.net
     static class DatagramPacket
     {
 
-        public static void init()
-        {
 
-        }
 
     }
 

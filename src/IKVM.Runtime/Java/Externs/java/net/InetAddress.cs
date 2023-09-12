@@ -28,10 +28,7 @@ namespace IKVM.Java.Externs.java.net
     static class InetAddress
     {
 
-        public static void init()
-        {
 
-        }
 
     }
 

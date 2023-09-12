@@ -404,6 +404,7 @@ jobs:
       run: ri C:\tests--IKVM.OpenJDK.Tests.tar.gz
   test:
     strategy:
+      fail-fast: false
       matrix:
         run:
         - IKVM.ByteCode.Tests

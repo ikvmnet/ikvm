@@ -177,10 +177,14 @@ namespace IKVM.Java.Externs.java.net
             InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
             {
                 var socket = new Socket(isServer ? SocketType.Stream : SocketType.Dgram, ProtocolType.Tcp);
+                socket.Blocking = true;
 
                 // if this is a server socket then enable SO_REUSEADDR automatically and set to non blocking
                 if (AbstractPlainSocketImplServerSocketGetter(impl) != null)
+                {
+                    socket.Blocking = false;
                     socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                }
 
                 FileDescriptorAccessor.SetSocket(impl.fd, socket);
             });
@@ -364,13 +368,13 @@ namespace IKVM.Java.Externs.java.net
                         if (newSocket == null)
                             throw new global::java.net.SocketException("Invalid socket.");
 
-//                        // allow socket handle to be inherited by child processes on Windows
-//                        if (RuntimeUtil.IsWindows)
-//#if NETFRAMEWORK
-//                            SetHandleInformation(newSocket.Handle, HANDLE_FLAGS.INHERIT, HANDLE_FLAGS.NONE);
-//#else
-//                            SetHandleInformation(newSocket.SafeHandle, HANDLE_FLAGS.INHERIT, HANDLE_FLAGS.NONE);
-//#endif
+                        //                        // allow socket handle to be inherited by child processes on Windows
+                        //                        if (RuntimeUtil.IsWindows)
+                        //#if NETFRAMEWORK
+                        //                            SetHandleInformation(newSocket.Handle, HANDLE_FLAGS.INHERIT, HANDLE_FLAGS.NONE);
+                        //#else
+                        //                            SetHandleInformation(newSocket.SafeHandle, HANDLE_FLAGS.INHERIT, HANDLE_FLAGS.NONE);
+                        //#endif
 
                         // associate new FileDescriptor with socket
                         var newfd = new global::java.io.FileDescriptor();

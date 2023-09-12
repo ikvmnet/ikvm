@@ -28,10 +28,7 @@ namespace IKVM.Java.Externs.java.net
     static class Inet6Address
     {
 
-        public static void init()
-        {
 
-        }
 
     }
 
