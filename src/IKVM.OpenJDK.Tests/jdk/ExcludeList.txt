@@ -1354,6 +1354,7 @@ java/net/DatagramSocket/B6411513.java                                           
 java/net/DatagramSocket/InheritHandle.java                                                                              generic-all
 java/net/DatagramSocket/SetDatagramSocketImplFactory/ADatagramSocket.java                                               generic-all
 java/net/InetAddress/ptr/lookup.sh                                                                                      generic-all
+java/net/InetAddress/IsReachableViaLoopbackTest.java                                                                    linux-all,macosx-all
 java/net/ServerSocket/AcceptCauseFileDescriptorLeak.sh                                                                  generic-all
 java/net/ServerSocket/ThreadStop.java                                                                                   generic-all
 java/net/Socket/OldSocketImpl.sh                                                                                        generic-all
