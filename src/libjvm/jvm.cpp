@@ -3421,7 +3421,7 @@ jint JNICALL JVM_SetSockOpt(jint fd, int level, int optname, const char* optval,
 
 int JNICALL JVM_GetHostName(char* name, int namelen)
 {
-    return 0;
+    return gethostname(name, namelen);
 }
 
 void* JNICALL JVM_LoadLibrary(const char* name)
