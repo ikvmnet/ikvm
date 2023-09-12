@@ -1354,8 +1354,6 @@ java/net/DatagramSocket/B6411513.java                                           
 java/net/DatagramSocket/InheritHandle.java                                                                              generic-all
 java/net/DatagramSocket/SetDatagramSocketImplFactory/ADatagramSocket.java                                               generic-all
 java/net/InetAddress/ptr/lookup.sh                                                                                      generic-all
-#java/net/NetworkInterface/IPv4Only.java                                                                                 generic-all
-#java/net/NetworkInterface/Test.java                                                                                     generic-all
 java/net/ServerSocket/AcceptCauseFileDescriptorLeak.sh                                                                  generic-all
 java/net/ServerSocket/ThreadStop.java                                                                                   generic-all
 java/net/Socket/OldSocketImpl.sh                                                                                        generic-all
@@ -3169,9 +3167,7 @@ java/lang/Runtime/exec/ExecWithInput.java                                       
 java/lang/Runtime/exec/Status.java                                                                                      linux-all
 
 java/net/BindException/Test.java                                                                                        linux-all
-#java/net/ipv6tests/B6521014.java                                                                                        linux-all,macosx-all
-#java/net/InetAddress/IsReachable.java                                                                                   linux-all
-#java/net/Inet4Address/PingThis.java                                                                                     linux-all
+java/net/ipv6tests/B6521014.java                                                                                        macosx-all
 java/net/PortUnreachableException/Concurrent.java                                                                       linux-all
 
 java/net/Socket/InheritHandle.java                                                                                      linux-all
@@ -3377,16 +3373,12 @@ java/net/DatagramPacket/ReuseBuf.java                                           
 java/net/DatagramSocket/PortUnreachable.java                                                                            macosx-all
 java/net/DatagramSocket/Send12k.java                                                                                    macosx-all
 java/net/DatagramSocket/SendSize.java                                                                                   macosx-all
-#java/net/Inet6Address/B6206527.java                                                                                     macosx-all
-#java/net/Inet6Address/B6558853.java                                                                                     macosx-all
-#java/net/InetAddress/CheckJNI.java                                                                                      macosx-all
 java/net/MulticastSocket/B6427403.java                                                                                  macosx-all
 java/net/MulticastSocket/JoinGroup.java                                                                                 macosx-all
 java/net/MulticastSocket/Leave.java                                                                                     macosx-all
 java/net/MulticastSocket/Promiscuous.java                                                                               macosx-all
 java/net/MulticastSocket/SetOutgoingIf.java                                                                             macosx-all
-#java/net/NetworkInterface/UniqueMacAddressesTest.java                                                                   macosx-all
-#java/net/PlainSocketImpl/SetBufferSize.java                                                                             macosx-all
+java/net/PlainSocketImpl/SetBufferSize.java                                                                             macosx-all
 java/net/Socket/LinkLocal.java                                                                                          macosx-all
 java/net/Socket/SetSoLinger.java                                                                                        macosx-all
 java/net/Socket/TrafficClass.java                                                                                       macosx-all
