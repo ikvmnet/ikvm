@@ -30,7 +30,7 @@ namespace IKVM.Java.Externs.java.net
                             try
                             {
                                 // wait for data to be available
-                                if (socket.Poll(timeout * 1000L > int.MaxValue ? int.MaxValue : timeout * 1000, SelectMode.SelectRead) == false)
+                                if (socket.Poll((int)Math.Min(timeout * 1000L, int.MaxValue), SelectMode.SelectRead) == false)
                                     throw new global::java.net.SocketTimeoutException("Receive timed out.");
                             }
                             catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
@@ -52,7 +52,7 @@ namespace IKVM.Java.Externs.java.net
                             {
                                 var rl = new List<Socket>() { socket };
                                 var el = new List<Socket>() { socket };
-                                Socket.Select(rl, null, el, timeout * 1000L > int.MaxValue ? int.MaxValue : timeout * 1000);
+                                Socket.Select(rl, null, el, (int)Math.Min(timeout * 1000L, int.MaxValue));
                                 if (rl.Count == 0 && el.Count == 0)
                                     throw new global::java.net.SocketTimeoutException("Receive timed out.");
                             }
