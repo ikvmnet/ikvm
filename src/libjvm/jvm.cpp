@@ -17,6 +17,7 @@
 #include <dlfcn.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <time.h>
 #endif
 
 #if defined LINUX | MACOSX
@@ -86,7 +87,6 @@ jlong JNICALL JVM_CurrentTimeMillis(JNIEnv* env, jclass ignored)
 #if WIN32
     FILETIME wt;
     GetSystemTimeAsFileTime(&wt);
-    jlong a = jlong_from(wt.dwHighDateTime, wt.dwLowDateTime);
     return windows_to_java_time(wt);
 #else
     timeval time;
@@ -99,7 +99,14 @@ const jint NANOSECS_PER_MILLISEC = 1000000;
 
 jlong JNICALL JVM_NanoTime(JNIEnv* env, jclass ignored)
 {
-    return JVM_CurrentTimeMillis(env, ignored) * NANOSECS_PER_MILLISEC;
+#if LINUX
+    struct timespec tp;
+    int status = clock_gettime(CLOCK_MONOTONIC, &tp);
+    jlong result = jlong(tp.tv_sec) * (1000 * 1000 * 1000) + jlong(tp.tv_nsec);
+    return result;
+#else
+    return JVM_CurrentTimeMillis(env, ignored) * NANOSECS_PER_MILLISEC; 
+#endif
 }
 
 void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pos, jint length)
