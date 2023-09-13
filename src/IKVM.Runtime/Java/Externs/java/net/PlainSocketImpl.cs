@@ -348,30 +348,17 @@ namespace IKVM.Java.Externs.java.net
 
                     try
                     {
+                        socket.Blocking = true;
+                        
+                        // wait for connection attempt
                         if (impl.timeout > 0)
-                        {
-                            // wait for connection attempt
-                            socket.Blocking = false;
-                            if (socket.Poll(impl.timeout * 1000 > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
+                            if (socket.Poll((int)Math.Min(impl.timeout * 1000L, int.MaxValue), SelectMode.SelectRead) == false)
                                 throw new global::java.net.SocketTimeoutException("Accept timed out.");
-                        }
-                        else
-                        {
-                            socket.Blocking = true;
-                        }
 
                         // accept new socket
                         var newSocket = socket.Accept();
                         if (newSocket == null)
                             throw new global::java.net.SocketException("Invalid socket.");
-
-                        //                        // allow socket handle to be inherited by child processes on Windows
-                        //                        if (RuntimeUtil.IsWindows)
-                        //#if NETFRAMEWORK
-                        //                            SetHandleInformation(newSocket.Handle, HANDLE_FLAGS.INHERIT, HANDLE_FLAGS.NONE);
-                        //#else
-                        //                            SetHandleInformation(newSocket.SafeHandle, HANDLE_FLAGS.INHERIT, HANDLE_FLAGS.NONE);
-                        //#endif
 
                         // associate new FileDescriptor with socket
                         var newfd = new global::java.io.FileDescriptor();

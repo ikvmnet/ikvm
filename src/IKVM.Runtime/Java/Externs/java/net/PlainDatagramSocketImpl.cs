@@ -426,12 +426,10 @@ namespace IKVM.Java.Externs.java.net
 
                     try
                     {
+                        // wait for data to be available
                         if (impl.timeout > 0)
-                        {
-                            // wait for data to be available
-                            if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
+                            if (socket.Poll((int)Math.Min(impl.timeout * 1000L, int.MaxValue), SelectMode.SelectRead) == false)
                                 throw new global::java.net.SocketTimeoutException("Peek timed out.");
-                        }
 
                         var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
                         var length = socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, 1, SocketFlags.Peek, ref remoteEndpoint, null, null), ref remoteEndpoint);
@@ -576,7 +574,7 @@ namespace IKVM.Java.Externs.java.net
                                 try
                                 {
                                     // wait for data to be available
-                                    if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
+                                    if (socket.Poll((int)Math.Min(impl.timeout * 1000L, int.MaxValue), SelectMode.SelectRead) == false)
                                         throw new global::java.net.SocketTimeoutException("Receive timed out.");
                                 }
                                 catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
@@ -705,7 +703,7 @@ namespace IKVM.Java.Externs.java.net
                                 try
                                 {
                                     // wait for data to be available
-                                    if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
+                                    if (socket.Poll((int)Math.Min(timeout * 1000L, int.MaxValue), SelectMode.SelectRead) == false)
                                         throw new global::java.net.SocketTimeoutException("Receive timed out.");
                                 }
                                 catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)

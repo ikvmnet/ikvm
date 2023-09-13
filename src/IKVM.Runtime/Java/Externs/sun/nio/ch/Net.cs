@@ -512,7 +512,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         _ => throw new NotSupportedException(),
                     };
 
-                    if (socket.Poll(timeout * 1000L > int.MaxValue ? int.MaxValue : (int)timeout * 1000, selectMode))
+                    if (socket.Poll((int)Math.Min(timeout * 1000L, int.MaxValue), selectMode))
                         return events;
 
                     return 0;
