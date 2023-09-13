@@ -5,7 +5,9 @@
 #include <string.h>
 
 #if defined WIN32
+#include <windows.h>
 #include <winsock2.h>
+#include <stdint.h>
 #endif
 
 #if defined LINUX | MACOSX
@@ -14,25 +16,90 @@
 #include <errno.h>
 #include <dlfcn.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #endif
 
 #if defined LINUX | MACOSX
 static pthread_mutex_t dl_mutex;
 #endif
 
+// Unsigned byte types for os and stream.hpp
+
+// Unsigned one, two, four and eigth byte quantities used for describing
+// the .class file format. See JVM book chapter 4.
+
+typedef uint8_t  jubyte;
+typedef uint16_t jushort;
+typedef uint32_t juint;
+typedef uint64_t julong;
+
+const jubyte  max_jubyte = (jubyte)-1;  // 0xFF       largest jubyte
+const jushort max_jushort = (jushort)-1; // 0xFFFF     largest jushort
+const juint   max_juint = (juint)-1;   // 0xFFFFFFFF largest juint
+const julong  max_julong = (julong)-1;  // 0xFF....FF largest julong
+
+// the fancy casts are a hopefully portable way
+// to do unsigned 32 to 64 bit type conversion
+inline void set_low(jlong* value, jint low) {
+    *value &= (jlong)0xffffffff << 32;
+    *value |= (jlong)(julong)(juint)low;
+}
+
+inline void set_high(jlong* value, jint high) {
+    *value &= (jlong)(julong)(juint)0xffffffff;
+    *value |= (jlong)high << 32;
+}
+
+inline jlong jlong_from(jint h, jint l) {
+    jlong result = 0; // initialization to avoid warning
+    set_high(&result, h);
+    set_low(&result, l);
+    return result;
+}
+
 jint JNICALL JVM_GetInterfaceVersion()
 {
     return JVM_INTERFACE_VERSION;
 }
 
+#if WIN32
+
+// Windows format:
+//   The FILETIME structure is a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601.
+// Java format:
+//   Java standards require the number of milliseconds since 1/1/1970
+
+// Constant offset - calculated using offset()
+static jlong  _offset = 116444736000000000;
+// Fake time counter for reproducible results when debugging
+static jlong  fake_time = 0;
+
+inline jlong windows_to_java_time(FILETIME wt) {
+    jlong a = jlong_from(wt.dwHighDateTime, wt.dwLowDateTime);
+    return (a - _offset) / 10000;
+}
+
+#endif
+
 jlong JNICALL JVM_CurrentTimeMillis(JNIEnv* env, jclass ignored)
 {
-    return 0;
+#if WIN32
+    FILETIME wt;
+    GetSystemTimeAsFileTime(&wt);
+    jlong a = jlong_from(wt.dwHighDateTime, wt.dwLowDateTime);
+    return windows_to_java_time(wt);
+#else
+    timeval time;
+    int status = gettimeofday(&time, NULL);
+    return jlong(time.tv_sec) * 1000 + jlong(time.tv_usec / 1000);
+#endif
 }
+
+const jint NANOSECS_PER_MILLISEC = 1000000;
 
 jlong JNICALL JVM_NanoTime(JNIEnv* env, jclass ignored)
 {
-    return 0;
+    return JVM_CurrentTimeMillis(env, ignored) * NANOSECS_PER_MILLISEC;
 }
 
 void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pos, jint length)
