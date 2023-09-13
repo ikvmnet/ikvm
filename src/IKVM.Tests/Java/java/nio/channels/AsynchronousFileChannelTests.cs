@@ -385,6 +385,7 @@ namespace IKVM.Tests.Java.java.nio.channels
                 return;
 
             Thread.currentThread().getName().Should().NotBe("ShouldExecuteOnThreadPool");
+            var thisThread = Thread.currentThread();
 
             var f = new File("AsynchronousFileChannelTests_ShouldExecuteOnThreadPool.txt");
             if (f.exists())
@@ -402,7 +403,11 @@ namespace IKVM.Tests.Java.java.nio.channels
             var h = new AwaitableCompletionHandler<Integer>();
             c.read(b, 0, null, h);
             var n = await h;
-            Thread.currentThread().getName().Should().Be("ShouldExecuteOnThreadPool");
+
+            // should resume execution either on the same thread (synchronous) or on a thread pool thread
+            if (Thread.currentThread() != thisThread)
+                Thread.currentThread().getName().Should().Be("ShouldExecuteOnThreadPool");
+
             n.intValue().Should().Be(1);
             c.close();
 
