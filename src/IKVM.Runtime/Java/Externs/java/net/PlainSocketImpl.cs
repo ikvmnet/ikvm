@@ -179,12 +179,9 @@ namespace IKVM.Java.Externs.java.net
                 var socket = new Socket(isServer ? SocketType.Stream : SocketType.Dgram, ProtocolType.Tcp);
                 socket.Blocking = true;
 
-                // if this is a server socket then enable SO_REUSEADDR automatically and set to non blocking
+                // if this is a server socket then enable SO_REUSEADDR automatically
                 if (AbstractPlainSocketImplServerSocketGetter(impl) != null)
-                {
-                    socket.Blocking = false;
                     socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                }
 
                 FileDescriptorAccessor.SetSocket(impl.fd, socket);
             });

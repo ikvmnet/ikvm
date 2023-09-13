@@ -51,7 +51,7 @@ namespace IKVM.Tests.Java.java.net
                 {
                     serverSocket = new ServerSocket(port);
                     port = serverSocket.getLocalPort();
-                    serverSocket.setSoTimeout(2000);
+                    serverSocket.setSoTimeout(15000);
                     base.start();
                 }
                 catch (IOException e)
@@ -143,6 +143,7 @@ namespace IKVM.Tests.Java.java.net
             server.Start();
 
             var socket = new Socket("localhost", server.Port);
+            socket.setSoTimeout(15000);
             var wrt = new PrintStream(socket.getOutputStream());
             var rdr = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
