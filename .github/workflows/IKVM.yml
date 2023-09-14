@@ -592,13 +592,31 @@ jobs:
 
         # if a query was specified, add to test command
         if ($tests) {
+            $argl = @(
+                "-f", $tfm,
+                "--blame",
+                "--blame-hang",
+                "--blang-hang-timeout", "30m",
+                "-v", "2",
+                "--results-directory", "TestResults",
+                "--logger:console;verbosity=detailed",
+                "--logger:trx",
+                "--collect", "'Code Coverage'"
+            )
+            
+            $runst = $(gci .\tests\$tst\$tfm -Recurse -Filter '*.runsettings')
+            if ($runst) {
+                $argl += "--settings:$runst"
+            }
+
             if ($qry -ne "" -and $qry -ne $null) {
                 Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst-$qry--$tfm--$sys"
-                dotnet test -f $tfm --blame --blame-hang --blame-hang-timeout 30m -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" --filter "$qry" $tests
+                $argl += @("--filter", $qry)
             } else {
                 Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst--$tfm--$sys"
-                dotnet test -f $tfm --blame --blame-hang --blame-hang-timeout 30m -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" $tests
             }
+            
+            dotnet test @argl $tests[0].FullName
         }
       working-directory: ${{ env.IKVMPATH }}
     - name: Archive Test Results
