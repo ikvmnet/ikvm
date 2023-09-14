@@ -596,7 +596,7 @@ namespace IKVM.Java.Externs.java.net
                                 {
                                     var rl = new List<Socket>() { socket };
                                     var el = new List<Socket>() { socket };
-                                    Socket.Select(rl, null, el, impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000);
+                                    Socket.Select(rl, null, el, (int)Math.Min(impl.timeout * 1000L, int.MaxValue));
                                     if (rl.Count == 0 && el.Count == 0)
                                         throw new global::java.net.SocketTimeoutException("Receive timed out.");
                                 }
@@ -698,12 +698,11 @@ namespace IKVM.Java.Externs.java.net
                             // Windows Poll method reports errors as readable, however, Linux reports it as errored, so
                             // we can use Poll on Windows for both errors, but must use Select on Linux to trap both
                             // read and error states
-                            if (RuntimeUtil.IsWindows)
+                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                             {
                                 try
                                 {
-                                    // wait for data to be available
-                                    if (socket.Poll((int)Math.Min(timeout * 1000L, int.MaxValue), SelectMode.SelectRead) == false)
+                                    if (socket.Poll((int)Math.Min(impl.timeout * 1000L, int.MaxValue), SelectMode.SelectRead) == false)
                                         throw new global::java.net.SocketTimeoutException("Receive timed out.");
                                 }
                                 catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
@@ -725,7 +724,7 @@ namespace IKVM.Java.Externs.java.net
                                 {
                                     var rl = new List<Socket>() { socket };
                                     var el = new List<Socket>() { socket };
-                                    Socket.Select(rl, null, el, impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000);
+                                    Socket.Select(rl, null, el, (int)Math.Min(impl.timeout * 1000L, int.MaxValue));
                                     if (rl.Count == 0 && el.Count == 0)
                                         throw new global::java.net.SocketTimeoutException("Receive timed out.");
                                 }
