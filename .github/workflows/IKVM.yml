@@ -422,6 +422,14 @@ jobs:
         - IKVM.OpenJDK.Tests?TestPartition=5
         - IKVM.OpenJDK.Tests?TestPartition=6
         - IKVM.OpenJDK.Tests?TestPartition=7
+        - IKVM.OpenJDK.Tests?TestPartition=8
+        - IKVM.OpenJDK.Tests?TestPartition=9
+        - IKVM.OpenJDK.Tests?TestPartition=10
+        - IKVM.OpenJDK.Tests?TestPartition=11
+        - IKVM.OpenJDK.Tests?TestPartition=12
+        - IKVM.OpenJDK.Tests?TestPartition=13
+        - IKVM.OpenJDK.Tests?TestPartition=14
+        - IKVM.OpenJDK.Tests?TestPartition=15
         tfm:
         - net472
         - net6.0
