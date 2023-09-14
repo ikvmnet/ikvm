@@ -28,7 +28,7 @@ namespace IKVM.Tests.Java.java.net
                 .OfType<Inet6Address>()
                 .FirstOrDefault(i => i.isLinkLocalAddress());
 
-            var sock = new ServerSocket(0);
+            using var sock = new ServerSocket(0);
             var port = sock.getLocalPort();
 
             var test = Task.Run(() =>
@@ -39,13 +39,14 @@ namespace IKVM.Tests.Java.java.net
                 n.close();
             });
 
-            var s = sock.accept();
+            using var s = sock.accept();
             var a = s.getInetAddress();
-            var o = s.getOutputStream();
-            o.write(1);
-            o.close();
             a.Should().BeOfType<Inet6Address>();
             a.getHostAddress().Should().Contain("%");
+
+            using var o = s.getOutputStream();
+            o.write(1);
+            o.close();
 
             test.Wait();
         }
