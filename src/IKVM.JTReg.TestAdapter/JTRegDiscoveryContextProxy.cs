@@ -35,7 +35,14 @@ namespace IKVM.JTReg.TestAdapter
             this.discoveryContext = discoveryContext ?? throw new ArgumentNullException(nameof(discoveryContext));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.discoverySink = discoverySink ?? throw new ArgumentNullException(nameof(discoverySink));
+
+            Options = discoveryContext.RunSettings.ToJTRegOptions();
         }
+
+        /// <summary>
+        /// Gets the options to be applied to the tests.
+        /// </summary>
+        public JTRegTestOptions Options { get; private set; }
 
         public void SendMessage(JTRegTestMessageLevel informational, string message)
         {

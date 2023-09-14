@@ -1,0 +1,5 @@
+﻿<RunSettings>
+    <JTRegConfiguration>
+        <PartitionCount>8</PartitionCount>
+    </JTRegConfiguration>
+</RunSettings>

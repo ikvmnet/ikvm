@@ -19,8 +19,6 @@ namespace IKVM.JTReg.TestAdapter.Core
     static class Util
     {
 
-        internal const int PARTITION_COUNT = 8;
-
         static readonly MD5 md5 = MD5.Create();
         static readonly SimpleDateFormat TestResultDateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US);
         static readonly MethodInfo RemainingToListOfTestResultMethod = typeof(IteratorExtensions).GetMethod(nameof(IteratorExtensions.RemainingToList)).MakeGenericMethod(JTRegTypes.TestResult.Type);
@@ -139,7 +137,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <param name="testManager"></param>
         /// <param name="testSuite"></param>
         /// <returns></returns>
-        public static IEnumerable<JTRegTestCase> GetTestCases(string source, dynamic testManager, dynamic testSuite)
+        public static IEnumerable<JTRegTestCase> GetTestCases(string source, dynamic testManager, dynamic testSuite, int partitionCount)
         {
             if (string.IsNullOrEmpty(source))
                 throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
@@ -149,7 +147,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                 throw new ArgumentNullException(nameof(testSuite));
 
             // obtain enumerable of the test results within the suite
-            return ((IEnumerable<dynamic>)GetTestResults(source, testManager, testSuite)).Select(i => (JTRegTestCase)ToTestCase(source, testSuite, i.getDescription()));
+            return ((IEnumerable<dynamic>)GetTestResults(source, testManager, testSuite)).Select(i => (JTRegTestCase)ToTestCase(source, testSuite, i.getDescription(), partitionCount));
         }
 
         /// <summary>
@@ -185,8 +183,9 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <param name="source"></param>
         /// <param name="testSuite"></param>
         /// <param name="testDescription"></param>
+        /// <param name="partitionCount"></param>
         /// <returns></returns>
-        public static JTRegTestCase ToTestCase(string source, dynamic testSuite, dynamic testDescription)
+        public static JTRegTestCase ToTestCase(string source, dynamic testSuite, dynamic testDescription, int partitionCount)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
@@ -204,7 +203,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             testCase.TestTitle = GetTestTitle(source, testSuite, testDescription);
             testCase.TestAuthor = GetTestAuthor(source, testSuite, testDescription);
             testCase.TestCategory = (string[])GetTestKeywords(source, testSuite, testDescription);
-            testCase.TestPartition = Math.Abs(GetStringHashCode(testCase.TestPathName)) % PARTITION_COUNT;
+            testCase.TestPartition = Math.Abs(GetStringHashCode(testCase.TestPathName)) % partitionCount;
             testCase.Traits.Add("Partition", testCase.TestPartition.ToString());
             return testCase;
         }
@@ -217,14 +216,14 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <param name="testResult"></param>
         /// <param name="testCase"></param>
         /// <returns></returns>
-        public static JTRegTestResult ToTestResult(string source, dynamic testSuite, dynamic testResult, JTRegTestCase testCase)
+        public static JTRegTestResult ToTestResult(string source, dynamic testSuite, dynamic testResult, JTRegTestCase testCase, int partitionCount)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            var r = new JTRegTestResult(testCase ?? ToTestCase(source, testSuite, testResult))
+            var r = new JTRegTestResult(testCase ?? ToTestCase(source, testSuite, testResult, partitionCount))
             {
                 DisplayName = Util.GetTestDisplayName(testResult.getDescription()),
                 ComputerName = testResult.getProperty("hostname"),

@@ -205,7 +205,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                 // for each suite, get the results and transform a test case
                 foreach (dynamic testSuite in (IEnumerable<dynamic>)Util.GetTestSuites(source, testManager))
                 {
-                    foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite))
+                    foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite, context.Options.PartitionCount))
                     {
                         context.SendTestCase(testCase);
                         testCount++;
@@ -315,7 +315,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                 foreach (dynamic testSuite in testSuites)
                 {
                     bool FilterByList(dynamic td) => tests == null || tests.Any(i => i.TestPathName == (string)Util.GetTestPathName(source, testSuite, td));
-                    bool FilterByContext(dynamic td) => context.FilterTestCase(Util.ToTestCase(source, testSuite, td));
+                    bool FilterByContext(dynamic td) => context.FilterTestCase(Util.ToTestCase(source, testSuite, td, context.Options.PartitionCount));
                     bool Filter(dynamic td) => FilterByList(td) && FilterByContext(td);
 
                     context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Running test suite: {(string)testSuite.getName()}");
