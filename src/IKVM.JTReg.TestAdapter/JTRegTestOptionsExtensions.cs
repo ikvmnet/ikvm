@@ -14,7 +14,7 @@ namespace IKVM.JTReg.TestAdapter
 
         public static JTRegTestOptions ToJTRegOptions(this IRunSettings self)
         {
-            var x = XDocument.Parse(self.SettingsXml)?.Root?.Element("JTRegConfiguration");
+            var x = self?.SettingsXml != null ? XDocument.Parse(self.SettingsXml)?.Root?.Element("JTRegConfiguration") : null;
             var o = new JTRegTestOptions();
             o.PartitionCount = (int?)x?.Element("PartitionCount") ?? DEFAULT_PARTITION_COUNT;
             return o;
