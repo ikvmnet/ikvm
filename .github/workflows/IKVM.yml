@@ -604,7 +604,6 @@ jobs:
                 "-f", $tfm,
                 "--blame",
                 "--blame-hang",
-                "--blang-hang-timeout", "30m",
                 "-v", "2",
                 "--results-directory", "TestResults",
                 "--logger:console;verbosity=detailed",
