@@ -604,6 +604,7 @@ jobs:
                 "-f", $tfm,
                 "--blame",
                 "--blame-hang",
+                "--blame-hang-timeout", "30m",
                 "-v", "2",
                 "--results-directory", "TestResults",
                 "--logger:console;verbosity=detailed",
@@ -617,8 +618,8 @@ jobs:
             }
 
             if ($qry -ne "" -and $qry -ne $null) {
-                Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst-$qry--$tfm--$sys"
                 $argl += @("--filter", $qry)
+                Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst-$qry--$tfm--$sys"
             } else {
                 Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst--$tfm--$sys"
             }
