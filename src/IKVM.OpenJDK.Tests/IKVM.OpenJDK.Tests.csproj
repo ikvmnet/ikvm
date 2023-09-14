@@ -4,6 +4,7 @@
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+        <RunSettingsFilePath>$(MSBuildProjectDirectory)\IKVM.OpenJDK.Tests.runsettings</RunSettingsFilePath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -29,6 +30,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Update="IKVM.OpenJDK.Tests.runsettings">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
         <None Update="jdk\ExcludeList.txt">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>

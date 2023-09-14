@@ -24,6 +24,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Update="IKVM.JTReg.TestAdapter.Tests.runsettings">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
         <None Include="root\**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
