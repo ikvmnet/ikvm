@@ -68,7 +68,8 @@ namespace IKVM.Runtime.JNI
 
         #region Delegates
 
-        delegate int GetMethodArgsDelegateType(JNIEnv* pEnv, nint methodID, byte* sig);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate int GetMethodArgsDelegateType(JNIEnv* pEnv, jmethodID methodID, byte* sig);
 
         delegate jint GetVersionDelegateType(JNIEnv* pEnv);
         delegate jclass DefineClassDelegateType(JNIEnv* pEnv, byte* name, jobject loader, jbyte* pbuf, jint length);
@@ -560,7 +561,7 @@ namespace IKVM.Runtime.JNI
 
             handle->AllocObject = (void*)Marshal.GetFunctionPointerForDelegate(AllocObjectDelegate);
             handle->NewObject = (void*)GetLibJvmFunctionHandle("__JNI_NewObject");
-            handle->NewObjectV = (void*)GetLibJvmFunctionHandle("__JNI_NewObjectV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(nint));
+            handle->NewObjectV = (void*)GetLibJvmFunctionHandle("__JNI_NewObjectV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
             handle->NewObjectA = (void*)Marshal.GetFunctionPointerForDelegate(NewObjectADelegate);
 
             handle->GetObjectClass = (void*)Marshal.GetFunctionPointerForDelegate(GetObjectClassDelegate);
