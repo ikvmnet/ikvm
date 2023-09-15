@@ -18,7 +18,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Gets the default instance.
         /// </summary>
-        public static LibJava Instance = new();
+        public static readonly LibJava Instance = new();
 
         readonly LibJvm libjvm = LibJvm.Instance;
 

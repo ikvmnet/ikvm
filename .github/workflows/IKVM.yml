@@ -604,9 +604,9 @@ jobs:
                 "--blame-crash",
                 "--blame-hang",
                 "--blame-hang-timeout", "30m",
-                "-v", "2",
+                "-v:diag",
                 "--results-directory", "TestResults",
-                "--logger:console;verbosity=detailed",
+                "--logger:console;verbosity=diag",
                 "--logger:trx",
                 "--collect", "'Code Coverage'"
             )

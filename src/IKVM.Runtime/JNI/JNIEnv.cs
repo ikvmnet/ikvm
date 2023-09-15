@@ -25,7 +25,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using IKVM.ByteCode.Text;
@@ -424,7 +423,7 @@ namespace IKVM.Runtime.JNI
         /// <param name="method"></param>
         /// <param name="sig"></param>
         /// <returns></returns>
-        internal static int GetMethodArgs(JNIEnv* pEnv, nint method, byte* sig)
+        internal static int GetMethodArgs(JNIEnv* pEnv, jmethodID method, byte* sig)
         {
             var args = RuntimeJavaMethod.FromCookie(method).GetParameters();
             for (var i = 0; i < args.Length; i++)

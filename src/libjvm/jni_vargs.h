@@ -4,13 +4,25 @@
 #include <stdarg.h>
 #include <jni.h>
 
-typedef int (*GetMethodArgs_t)(JNIEnv* pEnv, jmethodID method, char* sig);
+#ifdef _WIN32
+#include <malloc.h>
+#define ALLOCA _alloca
+#else
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <stdlib.h>
+#else
+#include <alloca.h>
+#endif
+#define ALLOCA alloca
+#endif
+
+typedef int (__cdecl *GetMethodArgs_t)(JNIEnv* pEnv, jmethodID method, char* sig);
 #define GET_METHOD_ARGS(pEnv, method, sig) (((GetMethodArgs_t)((*pEnv)->reserved0))(pEnv, methodID, sig))
 
 #define MAKE_ARG_ARRAY(pEnv, args) \
 	char sig[257];\
 	int argc = GET_METHOD_ARGS(pEnv, methodID, sig);\
-	jvalue *argv = (jvalue*)__builtin_alloca((long unsigned int)argc * sizeof(jvalue));\
+	jvalue *argv = (jvalue*)ALLOCA(argc * sizeof(jvalue));\
 	for (int i = 0; i < argc; i++)\
 	{\
 		if (sig[i] == 'Z')\
@@ -57,44 +69,48 @@ JNIEXPORT type JNICALL __JNI_Call##Type##Method(JNIEnv* pEnv, jobject obj, jmeth
 {\
 	va_list args;\
 	va_start(args, methodID);\
-    MAKE_ARG_ARRAY(pEnv, args);\
-    type ret = (*pEnv)->Call##Type##MethodA(pEnv, obj, methodID, argv);\
+    type ret = (*pEnv)->Call##Type##MethodV(pEnv, obj, methodID, args);\
 	va_end(args);\
 	return ret;\
 }\
+\
 JNIEXPORT type JNICALL __JNI_Call##Type##MethodV(JNIEnv* pEnv, jobject obj, jmethodID methodID, va_list args)\
 {\
 	MAKE_ARG_ARRAY(pEnv, args);\
 	return (*pEnv)->Call##Type##MethodA(pEnv, obj, methodID, argv);\
 }\
+\
 JNIEXPORT type JNICALL __JNI_CallNonvirtual##Type##Method(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, ...)\
 {\
 	va_list args;\
 	va_start(args, methodID);\
-	MAKE_ARG_ARRAY(pEnv, args);\
-    type ret = (*pEnv)->CallNonvirtual##Type##MethodA(pEnv, obj, clazz, methodID, argv);\
+    type ret = (*pEnv)->CallNonvirtual##Type##MethodV(pEnv, obj, clazz, methodID, args);\
 	va_end(args);\
 	return ret;\
 }\
+\
 JNIEXPORT type JNICALL __JNI_CallNonvirtual##Type##MethodV(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, va_list args)\
 {\
 	MAKE_ARG_ARRAY(pEnv, args);\
 	return (*pEnv)->CallNonvirtual##Type##MethodA(pEnv, obj, clazz, methodID, argv);\
 }\
+\
 JNIEXPORT type JNICALL __JNI_CallStatic##Type##Method(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...)\
 {\
 	va_list args;\
 	va_start(args, methodID);\
-    MAKE_ARG_ARRAY(pEnv, args);\
-    type ret = (*pEnv)->CallStatic##Type##MethodA(pEnv, clazz, methodID, argv);\
+    type ret = (*pEnv)->CallStatic##Type##MethodV(pEnv, clazz, methodID, args);\
 	va_end(args);\
 	return ret;\
 }\
+\
 JNIEXPORT type JNICALL __JNI_CallStatic##Type##MethodV(JNIEnv* pEnv, jclass clazz, jmethodID methodID, va_list args)\
 {\
 	MAKE_ARG_ARRAY(pEnv, args);\
 	return (*pEnv)->CallStatic##Type##MethodA(pEnv, clazz, methodID, argv);\
-}
+}\
+\
+
 
 JNIEXPORT jobject JNICALL __JNI_NewObject(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...);
 JNIEXPORT jobject JNICALL __JNI_NewObjectV(JNIEnv* pEnv, jclass clazz, jmethodID methodID, va_list args);

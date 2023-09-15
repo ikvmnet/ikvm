@@ -14,8 +14,7 @@ JNIEXPORT jobject JNICALL __JNI_NewObject(JNIEnv* pEnv, jclass clazz, jmethodID 
 {
     va_list args;
     va_start(args, methodID);
-    MAKE_ARG_ARRAY(pEnv, args);
-    jobject o = (*pEnv)->NewObjectA(pEnv, clazz, methodID, argv);
+    jobject o = (*pEnv)->NewObjectV(pEnv, clazz, methodID, args);
     va_end(args);
     return o;
 }
@@ -30,8 +29,7 @@ JNIEXPORT void JNICALL __JNI_CallVoidMethod(JNIEnv* pEnv, jobject obj, jmethodID
 {
     va_list args;
     va_start(args, methodID);
-    MAKE_ARG_ARRAY(pEnv, args);
-    (*pEnv)->CallVoidMethodA(pEnv, obj, methodID, argv);
+    (*pEnv)->CallVoidMethodV(pEnv, obj, methodID, args);
     va_end(args);
 }
 
@@ -45,8 +43,7 @@ JNIEXPORT void JNICALL __JNI_CallNonvirtualVoidMethod(JNIEnv* pEnv, jobject obj,
 {
     va_list args;
     va_start(args, methodID);
-    MAKE_ARG_ARRAY(pEnv, args);
-    (*pEnv)->CallNonvirtualVoidMethodA(pEnv, obj, clazz, methodID, argv);
+    (*pEnv)->CallNonvirtualVoidMethodV(pEnv, obj, clazz, methodID, args);
     va_end(args);
 }
 
@@ -60,8 +57,7 @@ JNIEXPORT void JNICALL __JNI_CallStaticVoidMethod(JNIEnv* pEnv, jclass clazz, jm
 {
     va_list args;
     va_start(args, methodID);
-    MAKE_ARG_ARRAY(pEnv, args);
-    (*pEnv)->CallStaticVoidMethodA(pEnv, clazz, methodID, argv);
+    (*pEnv)->CallStaticVoidMethodV(pEnv, clazz, methodID, args);
     va_end(args);
 }
 
