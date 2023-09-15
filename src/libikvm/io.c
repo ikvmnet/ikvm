@@ -16,7 +16,7 @@
 #include <sys/stat.h>
 #endif
 
-NETEXPORT int NETCALL IKVM_io_is_file(long handle)
+NETEXPORT int NETCALL IKVM_io_is_file(long long handle)
 {
 #ifdef WIN32
     return GetFileType((HANDLE)handle) == FILE_TYPE_DISK;
@@ -29,7 +29,7 @@ NETEXPORT int NETCALL IKVM_io_is_file(long handle)
 #endif
 }
 
-NETEXPORT int NETCALL IKVM_io_is_socket(long handle)
+NETEXPORT int NETCALL IKVM_io_is_socket(long long handle)
 {
 #ifdef WIN32
     return GetFileType((HANDLE)handle) == FILE_TYPE_PIPE && GetNamedPipeInfo((HANDLE)handle, NULL, NULL, NULL, NULL) == 0;
