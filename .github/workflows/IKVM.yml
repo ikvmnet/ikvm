@@ -595,14 +595,13 @@ jobs:
             $tst = $run
         }
 
-        # scan for test assemblies
-        $tests = $(gci .\tests\$tst\$tfm -Recurse -Filter '*.Tests.dll')
-
-        # if a query was specified, add to test command
+        # scan and process test assemblies
+        $tests = $(gi .\tests\$tst\$tfm\*.Tests.dll')
         if ($tests) {
             $argl = @(
                 "-f", $tfm,
                 "--blame",
+                "--blame-crash",
                 "--blame-hang",
                 "--blame-hang-timeout", "30m",
                 "-v", "2",
@@ -612,9 +611,9 @@ jobs:
                 "--collect", "'Code Coverage'"
             )
             
-            $runst = $(gci .\tests\$tst\$tfm -Recurse -Filter '*.runsettings')
-            if ($runst) {
-                $argl += "--settings:$runst"
+            $runsettings = $(gi .\tests\$tst\$tfm\*.runsettings')
+            if ($runsettings) {
+                $argl += "--settings:$runsettings"
             }
 
             if ($qry -ne "" -and $qry -ne $null) {
