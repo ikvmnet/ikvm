@@ -16,13 +16,12 @@
 #define ALLOCA alloca
 #endif
 
-typedef int (__cdecl *GetMethodArgs_t)(JNIEnv* pEnv, jmethodID method, char* sig);
-#define GET_METHOD_ARGS(pEnv, method, sig) (((GetMethodArgs_t)((*pEnv)->reserved0))(pEnv, methodID, sig))
+typedef int (*GetMethodArgs_t)(JNIEnv* pEnv, jmethodID methodID, char* sig);
 
 #define MAKE_ARG_ARRAY(pEnv, args) \
 	char sig[257];\
-	int argc = GET_METHOD_ARGS(pEnv, methodID, sig);\
-	jvalue *argv = (jvalue*)ALLOCA(argc * sizeof(jvalue));\
+	int argc = ((GetMethodArgs_t)((*pEnv)->reserved0))(pEnv, methodID, sig);\
+	jvalue *argv = (jvalue*)ALLOCA(sizeof(jvalue) * argc);\
 	for (int i = 0; i < argc; i++)\
 	{\
 		if (sig[i] == 'Z')\
@@ -43,7 +42,7 @@ typedef int (__cdecl *GetMethodArgs_t)(JNIEnv* pEnv, jmethodID method, char* sig
 			argv[i].d = (jdouble)va_arg(args, double);\
 		else if (sig[i] == 'L')\
 			argv[i].l = (jobject)va_arg(args, void*);\
-	}
+	}\
 
 
 #define MAKE_METHOD_SIGNATURE(Type, type) \
