@@ -18,12 +18,12 @@
 
 typedef int (*GetMethodArgs_t)(JNIEnv* pEnv, jmethodID methodID, char* sig);
 
-#define MAKE_ARG_ARRAY(pEnv, args) \
+#define MAKE_ARG_ARRAY(pEnv, methodID, args, argv) \
+do {\
 	char sig[257];\
 	int argc = ((GetMethodArgs_t)((*pEnv)->reserved0))(pEnv, methodID, sig);\
-	jvalue *argv = (jvalue*)ALLOCA(sizeof(jvalue) * argc);\
-	for (int i = 0; i < argc; i++)\
-	{\
+	argv = (jvalue*)ALLOCA(sizeof(jvalue) * argc);\
+	for (int i = 0; i < argc; i++) {\
 		if (sig[i] == 'Z')\
 			argv[i].z = (jboolean)va_arg(args, int);\
 		else if (sig[i] == 'B')\
@@ -43,6 +43,8 @@ typedef int (*GetMethodArgs_t)(JNIEnv* pEnv, jmethodID methodID, char* sig);
 		else if (sig[i] == 'L')\
 			argv[i].l = (jobject)va_arg(args, void*);\
 	}\
+}\
+while (0);\
 
 
 #define MAKE_METHOD_SIGNATURE(Type, type) \
@@ -75,7 +77,8 @@ JNIEXPORT type JNICALL __JNI_Call##Type##Method(JNIEnv* pEnv, jobject obj, jmeth
 \
 JNIEXPORT type JNICALL __JNI_Call##Type##MethodV(JNIEnv* pEnv, jobject obj, jmethodID methodID, va_list args)\
 {\
-	MAKE_ARG_ARRAY(pEnv, args);\
+	jvalue *argv;\
+	MAKE_ARG_ARRAY(pEnv, methodID, args, argv);\
 	return (*pEnv)->Call##Type##MethodA(pEnv, obj, methodID, argv);\
 }\
 \
@@ -90,7 +93,8 @@ JNIEXPORT type JNICALL __JNI_CallNonvirtual##Type##Method(JNIEnv* pEnv, jobject 
 \
 JNIEXPORT type JNICALL __JNI_CallNonvirtual##Type##MethodV(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, va_list args)\
 {\
-	MAKE_ARG_ARRAY(pEnv, args);\
+	jvalue *argv;\
+	MAKE_ARG_ARRAY(pEnv, methodID, args, argv);\
 	return (*pEnv)->CallNonvirtual##Type##MethodA(pEnv, obj, clazz, methodID, argv);\
 }\
 \
@@ -105,7 +109,8 @@ JNIEXPORT type JNICALL __JNI_CallStatic##Type##Method(JNIEnv* pEnv, jclass clazz
 \
 JNIEXPORT type JNICALL __JNI_CallStatic##Type##MethodV(JNIEnv* pEnv, jclass clazz, jmethodID methodID, va_list args)\
 {\
-	MAKE_ARG_ARRAY(pEnv, args);\
+	jvalue *argv;\
+	MAKE_ARG_ARRAY(pEnv, methodID, args, argv);\
 	return (*pEnv)->CallStatic##Type##MethodA(pEnv, clazz, methodID, argv);\
 }\
 \
