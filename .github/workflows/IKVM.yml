@@ -596,7 +596,7 @@ jobs:
         }
 
         # scan and process test assemblies
-        $tests = $(gi .\tests\$tst\$tfm\*.Tests.dll')
+        $tests = $(gi .\tests\$tst\$tfm\*.Tests.dll)
         if ($tests) {
             $argl = @(
                 "-f", $tfm,
@@ -611,7 +611,7 @@ jobs:
                 "--collect", "'Code Coverage'"
             )
             
-            $runsettings = $(gi .\tests\$tst\$tfm\*.runsettings')
+            $runsettings = $(gi .\tests\$tst\$tfm\*.runsettings)
             if ($runsettings) {
                 $argl += "--settings:$runsettings"
             }
