@@ -3503,7 +3503,7 @@ void* JNICALL JVM_LoadLibrary(const char* name)
 #ifdef WIN32
     return LoadLibraryEx(name, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
 #else
-    return dlopen(name, RTLD_NOW | RTLD_GLOBAL);
+    return dlopen(name, RTLD_LAZY);
 #endif
 }
 
