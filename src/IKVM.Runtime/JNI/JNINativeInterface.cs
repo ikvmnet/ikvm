@@ -534,7 +534,7 @@ namespace IKVM.Runtime.JNI
         {
             JNIVM.jvmCreated = true;
 
-            Handle->GetMethodArgs = (void*)Marshal.GetFunctionPointerForDelegate(GetMethodArgsDelegate);
+            Handle->reserved0 = (void*)Marshal.GetFunctionPointerForDelegate(GetMethodArgsDelegate);
             Handle->reserved1 = null;
             Handle->reserved2 = null;
 
@@ -837,7 +837,7 @@ namespace IKVM.Runtime.JNI
             Handle->GetObjectRefType = (void*)Marshal.GetFunctionPointerForDelegate(GetObjectRefTypeDelegate);
         }
 
-        public void* GetMethodArgs;
+        public void* reserved0;
         public void* reserved1;
         public void* reserved2;
 
