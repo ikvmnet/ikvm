@@ -155,7 +155,6 @@ namespace IKVM.Runtime.JNI
 
                     JNIMemory.Free((nint)(void*)pJNIEnv);
                 }
-
             }
 
             internal struct FrameState
@@ -420,12 +419,12 @@ namespace IKVM.Runtime.JNI
         /// Outputs an encoded signature of the arguments available to the method.
         /// </summary>
         /// <param name="pEnv"></param>
-        /// <param name="method"></param>
+        /// <param name="methodID"></param>
         /// <param name="sig"></param>
         /// <returns></returns>
-        internal static int GetMethodArgs(JNIEnv* pEnv, jmethodID method, byte* sig)
+        internal static int GetMethodArgs(JNIEnv* pEnv, jmethodID methodID, byte* sig)
         {
-            var args = RuntimeJavaMethod.FromCookie(method).GetParameters();
+            var args = RuntimeJavaMethod.FromCookie(methodID).GetParameters();
             for (var i = 0; i < args.Length; i++)
                 sig[i] = args[i].IsPrimitive ? (byte)args[i].SigName[0] : (byte)'L';
 
