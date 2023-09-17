@@ -3,7 +3,7 @@
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net481;net6.0</TargetFrameworks>
         <LangVersion>11</LangVersion>
-        <PlatformTarget>x86</PlatformTarget>
+        <PlatformTarget>x64</PlatformTarget>
     </PropertyGroup>
 
     <ItemGroup>

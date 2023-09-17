@@ -1,4 +1,4 @@
-﻿using IKVM.Runtime.JNI;
+﻿using System;
 
 namespace IKVM.ConsoleApp
 {
@@ -7,8 +7,29 @@ namespace IKVM.ConsoleApp
 
         public static void Main(string[] args)
         {
-            var f = new JNIFrame();
-            f.Enter(null);
+            Foo();
+        }
+
+        public static void Foo()
+        {
+            new Bar();
+            Environment.Exit(0);
+        }
+
+        class Bar
+        {
+
+            public Bar()
+            {
+                for (int i = 0; i < 19383; i++)
+                    System.Console.WriteLine(java.net.InetAddress.getLocalHost().getHostName());
+            }
+
+            ~Bar()
+            {
+
+            }
+
         }
 
     }
