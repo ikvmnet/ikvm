@@ -402,6 +402,14 @@ jobs:
     - name: Delete Tests (IKVM.OpenJDK.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.OpenJDK.Tests.tar.gz
+    - name: Package Documentation
+      run: zip C:\doc.zip doc
+      working-directory: ${{ env.WORKPATH }}\ikvm
+    - name: Upload Documentation
+      uses: actions/upload-artifact@v3
+      with:
+        name: doc
+        path: C:\doc.zip
   test:
     strategy:
       fail-fast: false
@@ -700,13 +708,18 @@ jobs:
     - name: Compress Image
       shell: pwsh
       run: cd dist && gi image/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "image/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.tar.gz" .; Pop-Location }
+    - name: Download Documentation
+      uses: actions/download-artifact@v3
+      with:
+        name: doc
+        path: dist
     - name: Create Release
       if: github.ref_type == 'tag'
       uses: ncipollo/release-action@v1.10.0
       with:
         tag: ${{ github.ref_name }}
         allowUpdates: true
-        artifacts: dist/nuget/*.nupkg,dist/bin/*.zip,dist/bin/*.tar.gz,dist/image/*.zip,dist/image/*.tar.gz,dist/tools/*.zip,dist/tools/*.tar.gz
+        artifacts: dist/nuget/*.nupkg,dist/bin/*.zip,dist/bin/*.tar.gz,dist/image/*.zip,dist/image/*.tar.gz,dist/tools/*.zip,dist/tools/*.tar.gz,dist/doc.zip
         draft: false
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
