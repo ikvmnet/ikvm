@@ -542,6 +542,10 @@ jobs:
         Add-Content $env:GITHUB_ENV "`nIKVMPATH=$dir/ikvm"
         Add-Content $env:GITHUB_ENV "`nTMP=$dir/temp`nTEMP=$dir/temp`nTMPDIR=$dir/temp"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir/dotnet"
+    - name: Install ProcDump
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: choco install procdump -y; Add-Content $env:GITHUB_PATH "$env:ProgramData\chocolatey\bin\"
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v3
       with:
