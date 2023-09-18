@@ -175,16 +175,32 @@ namespace IKVM.JTReg.TestAdapter.Core
             if (context is null)
                 throw new ArgumentNullException(nameof(context));
 
+            DiscoverTestsImpl(source, Util.GetTestSuiteDirectories(Path.GetFullPath(source), context).ToArray(), context, cancellationToken);
+        }
+
+        /// <summary>
+        /// Discovers the available tests in the given root directories.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="testDirs"></param>
+        /// <param name="context"></param>
+        /// <param name="cancellationToken"></param>
+        internal void DiscoverTestsImpl(string source, string[] testDirs, IJTRegDiscoveryContext context, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(source))
+                throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
+            if (testDirs is null)
+                throw new ArgumentNullException(nameof(testDirs));
+            if (context is null)
+                throw new ArgumentNullException(nameof(context));
+
             try
             {
-                // normalize source if possible
-                source = Path.GetFullPath(source);
-
                 // discover test suites from test assembly
-                var testDirs = new java.util.ArrayList();
-                foreach (var testRoot in Util.GetTestSuiteDirectories(source, context))
-                    testDirs.add(new java.io.File(testRoot));
-                if (testDirs.size() == 0)
+                var testRoots = new java.util.ArrayList();
+                foreach (var testDir in testDirs)
+                    testRoots.add(new java.io.File(testDir));
+                if (testRoots.size() == 0)
                     return;
 
                 // output path for jtreg state
@@ -200,7 +216,7 @@ namespace IKVM.JTReg.TestAdapter.Core
 
                 // initialize the test manager with the discovered roots
                 var testManager = CreateTestManager(context, baseDir, new java.io.PrintWriter(output));
-                testManager.addTestFiles(testDirs, false);
+                testManager.addTestFiles(testRoots, false);
 
                 // track metrics related to tests
                 int testCount = 0;
@@ -235,8 +251,10 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <param name="cancellationToken"></param>
         public void RunTests(string source, List<JTRegTestCase> tests, IJTRegExecutionContext context, CancellationToken cancellationToken)
         {
-            // normalize source if possible
-            source = Path.GetFullPath(source);
+            if (string.IsNullOrEmpty(source))
+                throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
+            if (context is null)
+                throw new ArgumentNullException(nameof(context));
 
             try
             {
@@ -251,7 +269,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                         debug.Start();
                     }
 
-                    RunTestsImpl(source, tests?.Where(i => i.Source == source).ToList(), context, debug?.Uri, cancellationToken);
+                    RunTestsImpl(source, Util.GetTestSuiteDirectories(Path.GetFullPath(source), context).ToArray(), tests?.Where(i => i.Source == source).ToList(), context, debug?.Uri, cancellationToken);
                 }
                 finally
                 {
@@ -276,11 +294,12 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// Runs the tests in the given sources, optionally filtered by specific test case.
         /// </summary>
         /// <param name="source"></param>
+        /// <param name="testDirs"></param>
         /// <param name="tests"></param>
         /// <param name="context"></param>
         /// <param name="debugUri"></param>
         /// <param name="cancellationToken"></param>
-        internal void RunTestsImpl(string source, List<JTRegTestCase> tests, IJTRegExecutionContext context, Uri debugUri, CancellationToken cancellationToken)
+        internal void RunTestsImpl(string source, string[] testDirs, List<JTRegTestCase> tests, IJTRegExecutionContext context, Uri debugUri, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(source))
                 throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
@@ -292,10 +311,10 @@ namespace IKVM.JTReg.TestAdapter.Core
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // discover test suites from test assembly
-                var testDirs = new java.util.ArrayList();
-                foreach (var testRoot in Util.GetTestSuiteDirectories(source, context))
-                    testDirs.add(new java.io.File(testRoot));
-                if (testDirs.size() == 0)
+                var testRoots = new java.util.ArrayList();
+                foreach (var testDir in testDirs)
+                    testRoots.add(new java.io.File(testDir));
+                if (testRoots.size() == 0)
                     return;
 
                 // output path for jtreg state
@@ -311,7 +330,7 @@ namespace IKVM.JTReg.TestAdapter.Core
 
                 // initialize the test manager with the discovered roots
                 var testManager = CreateTestManager(context, baseDir, new java.io.PrintWriter(output));
-                testManager.addTestFiles(testDirs, false);
+                testManager.addTestFiles(testRoots, false);
 
                 // load the set of suites
                 var testSuites = ((IEnumerable<dynamic>)Util.GetTestSuites(source, testManager)).ToList();
