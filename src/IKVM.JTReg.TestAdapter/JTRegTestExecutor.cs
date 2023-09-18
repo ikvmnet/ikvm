@@ -35,11 +35,7 @@ namespace IKVM.JTReg.TestAdapter
                 if (cts.Token.IsCancellationRequested)
                     break;
 
-                // setup isolation host for source
-                using var host = new JTRegTestIsolationHost(group.Key);
-                var proxy = host.CreateManager();
-
-                // run tests for source
+                var proxy = JTRegTestIsolationHost.Instance.CreateManager();
                 proxy.RunTests(group.Key, JTRegProxyUtil.Convert(group).ToList(), new JTRegExecutionContextProxy(runContext, frameworkHandle), ctp);
             }
         }
@@ -60,11 +56,8 @@ namespace IKVM.JTReg.TestAdapter
                 if (cts.Token.IsCancellationRequested)
                     break;
 
-                // setup isolation host for source
-                using var host = new JTRegTestIsolationHost(source);
-                var proxy = host.CreateManager();
-
-                proxy.RunTests(source, null, new JTRegExecutionContextProxy(runContext, frameworkHandle), ctp);
+                var proxy = JTRegTestIsolationHost.Instance.CreateManager();
+                proxy.RunTests(source, new JTRegExecutionContextProxy(runContext, frameworkHandle), ctp);
             }
         }
 

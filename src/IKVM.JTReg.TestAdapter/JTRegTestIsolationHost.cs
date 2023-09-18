@@ -12,6 +12,8 @@ namespace IKVM.JTReg.TestAdapter
     class JTRegTestIsolationHost : IDisposable
     {
 
+        public static readonly JTRegTestIsolationHost Instance = new();
+
 #if NETFRAMEWORK
         AppDomain appdomain;
 #endif
@@ -19,14 +21,17 @@ namespace IKVM.JTReg.TestAdapter
         /// <summary>
         /// Initializes the static instance.
         /// </summary>
-        public JTRegTestIsolationHost(string source)
+        public JTRegTestIsolationHost()
         {
-//#if NETFRAMEWORK
-//            var setup = new AppDomainSetup();
-//            setup.ApplicationBase = Path.GetDirectoryName(typeof(JTRegTestManagerProxy).Assembly.Location);
-//            setup.ConfigurationFile = File.Exists(source + ".config") ? source + ".config" : typeof(JTRegTestManagerProxy).Assembly.Location + ".config";
-//            appdomain = AppDomain.CreateDomain($"JTRegTestAdapter::{source}", null, setup);
-//#endif
+#if NETFRAMEWORK
+            var path = typeof(JTRegTestIsolationHost).Assembly.Location;
+            var conf = Path.ChangeExtension(path, ".dll.config");
+
+            var setup = new AppDomainSetup();
+            setup.ApplicationBase = Path.GetDirectoryName(path);
+            setup.ConfigurationFile = conf;
+            appdomain = AppDomain.CreateDomain("JTRegTestAdapter", null, setup);
+#endif
         }
 
         /// <summary>
@@ -35,11 +40,11 @@ namespace IKVM.JTReg.TestAdapter
         /// <returns></returns>
         public JTRegTestManagerProxy CreateManager()
         {
-//#if NETFRAMEWORK
-//            return (JTRegTestManagerProxy)appdomain.CreateInstanceAndUnwrap(typeof(JTRegTestManagerProxy).Assembly.FullName, typeof(JTRegTestManagerProxy).FullName);
-//#else
+#if NETFRAMEWORK
+            return (JTRegTestManagerProxy)appdomain.CreateInstanceAndUnwrap(typeof(JTRegTestManagerProxy).Assembly.FullName, typeof(JTRegTestManagerProxy).FullName);
+#else
             return new JTRegTestManagerProxy();
-//#endif
+#endif
         }
 
         /// <summary>
@@ -47,13 +52,21 @@ namespace IKVM.JTReg.TestAdapter
         /// </summary>
         public void Dispose()
         {
-//#if NETFRAMEWORK
-//            if (appdomain != null)
-//            {
-//                AppDomain.Unload(appdomain);
-//                appdomain = null;
-//            }
-//#endif
+#if NETFRAMEWORK
+            if (appdomain != null)
+            {
+                try
+                {
+                    AppDomain.Unload(appdomain);
+                }
+                catch
+                {
+                    // ignore any exceptions during unload
+                }
+
+                appdomain = null;
+            }
+#endif
         }
 
     }
