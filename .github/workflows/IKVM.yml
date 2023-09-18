@@ -444,17 +444,14 @@ jobs:
           sys: osx-x64
         include:
         - run: IKVM.ByteCode.Tests
-          tfm: netcoreapp3.1
+          tfm: net7.0
           sys: windows
         - run: IKVM.ByteCode.Tests
-          tfm: netcoreapp3.1
+          tfm: net7.0
           sys: linux
-        - run: IKVM.Java.Tests
-          tfm: netcoreapp3.1
-          sys: windows
-        - run: IKVM.Java.Tests
-          tfm: netcoreapp3.1
-          sys: linux
+        - run: IKVM.ByteCode.Tests
+          tfm: net7.0
+          sys: osx-x64
         - run: IKVM.JTReg.TestAdapter.Tests
           tfm: net7.0
           sys: windows
@@ -608,7 +605,7 @@ jobs:
                 "--results-directory", "TestResults",
                 "--logger:console;verbosity=diag",
                 "--logger:trx",
-                "--collect", "'Code Coverage'"
+                "--collect", "Code Coverage"
             )
             
             $runsettings = $(gi .\tests\$tst\$tfm\*.runsettings)
