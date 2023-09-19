@@ -175,7 +175,8 @@ namespace IKVM.JTReg.TestAdapter.Core
             if (context is null)
                 throw new ArgumentNullException(nameof(context));
 
-            DiscoverTestsImpl(source, Util.GetTestSuiteDirectories(Path.GetFullPath(source), context).ToArray(), context, cancellationToken);
+            source = Path.GetFullPath(source);
+            DiscoverTestsImpl(source, Util.GetTestSuiteDirectories(source, context).ToArray(), context, cancellationToken);
         }
 
         /// <summary>
@@ -269,7 +270,8 @@ namespace IKVM.JTReg.TestAdapter.Core
                         debug.Start();
                     }
 
-                    RunTestsImpl(source, Util.GetTestSuiteDirectories(Path.GetFullPath(source), context).ToArray(), tests?.Where(i => i.Source == source).ToList(), context, debug?.Uri, cancellationToken);
+                    source = Path.GetFullPath(source);
+                    RunTestsImpl(source, Util.GetTestSuiteDirectories(source, context).ToArray(), tests?.Where(i => i.Source == source).ToList(), context, debug?.Uri, cancellationToken);
                 }
                 finally
                 {

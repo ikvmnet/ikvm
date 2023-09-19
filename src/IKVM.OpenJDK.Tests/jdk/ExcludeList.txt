@@ -3429,3 +3429,4 @@ java/util/prefs/RemoveUnregedListener.java                                      
 jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
 sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
 sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java                                        macosx-all
+java/net/InetAddress/CheckJNI.java                                                                                      macosx-all
