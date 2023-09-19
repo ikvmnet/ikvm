@@ -222,7 +222,7 @@ namespace IKVM.Java.Externs.java.net
                                 var re = new List<Socket>() { socket };
                                 var wr = new List<Socket>() { socket };
                                 var ex = new List<Socket>() { socket };
-                                Socket.Select(re, wr, ex, timeout * 1000 > int.MaxValue ? int.MaxValue : timeout * 1000);
+                                Socket.Select(re, wr, ex, (int)Math.Min(timeout * 1000L, int.MaxValue));
                                 var er = (int)socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Error);
                                 if (er != 0)
                                     throw new SocketException(er);
@@ -349,7 +349,7 @@ namespace IKVM.Java.Externs.java.net
                     try
                     {
                         socket.Blocking = true;
-                        
+
                         // wait for connection attempt
                         if (impl.timeout > 0)
                             if (socket.Poll((int)Math.Min(impl.timeout * 1000L, int.MaxValue), SelectMode.SelectRead) == false)
