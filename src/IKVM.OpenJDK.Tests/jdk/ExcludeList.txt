@@ -1389,7 +1389,6 @@ java/nio/channels/FileChannel/Lock.java                                         
 java/nio/channels/FileChannel/MapOverEnd.java                                                                           linux-all,macosx-all
 java/nio/channels/FileChannel/Size.java                                                                                 linux-all,macosx-all
 java/nio/channels/FileChannel/Truncate.java                                                                             generic-all
-java/nio/channels/FileChannel/Write.java                                                                                generic-all
 java/nio/channels/Selector/CloseThenRegister.java                                                                       generic-all
 java/nio/channels/Selector/OutOfBand.java                                                                               generic-all
 java/nio/channels/Selector/RegAfterPreClose.java                                                                        generic-all
