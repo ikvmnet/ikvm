@@ -25,7 +25,8 @@ namespace IKVM.Java.Externs.java.net
                         // Windows Poll method reports errors as readable, however, Linux reports it as errored, so
                         // we can use Poll on Windows for both errors, but must use Select on Linux to trap both
                         // read and error states
-                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        // OS X select hangs, so we use Poll there too.
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                         {
                             try
                             {
