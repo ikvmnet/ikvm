@@ -403,7 +403,8 @@ jobs:
       shell: pwsh
       run: ri C:\tests--IKVM.OpenJDK.Tests.tar.gz
     - name: Package Documentation
-      run: zip C:\doc.zip doc
+      shell: pwsh
+      run: Compress-Archive -Path doc\* -DestinationPath C:\doc.zip
       working-directory: ${{ env.WORKPATH }}\ikvm
     - name: Upload Documentation
       uses: actions/upload-artifact@v3
