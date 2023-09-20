@@ -104,6 +104,7 @@ namespace IKVM.Java.Externs.java.net
         static readonly Action<global::java.net.Inet6Address, int> Inet6AddressCachedScopeIdSetter = MakeFieldSetter<global::java.net.Inet6Address, int>(Inet6AddressCachedScopeIdField);
         static readonly Func<global::java.net.Inet6Address, int> Inet6AddressCachedScopeIdGetter = MakeFieldGetter<global::java.net.Inet6Address, int>(Inet6AddressCachedScopeIdField);
 
+        static global::ikvm.@internal.CallerID __callerID;
         delegate void __jniDelegate__socketCreate(IntPtr jniEnv, IntPtr self, sbyte stream);
         static __jniDelegate__socketCreate __jniPtr__socketCreate;
         delegate void __jniDelegate__socketConnect(IntPtr jniEnv, IntPtr self, IntPtr iaObj, int port, int timeout);
@@ -122,6 +123,10 @@ namespace IKVM.Java.Externs.java.net
         static __jniDelegate__socketGetOption __jniPtr__socketGetOption;
         delegate int __jniDelegate__socketSendUrgentData(IntPtr jniEnv, IntPtr self, int data);
         static __jniDelegate__socketSendUrgentData __jniPtr__socketSendUrgentData;
+        delegate int __jniDelegate__socketClose0(IntPtr jniEnv, IntPtr self, bool useDeferredClose);
+        static __jniDelegate__socketClose0 __jniPtr__socketClose0;
+        delegate int __jniDelegate__socketShutdown(IntPtr jniEnv, IntPtr self, int howto);
+        static __jniDelegate__socketShutdown __jniPtr__socketShutdown;
 
         /// <summary>
         /// Converts the given <see cref="InetAddress"/> into an appropriate endpoint address.
@@ -183,14 +188,6 @@ namespace IKVM.Java.Externs.java.net
         static readonly byte[] PeekBuffer = new byte[1];
 
         /// <summary>
-        /// Implements the native method for 'initProto'.
-        /// </summary>
-        public static void initProto()
-        {
-
-        }
-
-        /// <summary>
         /// Implements the native method for 'socketCreate'.
         /// </summary>
         public static void socketCreate(object self, bool stream)
@@ -214,9 +211,10 @@ namespace IKVM.Java.Externs.java.net
             }
             else
             {
-                __jniPtr__socketCreate ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketCreate>(JNIFrame.GetFuncPtr((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID(), "java/net/PlainSocketImpl", nameof(socketCreate), "(Z)V"));
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __jniPtr__socketCreate ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketCreate>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketCreate), "(Z)V"));
                 var jniFrm = new JNIFrame();
-                var jniEnv = jniFrm.Enter((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID());
+                var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
                     var selfRef = jniFrm.MakeLocalRef(self);
@@ -325,9 +323,10 @@ namespace IKVM.Java.Externs.java.net
             }
             else
             {
-                __jniPtr__socketConnect ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketConnect>(JNIFrame.GetFuncPtr((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID(), "java/net/PlainSocketImpl", nameof(socketConnect), "(Ljava/net/InetAddress;I)V"));
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __jniPtr__socketConnect ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketConnect>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketConnect), "(Ljava/net/InetAddress;I)V"));
                 var jniFrm = new JNIFrame();
-                var jniEnv = jniFrm.Enter((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID());
+                var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
                     var selfRef = jniFrm.MakeLocalRef(self);
@@ -389,9 +388,10 @@ namespace IKVM.Java.Externs.java.net
             }
             else
             {
-                __jniPtr__socketBind ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketBind>(JNIFrame.GetFuncPtr((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID(), "java/net/PlainSocketImpl", nameof(socketBind), "(Ljava/net/InetAddress;I)V"));
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __jniPtr__socketBind ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketBind>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketBind), "(Ljava/net/InetAddress;I)V"));
                 var jniFrm = new JNIFrame();
-                var jniEnv = jniFrm.Enter((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID());
+                var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
                     var selfRef = jniFrm.MakeLocalRef(self);
@@ -432,9 +432,10 @@ namespace IKVM.Java.Externs.java.net
             }
             else
             {
-                __jniPtr__socketListen ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketListen>(JNIFrame.GetFuncPtr((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID(), "java/net/PlainSocketImpl", nameof(socketListen), "(I)V"));
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __jniPtr__socketListen ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketListen>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketListen), "(I)V"));
                 var jniFrm = new JNIFrame();
-                var jniEnv = jniFrm.Enter((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID());
+                var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
                     var selfRef = jniFrm.MakeLocalRef(self);
@@ -508,9 +509,10 @@ namespace IKVM.Java.Externs.java.net
             }
             else
             {
-                __jniPtr__socketAccept ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketAccept>(JNIFrame.GetFuncPtr((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID(), "java/net/PlainSocketImpl", nameof(socketAccept), "(Ljava/net/SocketImpl;)V"));
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __jniPtr__socketAccept ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketAccept>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketAccept), "(Ljava/net/SocketImpl;)V"));
                 var jniFrm = new JNIFrame();
-                var jniEnv = jniFrm.Enter((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID());
+                var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
                     var selfRef = jniFrm.MakeLocalRef(self);
@@ -562,9 +564,10 @@ namespace IKVM.Java.Externs.java.net
             }
             else
             {
-                __jniPtr__socketAvailable ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketAvailable>(JNIFrame.GetFuncPtr((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID(), "java/net/PlainSocketImpl", nameof(socketAvailable), "()I"));
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __jniPtr__socketAvailable ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketAvailable>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketAvailable), "()I"));
                 var jniFrm = new JNIFrame();
-                var jniEnv = jniFrm.Enter((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID());
+                var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
                     var thisRef = jniFrm.MakeLocalRef(this_);
@@ -592,35 +595,60 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                if (impl.fd == null)
-                    throw new global::java.net.SocketException("Socket already closed.");
-
-                // fd still present, but socket gone, silently exit
-                if (impl.fd.getSocket() == null)
-                    return;
-
-                InvokeActionWithSocket(impl, socket =>
+                InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
                 {
-                    // if we're not configured to linger, disable sending, but continue to allow receive
-                    if (socket.LingerState.Enabled == false)
-                    {
-                        try
-                        {
-                            socket.Shutdown(SocketShutdown.Send);
-                        }
-                        catch (SocketException)
-                        {
-                            // ignore
-                        }
-                    }
+                    if (impl.fd == null)
+                        throw new global::java.net.SocketException("Socket already closed.");
 
-                    // null socket before close, as close may take a minute to flush
-                    FileDescriptorAccessor.SetSocket(impl.fd, null);
-                    socket.Close();
+                    // fd still present, but socket gone, silently exit
+                    if (impl.fd.getSocket() == null)
+                        return;
+
+                    InvokeActionWithSocket(impl, socket =>
+                    {
+                        // if we're not configured to linger, disable sending, but continue to allow receive
+                        if (socket.LingerState.Enabled == false)
+                        {
+                            try
+                            {
+                                socket.Shutdown(SocketShutdown.Send);
+                            }
+                            catch (SocketException)
+                            {
+                                // ignore
+                            }
+                        }
+
+                        // null socket before close, as close may take a minute to flush
+                        FileDescriptorAccessor.SetSocket(impl.fd, null);
+                        socket.Close();
+                    });
                 });
-            });
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __jniPtr__socketClose0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketClose0>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketClose0), "(Z)V"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    var thisRef = jniFrm.MakeLocalRef(self);
+                    __jniPtr__socketClose0(jniEnv, thisRef, useDeferredClose);
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
 #endif
         }
 
@@ -632,16 +660,41 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                if (impl.fd == null)
-                    throw new global::java.net.SocketException("Socket already closed.");
-
-                InvokeActionWithSocket(impl, socket =>
+                InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
                 {
-                    socket.Shutdown((SocketShutdown)howto);
+                    if (impl.fd == null)
+                        throw new global::java.net.SocketException("Socket already closed.");
+
+                    InvokeActionWithSocket(impl, socket =>
+                    {
+                        socket.Shutdown((SocketShutdown)howto);
+                    });
                 });
-            });
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __jniPtr__socketShutdown ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketShutdown>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketShutdown), "(I)V"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    var thisRef = jniFrm.MakeLocalRef(self);
+                    __jniPtr__socketShutdown(jniEnv, thisRef, howto);
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
 #endif
         }
 
@@ -717,9 +770,10 @@ namespace IKVM.Java.Externs.java.net
             }
             else
             {
-                __jniPtr__socketSetOption ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketSetOption>(JNIFrame.GetFuncPtr((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID(), "java/net/PlainSocketImpl", nameof(socketSetOption0), "(IZLjava/lang/Object;)V"));
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __jniPtr__socketSetOption ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketSetOption>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketSetOption0), "(IZLjava/lang/Object;)V"));
                 var jniFrm = new JNIFrame();
-                var jniEnv = jniFrm.Enter((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID());
+                var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
                     var thisRef = jniFrm.MakeLocalRef(self);
@@ -797,9 +851,10 @@ namespace IKVM.Java.Externs.java.net
             }
             else
             {
-                __jniPtr__socketGetOption ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketGetOption>(JNIFrame.GetFuncPtr((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID(), "java/net/PlainSocketImpl", nameof(socketGetOption), "(I)I"));
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __jniPtr__socketGetOption ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketGetOption>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketGetOption), "(I)I"));
                 var jniFrm = new JNIFrame();
-                var jniEnv = jniFrm.Enter((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID());
+                var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
                     var thisRef = jniFrm.MakeLocalRef(self);
@@ -919,9 +974,10 @@ namespace IKVM.Java.Externs.java.net
             }
             else
             {
-                __jniPtr__socketSendUrgentData ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketSendUrgentData>(JNIFrame.GetFuncPtr((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID(), "java/net/PlainSocketImpl", nameof(socketSendUrgentData), "(B)V"));
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __jniPtr__socketSendUrgentData ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketSendUrgentData>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketSendUrgentData), "(B)V"));
                 var jniFrm = new JNIFrame();
-                var jniEnv = jniFrm.Enter((global::ikvm.@internal.CallerID)PlainSocketImplAccessor.InvokeGetCallerID());
+                var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
                     var thisRef = jniFrm.MakeLocalRef(this_);

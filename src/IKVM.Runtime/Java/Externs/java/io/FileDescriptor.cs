@@ -157,6 +157,13 @@ namespace IKVM.Java.Externs.java.io
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            if (handle == -1)
+            {
+                FileDescriptorAccessor.SetStream(self, null);
+                FileDescriptorAccessor.SetSocket(self, null);
+                return;
+            }
+
             if (LibIkvm.Instance.io_is_file(handle))
             {
                 FileDescriptorAccessor.SetStream(self, new FileStream(new SafeFileHandle((IntPtr)handle, true), FileAccess.ReadWrite));
@@ -212,7 +219,10 @@ namespace IKVM.Java.Externs.java.io
         /// <exception cref="PlatformNotSupportedException"></exception>
         public static unsafe void setFd(object self, int fd)
         {
-            SetHandleOrFileDescriptor(self, fd);
+            if (fd != (int)GetHandleOrFileDescriptor(self))
+            {
+                SetHandleOrFileDescriptor(self, fd);
+            }
         }
 
         /// <summary>
@@ -235,10 +245,13 @@ namespace IKVM.Java.Externs.java.io
         /// <param name="handle"></param>
         public static void setHandle(object self, long handle)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                SetHandleOrFileDescriptor(self, handle);
-            else
-                throw new PlatformNotSupportedException();
+            if (handle != GetHandleOrFileDescriptor(self))
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    SetHandleOrFileDescriptor(self, handle);
+                else
+                    throw new PlatformNotSupportedException();
+            }
         }
 
         /// <summary>

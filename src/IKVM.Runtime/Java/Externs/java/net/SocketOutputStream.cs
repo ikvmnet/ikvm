@@ -34,55 +34,55 @@ namespace IKVM.Java.Externs.java.net
     static class SocketOutputStream
     {
 
-        /// <summary>
-        /// Implements the native method for 'socketWrite0'.
-        /// </summary>
-        /// <param name="this_"></param>
-        /// <param name="fd"></param>
-        /// <param name="data"></param>
-        /// <param name="off"></param>
-        /// <param name="len"></param>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        /// <exception cref="global::java.lang.NullPointerException"></exception>
-        public static void socketWrite0(object this_, global::java.io.FileDescriptor fd, byte[] data, int off, int len)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            if (data == null)
-                throw new global::java.lang.NullPointerException("data argument.");
+//        /// <summary>
+//        /// Implements the native method for 'socketWrite0'.
+//        /// </summary>
+//        /// <param name="this_"></param>
+//        /// <param name="fd"></param>
+//        /// <param name="data"></param>
+//        /// <param name="off"></param>
+//        /// <param name="len"></param>
+//        /// <exception cref="global::java.net.SocketException"></exception>
+//        /// <exception cref="global::java.lang.NullPointerException"></exception>
+//        public static void socketWrite0(object this_, global::java.io.FileDescriptor fd, byte[] data, int off, int len)
+//        {
+//#if FIRST_PASS
+//            throw new NotImplementedException();
+//#else
+//            if (data == null)
+//                throw new global::java.lang.NullPointerException("data argument.");
 
-            InvokeAction<global::java.net.SocketOutputStream>(this_, impl =>
-            {
-                InvokeActionWithSocket(fd, socket =>
-                {
-                    var prevBlocking = socket.Blocking;
-                    var prevSendTimeout = socket.SendTimeout;
+//            InvokeAction<global::java.net.SocketOutputStream>(this_, impl =>
+//            {
+//                InvokeActionWithSocket(fd, socket =>
+//                {
+//                    var prevBlocking = socket.Blocking;
+//                    var prevSendTimeout = socket.SendTimeout;
 
-                    try
-                    {
-                        socket.Blocking = false;
-                        socket.Blocking = true;
-                        socket.SendTimeout = 0;
-                        socket.Send(data, off, Math.Min(len, data.Length - off), SocketFlags.None);
-                    }
-                    catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
-                    {
-                        throw new global::java.net.SocketException("Socket closed.");
-                    }
-                    catch (SocketException)
-                    {
-                        throw;
-                    }
-                    finally
-                    {
-                        socket.Blocking = prevBlocking;
-                        socket.SendTimeout = prevSendTimeout;
-                    }
-                });
-            });
-#endif
-        }
+//                    try
+//                    {
+//                        socket.Blocking = false;
+//                        socket.Blocking = true;
+//                        socket.SendTimeout = 0;
+//                        socket.Send(data, off, Math.Min(len, data.Length - off), SocketFlags.None);
+//                    }
+//                    catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+//                    {
+//                        throw new global::java.net.SocketException("Socket closed.");
+//                    }
+//                    catch (SocketException)
+//                    {
+//                        throw;
+//                    }
+//                    finally
+//                    {
+//                        socket.Blocking = prevBlocking;
+//                        socket.SendTimeout = prevSendTimeout;
+//                    }
+//                });
+//            });
+//#endif
+//        }
 
 #if !FIRST_PASS
 
