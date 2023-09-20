@@ -10,7 +10,7 @@
     <ItemGroup>
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\javavm\export" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\javavm\export" Condition=" '$(TargetTriple.Contains(&quot;-apple-&quot;))' == 'false' " />
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\macosx\javavm\export" Condition="$(TargetTriple.Contains('-apple-'))"  />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\macosx\javavm\export" Condition="$(TargetTriple.Contains('-apple-'))" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
         <Dependencies Include="ws2_32" />
