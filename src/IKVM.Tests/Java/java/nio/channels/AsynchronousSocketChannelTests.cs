@@ -111,9 +111,6 @@ namespace IKVM.Tests.Java.java.nio.channels
             }
         }
 
-        /**
-         * Read bytes from a channel until EOF is received.
-         */
         sealed class Sink
         {
 
