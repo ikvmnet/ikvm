@@ -25,12 +25,11 @@
 
 #define assert(condition, fmt, ...);
 
-// Unsigned byte types for os and stream.hpp
+typedef uint32_t uint;
 
 // Unsigned one, two, four and eigth byte quantities used for describing
 // the .class file format. See JVM book chapter 4.
 
-typedef uint32_t uint;
 typedef uint8_t  jubyte;
 typedef uint16_t jushort;
 typedef uint32_t juint;
@@ -158,7 +157,6 @@ jlong os_javaTimeNanos() {
     return os_javaTimeMillis() * NANOSECS_PER_MILLISEC;
 }
 #endif
-
 
 jlong JNICALL JVM_NanoTime(JNIEnv* env, jclass ignored)
 {
