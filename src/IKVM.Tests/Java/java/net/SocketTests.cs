@@ -133,7 +133,7 @@ namespace IKVM.Tests.Java.java.net
             {
                 try
                 {
-                    s.setSoTimeout(5000);
+                    s.setSoTimeout(15000);
                     var i = s.getInputStream();
                     var n = i.read();
                     throw new System.Exception();
@@ -150,7 +150,7 @@ namespace IKVM.Tests.Java.java.net
 
             Thread.sleep(1000);
             s.close();
-            Thread.sleep(6000);
+            Thread.sleep(5000);
             b.Should().BeTrue();
             t.Wait();
         }
