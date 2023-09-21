@@ -20,6 +20,10 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void ScopeShouldAppearInLinkLocalAddress()
         {
+            // https://bugs.openjdk.org/browse/JDK-8212699 fixed in u202 or some such
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var dest = NetworkInterface.getNetworkInterfaces()
                 .AsEnumerable<NetworkInterface>()
                 .Where(i => i.isUp())
