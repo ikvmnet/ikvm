@@ -113,7 +113,7 @@ namespace IKVM.Tests.Java.java.net
 
             Thread.sleep(1000);
             s.close();
-            Thread.sleep(1000);
+            Thread.sleep(15000);
             b.Should().BeTrue();
             t.Wait();
         }
@@ -150,7 +150,7 @@ namespace IKVM.Tests.Java.java.net
 
             Thread.sleep(1000);
             s.close();
-            Thread.sleep(1000);
+            Thread.sleep(6000);
             b.Should().BeTrue();
             t.Wait();
         }

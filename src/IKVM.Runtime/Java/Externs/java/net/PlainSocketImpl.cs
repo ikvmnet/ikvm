@@ -105,6 +105,8 @@ namespace IKVM.Java.Externs.java.net
         static readonly Func<global::java.net.Inet6Address, int> Inet6AddressCachedScopeIdGetter = MakeFieldGetter<global::java.net.Inet6Address, int>(Inet6AddressCachedScopeIdField);
 
         static global::ikvm.@internal.CallerID __callerID;
+        delegate void __jniDelegate__initProto(IntPtr jniEnv, IntPtr self);
+        static __jniDelegate__initProto __jniPtr__initProto;
         delegate void __jniDelegate__socketCreate(IntPtr jniEnv, IntPtr self, sbyte stream);
         static __jniDelegate__socketCreate __jniPtr__socketCreate;
         delegate void __jniDelegate__socketConnect(IntPtr jniEnv, IntPtr self, IntPtr iaObj, int port, int timeout);
@@ -186,6 +188,43 @@ namespace IKVM.Java.Externs.java.net
 #endif
 
         static readonly byte[] PeekBuffer = new byte[1];
+
+        /// <summary>
+        /// Implements the native method for 'initProto'.
+        /// </summary>
+        public static void initProto()
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __jniPtr__initProto ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__initProto>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(initProto), "()V"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    var clazzRef = jniFrm.MakeLocalRef(ClassLiteral<global::java.net.PlainSocketImpl>.Value);
+                    __jniPtr__initProto(jniEnv, clazzRef);
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
+#endif
+        }
 
         /// <summary>
         /// Implements the native method for 'socketCreate'.
