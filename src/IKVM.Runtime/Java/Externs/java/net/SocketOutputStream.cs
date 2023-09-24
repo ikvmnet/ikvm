@@ -48,9 +48,12 @@ namespace IKVM.Java.Externs.java.net
 
                 InvokeAction<global::java.net.SocketOutputStream>(this_, impl =>
                 {
+                    if (fdObj == null)
+                        throw new global::java.net.SocketException("Socket closed");
+
                     var socket = FileDescriptorAccessor.GetSocket(fdObj);
                     if (socket == null)
-                        throw new global::java.net.SocketException("Invalid file handle.");
+                        throw new global::java.net.SocketException("Socket closed");
 
                     var prevBlocking = socket.Blocking;
                     var prevSendTimeout = socket.SendTimeout;
