@@ -142,7 +142,7 @@ namespace IKVM.Tests.Java.java.io
             using (var r = new RandomAccessFile(p, "r"))
             {
                 r.Invoking(s => s.setLength(2048)).Should().Throw<IOException>();
-                r.getFilePointer().Should().Be(0);
+                r.length().Should().Be(1024, "length should not have increased");
             }
 
             new System.IO.FileInfo(p).Length.Should().Be(1024, "length of the .NET file should not have changed after failure");

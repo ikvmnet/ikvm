@@ -40,46 +40,19 @@ public final class FileDescriptor {
         );
     }
 
-    @ikvm.lang.Internal
-    public static FileDescriptor fromStream(cli.System.IO.Stream stream) {
-        FileDescriptor desc = new FileDescriptor();
-        desc.stream = stream;
-        return desc;
-    }
-
-    @ikvm.lang.Internal
-    public static FileDescriptor fromSocket(cli.System.Net.Sockets.Socket socket) {
-        FileDescriptor desc = new FileDescriptor();
-        desc.socket = socket;
-        return desc;
-    }
-
-    private volatile cli.System.IO.Stream stream;
-    
-    @ikvm.lang.Internal
-    public cli.System.IO.Stream getStream() {
-        return stream;
-    }
-
-    private volatile cli.System.Net.Sockets.Socket socket;
-    
-    @ikvm.lang.Internal
-    public cli.System.Net.Sockets.Socket getSocket() {
-        return socket;
-    }
+    private volatile Object obj;
+    private volatile long ptr;
     
     @ikvm.lang.Property(get = "getFd", set = "setFd")
     private int fd;
 
     private native int getFd();
-
     private native void setFd(int fd);
 
     @ikvm.lang.Property(get = "getHandle", set = "setHandle")
     private long handle;
 
     private native long getHandle();
-
     private native void setHandle(long handle);
 
     private Closeable parent;
@@ -88,14 +61,26 @@ public final class FileDescriptor {
 
     private cli.System.Threading.SemaphoreSlim semaphore;
     private cli.System.Threading.Tasks.Task task;
+    
+    @ikvm.lang.Internal
+    public native cli.System.IO.Stream getStream();
 
-    public FileDescriptor() {
-        
+    @ikvm.lang.Internal
+    public native cli.System.Net.Sockets.Socket getSocket();
+    
+    /**
+     * Constructs an (invalid) FileDescriptor
+     * object.
+     */
+    public /**/ FileDescriptor() {
+        fd = -1;
     }
 
-    static {
-        initIDs();
+    private /* */ FileDescriptor(int fd) {
+        this.fd = fd;
     }
+
+    private static native FileDescriptor standardStream(int fd);
 
     /**
      * A handle to the standard input stream. Usually, this file
@@ -131,7 +116,7 @@ public final class FileDescriptor {
      *          {@code false} otherwise.
      */
     public boolean valid() {
-        return stream != null || socket != null;
+        return ((handle != -1) || (fd != -1));
     }
 
     /**
@@ -167,7 +152,9 @@ public final class FileDescriptor {
     /* This routine initializes JNI field offsets for the class */
     private static native void initIDs();
 
-    private static native FileDescriptor standardStream(int fd);
+    static {
+        initIDs();
+    }
 
     /*
      * Package private methods to track referents.

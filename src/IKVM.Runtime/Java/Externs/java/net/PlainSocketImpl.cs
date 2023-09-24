@@ -125,7 +125,7 @@ namespace IKVM.Java.Externs.java.net
         static __jniDelegate__socketGetOption __jniPtr__socketGetOption;
         delegate int __jniDelegate__socketSendUrgentData(IntPtr jniEnv, IntPtr self, int data);
         static __jniDelegate__socketSendUrgentData __jniPtr__socketSendUrgentData;
-        delegate int __jniDelegate__socketClose0(IntPtr jniEnv, IntPtr self, bool useDeferredClose);
+        delegate int __jniDelegate__socketClose0(IntPtr jniEnv, IntPtr self, sbyte useDeferredClose);
         static __jniDelegate__socketClose0 __jniPtr__socketClose0;
         delegate int __jniDelegate__socketShutdown(IntPtr jniEnv, IntPtr self, int howto);
         static __jniDelegate__socketShutdown __jniPtr__socketShutdown;
@@ -203,14 +203,13 @@ namespace IKVM.Java.Externs.java.net
             }
             else
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainSocketImpl).TypeHandle);
                 __jniPtr__initProto ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__initProto>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(initProto), "()V"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    var clazzRef = jniFrm.MakeLocalRef(ClassLiteral<global::java.net.PlainSocketImpl>.Value);
-                    __jniPtr__initProto(jniEnv, clazzRef);
+                    __jniPtr__initProto(jniEnv, jniFrm.MakeLocalRef(ClassLiteral<global::java.net.PlainSocketImpl>.Value));
                 }
                 catch (Exception ex)
                 {
@@ -250,14 +249,13 @@ namespace IKVM.Java.Externs.java.net
             }
             else
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainSocketImpl).TypeHandle);
                 __jniPtr__socketCreate ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketCreate>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketCreate), "(Z)V"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    var selfRef = jniFrm.MakeLocalRef(self);
-                    __jniPtr__socketCreate(jniEnv, selfRef, stream ? JNIEnv.JNI_TRUE : JNIEnv.JNI_FALSE);
+                    __jniPtr__socketCreate(jniEnv, jniFrm.MakeLocalRef(self), stream ? JNIEnv.JNI_TRUE : JNIEnv.JNI_FALSE);
                 }
                 catch (Exception ex)
                 {
@@ -285,92 +283,95 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeAction<global::java.net.PlainSocketImpl, global::java.net.InetAddress>(self, iaObj, (impl, address) =>
                 {
-                    InvokeActionWithSocket(impl, socket =>
+                    var socket = FileDescriptorAccessor.GetSocket(impl.fd);
+                    if (socket == null)
+                        throw new global::java.net.SocketException("Socket closed");
+
+                    var trafficClass = AbstractPlainSocketImplTrafficClassGetter(impl);
+                    if (trafficClass != 0)
+                        socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService, trafficClass);
+
+                    var prevBlocking = socket.Blocking;
+
+                    try
                     {
-                        var trafficClass = AbstractPlainSocketImplTrafficClassGetter(impl);
-                        if (trafficClass != 0)
-                            socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService, trafficClass);
-
-                        var prevBlocking = socket.Blocking;
-
-                        try
+                        if (timeout > 0)
                         {
-                            if (timeout > 0)
-                            {
-                                socket.Blocking = false;
+                            socket.Blocking = false;
 
-                                // non-blocking connect throws a WouldBlock exception, after which we Poll for completion
-                                try
-                                {
-                                    socket.Connect(GetEndPointAddress(address), port);
-                                }
-                                catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
-                                {
-                                    var re = new List<Socket>() { socket };
-                                    var wr = new List<Socket>() { socket };
-                                    var ex = new List<Socket>() { socket };
-                                    Socket.Select(re, wr, ex, (int)Math.Min(timeout * 1000L, int.MaxValue));
-                                    var er = (int)socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Error);
-                                    if (er != 0)
-                                        throw new SocketException(er);
-                                    if (wr.Count == 0)
-                                        throw new global::java.net.SocketTimeoutException("Connect timed out.");
-                                }
-                            }
-                            else
+                            // non-blocking connect throws a WouldBlock exception, after which we Poll for completion
+                            try
                             {
-                                socket.Blocking = true;
                                 socket.Connect(GetEndPointAddress(address), port);
                             }
+                            catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
+                            {
+                                var re = new List<Socket>() { socket };
+                                var wr = new List<Socket>() { socket };
+                                var ex = new List<Socket>() { socket };
+                                Socket.Select(re, wr, ex, (int)Math.Min(timeout * 1000L, int.MaxValue));
+                                var er = (int)socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Error);
+                                if (er != 0)
+                                    throw new SocketException(er);
+                                if (wr.Count == 0)
+                                    throw new global::java.net.SocketTimeoutException("Connect timed out.");
+                            }
+                        }
+                        else
+                        {
+                            socket.Blocking = true;
+                            socket.Connect(GetEndPointAddress(address), port);
+                        }
 
-                            impl.address = address;
-                            impl.port = port;
+                        impl.address = address;
+                        impl.port = port;
 
-                            if (impl.localport == 0)
-                                impl.localport = ((IPEndPoint)socket.LocalEndPoint).Port;
-                        }
-                        catch (SocketException e) when (e.SocketErrorCode == SocketError.InvalidArgument)
-                        {
-                            throw new global::java.net.SocketException(e.Message);
-                        }
-                        catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionRefused)
-                        {
-                            throw new global::java.net.ConnectException(e.Message);
-                        }
-                        catch (SocketException e) when (e.SocketErrorCode == SocketError.HostUnreachable)
-                        {
-                            throw new global::java.net.NoRouteToHostException(e.Message);
-                        }
-                        catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressNotAvailable)
-                        {
-                            throw new global::java.net.NoRouteToHostException(e.Message);
-                        }
-                        catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
-                        {
-                            throw new global::java.net.ConnectException(e.Message);
-                        }
-                        catch (SocketException e) when (e.SocketErrorCode == SocketError.IsConnected)
-                        {
-                            throw new global::java.net.SocketException("Socket closed");
-                        }
-                        finally
-                        {
-                            socket.Blocking = prevBlocking;
-                        }
-                    });
+                        if (impl.localport == 0)
+                            impl.localport = ((IPEndPoint)socket.LocalEndPoint).Port;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        throw new global::java.io.InterruptedIOException();
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.InvalidArgument)
+                    {
+                        throw new global::java.net.SocketException(e.Message);
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionRefused)
+                    {
+                        throw new global::java.net.ConnectException(e.Message);
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.HostUnreachable)
+                    {
+                        throw new global::java.net.NoRouteToHostException(e.Message);
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressNotAvailable)
+                    {
+                        throw new global::java.net.NoRouteToHostException(e.Message);
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                    {
+                        throw new global::java.net.ConnectException(e.Message);
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.IsConnected)
+                    {
+                        throw new global::java.net.SocketException("Socket closed");
+                    }
+                    finally
+                    {
+                        socket.Blocking = prevBlocking;
+                    }
                 });
             }
             else
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainSocketImpl).TypeHandle);
                 __jniPtr__socketConnect ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketConnect>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketConnect), "(Ljava/net/InetAddress;I)V"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    var selfRef = jniFrm.MakeLocalRef(self);
-                    var iaObjRef = jniFrm.MakeLocalRef(iaObj);
-                    __jniPtr__socketConnect(jniEnv, selfRef, iaObjRef, port, timeout);
+                    __jniPtr__socketConnect(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(iaObj), port, timeout);
                 }
                 catch (Exception ex)
                 {
@@ -398,44 +399,47 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
                 {
-                    InvokeActionWithSocket(impl, socket =>
+                    var socket = FileDescriptorAccessor.GetSocket(impl.fd);
+                    if (socket == null)
+                        throw new global::java.net.SocketException("Socket closed");
+
+                    try
                     {
-                        try
-                        {
-                            socket.Bind(new IPEndPoint(iaObj.isAnyLocalAddress() ? IPAddress.IPv6Any : GetEndPointAddress(iaObj), localport));
-                            impl.address = iaObj;
-                            impl.localport = localport == 0 ? ((IPEndPoint)socket.LocalEndPoint).Port : localport;
-                        }
-                        catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressAlreadyInUse)
-                        {
-                            throw new global::java.net.BindException("Bind failed");
-                        }
-                        catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressNotAvailable)
-                        {
-                            throw new global::java.net.BindException("Bind failed");
-                        }
-                        catch (SocketException e) when (e.SocketErrorCode == SocketError.AccessDenied)
-                        {
-                            throw new global::java.net.BindException("Bind failed");
-                        }
-                        catch (SocketException)
-                        {
-                            throw new global::java.net.SocketException("Bind failed");
-                        }
-                    });
+                        socket.Bind(new IPEndPoint(iaObj.isAnyLocalAddress() ? IPAddress.IPv6Any : GetEndPointAddress(iaObj), localport));
+                        impl.address = iaObj;
+                        impl.localport = localport == 0 ? ((IPEndPoint)socket.LocalEndPoint).Port : localport;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        throw new global::java.io.InterruptedIOException("Bind failed");
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressAlreadyInUse)
+                    {
+                        throw new global::java.net.BindException("Bind failed");
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressNotAvailable)
+                    {
+                        throw new global::java.net.BindException("Bind failed");
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.AccessDenied)
+                    {
+                        throw new global::java.net.BindException("Bind failed");
+                    }
+                    catch (SocketException)
+                    {
+                        throw new global::java.net.SocketException("Bind failed");
+                    }
                 });
             }
             else
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainSocketImpl).TypeHandle);
                 __jniPtr__socketBind ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketBind>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketBind), "(Ljava/net/InetAddress;I)V"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    var selfRef = jniFrm.MakeLocalRef(self);
-                    var iaObjRef = jniFrm.MakeLocalRef(iaObj);
-                    __jniPtr__socketBind(jniEnv, selfRef, iaObjRef, localport);
+                    __jniPtr__socketBind(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(iaObj), localport);
                 }
                 catch (Exception ex)
                 {
@@ -463,22 +467,22 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
                 {
-                    InvokeActionWithSocket(impl, socket =>
-                    {
-                        socket.Listen(count);
-                    });
+                    var socket = FileDescriptorAccessor.GetSocket(impl.fd);
+                    if (socket == null)
+                        throw new global::java.net.SocketException("Socket closed");
+
+                    socket.Listen(count);
                 });
             }
             else
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainSocketImpl).TypeHandle);
                 __jniPtr__socketListen ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketListen>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketListen), "(I)V"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    var selfRef = jniFrm.MakeLocalRef(self);
-                    __jniPtr__socketListen(jniEnv, selfRef, count);
+                    __jniPtr__socketListen(jniEnv, jniFrm.MakeLocalRef(self), count);
                 }
                 catch (Exception ex)
                 {
@@ -506,57 +510,60 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeAction<global::java.net.PlainSocketImpl, global::java.net.SocketImpl>(self, s_, (impl, s) =>
                 {
-                    InvokeActionWithSocket(impl, socket =>
+                    var socket = FileDescriptorAccessor.GetSocket(impl.fd);
+                    if (socket == null)
+                        throw new global::java.net.SocketException("Socket closed");
+
+                    var prevBlocking = socket.Blocking;
+
+                    try
                     {
-                        var prevBlocking = socket.Blocking;
+                        socket.Blocking = true;
 
-                        try
-                        {
-                            socket.Blocking = true;
+                        // wait for connection attempt
+                        if (impl.timeout > 0)
+                            if (socket.Poll((int)Math.Min(impl.timeout * 1000L, int.MaxValue), SelectMode.SelectRead) == false)
+                                throw new global::java.net.SocketTimeoutException("Accept timed out.");
 
-                            // wait for connection attempt
-                            if (impl.timeout > 0)
-                                if (socket.Poll((int)Math.Min(impl.timeout * 1000L, int.MaxValue), SelectMode.SelectRead) == false)
-                                    throw new global::java.net.SocketTimeoutException("Accept timed out.");
+                        // accept new socket
+                        var newSocket = socket.Accept();
+                        if (newSocket == null)
+                            throw new global::java.net.SocketException("Invalid socket.");
 
-                            // accept new socket
-                            var newSocket = socket.Accept();
-                            if (newSocket == null)
-                                throw new global::java.net.SocketException("Invalid socket.");
+                        // associate new FileDescriptor with socket
+                        var newfd = new global::java.io.FileDescriptor();
+                        FileDescriptorAccessor.SetSocket(newfd, newSocket);
 
-                            // associate new FileDescriptor with socket
-                            var newfd = new global::java.io.FileDescriptor();
-                            FileDescriptorAccessor.SetSocket(newfd, newSocket);
-
-                            // populate newly accepted socket
-                            var remoteIpEndPoint = (IPEndPoint)newSocket.RemoteEndPoint;
-                            s.fd = newfd;
-                            s.address = remoteIpEndPoint.ToInetAddress();
-                            s.port = remoteIpEndPoint.Port;
-                            s.localport = impl.port;
-                        }
-                        catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
-                        {
-                            throw new global::java.io.InterruptedIOException(e.Message);
-                        }
-                        finally
-                        {
-                            socket.Blocking = prevBlocking;
-                        }
-                    });
+                        // populate newly accepted socket
+                        var remoteIpEndPoint = (IPEndPoint)newSocket.RemoteEndPoint;
+                        s.fd = newfd;
+                        s.address = remoteIpEndPoint.ToInetAddress();
+                        s.port = remoteIpEndPoint.Port;
+                        s.localport = impl.port;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        throw new global::java.io.InterruptedIOException();
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                    {
+                        throw new global::java.io.InterruptedIOException(e.Message);
+                    }
+                    finally
+                    {
+                        socket.Blocking = prevBlocking;
+                    }
                 });
             }
             else
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainSocketImpl).TypeHandle);
                 __jniPtr__socketAccept ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketAccept>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketAccept), "(Ljava/net/SocketImpl;)V"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    var selfRef = jniFrm.MakeLocalRef(self);
-                    var socketRef = jniFrm.MakeLocalRef(s_);
-                    __jniPtr__socketAccept(jniEnv, selfRef, socketRef);
+                    __jniPtr__socketAccept(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(s_));
                 }
                 catch (Exception ex)
                 {
@@ -584,33 +591,33 @@ namespace IKVM.Java.Externs.java.net
             {
                 return InvokeFunc<global::java.net.PlainSocketImpl, int>(this_, impl =>
                 {
-                    return InvokeFuncWithSocket(impl, socket =>
+                    var socket = FileDescriptorAccessor.GetSocket(impl.fd);
+                    if (socket == null)
+                        throw new global::java.net.SocketException("Socket closed");
+
+                    try
                     {
-                        try
-                        {
-                            return socket.Available;
-                        }
-                        catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
-                        {
-                            throw new global::sun.net.ConnectionResetException();
-                        }
-                        catch (SocketException e)
-                        {
-                            throw new global::java.net.SocketException(e.Message);
-                        }
-                    });
+                        return socket.Available;
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+                    {
+                        throw new global::sun.net.ConnectionResetException();
+                    }
+                    catch (SocketException e)
+                    {
+                        throw new global::java.net.SocketException(e.Message);
+                    }
                 });
             }
             else
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainSocketImpl).TypeHandle);
                 __jniPtr__socketAvailable ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketAvailable>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketAvailable), "()I"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    var thisRef = jniFrm.MakeLocalRef(this_);
-                    return __jniPtr__socketAvailable(jniEnv, thisRef);
+                    return __jniPtr__socketAvailable(jniEnv, jniFrm.MakeLocalRef(this_));
                 }
                 catch (Exception ex)
                 {
@@ -638,44 +645,42 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
                 {
-                    if (impl.fd == null)
-                        throw new global::java.net.SocketException("Socket already closed.");
-
-                    // fd still present, but socket gone, silently exit
-                    if (impl.fd.getSocket() == null)
+                    // exit if descriptor already closed
+                    if (impl.fd == null || FileDescriptorAccessor.GetHandle(impl.fd) == -1)
                         return;
 
-                    InvokeActionWithSocket(impl, socket =>
-                    {
-                        // if we're not configured to linger, disable sending, but continue to allow receive
-                        if (socket.LingerState.Enabled == false)
-                        {
-                            try
-                            {
-                                socket.Shutdown(SocketShutdown.Send);
-                            }
-                            catch (SocketException)
-                            {
-                                // ignore
-                            }
-                        }
+                    var socket = FileDescriptorAccessor.GetSocket(impl.fd);
+                    if (socket == null)
+                        throw new global::java.net.SocketException("Socket already closed.");
 
-                        // null socket before close, as close may take a minute to flush
-                        FileDescriptorAccessor.SetSocket(impl.fd, null);
-                        socket.Close();
-                    });
+                    // if we're not configured to linger, disable sending, but continue to allow receive
+                    if (socket.LingerState.Enabled == false)
+                    {
+                        try
+                        {
+                            socket.Shutdown(SocketShutdown.Send);
+                        }
+                        catch (SocketException)
+                        {
+                            // ignore
+                        }
+                    }
+
+                    // null socket before close, as close may take a minute to flush
+                    var h = FileDescriptorAccessor.GetHandle(impl.fd);
+                    FileDescriptorAccessor.SetHandle(impl.fd, -1);
+                    LibIkvm.Instance.io_close_socket(h);
                 });
             }
             else
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainSocketImpl).TypeHandle);
                 __jniPtr__socketClose0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketClose0>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketClose0), "(Z)V"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    var thisRef = jniFrm.MakeLocalRef(self);
-                    __jniPtr__socketClose0(jniEnv, thisRef, useDeferredClose);
+                    __jniPtr__socketClose0(jniEnv, jniFrm.MakeLocalRef(self), useDeferredClose ? JNIEnv.JNI_TRUE : JNIEnv.JNI_FALSE);
                 }
                 catch (Exception ex)
                 {
@@ -704,24 +709,24 @@ namespace IKVM.Java.Externs.java.net
                 InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
                 {
                     if (impl.fd == null)
-                        throw new global::java.net.SocketException("Socket already closed.");
+                        throw new global::java.net.SocketException("Socket closed");
 
-                    InvokeActionWithSocket(impl, socket =>
-                    {
-                        socket.Shutdown((SocketShutdown)howto);
-                    });
+                    var socket = FileDescriptorAccessor.GetSocket(impl.fd);
+                    if (socket == null)
+                        throw new global::java.net.SocketException("Socket closed");
+
+                    socket.Shutdown((SocketShutdown)howto);
                 });
             }
             else
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainSocketImpl).TypeHandle);
                 __jniPtr__socketShutdown ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketShutdown>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketShutdown), "(I)V"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    var thisRef = jniFrm.MakeLocalRef(self);
-                    __jniPtr__socketShutdown(jniEnv, thisRef, howto);
+                    __jniPtr__socketShutdown(jniEnv, jniFrm.MakeLocalRef(self), howto);
                 }
                 catch (Exception ex)
                 {
@@ -749,75 +754,74 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
                 {
-                    InvokeActionWithSocket(impl, socket =>
+                    var socket = FileDescriptorAccessor.GetSocket(impl.fd);
+                    if (socket == null)
+                        throw new global::java.net.SocketException("Socket closed");
+
+                    if (value == null)
+                        throw new global::java.lang.NullPointerException(nameof(value));
+
+                    // .NET provides property
+                    if (cmd == global::java.net.SocketOptions.SO_TIMEOUT)
                     {
-                        if (value == null)
-                            throw new global::java.lang.NullPointerException(nameof(value));
+                        var timeout = (global::java.lang.Integer)value;
+                        socket.ReceiveTimeout = timeout.intValue();
+                        return;
+                    }
 
-                        // .NET provides property
-                        if (cmd == global::java.net.SocketOptions.SO_TIMEOUT)
-                        {
-                            var timeout = (global::java.lang.Integer)value;
-                            socket.ReceiveTimeout = timeout.intValue();
-                            return;
-                        }
+                    // .NET provides property
+                    if (cmd == global::java.net.SocketOptions.SO_LINGER)
+                    {
+                        var linger = (global::java.lang.Integer)value;
+                        socket.LingerState = new LingerOption(on, linger.intValue());
+                        return;
+                    }
 
-                        // .NET provides property
-                        if (cmd == global::java.net.SocketOptions.SO_LINGER)
-                        {
-                            var linger = (global::java.lang.Integer)value;
-                            socket.LingerState = new LingerOption(on, linger.intValue());
-                            return;
-                        }
+                    // .NET provides a property
+                    if (cmd == global::java.net.SocketOptions.SO_RCVBUF)
+                    {
+                        var val = (global::java.lang.Integer)value;
+                        socket.ReceiveBufferSize = val.intValue();
+                        return;
+                    }
 
-                        // .NET provides a property
-                        if (cmd == global::java.net.SocketOptions.SO_RCVBUF)
-                        {
-                            var val = (global::java.lang.Integer)value;
-                            socket.ReceiveBufferSize = val.intValue();
-                            return;
-                        }
+                    // .NET provides a property
+                    if (cmd == global::java.net.SocketOptions.SO_SNDBUF)
+                    {
+                        var val = (global::java.lang.Integer)value;
+                        socket.SendBufferSize = val.intValue();
+                        return;
+                    }
 
-                        // .NET provides a property
-                        if (cmd == global::java.net.SocketOptions.SO_SNDBUF)
-                        {
-                            var val = (global::java.lang.Integer)value;
-                            socket.SendBufferSize = val.intValue();
-                            return;
-                        }
+                    // .NET provides a property
+                    if (cmd == global::java.net.SocketOptions.TCP_NODELAY)
+                    {
+                        socket.NoDelay = on;
+                        return;
+                    }
 
-                        // .NET provides a property
-                        if (cmd == global::java.net.SocketOptions.TCP_NODELAY)
-                        {
-                            socket.NoDelay = on;
-                            return;
-                        }
+                    // lookup option options
+                    if (SocketOptionUtil.TryGetDotNetSocketOption(cmd, out var options) == false)
+                        throw new global::java.net.SocketException("Invalid option.");
 
-                        // lookup option options
-                        if (SocketOptionUtil.TryGetDotNetSocketOption(cmd, out var options) == false)
-                            throw new global::java.net.SocketException("Invalid option.");
-
-                        // configure socket
-                        socket.SetSocketOption(options.Level, options.Name, value switch
-                        {
-                            global::java.lang.Boolean b => GetSocketOptionSetValue(options.Type, b.booleanValue()),
-                            global::java.lang.Integer i => GetSocketOptionSetValue(options.Type, i.intValue()),
-                            _ => throw new global::java.net.SocketException("Invalid option value."),
-                        });
+                    // configure socket
+                    socket.SetSocketOption(options.Level, options.Name, value switch
+                    {
+                        global::java.lang.Boolean b => GetSocketOptionSetValue(options.Type, b.booleanValue()),
+                        global::java.lang.Integer i => GetSocketOptionSetValue(options.Type, i.intValue()),
+                        _ => throw new global::java.net.SocketException("Invalid option value."),
                     });
                 });
             }
             else
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainSocketImpl).TypeHandle);
                 __jniPtr__socketSetOption ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketSetOption>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketSetOption0), "(IZLjava/lang/Object;)V"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    var thisRef = jniFrm.MakeLocalRef(self);
-                    var valueRef = jniFrm.MakeLocalRef(value);
-                    __jniPtr__socketSetOption(jniEnv, thisRef, cmd, on ? JNIEnv.JNI_TRUE : JNIEnv.JNI_FALSE, valueRef);
+                    __jniPtr__socketSetOption(jniEnv, jniFrm.MakeLocalRef(self), cmd, on ? JNIEnv.JNI_TRUE : JNIEnv.JNI_FALSE, jniFrm.MakeLocalRef(value));
                 }
                 catch (Exception ex)
                 {
@@ -845,60 +849,59 @@ namespace IKVM.Java.Externs.java.net
             {
                 return InvokeFunc<global::java.net.PlainSocketImpl, global::java.net.InetAddressContainer, int>(self, iaContainerObj_, (impl, iaContainerObj) =>
                 {
-                    return InvokeFuncWithSocket(impl, socket =>
+                    var socket = FileDescriptorAccessor.GetSocket(impl.fd);
+                    if (socket == null)
+                        throw new global::java.net.SocketException("Socket closed");
+
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_TIMEOUT)
+                        return socket.ReceiveTimeout;
+
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_LINGER)
+                        return socket.LingerState.Enabled ? socket.LingerState.LingerTime : -1;
+
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_RCVBUF)
+                        return socket.ReceiveBufferSize;
+
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_SNDBUF)
+                        return socket.SendBufferSize;
+
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_BINDADDR)
                     {
-                        // .NET provides property
-                        if (opt == global::java.net.SocketOptions.SO_TIMEOUT)
-                            return socket.ReceiveTimeout;
+                        iaContainerObj.addr = ((IPEndPoint)socket.LocalEndPoint).ToInetAddress();
+                        return 0;
+                    }
 
-                        // .NET provides property
-                        if (opt == global::java.net.SocketOptions.SO_LINGER)
-                            return socket.LingerState.Enabled ? socket.LingerState.LingerTime : -1;
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.TCP_NODELAY)
+                        return socket.NoDelay ? 1 : -1;
 
-                        // .NET provides property
-                        if (opt == global::java.net.SocketOptions.SO_RCVBUF)
-                            return socket.ReceiveBufferSize;
+                    // lookup option options
+                    if (SocketOptionUtil.TryGetDotNetSocketOption(opt, out var options) == false)
+                        throw new global::java.net.SocketException("Invalid option.");
 
-                        // .NET provides property
-                        if (opt == global::java.net.SocketOptions.SO_SNDBUF)
-                            return socket.SendBufferSize;
-
-                        // .NET provides property
-                        if (opt == global::java.net.SocketOptions.SO_BINDADDR)
-                        {
-                            iaContainerObj.addr = ((IPEndPoint)socket.LocalEndPoint).ToInetAddress();
-                            return 0;
-                        }
-
-                        // .NET provides property
-                        if (opt == global::java.net.SocketOptions.TCP_NODELAY)
-                            return socket.NoDelay ? 1 : -1;
-
-                        // lookup option options
-                        if (SocketOptionUtil.TryGetDotNetSocketOption(opt, out var options) == false)
-                            throw new global::java.net.SocketException("Invalid option.");
-
-                        // configure socket
-                        return socket.GetSocketOption(options.Level, options.Name) switch
-                        {
-                            bool b => GetSocketOptionGetValue(options.Type, b),
-                            int i => GetSocketOptionGetValue(options.Type, i),
-                            _ => throw new global::java.net.SocketException("Invalid option value."),
-                        };
-                    });
+                    // configure socket
+                    return socket.GetSocketOption(options.Level, options.Name) switch
+                    {
+                        bool b => GetSocketOptionGetValue(options.Type, b),
+                        int i => GetSocketOptionGetValue(options.Type, i),
+                        _ => throw new global::java.net.SocketException("Invalid option value."),
+                    };
                 });
             }
             else
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainSocketImpl).TypeHandle);
                 __jniPtr__socketGetOption ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketGetOption>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketGetOption), "(I)I"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    var thisRef = jniFrm.MakeLocalRef(self);
-                    var iaContainerObjRef = jniFrm.MakeLocalRef(iaContainerObj_);
-                    return __jniPtr__socketGetOption(jniEnv, thisRef, opt, iaContainerObjRef);
+                    return __jniPtr__socketGetOption(jniEnv, jniFrm.MakeLocalRef(self), opt, jniFrm.MakeLocalRef(iaContainerObj_));
                 }
                 catch (Exception ex)
                 {
@@ -986,41 +989,41 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
                 {
-                    InvokeActionWithSocket(impl, socket =>
+                    var socket = FileDescriptorAccessor.GetSocket(impl.fd);
+                    if (socket == null)
+                        throw new global::java.net.SocketException("Socket closed");
+
+                    var prevBlocking = socket.Blocking;
+                    var prevTimeout = socket.SendTimeout;
+
+                    try
                     {
-                        var prevBlocking = socket.Blocking;
-                        var prevTimeout = socket.SendTimeout;
+                        socket.Blocking = true;
+                        socket.SendTimeout = impl.timeout;
 
-                        try
-                        {
-                            socket.Blocking = true;
-                            socket.SendTimeout = impl.timeout;
-
-                            var buffer = new byte[] { (byte)data };
-                            socket.Send(buffer, 0, 1, SocketFlags.OutOfBand);
-                        }
-                        catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
-                        {
-                            throw new global::java.io.InterruptedIOException(e.Message);
-                        }
-                        finally
-                        {
-                            socket.Blocking = prevBlocking;
-                            socket.SendTimeout = prevTimeout;
-                        }
-                    });
+                        var buffer = new byte[] { (byte)data };
+                        socket.Send(buffer, 0, 1, SocketFlags.OutOfBand);
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                    {
+                        throw new global::java.io.InterruptedIOException(e.Message);
+                    }
+                    finally
+                    {
+                        socket.Blocking = prevBlocking;
+                        socket.SendTimeout = prevTimeout;
+                    }
                 });
             }
             else
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(PlainSocketImpl).TypeHandle);
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainSocketImpl).TypeHandle);
                 __jniPtr__socketSendUrgentData ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketSendUrgentData>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainSocketImpl", nameof(socketSendUrgentData), "(B)V"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    var thisRef = jniFrm.MakeLocalRef(this_);
-                    __jniPtr__socketSendUrgentData(jniEnv, thisRef, data);
+                    __jniPtr__socketSendUrgentData(jniEnv, jniFrm.MakeLocalRef(this_), data);
                 }
                 catch (Exception ex)
                 {
@@ -1035,45 +1038,6 @@ namespace IKVM.Java.Externs.java.net
             }
 #endif
         }
-
-#if !FIRST_PASS
-
-        /// <summary>
-        /// Invokes the given action with the current socket, catching and mapping any resulting .NET exceptions.
-        /// </summary>
-        /// <param name="impl"></param>
-        /// <param name="action"></param>
-        /// <returns></returns>
-        /// <exception cref="global::java.lang.NullPointerException"></exception>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        static void InvokeActionWithSocket(global::java.net.PlainSocketImpl impl, Action<Socket> action)
-        {
-            var socket = impl.fd?.getSocket();
-            if (socket == null)
-                throw new global::java.net.SocketException("Socket closed.");
-
-            action(socket);
-        }
-
-        /// <summary>
-        /// Invokes the given function with the current socket, catching and mapping any resulting .NET exceptions.
-        /// </summary>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="impl"></param>
-        /// <param name="func"></param>
-        /// <returns></returns>
-        /// <exception cref="global::java.lang.NullPointerException"></exception>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        static TResult InvokeFuncWithSocket<TResult>(global::java.net.PlainSocketImpl impl, Func<Socket, TResult> func)
-        {
-            var socket = impl.fd?.getSocket();
-            if (socket == null)
-                throw new global::java.net.SocketException("Socket closed.");
-
-            return func(socket);
-        }
-
-#endif
 
     }
 

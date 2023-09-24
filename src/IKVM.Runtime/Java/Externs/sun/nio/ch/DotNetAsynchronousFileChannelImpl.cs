@@ -215,24 +215,20 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static void Close(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self)
         {
-            var stream = FileDescriptorAccessor.GetStream(self.fdObj);
-            if (stream == null)
+            if (self.fdObj == null)
                 return;
 
             try
             {
                 self.closeLock.writeLock().@lock();
-                FileDescriptorAccessor.SetStream(self.fdObj, null);
+                var h = FileDescriptorAccessor.GetHandle(self.fdObj);
+                FileDescriptorAccessor.SetHandle(self.fdObj, -1);
+                LibIkvm.Instance.io_close_file(h);
                 self.closed = true;
-
-                try
-                {
-                    stream.Close();
-                }
-                catch
-                {
-                    // ignore errors closing the stream
-                }
+            }
+            catch
+            {
+                // ignore
             }
             finally
             {

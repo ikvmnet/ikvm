@@ -749,13 +749,29 @@ namespace IKVM.Java.Externs.java.lang
             object s2 = null;
             AccessControllerAccessor.InvokeDoPrivileged(new ActionPrivilegedAction(() =>
             {
-                s0 = h0 == null ? ProcessBuilderNullOutputStreamAccessor.GetInstance() : BufferedOutputStreamAccessor.Init(FileOutputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h0)));
-                s1 = h1 == null ? ProcessBuilderNullInputStreamAccessor.GetInstance() : BufferedInputStreamAccessor.Init(FileInputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h1)));
-                s2 = h2 == null ? ProcessBuilderNullInputStreamAccessor.GetInstance() : FileInputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h2));
+                s0 = h0 == null ? ProcessBuilderNullOutputStreamAccessor.GetInstance() : BufferedOutputStreamAccessor.Init(FileOutputStreamAccessor.Init2(CreateFileDescriptor(h0)));
+                s1 = h1 == null ? ProcessBuilderNullInputStreamAccessor.GetInstance() : BufferedInputStreamAccessor.Init(FileInputStreamAccessor.Init2(CreateFileDescriptor(h1)));
+                s2 = h2 == null ? ProcessBuilderNullInputStreamAccessor.GetInstance() : FileInputStreamAccessor.Init2(CreateFileDescriptor(h2));
             }), null, CallerIDAccessor.InvokeCreate(ProcessImplAccessor.Type.TypeHandle));
 
             // return new process
             return ProcessImplAccessor.Init(process, s0, s1, s2);
+#endif
+        }
+
+        /// <summary>
+        /// Creates a new FileDescriptor from the specified stream.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns></returns>
+        static object CreateFileDescriptor(Stream stream)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var fdo = FileDescriptorAccessor.Init();
+            FileDescriptorAccessor.SetStream(fdo, stream);
+            return fdo;
 #endif
         }
 

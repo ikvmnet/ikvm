@@ -7,6 +7,9 @@
     <PropertyGroup>
         <TargetName>ikvm</TargetName>
     </PropertyGroup>
+    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
+        <Dependencies Include="ws2_32" />
+    </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
         <Dependencies Include="c" />
     </ItemGroup>

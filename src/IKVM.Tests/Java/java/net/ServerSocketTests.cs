@@ -224,7 +224,7 @@ namespace IKVM.Tests.Java.java.net
             {
                 try
                 {
-                    ss.setSoTimeout(60000);
+                    ss.setSoTimeout(10000);
                     ss.accept();
                 }
                 catch (SocketException e)
@@ -233,7 +233,7 @@ namespace IKVM.Tests.Java.java.net
                 }
             });
 
-            Thread.sleep(1000);
+            Thread.sleep(2000);
             ss.close();
             Thread.sleep(1000);
             task.Wait();

@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
@@ -420,7 +418,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     var sol = (SocketOptionLevel)level;
                     var son = (SocketOptionName)opt;
 
-                    if (sol == SocketOptionLevel.IPv6 && opt == global::ikvm.@internal.Winsock.IPV6_TCLASS)
+                    if (sol == SocketOptionLevel.IPv6 && opt == 39)
                         return 0;
 
                     try
@@ -459,7 +457,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     var sol = (SocketOptionLevel)level;
                     var son = (SocketOptionName)opt;
 
-                    if (sol == SocketOptionLevel.IPv6 && opt == global::ikvm.@internal.Winsock.IPV6_TCLASS)
+                    if (sol == SocketOptionLevel.IPv6 && opt == 39)
                         return;
 
                     if (mayNeedConversion)

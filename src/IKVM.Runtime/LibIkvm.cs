@@ -61,6 +61,38 @@ namespace IKVM.Runtime
             [DllImport("ikvm", SetLastError = false)]
             internal static extern long IKVM_io_is_socket(long handle);
 
+            /// <summary>
+            /// Invokes the native 'IKVM_io_duplicate_file' function.
+            /// </summary>
+            /// <param name="handle"></param>
+            /// <returns></returns>
+            [DllImport("ikvm", SetLastError = false)]
+            internal static extern long IKVM_io_duplicate_file(long handle);
+
+            /// <summary>
+            /// Invokes the native 'IKVM_io_duplicate_socket' function.
+            /// </summary>
+            /// <param name="handle"></param>
+            /// <returns></returns>
+            [DllImport("ikvm", SetLastError = false)]
+            internal static extern long IKVM_io_duplicate_socket(long handle);
+
+            /// <summary>
+            /// Invokes the native 'IKVM_io_close_file' function.
+            /// </summary>
+            /// <param name="handle"></param>
+            /// <returns></returns>
+            [DllImport("ikvm", SetLastError = false)]
+            internal static extern void IKVM_io_close_file(long handle);
+
+            /// <summary>
+            /// Invokes the native 'IKVM_io_close_socket' function.
+            /// </summary>
+            /// <param name="handle"></param>
+            /// <returns></returns>
+            [DllImport("ikvm", SetLastError = false)]
+            internal static extern void IKVM_io_close_socket(long handle);
+
         }
 
         /// <summary>
@@ -209,6 +241,34 @@ namespace IKVM.Runtime
         /// <param name="handle"></param>
         /// <returns></returns>
         public bool io_is_socket(long handle) => Externs.IKVM_io_is_socket(handle) != 0;
+
+        /// <summary>
+        /// Invokes the 'io_close_file' function.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        public void io_close_file(long handle) => Externs.IKVM_io_close_file(handle);
+
+        /// <summary>
+        /// Invokes the 'io_close_socket' function.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        public void io_close_socket(long handle) => Externs.IKVM_io_close_socket(handle);
+
+        /// <summary>
+        /// Invokes the 'io_duplicate_file' function.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        public long io_duplicate_file(long handle) => Externs.IKVM_io_duplicate_file(handle);
+
+        /// <summary>
+        /// Invokes the 'io_duplicate_socket' function.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        public long io_duplicate_socket(long handle) => Externs.IKVM_io_duplicate_socket(handle);
 
         /// <summary>
         /// Releases the instance.
