@@ -3170,7 +3170,7 @@ java/net/BindException/Test.java                                                
 java/net/ipv6tests/B6521014.java                                                                                        macosx-all
 java/net/PortUnreachableException/Concurrent.java                                                                       linux-all
 
-java/net/Socket/InheritHandle.java                                                                                      linux-all
+java/net/Socket/InheritHandle.java                                                                                      linux-all,macosx-all
 java/net/Socket/LingerTest.java                                                                                         linux-all
 java/net/Socket/NullHost.java                                                                                           linux-all
 java/net/Socket/asyncClose/AsyncClose.java                                                                              linux-all,macosx-all
