@@ -51,35 +51,38 @@ NETEXPORT int NETCALL IKVM_io_is_socket(long long handle)
 
 NETEXPORT long long NETCALL IKVM_io_duplicate_file(long long handle)
 {
-#ifdef WIN32
     if (handle > -1)
     {
+#ifdef WIN32
         HANDLE newHandle;
         DuplicateHandle(GetCurrentProcess(), (HANDLE)handle, GetCurrentProcess(), &newHandle, 0, FALSE, DUPLICATE_SAME_ACCESS);
         return (long long)newHandle;
-    }
-
-    return -1;
 #else
-    if (handle > -1)
         return (long long)dup((int)handle);
-    else
-        return -1;
 #endif
+    }
+    else
+    {
+        return -1;
+    }
 }
 
 NETEXPORT long long NETCALL IKVM_io_duplicate_socket(long long handle)
 {
-#ifdef WIN32
-    WSAPROTOCOL_INFOW protocolInfo;
-    WSADuplicateSocketW((SOCKET)handle, GetCurrentProcessId(), &protocolInfo);
-    return (long long)WSASocketW(-1, -1, -1, &protocolInfo, 0, 0);
-#else
     if (handle > -1)
+    {
+#ifdef WIN32
+        WSAPROTOCOL_INFOW protocolInfo;
+        WSADuplicateSocketW((SOCKET)handle, GetCurrentProcessId(), &protocolInfo);
+        return (long long)WSASocketW(-1, -1, -1, &protocolInfo, 0, 0);
+#else
         return (long long)dup((int)handle);
-    else
-        return -1;
 #endif
+    }
+    else
+    {
+        return -1;
+    }
 }
 
 NETEXPORT void NETCALL IKVM_io_close_file(long long handle)
