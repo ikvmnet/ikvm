@@ -345,7 +345,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                     bool Filter(dynamic td) => FilterByList(td) && FilterByContext(td);
 
                     context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Running test suite: {(string)testSuite.getName()}");
-                    RunTestsImpl(source, testManager, testSuite, context, tests, output, CreateParameters(testManager, testSuite, (Func<dynamic, bool>)Filter, debugUri), cancellationToken);
+                    RunTestsImpl(source, testManager, testSuite, context, tests, output, CreateParameters(testManager, testSuite, (Func<dynamic, bool>)Filter, context.Options, debugUri), cancellationToken);
                 }
             }
             catch (Exception e)
@@ -360,9 +360,10 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <param name="testManager"></param>
         /// <param name="testSuite"></param>
         /// <param name="filter"></param>
+        /// <param name="options"></param>
         /// <param name="debugUri"></param>
         /// <returns></returns>
-        dynamic CreateParameters(dynamic testManager, dynamic testSuite, Func<dynamic, bool> filter, Uri debugUri)
+        dynamic CreateParameters(dynamic testManager, dynamic testSuite, Func<dynamic, bool> filter, JTRegTestOptions options, Uri debugUri)
         {
             if (testManager is null)
                 throw new ArgumentNullException(nameof(testManager));
@@ -397,7 +398,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             rp.setFile((java.io.File)wd.getFile("config.jti"));
             rp.setEnvVars(GetEnvVars(debugUri));
             rp.setConcurrency(Environment.ProcessorCount);
-            rp.setTimeoutFactor(6);
+            rp.setTimeoutFactor(options.TimeoutFactor);
             rp.setRetainArgs(java.util.Collections.singletonList("all"));
             rp.setExcludeLists(excludeFileList.ToArray());
             rp.setMatchLists(includeFileList.ToArray());
@@ -501,10 +502,12 @@ namespace IKVM.JTReg.TestAdapter.Core
                     policyFileStream.WriteLine($@"grant codebase ""{java.nio.file.Paths.get(Path.Combine(JTREG_LIB, jarName)).toUri().toURL()}"" {{ permission java.security.AllPermission; }};");
 
             // set parameters on pool
+            var opts = context.Options;
             var pool = JTRegTypes.Agent.Pool.Instance();
+            pool.setTimeoutFactor(opts.TimeoutFactor);
             pool.setSecurityPolicy(policyFile);
 
-            // before we install our own security manager (which will restrict access to the system properties) take a copy of the system properties
+            // before we install our own security manager (which will restrict access to the system properties) take a copy of the system propearties
             JTRegTypes.TestEnvironment.AddDefaultPropTable("(system properties)", java.lang.System.getProperties());
 
             // collect events from the harness
