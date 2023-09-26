@@ -47,8 +47,13 @@ namespace IKVM.MSBuild.Tests
 
         public TestContext TestContext { get; set; }
 
-        [TestMethod]
-        public void Can_build_test_project()
+        public IProjectAnalyzer Analyzer { get; set; }
+
+        /// <summary>
+        /// Initializes Buildalyzer for the tests.
+        /// </summary>
+        [TestInitialize]
+        public void Init()
         {
             var properties = File.ReadAllLines("IKVM.MSBuild.Tests.properties").Select(i => i.Split('=', 2)).ToDictionary(i => i[0], i => i[1]);
 
@@ -85,76 +90,69 @@ namespace IKVM.MSBuild.Tests
                 .Save(Path.Combine(@"Project", "nuget.config"));
 
             var manager = new AnalyzerManager();
-            var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
-            analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
-            analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
-            analyzer.SetGlobalProperty("IkvmCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
-            analyzer.SetGlobalProperty("IkvmExportCacheDir", ikvmExportCachePath + Path.DirectorySeparatorChar);
-            analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
-            analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
-            analyzer.SetGlobalProperty("CreateHardLinksForAdditionalFilesIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForCopyAdditionalFilesIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForCopyFilesToOutputDirectoryIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForCopyLocalIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
-            analyzer.SetGlobalProperty("Configuration", "Release");
+            Analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
+            Analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
+            Analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
+            Analyzer.SetGlobalProperty("IkvmCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
+            Analyzer.SetGlobalProperty("IkvmExportCacheDir", ikvmExportCachePath + Path.DirectorySeparatorChar);
+            Analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
+            Analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
+            Analyzer.SetGlobalProperty("CreateHardLinksForAdditionalFilesIfPossible", "true");
+            Analyzer.SetGlobalProperty("CreateHardLinksForCopyAdditionalFilesIfPossible", "true");
+            Analyzer.SetGlobalProperty("CreateHardLinksForCopyFilesToOutputDirectoryIfPossible", "true");
+            Analyzer.SetGlobalProperty("CreateHardLinksForCopyLocalIfPossible", "true");
+            Analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
+            Analyzer.SetGlobalProperty("Configuration", "Release");
 
-            analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
-            var o = new EnvironmentOptions();
-            o.TargetsToBuild.Clear();
-            o.TargetsToBuild.Add("Restore");
-            o.TargetsToBuild.Add("Clean");
-            analyzer.Build(o).OverallSuccess.Should().BeTrue();
+            Analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
+            var options = new EnvironmentOptions();
+            options.TargetsToBuild.Clear();
+            options.TargetsToBuild.Add("Restore");
+            options.TargetsToBuild.Add("Clean");
+            Analyzer.Build(options).OverallSuccess.Should().BeTrue();
+        }
 
-            var targets = new[]
-            {
-                ("net472",          "win-x86"),
-                ("net472",          "win-x64"),
-                ("net48",           "win-x86"),
-                ("net48",           "win-x64"),
-                ("net6.0",          "win-x86"),
-                ("net6.0",          "win-x64"),
-                ("net6.0",          "linux-x64"),
-                ("net6.0",          "linux-arm"),
-                ("net6.0",          "linux-arm64"),
-                ("net6.0",          "linux-musl-x64"),
-                ("net6.0",          "linux-musl-arm"),
-                ("net6.0",          "linux-musl-arm64"),
-                ("net6.0",          "osx-x64"),
-                ("net6.0",          "osx-arm64"),
-            };
+        [DataTestMethod]
+        [DataRow("net472", "win-x86")]
+        [DataRow("net472", "win-x64")]
+        [DataRow("net48", "win-x86")]
+        [DataRow("net48", "win-x64")]
+        [DataRow("net6.0", "win-x86")]
+        [DataRow("net6.0", "win-x64")]
+        [DataRow("net6.0", "linux-x64")]
+        [DataRow("net6.0", "linux-arm")]
+        [DataRow("net6.0", "linux-arm64")]
+        [DataRow("net6.0", "linux-musl-x64")]
+        [DataRow("net6.0", "linux-musl-arm")]
+        [DataRow("net6.0", "linux-musl-arm64")]
+        [DataRow("net6.0", "osx-x64")]
+        [DataRow("net6.0", "osx-arm64")]
+        [DataRow("net7.0", "win-x86")]
+        [DataRow("net7.0", "win-x64")]
+        [DataRow("net7.0", "linux-x64")]
+        [DataRow("net7.0", "linux-arm")]
+        [DataRow("net7.0", "linux-arm64")]
+        [DataRow("net7.0", "linux-musl-x64")]
+        [DataRow("net7.0", "linux-musl-arm")]
+        [DataRow("net7.0", "linux-musl-arm64")]
+        [DataRow("net7.0", "osx-x64")]
+        [DataRow("net7.0", "osx-arm64")]
+        public void CanBuildTestProject(string tfm, string rid)
+        {
+            // skip framework tests for non-Windows platforms
+            if (tfm == "net472" || tfm == "net48")
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                    return;
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
-                RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                targets = new[]
-                {
-                    ("net6.0",          "win-x86"),
-                    ("net6.0",          "win-x64"),
-                    ("net6.0",          "linux-x64"),
-                    ("net6.0",          "linux-arm"),
-                    ("net6.0",          "linux-arm64"),
-                    ("net6.0",          "linux-musl-x64"),
-                    ("net6.0",          "linux-musl-arm"),
-                    ("net6.0",          "linux-musl-arm64"),
-                    ("net6.0",          "osx-x64"),
-                    ("net6.0",          "osx-arm64"),
-                };
-            }
-
-            foreach (var (tfm, rid) in targets)
-            {
-                TestContext.WriteLine("Publishing with TargetFramework {0} and RuntimeIdentifier {1}.", tfm, rid);
-                var options = new EnvironmentOptions();
-                options.DesignTime = false;
-                options.Restore = false;
-                options.GlobalProperties["TargetFramework"] = tfm;
-                options.GlobalProperties["RuntimeIdentifier"] = rid;
-                options.TargetsToBuild.Clear();
-                options.TargetsToBuild.Add("Build");
-                options.TargetsToBuild.Add("Publish");
-                analyzer.Build(o).OverallSuccess.Should().Be(true);
-            }
+            var options = new EnvironmentOptions();
+            options.DesignTime = false;
+            options.Restore = false;
+            options.GlobalProperties["TargetFramework"] = tfm;
+            options.GlobalProperties["RuntimeIdentifier"] = rid;
+            options.TargetsToBuild.Clear();
+            options.TargetsToBuild.Add("Build");
+            options.TargetsToBuild.Add("Publish");
+            Analyzer.Build(options).OverallSuccess.Should().Be(true);
         }
 
     }
