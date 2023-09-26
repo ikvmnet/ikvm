@@ -11,6 +11,8 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <Target Name="_CopySourceItemsToOutputDirectory" />
+    <Target Name="_CopyFilesMarkedCopyLocal" />
+    <Target Name="_CopyOutOfDateSourceItemsToOutputDirectory" />
+    <Target Name="_CopyOutOfDateSourceItemsToOutputDirectoryAlways" />
 
 </Project>

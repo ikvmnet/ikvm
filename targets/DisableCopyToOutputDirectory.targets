@@ -9,7 +9,7 @@
 <Project>
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-        <DisableCopyToOutputDirectory>false</DisableCopyToOutputDirectory>
+        <DisableCopyToOutputDirectory Condition=" '$(DisableCopyToOutputDirectory)' == '' ">false</DisableCopyToOutputDirectory>
     </PropertyGroup>
 
     <Import Project="DisableCopyToOutputDirectory.include" Condition=" '$(DisableCopyToOutputDirectory)' == 'true' " />
