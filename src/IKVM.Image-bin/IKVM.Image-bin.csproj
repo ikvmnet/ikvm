@@ -1,4 +1,6 @@
-﻿<Project Sdk="Microsoft.Build.NoTargets">
+﻿<Project>
+    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.props" />
+    
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
@@ -47,5 +49,15 @@
             GetClangProjectReferencesByRuntime;
         </GetClangProjectReferencesDependsOn>
     </PropertyGroup>
+
+    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
+
+    <Target Name="_CopyOutOfDateSourceItemsToOutputDirectory">
+
+    </Target>
+
+    <Target Name="_CopyOutOfDateSourceItemsToOutputDirectoryAlways">
+
+    </Target>
 
 </Project>
