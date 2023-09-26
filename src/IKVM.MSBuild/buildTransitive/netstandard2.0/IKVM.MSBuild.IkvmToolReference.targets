@@ -111,23 +111,4 @@
         <Message Text="Using ikvmstub executable from project at '$(IkvmExporterPath)'." Importance="high" Condition=" '$(IkvmExporterPath)' != '' " />
     </Target>
 
-    <PropertyGroup>
-        <ResolveIkvmFrameworkReferencesDependsOn>
-            $(ResolveIkvmFrameworkReferencesDependsOn);
-            GetFrameworkPaths;
-            GetReferenceAssemblyPaths;
-            PrepareForBuild;
-            ResolveSDKReferences;
-            ExpandSDKReferences;
-            ResolveTargetingPackAssets;
-        </ResolveIkvmFrameworkReferencesDependsOn>
-    </PropertyGroup>
-
-    <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
-    <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
-        <ItemGroup>
-            <IkvmFrameworkReference Include="@(Reference)" />
-        </ItemGroup>
-    </Target>
-
 </Project>

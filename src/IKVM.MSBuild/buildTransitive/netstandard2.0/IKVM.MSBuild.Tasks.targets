@@ -18,24 +18,5 @@
     <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
     <UsingTask TaskName="IkvmExporter" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
     <UsingTask TaskName="IkvmJavaCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-
-    <PropertyGroup>
-        <ResolveIkvmFrameworkReferencesDependsOn>
-            $(ResolveIkvmFrameworkReferencesDependsOn);
-            GetFrameworkPaths;
-            GetReferenceAssemblyPaths;
-            PrepareForBuild;
-            ResolveSDKReferences;
-            ExpandSDKReferences;
-            ResolveTargetingPackAssets;
-        </ResolveIkvmFrameworkReferencesDependsOn>
-    </PropertyGroup>
-
-    <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
-    <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
-        <ItemGroup>
-            <IkvmFrameworkReference Include="@(Reference)" />
-        </ItemGroup>
-    </Target>
     
 </Project>

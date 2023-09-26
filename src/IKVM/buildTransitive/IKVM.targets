@@ -3,6 +3,23 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <ResolveIkvmFrameworkReferencesDependsOn>
+            $(ResolveIkvmFrameworkReferencesDependsOn);
+            ResolveAssemblyReferences;
+        </ResolveIkvmFrameworkReferencesDependsOn>
+    </PropertyGroup>
+
+    <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
+    <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
+        <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+            <IkvmFrameworkReference Include="@(ReferencePath)" Condition=" '%(ReferencePath.NuGetIsFrameworkReference)' == 'true' Or '%(ReferencePath.FrameworkFile)' == 'true' Or '%(ReferencePath.ResolvedFrom)' == '{TargetFrameworkDirectory}' "/>
+        </ItemGroup>
+        <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">
+            <IkvmFrameworkReference Include="@(ReferencePath)" Condition=" '%(ReferencePath.FrameworkReferenceName)' != '' Or '%(ReferencePath.FrameworkReferenceVersion)' != '' "/>
+        </ItemGroup>
+    </Target>
+
     <!-- Transforms the IkvmReference item group into IkvmReferenceItem items. -->
     <Target Name="GetIkvmReferenceItemsFromIkvmReferences">
         <ItemGroup>
@@ -68,25 +85,20 @@
 
     </Target>
 
-    <!-- Ensure the IkvmReference assemblies are built before compile. -->
-    <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
-        <CompileDependsOn>
-            CompileIkvmReferences;
-            $(CompileDependsOn);
-        </CompileDependsOn>
-    </PropertyGroup>
-
     <!-- Adds the expected IkvmReferences to the Reference set. -->
     <Target Name="_ResolveIkvmReferences" DependsOnTargets="GetIkvmReferenceItems">
         <ItemGroup>
-            <Reference Include="@(IkvmReferenceItem->'%(AssemblyName), Version=%(AssemblyVersion)')">
+            <IkvmReferencePath Include="@(IkvmReferenceItem->'%(CachePath)')">
                 <ReferenceSourceTarget>ResolveIkvmReferences</ReferenceSourceTarget>
                 <HintPath>%(IkvmReferenceItem.CachePath)</HintPath>
                 <Aliases>%(IkvmReferenceItem.Aliases)</Aliases>
                 <Private>%(IkvmReferenceItem.Private)</Private>
+                <CopyLocal>%(IkvmReferenceItem.CopyLocal)</CopyLocal>
                 <ReferenceOutputAssembly>%(IkvmReferenceItem.ReferenceOutputAssembly)</ReferenceOutputAssembly>
                 <JavaClasspath>%(IkvmReferenceItem.Compile)</JavaClasspath>
-            </Reference>
+            </IkvmReferencePath>
+            <ReferencePath Include="@(IkvmReferencePath)" />
+            <ReferenceCopyLocalPaths Include="@(IkvmReferencePath)" />
         </ItemGroup>
     </Target>
 
@@ -103,19 +115,12 @@
 
     </Target>
 
+    <!-- Ensure the IkvmReference assemblies are built before compile. -->
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
-        <ResolveAssemblyReferencesDependsOn>
+        <ResolveReferencesDependsOn>
             ResolveIkvmReferences;
-            $(ResolveAssemblyReferencesDependsOn);
-        </ResolveAssemblyReferencesDependsOn>
-    </PropertyGroup>
-
-    <PropertyGroup>
-        <ResolveIkvmFrameworkReferencesDependsOn>
-            $(ResolveIkvmFrameworkReferencesDependsOn);
-            ResolveIkvmRuntimeAssembly;
-            ResolveIkvmBaseAssembly;
-        </ResolveIkvmFrameworkReferencesDependsOn>
+            $(ResolveReferencesDependsOn);
+        </ResolveReferencesDependsOn>
     </PropertyGroup>
 
     <!-- Include Task or NoTask implementation of targets. -->
