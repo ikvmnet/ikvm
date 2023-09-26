@@ -1,10 +1,10 @@
-﻿<Project>
-    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.props" />
+﻿<Project Sdk="Microsoft.Build.NoTargets">
     
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+        <DisableCopyToOutputDirectory>true</DisableCopyToOutputDirectory>
     </PropertyGroup>
 
     <ItemGroup>
@@ -49,15 +49,5 @@
             GetClangProjectReferencesByRuntime;
         </GetClangProjectReferencesDependsOn>
     </PropertyGroup>
-
-    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
-
-    <Target Name="_CopyOutOfDateSourceItemsToOutputDirectory">
-
-    </Target>
-
-    <Target Name="_CopyOutOfDateSourceItemsToOutputDirectoryAlways">
-
-    </Target>
 
 </Project>
