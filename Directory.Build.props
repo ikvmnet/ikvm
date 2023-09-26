@@ -27,6 +27,11 @@
         <_EnabledImageRuntimes>;$(EnabledImageRuntimes);</_EnabledImageRuntimes>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <FastBuild Condition=" '$(FastBuild)' == '' ">false</FastBuild>
+        <DisableCopyToOutputDirectory Condition=" '$(FastBuild)' == 'true' ">true</DisableCopyToOutputDirectory>
+    </PropertyGroup>
+
     <ItemGroup>
         <Authors Include="Jeroen Frijters" />
         <Authors Include="Windward Studios" />
