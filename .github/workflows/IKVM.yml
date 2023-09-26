@@ -443,66 +443,66 @@ jobs:
         - net472
         - net6.0
         sys:
-        - windows
-        - linux
+        - win-x64
+        - linux-x64
         - osx-x64
         exclude:
         - tfm: net472
-          sys: linux
+          sys: linux-x64
         - tfm: net472
           sys: osx-x64
         include:
         - run: IKVM.ByteCode.Tests
           tfm: net7.0
-          sys: windows
+          sys: win-x64
         - run: IKVM.ByteCode.Tests
           tfm: net7.0
-          sys: linux
+          sys: linux-x64
         - run: IKVM.ByteCode.Tests
           tfm: net7.0
           sys: osx-x64
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net472
-          sys: windows
+          sys: win-x64
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net7.0
-          sys: windows
+          sys: win-x64
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net7.0
           sys: osx-x64
         - run: IKVM.MSBuild.Tests
           tfm: net7.0
-          sys: windows
+          sys: win-x64
         - run: IKVM.MSBuild.Tests
           tfm: net7.0
-          sys: linux
+          sys: linux-x64
         - run: IKVM.MSBuild.Tests
           tfm: net7.0
           sys: osx-x64
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
-          sys: windows
+          sys: win-x64
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
-          sys: linux
+          sys: linux-x64
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
           sys: osx-x64
         - run: IKVM.Tests
           tfm: net7.0
-          sys: windows
+          sys: win-x64
         - run: IKVM.Tests
           tfm: net7.0
-          sys: linux
+          sys: linux-x64
         - run: IKVM.Tests
           tfm: net7.0
           sys: osx-x64
         - run: IKVM.Tools.Tests
           tfm: net7.0
-          sys: windows
+          sys: win-x64
         - run: IKVM.Tools.Tests
           tfm: net7.0
-          sys: linux
+          sys: linux-x64
         - run: IKVM.Tools.Tests
           tfm: net7.0
           sys: osx-x64
@@ -510,7 +510,7 @@ jobs:
     needs:
     - build-ikvm
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
@@ -556,7 +556,7 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Setup WSL
-      if: matrix.sys == 'windows'
+      if: runner.os == 'Windows'
       uses: Vampire/setup-wsl@v2
     - name: Get Test Name
       uses: actions/github-script@v6
