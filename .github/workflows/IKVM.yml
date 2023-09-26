@@ -229,6 +229,7 @@ jobs:
           /p:CreateHardLinksForCopyLocalIfPossible=true `
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
+          /p:FastBuild=true `
           IKVM.dist.msbuildproj
       working-directory: ${{ env.WORKPATH }}\ikvm
     - name: Upload MSBuild Log
