@@ -23,11 +23,11 @@ namespace IKVM.Tests.Runtime
         public void SupportedRuntimeIdentifiersShouldContainLocalGenericPlatform()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
-                RuntimeUtil.SupportedRuntimeIdentifiers.Should().Contain("win7-x86");
+                RuntimeUtil.SupportedRuntimeIdentifiers.Should().Contain("win-x86");
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X64)
-                RuntimeUtil.SupportedRuntimeIdentifiers.Should().Contain("win7-x64");
+                RuntimeUtil.SupportedRuntimeIdentifiers.Should().Contain("win-x64");
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.Arm)
-                RuntimeUtil.SupportedRuntimeIdentifiers.Should().Contain("win81-arm");
+                RuntimeUtil.SupportedRuntimeIdentifiers.Should().Contain("win-arm");
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
                 RuntimeUtil.SupportedRuntimeIdentifiers.Should().Contain("win-arm64");
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.X64)

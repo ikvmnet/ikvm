@@ -47,7 +47,7 @@ namespace IKVM.Tools.Tests.Runner.Exporter
 
             var rid = "";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                rid = "win7-x64";
+                rid = "win-x64";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 rid = "linux-x64";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && RuntimeInformation.ProcessArchitecture == Architecture.X64)

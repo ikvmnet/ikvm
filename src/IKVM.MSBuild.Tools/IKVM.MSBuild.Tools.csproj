@@ -11,7 +11,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win7-x64\IKVM.MSBuild.Tools.runtime.win7-x64.csproj" Condition="$(_EnabledToolRuntimes.Contains('win7-x64'))">
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win-x64\IKVM.MSBuild.Tools.runtime.win-x64.csproj" Condition="$(_EnabledToolRuntimes.Contains('win-x64'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
         <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win-arm64\IKVM.MSBuild.Tools.runtime.win-arm64.csproj" Condition="$(_EnabledToolRuntimes.Contains('win-arm64'))">

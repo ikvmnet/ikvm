@@ -32,14 +32,14 @@
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
-            <PublishTargetPath>ikvmc\net472\win7-x64</PublishTargetPath>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win-x64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmc\net472\win-x64</PublishTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
-            <PublishTargetPath>ikvmc\net6.0\win7-x64</PublishTargetPath>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win-x64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmc\net6.0\win-x64</PublishTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">

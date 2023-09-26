@@ -15,10 +15,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Image.runtime.win7-x64\IKVM.Image.runtime.win7-x64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win7-x64;'))">
+        <ProjectReference Include="..\IKVM.Image.runtime.win-x64\IKVM.Image.runtime.win-x64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-x64;'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
-        <ProjectReference Include="..\IKVM.Image.runtime.win7-x86\IKVM.Image.runtime.win7-x86.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win7-x86;'))">
+        <ProjectReference Include="..\IKVM.Image.runtime.win-x86\IKVM.Image.runtime.win-x86.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-x86;'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
         <ProjectReference Include="..\IKVM.Image.runtime.win-arm64\IKVM.Image.runtime.win-arm64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))">

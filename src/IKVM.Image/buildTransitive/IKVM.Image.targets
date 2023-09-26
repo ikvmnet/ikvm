@@ -5,7 +5,7 @@
 
     <ItemGroup>
         <IkvmImageTargetFrameworks Include="net472;net6.0" />
-        <IkvmImageRuntimeIdentifiers Include="win7-x64;win7-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64" />
+        <IkvmImageRuntimeIdentifiers Include="win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64" />
     </ItemGroup>
 
     <Choose>
@@ -26,17 +26,17 @@
             <Choose>
                 <When Condition="$(RuntimeIdentifier.EndsWith('-x64'))">
                     <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>win7-x64</_IkvmImageRuntimeIdentifier>
+                        <_IkvmImageRuntimeIdentifier>win-x64</_IkvmImageRuntimeIdentifier>
                     </PropertyGroup>
                 </When>
                 <When Condition="$(RuntimeIdentifier.EndsWith('-x86'))">
                     <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>win7-x86</_IkvmImageRuntimeIdentifier>
+                        <_IkvmImageRuntimeIdentifier>win-x86</_IkvmImageRuntimeIdentifier>
                     </PropertyGroup>
                 </When>
                 <When Condition="$(RuntimeIdentifier.EndsWith('-arm'))">
                     <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>win81-arm</_IkvmImageRuntimeIdentifier>
+                        <_IkvmImageRuntimeIdentifier>win-arm</_IkvmImageRuntimeIdentifier>
                     </PropertyGroup>
                 </When>
                 <When Condition="$(RuntimeIdentifier.EndsWith('-arm64'))">

@@ -107,10 +107,10 @@ namespace IKVM.NET.Sdk.Tests
 
             var targets = new[]
             {
-                ("net472",          "win7-x86"),
-                ("net472",          "win7-x64"),
-                ("net6.0",          "win7-x86"),
-                ("net6.0",          "win7-x64"),
+                ("net472",          "win-x86"),
+                ("net472",          "win-x64"),
+                ("net6.0",          "win-x86"),
+                ("net6.0",          "win-x64"),
                 ("net6.0",          "linux-x64"),
                 ("net6.0",          "linux-arm"),
                 ("net6.0",          "linux-arm64"),
@@ -123,8 +123,8 @@ namespace IKVM.NET.Sdk.Tests
             {
                 targets = new[]
                 {
-                    ("net6.0",          "win7-x86"),
-                    ("net6.0",          "win7-x64"),
+                    ("net6.0",          "win-x86"),
+                    ("net6.0",          "win-x64"),
                     ("net6.0",          "linux-x64"),
                     ("net6.0",          "linux-arm"),
                     ("net6.0",          "linux-arm64"),
