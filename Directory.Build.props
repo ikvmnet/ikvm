@@ -10,15 +10,12 @@
         
         <SupportedRuntimes>win7-x64;win7-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedRuntimes>
         <EnabledRuntimes Condition=" '$(EnabledRuntimes)' == '' ">$(SupportedRuntimes)</EnabledRuntimes>
-        <EnabledRuntimes>win7-x64;linux-x64;osx-x64</EnabledRuntimes>
 
         <SupportedToolRuntimes>win7-x64;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedToolRuntimes>
         <EnabledToolRuntimes Condition=" '$(EnabledToolRuntimes)' == '' ">$(SupportedToolRuntimes)</EnabledToolRuntimes>
-        <EnabledToolRuntimes>win7-x64;linux-x64;osx-x64</EnabledToolRuntimes>
         
         <SupportedImageRuntimes>win7-x64;win7-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedImageRuntimes>
         <EnabledImageRuntimes Condition=" '$(EnabledImageRuntimes)' == '' ">$(SupportedImageRuntimes)</EnabledImageRuntimes>
-        <EnabledImageRuntimes>win7-x64;linux-x64;osx-x64</EnabledImageRuntimes>
     </PropertyGroup>
 
     <PropertyGroup>
