@@ -31,12 +31,12 @@
         </PublishProjectReference>
     </ItemGroup>
 
-    <Target Name="CollectIkvmImageBinItems" BeforeTargets="ExpandIkvmImageItems" DependsOnTargets="CollectPublishProjectReferenceItems;GetPublishProjectReferenceOutputItems">
+    <Target Name="CollectIkvmImageBinItems" BeforeTargets="ExpandIkvmImageItems" DependsOnTargets="CollectPublishProjectReferenceItems;GetPublishProjectReferenceOutputItems" Condition=" '$(UsingIkvmCoreMSBuild)' == 'true' ">
         <ItemGroup>
             <IkvmImageItem Include="@(PublishIkvmImageBinItem)">
                 <ImagePath>bin\%(PublishIkvmImageBinItem.PublishItemPath)</ImagePath>
-                <PackagePath Condition=" '$([System.IO.Path]::GetExtension(%(PublishIkvmImageBinItem.PublishItemPath)))' != '' ">ikvm\%(PublishIkvmImageBinItem.TargetFramework)\%(PublishIkvmImageBinItem.RuntimeIdentifier)\bin\%(PublishIkvmImageBinItem.PublishItemPath)</PackagePath>
-                <PackagePath Condition=" '$([System.IO.Path]::GetExtension(%(PublishIkvmImageBinItem.PublishItemPath)))' == '' ">$([System.IO.Path]::GetDirectoryName('ikvm\%(PublishIkvmImageBinItem.TargetFramework)\%(PublishIkvmImageBinItem.RuntimeIdentifier)\bin\%(PublishIkvmImageBinItem.PublishItemPath)'))</PackagePath>
+                <PackagePath Condition=" '%(PublishIkvmImageBinItem.PublishItemPath)' != '' ">ikvm\%(PublishIkvmImageBinItem.TargetFramework)\%(PublishIkvmImageBinItem.RuntimeIdentifier)\bin\%(PublishIkvmImageBinItem.PublishItemPath)</PackagePath>
+                <PackagePath Condition=" '%(PublishIkvmImageBinItem.PublishItemPath)' != '' And '$([System.IO.Path]::GetExtension(%(PublishIkvmImageBinItem.PublishItemPath)))' != '' ">$([System.IO.Path]::GetDirectoryName('ikvm\%(PublishIkvmImageBinItem.TargetFramework)\%(PublishIkvmImageBinItem.RuntimeIdentifier)\bin\%(PublishIkvmImageBinItem.PublishItemPath)'))</PackagePath>
                 <Pack>true</Pack>
             </IkvmImageItem>
         </ItemGroup>

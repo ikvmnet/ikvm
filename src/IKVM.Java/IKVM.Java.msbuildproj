@@ -59,13 +59,6 @@
         <MapFile Include="map.xml" />
     </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="ikvm.core.msbuild">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-    </ItemGroup>
-
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />

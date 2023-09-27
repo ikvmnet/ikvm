@@ -18,13 +18,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="ikvm.core.msbuild">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-    </ItemGroup>
-
-    <ItemGroup>
         <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <PublishTargetPath Condition=" '$(TargetFramework)' == 'net472' ">tasks</PublishTargetPath>
