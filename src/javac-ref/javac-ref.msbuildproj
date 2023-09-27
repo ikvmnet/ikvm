@@ -8,6 +8,8 @@
         <AssemblyName>javac</AssemblyName>
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
+        <PublishReadyToRun>true</PublishReadyToRun>
+        <PublishReadyToRunComposite>true</PublishReadyToRunComposite>
         <StartupObject>com.sun.tools.javac.Main</StartupObject>
         <RootNamespace>ikvm.tools.javac</RootNamespace>
     </PropertyGroup>
