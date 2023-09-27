@@ -5,8 +5,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="CliWrap" Version="3.5.0" />
-        <PackageReference Include="Mono.Posix" Version="7.1.0-final.1.21458.1" />
+        <PackageReference Include="CliWrap" />
+        <PackageReference Include="Mono.Posix" />
     </ItemGroup>
 
 </Project>

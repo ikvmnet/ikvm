@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.Memory" Version="4.5.5" />
+        <PackageReference Include="System.Memory" />
     </ItemGroup>
 
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
@@ -16,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">
-        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="6.0.3" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" />
     </ItemGroup>
 
 </Project>

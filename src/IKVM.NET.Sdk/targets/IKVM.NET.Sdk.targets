@@ -26,9 +26,9 @@
 
     <!-- Inline tasks require some packages present. -->
     <ItemGroup Condition=" '$(UseIkvmTasks)' == 'false' ">
-        <PackageReference Include="System.Collections.Immutable" Version="6.0.0" Exclude="@(PackageReference)" PrivateAssets="all" />
-        <PackageReference Include="System.Memory" Version="4.5.5" Exclude="@(PackageReference)" PrivateAssets="all" />
-        <PackageReference Include="System.Reflection.Metadata" Version="6.0.1" Exclude="@(PackageReference)" PrivateAssets="all" />
+        <PackageReference Include="System.Collections.Immutable" Exclude="@(PackageReference)" PrivateAssets="all" />
+        <PackageReference Include="System.Memory" Exclude="@(PackageReference)" PrivateAssets="all" />
+        <PackageReference Include="System.Reflection.Metadata" Exclude="@(PackageReference)" PrivateAssets="all" />
         <PackageReference Update="System.Collections.Immutable" GeneratePathProperty="true" />
         <PackageReference Update="System.Memory" GeneratePathProperty="true" />
         <PackageReference Update="System.Reflection.Metadata" GeneratePathProperty="true" />

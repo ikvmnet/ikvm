@@ -8,11 +8,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CliWrap" Version="3.5.0" />
-        <PackageReference Include="Microsoft.Build" Version="16.9.0" PrivateAssets="All" />
-        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.9.0" PrivateAssets="All" />
-        <PackageReference Include="System.Reflection.Metadata" Version="6.0.1" />
-        <PackageReference Include="Microsoft.NETCore.Platforms" Version="8.0.0-preview.7.23375.6" GeneratePathProperty="true" />
+        <PackageReference Include="CliWrap" />
+        <PackageReference Include="Microsoft.Build" />
+        <PackageReference Include="Microsoft.Build.Utilities.Core" PrivateAssets="All" />
+        <PackageReference Include="System.Reflection.Metadata" />
+        <PackageReference Include="Microsoft.NETCore.Platforms" GeneratePathProperty="true" />
     </ItemGroup>
 
     <ItemGroup>

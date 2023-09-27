@@ -24,9 +24,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-        <PackageReference Include="System.IO.Pipelines" Version="6.0.3" />
-        <PackageReference Include="System.Memory" Version="4.5.5" />
+        <PackageReference Include="Microsoft.CSharp" />
+        <PackageReference Include="System.IO.Pipelines" />
+        <PackageReference Include="System.Memory" />
     </ItemGroup>
 
 </Project>

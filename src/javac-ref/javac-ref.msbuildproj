@@ -15,6 +15,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="ikvm.core.msbuild">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
     </ItemGroup>
 

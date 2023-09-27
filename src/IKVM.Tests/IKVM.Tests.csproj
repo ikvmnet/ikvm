@@ -8,28 +8,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Remove="**\*.java" />
-        <None Remove="Runtime\Vfs\VfsTestResource.txt" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <EmbeddedResource Include="**\*.java" />
-        <EmbeddedResource Include="Runtime\Vfs\VfsTestResource.txt" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="..\..\ext\helloworld\*.jar" LinkBase="helloworld">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="FluentAssertions" Version="5.0.0" />
-        <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.3" />
-        <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
-        <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
-        <PackageReference Include="System.Net.Http" Version="4.3.4" />
+        <PackageReference Include="FluentAssertions" />
+        <PackageReference Include="Microsoft.CSharp" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="MSTest.TestAdapter" />
+        <PackageReference Include="MSTest.TestFramework" />
+        <PackageReference Include="System.Net.Http" />
     </ItemGroup>
 
     <ItemGroup>
@@ -160,6 +144,22 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
 
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="**\*.java" />
+        <None Remove="Runtime\Vfs\VfsTestResource.txt" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="**\*.java" />
+        <EmbeddedResource Include="Runtime\Vfs\VfsTestResource.txt" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\ext\helloworld\*.jar" LinkBase="helloworld">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

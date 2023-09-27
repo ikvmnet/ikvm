@@ -10,7 +10,6 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Runtime" />
-        <InternalsVisibleTo Include="IKVM.AWT.WinForms" />
     </ItemGroup>
 
     <ItemGroup>
@@ -58,6 +57,13 @@
 
     <ItemGroup>
         <MapFile Include="map.xml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="ikvm.core.msbuild">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
     </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
