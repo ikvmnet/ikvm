@@ -35,8 +35,8 @@
         <ItemGroup>
             <IkvmImageItem Include="@(PublishIkvmImageBinItem)">
                 <ImagePath>bin\%(PublishIkvmImageBinItem.PublishItemPath)</ImagePath>
-                <PackagePath Condition=" '$([System.IO.Path]::GetExtension(%(PublishIkvmImageBinItem.PublishItemPath)))' != '' ">ikvm\%(PublishIkvmImageBinItem.TargetFramework)\%(PublishIkvmImageBinItem.RuntimeIdentifier)\bin\%(PublishIkvmImageBinItem.PublishItemPath)</PackagePath>
-                <PackagePath Condition=" '$([System.IO.Path]::GetExtension(%(PublishIkvmImageBinItem.PublishItemPath)))' == '' ">$([System.IO.Path]::GetDirectoryName('ikvm\%(PublishIkvmImageBinItem.TargetFramework)\%(PublishIkvmImageBinItem.RuntimeIdentifier)\bin\%(PublishIkvmImageBinItem.PublishItemPath)'))</PackagePath>
+                <PackagePath Condition=" '$([System.IO.Path]::GetExtension('%(PublishIkvmImageBinItem.PublishItemPath)'))' != '' ">ikvm\%(PublishIkvmImageBinItem.TargetFramework)\%(PublishIkvmImageBinItem.RuntimeIdentifier)\bin\%(PublishIkvmImageBinItem.PublishItemPath)</PackagePath>
+                <PackagePath Condition=" '$([System.IO.Path]::GetExtension('%(PublishIkvmImageBinItem.PublishItemPath)'))' == '' ">$([System.IO.Path]::GetDirectoryName('ikvm\%(PublishIkvmImageBinItem.TargetFramework)\%(PublishIkvmImageBinItem.RuntimeIdentifier)\bin\%(PublishIkvmImageBinItem.PublishItemPath)'))</PackagePath>
                 <Pack>true</Pack>
             </IkvmImageItem>
         </ItemGroup>
