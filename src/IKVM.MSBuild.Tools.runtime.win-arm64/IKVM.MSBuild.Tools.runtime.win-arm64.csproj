@@ -6,10 +6,6 @@
         <Description>IKVM MSBuild Tools</Description>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    </PropertyGroup>
-
     <ItemGroup>
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
         <None Include="..\..\README.md" Pack="true" PackagePath="." />

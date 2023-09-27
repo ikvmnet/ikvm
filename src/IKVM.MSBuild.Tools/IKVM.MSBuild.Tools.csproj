@@ -6,32 +6,14 @@
         <Description>IKVM MSBuild Tools</Description>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    </PropertyGroup>
-
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win-x64\IKVM.MSBuild.Tools.runtime.win-x64.csproj" Condition="$(_EnabledToolRuntimes.Contains('win-x64'))">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win-arm64\IKVM.MSBuild.Tools.runtime.win-arm64.csproj" Condition="$(_EnabledToolRuntimes.Contains('win-arm64'))">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj" Condition="$(_EnabledToolRuntimes.Contains('linux-x64'))">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-arm\IKVM.MSBuild.Tools.runtime.linux-arm.csproj" Condition="$(_EnabledToolRuntimes.Contains('linux-arm'))">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-arm64\IKVM.MSBuild.Tools.runtime.linux-arm64.csproj" Condition="$(_EnabledToolRuntimes.Contains('linux-arm64'))">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.osx-x64\IKVM.MSBuild.Tools.runtime.osx-x64.csproj" Condition="$(_EnabledToolRuntimes.Contains('osx-x64'))">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.osx-arm64\IKVM.MSBuild.Tools.runtime.osx-arm64.csproj" Condition="$(_EnabledToolRuntimes.Contains('osx-arm64'))">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win-x64\IKVM.MSBuild.Tools.runtime.win-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledToolRuntimes.Contains('win-x64'))" />
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win-arm64\IKVM.MSBuild.Tools.runtime.win-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledToolRuntimes.Contains('win-arm64'))" />
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledToolRuntimes.Contains('linux-x64'))" />
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-arm\IKVM.MSBuild.Tools.runtime.linux-arm.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledToolRuntimes.Contains('linux-arm'))" />
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-arm64\IKVM.MSBuild.Tools.runtime.linux-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledToolRuntimes.Contains('linux-arm64'))" />
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.osx-x64\IKVM.MSBuild.Tools.runtime.osx-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledToolRuntimes.Contains('osx-x64'))" />
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.osx-arm64\IKVM.MSBuild.Tools.runtime.osx-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledToolRuntimes.Contains('osx-arm64'))" />
     </ItemGroup>
 
     <ItemGroup>

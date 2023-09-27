@@ -8,10 +8,6 @@
         <IncludeBuildOutput>false</IncludeBuildOutput>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    </PropertyGroup>
-
     <ItemGroup>
         <None Include="Sdk\**\*" Pack="true" PackagePath="Sdk\%(RecursiveDir)%(Filename)%(Extension)" />
         <None Include="targets\**\*" Pack="true" PackagePath="targets\%(RecursiveDir)%(Filename)%(Extension)" />

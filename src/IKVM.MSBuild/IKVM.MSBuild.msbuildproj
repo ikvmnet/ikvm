@@ -6,14 +6,8 @@
         <Description>IKVM MSBuild Targets</Description>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    </PropertyGroup>
-
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.MSBuild.Tools\IKVM.MSBuild.Tools.csproj">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
+        <ProjectReference Include="..\IKVM.MSBuild.Tools\IKVM.MSBuild.Tools.csproj" ReferenceOutputAssembly="true" />
     </ItemGroup>
 
     <ItemGroup>
