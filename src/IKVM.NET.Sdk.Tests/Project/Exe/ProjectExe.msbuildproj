@@ -3,7 +3,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net7.0</TargetFrameworks>
         <RuntimeIdentifiers>win-x86;win-x64;linux-x64;linux-arm;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
         <RootNamespace>project.exe</RootNamespace>
         <StartupObject>project.exe.Main</StartupObject>
