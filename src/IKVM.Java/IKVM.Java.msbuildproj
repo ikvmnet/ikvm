@@ -10,7 +10,6 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Runtime" />
-        <InternalsVisibleTo Include="IKVM.AWT.WinForms" />
     </ItemGroup>
 
     <ItemGroup>
