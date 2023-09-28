@@ -1,12 +1,12 @@
-﻿using System.IO;
-using System.Security.Cryptography;
-using System.Text;
-
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
-
-namespace IKVM.MSBuild.Tasks
+﻿namespace IKVM.MSBuild.Tasks
 {
+
+    using System.IO;
+    using System.Security.Cryptography;
+    using System.Text;
+
+    using Microsoft.Build.Framework;
+    using Microsoft.Build.Utilities;
 
     /// <summary>
     /// Calculates a MD5 sum for each of the files refered to by the source collection.

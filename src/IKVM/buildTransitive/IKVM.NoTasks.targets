@@ -7,26 +7,6 @@
     This file contains targets which invoke the jobs in 'NoTask' mode. The tasks provided by MSBuild are not used.
     -->
 
-    <PropertyGroup>
-        <___IkvmReferenceItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItem.cs'))'))</___IkvmReferenceItemCs>
-        <___IkvmReferenceItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemMetadata.cs'))'))</___IkvmReferenceItemMetadataCs>
-        <___IkvmReferenceItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemPrepare.cs'))'))</___IkvmReferenceItemPrepareCs>
-    </PropertyGroup>
-
-    <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <Task>
-            <Reference Include="System.Collections.Immutable" />
-            <Reference Include="System.Reflection.Metadata" />
-            <Code Type="Class" Language="cs">
-                <![CDATA[
-$([MSBuild]::Unescape('$(___IkvmReferenceItemCs)'))
-$([MSBuild]::Unescape('$(___IkvmReferenceItemMetadataCs)'))
-$([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))
-            ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
     <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
     <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences" Inputs="$(IkvmCompilerPath);@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
@@ -43,6 +23,17 @@ $([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CacheSymbolsPath)'))" />
 
         <ItemGroup>
+            <_IkvmCompilerReferencePath Remove="@(_IkvmCompilerReferencePath)" />
+            <_IkvmReferenceItemResolvedReference Remove="@(_IkvmReferenceItemResolvedReference)" />
+            <_IkvmReferenceItemResolvedReference Include="%(IkvmReferenceItem.ResolvedReferences)" />
+            <_IkvmCompilerReferencePath Include="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference)" />
+        </ItemGroup>
+
+        <IkvmCanonicalizePath Items="@(_IkvmCompilerReferencePath->'%(FullPath)')">
+            <Output TaskParameter="Items" ItemName="__IkvmCompilerReferencePath" />
+        </IkvmCanonicalizePath>
+
+        <ItemGroup>
             <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
             <_IkvmCompilerArgs Include="-debug" Condition=" '%(IkvmReferenceItem.Debug)' == 'true' " />
             <_IkvmCompilerArgs Include="-assembly:%(IkvmReferenceItem.AssemblyName)" />
@@ -57,11 +48,7 @@ $([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))
             <_IkvmCompilerArgs Include="-target:library" />
             <_IkvmCompilerArgs Include="-nostdlib" />
             <_IkvmCompilerArgs Include="-classloader:%(IkvmReferenceItem.ClassLoader)" Condition=" '%(IkvmReferenceItem.ClassLoader)' != '' " />
-            <_IkvmCompilerReferencePath Remove="@(_IkvmCompilerReferencePath)" />
-            <_IkvmReferenceItemResolvedReference Remove="@(_IkvmReferenceItemResolvedReference)" />
-            <_IkvmReferenceItemResolvedReference Include="%(IkvmReferenceItem.ResolvedReferences)" />
-            <_IkvmCompilerReferencePath Include="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference)" />
-            <_IkvmCompilerArgs Include="@(_IkvmCompilerReferencePath->'-reference:%(FullPath)')" />
+            <_IkvmCompilerArgs Include="@(__IkvmCompilerReferencePath->'-reference:%(Identity)')" />
             <_IkvmCompilerArgs Include="-out:%(IkvmReferenceItem.StagePath)" />
             <_IkvmCompilerArgs Include="%(IkvmReferenceItem.Compile)" />
         </ItemGroup>

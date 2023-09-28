@@ -10,6 +10,9 @@
         <TestTarget Include="IKVM.ByteCode.Tests|net472" ProjectName="IKVM.ByteCode.Tests" TargetFramework="net472" />
         <TestTarget Include="IKVM.ByteCode.Tests|net6.0" ProjectName="IKVM.ByteCode.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.ByteCode.Tests|net7.0" ProjectName="IKVM.ByteCode.Tests" TargetFramework="net7.0" />
+        <TestTarget Include="IKVM.Reflection.Tests|net472" ProjectName="IKVM.Reflection.Tests" TargetFramework="net472" />
+        <TestTarget Include="IKVM.Reflection.Tests|net6.0" ProjectName="IKVM.Reflection.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="IKVM.Reflection.Tests|net7.0" ProjectName="IKVM.Reflection.Tests" TargetFramework="net7.0" />
         <TestTarget Include="IKVM.Java.Tests|net472" ProjectName="IKVM.Java.Tests" TargetFramework="net472" />
         <TestTarget Include="IKVM.Java.Tests|net6.0" ProjectName="IKVM.Java.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.Tests|net472" ProjectName="IKVM.Tests" TargetFramework="net472" />

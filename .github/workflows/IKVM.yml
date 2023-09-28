@@ -293,6 +293,17 @@ jobs:
     - name: Delete Tests (IKVM.ByteCode.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.ByteCode.Tests.tar.gz
+    - name: Package Tests (IKVM.Reflection.Tests)
+      run: tar czvf C:\tests--IKVM.Reflection.Tests.tar.gz tests\IKVM.Reflection.Tests
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+    - name: Upload Tests (IKVM.Reflection.Tests)
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests--IKVM.Reflection.Tests
+        path: C:\tests--IKVM.Reflection.Tests.tar.gz
+    - name: Delete Tests (IKVM.Reflection.Tests)
+      shell: pwsh
+      run: ri C:\tests--IKVM.Reflection.Tests.tar.gz
     - name: Package Tests (IKVM.Tests)
       run: tar czvf C:\tests--IKVM.Tests.tar.gz tests\IKVM.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -418,6 +429,7 @@ jobs:
       matrix:
         run:
         - IKVM.ByteCode.Tests
+        - IKVM.Reflection.Tests
         - IKVM.Tests
         - IKVM.Java.Tests
         - IKVM.Tools.Exporter.Tests
@@ -460,6 +472,15 @@ jobs:
           tfm: net7.0
           sys: linux-x64
         - run: IKVM.ByteCode.Tests
+          tfm: net7.0
+          sys: osx-x64
+        - run: IKVM.Reflection.Tests
+          tfm: net7.0
+          sys: win-x64
+        - run: IKVM.Reflection.Tests
+          tfm: net7.0
+          sys: linux-x64
+        - run: IKVM.Reflection.Tests
           tfm: net7.0
           sys: osx-x64
         - run: IKVM.MSBuild.Tasks.Tests

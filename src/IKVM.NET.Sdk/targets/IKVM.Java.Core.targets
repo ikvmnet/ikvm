@@ -39,13 +39,27 @@
         </ItemGroup>
         
         <IkvmReferenceExportItemPrepare Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)">
-            <Output TaskParameter="Items" ItemName="ReferenceExport" />
+            <Output TaskParameter="Items" ItemName="__ReferenceExport" />
         </IkvmReferenceExportItemPrepare>
+        
         <ItemGroup>
-            <ReferenceExport Update="@(ReferenceExport)">
+            <__ReferenceExport Update="@(__ReferenceExport)">
                 <StagePath>$(IkvmExportStageDir)%(IkvmIdentity)\%(Filename).jar</StagePath>
                 <CachePath>$(IkvmExportCacheDir)%(IkvmIdentity)\%(Filename).jar</CachePath>
-            </ReferenceExport>
+            </__ReferenceExport>
+        </ItemGroup>
+
+        <IkvmCanonicalizePath Items="@(__ReferenceExport)" MetadataName="StagePath;CachePath">
+            <Output TaskParameter="Items" ItemName="___ReferenceExport" />
+        </IkvmCanonicalizePath>
+
+        <ItemGroup>
+            <ReferenceExport Remove="@(ReferenceExport)" />
+            <ReferenceExport Include="@(___ReferenceExport)" />
+            
+            <_ReferenceExport Remove="@(_ReferenceExport)" />
+            <__ReferenceExport Remove="@(__ReferenceExport)" />
+            <___ReferenceExport Remove="@(___ReferenceExport)" />
         </ItemGroup>
     </Target>
 

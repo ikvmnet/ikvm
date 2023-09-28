@@ -1,0 +1,40 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <___IkvmTaskUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmTaskUtil.cs'))'))</___IkvmTaskUtilCs>
+        <___IkvmCanonicalizePathCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmCanonicalizePath.cs'))'))</___IkvmCanonicalizePathCs>
+        <___IkvmReferenceItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItem.cs'))'))</___IkvmReferenceItemCs>
+        <___IkvmReferenceItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemMetadata.cs'))'))</___IkvmReferenceItemMetadataCs>
+        <___IkvmReferenceItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemPrepare.cs'))'))</___IkvmReferenceItemPrepareCs>
+    </PropertyGroup>
+
+    <UsingTask TaskName="IkvmCanonicalizePath" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+$([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmCanonicalizePathCs)'))
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Reference Include="System.Collections.Immutable" />
+            <Reference Include="System.Reflection.Metadata" />
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+$([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceItemCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceItemMetadataCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+</Project>

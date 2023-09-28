@@ -66,7 +66,7 @@
     
     <PropertyGroup Label="Build Info">
         <LangVersion Condition=" '$(LangVersion)' == '' ">10.0</LangVersion>
-        <NoWarn>$(NoWarn);1591;1573;CS8002;NU5100;NU5118;NU5128</NoWarn>
+        <NoWarn>$(NoWarn);1591;1573;CS8002;NU5100;NU5118;NU5128;MSB3245;NETSDK1023</NoWarn>
         <AutoGenerateBindingRedirects Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
         <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
@@ -74,6 +74,7 @@
         <CopyRetryDelayMilliseconds>15000</CopyRetryDelayMilliseconds>
         <FastBuild Condition=" '$(FastBuild)' == '' ">false</FastBuild>
         <DisableCopyToOutputDirectory Condition=" '$(FastBuild)' == 'true' ">true</DisableCopyToOutputDirectory>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     </PropertyGroup>
 
     <PropertyGroup Label="Assembly Info">
