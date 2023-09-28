@@ -32,20 +32,9 @@
     </ItemGroup>
 
     <!-- Inline tasks require some packages present. -->
-    <ItemGroup Condition=" '$(UseIkvmTasks)' == 'false' And '$(ManagePackageVersionsCentrally)' == 'true' ">
-        <PackageVersion Include="System.Collections.Immutable" Version="7.0.0" Exclude="@(PackageVersion)" />
-        <PackageVersion Include="System.Memory" Version="4.5.5" Exclude="@(PackageVersion)" />
-        <PackageVersion Include="System.Reflection.Metadata" Version="7.0.2" Exclude="@(PackageVersion)" />
-        <PackageReference Include="System.Collections.Immutable" Exclude="@(PackageReference)" PrivateAssets="all" />
-        <PackageReference Include="System.Memory" Exclude="@(PackageReference)" PrivateAssets="all" />
-        <PackageReference Include="System.Reflection.Metadata" Exclude="@(PackageReference)" PrivateAssets="all" />
-        <PackageReference Update="System.Collections.Immutable" GeneratePathProperty="true" />
-        <PackageReference Update="System.Memory" GeneratePathProperty="true" />
-        <PackageReference Update="System.Reflection.Metadata" GeneratePathProperty="true" />
-    </ItemGroup>
 
     <!-- Inline tasks require some packages present. -->
-    <ItemGroup Condition=" '$(UseIkvmTasks)' == 'false' And '$(ManagePackageVersionsCentrally)' != 'true' ">
+    <ItemGroup Condition=" '$(UseIkvmTasks)' == 'false' >
         <PackageReference Include="System.Collections.Immutable" Exclude="@(PackageReference)" Version="7.0.0" PrivateAssets="all" />
         <PackageReference Include="System.Memory" Exclude="@(PackageReference)" Version="4.5.5" PrivateAssets="all" />
         <PackageReference Include="System.Reflection.Metadata" Exclude="@(PackageReference)" Version="7.0.2" PrivateAssets="all" />
