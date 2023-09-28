@@ -4,6 +4,7 @@
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM MSBuild Targets</Description>
+        <IncludeSymbols>false</IncludeSymbols>
     </PropertyGroup>
 
     <ItemGroup>

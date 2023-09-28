@@ -4,6 +4,7 @@
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM Runtime Image</Description>
+        <IncludeSymbols>false</IncludeSymbols>
         <ImageRuntimeIdentifier>win-x64</ImageRuntimeIdentifier>
         <ImageBinProject>..\IKVM.Image-bin\IKVM.Image-bin.csproj</ImageBinProject>
     </PropertyGroup>

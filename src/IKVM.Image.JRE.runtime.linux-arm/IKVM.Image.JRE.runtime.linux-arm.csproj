@@ -4,6 +4,7 @@
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM JRE Runtime Image</Description>
+        <IncludeSymbols>false</IncludeSymbols>
         <ImageRuntimeIdentifier>linux-arm</ImageRuntimeIdentifier>
         <ImageBinProject>..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj</ImageBinProject>
     </PropertyGroup>

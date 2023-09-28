@@ -17,4 +17,3 @@
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\IKVM.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
 </Project>
-

@@ -6,6 +6,7 @@
         <Description>IKVM Managed SDK</Description>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
         <IncludeBuildOutput>false</IncludeBuildOutput>
+        <IncludeSymbols>false</IncludeSymbols>
     </PropertyGroup>
 
     <ItemGroup>
