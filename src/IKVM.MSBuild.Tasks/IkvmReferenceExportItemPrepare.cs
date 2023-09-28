@@ -56,7 +56,7 @@
 
         readonly static MD5 md5 = MD5.Create();
         readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<string>> fileIdentityCache = new ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<string>>();
-        readonly static ConcurrentDictionary<string, System.Threading.Tasks.Task<AssemblyInfo>> assemblyInfoCache = new ConcurrentDictionary<string, System.Threading.Tasks.Task<AssemblyInfo>>();
+        readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<AssemblyInfo>> assemblyInfoCache = new ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<AssemblyInfo>>();
 
         /// <summary>
         /// Calculates the hash of the value.
@@ -224,16 +224,18 @@
         /// <returns></returns>
         System.Threading.Tasks.Task<List<string>> CalculateLibrariesAsync(IkvmReferenceExportItem item, CancellationToken cancellationToken)
         {
-            // gather library lines
-            var libraries = new HashSet<string>();
+            var librariesList = new HashSet<string>();
+
             if (Libraries != null)
                 foreach (var library in Libraries)
-                    libraries.Add(library.ItemSpec);
+                    librariesList.Add(library.ItemSpec);
+
             if (item.Libraries != null)
                 foreach (var library in item.Libraries)
-                    libraries.Add(library);
+                    librariesList.Add(library);
 
-            return System.Threading.Tasks.Task.FromResult(libraries.OrderBy(i => i).ToList());
+            var libraries = librariesList.OrderBy(i => i).ToList();
+            return System.Threading.Tasks.Task.FromResult(libraries);
         }
 
         /// <summary>
@@ -331,7 +333,7 @@
         /// <returns></returns>
         System.Threading.Tasks.Task<AssemblyInfo> GetAssemblyInfoAsync(string path)
         {
-            return assemblyInfoCache.GetOrAdd(path, p => System.Threading.Tasks.Task.Run(() => ReadAssemblyInfo(p)));
+            return assemblyInfoCache.GetOrAdd((path, File.GetLastWriteTimeUtc(path)), _ => System.Threading.Tasks.Task.Run(() => ReadAssemblyInfo(_.Item1)));
         }
 
         /// <summary>
