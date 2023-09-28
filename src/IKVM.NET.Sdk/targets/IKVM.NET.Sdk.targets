@@ -19,14 +19,7 @@
 
     <Import Project="$(MSBuildThisFileDirectory)IKVM.NET.Sdk.Java.targets" />
 
-    <ItemGroup Condition=" '$(ManagePackageVersionsCentrally)' == 'true' ">
-        <PackageVersion Include="IKVM" Version="$(IkvmVersion)" Exclude="@(PackageVersion)" Condition=" '$(DisableImplicitIkvmPackageReference)' != 'true' " />
-        <PackageVersion Include="IKVM.MSBuild" Version="$(IkvmVersion)" Exclude="@(PackageVersion)" Condition=" '$(DisableImplicitIkvmMSBuildPackageReference)' != 'true' " />
-        <PackageReference Include="IKVM" Exclude="@(PackageReference)" Condition=" '$(DisableImplicitIkvmPackageReference)' != 'true' " />
-        <PackageReference Include="IKVM.MSBuild" Exclude="@(PackageReference)" Condition=" '$(DisableImplicitIkvmMSBuildPackageReference)' != 'true' " />
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(ManagePackageVersionsCentrally)' != 'true' ">
+    <ItemGroup>
         <PackageReference Include="IKVM" Version="$(IkvmVersion)" Exclude="@(PackageReference)" Condition=" '$(DisableImplicitIkvmPackageReference)' != 'true' " />
         <PackageReference Include="IKVM.MSBuild" Version="$(IkvmVersion)" Exclude="@(PackageReference)" Condition=" '$(DisableImplicitIkvmMSBuildPackageReference)' != 'true' " />
     </ItemGroup>
@@ -34,7 +27,7 @@
     <!-- Inline tasks require some packages present. -->
 
     <!-- Inline tasks require some packages present. -->
-    <ItemGroup Condition=" '$(UseIkvmTasks)' == 'false' >
+    <ItemGroup Condition=" '$(UseIkvmTasks)' == 'false' ">
         <PackageReference Include="System.Collections.Immutable" Exclude="@(PackageReference)" Version="7.0.0" PrivateAssets="all" />
         <PackageReference Include="System.Memory" Exclude="@(PackageReference)" Version="4.5.5" PrivateAssets="all" />
         <PackageReference Include="System.Reflection.Metadata" Exclude="@(PackageReference)" Version="7.0.2" PrivateAssets="all" />
