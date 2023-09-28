@@ -3,6 +3,23 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
+    <!-- Adds an index value to each item. Can be used to ensure at least one unique metadata value is available on each item. -->
+    <UsingTask TaskName="SortAssemblyAttributeLines" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Lines ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Collections.Generic" />
+            <Using Namespace="System.Linq" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                Lines = Lines.OrderBy(i => i.ItemSpec).ToArray();
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
     <Target Name="CoreGenerateAssemblyInfo" Condition=" '$(Language)' == 'Java' " DependsOnTargets="CreateGeneratedAssemblyInfoInputsCacheFile" Inputs="$(GeneratedAssemblyInfoInputsCacheFile)" Outputs="$(GeneratedAssemblyInfoFile)">
         <ItemGroup>
             <Compile Remove="$(GeneratedAssemblyInfoFile)" />
@@ -22,10 +39,15 @@
             <JavaAssemblyAttribute Include="System.Runtime.CompilerServices.ExtensionAttribute" />
         </ItemGroup>
         <ItemGroup>
-            <_JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' == '' And '%(JavaAssemblyAttribute._Parameter2)' == '' And '%(JavaAssemblyAttribute._Parameter3)' == '' " />
-            <_JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' == '' And '%(JavaAssemblyAttribute._Parameter3)' == '' " />
-            <_JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' != '' And '%(JavaAssemblyAttribute._Parameter3)' == '' " />
-            <_JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;, &quot;%(_Parameter3)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' != '' And '%(JavaAssemblyAttribute._Parameter3)' != '' " />
+            <__JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' == '' And '%(JavaAssemblyAttribute._Parameter2)' == '' And '%(JavaAssemblyAttribute._Parameter3)' == '' " />
+            <__JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' == '' And '%(JavaAssemblyAttribute._Parameter3)' == '' " />
+            <__JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' != '' And '%(JavaAssemblyAttribute._Parameter3)' == '' " />
+            <__JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;, &quot;%(_Parameter3)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' != '' And '%(JavaAssemblyAttribute._Parameter3)' != '' " />
+        </ItemGroup>
+        <SortAssemblyAttributeLines Lines="@(__JavaAssemblyInfoLine)">
+            <Output TaskParameter="Lines" ItemName="_JavaAssemblyInfoLine" />
+        </SortAssemblyAttributeLines>
+        <ItemGroup>
             <_JavaAssemblyInfoLine Include="interface __AssemblyInfo {}" />
         </ItemGroup>
         <WriteLinesToFile File="$(GeneratedAssemblyInfoFile)" Lines="@(_JavaAssemblyInfoLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
