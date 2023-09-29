@@ -57,16 +57,16 @@ namespace IKVM.MSBuild.Tests
         {
             var properties = File.ReadAllLines("IKVM.MSBuild.Tests.properties").Select(i => i.Split('=', 2)).ToDictionary(i => i[0], i => i[1]);
 
-            var nugetPackageRoot = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", "nuget", "packages");
+            var nugetPackageRoot = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", Guid.NewGuid().ToString(), "nuget", "packages");
             if (Directory.Exists(nugetPackageRoot))
                 Directory.Delete(nugetPackageRoot, true);
             Directory.CreateDirectory(nugetPackageRoot);
 
-            var ikvmCachePath = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", "ikvm", "cache");
+            var ikvmCachePath = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", Guid.NewGuid().ToString(), "ikvm", "cache");
             if (Directory.Exists(ikvmCachePath))
                 Directory.Delete(ikvmCachePath, true);
 
-            var ikvmExportCachePath = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", "ikvm", "expcache");
+            var ikvmExportCachePath = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", Guid.NewGuid().ToString(), "ikvm", "expcache");
             if (Directory.Exists(ikvmExportCachePath))
                 Directory.Delete(ikvmExportCachePath, true);
 
