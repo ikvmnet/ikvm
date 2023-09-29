@@ -1,6 +1,6 @@
 <Project>
     <ItemGroup>
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libikvm\libikvm.clangproj " />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libikvm\libikvm.clangproj" />
     </ItemGroup>
 
     <Target Name="GetClangProjectReferencesByRuntime" Inputs="@(_ReferencedClangProjects)" Outputs="%(_ReferencedClangProjects.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">
