@@ -203,7 +203,7 @@
             </_IkvmImageItemFinal>
         </ItemGroup>
         <_NormalizeIkvmImageItems Items="@(_IkvmImageItemFinal)">
-            <Output TaskParameter="Items" ItemName="None" />
+            <Output TaskParameter="Items" ItemName="_NoneWithTargetPath" />
         </_NormalizeIkvmImageItems>
     </Target>
 
@@ -216,12 +216,12 @@
 
     <Target Name="GetDefaultIkvmPropertiesFile" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths">
         <ItemGroup>
-            <None Include="$(MSBuildThisFileDirectory)..\content\ikvm.properties" Condition="Exists('$(MSBuildThisFileDirectory)..\content\ikvm.properties')">
+            <_NoneWithTargetPath Include="$(MSBuildThisFileDirectory)..\content\ikvm.properties" Condition="Exists('$(MSBuildThisFileDirectory)..\content\ikvm.properties')">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>ikvm.properties</TargetPath>
                 <Private>true</Private>
                 <Link>ikvm.properties</Link>
-            </None>
+            </_NoneWithTargetPath>
         </ItemGroup>
     </Target>
 

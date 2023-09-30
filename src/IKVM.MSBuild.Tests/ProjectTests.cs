@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Xml.Linq;
 
 using Buildalyzer;
@@ -45,37 +48,40 @@ namespace IKVM.MSBuild.Tests
 
         }
 
-        public TestContext TestContext { get; set; }
+        public static Dictionary<string, string> Properties { get; set; }
 
-        public IProjectAnalyzer Analyzer { get; set; }
+        public static string TempRoot { get; set; }
 
-        /// <summary>
-        /// Initializes Buildalyzer for the tests.
-        /// </summary>
-        [TestInitialize]
-        public void Init()
+        public static string NuGetPackageRoot { get; set; }
+
+        public static string IkvmCachePath { get; set; }
+
+        public static string IkvmExportCachePath { get; set; }
+
+        [ClassInitialize]
+        public static void ClassInitialize(TestContext context)
         {
-            var properties = File.ReadAllLines("IKVM.MSBuild.Tests.properties").Select(i => i.Split('=', 2)).ToDictionary(i => i[0], i => i[1]);
+            // properties to load into test build
+            Properties = File.ReadAllLines("IKVM.MSBuild.Tests.properties").Select(i => i.Split('=', 2)).ToDictionary(i => i[0], i => i[1]);
 
-            var nugetPackageRoot = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", Guid.NewGuid().ToString(), "nuget", "packages");
-            if (Directory.Exists(nugetPackageRoot))
-                Directory.Delete(nugetPackageRoot, true);
-            Directory.CreateDirectory(nugetPackageRoot);
+            // temporary directory for run
+            TempRoot = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", Guid.NewGuid().ToString());
+            if (Directory.Exists(TempRoot))
+                Directory.Delete(TempRoot, true);
+            Directory.CreateDirectory(TempRoot);
 
-            var ikvmCachePath = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", Guid.NewGuid().ToString(), "ikvm", "cache");
-            if (Directory.Exists(ikvmCachePath))
-                Directory.Delete(ikvmCachePath, true);
+            // other required sub directories
+            NuGetPackageRoot = Path.Combine(TempRoot, "nuget", "packages");
+            IkvmCachePath = Path.Combine(TempRoot, "ikvm", "cache");
+            IkvmExportCachePath = Path.Combine(TempRoot, "ikvm", "expcache");
 
-            var ikvmExportCachePath = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", Guid.NewGuid().ToString(), "ikvm", "expcache");
-            if (Directory.Exists(ikvmExportCachePath))
-                Directory.Delete(ikvmExportCachePath, true);
-
+            // nuget.config file that defines package sources
             new XDocument(
                 new XElement("configuration",
                     new XElement("config",
                         new XElement("add",
                             new XAttribute("key", "globalPackagesFolder"),
-                            new XAttribute("value", nugetPackageRoot))),
+                            new XAttribute("value", NuGetPackageRoot))),
                     new XElement("packageSources",
                         new XElement("clear"),
                         new XElement("add",
@@ -83,34 +89,43 @@ namespace IKVM.MSBuild.Tests
                             new XAttribute("value", "https://api.nuget.org/v3/index.json")),
                         new XElement("add",
                             new XAttribute("key", "dev"),
-                            new XAttribute("value", Path.Combine(Path.GetDirectoryName(typeof(ProjectTests).Assembly.Location), @"nuget"))),
-                        new XElement("add",
-                            new XAttribute("key", "nuget.org"),
-                            new XAttribute("value", "https://api.nuget.org/v3/index.json")))))
+                            new XAttribute("value", Path.Combine(Path.GetDirectoryName(typeof(ProjectTests).Assembly.Location), @"nuget"))))))
                 .Save(Path.Combine(@"Project", "nuget.config"));
 
             var manager = new AnalyzerManager();
-            Analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
-            Analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
-            Analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
-            Analyzer.SetGlobalProperty("IkvmCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
-            Analyzer.SetGlobalProperty("IkvmExportCacheDir", ikvmExportCachePath + Path.DirectorySeparatorChar);
-            Analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
-            Analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
-            Analyzer.SetGlobalProperty("CreateHardLinksForAdditionalFilesIfPossible", "true");
-            Analyzer.SetGlobalProperty("CreateHardLinksForCopyAdditionalFilesIfPossible", "true");
-            Analyzer.SetGlobalProperty("CreateHardLinksForCopyFilesToOutputDirectoryIfPossible", "true");
-            Analyzer.SetGlobalProperty("CreateHardLinksForCopyLocalIfPossible", "true");
-            Analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
-            Analyzer.SetGlobalProperty("Configuration", "Release");
+            var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
+            analyzer.AddBuildLogger(new TargetLogger(context));
+            analyzer.AddBinaryLogger(Path.Combine(TempRoot, "msbuild.binlog"));
+            analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
+            analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
+            analyzer.SetGlobalProperty("IkvmCacheDir", IkvmCachePath + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("IkvmExportCacheDir", IkvmExportCachePath + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("PackageVersion", Properties["PackageVersion"]);
+            analyzer.SetGlobalProperty("RestorePackagesPath", NuGetPackageRoot + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("CreateHardLinksForAdditionalFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyAdditionalFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyFilesToOutputDirectoryIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyLocalIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("Configuration", "Release");
 
-            Analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
             var options = new EnvironmentOptions();
+            options.DesignTime = false;
+            options.Restore = true;
             options.TargetsToBuild.Clear();
-            options.TargetsToBuild.Add("Restore");
             options.TargetsToBuild.Add("Clean");
-            Analyzer.Build(options).OverallSuccess.Should().BeTrue();
+            options.TargetsToBuild.Add("Restore");
+            analyzer.Build(options).OverallSuccess.Should().Be(true);
         }
+
+        [ClassCleanup]
+        public static void ClassCleanup()
+        {
+            if (Directory.Exists(TempRoot))
+                Directory.Delete(TempRoot, true);
+        }
+
+        public TestContext TestContext { get; set; }
 
         [DataTestMethod]
         [DataRow("net472", "win-x86")]
@@ -144,15 +159,32 @@ namespace IKVM.MSBuild.Tests
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
                     return;
 
+            var manager = new AnalyzerManager();
+            var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
+            analyzer.AddBuildLogger(new TargetLogger(TestContext));
+            analyzer.AddBinaryLogger(Path.Combine(TempRoot, $"{tfm}-{rid}-msbuild.binlog"));
+            analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
+            analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
+            analyzer.SetGlobalProperty("IkvmCacheDir", IkvmCachePath + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("IkvmExportCacheDir", IkvmExportCachePath + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("PackageVersion", Properties["PackageVersion"]);
+            analyzer.SetGlobalProperty("RestorePackagesPath", NuGetPackageRoot + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("CreateHardLinksForAdditionalFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyAdditionalFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyFilesToOutputDirectoryIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyLocalIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("Configuration", "Release");
+
             var options = new EnvironmentOptions();
             options.DesignTime = false;
-            options.Restore = false;
+            options.Restore = true;
             options.GlobalProperties["TargetFramework"] = tfm;
             options.GlobalProperties["RuntimeIdentifier"] = rid;
             options.TargetsToBuild.Clear();
             options.TargetsToBuild.Add("Build");
             options.TargetsToBuild.Add("Publish");
-            Analyzer.Build(options).OverallSuccess.Should().Be(true);
+            analyzer.Build(options).OverallSuccess.Should().Be(true);
         }
 
     }

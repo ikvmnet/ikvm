@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using IKVM.Tools.Runner;
 using IKVM.Tools.Runner.Importer;
 
 using Microsoft.Build.Framework;
