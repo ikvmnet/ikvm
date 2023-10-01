@@ -101,7 +101,6 @@
         </When>
     </Choose>
 
-    <!-- Transforms the contents of a file using a #PARAMETER# replacement strategy. -->
     <UsingTask TaskName="_ExpandIkvmImageItems" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <TargetFrameworks ParameterType="System.String[]" Required="true" />
@@ -197,10 +196,9 @@
     <Target Name="GetIkvmImageItemsOutputItems" DependsOnTargets="$(GetIkvmImageItemsOutputItemsDependsOn)" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths">
         <ItemGroup>
             <_IkvmImageItemFinal Include="@(_ExpandedIkvmImageItem)">
-                <Pack Condition=" '%(_ExpandedIkvmImageItem.Pack)' == '' ">false</Pack>
                 <TargetPath>ikvm\%(_ExpandedIkvmImageItem.RuntimeIdentifier)\%(_ExpandedIkvmImageItem.ImagePath)</TargetPath>
-                <Private Condition=" '%(_ExpandedIkvmImageItem.Private)' == '' ">true</Private>
                 <Link>ikvm\%(_ExpandedIkvmImageItem.RuntimeIdentifier)\%(_ExpandedIkvmImageItem.ImagePath)</Link>
+                <Pack Condition=" '%(_ExpandedIkvmImageItem.Pack)' == '' ">false</Pack>
             </_IkvmImageItemFinal>
         </ItemGroup>
         <_NormalizeIkvmImageItems Items="@(_IkvmImageItemFinal)">
@@ -220,7 +218,6 @@
             <None Include="$(MSBuildThisFileDirectory)..\content\ikvm.properties" Condition="Exists('$(MSBuildThisFileDirectory)..\content\ikvm.properties')">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>ikvm.properties</TargetPath>
-                <Private>true</Private>
                 <Link>ikvm.properties</Link>
             </None>
         </ItemGroup>

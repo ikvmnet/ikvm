@@ -4,6 +4,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\win-x64\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+        </IkvmImageItem>
         <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net472\win-x64\**\*">
             <TargetFramework>net472</TargetFramework>
             <RuntimeIdentifier>win-x64</RuntimeIdentifier>

@@ -14,7 +14,6 @@
     <Target Name="GetIkvmImageItemsToPack" DependsOnTargets="CollectIkvmImageItemsOutputItems" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths">
         <ItemGroup>
             <_PackageFiles Include="@(IkvmImageItem)">
-                <CopyToOutputDirectory>Never</CopyToOutputDirectory>
                 <PackagePath Condition=" '%(IkvmImageItem.ImagePath)' != '' ">ikvm\%(IkvmImageItem.TargetFramework)\%(IkvmImageItem.RuntimeIdentifier)\%(IkvmImageItem.ImagePath)</PackagePath>
                 <PackagePath Condition=" '%(IkvmImageItem.ImagePath)' != '' And '$([System.IO.Path]::GetExtension(%(IkvmImageItem.ImagePath)))' == '' ">$([System.IO.Path]::GetDirectoryName('ikvm\%(IkvmImageItem.TargetFramework)\%(IkvmImageItem.RuntimeIdentifier)\%(IkvmImageItem.ImagePath)'))</PackagePath>
                 <Pack>true</Pack>

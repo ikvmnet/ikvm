@@ -4,6 +4,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\linux-musl-x64\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>linux-musl-x64</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+        </IkvmImageItem>
         <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net472\linux-musl-x64\**\*">
             <TargetFramework>net472</TargetFramework>
             <RuntimeIdentifier>linux-musl-x64</RuntimeIdentifier>
