@@ -1,7 +1,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-        <IkvmImageItemGroup Condition=" '$(IkvmImageItemGroup)' == '' ">_NoneWithTargetPath</IkvmImageItemGroup>
+        <IkvmImageItemGroup Condition=" '$(IkvmImageItemGroup)' == '' ">_SourceItemsToCopyToOutputDirectory</IkvmImageItemGroup>
     </PropertyGroup>
 
     <ItemGroup>
@@ -107,8 +107,7 @@
             <RuntimeIdentifiers ParameterType="System.String[]" Required="true" />
             <TargetFramework ParameterType="System.String" />
             <RuntimeIdentifier ParameterType="System.String" />
-            <InputItems ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
-            <FinalItems ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
         </ParameterGroup>
         <Task>
             <Using Namespace="System" />
@@ -120,9 +119,15 @@
                 
                 foreach (var tfm in TargetFrameworks)
                 {
+                    if (!string.IsNullOrEmpty(TargetFramework) && TargetFramework != tfm)
+                        continue;
+                    
                     foreach (var rid in RuntimeIdentifiers)
                     {
-                        foreach (var item in InputItems)
+                        if (!string.IsNullOrEmpty(RuntimeIdentifier) && RuntimeIdentifier != rid)
+                            continue;
+                        
+                        foreach (var item in Items)
                         {
                             var itemTfm = item.GetMetadata("TargetFramework");
                             if (string.IsNullOrEmpty(itemTfm))
@@ -137,30 +142,18 @@
                                 var i = new TaskItem(item);
                                 i.SetMetadata("TargetFramework", tfm);
                                 i.SetMetadata("RuntimeIdentifier", rid);
-                                
                                 i.SetMetadata("CopyToOutputDirectory", "PreserveNewest");
-                                if (!string.IsNullOrEmpty(TargetFramework) && TargetFramework != tfm)
-                                    i.SetMetadata("CopyToOutputDirectory", "Never");
-                                if (!string.IsNullOrEmpty(RuntimeIdentifier) && RuntimeIdentifier != rid)
-                                    i.SetMetadata("CopyToOutputDirectory", "Never");
-                                
                                 l.Add(i);
                             }
                         }
                     }
                 }
                 
-                FinalItems = l.ToArray();
+                Items = l.ToArray();
                 ]]>
             </Code>
         </Task>
     </UsingTask>
-
-    <Target Name="ExpandIkvmImageItems" DependsOnTargets="$(ExpandIkvmImageItemsDependsOn)">
-        <_ExpandIkvmImageItems TargetFrameworks="@(IkvmImageTargetFrameworks)" RuntimeIdentifiers="@(IkvmImageRuntimeIdentifiers)" TargetFramework="$(_IkvmImageTargetFramework)" RuntimeIdentifier="$(_IkvmImageRuntimeIdentifier)" InputItems="@(IkvmImageItem)">
-            <Output TaskParameter="FinalItems" ItemName="_ExpandedIkvmImageItem" />
-        </_ExpandIkvmImageItems>
-    </Target>
 
     <PropertyGroup>
         <ExpandIkvmImageItemsDependsOn>
@@ -168,8 +161,20 @@
         </ExpandIkvmImageItemsDependsOn>
     </PropertyGroup>
 
-    <!-- Normalizes the set of IkvmImageItems. -->
-    <UsingTask TaskName="_NormalizeIkvmImageItems" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <Target Name="ExpandIkvmImageItems" DependsOnTargets="$(ExpandIkvmImageItemsDependsOn)">
+        <_ExpandIkvmImageItems TargetFrameworks="@(IkvmImageTargetFrameworks)" RuntimeIdentifiers="@(IkvmImageRuntimeIdentifiers)" TargetFramework="$(_IkvmImageTargetFramework)" RuntimeIdentifier="$(_IkvmImageRuntimeIdentifier)" Items="@(IkvmImageItem)">
+            <Output TaskParameter="Items" ItemName="_IkvmImageItemExpanded" />
+        </_ExpandIkvmImageItems>
+        <ItemGroup>
+            <_IkvmImageItemExpanded Update="@(_IkvmImageItemExpanded)">
+                <TargetPath>ikvm\%(_IkvmImageItemExpanded.RuntimeIdentifier)\%(_IkvmImageItemExpanded.ImagePath)</TargetPath>
+                <Link>ikvm\%(_IkvmImageItemExpanded.RuntimeIdentifier)\%(_IkvmImageItemExpanded.ImagePath)</Link>
+                <Pack Condition=" '%(_IkvmImageItemExpanded.Pack)' == '' ">false</Pack>
+            </_IkvmImageItemExpanded>
+        </ItemGroup>
+    </Target>
+
+    <UsingTask TaskName="_FilterIkvmImageItems" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
         </ParameterGroup>
@@ -179,31 +184,37 @@
             <Using Namespace="System.IO" />
             <Code Type="Fragment" Language="cs">
                 <![CDATA[
-                var targetPathHash = new HashSet<string>();
+                var l = new List<ITaskItem>();
+                
+                var targetPathHashSet = new HashSet<string>();
                 foreach (var item in Items)
                 {
                     var targetPath = item.GetMetadata("TargetPath");
                     var copyToOutputDirectory = item.GetMetadata("CopyToOutputDirectory");
                     if (!string.IsNullOrEmpty(copyToOutputDirectory) && !string.Equals(copyToOutputDirectory, "Never", StringComparison.OrdinalIgnoreCase))
-                        if (!string.IsNullOrEmpty(targetPath) && targetPathHash.Add(targetPath) == false)
-                            item.SetMetadata("CopyToOutputDirectory", "Never");
+                        if (!string.IsNullOrEmpty(targetPath) && targetPathHashSet.Add(targetPath) == false)
+                            continue;
+                    
+                    l.Add(item);
                 }
+                
+                Items = l.ToArray();
                 ]]>
             </Code>
         </Task>
     </UsingTask>
 
     <Target Name="GetIkvmImageItemsOutputItems" DependsOnTargets="$(GetIkvmImageItemsOutputItemsDependsOn)" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths">
+        <_FilterIkvmImageItems Items="@(_IkvmImageItemExpanded)">
+            <Output TaskParameter="Items" ItemName="_IkvmImageItemFiltered" />
+        </_FilterIkvmImageItems>
+        <CreateItem Include="@(_IkvmImageItemFiltered)">
+            <Output TaskParameter="Include" ItemName="$(IkvmImageItemGroup)" />
+        </CreateItem>
         <ItemGroup>
-            <_IkvmImageItemFinal Include="@(_ExpandedIkvmImageItem)">
-                <TargetPath>ikvm\%(_ExpandedIkvmImageItem.RuntimeIdentifier)\%(_ExpandedIkvmImageItem.ImagePath)</TargetPath>
-                <Link>ikvm\%(_ExpandedIkvmImageItem.RuntimeIdentifier)\%(_ExpandedIkvmImageItem.ImagePath)</Link>
-                <Pack Condition=" '%(_ExpandedIkvmImageItem.Pack)' == '' ">false</Pack>
-            </_IkvmImageItemFinal>
+            <_IkvmImageItemExpanded Remove="@(_IkvmImageItemExpanded)" />
+            <_IkvmImageItemFiltered Remove="@(_IkvmImageItemFiltered)" />
         </ItemGroup>
-        <_NormalizeIkvmImageItems Items="@(_IkvmImageItemFinal)">
-            <Output TaskParameter="Items" ItemName="$(IkvmImageItemGroup)" />
-        </_NormalizeIkvmImageItems>
     </Target>
 
     <PropertyGroup>
