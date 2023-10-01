@@ -1,0 +1,25 @@
+<!--
+
+    IKVM.Image.pack.targets
+    
+    Imported by the the Image packages to ensure we pack IkvmImageItems appropriately.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <Target Name="GetIkvmImageItemsToPack" DependsOnTargets="CollectIkvmImageItemsOutputItems" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths">
+        <ItemGroup>
+            <_PackageFiles Include="@(IkvmImageItem)">
+                <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+                <PackagePath Condition=" '%(IkvmImageItem.ImagePath)' != '' ">ikvm\%(IkvmImageItem.TargetFramework)\%(IkvmImageItem.RuntimeIdentifier)\%(IkvmImageItem.ImagePath)</PackagePath>
+                <PackagePath Condition=" '%(IkvmImageItem.ImagePath)' != '' And '$([System.IO.Path]::GetExtension(%(IkvmImageItem.ImagePath)))' == '' ">$([System.IO.Path]::GetDirectoryName('ikvm\%(IkvmImageItem.TargetFramework)\%(IkvmImageItem.RuntimeIdentifier)\%(IkvmImageItem.ImagePath)'))</PackagePath>
+                <Pack>true</Pack>
+            </_PackageFiles>
+        </ItemGroup>
+    </Target>
+
+</Project>

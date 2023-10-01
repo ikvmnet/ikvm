@@ -1,6 +1,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+        <IkvmImageItemGroup Condition=" '$(IkvmImageItemGroup)' == '' ">_NoneWithTargetPath</IkvmImageItemGroup>
     </PropertyGroup>
 
     <ItemGroup>
@@ -203,7 +204,7 @@
             </_IkvmImageItemFinal>
         </ItemGroup>
         <_NormalizeIkvmImageItems Items="@(_IkvmImageItemFinal)">
-            <Output TaskParameter="Items" ItemName="_NoneWithTargetPath" />
+            <Output TaskParameter="Items" ItemName="$(IkvmImageItemGroup)" />
         </_NormalizeIkvmImageItems>
     </Target>
 
@@ -216,12 +217,12 @@
 
     <Target Name="GetDefaultIkvmPropertiesFile" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths">
         <ItemGroup>
-            <_NoneWithTargetPath Include="$(MSBuildThisFileDirectory)..\content\ikvm.properties" Condition="Exists('$(MSBuildThisFileDirectory)..\content\ikvm.properties')">
+            <None Include="$(MSBuildThisFileDirectory)..\content\ikvm.properties" Condition="Exists('$(MSBuildThisFileDirectory)..\content\ikvm.properties')">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>ikvm.properties</TargetPath>
                 <Private>true</Private>
                 <Link>ikvm.properties</Link>
-            </_NoneWithTargetPath>
+            </None>
         </ItemGroup>
     </Target>
 

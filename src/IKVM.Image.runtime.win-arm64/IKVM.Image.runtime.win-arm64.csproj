@@ -18,4 +18,5 @@
     </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Image\IKVM.Image.runtime.targets" />
+    
 </Project>
