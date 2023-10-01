@@ -1,9 +1,9 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project>
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <ItemGroup
+    <ItemGroup>
         <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\win-x86\**\*">
             <TargetFramework>any</TargetFramework>
             <RuntimeIdentifier>win-x86</RuntimeIdentifier>

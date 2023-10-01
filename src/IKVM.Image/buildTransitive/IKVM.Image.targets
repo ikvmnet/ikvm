@@ -1,4 +1,4 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project>
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
         <IkvmImageItemGroup Condition=" '$(IkvmImageItemGroup)' == '' ">_SourceItemsToCopyToOutputDirectory</IkvmImageItemGroup>

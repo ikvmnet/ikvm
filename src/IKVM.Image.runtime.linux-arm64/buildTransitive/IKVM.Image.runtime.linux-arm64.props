@@ -1,9 +1,9 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project>
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <ItemGroup
+    <ItemGroup>
         <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\linux-arm64\**\*">
             <TargetFramework>any</TargetFramework>
             <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>

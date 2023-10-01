@@ -1,7 +1,8 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project>
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\targets\IKVM.NET.Sdk.props" />
+    
 </Project>
