@@ -3,7 +3,7 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <ItemGroup
+    <ItemGroup>
         <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\linux-musl-arm\**\*">
             <TargetFramework>any</TargetFramework>
             <RuntimeIdentifier>linux-musl-arm</RuntimeIdentifier>
