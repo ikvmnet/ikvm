@@ -29,10 +29,6 @@
             <_IkvmCompilerReferencePath Include="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference)" />
         </ItemGroup>
 
-        <IkvmCanonicalizePath Items="@(_IkvmCompilerReferencePath->'%(FullPath)')">
-            <Output TaskParameter="Items" ItemName="__IkvmCompilerReferencePath" />
-        </IkvmCanonicalizePath>
-
         <ItemGroup>
             <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
             <_IkvmCompilerArgs Include="-debug" Condition=" '%(IkvmReferenceItem.Debug)' == 'true' " />
@@ -48,7 +44,7 @@
             <_IkvmCompilerArgs Include="-target:library" />
             <_IkvmCompilerArgs Include="-nostdlib" />
             <_IkvmCompilerArgs Include="-classloader:%(IkvmReferenceItem.ClassLoader)" Condition=" '%(IkvmReferenceItem.ClassLoader)' != '' " />
-            <_IkvmCompilerArgs Include="@(__IkvmCompilerReferencePath->'-reference:%(Identity)')" />
+            <_IkvmCompilerArgs Include="@(_IkvmCompilerReferencePath->'-reference:%(FullPath)')" />
             <_IkvmCompilerArgs Include="-out:%(IkvmReferenceItem.StagePath)" />
             <_IkvmCompilerArgs Include="%(IkvmReferenceItem.Compile)" />
         </ItemGroup>

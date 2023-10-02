@@ -1,6 +1,7 @@
 ﻿namespace IKVM.MSBuild.Tasks
 {
 
+    using System.Collections.Concurrent;
     using System.IO;
 
     using Microsoft.Build.Framework;
@@ -11,6 +12,8 @@
     /// </summary>
     public class IkvmCanonicalizePath : Task
     {
+
+        readonly static ConcurrentDictionary<string, string> cache = new();
 
         /// <summary>
         /// Items to canonicalize.
@@ -65,7 +68,7 @@
         /// <returns></returns>
         string TryCanonicalizePath(string path)
         {
-            return path != null && Path.IsPathRooted(path) ? IkvmTaskUtil.CanonicalizePath(path) : path;
+            return path != null && Path.IsPathRooted(path) ? IkvmTaskUtil.CanonicalizePath(path, cache) : path;
         }
 
     }

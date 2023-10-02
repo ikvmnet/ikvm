@@ -9,7 +9,6 @@
     using System.Linq;
     using System.Reflection.Metadata;
     using System.Reflection.PortableExecutable;
-    using System.Security;
     using System.Security.Cryptography;
     using System.Text;
     using System.Text.RegularExpressions;
@@ -55,8 +54,8 @@
 
         readonly static RandomNumberGenerator rng = RandomNumberGenerator.Create();
         readonly static MD5 md5 = MD5.Create();
-        readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<string>> fileIdentityCache = new ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<string>>();
-        readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<AssemblyInfo>> assemblyInfoCache = new ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<AssemblyInfo>>();
+        readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<string>> fileIdentityCache = new();
+        readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<AssemblyInfo>> assemblyInfoCache = new();
 
         /// <summary>
         /// Calculates the hash of the value.
@@ -206,14 +205,13 @@
 
             if (References != null)
                 foreach (var reference in References)
-                    referencesList.Add(Path.IsPathRooted(reference.ItemSpec) ? IkvmTaskUtil.CanonicalizePath(reference.ItemSpec) : reference.ItemSpec);
+                    referencesList.Add(reference.ItemSpec);
 
             if (item.References != null)
                 foreach (var reference in item.References)
-                    referencesList.Add(Path.IsPathRooted(reference) ? IkvmTaskUtil.CanonicalizePath(reference) : reference);
+                    referencesList.Add(reference);
 
-            var itemSpec = Path.IsPathRooted(item.ItemSpec) ? IkvmTaskUtil.CanonicalizePath(item.ItemSpec) : item.ItemSpec;
-            var references = await GetAssemblyReferencesAsync(itemSpec, referencesList, cancellationToken);
+            var references = await GetAssemblyReferencesAsync(item.ItemSpec, referencesList, cancellationToken);
             return references.OrderBy(i => i).ToList();
         }
 
@@ -229,11 +227,11 @@
 
             if (Libraries != null)
                 foreach (var library in Libraries)
-                    librariesList.Add(Path.IsPathRooted(library.ItemSpec) ? IkvmTaskUtil.CanonicalizePath(library.ItemSpec) : library.ItemSpec);
-
+                    librariesList.Add(library.ItemSpec);
+            
             if (item.Libraries != null)
                 foreach (var library in item.Libraries)
-                    librariesList.Add(Path.IsPathRooted(library) ? IkvmTaskUtil.CanonicalizePath(library) : library);
+                    librariesList.Add( library);
 
             var libraries = librariesList.OrderBy(i => i).ToList();
             return System.Threading.Tasks.Task.FromResult(libraries);
@@ -468,11 +466,11 @@
 
             // resolve absolute directory path, but can't acquire an identity for a directory in any other way
             if (Directory.Exists(value))
-                return IkvmTaskUtil.CanonicalizePath(value);
+                return value;
 
             // others should exist
             if (File.Exists(value))
-                return await GetIdentityForFileAsync(IkvmTaskUtil.CanonicalizePath(value), cancellationToken);
+                return await GetIdentityForFileAsync(value, cancellationToken);
 
             throw new Exception($"Could not resolve identity for '{value}'.");
         }

@@ -49,17 +49,12 @@
             </__ReferenceExport>
         </ItemGroup>
 
-        <IkvmCanonicalizePath Items="@(__ReferenceExport)" MetadataName="StagePath;CachePath">
-            <Output TaskParameter="Items" ItemName="___ReferenceExport" />
-        </IkvmCanonicalizePath>
-
         <ItemGroup>
             <ReferenceExport Remove="@(ReferenceExport)" />
-            <ReferenceExport Include="@(___ReferenceExport)" />
+            <ReferenceExport Include="@(__ReferenceExport)" />
             
             <_ReferenceExport Remove="@(_ReferenceExport)" />
             <__ReferenceExport Remove="@(__ReferenceExport)" />
-            <___ReferenceExport Remove="@(___ReferenceExport)" />
         </ItemGroup>
     </Target>
 

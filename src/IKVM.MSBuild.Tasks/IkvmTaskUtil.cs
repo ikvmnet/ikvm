@@ -2,6 +2,7 @@
 {
 
     using System;
+    using System.Collections.Concurrent;
     using System.IO;
     using System.Linq;
     using System.Security;
@@ -13,8 +14,19 @@
         /// Attempts to canonicalize the given path.
         /// </summary>
         /// <param name="path"></param>
+        /// <param name="cache"></param>
         /// <returns></returns>
-        public static string CanonicalizePath(string path)
+        public static string CanonicalizePath(string path, ConcurrentDictionary<string, string> cache)
+        {
+            return cache.GetOrAdd(path, p => CanonicalizePathImpl(p, cache));
+        }
+
+        /// <summary>
+        /// Implementation to canonicalize a path.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        static string CanonicalizePathImpl(string path, ConcurrentDictionary<string, string> cache)
         {
             try
             {
@@ -25,7 +37,7 @@
                 if (parent == null)
                     return path.Length > 1 && path[1] == ':' ? $"{char.ToUpper(path[0])}:{Path.DirectorySeparatorChar}" : path;
                 else
-                    parent = CanonicalizePath(parent);
+                    parent = CanonicalizePath(parent, cache);
 
                 // trailing slash would result in a last path element of empty string
                 var name = Path.GetFileName(path);

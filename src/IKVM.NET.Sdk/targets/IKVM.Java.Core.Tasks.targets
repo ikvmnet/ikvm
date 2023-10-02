@@ -44,10 +44,6 @@
     <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles" Inputs="@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
         <Delete Files="$(_CompileJavaStampFile)" />
 
-        <PropertyGroup>
-            <_JavaCompilerDebug Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' ">all</_JavaCompilerDebug>
-        </PropertyGroup>
-
         <!-- Store initial time. Files that remain older than this will be removed. -->
         <PropertyGroup>
             <_CompileJavaStartTime>$([System.DateTime]::Now.Ticks)</_CompileJavaStartTime>
@@ -57,6 +53,11 @@
         <MakeDir Directories="$(ClassOutputPath)" />
         <RemoveDir Directories="$(HeaderOutputPath)" />
         <MakeDir Directories="$(HeaderOutputPath)" />
+
+        <PropertyGroup>
+            <_JavaCompilerDebug Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' ">all</_JavaCompilerDebug>
+        </PropertyGroup>
+        
         <IkvmJavaCompiler
             Debug="$(_JavaCompilerDebug)"
             NoWarn="true"
@@ -70,16 +71,19 @@
 
         <!-- Remove files that were not modified by this compilation. -->
         <ItemGroup>
-            <_CompileJavaClassFiles Remove="@(_CompileJavaClassFiles)" />
             <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
-            <_CompileJavaClassFiles Remove="@(_CompileJavaHeaderFiles)" />
-            <_CompileJavaClassFiles Include="$(HeaderOutputPath)**\*.h" />
-            <_CompileJavaStaleFiles Remove="@(_CompileJavaStaleFiles)" />
-            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles);@(_CompileJavaHeaderFiles)" Condition="$([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime)" />
+            <_CompileJavaHeaderFiles Include="$(ClassOutputPath)**\*.h" />
+            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles);@(_CompileJavaHeaderFiles)" Condition=" '%(ModifiedTime)' == '' Or $([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime) " />
+            <_CompileJavaClassFiles Remove="@(_CompileJavaClassFiles)" />
+            <_CompileJavaHeaderFiles Remove="@(_CompileJavaHeaderFiles)" />
         </ItemGroup>
-        <Delete Files="@(_CompileJavaStaleFiles)" />
 
+        <Delete Files="@(_CompileJavaStaleFiles)" />
         <Touch Files="$(_CompileJavaStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <_CompileJavaStaleFiles Remove="@(_CompileJavaStaleFiles)" />
+        </ItemGroup>
     </Target>
 
     <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
