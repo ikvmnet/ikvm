@@ -31,6 +31,8 @@ namespace IKVM.MSBuild.Tasks
         [Required]
         public string Destination { get; set; }
 
+        public string HeaderDestination { get; set; }
+
         public string Debug { get; set; }
 
         public bool NoWarn { get; set; }
@@ -65,6 +67,18 @@ namespace IKVM.MSBuild.Tasks
             fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Collections.singletonList(destination));
             javacArgLog.Add($"-d");
             javacArgLog.Add($"\"{string.Join(System.IO.Path.PathSeparator.ToString(), fileManager.getLocation(StandardLocation.CLASS_OUTPUT).AsEnumerable<File>().Select(i => i.getPath()))}\"");
+
+            if (string.IsNullOrWhiteSpace(HeaderDestination) == false)
+            {
+                // create destination directory
+                var headerDestination = new File(System.IO.Path.GetFullPath(HeaderDestination));
+                headerDestination.mkdirs();
+
+                // set header output path
+                fileManager.setLocation(StandardLocation.NATIVE_HEADER_OUTPUT, Collections.singletonList(headerDestination));
+                javacArgLog.Add($"-h");
+                javacArgLog.Add($"\"{string.Join(System.IO.Path.PathSeparator.ToString(), fileManager.getLocation(StandardLocation.NATIVE_HEADER_OUTPUT).AsEnumerable<File>().Select(i => i.getPath()))}\"");
+            }
 
             // get set of source items to compile
             var compilationUnits = fileManager.getJavaFileObjectsFromFiles(Arrays.asList(Sources.Select(i => new File(System.IO.Path.GetFullPath(i.ItemSpec))).Cast<object>().ToArray()));
