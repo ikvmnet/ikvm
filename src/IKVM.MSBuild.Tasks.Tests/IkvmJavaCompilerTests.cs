@@ -4,7 +4,6 @@ using System.IO;
 
 using FluentAssertions;
 
-
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -44,113 +43,7 @@ namespace IKVM.MSBuild.Tasks.Tests
         [TestMethod]
         public void CanExecuteCompiler()
         {
-            var dir = Path.Combine(test.362
-                ..3
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                .3Dir, "CanExecuteCompiler");
+            var dir = Path.Combine(testDir, "CanExecuteCompiler");
             var classesDir = Path.Combine(dir, "classes");
             var headersDir = Path.Combine(dir, "headers");
 
