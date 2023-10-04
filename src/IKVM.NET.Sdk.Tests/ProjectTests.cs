@@ -167,7 +167,7 @@ namespace IKVM.NET.Sdk.Tests
             var manager = new AnalyzerManager();
             var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.msbuildproj"));
             analyzer.AddBuildLogger(new TargetLogger(TestContext));
-            analyzer.AddBinaryLogger(Path.Combine(TempRoot, $"{tfm}-{rid}-msbuild.binlog"));
+            analyzer.AddBinaryLogger(Path.Combine(WorkRoot, $"{tfm}-{rid}-msbuild.binlog"));
             analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
             analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
             analyzer.SetGlobalProperty("IkvmCacheDir", IkvmCachePath + Path.DirectorySeparatorChar);
