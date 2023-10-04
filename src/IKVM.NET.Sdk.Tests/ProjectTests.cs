@@ -73,7 +73,7 @@ namespace IKVM.NET.Sdk.Tests
             Directory.CreateDirectory(TempRoot);
 
             // work directory
-            WorkRoot = Path.Combine(context.TestRunResultsDirectory, "IKVM.NET.Sdk.Tests", Guid.NewGuid().ToString());
+            WorkRoot = Path.Combine(context.TestRunResultsDirectory, "IKVM.NET.Sdk.Tests", "ProjectTests");
             if (Directory.Exists(WorkRoot))
                 Directory.Delete(WorkRoot, true);
             Directory.CreateDirectory(WorkRoot);

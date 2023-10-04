@@ -73,7 +73,7 @@ namespace IKVM.MSBuild.Tests
             Directory.CreateDirectory(TempRoot);
 
             // work directory
-            WorkRoot = Path.Combine(context.TestRunResultsDirectory, "IKVM.MSBuild.Tests", Guid.NewGuid().ToString());
+            WorkRoot = Path.Combine(context.TestRunResultsDirectory, "IKVM.MSBuild.Tests", "ProjectTests");
             if (Directory.Exists(WorkRoot))
                 Directory.Delete(WorkRoot, true);
             Directory.CreateDirectory(WorkRoot);
