@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using System.Xml.Linq;
 
 using Buildalyzer;
@@ -103,7 +101,7 @@ namespace IKVM.MSBuild.Tests
             var manager = new AnalyzerManager();
             var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
             analyzer.AddBuildLogger(new TargetLogger(context));
-            analyzer.AddBinaryLogger(Path.Combine(TempRoot, "msbuild.binlog"));
+            analyzer.AddBinaryLogger(Path.Combine(WorkRoot, "msbuild.binlog"));
             analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
             analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
             analyzer.SetGlobalProperty("IkvmCacheDir", IkvmCachePath + Path.DirectorySeparatorChar);
@@ -186,7 +184,7 @@ namespace IKVM.MSBuild.Tests
 
             var options = new EnvironmentOptions();
             options.DesignTime = false;
-            options.Restore = true;
+            options.Restore = false;
             options.GlobalProperties["TargetFramework"] = tfm;
             options.GlobalProperties["RuntimeIdentifier"] = rid;
             options.TargetsToBuild.Clear();
