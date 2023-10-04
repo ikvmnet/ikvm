@@ -50,6 +50,8 @@ namespace IKVM.NET.Sdk.Tests
 
         public static string TempRoot { get; set; }
 
+        public static string WorkRoot { get; set; }
+
         public static string NuGetPackageRoot { get; set; }
 
         public static string IkvmCachePath { get; set; }
@@ -64,11 +66,17 @@ namespace IKVM.NET.Sdk.Tests
             // properties to load into test build
             Properties = File.ReadAllLines("IKVM.NET.Sdk.Tests.properties").Select(i => i.Split('=', 2)).ToDictionary(i => i[0], i => i[1]);
 
-            // temporary directory for run
+            // temporary directory
             TempRoot = Path.Combine(Path.GetTempPath(), "IKVM.NET.Sdk.Tests", Guid.NewGuid().ToString());
             if (Directory.Exists(TempRoot))
                 Directory.Delete(TempRoot, true);
             Directory.CreateDirectory(TempRoot);
+
+            // work directory
+            WorkRoot = Path.Combine(context.TestRunResultsDirectory, "IKVM.NET.Sdk.Tests", Guid.NewGuid().ToString());
+            if (Directory.Exists(WorkRoot))
+                Directory.Delete(WorkRoot, true);
+            Directory.CreateDirectory(WorkRoot);
 
             // other required sub directories
             NuGetPackageRoot = Path.Combine(TempRoot, "nuget", "packages");
@@ -95,7 +103,7 @@ namespace IKVM.NET.Sdk.Tests
             var manager = new AnalyzerManager();
             var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.msbuildproj"));
             analyzer.AddBuildLogger(new TargetLogger(context));
-            analyzer.AddBinaryLogger(Path.Combine(TempRoot, "msbuild.binlog"));
+            analyzer.AddBinaryLogger(Path.Combine(WorkRoot, "msbuild.binlog"));
             analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
             analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
             analyzer.SetGlobalProperty("IkvmCacheDir", IkvmCachePath + Path.DirectorySeparatorChar);
