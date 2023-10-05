@@ -142,7 +142,6 @@
                                 var i = new TaskItem(item);
                                 i.SetMetadata("TargetFramework", tfm);
                                 i.SetMetadata("RuntimeIdentifier", rid);
-                                i.SetMetadata("CopyToOutputDirectory", "PreserveNewest");
                                 l.Add(i);
                             }
                         }
@@ -168,7 +167,7 @@
         <ItemGroup>
             <_IkvmImageItemExpanded Update="@(_IkvmImageItemExpanded)">
                 <TargetPath>ikvm\%(_IkvmImageItemExpanded.RuntimeIdentifier)\%(_IkvmImageItemExpanded.ImagePath)</TargetPath>
-                <CopyToPublishDirectory>%(CopyToOutputDirectory)</CopyToPublishDirectory>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <Link>ikvm\%(_IkvmImageItemExpanded.RuntimeIdentifier)\%(_IkvmImageItemExpanded.ImagePath)</Link>
                 <Pack Condition=" '%(_IkvmImageItemExpanded.Pack)' == '' ">false</Pack>
             </_IkvmImageItemExpanded>
@@ -191,12 +190,8 @@
                 foreach (var item in Items)
                 {
                     var targetPath = item.GetMetadata("TargetPath");
-                    var copyToOutputDirectory = item.GetMetadata("CopyToOutputDirectory");
-                    if (!string.IsNullOrEmpty(copyToOutputDirectory) && !string.Equals(copyToOutputDirectory, "Never", StringComparison.OrdinalIgnoreCase))
-                        if (!string.IsNullOrEmpty(targetPath) && targetPathHashSet.Add(targetPath) == false)
-                            continue;
-                    
-                    l.Add(item);
+                    if (string.IsNullOrEmpty(targetPath) == false && targetPathHashSet.Add(targetPath))
+                        l.Add(item);
                 }
                 
                 Items = l.ToArray();
