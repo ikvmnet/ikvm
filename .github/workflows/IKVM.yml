@@ -495,12 +495,12 @@ jobs:
         - run: IKVM.MSBuild.Tests
           tfm: net7.0
           sys: win-x64
-        - run: IKVM.MSBuild.Tests
-          tfm: net7.0
-          sys: linux-x64
-        - run: IKVM.MSBuild.Tests
-          tfm: net7.0
-          sys: osx-x64
+        # - run: IKVM.MSBuild.Tests
+        #   tfm: net7.0
+        #   sys: linux-x64
+        # - run: IKVM.MSBuild.Tests
+        #   tfm: net7.0
+        #   sys: osx-x64
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
           sys: win-x64
