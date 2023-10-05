@@ -80,14 +80,19 @@ namespace IKVM.MSBuild.Tasks
 
                 // kick off the launcher with the configured options
                 var run = ExecuteAsync(new IkvmToolTaskDiagnosticWriter(Log, log), CancellationToken.None);
+                if (run.IsCompleted)
+                    return run.GetAwaiter().GetResult();
 
-                // yield and wait for the task to complete
                 BuildEngine3.Yield();
-                var rsl = run.GetAwaiter().GetResult();
-                BuildEngine3.Reacquire();
 
-                // check that we exited successfully
-                return rsl;
+                try
+                {
+                    return run.GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    BuildEngine3.Reacquire();
+                }
             }
             finally
             {

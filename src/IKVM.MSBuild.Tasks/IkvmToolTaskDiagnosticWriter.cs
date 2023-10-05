@@ -60,7 +60,7 @@ namespace IKVM.MSBuild.Tasks
                         break;
                 }
             }
-            catch (Exception e)
+            catch
             {
                 // ignore failure to log, not much we can do
             }

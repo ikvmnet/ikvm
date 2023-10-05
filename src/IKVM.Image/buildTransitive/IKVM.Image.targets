@@ -201,18 +201,12 @@
 
     <Target Name="GetIkvmImageItemsOutputItems" DependsOnTargets="$(GetIkvmImageItemsOutputItemsDependsOn)" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths">
         <_FilterIkvmImageItems Items="@(_IkvmImageItemExpanded)">
-            <Output TaskParameter="Items" ItemName="_IkvmImageItemFiltered" />
+            <Output TaskParameter="Items" ItemName="_SourceItemsToCopyToOutputDirectory" Condition=" '$(IkvmImageItemToNone)' != 'true' " />
+            <Output TaskParameter="Items" ItemName="_SourceItemsToCopyToPublishDirectory" Condition=" '$(IkvmImageItemToNone)' != 'true' " />
+            <Output TaskParameter="Items" ItemName="None" Condition=" '$(IkvmImageItemToNone)' == 'true' " />
         </_FilterIkvmImageItems>
-        <ItemGroup Condition=" '$(IkvmImageItemToNone)' != 'true' ">
-            <_SourceItemsToCopyToOutputDirectory Include="@(_IkvmImageItemFiltered)" />
-            <_SourceItemsToCopyToPublishDirectory Include="@(_IkvmImageItemFiltered)" />
-        </ItemGroup>
-        <ItemGroup Condition=" '$(IkvmImageItemToNone)' == 'true' ">
-            <None Include="@(_IkvmImageItemFiltered)" />
-        </ItemGroup>
         <ItemGroup>
             <_IkvmImageItemExpanded Remove="@(_IkvmImageItemExpanded)" />
-            <_IkvmImageItemFiltered Remove="@(_IkvmImageItemFiltered)" />
         </ItemGroup>
     </Target>
 
