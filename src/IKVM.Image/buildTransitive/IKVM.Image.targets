@@ -1,7 +1,7 @@
 <Project>
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-        <IkvmImageItemGroup Condition=" '$(IkvmImageItemGroup)' == '' ">_SourceItemsToCopyToOutputDirectory</IkvmImageItemGroup>
+        <IkvmImageItemGroup Condition=" '$(IkvmImageItemGroup)' == '' ">_NoneWithTargetPath</IkvmImageItemGroup>
     </PropertyGroup>
 
     <ItemGroup>
@@ -168,6 +168,7 @@
         <ItemGroup>
             <_IkvmImageItemExpanded Update="@(_IkvmImageItemExpanded)">
                 <TargetPath>ikvm\%(_IkvmImageItemExpanded.RuntimeIdentifier)\%(_IkvmImageItemExpanded.ImagePath)</TargetPath>
+                <CopyToPublishDirectory>%(CopyToOutputDirectory)</CopyToPublishDirectory>
                 <Link>ikvm\%(_IkvmImageItemExpanded.RuntimeIdentifier)\%(_IkvmImageItemExpanded.ImagePath)</Link>
                 <Pack Condition=" '%(_IkvmImageItemExpanded.Pack)' == '' ">false</Pack>
             </_IkvmImageItemExpanded>
