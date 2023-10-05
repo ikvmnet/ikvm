@@ -1,7 +1,6 @@
 <Project>
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-        <IkvmImageItemGroup Condition=" '$(IkvmImageItemGroup)' == '' ">_NoneWithTargetPath</IkvmImageItemGroup>
     </PropertyGroup>
 
     <ItemGroup>
@@ -204,9 +203,13 @@
         <_FilterIkvmImageItems Items="@(_IkvmImageItemExpanded)">
             <Output TaskParameter="Items" ItemName="_IkvmImageItemFiltered" />
         </_FilterIkvmImageItems>
-        <CreateItem Include="@(_IkvmImageItemFiltered)">
-            <Output TaskParameter="Include" ItemName="$(IkvmImageItemGroup)" />
-        </CreateItem>
+        <ItemGroup Condition=" '$(IkvmImageItemToNone)' != 'true' ">
+            <_SourceItemsToCopyToOutputDirectory Include="@(_IkvmImageItemFiltered)" />
+            <_SourceItemsToCopyToPublishDirectory Include="@(_IkvmImageItemFiltered)" />
+        </ItemGroup>
+        <ItemGroup Condition=" '$(IkvmImageItemToNone)' == 'true' ">
+            <None Include="@(_IkvmImageItemFiltered)" />
+        </ItemGroup>
         <ItemGroup>
             <_IkvmImageItemExpanded Remove="@(_IkvmImageItemExpanded)" />
             <_IkvmImageItemFiltered Remove="@(_IkvmImageItemFiltered)" />

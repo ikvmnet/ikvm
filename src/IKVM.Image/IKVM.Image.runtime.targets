@@ -10,7 +10,7 @@
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
         <SupportedImageTargetFrameworks Condition=" '$(SupportedImageTargetFrameworks)' == '' ">;$(TargetFrameworks);</SupportedImageTargetFrameworks>
-        <IkvmImageItemGroup>None</IkvmImageItemGroup>
+        <IkvmImageItemToNone>true</IkvmImageItemToNone>
     </PropertyGroup>
 
     <ItemGroup>

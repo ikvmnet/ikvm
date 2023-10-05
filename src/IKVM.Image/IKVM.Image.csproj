@@ -8,7 +8,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM Runtime Image</Description>
         <IncludeSymbols>false</IncludeSymbols>
-        <IkvmImageItemGroup>None</IkvmImageItemGroup>
+        <IkvmImageItemGroupToNone>true</IkvmImageItemGroupToNone>
     </PropertyGroup>
 
     <ItemGroup>
