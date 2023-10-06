@@ -214,8 +214,14 @@ namespace IKVM.MSBuild.Tests
                 Directory.Exists(Path.Combine(outDir, "ikvm")).Should().BeTrue();
                 Directory.Exists(Path.Combine(outDir, "ikvm", rid)).Should().BeTrue();
                 Directory.Exists(Path.Combine(outDir, "ikvm", rid, "bin")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", rid, "TRADEMARK")).Should().BeTrue();
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", "IKVM.Runtime.dll")).Should().BeTrue();
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", "IKVM.Java.dll")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "tzdb.dat")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "tzmappings")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "currency.data")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "security", "java.policy")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "security", "java.security")).Should().BeTrue();
 
                 // ikvm image bin exeecutables
                 foreach (var exeName in new[] { "jar", "jarsigner", "java", "javac", "javah", "javap", "jdeps", "keytool", "native2ascii", "orbd", "policytool", "rmic", "schemagen", "wsgen", "wsimport" })

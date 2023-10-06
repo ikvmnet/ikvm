@@ -21,84 +21,11 @@
         </When>
     </Choose>
 
-    <Choose>
-        <When Condition="$(RuntimeIdentifier.StartsWith('win'))">
-            <Choose>
-                <When Condition="$(RuntimeIdentifier.EndsWith('-x64'))">
-                    <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>win-x64</_IkvmImageRuntimeIdentifier>
-                    </PropertyGroup>
-                </When>
-                <When Condition="$(RuntimeIdentifier.EndsWith('-x86'))">
-                    <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>win-x86</_IkvmImageRuntimeIdentifier>
-                    </PropertyGroup>
-                </When>
-                <When Condition="$(RuntimeIdentifier.EndsWith('-arm'))">
-                    <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>win-arm</_IkvmImageRuntimeIdentifier>
-                    </PropertyGroup>
-                </When>
-                <When Condition="$(RuntimeIdentifier.EndsWith('-arm64'))">
-                    <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>win-arm64</_IkvmImageRuntimeIdentifier>
-                    </PropertyGroup>
-                </When>
-            </Choose>
-        </When>
-        <When Condition="$(RuntimeIdentifier.StartsWith('linux-'))">
-            <Choose>
-                <When Condition="$(RuntimeIdentifier.EndsWith('-x64'))">
-                    <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>linux-x64</_IkvmImageRuntimeIdentifier>
-                    </PropertyGroup>
-                </When>
-                <When Condition="$(RuntimeIdentifier.EndsWith('-arm'))">
-                    <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>linux-arm</_IkvmImageRuntimeIdentifier>
-                    </PropertyGroup>
-                </When>
-                <When Condition="$(RuntimeIdentifier.EndsWith('-arm64'))">
-                    <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>linux-arm64</_IkvmImageRuntimeIdentifier>
-                    </PropertyGroup>
-                </When>
-            </Choose>
-        </When>
-        <When Condition="$(RuntimeIdentifier.StartsWith('linux-musl-'))">
-            <Choose>
-                <When Condition="$(RuntimeIdentifier.EndsWith('-x64'))">
-                    <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>linux-musl-x64</_IkvmImageRuntimeIdentifier>
-                    </PropertyGroup>
-                </When>
-                <When Condition="$(RuntimeIdentifier.EndsWith('-arm'))">
-                    <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>linux-musl-arm</_IkvmImageRuntimeIdentifier>
-                    </PropertyGroup>
-                </When>
-                <When Condition="$(RuntimeIdentifier.EndsWith('-arm64'))">
-                    <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>linux-musl-arm64</_IkvmImageRuntimeIdentifier>
-                    </PropertyGroup>
-                </When>
-            </Choose>
-        </When>
-        <When Condition="$(RuntimeIdentifier.StartsWith('osx-'))">
-            <Choose>
-                <When Condition="$(RuntimeIdentifier.EndsWith('-x64'))">
-                    <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>osx-x64</_IkvmImageRuntimeIdentifier>
-                    </PropertyGroup>
-                </When>
-                <When Condition="$(RuntimeIdentifier.EndsWith('-arm64'))">
-                    <PropertyGroup>
-                        <_IkvmImageRuntimeIdentifier>osx-arm64</_IkvmImageRuntimeIdentifier>
-                    </PropertyGroup>
-                </When>
-            </Choose>
-        </When>
-    </Choose>
+    <Target Name="ResolveIkvmImageRuntimeIdentifier">
+        <IkvmResolveNearestRuntimeIdentifier AvailableRuntimeIdentifiers="@(IkvmImageRuntimeIdentifiers, ';')" TargetRuntimeIdentifier="$(RuntimeIdentifier)">
+            <Output TaskParameter="NearestRuntimeIdentifier" PropertyName="_IkvmImageRuntimeIdentifier" />
+        </IkvmResolveNearestRuntimeIdentifier>
+    </Target>
 
     <UsingTask TaskName="_ExpandIkvmImageItems" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
@@ -156,6 +83,7 @@
     <PropertyGroup>
         <ExpandIkvmImageItemsDependsOn>
             $(ExpandIkvmImageItemsDependsOn);
+            ResolveIkvmImageRuntimeIdentifier;
         </ExpandIkvmImageItemsDependsOn>
     </PropertyGroup>
 

@@ -44,6 +44,7 @@
 
     <Import Project="IKVM.Image.pack.targets" />
     <Import Project="buildTransitive\IKVM.Image.targets" />
+    <Import Project="..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.NoTasks.targets" />
     
     <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
 </Project>

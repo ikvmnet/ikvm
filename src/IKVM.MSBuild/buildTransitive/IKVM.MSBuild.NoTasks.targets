@@ -5,18 +5,22 @@
 
     <PropertyGroup>
         <___IkvmTaskUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmTaskUtil.cs'))'))</___IkvmTaskUtilCs>
-        <___IkvmCanonicalizePathCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmCanonicalizePath.cs'))'))</___IkvmCanonicalizePathCs>
+        <___IkvmJsonParserCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmJsonParser.cs'))'))</___IkvmJsonParserCs>
+        <___IkvmResolveNearestRuntimeIdentifierCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmResolveNearestRuntimeIdentifier.cs'))'))</___IkvmResolveNearestRuntimeIdentifierCs>
         <___IkvmReferenceItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItem.cs'))'))</___IkvmReferenceItemCs>
         <___IkvmReferenceItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemMetadata.cs'))'))</___IkvmReferenceItemMetadataCs>
         <___IkvmReferenceItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemPrepare.cs'))'))</___IkvmReferenceItemPrepareCs>
     </PropertyGroup>
 
-    <UsingTask TaskName="IkvmCanonicalizePath" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <UsingTask TaskName="IkvmResolveNearestRuntimeIdentifier" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
+            <Reference Include="System.Collections.Immutable" />
+            <Reference Include="System.Reflection.Metadata" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
 $([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
-$([MSBuild]::Unescape('$(___IkvmCanonicalizePathCs)'))
+$([MSBuild]::Unescape('$(___IkvmJsonParserCs)'))
+$([MSBuild]::Unescape('$(___IkvmResolveNearestRuntimeIdentifierCs)'))
             ]]>
             </Code>
         </Task>
