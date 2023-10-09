@@ -127,7 +127,7 @@
         </Task>
     </UsingTask>
 
-    <Target Name="GetIkvmImageItemsOutputItems" DependsOnTargets="$(GetIkvmImageItemsOutputItemsDependsOn)" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths">
+    <Target Name="GetIkvmImageItemsOutputItems" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths" DependsOnTargets="$(GetIkvmImageItemsOutputItemsDependsOn)">
         <_FilterIkvmImageItems Items="@(_IkvmImageItemExpanded)">
             <Output TaskParameter="Items" ItemName="_SourceItemsToCopyToOutputDirectory" Condition=" '$(IkvmImageItemToNone)' != 'true' " />
             <Output TaskParameter="Items" ItemName="_SourceItemsToCopyToPublishDirectory" Condition=" '$(IkvmImageItemToNone)' != 'true' " />

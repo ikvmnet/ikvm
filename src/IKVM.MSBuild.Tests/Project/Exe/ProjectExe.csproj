@@ -17,5 +17,16 @@
         <ProjectReference Include="..\Lib\ProjectLib.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <IkvmReference Include="..\helloworld\helloworld-2.0-1\helloworld-2.0.jar">
+
+        </IkvmReference>
+        <IkvmReference Include="..\helloworld\helloworld-2.0-2\helloworld-2.0.jar">
+            <AssemblyName>helloworld-2</AssemblyName>
+            <AssemblyVersion>2.1.0.0</AssemblyVersion>
+            <Aliases>helloworld2</Aliases>
+        </IkvmReference>
+    </ItemGroup>
+
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 </Project>

@@ -44,25 +44,6 @@
         <Error Text="Could not locate IKVM.Runtime.dll." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
     </Target>
 
-    <PropertyGroup>
-        <ResolveIkvmBaseAssemblyDependsOn>
-            $(ResolveIkvmBaseAssemblyDependsOn);
-            ResolvePackageDependenciesForBuild;
-            ResolveProjectReferences;
-        </ResolveIkvmBaseAssemblyDependsOn>
-    </PropertyGroup>
-
-    <!-- Locates the IKVM.Java assembly from among the current references of the project. -->
-    <Target Name="ResolveIkvmBaseAssembly" DependsOnTargets="$(ResolveIkvmBaseAssemblyDependsOn)">
-        <ItemGroup>
-            <_IkvmBaseAssembly Include="@(Reference);@(_ResolvedProjectReferencePaths)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Java.dll' " />
-        </ItemGroup>
-        <PropertyGroup>
-            <IkvmBaseAssembly>@(_IkvmBaseAssembly)</IkvmBaseAssembly>
-        </PropertyGroup>
-        <Error Text="Could not locate IKVM.Java.dll." Condition=" '$(IkvmBaseAssembly)' == '' " />
-    </Target>
-
     <!--
     Optionally disable registration of tasks.
     -->
