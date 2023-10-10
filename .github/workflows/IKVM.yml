@@ -549,8 +549,8 @@ jobs:
         mkdir $dir
         mkdir $dir\temp
         mkdir $dir\dotnet
-        mkdir $dir\ikvm
-        Add-Content $env:GITHUB_ENV "`nIKVMPATH=$dir\ikvm"
+        mkdir $dir\work
+        Add-Content $env:GITHUB_ENV "`nWORKPATH=$dir\work"
         Add-Content $env:GITHUB_ENV "`nTMP=$dir\temp`nTEMP=$dir\temp`nTMPDIR=$dir\temp"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir\dotnet"
     - name: Set Paths (Linux/OS X)
@@ -561,8 +561,8 @@ jobs:
         mkdir $dir
         mkdir $dir/temp
         mkdir $dir/dotnet
-        mkdir $dir/ikvm
-        Add-Content $env:GITHUB_ENV "`nIKVMPATH=$dir/ikvm"
+        mkdir $dir/work
+        Add-Content $env:GITHUB_ENV "`nWORKPATH=$dir/work"
         Add-Content $env:GITHUB_ENV "`nTMP=$dir/temp`nTEMP=$dir/temp`nTMPDIR=$dir/temp"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir/dotnet"
     - name: Install ProcDump
@@ -595,14 +595,14 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: tests--${{ steps.test-name.outputs.result }}
-        path: ${{ env.IKVMPATH }}
+        path: ${{ env.WORKPATH }}
     - name: Restore Tests
       run: tar xzvf tests--${{ steps.test-name.outputs.result }}.tar.gz
-      working-directory: ${{ env.IKVMPATH }}
+      working-directory: ${{ env.WORKPATH }}
     - name: Delete Tests
       shell: pwsh
       run: ri tests--${{ steps.test-name.outputs.result }}.tar.gz
-      working-directory: ${{ env.IKVMPATH }}
+      working-directory: ${{ env.WORKPATH }}
     - name: Execute Tests
       timeout-minutes: 120
       shell: pwsh
@@ -651,11 +651,11 @@ jobs:
             
             dotnet test @argl $tests[0].FullName
         }
-      working-directory: ${{ env.IKVMPATH }}
+      working-directory: ${{ env.WORKPATH }}
     - name: Archive Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
       run: tar czvf ${{ env.TMPDIR }}/TestResults.tar.gz TestResults
-      working-directory: ${{ env.IKVMPATH }}
+      working-directory: ${{ env.WORKPATH }}
     - name: Upload Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
       uses: actions/upload-artifact@v3
