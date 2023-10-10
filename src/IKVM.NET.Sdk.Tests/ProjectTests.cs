@@ -187,6 +187,7 @@ namespace IKVM.NET.Sdk.Tests
             options.GlobalProperties["TargetFramework"] = tfm;
             options.GlobalProperties["RuntimeIdentifier"] = rid;
             options.TargetsToBuild.Clear();
+            options.TargetsToBuild.Add("Clean");
             options.TargetsToBuild.Add("Build");
             options.TargetsToBuild.Add("Publish");
             analyzer.Build(options).OverallSuccess.Should().Be(true);

@@ -218,17 +218,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (self.fdObj == null)
                 return;
 
+            self.closeLock.writeLock().@lock();
+
             try
             {
-                self.closeLock.writeLock().@lock();
-                var h = FileDescriptorAccessor.GetHandle(self.fdObj);
-                FileDescriptorAccessor.SetHandle(self.fdObj, -1);
-                LibIkvm.Instance.io_close_file(h);
+                if (self.closed)
+                    return;
+
                 self.closed = true;
-            }
-            catch
-            {
-                // ignore
             }
             finally
             {
@@ -236,6 +233,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
 
             self.invalidateAllLocks();
+
+            var h = FileDescriptorAccessor.GetHandle(self.fdObj);
+            FileDescriptorAccessor.SetHandle(self.fdObj, -1);
+            LibIkvm.Instance.io_close_file(h);
         }
 
         /// <summary>
