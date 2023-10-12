@@ -33,10 +33,12 @@
             /// Initializes a new instance.
             /// </summary>
             /// <param name="name"></param>
+            /// <param name="mvid"></param>
             /// <param name="references"></param>
-            public AssemblyInfo(string name, List<string> references)
+            public AssemblyInfo(string name, Guid mvid, List<string> references)
             {
                 Name = name;
+                Mvid = mvid;
                 References = references;
             }
 
@@ -44,6 +46,11 @@
             /// Name of the assembly.
             /// </summary>
             public string Name { get; set; }
+
+            /// <summary>
+            /// Gets the MVID of the assembly.
+            /// </summary>
+            public Guid Mvid { get; set; }
 
             /// <summary>
             /// Names of the references of the assembly.
@@ -55,7 +62,7 @@
         readonly static RandomNumberGenerator rng = RandomNumberGenerator.Create();
         readonly static MD5 md5 = MD5.Create();
         readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<string>> fileIdentityCache = new();
-        readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<AssemblyInfo>> assemblyInfoCache = new();
+        readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<AssemblyInfo?>> assemblyInfoCache = new();
 
         /// <summary>
         /// Calculates the hash of the value.
@@ -228,10 +235,10 @@
             if (Libraries != null)
                 foreach (var library in Libraries)
                     librariesList.Add(library.ItemSpec);
-            
+
             if (item.Libraries != null)
                 foreach (var library in item.Libraries)
-                    librariesList.Add( library);
+                    librariesList.Add(library);
 
             var libraries = librariesList.OrderBy(i => i).ToList();
             return System.Threading.Tasks.Task.FromResult(libraries);
@@ -299,7 +306,7 @@
             foreach (var n in new[] { "IKVM.Runtime", "IKVM.Java" })
             {
                 foreach (var i in referencesList)
-                    if ((await GetAssemblyInfoAsync(i)).Name == n)
+                    if (await GetAssemblyInfoAsync(i) is AssemblyInfo a && a.Name == n)
                         hs.Add(i);
             }
 
@@ -318,11 +325,12 @@
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            foreach (var reference in (await GetAssemblyInfoAsync(path)).References)
-                foreach (var i in referencesList)
-                    if ((await GetAssemblyInfoAsync(i)).Name == reference)
-                        if (hs.Add(i))
-                            await BuildAssemblyReferencesAsync(i, referencesList, hs, cancellationToken);
+            if (await GetAssemblyInfoAsync(path) is AssemblyInfo a)
+                foreach (var reference in a.References)
+                    foreach (var i in referencesList)
+                        if ((await GetAssemblyInfoAsync(i)) is AssemblyInfo a2 && a2.Name == reference)
+                            if (hs.Add(i))
+                                await BuildAssemblyReferencesAsync(i, referencesList, hs, cancellationToken);
         }
 
         /// <summary>
@@ -330,7 +338,7 @@
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        System.Threading.Tasks.Task<AssemblyInfo> GetAssemblyInfoAsync(string path)
+        System.Threading.Tasks.Task<AssemblyInfo?> GetAssemblyInfoAsync(string path)
         {
             return assemblyInfoCache.GetOrAdd((path, File.GetLastWriteTimeUtc(path)), _ => System.Threading.Tasks.Task.Run(() => ReadAssemblyInfo(_.Item1)));
         }
@@ -340,14 +348,19 @@
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        AssemblyInfo ReadAssemblyInfo(string path)
+        AssemblyInfo? ReadAssemblyInfo(string path)
         {
-            using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var perdr = new PEReader(fsstm);
-            var mrdr = perdr.GetMetadataReader();
-
-            return new AssemblyInfo(mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).ToList());
+            try
+            {
+                using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var perdr = new PEReader(fsstm);
+                var mrdr = perdr.GetMetadataReader();
+                return new AssemblyInfo(mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).ToList());
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -410,25 +423,11 @@
         /// <summary>
         /// Attempts to get an identity value for a file that might be an assembly.
         /// </summary>
-        /// <param name="file"></param>
+        /// <param name="path"></param>
         /// <returns></returns>
-        System.Threading.Tasks.Task<string> TryGetIdentityForAssemblyAsync(string file)
+        async System.Threading.Tasks.Task<string> TryGetIdentityForAssemblyAsync(string path)
         {
-            return System.Threading.Tasks.Task.Run(() =>
-            {
-                try
-                {
-                    using var fsstm = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    using var perdr = new PEReader(fsstm);
-                    var mrdr = perdr.GetMetadataReader();
-                    var mvid = mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid);
-                    return $"MVID:{mvid}";
-                }
-                catch
-                {
-                    return null;
-                }
-            });
+            return $"MVID:{(await GetAssemblyInfoAsync(path))?.Mvid}";
         }
 
         /// <summary>
