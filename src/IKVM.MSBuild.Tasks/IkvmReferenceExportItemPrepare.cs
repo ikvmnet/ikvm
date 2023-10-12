@@ -59,10 +59,9 @@
 
         }
 
-        readonly static RandomNumberGenerator rng = RandomNumberGenerator.Create();
-        readonly static MD5 md5 = MD5.Create();
-        readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<string>> fileIdentityCache = new();
-        readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<AssemblyInfo?>> assemblyInfoCache = new();
+        readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
+        readonly ConcurrentDictionary<string, System.Threading.Tasks.Task<string>> fileIdentityCache = new();
+        readonly ConcurrentDictionary<string, System.Threading.Tasks.Task<AssemblyInfo?>> assemblyInfoCache = new();
 
         /// <summary>
         /// Calculates the hash of the value.
@@ -71,8 +70,8 @@
         /// <returns></returns>
         static byte[] ComputeHash(byte[] buffer)
         {
-            lock (md5)
-                return md5.ComputeHash(buffer);
+            using var md5 = MD5.Create();
+            return md5.ComputeHash(buffer);
         }
 
         /// <summary>
@@ -82,8 +81,8 @@
         /// <returns></returns>
         static byte[] ComputeHash(Stream stream)
         {
-            lock (md5)
-                return md5.ComputeHash(stream);
+            using var md5 = MD5.Create();
+            return md5.ComputeHash(stream);
         }
 
         /// <summary>
@@ -340,7 +339,7 @@
         /// <returns></returns>
         System.Threading.Tasks.Task<AssemblyInfo?> GetAssemblyInfoAsync(string path)
         {
-            return assemblyInfoCache.GetOrAdd((path, File.GetLastWriteTimeUtc(path)), _ => System.Threading.Tasks.Task.Run(() => ReadAssemblyInfo(_.Item1)));
+            return assemblyInfoCache.GetOrAdd(path, ReadAssemblyInfoAsync);
         }
 
         /// <summary>
@@ -348,19 +347,22 @@
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        AssemblyInfo? ReadAssemblyInfo(string path)
+        System.Threading.Tasks.Task<AssemblyInfo?> ReadAssemblyInfoAsync(string path)
         {
-            try
+            return System.Threading.Tasks.Task.Run<AssemblyInfo?>(() =>
             {
-                using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-                using var perdr = new PEReader(fsstm);
-                var mrdr = perdr.GetMetadataReader();
-                return new AssemblyInfo(mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).ToList());
-            }
-            catch
-            {
-                return null;
-            }
+                try
+                {
+                    using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    using var perdr = new PEReader(fsstm);
+                    var mrdr = perdr.GetMetadataReader();
+                    return new AssemblyInfo(mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).ToList());
+                }
+                catch
+                {
+                    return null;
+                }
+            });
         }
 
         /// <summary>
@@ -443,7 +445,7 @@
             if (File.Exists(file) == false)
                 throw new FileNotFoundException($"Could not find file '{file}'.");
 
-            return fileIdentityCache.GetOrAdd((file, File.GetLastWriteTimeUtc(file)), _ => CreateIdentityForFileAsync(_.Item1));
+            return fileIdentityCache.GetOrAdd(file, CreateIdentityForFileAsync);
         }
 
         /// <summary>

@@ -20,6 +20,7 @@ namespace IKVM.MSBuild.Tasks.Tests
 
         [DataTestMethod]
         [DataRow("net472", ".NETFramework", "4.7.2")]
+        [DataRow("net6.0", ".NETCore", "6.0")]
         public void CanPrepareForFramework(string tfm, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
             var engine = new Mock<IBuildEngine7>();
