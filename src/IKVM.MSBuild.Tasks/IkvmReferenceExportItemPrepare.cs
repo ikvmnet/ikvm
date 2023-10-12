@@ -7,8 +7,6 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using System.Reflection.Metadata;
-    using System.Reflection.PortableExecutable;
     using System.Security.Cryptography;
     using System.Text;
     using System.Text.RegularExpressions;
@@ -23,45 +21,9 @@
     public class IkvmReferenceExportItemPrepare : Task
     {
 
-        /// <summary>
-        /// Defines the cached information per assembly.
-        /// </summary>
-        struct AssemblyInfo
-        {
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="name"></param>
-            /// <param name="mvid"></param>
-            /// <param name="references"></param>
-            public AssemblyInfo(string name, Guid mvid, List<string> references)
-            {
-                Name = name;
-                Mvid = mvid;
-                References = references;
-            }
-
-            /// <summary>
-            /// Name of the assembly.
-            /// </summary>
-            public string Name { get; set; }
-
-            /// <summary>
-            /// Gets the MVID of the assembly.
-            /// </summary>
-            public Guid Mvid { get; set; }
-
-            /// <summary>
-            /// Names of the references of the assembly.
-            /// </summary>
-            public List<string> References { get; set; }
-
-        }
-
         readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
         readonly ConcurrentDictionary<string, System.Threading.Tasks.Task<string>> fileIdentityCache = new();
-        readonly ConcurrentDictionary<string, System.Threading.Tasks.Task<AssemblyInfo?>> assemblyInfoCache = new();
+        readonly IkvmAssemblyInfoUtil assemblyIdentityUtil = new();
 
         /// <summary>
         /// Calculates the hash of the value.
@@ -305,7 +267,7 @@
             foreach (var n in new[] { "IKVM.Runtime", "IKVM.Java" })
             {
                 foreach (var i in referencesList)
-                    if (await GetAssemblyInfoAsync(i) is AssemblyInfo a && a.Name == n)
+                    if (await assemblyIdentityUtil.GetAssemblyInfoAsync(i) is IkvmAssemblyInfoUtil.AssemblyInfo a && a.Name == n)
                         hs.Add(i);
             }
 
@@ -324,45 +286,12 @@
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (await GetAssemblyInfoAsync(path) is AssemblyInfo a)
+            if (await assemblyIdentityUtil.GetAssemblyInfoAsync(path) is IkvmAssemblyInfoUtil.AssemblyInfo a)
                 foreach (var reference in a.References)
                     foreach (var i in referencesList)
-                        if ((await GetAssemblyInfoAsync(i)) is AssemblyInfo a2 && a2.Name == reference)
+                        if ((await assemblyIdentityUtil.GetAssemblyInfoAsync(i)) is IkvmAssemblyInfoUtil.AssemblyInfo a2 && a2.Name == reference)
                             if (hs.Add(i))
                                 await BuildAssemblyReferencesAsync(i, referencesList, hs, cancellationToken);
-        }
-
-        /// <summary>
-        /// Gets the assembly info for the given assembly path.
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        System.Threading.Tasks.Task<AssemblyInfo?> GetAssemblyInfoAsync(string path)
-        {
-            return assemblyInfoCache.GetOrAdd(path, ReadAssemblyInfoAsync);
-        }
-
-        /// <summary>
-        /// Reads the assembly info from the given assembly path.
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        System.Threading.Tasks.Task<AssemblyInfo?> ReadAssemblyInfoAsync(string path)
-        {
-            return System.Threading.Tasks.Task.Run<AssemblyInfo?>(() =>
-            {
-                try
-                {
-                    using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    using var perdr = new PEReader(fsstm);
-                    var mrdr = perdr.GetMetadataReader();
-                    return new AssemblyInfo(mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).ToList());
-                }
-                catch
-                {
-                    return null;
-                }
-            });
         }
 
         /// <summary>
@@ -384,52 +313,13 @@
         }
 
         /// <summary>
-        /// Gets the hash value for the given file.
-        /// </summary>
-        /// <param name="file"></param>
-        /// <returns></returns>
-        async System.Threading.Tasks.Task<string> CreateIdentityForFileAsync(string file)
-        {
-            if (string.IsNullOrWhiteSpace(file))
-                throw new ArgumentException($"'{nameof(file)}' cannot be null or whitespace.", nameof(file));
-            if (File.Exists(file) == false)
-                throw new FileNotFoundException($"Could not find file '{file}'.");
-
-            // file might have a companion SHA1 hash, let's use it, no calculation required
-            var sha1File = file + ".sha1";
-            if (File.Exists(sha1File))
-                if (File.ReadAllText(sha1File) is string h)
-                    return $"SHA1:{Regex.Match(h.Trim(), @"^([\w\-]+)").Value}";
-
-            // file might have a companion MD5 hash, let's use it, no calculation required
-            var md5File = file + ".md5";
-            if (File.Exists(md5File))
-                if (File.ReadAllText(md5File) is string h)
-                    return $"MD5:{Regex.Match(h.Trim(), @"^([\w\-]+)").Value}";
-
-            // if the file is potentially a .NET assembly
-            if (Path.GetExtension(file) == ".dll" || Path.GetExtension(file) == ".exe")
-                if (await TryGetIdentityForAssemblyAsync(file) is string h)
-                    return h;
-
-            // fallback to a standard full MD5 of the file
-            using var stm = File.OpenRead(file);
-            var hsh = ComputeHash(stm);
-            var bld = new StringBuilder(hsh.Length * 2);
-            foreach (var b in hsh)
-                bld.Append(b.ToString("x2"));
-
-            return bld.ToString();
-        }
-
-        /// <summary>
         /// Attempts to get an identity value for a file that might be an assembly.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
         async System.Threading.Tasks.Task<string> TryGetIdentityForAssemblyAsync(string path)
         {
-            return $"MVID:{(await GetAssemblyInfoAsync(path))?.Mvid}";
+            return $"MVID:{(await assemblyIdentityUtil.GetAssemblyInfoAsync(path))?.Mvid}";
         }
 
         /// <summary>
@@ -474,6 +364,45 @@
                 return await GetIdentityForFileAsync(value, cancellationToken);
 
             throw new Exception($"Could not resolve identity for '{value}'.");
+        }
+
+        /// <summary>
+        /// Gets the hash value for the given file.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        async System.Threading.Tasks.Task<string> CreateIdentityForFileAsync(string file)
+        {
+            if (string.IsNullOrWhiteSpace(file))
+                throw new ArgumentException($"'{nameof(file)}' cannot be null or whitespace.", nameof(file));
+            if (File.Exists(file) == false)
+                throw new FileNotFoundException($"Could not find file '{file}'.");
+
+            // file might have a companion SHA1 hash, let's use it, no calculation required
+            var sha1File = file + ".sha1";
+            if (File.Exists(sha1File))
+                if (File.ReadAllText(sha1File) is string h)
+                    return $"SHA1:{Regex.Match(h.Trim(), @"^([\w\-]+)").Value}";
+
+            // file might have a companion MD5 hash, let's use it, no calculation required
+            var md5File = file + ".md5";
+            if (File.Exists(md5File))
+                if (File.ReadAllText(md5File) is string h)
+                    return $"MD5:{Regex.Match(h.Trim(), @"^([\w\-]+)").Value}";
+
+            // if the file is potentially a .NET assembly
+            if (Path.GetExtension(file) == ".dll" || Path.GetExtension(file) == ".exe")
+                if (await TryGetIdentityForAssemblyAsync(file) is string h)
+                    return h;
+
+            // fallback to a standard full MD5 of the file
+            using var stm = File.OpenRead(file);
+            var hsh = ComputeHash(stm);
+            var bld = new StringBuilder(hsh.Length * 2);
+            foreach (var b in hsh)
+                bld.Append(b.ToString("x2"));
+
+            return bld.ToString();
         }
 
     }

@@ -5,6 +5,7 @@
 
     <PropertyGroup>
         <___IkvmTaskUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmTaskUtil.cs'))'))</___IkvmTaskUtilCs>
+        <___IkvmAssemblyInfoUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmAssemblyInfoUtil.cs'))'))</___IkvmAssemblyInfoUtilCs>
         <___IkvmJsonParserCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmJsonParser.cs'))'))</___IkvmJsonParserCs>
         <___IkvmResolveNearestRuntimeIdentifierCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmResolveNearestRuntimeIdentifier.cs'))'))</___IkvmResolveNearestRuntimeIdentifierCs>
         <___IkvmReferenceItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItem.cs'))'))</___IkvmReferenceItemCs>
@@ -33,6 +34,7 @@ $([MSBuild]::Unescape('$(___IkvmResolveNearestRuntimeIdentifierCs)'))
             <Code Type="Class" Language="cs">
                 <![CDATA[
 $([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmAssemblyInfoUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceItemCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceItemMetadataCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))

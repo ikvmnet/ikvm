@@ -9,6 +9,7 @@
 
     <PropertyGroup>
         <___IkvmTaskUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmTaskUtil.cs'))'))</___IkvmTaskUtilCs>
+        <___IkvmAssemblyInfoUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmAssemblyInfoUtil.cs'))'))</___IkvmAssemblyInfoUtilCs>
         <___IkvmReferenceExportItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItem.cs'))'))</___IkvmReferenceExportItemCs>
         <___IkvmReferenceExportItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemMetadata.cs'))'))</___IkvmReferenceExportItemMetadataCs>
         <___IkvmReferenceExportItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemPrepare.cs'))'))</___IkvmReferenceExportItemPrepareCs>
@@ -34,6 +35,7 @@
             <Code Type="Class" Language="cs">
                 <![CDATA[
 $([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmAssemblyInfoUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceExportItemCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceExportItemMetadataCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
