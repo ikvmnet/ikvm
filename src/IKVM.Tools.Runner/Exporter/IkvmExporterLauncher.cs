@@ -158,7 +158,15 @@ namespace IKVM.Tools.Runner.Exporter
 
                 // windows provides special support for killing subprocesses on termination of parent
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    WindowsChildProcessTracker.AddProcess(Process.GetProcessById(pid.ProcessId));
+                    try
+                    {
+                        if (pid.Task.IsCompleted == false)
+                            WindowsChildProcessTracker.AddProcess(Process.GetProcessById(pid.ProcessId));
+                    }
+                    catch
+                    {
+                        await LogEvent(IkvmToolDiagnosticEventLevel.Error, "Failed to attach child process.");
+                    }
 
                 // wait for the execution to finish
                 var ret = await pid;
