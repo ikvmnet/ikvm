@@ -25,7 +25,12 @@ namespace IKVM.MSBuild.Tasks.Tests
         /// <returns></returns>
         IkvmReferenceItemPrepare BuildTestTask(string toolFramework, string toolVersion)
         {
+            var engine = new Mock<IBuildEngine9>();
+            var errors = new List<BuildErrorEventArgs>();
+            engine.Setup(x => x.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback((BuildErrorEventArgs e) => errors.Add(e));
+
             var t = new IkvmReferenceItemPrepare();
+            t.BuildEngine = engine.Object;
             t.ToolVersion = toolVersion;
             t.ToolFramework = toolFramework;
             t.RuntimeAssembly = typeof(IKVM.Runtime.InternalException).Assembly.Location;
