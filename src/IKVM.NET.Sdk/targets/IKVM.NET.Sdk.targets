@@ -3,6 +3,9 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
+    <!-- Predefine targets for VS restore. -->
+    <Target Name="ResolveIkvmRuntimeAssembly" />
+
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
 
     <PropertyGroup Condition=" '$(DisableImplicitConfigurationDefines)' != 'true' ">
@@ -16,9 +19,6 @@
     <PropertyGroup>
         <DefineConstants>$(DefineConstants);$(VersionlessImplicitFrameworkDefine);$(ImplicitFrameworkDefine);$(BackwardsCompatFrameworkDefine)</DefineConstants>
     </PropertyGroup>
-
-    <!-- Predefine targets for VS restore. -->
-    <Target Name="ResolveIkvmRuntimeAssembly" />
 
     <Import Project="$(MSBuildThisFileDirectory)IKVM.NET.Sdk.Java.targets" />
 
