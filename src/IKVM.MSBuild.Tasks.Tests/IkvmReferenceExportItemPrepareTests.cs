@@ -41,6 +41,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             t.BuildEngine = engine.Object;
             t.ToolFramework = tfm;
             t.ToolVersion = "";
+            t.StateFile = Path.GetTempFileName();
             t.Items = a.ToArray();
             t.References = a.ToArray();
             t.Execute().Should().BeTrue();

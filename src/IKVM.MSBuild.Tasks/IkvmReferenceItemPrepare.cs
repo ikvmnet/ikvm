@@ -10,6 +10,7 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Xml.Linq;
 
     using IKVM.Util.Jar;
     using IKVM.Util.Modules;
@@ -22,6 +23,10 @@
     /// </summary>
     public class IkvmReferenceItemPrepare : Microsoft.Build.Utilities.Task
     {
+
+        const string XML_ROOT_ELEMENT_NAME = "IkvmReferenceItemPrepareState";
+        const string XML_ASSEMBLY_INFO_STATE_ELEMENT_NAME = "AssemblyInfoState";
+        const string XML_FILE_IDENTITY_STATE_ELEMENT_NAME = "FileIdentityState";
 
         /// <summary>
         /// Topologically sorts the <see cref="IkvmReferenceItem"/> set.
@@ -104,6 +109,11 @@
         }
 
         /// <summary>
+        /// Optional path to a state file to maintain between executions.
+        /// </summary>
+        public string StateFile { get; set; }
+
+        /// <summary>
         /// <see cref="IkvmReferenceItem"/> items without assigned hashes.
         /// </summary>
         [Required]
@@ -183,6 +193,8 @@
         /// <returns></returns>
         async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
         {
+            LoadState();
+
             var items = IkvmReferenceItem.Import(Items);
 
             // populate and normalize metadata
@@ -198,7 +210,61 @@
 
             // return the items in build order
             Items = Sort(items).Select(i => i.Item).ToArray();
+
+            await SaveStateAsync();
             return true;
+        }
+
+        /// <summary>
+        /// Attempts to load the state file.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        internal void LoadState()
+        {
+            if (StateFile != null && File.Exists(StateFile))
+            {
+                try
+                {
+                    var stateFileXml = XDocument.Load(StateFile);
+                    var stateFileRoot = stateFileXml.Element(XML_ROOT_ELEMENT_NAME);
+                    if (stateFileRoot != null)
+                    {
+                        var assemblyInfoStateXml = stateFileRoot.Element(XML_ASSEMBLY_INFO_STATE_ELEMENT_NAME);
+                        if (assemblyInfoStateXml != null)
+                            assemblyInfoUtil.LoadStateXml(assemblyInfoStateXml);
+
+                        var fileIdentityStateXml = stateFileRoot.Element(XML_FILE_IDENTITY_STATE_ELEMENT_NAME);
+                        if (fileIdentityStateXml != null)
+                            fileIdentityUtil.LoadStateXml(fileIdentityStateXml);
+                    }
+                }
+                catch
+                {
+                    Log.LogWarning("Could not load IkvmReferenceExportPrepare state file. File is potentially corrupt.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Attempts to save the state file.
+        /// </summary>
+        /// <returns></returns>
+        internal async Task SaveStateAsync()
+        {
+            if (StateFile != null)
+            {
+                var root = new XElement(XML_ROOT_ELEMENT_NAME);
+
+                var assemblyInfoStateXml = new XElement(XML_ASSEMBLY_INFO_STATE_ELEMENT_NAME);
+                await assemblyInfoUtil.SaveStateXmlAsync(assemblyInfoStateXml);
+                root.Add(assemblyInfoStateXml);
+
+                var fileIdentityStateXml = new XElement(XML_FILE_IDENTITY_STATE_ELEMENT_NAME);
+                await fileIdentityUtil.SaveStateXmlAsync(fileIdentityStateXml);
+                root.Add(fileIdentityStateXml);
+
+                root.Save(StateFile);
+            }
         }
 
         /// <summary>

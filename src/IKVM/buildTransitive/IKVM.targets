@@ -4,6 +4,10 @@
     </PropertyGroup>
 
     <PropertyGroup>
+        <IkvmReferenceItemPrepareStateFile Condition=" '$(IkvmReferenceItemPrepareStateFile)' == '' ">$(IntermediateOutputPath)$(MSBuildProjectName).IkvmReferenceItemPrepare.state</IkvmReferenceItemPrepareStateFile>
+    </PropertyGroup>
+
+    <PropertyGroup>
         <ResolveIkvmFrameworkReferencesDependsOn>
             $(ResolveIkvmFrameworkReferencesDependsOn);
         </ResolveIkvmFrameworkReferencesDependsOn>
@@ -91,7 +95,7 @@
         </ItemGroup>
 
         <!-- Populates metadata, validates, resolves references, and emits in build order. -->
-        <IkvmReferenceItemPrepare Items="@(IkvmReferenceItem)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" RuntimeAssembly="$(IkvmRuntimeAssembly)" References="@(_IkvmReferenceReferences)" StageDir="$(IkvmStageDir)" CacheDir="$(IkvmCacheDir)">
+        <IkvmReferenceItemPrepare StateFile="$(IkvmReferenceItemPrepareStateFile)" Items="@(IkvmReferenceItem)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" RuntimeAssembly="$(IkvmRuntimeAssembly)" References="@(_IkvmReferenceReferences)" StageDir="$(IkvmStageDir)" CacheDir="$(IkvmCacheDir)">
             <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithMetadata" />
         </IkvmReferenceItemPrepare>
 

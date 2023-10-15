@@ -10,6 +10,7 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Xml.Linq;
 
     using Microsoft.Build.Framework;
 
@@ -18,6 +19,10 @@
     /// </summary>
     public class IkvmReferenceExportItemPrepare : Microsoft.Build.Utilities.Task
     {
+
+        const string XML_ROOT_ELEMENT_NAME = "IkvmReferenceExportItemPrepareState";
+        const string XML_ASSEMBLY_INFO_STATE_ELEMENT_NAME = "AssemblyInfoState";
+        const string XML_FILE_IDENTITY_STATE_ELEMENT_NAME = "FileIdentityState";
 
         /// <summary>
         /// Calculates the hash of the value.
@@ -32,16 +37,21 @@
 
         readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
         readonly IkvmFileIdentityUtil fileIdentityUtil;
-        readonly IkvmAssemblyInfoUtil assemblyIdentityUtil;
+        readonly IkvmAssemblyInfoUtil assemblyInfoUtil;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         public IkvmReferenceExportItemPrepare()
         {
-            assemblyIdentityUtil = new();
-            fileIdentityUtil = new(assemblyIdentityUtil);
+            assemblyInfoUtil = new();
+            fileIdentityUtil = new(assemblyInfoUtil);
         }
+
+        /// <summary>
+        /// Optional path to a state file to preserve between executions.
+        /// </summary>
+        public string StateFile { get; set; }
 
         /// <summary>
         /// ReferenceExport items without assigned hashes.
@@ -109,10 +119,67 @@
         /// <returns></returns>
         async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
         {
+            LoadState();
+
+            // execute task and return newly sorted items
             var items = IkvmReferenceExportItem.Import(Items);
             await AssignBuildInfoAsync(items, cancellationToken);
             Items = items.OrderBy(i => i.RandomIndex).Select(i => i.Item).ToArray(); // randomize order to allow multiple processes to interleave
+
+            await SaveStateAsync();
             return true;
+        }
+
+        /// <summary>
+        /// Attempts to load the state file.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        internal void LoadState()
+        {
+            if (StateFile != null && File.Exists(StateFile))
+            {
+                try
+                {
+                    var stateFileXml = XDocument.Load(StateFile);
+                    var stateFileRoot = stateFileXml.Element(XML_ROOT_ELEMENT_NAME);
+                    if (stateFileRoot != null)
+                    {
+                        var assemblyInfoStateXml = stateFileRoot.Element(XML_ASSEMBLY_INFO_STATE_ELEMENT_NAME);
+                        if (assemblyInfoStateXml != null)
+                            assemblyInfoUtil.LoadStateXml(assemblyInfoStateXml);
+
+                        var fileIdentityStateXml = stateFileRoot.Element(XML_FILE_IDENTITY_STATE_ELEMENT_NAME);
+                        if (fileIdentityStateXml != null)
+                            fileIdentityUtil.LoadStateXml(fileIdentityStateXml);
+                    }
+                }
+                catch
+                {
+                    Log.LogWarning("Could not load IkvmReferenceExportItemPrepare state file. File is potentially corrupt.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Attempts to save the state file.
+        /// </summary>
+        /// <returns></returns>
+        internal async Task SaveStateAsync()
+        {
+            if (StateFile != null)
+            {
+                var root = new XElement(XML_ROOT_ELEMENT_NAME);
+
+                var assemblyInfoStateXml = new XElement(XML_ASSEMBLY_INFO_STATE_ELEMENT_NAME);
+                await assemblyInfoUtil.SaveStateXmlAsync(assemblyInfoStateXml);
+                root.Add(assemblyInfoStateXml);
+
+                var fileIdentityStateXml = new XElement(XML_FILE_IDENTITY_STATE_ELEMENT_NAME);
+                await fileIdentityUtil.SaveStateXmlAsync(fileIdentityStateXml);
+                root.Add(fileIdentityStateXml);
+
+                root.Save(StateFile);
+            }
         }
 
         /// <summary>
@@ -280,7 +347,7 @@
             foreach (var n in new[] { "IKVM.Runtime", "IKVM.Java" })
             {
                 foreach (var i in referencesList)
-                    if (await assemblyIdentityUtil.GetAssemblyInfoAsync(i) is IkvmAssemblyInfoUtil.AssemblyInfo a && a.Name == n)
+                    if (await assemblyInfoUtil.GetAssemblyInfoAsync(i) is IkvmAssemblyInfoUtil.AssemblyInfo a && a.Name == n)
                         hs.Add(i);
             }
 
@@ -299,10 +366,10 @@
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (await assemblyIdentityUtil.GetAssemblyInfoAsync(path) is IkvmAssemblyInfoUtil.AssemblyInfo a)
+            if (await assemblyInfoUtil.GetAssemblyInfoAsync(path) is IkvmAssemblyInfoUtil.AssemblyInfo a)
                 foreach (var reference in a.References)
                     foreach (var i in referencesList)
-                        if ((await assemblyIdentityUtil.GetAssemblyInfoAsync(i)) is IkvmAssemblyInfoUtil.AssemblyInfo a2 && a2.Name == reference)
+                        if ((await assemblyInfoUtil.GetAssemblyInfoAsync(i)) is IkvmAssemblyInfoUtil.AssemblyInfo a2 && a2.Name == reference)
                             if (hs.Add(i))
                                 await BuildAssemblyReferencesAsync(i, referencesList, hs, cancellationToken);
         }
