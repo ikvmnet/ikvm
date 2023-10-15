@@ -22,13 +22,13 @@
 
     <Import Project="$(MSBuildThisFileDirectory)IKVM.NET.Sdk.Java.targets" />
 
-    <ItemGroup>
-        <PackageReference Include="IKVM" Version="$(IkvmVersion)" IsImplicitlyDefined="true" Condition=" '$(DisableImplicitIkvmPackageReference)' != 'true' " />
-        <PackageReference Include="IKVM.MSBuild" Version="$(IkvmVersion)" IsImplicitlyDefined="true" Condition=" '$(DisableImplicitIkvmMSBuildPackageReference)' != 'true' " />
+    <ItemGroup Condition=" '$(DisableImplicitIkvmPackageReference)' != 'true' ">
+        <PackageReference Include="IKVM" Version="$(IkvmVersion)" IsImplicitlyDefined="true" />
+        <PackageReference Include="IKVM.MSBuild" Version="$(IkvmVersion)" IsImplicitlyDefined="true" />
     </ItemGroup>
 
     <!-- Inline tasks require some packages present. -->
-    <ItemGroup Condition=" '$(UseIkvmTasks)' == 'false' ">
+    <ItemGroup Condition=" '$(DisableImplicitIkvmPackageReference)' != 'true' And '$(UseIkvmTasks)' == 'false' ">
         <PackageReference Include="System.Collections.Immutable" Version="7.0.0" PrivateAssets="all" GeneratePathProperty="true" IsImplicitlyDefined="true" />
         <PackageReference Include="System.Memory" Version="4.5.5" PrivateAssets="all" GeneratePathProperty="true" IsImplicitlyDefined="true" />
         <PackageReference Include="System.Reflection.Metadata" Version="7.0.2" PrivateAssets="all" GeneratePathProperty="true" IsImplicitlyDefined="true" />
