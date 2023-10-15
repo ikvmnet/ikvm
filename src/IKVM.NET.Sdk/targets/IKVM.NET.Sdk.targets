@@ -17,6 +17,9 @@
         <DefineConstants>$(DefineConstants);$(VersionlessImplicitFrameworkDefine);$(ImplicitFrameworkDefine);$(BackwardsCompatFrameworkDefine)</DefineConstants>
     </PropertyGroup>
 
+    <!-- Predefine targets for VS restore. -->
+    <Target Name="ResolveIkvmRuntimeAssembly" />
+
     <Import Project="$(MSBuildThisFileDirectory)IKVM.NET.Sdk.Java.targets" />
 
     <ItemGroup>
