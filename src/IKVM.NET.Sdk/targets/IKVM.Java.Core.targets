@@ -8,9 +8,12 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <ClassOutputPath>$(IntermediateOutputPath)classes\</ClassOutputPath>
-        <HeaderOutputPath>$(IntermediateOutputPath)headers\</HeaderOutputPath>
-        <IkvmReferenceExportItemPrepareStateFile Condition=" '$(IkvmReferenceExportItemPrepareStateFile)' == '' ">$(IntermediateOutputPath)$(MSBuildProjectName).IkvmReferenceExportItemPrepare.state</IkvmReferenceExportItemPrepareStateFile>
+        <ClassOutputPath Condition=" '$(ClassOutputPath)' == '' ">$(IntermediateOutputPath)classes\</ClassOutputPath>
+        <HeaderOutputPath Condition=" '$(HeaderOutputPath)' == '' ">$(IntermediateOutputPath)headers\</HeaderOutputPath>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <_IkvmReferenceExportItemPrepareStateFile Condition=" '$(_IkvmReferenceExportItemPrepareStateFile)' == '' ">$(IntermediateOutputPath)$(MSBuildProjectFile).IkvmReferenceExportItemPrepare.state</_IkvmReferenceExportItemPrepareStateFile>
     </PropertyGroup>
 
     <!-- References may be derived from various sources: ProjectReference or IkvmReference. In each case, compilation of the Java
@@ -39,7 +42,7 @@
             </_ReferenceExport>
         </ItemGroup>
         
-        <IkvmReferenceExportItemPrepare StateFile="$(IkvmReferenceExportItemPrepareStateFile)" Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)">
+        <IkvmReferenceExportItemPrepare StateFile="$(_IkvmReferenceExportItemPrepareStateFile)" Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)">
             <Output TaskParameter="Items" ItemName="__ReferenceExport" />
         </IkvmReferenceExportItemPrepare>
         

@@ -21,7 +21,7 @@
     /// <summary>
     /// For each <see cref="IkvmReferenceItem"/> passed in, assigns default metadata if required.
     /// </summary>
-    public class IkvmReferenceItemPrepare : Microsoft.Build.Utilities.Task
+    public class IkvmReferenceItemPrepare : Microsoft.Build.Utilities.Task, ICancelableTask
     {
 
         const string XML_ROOT_ELEMENT_NAME = "IkvmReferenceItemPrepareState";
@@ -73,9 +73,6 @@
             throw new IkvmTaskMessageException("Error.IkvmCircularReference", l[0]);
         }
 
-        readonly IkvmAssemblyInfoUtil assemblyInfoUtil;
-        readonly IkvmFileIdentityUtil fileIdentityUtil;
-
         /// <summary>
         /// Calculates the hash.
         /// </summary>
@@ -87,16 +84,9 @@
             return md5.ComputeHash(buffer);
         }
 
-        /// <summary>
-        /// Calculates the hash.
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <returns></returns>
-        static byte[] ComputeHash(Stream stream)
-        {
-            using var md5 = MD5.Create();
-            return md5.ComputeHash(stream);
-        }
+        readonly CancellationTokenSource cts;
+        readonly IkvmAssemblyInfoUtil assemblyInfoUtil;
+        readonly IkvmFileIdentityUtil fileIdentityUtil;
 
         /// <summary>
         /// Initializes a new instance.
@@ -104,6 +94,7 @@
         public IkvmReferenceItemPrepare() :
             base(Resources.SR.ResourceManager, "IKVM:")
         {
+            cts = new CancellationTokenSource();
             assemblyInfoUtil = new IkvmAssemblyInfoUtil();
             fileIdentityUtil = new IkvmFileIdentityUtil(assemblyInfoUtil);
         }
@@ -162,21 +153,35 @@
         /// <returns></returns>
         public override bool Execute()
         {
-            // kick off the launcher with the configured options
-            var run = ExecuteAsync(CancellationToken.None);
+            if (cts.IsCancellationRequested)
+                return false;
 
-            // return immediately if finished
-            if (run.IsCompleted)
-                return run.GetAwaiter().GetResult();
+            // wait for result, and ensure we reacquire in case of return value or exception
+            Task<bool> run;
+
+            try
+            {
+                // kick off the launcher with the configured options
+                run = ExecuteAsync(cts.Token);
+                if (run.IsCompleted)
+                    return run.GetAwaiter().GetResult();
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
 
             // yield and wait for the task to complete
             BuildEngine3.Yield();
 
-            // wait for result, and ensure we reacquire in case of return value or exception
             var result = false;
             try
             {
                 result = run.GetAwaiter().GetResult();
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
             }
             finally
             {
@@ -185,6 +190,14 @@
 
             // check that we exited successfully
             return result;
+        }
+
+        /// <summary>
+        /// Cancels the task.
+        /// </summary>
+        public void Cancel()
+        {
+            cts.Cancel();
         }
 
         /// <summary>
