@@ -134,8 +134,6 @@
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException($"'{nameof(path)}' cannot be null or whitespace.", nameof(path));
-            if (File.Exists(path) == false)
-                throw new FileNotFoundException($"Could not find file '{path}'.");
 
             return (await cache.GetOrAdd(path, CreateAssemblyInfoAsync)).Info;
         }
@@ -149,23 +147,30 @@
         {
             return Task.Run(() =>
             {
-                var lastWriteTimeUtc = File.GetLastWriteTimeUtc(path);
-
-                // check if loaded state contains up to date information
-                if (state.TryGetValue(path, out var entry))
-                    if (entry.LastWriteTimeUtc == lastWriteTimeUtc)
-                        return (lastWriteTimeUtc, entry.Info);
-
                 try
                 {
-                    using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    using var perdr = new PEReader(fsstm);
-                    var mrdr = perdr.GetMetadataReader();
-                    return (lastWriteTimeUtc, new AssemblyInfo(mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).ToList()));
+                    var lastWriteTimeUtc = File.GetLastWriteTimeUtc(path);
+
+                    // check if loaded state contains up to date information
+                    if (state.TryGetValue(path, out var entry))
+                        if (entry.LastWriteTimeUtc == lastWriteTimeUtc)
+                            return (lastWriteTimeUtc, entry.Info);
+
+                    try
+                    {
+                        using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                        using var perdr = new PEReader(fsstm);
+                        var mrdr = perdr.GetMetadataReader();
+                        return (lastWriteTimeUtc, new AssemblyInfo(mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).ToList()));
+                    }
+                    catch
+                    {
+                        return (lastWriteTimeUtc, null);
+                    }
                 }
                 catch
                 {
-                    return (lastWriteTimeUtc, null);
+                    return (default, null);
                 }
             });
         }

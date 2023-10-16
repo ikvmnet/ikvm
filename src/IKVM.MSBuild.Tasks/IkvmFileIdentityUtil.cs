@@ -88,8 +88,6 @@
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException($"'{nameof(path)}' cannot be null or whitespace.", nameof(path));
-            if (File.Exists(path) == false)
-                throw new FileNotFoundException($"Could not find file '{path}'.");
 
             return (await cache.GetOrAdd(path, CreateIdentityForFileAsync)).Identity;
         }

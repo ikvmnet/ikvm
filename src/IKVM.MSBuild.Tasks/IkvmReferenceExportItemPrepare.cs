@@ -353,7 +353,11 @@
 
             // others should exist
             if (File.Exists(value))
-                return await fileIdentityUtil.GetIdentityForFileAsync(value, cancellationToken);
+            {
+                var identity = await fileIdentityUtil.GetIdentityForFileAsync(value, cancellationToken);
+                if (identity != null)
+                    return identity;
+            }
 
             throw new Exception($"Could not resolve identity for '{value}'.");
         }
