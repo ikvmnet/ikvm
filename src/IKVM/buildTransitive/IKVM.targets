@@ -5,7 +5,7 @@
 
     <PropertyGroup>
         <_IkvmReferenceItemPrepareStateFile Condition=" '$(IkvmReferenceItemPrepareStateFile)' == '' ">$(IntermediateOutputPath)$(MSBuildProjectName).IkvmReferenceItemPrepare.state</_IkvmReferenceItemPrepareStateFile>
-        <_IkvmReferenceItemPrepareStateFile>$([System.IO.Path]::GetFullPath('$(IkvmReferenceItemPrepareStateFile)'))</_IkvmReferenceItemPrepareStateFile>
+        <_IkvmReferenceItemPrepareStateFile>$([System.IO.Path]::GetFullPath('$(_IkvmReferenceItemPrepareStateFile)'))</_IkvmReferenceItemPrepareStateFile>
     </PropertyGroup>
 
     <PropertyGroup>
