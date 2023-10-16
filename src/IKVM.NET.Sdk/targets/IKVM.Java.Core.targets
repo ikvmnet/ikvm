@@ -14,6 +14,7 @@
     
     <PropertyGroup>
         <_IkvmReferenceExportItemPrepareStateFile Condition=" '$(_IkvmReferenceExportItemPrepareStateFile)' == '' ">$(IntermediateOutputPath)$(MSBuildProjectFile).IkvmReferenceExportItemPrepare.state</_IkvmReferenceExportItemPrepareStateFile>
+        <_IkvmReferenceExportItemPrepareStateFile>$([System.IO.Path]::GetFullPath('$(_IkvmReferenceExportItemPrepareStateFile)'))</_IkvmReferenceExportItemPrepareStateFile>
     </PropertyGroup>
 
     <!-- References may be derived from various sources: ProjectReference or IkvmReference. In each case, compilation of the Java
