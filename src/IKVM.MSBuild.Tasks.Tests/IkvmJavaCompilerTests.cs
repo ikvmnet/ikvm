@@ -17,33 +17,41 @@ namespace IKVM.MSBuild.Tasks.Tests
     public class IkvmJavaCompilerTests
     {
 
-        static string testDir;
+        public static string TempRoot { get; set; }
+
+        public static string WorkRoot { get; set; }
 
         [ClassInitialize]
 
-        public static void ClassInitialize()
+        public static void ClassInitialize(TestContext context)
         {
-            testDir = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tasks.Tests", Guid.NewGuid().ToString(), "IkvmJavaCompilerTests");
+            // temporary directory
+            TempRoot = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tasks.Tests", Guid.NewGuid().ToString());
+            if (Directory.Exists(TempRoot))
+                Directory.Delete(TempRoot, true);
+            Directory.CreateDirectory(TempRoot);
+
+            // work directory
+            WorkRoot = Path.Combine(context.TestRunResultsDirectory, "IKVM.MSBuild.Tasks.Tests", "IkvmJavaCompilerTests");
+            if (Directory.Exists(WorkRoot))
+                Directory.Delete(WorkRoot, true);
+            Directory.CreateDirectory(WorkRoot);
         }
 
         [ClassCleanup]
 
         public static void ClassCleanup()
         {
-            try
-            {
-                Directory.Delete(testDir, true);
-            }
-            catch
-            {
-                // ignore
-            }
+            if (Directory.Exists(TempRoot))
+                Directory.Delete(TempRoot, true);
         }
+
+        public TestContext TestContext { get; set; }
 
         [TestMethod]
         public void CanExecuteCompiler()
         {
-            var dir = Path.Combine(testDir, "CanExecuteCompiler");
+            var dir = Path.Combine(WorkRoot, "CanExecuteCompiler");
             var classesDir = Path.Combine(dir, "classes");
             var headersDir = Path.Combine(dir, "headers");
 
