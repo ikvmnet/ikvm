@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets">
+    
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
+        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+        <DisableCopyToOutputDirectory>true</DisableCopyToOutputDirectory>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <BinProject Include="..\java\java.csproj" />
+        <BinProject Include="..\keytool\keytool.msbuildproj" />
+        <BinProject Include="..\orbd\orbd.msbuildproj" />
+        <BinProject Include="..\policytool\policytool.msbuildproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PublishProjectReference Include="@(BinProject)" Condition=" '$(TargetFramework)' != '' And '$(RuntimeIdentifier)' != '' ">
+            <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=$(RuntimeIdentifier)</SetRuntimeIdentifier>
+            <PublishTargetPath>.</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+    </ItemGroup>
+
+</Project>

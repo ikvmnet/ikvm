@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <PackageId>IKVM.Runtime-ref</PackageId>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <AssemblyName>IKVM.Runtime</AssemblyName>
+        <DefineConstants>$(DefineConstants);EMITTERS;FIRST_PASS</DefineConstants>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Java" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.ByteCode\IKVM.ByteCode.csproj" />
+        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ExcludeFromCompile Include="..\IKVM.Runtime\bin\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\obj\**\*.cs" />
+        <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="" Exclude="@(ExcludeFromCompile)" />
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
+</Project>

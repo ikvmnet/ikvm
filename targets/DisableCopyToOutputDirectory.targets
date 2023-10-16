@@ -1,0 +1,17 @@
+<!--
+
+    DisableCopyToOutputDirectory.targets
+    
+    Including this targets file enables an optionn to disable the copy of items to the output directory.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+        <DisableCopyToOutputDirectory Condition=" '$(DisableCopyToOutputDirectory)' == '' ">false</DisableCopyToOutputDirectory>
+    </PropertyGroup>
+
+    <Import Project="DisableCopyToOutputDirectory.include" Condition=" '$(DisableCopyToOutputDirectory)' == 'true' " />
+
+</Project>

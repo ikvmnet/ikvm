@@ -1,14 +1,15 @@
-mode: Mainline
-assembly-versioning-scheme: MajorMinor
-assembly-file-versioning-scheme: MajorMinorPatchTag
+mode: ContinuousDeployment
+assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{WeightedPreReleaseNumber ?? 0}'
 major-version-bump-message: '\+semver:\s?(major)'
 minor-version-bump-message: '\+semver:\s?(minor)'
 patch-version-bump-message: '\+semver:\s?(patch)'
 branches:
   main:
-    is-mainline: true
+    regex: ^main$
+    tag: pre
     increment: Patch
   develop:
-    increment: Patch
-    tag: prerelease
-    source-branches: [ 'main' ]
+    regex: ^develop$
+    tag: dev
+    increment: Minor
+    

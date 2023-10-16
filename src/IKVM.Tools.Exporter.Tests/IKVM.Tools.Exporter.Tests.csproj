@@ -1,0 +1,49 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <PreserveCompilationContext>true</PreserveCompilationContext>
+        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="FluentAssertions" Version="6.8.0" />
+        <PackageReference Include="Microsoft.CodeCoverage" Version="17.4.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
+        <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
+        <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+        <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
+        <ProjectReference Include="..\IKVM.Tools.Exporter\IKVM.Tools.Exporter.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <IncludeTargetPath>lib\net472\</IncludeTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </IncludeProjectReference>
+        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <IncludeTargetPath>lib\net472\</IncludeTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </IncludeProjectReference>
+        <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <IncludeTargetPath>lib\net6.0\</IncludeTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </IncludeProjectReference>
+        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <IncludeTargetPath>lib\net6.0\</IncludeTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </IncludeProjectReference>
+    </ItemGroup>
+
+</Project>

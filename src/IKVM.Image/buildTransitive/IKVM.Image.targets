@@ -1,0 +1,178 @@
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <IkvmImageTargetFrameworks Include="net472;net6.0" />
+        <IkvmImageRuntimeIdentifiers Include="win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64" />
+    </ItemGroup>
+
+    <Choose>
+        <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+            <PropertyGroup>
+                <_IkvmImageTargetFramework>net472</_IkvmImageTargetFramework>
+            </PropertyGroup>
+        </When>
+        <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">
+            <PropertyGroup>
+                <_IkvmImageTargetFramework>net6.0</_IkvmImageTargetFramework>
+            </PropertyGroup>
+        </When>
+    </Choose>
+
+    <Target Name="ResolveIkvmImageRuntimeIdentifier">
+        <IkvmResolveNearestRuntimeIdentifier AvailableRuntimeIdentifiers="@(IkvmImageRuntimeIdentifiers, ';')" TargetRuntimeIdentifier="$(RuntimeIdentifier)">
+            <Output TaskParameter="NearestRuntimeIdentifier" PropertyName="_IkvmImageRuntimeIdentifier" />
+        </IkvmResolveNearestRuntimeIdentifier>
+    </Target>
+
+    <UsingTask TaskName="_ExpandIkvmImageItems" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <TargetFrameworks ParameterType="System.String[]" Required="true" />
+            <RuntimeIdentifiers ParameterType="System.String[]" Required="true" />
+            <TargetFramework ParameterType="System.String" />
+            <RuntimeIdentifier ParameterType="System.String" />
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Collections.Generic" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                var l = new List<ITaskItem>();
+                
+                foreach (var tfm in TargetFrameworks)
+                {
+                    if (!string.IsNullOrEmpty(TargetFramework) && TargetFramework != tfm)
+                        continue;
+                    
+                    foreach (var rid in RuntimeIdentifiers)
+                    {
+                        if (!string.IsNullOrEmpty(RuntimeIdentifier) && RuntimeIdentifier != rid)
+                            continue;
+                        
+                        foreach (var item in Items)
+                        {
+                            var itemTfm = item.GetMetadata("TargetFramework");
+                            if (string.IsNullOrEmpty(itemTfm))
+                                continue;
+                            
+                            var itemRid = item.GetMetadata("RuntimeIdentifier");
+                            if (string.IsNullOrEmpty(itemRid))
+                                continue;
+                            
+                            if ((itemTfm == "any" || itemTfm == tfm) && (itemRid == "any" || itemRid == rid))
+                            {
+                                var i = new TaskItem(item);
+                                i.SetMetadata("TargetFramework", tfm);
+                                i.SetMetadata("RuntimeIdentifier", rid);
+                                l.Add(i);
+                            }
+                        }
+                    }
+                }
+                
+                Items = l.ToArray();
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <PropertyGroup>
+        <ExpandIkvmImageItemsDependsOn>
+            $(ExpandIkvmImageItemsDependsOn);
+            ResolveIkvmImageRuntimeIdentifier;
+        </ExpandIkvmImageItemsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="ExpandIkvmImageItems" DependsOnTargets="$(ExpandIkvmImageItemsDependsOn)">
+        <_ExpandIkvmImageItems TargetFrameworks="@(IkvmImageTargetFrameworks)" RuntimeIdentifiers="@(IkvmImageRuntimeIdentifiers)" TargetFramework="$(_IkvmImageTargetFramework)" RuntimeIdentifier="$(_IkvmImageRuntimeIdentifier)" Items="@(IkvmImageItem)">
+            <Output TaskParameter="Items" ItemName="_IkvmImageItemExpanded" />
+        </_ExpandIkvmImageItems>
+        <ItemGroup>
+            <_IkvmImageItemExpanded Update="@(_IkvmImageItemExpanded)">
+                <TargetPath>ikvm\%(_IkvmImageItemExpanded.RuntimeIdentifier)\%(_IkvmImageItemExpanded.ImagePath)</TargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <Link>ikvm\%(_IkvmImageItemExpanded.RuntimeIdentifier)\%(_IkvmImageItemExpanded.ImagePath)</Link>
+                <Pack Condition=" '%(_IkvmImageItemExpanded.Pack)' == '' ">false</Pack>
+            </_IkvmImageItemExpanded>
+        </ItemGroup>
+    </Target>
+
+    <UsingTask TaskName="_FilterIkvmImageItems" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Collections.Generic" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                var l = new List<ITaskItem>();
+                
+                var targetPathHashSet = new HashSet<string>();
+                foreach (var item in Items)
+                {
+                    var targetPath = item.GetMetadata("TargetPath");
+                    if (string.IsNullOrEmpty(targetPath) == false && targetPathHashSet.Add(targetPath))
+                        l.Add(item);
+                }
+                
+                Items = l.ToArray();
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GetIkvmImageItemsOutputItems" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths" DependsOnTargets="$(GetIkvmImageItemsOutputItemsDependsOn)">
+        <_FilterIkvmImageItems Items="@(_IkvmImageItemExpanded)">
+            <Output TaskParameter="Items" ItemName="_SourceItemsToCopyToOutputDirectory" Condition=" '$(IkvmImageItemToNone)' != 'true' " />
+            <Output TaskParameter="Items" ItemName="_SourceItemsToCopyToPublishDirectory" Condition=" '$(IkvmImageItemToNone)' != 'true' " />
+            <Output TaskParameter="Items" ItemName="None" Condition=" '$(IkvmImageItemToNone)' == 'true' " />
+        </_FilterIkvmImageItems>
+        <ItemGroup>
+            <_IkvmImageItemExpanded Remove="@(_IkvmImageItemExpanded)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GetIkvmImageItemsOutputItemsDependsOn>
+            $(GetIkvmImageItemsOutputItemsDependsOn);
+            ExpandIkvmImageItems;
+        </GetIkvmImageItemsOutputItemsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GetDefaultIkvmPropertiesFile" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths">
+        <ItemGroup>
+            <None Include="$(MSBuildThisFileDirectory)..\content\ikvm.properties" Condition="Exists('$(MSBuildThisFileDirectory)..\content\ikvm.properties')">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <TargetPath>ikvm.properties</TargetPath>
+                <Link>ikvm.properties</Link>
+            </None>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="CollectIkvmImageItemsOutputItems" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths" DependsOnTargets="$(CollectIkvmImageItemsOutputItemsDependsOn)">
+
+    </Target>
+
+    <PropertyGroup>
+        <CollectIkvmImageItemsOutputItemsDependsOn>
+            ExpandIkvmImageItems;
+            GetIkvmImageItemsOutputItems;
+            $(CollectIkvmImageItemsOutputItemsDependsOn);
+        </CollectIkvmImageItemsOutputItemsDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <AssignTargetPathsDependsOn>
+            CollectIkvmImageItemsOutputItems;
+            GetDefaultIkvmPropertiesFile;
+            $(AssignTargetPathsDependsOn);
+        </AssignTargetPathsDependsOn>
+    </PropertyGroup>
+
+</Project>

@@ -1,0 +1,51 @@
+<!--
+
+    openjdk.lib.props
+    
+    Applies at the top of any OpenJDK derived native library project.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)lib.props" />
+
+    <!-- common preprocessor declarations -->
+    <PropertyGroup Condition=" '$(TargetTriple)' != '' ">
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MAJOR_VERSION=%5c&quot;$(OpenJdkMajorVersion)%5c&quot;</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MINOR_VERSION=%5c&quot;$(OpenJdkMinorVersion)%5c&quot;</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MICRO_VERSION=%5c&quot;$(OpenJdkMicroVersion)%5c&quot;</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_UPDATE_VERSION=%5c&quot;$(OpenJdkUpdateVersion)%5c&quot;</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_BUILD_NUMBER=%5c&quot;$(OpenJdkBuildNumber)%5c&quot;</PreprocessorDefinitions>
+    </PropertyGroup>
+
+    <!-- common/autoconf/flags.m4 -->
+    <PropertyGroup Condition="$(TargetTriple.Contains('-windows-')) ">
+        <OpenJdkTargetOsApiDir>windows</OpenJdkTargetOsApiDir>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);_STATIC_CPPLIB;_DISABLE_DEPRECATE_STATIC_CPPLIB;WIN32_LEAN_AND_MEAN;IAL</PreprocessorDefinitions>
+    </PropertyGroup>
+
+    <!-- common/autoconf/flags.m4 -->
+    <PropertyGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
+        <PositionIndependentCode>true</PositionIndependentCode>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE</PreprocessorDefinitions>
+    </PropertyGroup>
+
+    <!-- common/autoconf/flags.m4 -->
+    <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
+        <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);_ALLBSD_SOURCE;_DARWIN_UNLIMITED_SELECT</PreprocessorDefinitions>
+        <EnableOSXCodeSign Condition=" '$(EnableOSXCodeSign)' == '' ">true</EnableOSXCodeSign>
+    </PropertyGroup>
+
+    <!-- standard OpenJDK includes -->
+    <PropertyGroup Condition=" '$(TargetTriple)' != '' ">
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\common</IncludeDirectories>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common</IncludeDirectories>
+    </PropertyGroup>
+
+</Project>

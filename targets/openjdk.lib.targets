@@ -1,0 +1,16 @@
+<!--
+
+    openjdk.lib.targets
+    
+    Applies at the bottom of any OpenJDK derived native library project.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)lib.targets" />
+
+</Project>

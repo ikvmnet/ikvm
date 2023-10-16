@@ -1,0 +1,280 @@
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <!--
+    This file contains targets which invoke the jobs in 'NoTask' mode.
+    -->
+
+    <PropertyGroup>
+        <___IkvmTaskUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmTaskUtil.cs'))'))</___IkvmTaskUtilCs>
+        <___IkvmAssemblyInfoUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmAssemblyInfoUtil.cs'))'))</___IkvmAssemblyInfoUtilCs>
+        <___IkvmFileIdentityUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmFileIdentityUtil.cs'))'))</___IkvmFileIdentityUtilCs>
+        <___IkvmReferenceExportItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItem.cs'))'))</___IkvmReferenceExportItemCs>
+        <___IkvmReferenceExportItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemMetadata.cs'))'))</___IkvmReferenceExportItemMetadataCs>
+        <___IkvmReferenceExportItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemPrepare.cs'))'))</___IkvmReferenceExportItemPrepareCs>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(MSBuildRuntimeType)' == 'Core' ">
+        <___System_Collections_Immutable>$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll</___System_Collections_Immutable>
+        <___System_Memory>$(PkgSystem_Memory)\lib\netstandard2.0\System.Memory.dll</___System_Memory>
+        <___System_Reflection_Metadata>$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll</___System_Reflection_Metadata>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
+        <___System_Collections_Immutable>System.Collections.Immutable</___System_Collections_Immutable>
+        <___System_Memory>System.Memory</___System_Memory>
+        <___System_Reflection_Metadata>System.Reflection.Metadata</___System_Reflection_Metadata>
+    </PropertyGroup>
+
+    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Reference Include="$(___System_Collections_Immutable)" />
+            <Reference Include="$(___System_Memory)" />
+            <Reference Include="$(___System_Reflection_Metadata)" />
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+$([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmAssemblyInfoUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmFileIdentityUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemMetadataCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <UsingTask TaskName="IkvmSortItemGroup" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Collections.Generic" />
+            <Code Language="cs" Type="Fragment">
+                <![CDATA[
+Items = Items.OrderBy(i => i.ItemSpec).ToArray();
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <!-- Override IKVM.NET.Sdk: directly invoke executable  -->
+    <Target Name="_ExportReference" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
+        <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
+        <Error Text="ikvmstub executable could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
+        <Exec Command="chmod +x $(IkvmExporterPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <_ReferenceExportReference Remove="@(_ReferenceExportReference)" />
+            <_ReferenceExportReference Include="%(ReferenceExport.References)" />
+            <_ReferenceExportLibrary Remove="@(_ReferenceExportLibrary)" />
+            <_ReferenceExportLibrary Include="%(ReferenceExport.Libraries)" />
+        </ItemGroup>
+
+        <!-- Output to stage path then copy to cache path to be atomic. -->
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.StagePath)'))" />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.CachePath)'))" />
+
+        <ItemGroup>
+            <_IkvmExporterArgs Remove="@(_IkvmExporterArgs)" />
+            <_IkvmExporterArgs Include="--bootstrap" Condition=" '%(ReferenceExport.Bootstrap)' == 'true' " />
+            <_IkvmExporterArgs Include="--nostdlib" Condition=" '%(ReferenceExport.NoStdLib)' == 'true' " />
+            <_IkvmExporterArgs Include="--non-public-types" Condition=" '%(ReferenceExport.IncludeNonPublicTypes)' == 'true' " />
+            <_IkvmExporterArgs Include="--non-public-interfaces" Condition=" '%(ReferenceExport.IncludeNonPublicInterfaces)' == 'true' " />
+            <_IkvmExporterArgs Include="--non-public-members" Condition=" '%(ReferenceExport.IncludeNonPublicMembers)' == 'true' " />
+            <_IkvmExporterArgs Include="--parameters" Condition=" '%(ReferenceExport.IncludeParameterNames)' == 'true' " />
+            <_IkvmExporterArgs Include="@(_ReferenceExportReference->'--reference:&quot;%(FullPath)&quot;')" Condition=" '@(_ReferenceExportReference)' != '' " />
+            <_IkvmExporterArgs Include="@(_ReferenceExportLibrary->'--library:&quot;%(FullPath)&quot;')" Condition=" '@(_ReferenceExportLibrary)' != '' " />
+            <_IkvmExporterArgs Include="--out:&quot;%(ReferenceExport.StagePath)&quot;" />
+            <_IkvmExporterArgs Include="&quot;%(ReferenceExport.Identity)&quot;" />
+        </ItemGroup>
+
+        <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
+        <Message Text="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" />
+        <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" ContinueOnError="false" />
+        <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="Exists('%(ReferenceExport.StagePath)') And !Exists('%(ReferenceExport.CachePath)')" />
+        <Touch Files="%(ReferenceExport.CachePath)" />
+
+        <ItemGroup>
+            <FileWrites Include="%(ReferenceExport.StagePath)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Override IKVM.NET.Sdk: directly invoke javac executable  -->
+    <Target Name="_CompileJavaResponseFile" DependsOnTargets="ResolveJavaCompiler;ExportReferences;GetReferenceClasspath;BeforeCompile">
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
+        <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
+        <Exec Command="chmod +x $(JavaCompilerPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <IkvmSortItemGroup Items="@(Classpath)">
+            <Output TaskParameter="Items" ItemName="_JavaCompilerArgsClasspath" />
+        </IkvmSortItemGroup>
+
+        <IkvmSortItemGroup Items="@(Compile)">
+            <Output TaskParameter="Items" ItemName="_JavaCompilerArgsCompile" />
+        </IkvmSortItemGroup>
+
+        <ItemGroup>
+            <_JavaCompilerArgs Remove="@(_JavaCompilerArgs)" />
+            <_JavaCompilerArgs Include="-g" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' " />
+            <_JavaCompilerArgs Include="-nowarn" />
+            <_JavaCompilerArgs Include="-implicit:none" />
+            <_JavaCompilerArgs Include="-parameters" />
+            <_JavaCompilerArgs Include="-cp" />
+            <_JavaCompilerArgs Include="null" Condition=" '$(Bootstrap)' == 'true' " />
+            <_JavaCompilerArgs Include="@(_JavaCompilerArgsClasspath, '$([System.IO.Path]::PathSeparator)')" Condition=" '$(Bootstrap)' != 'true' And '@(_JavaCompilerArgsClasspath)' != '' " />
+            <_JavaCompilerArgs Include="-bootclasspath" Condition=" '$(Bootstrap)' == 'true' And '@(_JavaCompilerArgsClasspath)' != '' " />
+            <_JavaCompilerArgs Include="@(_JavaCompilerArgsClasspath, '$([System.IO.Path]::PathSeparator)')" Condition=" '$(Bootstrap)' == 'true' And '@(_JavaCompilerArgsClasspath)' != '' " />
+            <_JavaCompilerArgs Include="-source" />
+            <_JavaCompilerArgs Include="$(LangVersion)" />
+            <_JavaCompilerArgs Include="-target" />
+            <_JavaCompilerArgs Include="$(JavaVersion)" />
+            <_JavaCompilerArgs Include="-d" />
+            <_JavaCompilerArgs Include="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />
+            <_JavaCompilerArgs Include="-h" />
+            <_JavaCompilerArgs Include="$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))" />
+            <!--<_JavaCompilerArgs Include="-verbose" />-->
+            <_JavaCompilerArgs Include="@(_JavaCompilerArgsCompile->'%(FullPath)')" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(_CompileJavaResponseFile)" Lines="@(_JavaCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    </Target>
+
+    <PropertyGroup>
+        <CompileJavaDependsOn>
+            _CompileJavaResponseFile;
+            $(CompileJavaDependsOn)
+        </CompileJavaDependsOn>
+    </PropertyGroup>
+
+    <!-- Override IKVM.NET.Sdk: directly invoke javac executable  -->
+    <Target Name="_CompileJava" DependsOnTargets="_CompileJavaResponseFile;_ResolveClasspathFiles" Inputs="$(_CompileJavaResponseFile);@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
+        <Delete Files="$(_CompileJavaStampFile)" />
+        
+        <!-- Store initial time. Files that remain older than this will be removed. -->
+        <PropertyGroup>
+            <_CompileJavaStartTime>$([System.DateTime]::Now.Ticks)</_CompileJavaStartTime>
+        </PropertyGroup>
+
+        <RemoveDir Directories="$(ClassOutputPath)" />
+        <MakeDir Directories="$(ClassOutputPath)" />
+        <RemoveDir Directories="$(HeaderOutputPath)" />
+        <MakeDir Directories="$(HeaderOutputPath)" />
+        
+        <Message Text="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
+        <Exec Command="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
+
+        <!-- Remove files that were not modified by this compilation. -->
+        <ItemGroup>
+            <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
+            <_CompileJavaHeaderFiles Include="$(ClassOutputPath)**\*.h" />
+            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles);@(_CompileJavaHeaderFiles)" Condition=" '%(ModifiedTime)' == '' Or $([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime) " />
+            <_CompileJavaClassFiles Remove="@(_CompileJavaClassFiles)" />
+            <_CompileJavaHeaderFiles Remove="@(_CompileJavaHeaderFiles)" />
+        </ItemGroup>
+
+        <Delete Files="@(_CompileJavaStaleFiles)" />
+        <Touch Files="$(_CompileJavaStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <_CompileJavaStaleFiles Remove="@(_CompileJavaStaleFiles)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="_CoreCompileResponseFile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;CompileJava">
+        <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
+        <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
+
+        <Delete Files="$(_ExcludeFilePath)" Condition=" '@(ExcludeRegex)' == '' And Exists('$(_ExcludeFilePath)')" />
+        <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " WriteOnlyWhenDifferent="true" />
+
+        <ItemGroup>
+            <_Convert Include="@(Convert)" />
+            <_AssemblyAttributesClass Include="@(_Convert)" Condition=" '%(Filename)%(Extension)' == '__AssemblyAttributes.class' " />
+            <_AssemblyAttributesClass Include="@(_Convert)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
+            <_Convert Remove="@(_AssemblyAttributesClass)" />
+        </ItemGroup>
+
+        <PropertyGroup>
+            <_Target>$(OutputType.ToLowerInvariant())</_Target>
+            <_Target Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">library</_Target>
+        </PropertyGroup>
+
+        <IkvmSortItemGroup Items="@(JavaResource)">
+            <Output TaskParameter="Items" ItemName="_IkvmCompilerJavaResource" />
+        </IkvmSortItemGroup>
+
+        <IkvmSortItemGroup Items="@(_Convert)">
+            <Output TaskParameter="Items" ItemName="_IkvmCompilerConvert" />
+        </IkvmSortItemGroup>
+
+        <IkvmSortItemGroup Items="@(ReferencePathWithRefAssemblies)">
+            <Output TaskParameter="Items" ItemName="_IkvmCompilerReferencePathWithRefAssemblies" />
+        </IkvmSortItemGroup>
+
+        <ItemGroup>
+            <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
+            <_IkvmCompilerArgs Include="-nologo" />
+            <_IkvmCompilerArgs Include="-bootstrap" Condition=" '$(Bootstrap)' == 'true' " />
+            <_IkvmCompilerArgs Include="-debug" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' " />
+            <_IkvmCompilerArgs Include="-assembly:$(AssemblyName)" />
+            <_IkvmCompilerArgs Include="-version:$(AssemblyVersion)" />
+            <_IkvmCompilerArgs Include="-runtime:$(IkvmRuntimeAssembly)" />
+            <_IkvmCompilerArgs Include="-keyfile:$(KeyOriginatorFile)" Condition=" '$(KeyOriginatorFile)' != '' " />
+            <_IkvmCompilerArgs Include="@(MapFile->'-remap:%(FullPath)')" Condition=" '@(MapFile)' != '' " />
+            <_IkvmCompilerArgs Include="-compressresources" Condition=" '$(CompressResources)' == 'true' " />
+            <_IkvmCompilerArgs Include="-opt:fields" />
+            <_IkvmCompilerArgs Include="-strictfinalfieldsemantics" Condition=" '$(StrictFinalFieldSemantics)' == 'true' " />
+            <_IkvmCompilerArgs Include="-removeassertions" Condition=" '$(RemoveAssertions)' == 'true' " />
+            <_IkvmCompilerArgs Include="-target:$(_Target)" Condition=" '$(_Target)' != '' " />
+            <_IkvmCompilerArgs Include="-platform:$(PlatformTarget.ToLowerInvariant())" Condition=" '$(PlatformTarget)' != '' " />
+            <_IkvmCompilerArgs Include="-main:$(StartupObject)" Condition=" '$(StartupObject)' != '' " />
+            <_IkvmCompilerArgs Include="-nostdlib" Condition=" '$(NoCompilerStandardLib)' == 'true' " />
+            <_IkvmCompilerArgs Include="-sharedclassloader" Condition=" '$(SharedClassLoader)' == 'true' " />
+            <_IkvmCompilerArgs Include="-w$(WarningLevel)" />
+            <_IkvmCompilerArgs Include="-noparameterreflection" Condition=" '$(NoParameterReflection)' == 'true' " />
+            <_IkvmCompilerArgs Include="-exclude:$([System.IO.Path]::GetFullPath('$(_ExcludeFilePath)'))" Condition="Exists('$(_ExcludeFilePath)')" />
+            <_IkvmCompilerArgs Include="@(_AssemblyAttributesClass->'-assemblyattributes:%(FullPath)')" />
+            <_IkvmCompilerReferencePath Remove="@(_IkvmCompilerReferencePath)" />
+            <_IkvmCompilerReferencePath Include="@(_IkvmCompilerReferencePathWithRefAssemblies)" Condition=" '%(_IkvmCompilerReferencePathWithRefAssemblies.HideFromJava)' != 'true' " />
+            <_IkvmCompilerArgs Include="@(_IkvmCompilerReferencePath->'-reference:%(FullPath)')" />
+            <_IkvmCompilerResourceItem Remove="@(_IkvmCompilerResourceItem)" />
+            <_IkvmCompilerResourceItem Include="@(_IkvmCompilerJavaResource)" ResourcePath="$([System.String]::new('%(_IkvmCompilerJavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
+            <_IkvmCompilerArgs Include="@(_IkvmCompilerResourceItem->'-resource:%(ResourcePath)=%(FullPath)')" />
+            <_IkvmCompilerArgs Include="-out:$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
+            <_IkvmCompilerArgs Include="@(_IkvmCompilerConvert->'%(FullPath)')" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(_IkvmCompilerResponseFile)" Lines="@(_IkvmCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    </Target>
+
+    <PropertyGroup>
+        <CoreCompileDependsOn>
+            _CoreCompileResponseFile;
+            $(CoreCompileDependsOn);
+        </CoreCompileDependsOn>
+    </PropertyGroup>
+
+    <Target Name="_CoreCompile" DependsOnTargets="_CoreCompileResponseFile" Inputs="$(_IkvmCompilerResponseFile);$(_ExcludeFilePath);$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly)">
+        <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
+        <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
+        <Exec Command="chmod +x $(IkvmCompilerPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+        
+        <!-- Build Java assembly into temporary directory. -->
+        <RemoveDir Directories="$(_AssemblyTempPath)" Condition="Exists('$(_AssemblyTempPath)')" />
+        <MakeDir Directories="$(_AssemblyTempPath)" />
+        <Message Text="$(IkvmCompilerExec) @$(_IkvmCompilerResponseFile)" />
+        <Exec Command="$(IkvmCompilerExec) @$(_IkvmCompilerResponseFile)" ContinueOnError="false" />
+
+        <!-- Move temporary files in place of permanent files. -->
+        <Move SourceFiles="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" DestinationFiles="@(IntermediateAssembly)" OverwriteReadOnlyFiles="true" />
+        <Move SourceFiles="$(_AssemblyTempPath)$(TargetName).pdb" DestinationFiles="@(_DebugSymbolsIntermediatePath)" OverwriteReadOnlyFiles="true" Condition=" '@(_DebugSymbolsIntermediatePath)' != '' And Exists('$(_AssemblyTempPath)$(TargetName).pdb')" />
+
+        <ItemGroup>
+            <FileWrites Include="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
+            <FileWrites Include="$(_AssemblyTempPath)$(TargetName).pdb" />
+        </ItemGroup>
+    </Target>
+
+</Project>

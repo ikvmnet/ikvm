@@ -1,32 +1,6 @@
 <Project>
-
-    <Target Name="GetLibProjectReferences">
-        <MSBuild Projects="@(LibProjectReference->'%(ProjectFile)')" Targets="GetTargetPath" Properties="Platform=%(LibProjectReference.Platform);Configuration=%(LibProjectReference.Configuration)">
-            <Output TaskParameter="TargetOutputs" ItemName="_LibProjectReferenceWithOutputPath" />
-        </MSBuild>
-        <ItemGroup>
-            <LibProjectReferenceWithOutputPath Include="@(_LibProjectReferenceWithOutputPath)">
-                <OutputPath>%(Identity)</OutputPath>
-            </LibProjectReferenceWithOutputPath>
-        </ItemGroup>
-    </Target>
-
-    <Target Name="GetItemsForLibProjectReferences" BeforeTargets="Build;AssignTargetPaths" DependsOnTargets="GetLibProjectReferences" Condition="'$(DesignTimeBuild)' != 'true'">
-        <ItemGroup>
-            <None Include="@(LibProjectReferenceWithOutputPath->'%(OutputPath)')">
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <Link>%(LibProjectReferenceWithOutputPath.OutputDir)\%(LibProjectReferenceWithOutputPath.Filename)%(LibProjectReferenceWithOutputPath.Extension)</Link>
-                <Pack>true</Pack>
-                <PackagePath>%(LibProjectReferenceWithOutputPath.OutputDir)</PackagePath>
-                <PackageCopyToOutput>true</PackageCopyToOutput>
-            </None>
-        </ItemGroup>
-    </Target>
-
-    <Target Name="BuildLibProjectReferences" BeforeTargets="Compile" DependsOnTargets="GetLibProjectReferences" Condition="'$(DesignTimeBuild)' != 'true'">
-        <MSBuild Projects="%(LibProjectReferenceWithOutputPath.ProjectFile)" Targets="Build" Properties="Platform=%(LibProjectReferenceWithOutputPath.Platform);Configuration=%(LibProjectReferenceWithOutputPath.Configuration)">
-            <Output TaskParameter="TargetOutputs" ItemName="LibProjectReferencesCompileOutput" />
-        </MSBuild>
-    </Target>
+    <Import Project="targets\DisableCopyToOutputDirectory.targets"/>
+    <Import Project="targets\ClangProjectReference.targets" />
+    <Import Project="targets\DotNetOSXCodeSign.targets"/>
 
 </Project>

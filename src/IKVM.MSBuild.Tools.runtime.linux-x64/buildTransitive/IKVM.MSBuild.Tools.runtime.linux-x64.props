@@ -1,0 +1,13 @@
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\ikvmc\net472\linux-x64\" TargetFramework="net472" RuntimeIdentifier="linux-x64" />
+        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\ikvmc\net6.0\linux-x64\" TargetFramework="net6.0" RuntimeIdentifier="linux-x64" />
+        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\ikvmstub\net472\linux-x64\" TargetFramework="net472" RuntimeIdentifier="linux-x64" />
+        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\ikvmstub\net6.0\linux-x64\" TargetFramework="net6.0" RuntimeIdentifier="linux-x64" />
+    </ItemGroup>
+    
+</Project>

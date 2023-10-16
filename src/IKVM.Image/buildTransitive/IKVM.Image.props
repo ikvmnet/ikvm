@@ -1,0 +1,14 @@
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\any\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>any</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(Filename)%(Extension)</ImagePath>
+        </IkvmImageItem>
+    </ItemGroup>
+
+</Project>

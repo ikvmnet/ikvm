@@ -1,0 +1,49 @@
+﻿<Project>
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NETCore.Platforms" Version="8.0.0-preview.7.23375.6" GeneratePathProperty="true" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.ByteCode\IKVM.ByteCode.csproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <TransformValues Include="Name" Value="$(ProductName)" />
+        <TransformValues Include="Version" Value="$(Version)" />
+        <TransformValues Include="FileVersion" Value="$(FileVersion)" />
+        <TransformValues Include="VendorUrl" Value="$(PackageProjectUrl)" />
+        <TransformValues Include="VendorUrlBug" Value="$(PackageProjectUrl)/issues/" />
+        <TransformValues Include="OpenJdkVersion" Value="$(OpenJdkVersion)" />
+        <TransformValues Include="OpenJdkFullVersion" Value="$(OpenJdkFullVersion)" />
+        <TransformValues Include="OpenJdkVendor" Value="$(OpenJdkVendor)" />
+        <TransformValues Include="OpenJdkImplementationVendor" Value="$(OpenJdkImplementationVendor)" />
+        <TransformValues Include="OpenJdkImplementationVersion" Value="$(OpenJdkImplementationVersion)" />
+        <TransformValues Include="OpenJdkSpecificationVersion" Value="$(OpenJdkSpecificationVersion)" />
+        <TransformValues Include="OpenJdkSpecificationVendor" Value="$(OpenJdkSpecificationVendor)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Transform Include="JVM.Constants.cs.tt" TargetPath="$(IntermediateOutputPath)transform\JVM.Constants.cs" />
+        <Compile Include="$(IntermediateOutputPath)transform\JVM.Constants.cs" Visible="False" Link="JVM.Constants.cs" />
+        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_Platforms)\runtime.json" LogicalName="runtime.json" Link="runtime.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Java" />
+        <InternalsVisibleTo Include="IKVM.Tests" />
+    </ItemGroup>
+
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
+</Project>

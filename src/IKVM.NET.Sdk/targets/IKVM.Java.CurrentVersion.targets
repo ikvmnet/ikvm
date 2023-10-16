@@ -1,0 +1,122 @@
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <Import Project="$(CustomBeforeIkvmJavaTargets)" Condition=" '$(CustomBeforeIkvmJavaTargets)' != '' And Exists('$(CustomBeforeIkvmJavaTargets)') " />
+
+    <PropertyGroup>
+        <DefaultLanguageSourceExtension>.java</DefaultLanguageSourceExtension>
+        <Language>Java</Language>
+        <TargetRuntime>Managed</TargetRuntime>
+        <AlwaysUseNumericalSuffixInItemNames>true</AlwaysUseNumericalSuffixInItemNames>
+        <DefineCommonItemSchemas Condition=" '$(DefineCommonItemSchemas)' == '' ">true</DefineCommonItemSchemas>
+        <DefineCommonReferenceSchemas Condition=" '$(DefineCommonReferenceSchemas)' == '' ">true</DefineCommonReferenceSchemas>
+        <DefineCommonCapabilities Condition=" '$(DefineCommonCapabilities)' == '' ">true</DefineCommonCapabilities>
+        <SynthesizeLinkMetadata Condition=" '$(SynthesizeLinkMetadata)' == '' And '$(HasSharedItems)' == 'true' ">true</SynthesizeLinkMetadata>
+        <AppDesignerFolder Condition="'$(AppDesignerFolder)' == ''">Properties</AppDesignerFolder>
+        
+        <!-- Always generate AnyCPU assemblies when targeting CoreCLR -->
+        <PlatformTarget Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">AnyCPU</PlatformTarget>
+    </PropertyGroup>
+
+    <ItemGroup Condition=" '$(DefineJavaItemSchemas)' != 'false' ">
+        <PropertyPageSchema Include="$(MSBuildThisFileDirectory)Java.ProjectItemsSchema.xaml;"/>
+        <ProjectCapability Include="CSharp;Java;Managed"/>
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(DefineCommonCapabilities)' == 'true' ">
+        <ProjectCapability Include="ReferencesFolder" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <CreateManifestResourceNamesDependsOn></CreateManifestResourceNamesDependsOn>
+    </PropertyGroup>
+
+    <Target
+        Name="CreateManifestResourceNames"
+        Condition="'@(EmbeddedResource)' != ''"
+        DependsOnTargets="$(CreateManifestResourceNamesDependsOn)">
+        <ItemGroup>
+            <_Temporary Remove="@(_Temporary)" />
+        </ItemGroup>
+
+        <!-- Create manifest names for culture and non-culture Resx files, and for non-culture Non-Resx resources -->
+        <CreateCSharpManifestResourceName
+              ResourceFiles="@(EmbeddedResource)"
+              RootNamespace="$(RootNamespace)"
+              UseDependentUponConvention="$(EmbeddedResourceUseDependentUponConvention)"
+              Condition="'%(EmbeddedResource.ManifestResourceName)' == '' and ('%(EmbeddedResource.WithCulture)' == 'false' or '%(EmbeddedResource.Type)' == 'Resx')">
+            <Output TaskParameter="ResourceFilesWithManifestResourceNames" ItemName="_Temporary" />
+        </CreateCSharpManifestResourceName>
+
+        <!-- Create manifest names for all culture non-resx resources -->
+        <CreateCSharpManifestResourceName
+              ResourceFiles="@(EmbeddedResource)"
+              RootNamespace="$(RootNamespace)"
+              PrependCultureAsDirectory="false"
+              UseDependentUponConvention="$(EmbeddedResourceUseDependentUponConvention)"
+              Condition="'%(EmbeddedResource.ManifestResourceName)' == '' and '%(EmbeddedResource.WithCulture)' == 'true' and '%(EmbeddedResource.Type)' == 'Non-Resx'">
+            <Output TaskParameter="ResourceFilesWithManifestResourceNames" ItemName="_Temporary" />
+        </CreateCSharpManifestResourceName>
+
+        <ItemGroup>
+            <EmbeddedResource Remove="@(EmbeddedResource)" Condition="'%(EmbeddedResource.ManifestResourceName)' == ''"/>
+            <EmbeddedResource Include="@(_Temporary)" />
+            <_Temporary Remove="@(_Temporary)" />
+        </ItemGroup>
+    </Target>
+
+    <ItemGroup>
+        <DocFileItem Include="$(DocumentationFile)" Condition=" '$(DocumentationFile)' != '' "/>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <CoreCompileDependsOn>$(CoreCompileDependsOn);_ComputeNonExistentFileProperty</CoreCompileDependsOn>
+    </PropertyGroup>
+
+    <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
+
+    <PropertyGroup>
+        <JavaCoreTargetsPath Condition=" '$(JavaCoreTargetsPath)' == '' ">$(MSBuildThisFileDirectory)IKVM.Java.Core.targets</JavaCoreTargetsPath>
+    </PropertyGroup>
+    <Import Project="$(JavaCoreTargetsPath)" />
+
+    <PropertyGroup>
+        <JavaDesignTimeTargetsPath Condition=" '$(JavaDesignTimeTargetsPath)' == '' ">$(MSBuildThisFileDirectory)IKVM.Java.DesignTime.targets</JavaDesignTimeTargetsPath>
+    </PropertyGroup>
+    <Import Project="$(JavaDesignTimeTargetsPath)"  />
+
+    <Target Name="_SetTargetFrameworkMonikerAttribute" BeforeTargets="GenerateTargetFrameworkMonikerAttribute">
+        <PropertyGroup>
+            <TargetFrameworkMonikerAssemblyAttributeText Condition=" '$(TargetFrameworkMoniker)' != '' ">
+                // &lt;autogenerated /&gt;
+                @cli.System.Runtime.Versioning.TargetFrameworkAttribute.Annotation(value = &quot;$(TargetFrameworkMoniker)&quot;, FrameworkDisplayName = &quot;$(TargetFrameworkMonikerDisplayName)&quot;)
+                interface __AssemblyAttributes {}
+            </TargetFrameworkMonikerAssemblyAttributeText>
+        </PropertyGroup>
+    </Target>
+
+    <!-- Includes the original compilation outputs along with the target path. Allows consumers of the project to directly access the compiled results. -->
+    <Target Name="_UpdateTargetPathWithTargetPlatformMonikerWithJavaMetadata" AfterTargets="GetTargetPathWithTargetPlatformMoniker" BeforeTargets="GetTargetPath" DependsOnTargets="CompileJava">
+        <ItemGroup>
+            <TargetPathWithTargetPlatformMoniker Update="@(TargetPathWithTargetPlatformMoniker)">
+                <JavaClasspath>$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))</JavaClasspath>
+                <HeaderPath>$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))</HeaderPath>
+            </TargetPathWithTargetPlatformMoniker>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <Utf8Output Condition=" '$(Utf8Output)' == '' ">true</Utf8Output>
+        <NoCompilerStandardLib Condition=" '$(NoCompilerStandardLib)' == '' ">true</NoCompilerStandardLib>
+        <PreferredUILang Condition="'$(BuildingInsideVisualStudio)' == 'true' and '$(PreferredUILang)' == ''">$([System.Globalization.CultureInfo]::CurrentUICulture.Name)</PreferredUILang>
+    </PropertyGroup>
+
+    <ItemGroup Condition=" '$(NoCompilerStandardLib)' == 'true' and '$(NoStdLib)' != 'true' ">
+        <_ExplicitReference Include="$(FrameworkPathOverride)\mscorlib.dll" />
+    </ItemGroup>
+
+    <Import Project="$(CustomAfterIkvmJavaTargets)" Condition="'$(CustomAfterIkvmJavaTargets)' != '' and Exists('$(CustomAfterIkvmJavaTargets)')" />
+
+</Project>

@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <PackageId>IKVM.Java-ref</PackageId>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <AssemblyName>IKVM.Java</AssemblyName>
+        <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    </PropertyGroup>
+
+</Project>

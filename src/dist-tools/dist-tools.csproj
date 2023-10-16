@@ -1,0 +1,59 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ToolTarget Include="net472|win-x64" TargetFramework="net472" RuntimeIdentifier="win-x64" Condition="$(_EnabledToolRuntimes.Contains(';win-x64;'))" />
+        <ToolTarget Include="net472|win-x86" TargetFramework="net472" RuntimeIdentifier="win-x86" Condition="$(_EnabledToolRuntimes.Contains(';win-x86;'))" />
+        <ToolTarget Include="net472|linux-x64" TargetFramework="net472" RuntimeIdentifier="linux-x64" Condition="$(_EnabledToolRuntimes.Contains(';linux-x64;'))" />
+        <ToolTarget Include="net472|linux-arm" TargetFramework="net472" RuntimeIdentifier="linux-arm" Condition="$(_EnabledToolRuntimes.Contains(';linux-arm;'))" />
+        <ToolTarget Include="net472|linux-arm64" TargetFramework="net472" RuntimeIdentifier="linux-arm64" Condition="$(_EnabledToolRuntimes.Contains(';linux-arm64;'))" />
+        <ToolTarget Include="net472|linux-musl-x64" TargetFramework="net472" RuntimeIdentifier="linux-musl-x64" Condition="$(_EnabledToolRuntimes.Contains(';linux-musl-x64;'))" />
+        <ToolTarget Include="net472|linux-musl-arm" TargetFramework="net472" RuntimeIdentifier="linux-musl-arm" Condition="$(_EnabledToolRuntimes.Contains(';linux-musl-arm;'))" />
+        <ToolTarget Include="net472|linux-musl-arm64" TargetFramework="net472" RuntimeIdentifier="linux-musl-arm64" Condition="$(_EnabledToolRuntimes.Contains(';linux-musl-arm64;'))" />
+        <ToolTarget Include="net472|osx-x64" TargetFramework="net472" RuntimeIdentifier="osx-x64" Condition="$(_EnabledToolRuntimes.Contains(';osx-x64;'))" />
+        <ToolTarget Include="net472|osx-arm64" TargetFramework="net472" RuntimeIdentifier="osx-arm64" Condition="$(_EnabledToolRuntimes.Contains(';osx-arm64;'))" />
+        <ToolTarget Include="net6.0|win-x64" TargetFramework="net6.0" RuntimeIdentifier="win-x64" Condition="$(_EnabledToolRuntimes.Contains(';win-x64;'))" />
+        <ToolTarget Include="net6.0|win-x86" TargetFramework="net6.0" RuntimeIdentifier="win-x86" Condition="$(_EnabledToolRuntimes.Contains(';win-x86;'))" />
+        <ToolTarget Include="net6.0|win-arm64" TargetFramework="net6.0" RuntimeIdentifier="win-arm64" Condition="$(_EnabledToolRuntimes.Contains(';win-arm64;'))" />
+        <ToolTarget Include="net6.0|linux-x64" TargetFramework="net6.0" RuntimeIdentifier="linux-x64" Condition="$(_EnabledToolRuntimes.Contains(';linux-x64;'))" />
+        <ToolTarget Include="net6.0|linux-arm" TargetFramework="net6.0" RuntimeIdentifier="linux-arm" Condition="$(_EnabledToolRuntimes.Contains(';linux-arm;'))" />
+        <ToolTarget Include="net6.0|linux-arm64" TargetFramework="net6.0" RuntimeIdentifier="linux-arm64" Condition="$(_EnabledToolRuntimes.Contains(';linux-arm64;'))" />
+        <ToolTarget Include="net6.0|linux-musl-x64" TargetFramework="net6.0" RuntimeIdentifier="linux-musl-x64" Condition="$(_EnabledToolRuntimes.Contains(';linux-musl-x64;'))" />
+        <ToolTarget Include="net6.0|linux-musl-arm" TargetFramework="net6.0" RuntimeIdentifier="linux-musl-arm" Condition="$(_EnabledToolRuntimes.Contains(';linux-musl-arm;'))" />
+        <ToolTarget Include="net6.0|linux-musl-arm64" TargetFramework="net6.0" RuntimeIdentifier="linux-musl-arm64" Condition="$(_EnabledToolRuntimes.Contains(';linux-musl-arm64;'))" />
+        <ToolTarget Include="net6.0|osx-x64" TargetFramework="net6.0" RuntimeIdentifier="osx-x64" Condition="$(_EnabledToolRuntimes.Contains(';osx-x64;'))" />
+        <ToolTarget Include="net6.0|osx-arm64" TargetFramework="net6.0" RuntimeIdentifier="osx-arm64" Condition="$(_EnabledToolRuntimes.Contains(';osx-arm64;'))" />
+    </ItemGroup>
+
+    <!-- Runs once per TFM/RID combination to generate individual output. -->
+    <Target Name="GetCopyToOutputDirectoryItemsByToolTarget" BeforeTargets="BeforeBuild" Inputs="@(ToolTarget)" Outputs="%(Identity)\null">
+
+        <!-- batch values to properties -->
+        <PropertyGroup>
+            <_TargetFramework>%(ToolTarget.TargetFramework)</_TargetFramework>
+            <_RuntimeIdentifier>%(ToolTarget.RuntimeIdentifier)</_RuntimeIdentifier>
+        </PropertyGroup>
+
+        <!-- output for the TFM/RID -->
+        <ItemGroup>
+            <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+                <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
+                <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
+                <PublishTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)</PublishTargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            </PublishProjectReference>
+            <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+                <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
+                <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
+                <PublishTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)</PublishTargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            </PublishProjectReference>
+        </ItemGroup>
+    </Target>
+
+</Project>

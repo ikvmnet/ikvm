@@ -1,0 +1,24 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>1e74b9f3-af8c-4adb-90ea-0e1696c7886c</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>unpack</TargetName>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack</IncludeDirectories>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);NO_ZLIB;UNPACK_JNI;FULL</PreprocessorDefinitions>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\**\*.cpp" Exclude="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\main.cpp;$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\jni.cpp" LanguageStandard="c++11" />
+        <Compile Include="**\*.cpp" LanguageStandard="c++11" />
+        <Compile Include="**\*.c" LanguageStandard="c99" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

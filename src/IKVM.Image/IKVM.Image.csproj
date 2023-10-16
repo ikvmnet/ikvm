@@ -1,0 +1,50 @@
+﻿<Project>
+    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>IKVM Runtime Image</Description>
+        <IncludeSymbols>false</IncludeSymbols>
+        <IkvmImageItemToNone>true</IkvmImageItemToNone>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Image.runtime.win-x64\IKVM.Image.runtime.win-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';win-x64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.win-x86\IKVM.Image.runtime.win-x86.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';win-x86;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.win-arm64\IKVM.Image.runtime.win-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-x64\IKVM.Image.runtime.linux-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-arm\IKVM.Image.runtime.linux-arm.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-arm64\IKVM.Image.runtime.linux-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-musl-x64\IKVM.Image.runtime.linux-musl-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-x64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-musl-arm\IKVM.Image.runtime.linux-musl-arm.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-musl-arm64\IKVM.Image.runtime.linux-musl-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.osx-x64\IKVM.Image.runtime.osx-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.osx-arm64\IKVM.Image.runtime.osx-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="README.md" Pack="true" PackagePath="." />
+        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Content Include="ikvm.properties" Pack="true" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <!-- items to output -->
+    <ItemGroup>
+        <IkvmImageItem Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\any\any\**\*" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net472\any\**\*" TargetFramework="net472" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net6.0\any\**\*" TargetFramework="net6.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="@(OpenJdkImageContent)" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(ImagePath)" />
+    </ItemGroup>
+
+    <Import Project="IKVM.Image.pack.targets" />
+    <Import Project="buildTransitive\IKVM.Image.targets" />
+    <Import Project="..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.NoTasks.targets" />
+    
+    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
+</Project>

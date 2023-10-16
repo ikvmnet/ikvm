@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets">
+    
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
+        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+        <DisableCopyToOutputDirectory>true</DisableCopyToOutputDirectory>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <BinProject Include="..\jar\jar.msbuildproj" />
+        <BinProject Include="..\jarsigner\jarsigner.msbuildproj" />
+        <BinProject Include="..\javac\javac.msbuildproj" />
+        <BinProject Include="..\javadoc\javadoc.msbuildproj" />
+        <BinProject Include="..\javah\javah.msbuildproj" />
+        <BinProject Include="..\javap\javap.msbuildproj" />
+        <BinProject Include="..\jdeps\jdeps.msbuildproj" />
+        <BinProject Include="..\native2ascii\native2ascii.msbuildproj" />
+        <BinProject Include="..\rmic\rmic.msbuildproj" />
+        <BinProject Include="..\wsgen\wsgen.msbuildproj" />
+        <BinProject Include="..\wsimport\wsimport.msbuildproj" />
+        <BinProject Include="..\schemagen\schemagen.msbuildproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PublishProjectReference Include="@(BinProject)" Condition=" '$(TargetFramework)' != '' And '$(RuntimeIdentifier)' != '' ">
+            <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=$(RuntimeIdentifier)</SetRuntimeIdentifier>
+            <PublishTargetPath>.</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,43 @@
+﻿<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)..\targets\generated.props" Condition="Exists('$(MSBuildThisFileDirectory)..\targets\generated.props')" />
+
+    <PropertyGroup>
+        <IkvmKeyFile Condition=" '$(IkvmKeyFile)' == '' And Exists('$(MSBuildThisFileDirectory)..\ikvm.snk') ">$(MSBuildThisFileDirectory)..\ikvm.snk</IkvmKeyFile>
+    </PropertyGroup>
+
+    <ItemDefinitionGroup>
+        <IkvmReference>
+            <AssemblyName></AssemblyName>
+            <AssemblyVersion></AssemblyVersion>
+            <AssemblyFileVersion></AssemblyFileVersion>
+            <DisableAutoAssemblyName></DisableAutoAssemblyName>
+            <DisableAutoAssemblyVersion></DisableAutoAssemblyVersion>
+            <FallbackAssemblyName></FallbackAssemblyName>
+            <FallbackAssemblyVersion></FallbackAssemblyVersion>
+            <Compile></Compile>
+            <Sources></Sources>
+            <References></References>
+            <ClassLoader></ClassLoader>
+            <Debug></Debug>
+            <KeyFile>$(IkvmKeyFile)</KeyFile>
+            <DelaySign></DelaySign>
+            <Aliases></Aliases>
+            <Private>true</Private>
+            <CopyLocal>true</CopyLocal>
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </IkvmReference>
+    </ItemDefinitionGroup>
+
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+        <None Include="$(MSBuildThisFileDirectory)..\runtimes\**\*" LinkBase="runtimes">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>runtimes\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            <Visible>false</Visible>
+        </None>
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets">
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>IKVM MSBuild Tools</Description>
+        <IncludeSymbols>false</IncludeSymbols>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="..\..\README.md" Pack="true" PackagePath="." />
+        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm</SetRuntimeIdentifier>
+            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net6.0' ">ikvmc\net6.0\linux-arm</PublishTargetPath>
+            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net6.0' ">PreserveNewest</CopyToOutputDirectory>
+            <PublishPackagePath>ikvmc\net6.0\linux-arm</PublishPackagePath>
+            <Pack>true</Pack>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm</SetRuntimeIdentifier>
+            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net6.0' ">ikvmstub\net6.0\linux-arm</PublishTargetPath>
+            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net6.0' ">PreserveNewest</CopyToOutputDirectory>
+            <PublishPackagePath>ikvmstub\net6.0\linux-arm</PublishPackagePath>
+            <Pack>true</Pack>
+        </PublishProjectReference>
+    </ItemGroup>
+
+</Project>

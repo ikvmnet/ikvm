@@ -1,0 +1,12 @@
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <LanguageTargets>$(MSBuildThisFileDirectory)IKVM.Java.targets</LanguageTargets>
+        <LanguageProps>$(MSBuildThisFileDirectory)IKVM.Java.props</LanguageProps>
+        <DefaultLanguageSourceExtension>.java</DefaultLanguageSourceExtension>
+    </PropertyGroup>
+    
+</Project>

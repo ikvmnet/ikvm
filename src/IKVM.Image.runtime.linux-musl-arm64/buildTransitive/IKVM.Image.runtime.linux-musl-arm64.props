@@ -1,0 +1,24 @@
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\linux-musl-arm64\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>linux-musl-arm64</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+        </IkvmImageItem>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net472\linux-musl-arm64\**\*">
+            <TargetFramework>net472</TargetFramework>
+            <RuntimeIdentifier>linux-musl-arm64</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+        </IkvmImageItem>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net6.0\linux-musl-arm64\**\*">
+            <TargetFramework>net6.0</TargetFramework>
+            <RuntimeIdentifier>linux-musl-arm64</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+        </IkvmImageItem>
+    </ItemGroup>
+
+</Project>

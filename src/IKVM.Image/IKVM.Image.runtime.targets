@@ -1,0 +1,52 @@
+<!--
+
+    IKVM.Image.runtime.targets
+    
+    Imported by the .runtime projects to extract IkvmImageItems for each RuntimeIdentifier and TFM.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+        <SupportedImageTargetFrameworks Condition=" '$(SupportedImageTargetFrameworks)' == '' ">;$(TargetFrameworks);</SupportedImageTargetFrameworks>
+        <IkvmImageItemToNone>true</IkvmImageItemToNone>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <IkvmImageItem Include="ikvm\any\any\**\*" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\any\$(ImageRuntimeIdentifier)\**\*" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net472\any\**\*" TargetFramework="net472" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net472\$(ImageRuntimeIdentifier)\**\*" TargetFramework="net472" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net6.0\any\**\*" TargetFramework="net6.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net6.0\$(ImageRuntimeIdentifier)\**\*" TargetFramework="net6.0" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PublishProjectReference Include="$(ImageBinProject)" Condition="$(SupportedImageTargetFrameworks.Contains('net472'))">
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
+            <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
+            <PublishItemMetadata>TargetFramework=net472;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
+        </PublishProjectReference>
+        <PublishProjectReference Include="$(ImageBinProject)" Condition="$(SupportedImageTargetFrameworks.Contains('net6.0'))">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
+            <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
+            <PublishItemMetadata>TargetFramework=net6.0;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
+        </PublishProjectReference>
+    </ItemGroup>
+
+    <Target Name="CollectIkvmImageBinItems" BeforeTargets="ExpandIkvmImageItems" DependsOnTargets="CollectPublishProjectReferenceItems;GetPublishProjectReferenceOutputItems" Condition=" '$(UsingIkvmCoreMSBuild)' == 'true' ">
+        <ItemGroup>
+            <IkvmImageItem Include="@(PublishIkvmImageBinItem)">
+                <ImagePath>bin\%(PublishIkvmImageBinItem.PublishItemPath)</ImagePath>
+            </IkvmImageItem>
+        </ItemGroup>
+    </Target>
+
+    <Import Project="IKVM.Image.pack.targets" />
+    <Import Project="buildTransitive\IKVM.Image.targets" />
+    <Import Project="..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.NoTasks.targets" />
+    
+</Project>

@@ -1,0 +1,10 @@
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <UsingIkvmImageJre>true</UsingIkvmImageJre>
+    </PropertyGroup>
+    
+</Project>

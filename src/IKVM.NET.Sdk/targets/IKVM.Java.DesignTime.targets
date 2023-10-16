@@ -1,0 +1,33 @@
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <ManagedDesignTimeTargetsPath Condition=" '$(ManagedDesignTimeTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\VisualStudio\Managed\Microsoft.Managed.DesignTime.targets</ManagedDesignTimeTargetsPath>
+    </PropertyGroup>
+    <Import Project="$(ManagedDesignTimeTargetsPath)" Condition=" '$(ManagedDesignTimeTargetsPath)' != '' And Exists('$(ManagedDesignTimeTargetsPath)') " />
+
+    <PropertyGroup>
+        <TemplateLanguage Condition=" '$(TemplateLanguage)' == '' ">Java</TemplateLanguage>
+        <DefineJavaItemSchemas>false</DefineJavaItemSchemas>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectCapability Include="Java;Managed;ClassDesigner;SharedProjectReferences;ProjectPropertiesEditor;" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(DefineCommonManagedItemSchemas)' == 'true' ">
+        <PropertyPageSchema Include="$(ManagedXamlNeutralResourcesDirectory)EditorConfigFiles.xaml">
+            <Context>File</Context>
+        </PropertyPageSchema>
+        <PropertyPageSchema Include="$(ManagedXamlResourcesDirectory)EditorConfigFiles.BrowseObject.xaml">
+            <Context>BrowseObject</Context>
+        </PropertyPageSchema>
+    </ItemGroup>
+
+    <Target Name="CompileDesignTime" DependsOnTargets="_CheckCompileDesignTimePrerequisite;Compile">
+        <Message Text="CompileDesignTime" />
+    </Target>
+
+</Project>

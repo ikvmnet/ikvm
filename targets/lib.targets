@@ -1,0 +1,20 @@
+<!--
+
+    lib.targets
+    
+    Applies at the bottom of any native library project.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
+        <AdditionalLinkOptions>$(AdditionalLinkOptions);-Wl,-install_name,@rpath/lib$(TargetName).dylib</AdditionalLinkOptions>
+    </PropertyGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)ClangOSXCodeSign.targets"/>
+
+</Project>
