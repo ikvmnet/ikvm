@@ -263,6 +263,10 @@
                 await fileIdentityUtil.SaveStateXmlAsync(fileIdentityStateXml);
                 root.Add(fileIdentityStateXml);
 
+                var dir = Path.GetDirectoryName(StateFile);
+                if (Directory.Exists(dir) == false)
+                    Directory.CreateDirectory(dir);
+
                 root.Save(StateFile);
             }
         }
