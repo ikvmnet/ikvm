@@ -153,6 +153,9 @@
         /// <returns></returns>
         public override bool Execute()
         {
+            if (StateFile != null)
+                StateFile = Path.GetFullPath(StateFile);
+
             if (cts.IsCancellationRequested)
                 return false;
 

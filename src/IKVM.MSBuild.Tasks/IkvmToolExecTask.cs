@@ -76,6 +76,12 @@ namespace IKVM.MSBuild.Tasks
         /// <exception cref="NullReferenceException"></exception>
         public override bool Execute()
         {
+            // normalize paths due to yields potential of allowing continuation after CWD change
+            if (ToolPath != null)
+                ToolPath = Path.GetFullPath(ToolPath);
+            if (LogFile != null)
+                LogFile = Path.GetFullPath(LogFile);
+
             if (cts.IsCancellationRequested)
                 return false;
 

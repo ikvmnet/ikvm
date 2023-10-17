@@ -20,7 +20,6 @@
     public class IkvmReferenceExportItemPrepare : Microsoft.Build.Utilities.Task, ICancelableTask
     {
 
-
         const string XML_ROOT_ELEMENT_NAME = "IkvmReferenceExportItemPrepareState";
         const string XML_ASSEMBLY_INFO_STATE_ELEMENT_NAME = "AssemblyInfoState";
         const string XML_FILE_IDENTITY_STATE_ELEMENT_NAME = "FileIdentityState";
@@ -91,6 +90,9 @@
         /// <returns></returns>
         public override bool Execute()
         {
+            if (StateFile != null)
+                StateFile = Path.GetFullPath(StateFile);
+
             if (cts.IsCancellationRequested)
                 return false;
 
