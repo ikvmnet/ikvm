@@ -165,7 +165,7 @@
 
                     try
                     {
-                        log.LogMessage(MessageImportance.Low, "Loading assembly info from '{0}'.", path);
+                        log?.LogMessage(MessageImportance.Low, "Loading assembly info from '{0}'.", path);
                         using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                         using var perdr = new PEReader(fsstm);
                         var mrdr = perdr.GetMetadataReader();
@@ -173,13 +173,13 @@
                     }
                     catch (Exception e)
                     {
-                        log.LogWarning("Exception loading assembly info from '{0}': {1}", path, e.Message);
+                        log?.LogWarning("Exception loading assembly info from '{0}': {1}", path, e.Message);
                         return (lastWriteTimeUtc, null);
                     }
                 }
                 catch (Exception e)
                 {
-                    log.LogWarning("Exception loading assembly info from '{0}': {1}", path, e.Message);
+                    log?.LogWarning("Exception loading assembly info from '{0}': {1}", path, e.Message);
                     return (default, null);
                 }
             });

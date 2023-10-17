@@ -21,7 +21,7 @@ namespace IKVM.MSBuild.Tasks.Tests
 
             var f = Path.GetTempFileName();
             File.WriteAllText(f, "TEST");
-            var i = await u.GetIdentityForFileAsync(f, CancellationToken.None);
+            var i = await u.GetIdentityForFileAsync(f, null, CancellationToken.None);
 
             var x = new XElement("Test");
             await u.SaveStateXmlAsync(x);

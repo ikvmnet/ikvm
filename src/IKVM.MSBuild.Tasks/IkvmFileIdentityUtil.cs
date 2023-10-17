@@ -91,8 +91,6 @@
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException($"'{nameof(path)}' cannot be null or whitespace.", nameof(path));
-            if (log is null)
-                throw new ArgumentNullException(nameof(log));
 
             return (await cache.GetOrAdd(path, path => CreateIdentityForFileAsync(path, log, cancellationToken))).Identity;
         }
