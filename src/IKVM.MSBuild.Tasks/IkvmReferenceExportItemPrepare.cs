@@ -173,11 +173,17 @@
                     {
                         var assemblyInfoStateXml = stateFileRoot.Element(XML_ASSEMBLY_INFO_STATE_ELEMENT_NAME);
                         if (assemblyInfoStateXml != null)
+                        {
                             assemblyInfoUtil.LoadStateXml(assemblyInfoStateXml);
+                            Log.LogMessage(MessageImportance.Low, "Successfully loaded assembly info state.");
+                        }
 
                         var fileIdentityStateXml = stateFileRoot.Element(XML_FILE_IDENTITY_STATE_ELEMENT_NAME);
                         if (fileIdentityStateXml != null)
+                        {
                             fileIdentityUtil.LoadStateXml(fileIdentityStateXml);
+                            Log.LogMessage(MessageImportance.Low, "Successfully loaded file identity state.");
+                        }
                     }
                 }
                 catch
@@ -356,7 +362,7 @@
             // others should exist
             if (File.Exists(value))
             {
-                var identity = await fileIdentityUtil.GetIdentityForFileAsync(value, cancellationToken);
+                var identity = await fileIdentityUtil.GetIdentityForFileAsync(value, Log, cancellationToken);
                 if (identity != null)
                     return identity;
             }
@@ -382,7 +388,7 @@
             foreach (var n in new[] { "IKVM.Runtime", "IKVM.Java" })
             {
                 foreach (var i in referencesList)
-                    if (await assemblyInfoUtil.GetAssemblyInfoAsync(i) is IkvmAssemblyInfoUtil.AssemblyInfo a && a.Name == n)
+                    if (await assemblyInfoUtil.GetAssemblyInfoAsync(i, Log, cancellationToken) is IkvmAssemblyInfoUtil.AssemblyInfo a && a.Name == n)
                         hs.Add(i);
             }
 
@@ -401,10 +407,10 @@
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (await assemblyInfoUtil.GetAssemblyInfoAsync(path) is IkvmAssemblyInfoUtil.AssemblyInfo a)
+            if (await assemblyInfoUtil.GetAssemblyInfoAsync(path, Log, cancellationToken) is IkvmAssemblyInfoUtil.AssemblyInfo a)
                 foreach (var reference in a.References)
                     foreach (var i in referencesList)
-                        if ((await assemblyInfoUtil.GetAssemblyInfoAsync(i)) is IkvmAssemblyInfoUtil.AssemblyInfo a2 && a2.Name == reference)
+                        if ((await assemblyInfoUtil.GetAssemblyInfoAsync(i, Log, cancellationToken)) is IkvmAssemblyInfoUtil.AssemblyInfo a2 && a2.Name == reference)
                             if (hs.Add(i))
                                 await BuildAssemblyReferencesAsync(i, referencesList, hs, cancellationToken);
         }

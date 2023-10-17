@@ -8,9 +8,13 @@
     using System.Linq;
     using System.Reflection.Metadata;
     using System.Reflection.PortableExecutable;
+    using System.Threading;
     using System.Threading.Tasks;
     using System.Xml.Linq;
     using System.Xml.Serialization;
+
+    using Microsoft.Build.Framework;
+    using Microsoft.Build.Utilities;
 
     public class IkvmAssemblyInfoUtil
     {
@@ -110,7 +114,7 @@
         /// </summary>
         /// <param name="root"></param>
         /// <returns></returns>
-        public async Task SaveStateXmlAsync(XElement root)
+        public async System.Threading.Tasks.Task SaveStateXmlAsync(XElement root)
         {
             foreach (var i in cache)
             {
@@ -129,23 +133,26 @@
         /// Gets the assembly info for the given assembly path.
         /// </summary>
         /// <param name="path"></param>
+        /// <param name="log"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task<AssemblyInfo?> GetAssemblyInfoAsync(string path)
+        public async Task<AssemblyInfo?> GetAssemblyInfoAsync(string path, TaskLoggingHelper log, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException($"'{nameof(path)}' cannot be null or whitespace.", nameof(path));
 
-            return (await cache.GetOrAdd(path, CreateAssemblyInfoAsync)).Info;
+            return (await cache.GetOrAdd(path, path => CreateAssemblyInfoAsync(path, log, cancellationToken))).Info;
         }
 
         /// <summary>
         /// Reads the assembly info from the given assembly path.
         /// </summary>
         /// <param name="path"></param>
+        /// <param name="log"></param>
         /// <returns></returns>
-        Task<(DateTime LastWriteTimeUtc, AssemblyInfo? Info)> CreateAssemblyInfoAsync(string path)
+        Task<(DateTime LastWriteTimeUtc, AssemblyInfo? Info)> CreateAssemblyInfoAsync(string path, TaskLoggingHelper log, CancellationToken cancellationToken)
         {
-            return Task.Run(() =>
+            return System.Threading.Tasks.Task.Run(() =>
             {
                 try
                 {
@@ -158,18 +165,21 @@
 
                     try
                     {
+                        log.LogMessage(MessageImportance.Low, "Loading assembly info from '{0}'.", path);
                         using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                         using var perdr = new PEReader(fsstm);
                         var mrdr = perdr.GetMetadataReader();
                         return (lastWriteTimeUtc, new AssemblyInfo(mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).ToList()));
                     }
-                    catch
+                    catch (Exception e)
                     {
+                        log.LogWarning("Exception loading assembly info from '{0}': {1}", path, e.Message);
                         return (lastWriteTimeUtc, null);
                     }
                 }
-                catch
+                catch (Exception e)
                 {
+                    log.LogWarning("Exception loading assembly info from '{0}': {1}", path, e.Message);
                     return (default, null);
                 }
             });

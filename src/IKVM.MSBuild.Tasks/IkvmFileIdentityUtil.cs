@@ -12,6 +12,8 @@
     using System.Threading.Tasks;
     using System.Xml.Linq;
 
+    using Microsoft.Build.Utilities;
+
     public class IkvmFileIdentityUtil
     {
 
@@ -69,7 +71,7 @@
         /// </summary>
         /// <param name="root"></param>
         /// <returns></returns>
-        public async Task SaveStateXmlAsync(XElement root)
+        public async System.Threading.Tasks.Task SaveStateXmlAsync(XElement root)
         {
             foreach (var i in cache)
             {
@@ -82,24 +84,29 @@
         /// Gets the hash value for the given file.
         /// </summary>
         /// <param name="path"></param>
+        /// <param name="log"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task<string> GetIdentityForFileAsync(string path, CancellationToken cancellationToken)
+        public async Task<string> GetIdentityForFileAsync(string path, TaskLoggingHelper log, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException($"'{nameof(path)}' cannot be null or whitespace.", nameof(path));
+            if (log is null)
+                throw new ArgumentNullException(nameof(log));
 
-            return (await cache.GetOrAdd(path, CreateIdentityForFileAsync)).Identity;
+            return (await cache.GetOrAdd(path, path => CreateIdentityForFileAsync(path, log, cancellationToken))).Identity;
         }
 
         /// <summary>
         /// Gets the hash value for the given file.
         /// </summary>
         /// <param name="path"></param>
+        /// <param name="log"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<(DateTime LastWriteTimeUtc, string Identity)> CreateIdentityForFileAsync(string path)
+        Task<(DateTime LastWriteTimeUtc, string Identity)> CreateIdentityForFileAsync(string path, TaskLoggingHelper log, CancellationToken cancellationToken)
         {
-            return Task.Run(async () =>
+            return System.Threading.Tasks.Task.Run(async () =>
             {
                 var lastWriteTimeUtc = File.GetLastWriteTimeUtc(path);
 
@@ -122,7 +129,7 @@
 
                 // if the file is potentially a .NET assembly
                 if (Path.GetExtension(path) == ".dll" || Path.GetExtension(path) == ".exe")
-                    if (await assemblyInfoUtil.GetAssemblyInfoAsync(path) is IkvmAssemblyInfoUtil.AssemblyInfo a)
+                    if (await assemblyInfoUtil.GetAssemblyInfoAsync(path, log, cancellationToken) is IkvmAssemblyInfoUtil.AssemblyInfo a)
                         return (lastWriteTimeUtc, $"MVID:{a.Mvid}");
 
                 // fallback to a standard full MD5 of the file

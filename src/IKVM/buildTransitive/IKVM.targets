@@ -4,7 +4,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <_IkvmReferenceItemPrepareStateFile Condition=" '$(IkvmReferenceItemPrepareStateFile)' == '' ">$(IntermediateOutputPath)$(MSBuildProjectFile).IkvmReferenceItemPrepare.state</_IkvmReferenceItemPrepareStateFile>
+        <_IkvmReferenceItemPrepareStateFile Condition=" '$(IkvmReferenceItemPrepareStateFile)' == '' ">$(IntermediateOutputPath)$(MSBuildProjectFile).IkvmReferenceItemPrepare.cache</_IkvmReferenceItemPrepareStateFile>
     </PropertyGroup>
 
     <PropertyGroup>

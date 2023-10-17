@@ -247,11 +247,17 @@
                     {
                         var assemblyInfoStateXml = stateFileRoot.Element(XML_ASSEMBLY_INFO_STATE_ELEMENT_NAME);
                         if (assemblyInfoStateXml != null)
+                        {
                             assemblyInfoUtil.LoadStateXml(assemblyInfoStateXml);
+                            Log.LogMessage(MessageImportance.Low, "Successfully loaded assembly info state.");
+                        }
 
                         var fileIdentityStateXml = stateFileRoot.Element(XML_FILE_IDENTITY_STATE_ELEMENT_NAME);
                         if (fileIdentityStateXml != null)
+                        {
                             fileIdentityUtil.LoadStateXml(fileIdentityStateXml);
+                            Log.LogMessage(MessageImportance.Low, "Successfully loaded file identity state.");
+                        }
                     }
                 }
                 catch
@@ -527,13 +533,13 @@
             var manifest = new StringWriter();
             manifest.WriteLine("ToolVersion={0}", ToolVersion);
             manifest.WriteLine("ToolFramework={0}", ToolFramework);
-            manifest.WriteLine("RuntimeAssembly={0}", await fileIdentityUtil.GetIdentityForFileAsync(RuntimeAssembly, cancellationToken));
+            manifest.WriteLine("RuntimeAssembly={0}", await fileIdentityUtil.GetIdentityForFileAsync(RuntimeAssembly, Log, cancellationToken));
             manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
             manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
             manifest.WriteLine("AssemblyFileVersion={0}", item.AssemblyFileVersion);
             manifest.WriteLine("ClassLoader={0}", item.ClassLoader);
             manifest.WriteLine("Debug={0}", item.Debug ? "true" : "false");
-            manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? await fileIdentityUtil.GetIdentityForFileAsync(item.KeyFile, cancellationToken) : "");
+            manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? await fileIdentityUtil.GetIdentityForFileAsync(item.KeyFile, Log,cancellationToken) : "");
             manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
 
             // each Compile item should be a jar or class file
@@ -596,7 +602,7 @@
             if (File.Exists(path) == false)
                 throw new FileNotFoundException($"Cannot generate hash for missing file '{path}' on '{item.ItemSpec}'.");
 
-            return $"Compile={await fileIdentityUtil.GetIdentityForFileAsync(path, cancellationToken)}";
+            return $"Compile={await fileIdentityUtil.GetIdentityForFileAsync(path, Log, cancellationToken)}";
         }
 
         /// <summary>
@@ -620,7 +626,7 @@
             if (File.Exists(reference.ItemSpec) == false)
                 throw new FileNotFoundException($"Could not find reference file '{reference.ItemSpec}'.");
 
-            return $"Reference={await fileIdentityUtil.GetIdentityForFileAsync(reference.ItemSpec, cancellationToken)}";
+            return $"Reference={await fileIdentityUtil.GetIdentityForFileAsync(reference.ItemSpec, Log, cancellationToken)}";
         }
 
         /// <summary>
