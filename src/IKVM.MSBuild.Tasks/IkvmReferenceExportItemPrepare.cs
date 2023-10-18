@@ -24,16 +24,6 @@
         const string XML_ASSEMBLY_INFO_STATE_ELEMENT_NAME = "AssemblyInfoState";
         const string XML_FILE_IDENTITY_STATE_ELEMENT_NAME = "FileIdentityState";
 
-        /// <summary>
-        /// Calculates the hash of the value.
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <returns></returns>
-        static byte[] ComputeHash(byte[] buffer)
-        {
-            using var md5 = MD5.Create();
-            return md5.ComputeHash(buffer);
-        }
 
         readonly CancellationTokenSource cts;
         readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
@@ -271,7 +261,14 @@
                 foreach (var reference in item.References)
                     referencesList.Add(reference);
 
-            var references = await GetAssemblyReferencesAsync(item.ItemSpec, referencesList, cancellationToken);
+            // collect assembly name to assembly path mapping
+            var t = await Task.WhenAll(referencesList.Select(i => assemblyInfoUtil.GetAssemblyInfoAsync(i, Log, cancellationToken)));
+            var d = new Dictionary<string, string>();
+            foreach (var i in t)
+                if (i.HasValue)
+                    d[i.Value.Name] = i.Value.Path;
+
+            var references = await GetAssemblyReferencesAsync(item.ItemSpec, d, cancellationToken);
             return references.OrderBy(i => i).ToList();
         }
 
@@ -311,7 +308,9 @@
             if (string.IsNullOrWhiteSpace(item.IkvmIdentity) == false)
                 return item.IkvmIdentity;
 
-            var writer = new StringWriter();
+            using var md5 = MD5.Create();
+            using var stream = new CryptoStream(Stream.Null, md5, CryptoStreamMode.Write);
+            using var writer = new StreamWriter(stream);
             writer.WriteLine("ToolVersion={0}", ToolVersion);
             writer.WriteLine("ToolFramework={0}", ToolFramework);
             writer.WriteLine("Assembly={0}", item.ItemSpec);
@@ -337,8 +336,10 @@
                 foreach (var ns in item.Namespaces.Distinct().OrderBy(i => i))
                     writer.WriteLine($"Namespace={ns}");
 
-            // hash the resulting manifest and set the identity
-            return GetHashForString(writer.ToString());
+            // hash the resulting manifest and reeturn the identity
+            writer.Flush();
+            stream.FlushFinalBlock();
+            return IkvmTaskUtil.ToHex(md5.Hash);
         }
 
         /// <summary>
@@ -371,21 +372,20 @@
         /// Finds all of the direct and indirect references of the given assembly.
         /// </summary>
         /// <param name="path"></param>
-        /// <param name="referencesList"></param>
+        /// <param name="references"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        async Task<IEnumerable<string>> GetAssemblyReferencesAsync(string path, IEnumerable<string> referencesList, CancellationToken cancellationToken)
+        async Task<IEnumerable<string>> GetAssemblyReferencesAsync(string path, Dictionary<string, string> references, CancellationToken cancellationToken)
         {
-            var hs = new HashSet<string>();
+            var hs = new HashSet<string>() { path };
 
             // recurse into references of path
-            await BuildAssemblyReferencesAsync(path, referencesList, hs, cancellationToken);
+            await BuildAssemblyReferencesAsync(path, references, hs, cancellationToken);
 
             // ensure the required libraries are present
             foreach (var n in new[] { "IKVM.Runtime", "IKVM.Java" })
-                foreach (var i in referencesList)
-                    if (await assemblyInfoUtil.GetAssemblyInfoAsync(i, Log, cancellationToken) is IkvmAssemblyInfoUtil.AssemblyInfo a && a.Name == n)
-                        hs.Add(i);
+                if (references.TryGetValue(n, out var i))
+                    hs.Add(i);
 
             return hs;
         }
@@ -394,35 +394,19 @@
         /// Finds all of the direct and indirect references of the given assembly.
         /// </summary>
         /// <param name="path"></param>
-        /// <param name="referencesList"></param>
+        /// <param name="references"></param>
         /// <param name="hs"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        async Task BuildAssemblyReferencesAsync(string path, IEnumerable<string> referencesList, HashSet<string> hs, CancellationToken cancellationToken)
+        async Task BuildAssemblyReferencesAsync(string path, Dictionary<string, string> references, HashSet<string> hs, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             if (await assemblyInfoUtil.GetAssemblyInfoAsync(path, Log, cancellationToken) is IkvmAssemblyInfoUtil.AssemblyInfo a)
                 foreach (var reference in a.References)
-                    foreach (var i in referencesList)
-                        if ((await assemblyInfoUtil.GetAssemblyInfoAsync(i, Log, cancellationToken)) is IkvmAssemblyInfoUtil.AssemblyInfo a2 && a2.Name == reference)
-                            if (hs.Add(i))
-                                await BuildAssemblyReferencesAsync(i, referencesList, hs, cancellationToken);
-        }
-
-        /// <summary>
-        /// Gets the hash value for the given file.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        string GetHashForString(string value)
-        {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
-
-            var hsh = ComputeHash(Encoding.UTF8.GetBytes(value));
-            var bld = IkvmTaskUtil.ToHex(hsh);
-            return bld;
+                    if (references.TryGetValue(reference, out var i))
+                        if (hs.Add(i))
+                            await BuildAssemblyReferencesAsync(i, references, hs, cancellationToken);
         }
 
     }

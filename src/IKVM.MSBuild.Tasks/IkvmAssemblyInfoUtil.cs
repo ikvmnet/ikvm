@@ -34,15 +34,23 @@
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
+            /// <param name="path"></param>
             /// <param name="name"></param>
             /// <param name="mvid"></param>
             /// <param name="references"></param>
-            public AssemblyInfo(string name, Guid mvid, List<string> references)
+            public AssemblyInfo(string path, string name, Guid mvid, List<string> references)
             {
+                Path = path;
                 Name = name;
                 Mvid = mvid;
                 References = references ?? throw new ArgumentNullException(nameof(references));
             }
+
+            /// <summary>
+            /// Path to the assembly from which this information was derived.
+            /// </summary>
+            [XmlAttribute("Path")]
+            public string Path { get; set; }
 
             /// <summary>
             /// Name of the assembly.
@@ -169,7 +177,7 @@
                         using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                         using var perdr = new PEReader(fsstm);
                         var mrdr = perdr.GetMetadataReader();
-                        return (lastWriteTimeUtc, new AssemblyInfo(mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).ToList()));
+                        return (lastWriteTimeUtc, new AssemblyInfo(path, mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).ToList()));
                     }
                     catch (Exception e)
                     {
