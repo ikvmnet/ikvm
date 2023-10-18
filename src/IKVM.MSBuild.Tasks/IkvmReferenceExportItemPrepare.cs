@@ -383,11 +383,9 @@
 
             // ensure the required libraries are present
             foreach (var n in new[] { "IKVM.Runtime", "IKVM.Java" })
-            {
                 foreach (var i in referencesList)
                     if (await assemblyInfoUtil.GetAssemblyInfoAsync(i, Log, cancellationToken) is IkvmAssemblyInfoUtil.AssemblyInfo a && a.Name == n)
                         hs.Add(i);
-            }
 
             return hs;
         }
@@ -423,11 +421,8 @@
                 throw new ArgumentNullException(nameof(value));
 
             var hsh = ComputeHash(Encoding.UTF8.GetBytes(value));
-            var bld = new StringBuilder(hsh.Length * 2);
-            foreach (var b in hsh)
-                bld.Append(b.ToString("x2"));
-
-            return bld.ToString();
+            var bld = IkvmTaskUtil.ToHex(hsh);
+            return bld;
         }
 
     }

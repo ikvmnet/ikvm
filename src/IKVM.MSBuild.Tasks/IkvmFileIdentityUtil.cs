@@ -143,30 +143,6 @@
         }
 
         /// <summary>
-        /// Converts a series of bytes to a hexidecimal string.
-        /// </summary>
-        /// <param name="bytes"></param>
-        /// <param name="text"></param>
-        /// <returns></returns>
-        string ToHex(ReadOnlySpan<byte> bytes)
-        {
-            char GetDigit(int value) => value < 10 ? (char)('0' + value) : (char)('7' + value);
-
-            var t = new char[bytes.Length * 3];
-            var p = 0;
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                if (p > 0)
-                    t[p++] = ' ';
-
-                t[p++] = GetDigit((bytes[i] >> 4) & 0xf);
-                t[p++] = GetDigit(bytes[i] & 0xf);
-            }
-
-            return new string(t, 0, p);
-        }
-
-        /// <summary>
         /// Gets the hash value for the given file.
         /// </summary>
         /// <param name="path"></param>
@@ -202,7 +178,7 @@
                     // fallback to a standard full MD5 of the file
                     using var stm = File.OpenRead(path);
                     var hsh = ComputeHash(stm);
-                    var hex = ToHex(hsh);
+                    var hex = IkvmTaskUtil.ToHex(hsh);
 
                     return (lastWriteTimeUtc, hex);
                 }

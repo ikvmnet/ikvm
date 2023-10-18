@@ -3,7 +3,6 @@
 
     using System;
     using System.Collections.Concurrent;
-    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Security;
@@ -99,6 +98,30 @@
 
             var relativeToUri = new Uri(Path.GetFullPath(relativeTo));
             return Uri.UnescapeDataString(relativeToUri.MakeRelativeUri(pathUri).ToString().Replace('/', Path.DirectorySeparatorChar));
+        }
+
+        /// <summary>
+        /// Converts a series of bytes to a hexidecimal string.
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        public static string ToHex(byte[] bytes)
+        {
+            char GetDigit(int value) => value < 10 ? (char)('0' + value) : (char)('7' + value);
+
+            var t = new char[bytes.Length * 3];
+            var p = 0;
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                if (p > 0)
+                    t[p++] = ' ';
+
+                t[p++] = GetDigit((bytes[i] >> 4) & 0xf);
+                t[p++] = GetDigit(bytes[i] & 0xf);
+            }
+
+            return new string(t, 0, p);
         }
 
     }
