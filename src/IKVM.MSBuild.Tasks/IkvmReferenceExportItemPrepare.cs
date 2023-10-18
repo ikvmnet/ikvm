@@ -360,12 +360,9 @@
                 return value;
 
             // others should exist
-            if (File.Exists(value))
-            {
-                var identity = await fileIdentityUtil.GetIdentityForFileAsync(value, Log, cancellationToken);
-                if (identity != null)
-                    return identity;
-            }
+            var identity = await fileIdentityUtil.GetIdentityForFileAsync(value, Log, cancellationToken);
+            if (identity != null)
+                return identity;
 
             throw new Exception($"Could not resolve identity for '{value}'.");
         }

@@ -96,49 +96,39 @@
         }
 
         /// <summary>
-        /// Gets the hash value for the given file.
+        /// Attempts to read all of the text from a file.
         /// </summary>
         /// <param name="path"></param>
-        /// <param name="log"></param>
-        /// <param name="cancellationToken"></param>
+        /// <param name="text"></param>
         /// <returns></returns>
-        Task<(DateTime LastWriteTimeUtc, string Identity)> CreateIdentityForFileAsync(string path, TaskLoggingHelper log, CancellationToken cancellationToken)
+        bool TryReadAllText(string path, out string text)
         {
-            return System.Threading.Tasks.Task.Run(async () =>
+            if (File.Exists(path) == false)
             {
-                var lastWriteTimeUtc = File.GetLastWriteTimeUtc(path);
+                text = null;
+                return false;
+            }
 
-                // check if loaded state contains up to date information
-                if (state.TryGetValue(path, out var entry))
-                    if (entry.LastWriteTimeUtc == lastWriteTimeUtc)
-                        return (lastWriteTimeUtc, entry.Identity);
+            try
+            {
+                text = File.ReadAllText(path);
+                return true;
+            }
+            catch (FileNotFoundException)
+            {
+                text = null;
+                return false;
+            }
+        }
 
-                // file might have a companion SHA1 hash, let's use it, no calculation required
-                var sha1File = path + ".sha1";
-                if (File.Exists(sha1File))
-                    if (File.ReadAllText(sha1File) is string h)
-                        return (lastWriteTimeUtc, $"SHA1:{sha1Regex.Match(h).Value}");
-
-                // file might have a companion MD5 hash, let's use it, no calculation required
-                var md5File = path + ".md5";
-                if (File.Exists(md5File))
-                    if (File.ReadAllText(md5File) is string h)
-                        return (lastWriteTimeUtc, $"MD5:{md5Regex.Match(h).Value}");
-
-                // if the file is potentially a .NET assembly
-                if (Path.GetExtension(path) == ".dll" || Path.GetExtension(path) == ".exe")
-                    if (await assemblyInfoUtil.GetAssemblyInfoAsync(path, log, cancellationToken) is IkvmAssemblyInfoUtil.AssemblyInfo a)
-                        return (lastWriteTimeUtc, $"MVID:{a.Mvid}");
-
-                // fallback to a standard full MD5 of the file
-                using var stm = File.OpenRead(path);
-                var hsh = ComputeHash(stm);
-                var bld = new StringBuilder(hsh.Length * 2);
-                foreach (var b in hsh)
-                    bld.Append(b.ToString("x2"));
-
-                return (lastWriteTimeUtc, bld.ToString());
-            });
+        /// <summary>
+        /// Returns <c>true</c> if the given file path is potentially a .NET assembly.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        bool IsPossibleAssemblyPath(string path)
+        {
+            return Path.GetExtension(path) is ".exe" or ".dll";
         }
 
         /// <summary>
@@ -150,6 +140,77 @@
         {
             using var md5 = MD5.Create();
             return md5.ComputeHash(stream);
+        }
+
+        /// <summary>
+        /// Converts a series of bytes to a hexidecimal string.
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        string ToHex(ReadOnlySpan<byte> bytes)
+        {
+            char GetDigit(int value) => value < 10 ? (char)('0' + value) : (char)('7' + value);
+
+            var t = new char[bytes.Length * 3];
+            var p = 0;
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                if (p > 0)
+                    t[p++] = ' ';
+
+                t[p++] = GetDigit((bytes[i] >> 4) & 0xf);
+                t[p++] = GetDigit(bytes[i] & 0xf);
+            }
+
+            return new string(t, 0, p);
+        }
+
+        /// <summary>
+        /// Gets the hash value for the given file.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="log"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task<(DateTime LastWriteTimeUtc, string Identity)> CreateIdentityForFileAsync(string path, TaskLoggingHelper log, CancellationToken cancellationToken)
+        {
+            return System.Threading.Tasks.Task.Run(async () =>
+            {
+                try
+                {
+                    var lastWriteTimeUtc = File.GetLastWriteTimeUtc(path);
+
+                    // check if loaded state contains up to date information
+                    if (state.TryGetValue(path, out var entry))
+                        if (entry.LastWriteTimeUtc == lastWriteTimeUtc)
+                            return (lastWriteTimeUtc, entry.Identity);
+
+                    // file might have a companion SHA1 hash, let's use it, no calculation required
+                    if (TryReadAllText(path + ".sha1", out var sha1))
+                        return (lastWriteTimeUtc, $"SHA1:{sha1Regex.Match(sha1).Value}");
+
+                    // file might have a companion MD5 hash, let's use it, no calculation required
+                    if (TryReadAllText(path + ".md5", out var md5))
+                        return (lastWriteTimeUtc, $"MD5:{md5Regex.Match(md5).Value}");
+
+                    // if the file is potentially a .NET assembly
+                    if (IsPossibleAssemblyPath(path))
+                        if (await assemblyInfoUtil.GetAssemblyInfoAsync(path, log, cancellationToken) is IkvmAssemblyInfoUtil.AssemblyInfo a)
+                            return (lastWriteTimeUtc, $"MVID:{a.Mvid}");
+
+                    // fallback to a standard full MD5 of the file
+                    using var stm = File.OpenRead(path);
+                    var hsh = ComputeHash(stm);
+                    var hex = ToHex(hsh);
+
+                    return (lastWriteTimeUtc, hex);
+                }
+                catch (FileNotFoundException)
+                {
+                    return (default, null);
+                }
+            });
         }
 
     }
