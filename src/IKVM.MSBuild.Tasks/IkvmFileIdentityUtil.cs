@@ -6,7 +6,6 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Security.Cryptography;
-    using System.Text;
     using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
@@ -76,7 +75,12 @@
             foreach (var i in cache)
             {
                 var (lastWriteTimeUtc, identity) = await i.Value;
-                root.Add(new XElement(XML_FILE_ELEMENT_NAME, new XAttribute(XML_PATH_ATTRIBUTE_NAME, i.Key), new XAttribute(XML_LAST_WRITE_TIME_UTC_ATTRIBUTE_NAME, lastWriteTimeUtc), new XAttribute(XML_IDENTITY_ATTRIBUTE_NAME, identity)));
+
+                root.Add(
+                    new XElement(XML_FILE_ELEMENT_NAME,
+                        new XAttribute(XML_PATH_ATTRIBUTE_NAME, i.Key),
+                        new XAttribute(XML_LAST_WRITE_TIME_UTC_ATTRIBUTE_NAME, lastWriteTimeUtc),
+                        new XAttribute(XML_IDENTITY_ATTRIBUTE_NAME, identity)));
             }
         }
 

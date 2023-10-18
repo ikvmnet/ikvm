@@ -3,6 +3,7 @@
 
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Reflection;
@@ -209,6 +210,9 @@
         /// <returns></returns>
         async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
         {
+            var sw = new Stopwatch();
+            sw.Start();
+
             LoadState();
 
             var items = IkvmReferenceItem.Import(Items);
@@ -228,6 +232,10 @@
             Items = Sort(items).Select(i => i.Item).ToArray();
 
             await SaveStateAsync();
+
+            sw.Stop();
+            Log.LogMessage("Total time spent in IkvmReferenceItemPrepare: {0}", sw.Elapsed);
+
             return true;
         }
 

@@ -4,10 +4,10 @@
     using System;
     using System.Buffers.Binary;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Security.Cryptography;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Xml.Linq;
@@ -136,6 +136,9 @@
         /// <returns></returns>
         async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
         {
+            var sw = new Stopwatch();
+            sw.Start();
+
             LoadState();
 
             // execute task and return newly sorted items
@@ -144,6 +147,10 @@
             Items = items.OrderBy(i => i.RandomIndex).Select(i => i.Item).ToArray(); // randomize order to allow multiple processes to interleave
 
             await SaveStateAsync();
+
+            sw.Stop();
+            Log.LogMessage("Total time spent in IkvmReferenceExportItemPrepare: {0}", sw.Elapsed);
+
             return true;
         }
 
@@ -176,9 +183,9 @@
                         }
                     }
                 }
-                catch
+                catch (Exception e)
                 {
-                    Log.LogWarning("Could not load IkvmReferenceExportItemPrepare state file. File is potentially corrupt.");
+                    Log.LogWarning("Could not load IkvmReferenceExportItemPrepare state file. File is potentially corrupt. {0}", e.Message);
                 }
             }
         }

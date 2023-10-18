@@ -92,18 +92,29 @@
         /// <returns></returns>
         public void LoadStateXml(XElement root)
         {
-            if (root == null)
+            if (root is null)
                 throw new ArgumentNullException(nameof(root));
 
             foreach (var element in root.Elements(XML_ASSEMBLY_ELEMENT_NAME))
             {
                 var path = (string)element.Attribute(XML_PATH_ATTRIBUTE_NAME);
-                var lastWriteTimeUtc = (DateTime?)element.Attribute(XML_LAST_WRITE_TIME_UTC_ATTRIBUTE_NAME);
-                var name = (string)element.Attribute(XML_NAME_ATTRIBUTE_NAME);
-                var mvid = (Guid?)element.Attribute(XML_MVID_ATTRIBUTE_NAME);
-                var references = element.Elements(XML_REFERENCE_ELEMENT_NAME).Cast<string>().ToArray();
+                if (path is null)
+                    continue;
 
-                if (path == null || lastWriteTimeUtc == null || name == null || mvid == null)
+                var lastWriteTimeUtc = (DateTime?)element.Attribute(XML_LAST_WRITE_TIME_UTC_ATTRIBUTE_NAME);
+                if (lastWriteTimeUtc is null)
+                    continue;
+
+                var name = (string)element.Attribute(XML_NAME_ATTRIBUTE_NAME);
+                if (name is null)
+                    continue;
+
+                var mvid = (Guid?)element.Attribute(XML_MVID_ATTRIBUTE_NAME);
+                if (mvid is null)
+                    continue;
+
+                var references = element.Elements(XML_REFERENCE_ELEMENT_NAME).Select(i => i.Value).ToArray();
+                if (references is null)
                     continue;
 
                 state[path] = new AssemblyInfo(path, lastWriteTimeUtc.Value, name, mvid.Value, references);
@@ -120,7 +131,7 @@
             foreach (var i in cache)
             {
                 var info = await i.Value;
-                if (info == null)
+                if (info is null)
                     continue;
 
                 root.Add(
@@ -173,7 +184,7 @@
                         using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                         using var perdr = new PEReader(fsstm);
                         var mrdr = perdr.GetMetadataReader();
-                        return new AssemblyInfo(path, lastWriteTimeUtc, mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).ToArray());
+                        return new AssemblyInfo(path, lastWriteTimeUtc, mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).OrderBy(i => i).ToArray());
                     }
                     catch (Exception e)
                     {
