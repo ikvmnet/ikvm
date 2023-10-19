@@ -1975,6 +1975,7 @@ javax/print/attribute/SupportedPrintableAreas.java                              
 javax/print/attribute/autosense/PrintAutoSenseData.java                                                                 generic-all
 javax/print/PrintSEUmlauts/PrintSEUmlauts.java                                                                          generic-all
 javax/rmi/ssl/SSLSocketParametersTest.sh                                                                                generic-all
+javax/rmi/PortableRemoteObject/ConcurrentHashMapTest.java                                                               generic-all
 javax/script/ProviderTest.sh                                                                                            generic-all
 javax/security/auth/Subject/doAs/Test.sh                                                                                generic-all
 javax/security/auth/kerberos/ServicePermissionTest.java                                                                 generic-all
@@ -3424,3 +3425,4 @@ sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java
 java/net/InetAddress/CheckJNI.java                                                                                      macosx-all
 java/net/Inet6Address/B6206527.java                                                                                     macosx-all
 java/net/Inet6Address/B6558853.java                                                                                     macosx-all
+
