@@ -183,7 +183,6 @@
                     using var stm = File.OpenRead(path);
                     var hsh = ComputeHash(stm);
                     var hex = IkvmTaskUtil.ToHex(hsh);
-
                     return (lastWriteTimeUtc, hex);
                 }
                 catch (FileNotFoundException)

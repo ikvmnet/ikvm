@@ -15,24 +15,34 @@
         <___IkvmReferenceExportItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemMetadata.cs'))'))</___IkvmReferenceExportItemMetadataCs>
         <___IkvmReferenceExportItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemPrepare.cs'))'))</___IkvmReferenceExportItemPrepareCs>
     </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(MSBuildRuntimeType)' == 'Core' ">
-        <___System_Collections_Immutable>$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll</___System_Collections_Immutable>
-        <___System_Memory>$(PkgSystem_Memory)\lib\netstandard2.0\System.Memory.dll</___System_Memory>
-        <___System_Reflection_Metadata>$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll</___System_Reflection_Metadata>
+    
+    <PropertyGroup>
+        <___PkgSystem_Collections_Immutable>$(PkgSystem_Collections_Immutable)</___PkgSystem_Collections_Immutable>
+        <___PkgSystem_Memory>$(PkgSystem_Memory)</___PkgSystem_Memory>
+        <___PkgSystem_Reflection_Metadata>$(PkgSystem_Reflection_Metadata)</___PkgSystem_Reflection_Metadata>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
-        <___System_Collections_Immutable>System.Collections.Immutable</___System_Collections_Immutable>
-        <___System_Memory>System.Memory</___System_Memory>
-        <___System_Reflection_Metadata>System.Reflection.Metadata</___System_Reflection_Metadata>
-    </PropertyGroup>
-
-    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(TargetFramework)' != '' And '$(MSBuildRuntimeType)' == 'Core' ">
         <Task>
-            <Reference Include="$(___System_Collections_Immutable)" />
-            <Reference Include="$(___System_Memory)" />
-            <Reference Include="$(___System_Reflection_Metadata)" />
+            <Reference Include="$(___PkgSystem_Collections_Immutable)\lib\net6.0\System.Collections.Immutable.dll" />
+            <Reference Include="$(___PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+$([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmAssemblyInfoUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmFileIdentityUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemMetadataCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(TargetFramework)' != '' And '$(MSBuildRuntimeType)' != 'Core' ">
+        <Task>
+            <Reference Include="$(___PkgSystem_Collections_Immutable)\lib\net462\System.Collections.Immutable.dll" />
+            <Reference Include="$(___PkgSystem_Reflection_Metadata)\lib\net462\System.Reflection.Metadata.dll" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
 $([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))

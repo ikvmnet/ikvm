@@ -2,7 +2,7 @@
 {
 
     using System;
-    using System.Buffers.Binary;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
@@ -15,7 +15,7 @@
     using Microsoft.Build.Framework;
 
     /// <summary>
-    /// For each <see cref="ReferenceExportItem"/> passed in, assigns default metadata if required.
+    /// For each <see cref="IkvmReferenceExportItem"/> passed in, assigns default metadata if required.
     /// </summary>
     public class IkvmReferenceExportItemPrepare : Microsoft.Build.Utilities.Task, ICancelableTask
     {
@@ -25,10 +25,17 @@
         const string XML_FILE_IDENTITY_STATE_ELEMENT_NAME = "FileIdentityState";
 
 
+        /// <summary>
+        /// Generates a unique random number for this export item.
+        /// </summary>
+        /// <returns></returns>
+        static int GetRandomNumber() => Guid.NewGuid().GetHashCode();
+
         readonly CancellationTokenSource cts;
-        readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
         readonly IkvmFileIdentityUtil fileIdentityUtil;
         readonly IkvmAssemblyInfoUtil assemblyInfoUtil;
+        readonly Dictionary<string, IkvmAssemblyInfoUtil.AssemblyInfo> assemblyInfoByName = new();
+        readonly ConcurrentDictionary<string, Task<string[]>> assemblyReferenceCache = new();
 
         /// <summary>
         /// Initializes a new instance.
@@ -67,12 +74,8 @@
         /// <summary>
         /// Optional set of additional references.
         /// </summary>
+        [Required]
         public ITaskItem[] References { get; set; }
-
-        /// <summary>
-        /// Optional set of additional references.
-        /// </summary>
-        public ITaskItem[] Libraries { get; set; }
 
         /// <summary>
         /// Executes the task.
@@ -95,6 +98,17 @@
                 run = ExecuteAsync(cts.Token);
                 if (run.IsCompleted)
                     return run.GetAwaiter().GetResult();
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+
+            try
+            {
+                if (run.Wait(TimeSpan.FromSeconds(1)))
+                    if (run.IsCompleted)
+                        return run.GetAwaiter().GetResult();
             }
             catch (OperationCanceledException)
             {
@@ -143,6 +157,7 @@
 
             // execute task and return newly sorted items
             var items = IkvmReferenceExportItem.Import(Items);
+            await PreLoadAssembliesByNameAsync(items, cancellationToken);
             await AssignBuildInfoAsync(items, cancellationToken);
             Items = items.OrderBy(i => i.RandomIndex).Select(i => i.Item).ToArray(); // randomize order to allow multiple processes to interleave
 
@@ -157,7 +172,6 @@
         /// <summary>
         /// Attempts to load the state file.
         /// </summary>
-        /// <param name="cancellationToken"></param>
         internal void LoadState()
         {
             if (StateFile != null && File.Exists(StateFile))
@@ -217,23 +231,31 @@
         }
 
         /// <summary>
+        /// Preloads all of the known assemblies and generates a dictionary by name.
+        /// </summary>
+        /// <param name="items"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        async Task PreLoadAssembliesByNameAsync(IEnumerable<IkvmReferenceExportItem> items, CancellationToken cancellationToken)
+        {
+            // upfront load all of the assemblies involved
+            var itemInfoTasks = items.Select(i => assemblyInfoUtil.GetAssemblyInfoAsync(i.ItemSpec, Log, cancellationToken));
+            var referenceInfoTasks = References.Select(i => assemblyInfoUtil.GetAssemblyInfoAsync(i.ItemSpec, Log, cancellationToken));
+            var infos = await Task.WhenAll(Enumerable.Concat(itemInfoTasks, referenceInfoTasks));
+
+            // build a dictionary of assembly name to assembly info
+            foreach (var info in infos)
+                if (info.HasValue)
+                    assemblyInfoByName[info.Value.Name] = info.Value;
+        }
+
+        /// <summary>
         /// Assigns build information to the items.
         /// </summary>
         /// <param name="items"></param>
         internal Task AssignBuildInfoAsync(IEnumerable<IkvmReferenceExportItem> items, CancellationToken cancellationToken)
         {
             return Task.WhenAll(items.Select(i => AssignBuildInfoAsync(i, cancellationToken)));
-        }
-
-        /// <summary>
-        /// Generates a unique random number for this export item.
-        /// </summary>
-        /// <returns></returns>
-        int GetRandomNumber()
-        {
-            var b = new byte[4];
-            rng.GetBytes(b);
-            return BinaryPrimitives.ReadInt32LittleEndian(b);
         }
 
         /// <summary>
@@ -244,7 +266,6 @@
         internal async Task AssignBuildInfoAsync(IkvmReferenceExportItem item, CancellationToken cancellationToken)
         {
             item.References = await CalculateReferencesAsync(item, cancellationToken);
-            item.Libraries = await CalculateLibrariesAsync(item, cancellationToken);
             item.IkvmIdentity = await CalculateIkvmIdentityAsync(item, cancellationToken);
             item.RandomIndex ??= GetRandomNumber();
             item.Save();
@@ -258,47 +279,53 @@
         /// <returns></returns>
         async Task<List<string>> CalculateReferencesAsync(IkvmReferenceExportItem item, CancellationToken cancellationToken)
         {
-            var referencesList = new HashSet<string>() { item.ItemSpec };
-
-            if (References != null)
-                foreach (var reference in References)
-                    referencesList.Add(reference.ItemSpec);
-
-            if (item.References != null)
-                foreach (var reference in item.References)
-                    referencesList.Add(reference);
-
-            // collect assembly name to assembly path mapping
-            var t = await Task.WhenAll(referencesList.Select(i => assemblyInfoUtil.GetAssemblyInfoAsync(i, Log, cancellationToken)));
-            var d = new Dictionary<string, string>();
-            foreach (var i in t)
-                if (i.HasValue)
-                    d[i.Value.Name] = i.Value.Path;
-
-            var references = await GetAssemblyReferencesAsync(item.ItemSpec, d, cancellationToken);
-            return references.OrderBy(i => i).ToList();
+            return (await GetAssemblyReferencesAsync(item.ItemSpec, cancellationToken)).OrderBy(i => i).ToList();
         }
 
         /// <summary>
-        /// Calculates the direct libraries of the given item.
+        /// Finds all of the direct and indirect references of the given assembly.
         /// </summary>
-        /// <param name="item"></param>
+        /// <param name="path"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<List<string>> CalculateLibrariesAsync(IkvmReferenceExportItem item, CancellationToken cancellationToken)
+        Task<string[]> GetAssemblyReferencesAsync(string path, CancellationToken cancellationToken)
         {
-            var librariesList = new HashSet<string>();
+            return assemblyReferenceCache.GetOrAdd(path, _ => ResolveAssemblyReferencesAsync(_, cancellationToken));
+        }
 
-            if (Libraries != null)
-                foreach (var library in Libraries)
-                    librariesList.Add(library.ItemSpec);
+        /// <summary>
+        /// Finds all of the direct and indirect references of the given assembly.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        async Task<string[]> ResolveAssemblyReferencesAsync(string path, CancellationToken cancellationToken)
+        {
+            var references = new SortedSet<string>() { path };
+            await ResolveAssemblyReferencesAsync(path, references, cancellationToken);
+            return references.ToArray();
+        }
 
-            if (item.Libraries != null)
-                foreach (var library in item.Libraries)
-                    librariesList.Add(library);
+        /// <summary>
+        /// Finds all of the direct and indirect references of the given assembly.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="references"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        async Task ResolveAssemblyReferencesAsync(string path, SortedSet<string> references, CancellationToken cancellationToken)
+        {
+            var info = await assemblyInfoUtil.GetAssemblyInfoAsync(path, Log, cancellationToken);
+            if (info != null)
+                foreach (var reference in info.Value.References)
+                    if (assemblyInfoByName.TryGetValue(reference, out var i))
+                        if (references.Add(i.Path))
+                            await ResolveAssemblyReferencesAsync(i.Path, references, cancellationToken);
 
-            var libraries = librariesList.OrderBy(i => i).ToList();
-            return Task.FromResult(libraries);
+            // ensure the required libraries are present
+            foreach (var n in new[] { "IKVM.Runtime", "IKVM.Java" })
+                if (assemblyInfoByName.TryGetValue(n, out var i))
+                    references.Add(i.Path);
         }
 
         /// <summary>
@@ -333,10 +360,6 @@
             // traverse the reference set for references that are actually referenced
             foreach (var reference in item.References)
                 writer.WriteLine($"Reference={await GetIdentityAsync(reference, cancellationToken)}");
-
-            // gather library lines
-            foreach (var library in item.Libraries)
-                writer.WriteLine($"Library={await GetIdentityAsync(library, cancellationToken)}");
 
             // gather namespaces
             if (item.Namespaces != null)
@@ -373,47 +396,6 @@
                 return identity;
 
             throw new Exception($"Could not resolve identity for '{value}'.");
-        }
-
-        /// <summary>
-        /// Finds all of the direct and indirect references of the given assembly.
-        /// </summary>
-        /// <param name="path"></param>
-        /// <param name="references"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        async Task<IEnumerable<string>> GetAssemblyReferencesAsync(string path, Dictionary<string, string> references, CancellationToken cancellationToken)
-        {
-            var hs = new HashSet<string>() { path };
-
-            // recurse into references of path
-            await BuildAssemblyReferencesAsync(path, references, hs, cancellationToken);
-
-            // ensure the required libraries are present
-            foreach (var n in new[] { "IKVM.Runtime", "IKVM.Java" })
-                if (references.TryGetValue(n, out var i))
-                    hs.Add(i);
-
-            return hs;
-        }
-
-        /// <summary>
-        /// Finds all of the direct and indirect references of the given assembly.
-        /// </summary>
-        /// <param name="path"></param>
-        /// <param name="references"></param>
-        /// <param name="hs"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        async Task BuildAssemblyReferencesAsync(string path, Dictionary<string, string> references, HashSet<string> hs, CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (await assemblyInfoUtil.GetAssemblyInfoAsync(path, Log, cancellationToken) is IkvmAssemblyInfoUtil.AssemblyInfo a)
-                foreach (var reference in a.References)
-                    if (references.TryGetValue(reference, out var i))
-                        if (hs.Add(i))
-                            await BuildAssemblyReferencesAsync(i, references, hs, cancellationToken);
         }
 
     }

@@ -1,10 +1,10 @@
 <Project>
     <ItemGroup>
         <PackageVersion Include="System.Buffers" />
-        <PackageVersion Include="System.Collections.Immutable" Version="6.0.0" />
+        <PackageVersion Include="System.Collections.Immutable" Version="7.0.0" />
         <PackageVersion Include="System.IO.Compression" Version="4.3.0" />
         <PackageVersion Include="System.IO.Pipelines"  />
-        <PackageVersion Include="System.Memory" />
+        <PackageVersion Include="System.Memory" Version="4.5.5" />
         <PackageVersion Include="System.Runtime.CompilerServices.Unsafe" />
         <PackageVersion Include="System.Runtime.InteropServices.RuntimeInformation" />
         <PackageVersion Include="System.ValueTuple" />
@@ -14,7 +14,7 @@
         <PackageVersion Include="System.Data.Odbc" />
         <PackageVersion Include="System.IO.FileSystem.AccessControl" />
         <PackageVersion Include="System.Net.Http" Version="4.3.4" />
-        <PackageVersion Include="System.Reflection.Metadata" Version="6.0.1" />
+        <PackageVersion Include="System.Reflection.Metadata" Version="7.0.2" />
         <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="6.0.3" />
         <PackageVersion Include="Microsoft.Extensions.DependencyModel" />
         <PackageVersion Include="Microsoft.Win32.Registry" />
