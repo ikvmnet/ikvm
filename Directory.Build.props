@@ -76,8 +76,6 @@
         <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
         <CopyRetryCount>60</CopyRetryCount>
         <CopyRetryDelayMilliseconds>15000</CopyRetryDelayMilliseconds>
-        <FastBuild Condition=" '$(FastBuild)' == '' ">false</FastBuild>
-        <DisableCopyToOutputDirectory Condition=" '$(FastBuild)' == 'true' ">true</DisableCopyToOutputDirectory>
         <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     </PropertyGroup>
 

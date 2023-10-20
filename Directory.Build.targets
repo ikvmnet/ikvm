@@ -1,5 +1,4 @@
 <Project>
-    <Import Project="targets\DisableCopyToOutputDirectory.targets"/>
     <Import Project="targets\ClangProjectReference.targets" />
     <Import Project="targets\DotNetOSXCodeSign.targets"/>
 
