@@ -11,6 +11,7 @@ using Buildalyzer.Environment;
 using FluentAssertions;
 
 using Microsoft.Build.Framework;
+using Microsoft.Build.Tasks;
 using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -41,7 +42,12 @@ namespace IKVM.MSBuild.Tests
 
             public override void Initialize(IEventSource eventSource)
             {
-                eventSource.AnyEventRaised += (sender, evt) => context.WriteLine(evt.Message);
+                eventSource.AnyEventRaised += OnAnyEventRaised;
+            }
+
+            void OnAnyEventRaised(object sender, BuildEventArgs args)
+            {
+                context.WriteLine(args.Message);
             }
 
         }
@@ -121,6 +127,7 @@ namespace IKVM.MSBuild.Tests
             options.TargetsToBuild.Clear();
             options.TargetsToBuild.Add("Clean");
             options.TargetsToBuild.Add("Restore");
+            options.Arguments.Add("/v:d");
             analyzer.Build(options).OverallSuccess.Should().Be(true);
         }
 
@@ -134,34 +141,62 @@ namespace IKVM.MSBuild.Tests
         public TestContext TestContext { get; set; }
 
         [DataTestMethod]
-        [DataRow("net472", "win-x86", "{0}.exe", "{0}.dll")]
-        [DataRow("net472", "win-x64", "{0}.exe", "{0}.dll")]
-        [DataRow("net48", "win-x86", "{0}.exe", "{0}.dll")]
-        [DataRow("net48", "win-x64", "{0}.exe", "{0}.dll")]
-        [DataRow("net6.0", "win-x86", "{0}.exe", "{0}.dll")]
-        [DataRow("net6.0", "win-x64", "{0}.exe", "{0}.dll")]
-        [DataRow("net6.0", "linux-x64", "{0}", "lib{0}.so")]
-        [DataRow("net6.0", "linux-arm", "{0}", "lib{0}.so")]
-        [DataRow("net6.0", "linux-arm64", "{0}", "lib{0}.so")]
-        [DataRow("net6.0", "linux-musl-x64", "{0}", "lib{0}.so")]
-        [DataRow("net6.0", "linux-musl-arm", "{0}", "lib{0}.so")]
-        [DataRow("net6.0", "linux-musl-arm64", "{0}", "lib{0}.so")]
-        [DataRow("net6.0", "osx-x64", "{0}", "lib{0}.dylib")]
-        [DataRow("net6.0", "osx-arm64", "{0}", "lib{0}.dylib")]
-        [DataRow("net7.0", "win-x86", "{0}.exe", "{0}.dll")]
-        [DataRow("net7.0", "win-x64", "{0}.exe", "{0}.dll")]
-        [DataRow("net7.0", "linux-x64", "{0}", "lib{0}.so")]
-        [DataRow("net7.0", "linux-arm", "{0}", "lib{0}.so")]
-        [DataRow("net7.0", "linux-arm64", "{0}", "lib{0}.so")]
-        [DataRow("net7.0", "linux-musl-x64", "{0}", "lib{0}.so")]
-        [DataRow("net7.0", "linux-musl-arm", "{0}", "lib{0}.so")]
-        [DataRow("net7.0", "linux-musl-arm64", "{0}", "lib{0}.so")]
-        [DataRow("net7.0", "osx-x64", "{0}", "lib{0}.dylib")]
-        [DataRow("net7.0", "osx-arm64", "{0}", "lib{0}.dylib")]
-        public void CanBuildTestProject(string tfm, string rid, string exe, string lib)
+        [DataRow(EnvironmentPreference.Core, "net472", "win-x86", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net472", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net48", "win-x86", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net48", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net6.0", "win-x86", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net6.0", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net6.0", "win-arm64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net6.0", "linux-x64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net6.0", "linux-arm", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net6.0", "linux-arm64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net6.0", "linux-musl-x64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net6.0", "linux-musl-arm", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net6.0", "linux-musl-arm64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net6.0", "osx-x64", "{0}", "lib{0}.dylib")]
+        [DataRow(EnvironmentPreference.Core, "net6.0", "osx-arm64", "{0}", "lib{0}.dylib")]
+        [DataRow(EnvironmentPreference.Core, "net7.0", "win-x86", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net7.0", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net7.0", "win-arm64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net7.0", "linux-x64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net7.0", "linux-arm", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net7.0", "linux-arm64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net7.0", "linux-musl-x64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net7.0", "linux-musl-arm", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net7.0", "linux-musl-arm64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net7.0", "osx-x64", "{0}", "lib{0}.dylib")]
+        [DataRow(EnvironmentPreference.Core, "net7.0", "osx-arm64", "{0}", "lib{0}.dylib")]
+        [DataRow(EnvironmentPreference.Framework, "net472", "win-x86", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net472", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net48", "win-x86", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net48", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net6.0", "win-x86", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net6.0", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net6.0", "win-arm64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net6.0", "linux-x64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net6.0", "linux-arm", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net6.0", "linux-arm64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net6.0", "linux-musl-x64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net6.0", "linux-musl-arm", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net6.0", "linux-musl-arm64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net6.0", "osx-x64", "{0}", "lib{0}.dylib")]
+        [DataRow(EnvironmentPreference.Framework, "net6.0", "osx-arm64", "{0}", "lib{0}.dylib")]
+        [DataRow(EnvironmentPreference.Framework, "net7.0", "win-x86", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net7.0", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net7.0", "win-arm64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net7.0", "linux-x64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net7.0", "linux-arm", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net7.0", "linux-arm64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net7.0", "linux-musl-x64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net7.0", "linux-musl-arm", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net7.0", "linux-musl-arm64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net7.0", "osx-x64", "{0}", "lib{0}.dylib")]
+        [DataRow(EnvironmentPreference.Framework, "net7.0", "osx-arm64", "{0}", "lib{0}.dylib")]
+        public void CanBuildTestProject(EnvironmentPreference env, string tfm, string rid, string exe, string lib)
         {
             // skip framework tests for non-Windows platforms
-            if (tfm == "net472" || tfm == "net48")
+            if (env == EnvironmentPreference.Framework || tfm == "net472" || tfm == "net48")
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
                     return;
 
@@ -183,6 +218,7 @@ namespace IKVM.MSBuild.Tests
             analyzer.SetGlobalProperty("Configuration", "Release");
 
             var options = new EnvironmentOptions();
+            options.Preference = env;
             options.DesignTime = false;
             options.Restore = false;
             options.GlobalProperties["TargetFramework"] = tfm;
@@ -191,7 +227,7 @@ namespace IKVM.MSBuild.Tests
             options.TargetsToBuild.Add("Clean");
             options.TargetsToBuild.Add("Build");
             options.TargetsToBuild.Add("Publish");
-            options.Arguments.Add("/v:diag");
+            options.Arguments.Add("/v:d");
             analyzer.Build(options).OverallSuccess.Should().Be(true);
 
             var binDir = Path.Combine("Project", "Exe", "bin", "Release", tfm, rid);
