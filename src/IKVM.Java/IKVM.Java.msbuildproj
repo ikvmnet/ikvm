@@ -63,7 +63,18 @@
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.targets" />
 
-    <!-- IKVM.Java uses the javac executable from JAVA_HOME: bootstrap -->
+    <!-- IKVM.Java uses the java executable from JAVA_HOME -->
+    <Target Name="ResolveJava" Condition=" '$(JAVA_HOME)' != '' And '$(JavaPath)' == '' ">
+        <PropertyGroup>
+            <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\java') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java'))</JavaPath>
+            <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\java.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java.exe'))</JavaPath>
+            <JavaArgs>-Xmx1536M</JavaArgs>
+            <JavaExec Condition=" '$(JavaPath)' != '' ">"$(JavaPath)" $(JavaArgs)</JavaExec>
+        </PropertyGroup>
+        <Message Text="Using java executable found in JAVA_HOME at '$(JavaPath)'." Importance="high" Condition=" '$(JavaPath)' != '' " />
+    </Target>
+
+    <!-- IKVM.Java uses the javac executable from JAVA_HOME -->
     <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
         <PropertyGroup>
             <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac'))</JavaCompilerPath>
@@ -148,6 +159,276 @@
             BuildRmiStubs;
             $(CoreCompileDependsOn);
         </CoreCompileDependsOn>
+    </PropertyGroup>
+
+    <Target Name="ResolveRuntimeJar" Condition=" '$(RuntimeJarPath)' == '' ">
+        <PropertyGroup>
+            <RuntimeJarPath Condition="Exists('$(JAVA_HOME)\jre\lib\rt.jar')">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\jre\lib\rt.jar'))</RuntimeJarPath>
+        </PropertyGroup>
+        <Message Text="Using rt.jar found in JAVA_HOME at '$(RuntimeJarPath)'." Importance="high" Condition=" '$(RuntimeJarPath)' != '' " />
+    </Target>
+
+    <Target Name="ResolveToolsJar" Condition=" '$(ToolsJarPath)' == '' ">
+        <PropertyGroup>
+            <ToolsJarPath Condition="Exists('$(JAVA_HOME)\lib\tools.jar')">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\lib\tools.jar'))</ToolsJarPath>
+        </PropertyGroup>
+        <Message Text="Using tools.jar found in JAVA_HOME at '$(ToolsJarPath)'." Importance="high" Condition=" '$(ToolsJarPath)' != '' " />
+    </Target>
+
+    <PropertyGroup>
+        <BuildToolsResponseFile>$(IntermediateOutputPath)btclasses.javac.rsp</BuildToolsResponseFile>
+        <BuildToolsOutputPath>$(IntermediateOutputPath)btclasses\</BuildToolsOutputPath>
+        <BuildToolsStampFile>$(BuildToolsOutputPath)btclasses.stamp</BuildToolsStampFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <BuildOpenJDKToolsSource Include="$(OpenJdkDir)jdk\make\src\classes\**\*.java" />
+    </ItemGroup>
+
+    <Target Name="BuildToolsResponseFile" DependsOnTargets="ResolveToolsJar" Inputs="@(BuildOpenJDKToolsSource)" Outputs="$(BuildToolsResponseFile)">
+        <Error Text="Could not locate tools.jar." Condition=" '$(ToolsJarPath)' == '' " />
+        <Error Text="tools.jar could not be located at '$(ToolsJarPath)'." Condition="!Exists('$(ToolsJarPath)')" />
+
+        <ItemGroup>
+            <_BuildToolsJavaCompilerClasspath Include="$(ToolsJarPath)" />
+        </ItemGroup>
+
+        <PropertyGroup>
+            <_BuildToolsJavaCompilerClasspathArg>@(_BuildToolsJavaCompilerClasspath, '$([System.IO.Path]::PathSeparator)')</_BuildToolsJavaCompilerClasspathArg>
+            <_BuildToolsJavaCompilerClasspathArg>$(_BuildToolsJavaCompilerClasspathArg.Replace('\', '\\'))</_BuildToolsJavaCompilerClasspathArg>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <_BuildToolsJavaCompilerArgs Include="-cp" />
+            <_BuildToolsJavaCompilerArgs Include="&quot;$([MSBuild]::Escape('$(_BuildToolsJavaCompilerClasspathArg)'))&quot;" />
+            <_BuildToolsJavaCompilerArgs Include="-source" />
+            <_BuildToolsJavaCompilerArgs Include="1.8" />
+            <_BuildToolsJavaCompilerArgs Include="-target" />
+            <_BuildToolsJavaCompilerArgs Include="1.8" />
+            <_BuildToolsJavaCompilerArgs Include="-nowarn" />
+            <_BuildToolsJavaCompilerArgs Include="-d" />
+            <_BuildToolsJavaCompilerArgs Include="$(BuildToolsOutputPath)" />
+            <_BuildToolsJavaCompilerArgs Include="@(BuildOpenJDKToolsSource->'%(FullPath)')" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(BuildToolsResponseFile)" Lines="@(_BuildToolsJavaCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    </Target>
+
+    <Target Name="BuildTools" DependsOnTargets="ResolveJavaCompiler;BuildToolsResponseFile" Inputs="$(BuildToolsResponseFile);@(BuildOpenJDKToolsSource)" Outputs="$(BuildToolsStampFile)">
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
+        <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
+        <Exec Command="chmod +x $(JavaCompilerPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Delete Files="$(BuildToolsStampFile)" />
+        <PropertyGroup>
+            <_BuildToolsStartTime>$([System.DateTime]::Now.Ticks)</_BuildToolsStartTime>
+        </PropertyGroup>
+
+        <MakeDir Directories="$(BuildToolsOutputPath)" />
+        <Message Text="$(JavaCompilerExec) @$(BuildToolsResponseFile)" />
+        <Exec Command="$(JavaCompilerExec) @$(BuildToolsResponseFile)" />
+
+        <ItemGroup>
+            <_BuildToolsStaleFiles Include="$(BuildToolsOutputPath)**\*.class" Condition=" '%(ModifiedTime)' == '' Or $([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_BuildToolsStartTime) " />
+        </ItemGroup>
+
+        <!--<Delete Files="@(_BuildToolsStaleFiles)" />-->
+        <Touch Files="$(BuildToolsStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <_BuildToolsStaleFiles Remove="@(_BuildToolsStaleFiles)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <BuildDependsOn>
+            ResolveToolsJar;
+            BuildToolsResponseFile;
+            BuildTools;
+            $(BuildDependsOn);
+        </BuildDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <GenSrc>$(IntermediateOutputPath)gensrc\</GenSrc>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <CharacterDataDir>$(OpenJdkDir)jdk\make\data\characterdata\</CharacterDataDir>
+        <UnicodeDataDir>$(OpenJdkDir)jdk\make\data\unicodedata\</UnicodeDataDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CharacterDataItem Include="CharacterDataLatin1" Arg2="" Arg3="-latin1 8" />
+        <CharacterDataItem Include="CharacterData00" Arg2="-plane 0" Arg3="11 4 1" />
+        <CharacterDataItem Include="CharacterData01" Arg2="-plane 1" Arg3="11 4 1" />
+        <CharacterDataItem Include="CharacterData02" Arg2="-plane 2" Arg3="11 4 1" />
+        <CharacterDataItem Include="CharacterData0E" Arg2="-plane 14" Arg3="11 4 1" />
+        <CharacterDataStaticItem Include="CharacterDataUndefined" />
+        <CharacterDataStaticItem Include="CharacterDataPrivateUse" />
+    </ItemGroup>
+
+    <Target Name="GenerateCharacterData" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(CharacterDataDir)%(CharacterDataItem.Identity).java.template;$(UnicodeDataDir)UnicodeData.txt;$(UnicodeDataDir)SpecialCasing.txt;$(UnicodeDataDir)PropList.txt" Outputs="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <PropertyGroup>
+            <_TemplateArg>$(CharacterDataDir)%(CharacterDataItem.Identity).java.template</_TemplateArg>
+            <_TemplateArg>$(_TemplateArg.Replace('\', '\\'))</_TemplateArg>
+            <_SpecArg>$(UnicodeDataDir)UnicodeData.txt</_SpecArg>
+            <_SpecArg>$(_SpecArg.Replace('\', '\\'))</_SpecArg>
+            <_SpecialCasingArg>$(UnicodeDataDir)SpecialCasing.txt</_SpecialCasingArg>
+            <_SpecialCasingArg>$(_SpecialCasingArg.Replace('\', '\\'))</_SpecialCasingArg>
+            <_PropListArg>$(UnicodeDataDir)PropList.txt</_PropListArg>
+            <_PropListArg>$(_PropListArg.Replace('\', '\\'))</_PropListArg>
+            <_OutputArg>$(GenSrc)java\lang\%(CharacterDataItem.Identity).java</_OutputArg>
+            <_OutputArg>$(_OutputArg.Replace('\', '\\'))</_OutputArg>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <_GenerateCharacterArgs Include="%(CharacterDataItem.Arg2)" />
+            <_GenerateCharacterArgs Include="-template" />
+            <_GenerateCharacterArgs Include="$(_TemplateArg)" />
+            <_GenerateCharacterArgs Include="-spec" />
+            <_GenerateCharacterArgs Include="$(_SpecArg)" />
+            <_GenerateCharacterArgs Include="-specialcasing" />
+            <_GenerateCharacterArgs Include="$(_SpecialCasingArg)" />
+            <_GenerateCharacterArgs Include="-proplist" />
+            <_GenerateCharacterArgs Include="$(_PropListArg)" />
+            <_GenerateCharacterArgs Include="-o" />
+            <_GenerateCharacterArgs Include="$(_OutputArg)" />
+            <_GenerateCharacterArgs Include="-string" />
+            <_GenerateCharacterArgs Include="-usecharforbyte" />
+            <_GenerateCharacterArgs Include="%(CharacterDataItem.Arg3)" />
+        </ItemGroup>
+
+        <MakeDir Directories="$(GenSrc)java\lang" />
+        <Message Importance="high" Text="Generating %(CharacterDataItem.Identity).java" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.generatecharacter.GenerateCharacter @(_GenerateCharacterArgs, ' ')" />
+
+        <ItemGroup>
+            <Compile Include="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java" />
+            <FileWrites Include="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GenerateCharacterDataStatic" Inputs="$(CharacterDataDir)%(CharacterDataStaticItem.Identity).java.template" Outputs="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java">
+        <MakeDir Directories="$(GenSrc)java\lang" />
+        <Message Importance="high" Text="Generating %(CharacterDataStaticItem.Identity).java" />
+        <Copy SourceFiles="$(CharacterDataDir)%(CharacterDataStaticItem.Identity).java.template" DestinationFiles="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java" />
+
+        <ItemGroup>
+            <Compile Include="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java" />
+            <FileWrites Include="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <BuildDependsOn>
+            GenerateCharacterData;
+            GenerateCharacterDataStatic;
+            $(BuildDependsOn);
+        </BuildDependsOn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <_GenerateCharsetDecoderTemplateFile Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\charset\Charset-X-Coder.java.template" OutputFile="$(GenSrc)java\nio\charset\CharsetDecoder.java" />
+        <_GenerateCharsetEncoderTemplateFile Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\charset\Charset-X-Coder.java.template" OutputFile="$(GenSrc)java\nio\charset\CharsetEncoder.java" />
+    </ItemGroup>
+
+    <Target Name="GenerateCharsetDecoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(_GenerateCharsetDecoderTemplateFile)" Outputs="%(_GenerateCharsetDecoderTemplateFile.OutputFile)">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <_GenerateCharsetDecoderArgs Include="-Kdecoder" />
+            <_GenerateCharsetDecoderArgs Include="-DA=&quot;A&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Da=&quot;a&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DCode=&quot;Decode&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Dcode=&quot;decode&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DitypesPhrase=&quot;bytes in a specific charset&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DotypesPhrase=&quot;sixteen-bit Unicode characters&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Ditype=&quot;byte&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Dotype=&quot;character&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DItype=&quot;Byte&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DOtype=&quot;Char&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Dcoder=&quot;decoder&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DCoder=&quot;Decoder&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Dcoding=&quot;decoding&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DOtherCoder=&quot;Encoder&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DreplTypeName=&quot;string&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DdefaultRepl=&quot;\&quot;\\uFFFD\&quot;&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DdefaultReplName=&quot;&lt;tt&gt;\&quot;\\uFFFD\&quot;&lt;/tt&gt;&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DreplType=&quot;String&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DreplFQType=&quot;java.lang.String&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DreplLength=&quot;length()&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DItypesPerOtype=&quot;CharsPerByte&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DnotLegal=&quot;not legal for this charset&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Dotypes-per-itype=&quot;chars-per-byte&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DoutSequence=&quot;Unicode character&quot;" />
+        </ItemGroup>
+
+        <MakeDir Directories="$(GenSrc)java\nio\charset\" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetDecoderArgs, ' ') &lt; @(_GenerateCharsetDecoderTemplateFile) &gt; %(_GenerateCharsetDecoderTemplateFile.OutputFile).tmp" />
+        <Move SourceFiles="%(_GenerateCharsetDecoderTemplateFile.OutputFile).tmp" DestinationFiles="%(_GenerateCharsetDecoderTemplateFile.OutputFile)" />
+
+        <ItemGroup>
+            <Compile Include="%(_GenerateCharsetDecoderTemplateFile.OutputFile)" />
+            <FileWrites Include="%(_GenerateCharsetDecoderTemplateFile.OutputFile)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GenerateCharsetEncoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(_GenerateCharsetEncoderTemplateFile)" Outputs="%(_GenerateCharsetEncoderTemplateFile.OutputFile)">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <_GenerateCharsetEncoderArgs Include="-Kencoder" />
+	        <_GenerateCharsetEncoderArgs Include="-DA=&quot;An&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-Da=&quot;an&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-DCode=&quot;Encode&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-Dcode=&quot;encode&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-DitypesPhrase=&quot;sixteen-bit Unicode characters&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-DotypesPhrase=&quot;bytes in a specific charset&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-Ditype=&quot;character&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-Dotype=&quot;byte&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-DItype=&quot;Char&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-DOtype=&quot;Byte&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-Dcoder=&quot;encoder&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-DCoder=&quot;Encoder&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-Dcoding=&quot;encoding&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-DOtherCoder=&quot;Decoder&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-DreplTypeName=&quot;byte array&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-DdefaultRepl=&quot;new byte[] { (byte)'?' }&quot;" />
+	        <_GenerateCharsetEncoderArgs Include="-DdefaultReplName=&quot;&lt;tt&gt;{&lt;/tt&gt;\&amp;nbsp%3B&lt;tt&gt;(byte)'?'&lt;/tt&gt;\&amp;nbsp%3B&lt;tt&gt;}&lt;/tt&gt;&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DreplType=&quot;byte[]&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DreplFQType=&quot;byte[]&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DreplLength=&quot;length&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DItypesPerOtype=&quot;BytesPerChar&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DnotLegal=&quot;not a legal sixteen-bit Unicode sequence&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Dotypes-per-itype=&quot;bytes-per-char&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DoutSequence=&quot;byte sequence in the given charset&quot;" />
+        </ItemGroup>
+
+        <MakeDir Directories="$(GenSrc)java\nio\charset\" />
+        <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetEncoderArgs, ' ') &lt; @(_GenerateCharsetEncoderTemplateFile) &gt; %(_GenerateCharsetEncoderTemplateFile.OutputFile).tmp" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetEncoderArgs, ' ') &lt; @(_GenerateCharsetEncoderTemplateFile) &gt; %(_GenerateCharsetEncoderTemplateFile.OutputFile).tmp" />
+        <Move SourceFiles="%(_GenerateCharsetEncoderTemplateFile.OutputFile).tmp" DestinationFiles="%(_GenerateCharsetEncoderTemplateFile.OutputFile)" />
+
+        <ItemGroup>
+            <Compile Include="%(_GenerateCharsetEncoderTemplateFile.OutputFile)" />
+            <FileWrites Include="%(_GenerateCharsetEncoderTemplateFile.OutputFile)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <BuildDependsOn>
+            GenerateCharsetDecoder;
+            GenerateCharsetEncoder;
+            $(BuildDependsOn);
+        </BuildDependsOn>
     </PropertyGroup>
 
 </Project>

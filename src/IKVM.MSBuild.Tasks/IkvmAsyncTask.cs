@@ -32,7 +32,7 @@
         protected IkvmAsyncTask(ResourceManager taskResources) :
             base(taskResources)
         {
-
+            cts = new CancellationTokenSource();
         }
 
         /// <summary>
@@ -43,7 +43,7 @@
         protected IkvmAsyncTask(ResourceManager taskResources, string helpKeywordPrefix) :
             base(taskResources, helpKeywordPrefix)
         {
-
+            cts = new CancellationTokenSource();
         }
 
         /// <summary>
