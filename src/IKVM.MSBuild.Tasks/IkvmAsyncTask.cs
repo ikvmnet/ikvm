@@ -84,10 +84,9 @@
             // yield and wait for the task to complete
             BuildEngine3.Yield();
 
-            var result = false;
             try
             {
-                result = run.GetAwaiter().GetResult();
+                return run.GetAwaiter().GetResult();
             }
             catch (OperationCanceledException)
             {
@@ -97,9 +96,6 @@
             {
                 BuildEngine3.Reacquire();
             }
-
-            // check that we exited successfully
-            return result;
         }
 
         /// <summary>
