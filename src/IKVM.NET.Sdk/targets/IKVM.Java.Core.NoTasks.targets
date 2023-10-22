@@ -9,6 +9,7 @@
 
     <PropertyGroup>
         <___IkvmTaskUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmTaskUtil.cs'))'))</___IkvmTaskUtilCs>
+        <___IkvmAsyncTaskCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmAsyncTask.cs'))'))</___IkvmAsyncTaskCs>
         <___IkvmAssemblyInfoUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmAssemblyInfoUtil.cs'))'))</___IkvmAssemblyInfoUtilCs>
         <___IkvmFileIdentityUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmFileIdentityUtil.cs'))'))</___IkvmFileIdentityUtilCs>
         <___IkvmReferenceExportItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItem.cs'))'))</___IkvmReferenceExportItemCs>
@@ -28,7 +29,10 @@
             <Reference Include="$(___PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
+#define NETCOREAPP
+                
 $([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
 $([MSBuild]::Unescape('$(___IkvmAssemblyInfoUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmFileIdentityUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceExportItemCs)'))
@@ -45,7 +49,10 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
             <Reference Include="$(___PkgSystem_Reflection_Metadata)\lib\net462\System.Reflection.Metadata.dll" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
+#define NETFRAMEWORK
+
 $([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
 $([MSBuild]::Unescape('$(___IkvmAssemblyInfoUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmFileIdentityUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceExportItemCs)'))

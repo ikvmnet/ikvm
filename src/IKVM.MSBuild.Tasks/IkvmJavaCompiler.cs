@@ -20,7 +20,7 @@ namespace IKVM.MSBuild.Tasks
     /// <summary>
     /// Executes the Java compiler.
     /// </summary>
-    public class IkvmJavaCompiler : Task
+    public class IkvmJavaCompiler : IkvmAsyncTask
     {
 
         /// <summary>
@@ -61,14 +61,12 @@ namespace IKVM.MSBuild.Tasks
 
         }
 
-        readonly CancellationTokenSource cts;
-
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         public IkvmJavaCompiler()
         {
-            cts = new CancellationTokenSource();
+
         }
 
         /// <summary>
@@ -141,43 +139,7 @@ namespace IKVM.MSBuild.Tasks
             if (HeaderDestination != null)
                 HeaderDestination = System.IO.Path.GetFullPath(HeaderDestination);
 
-            if (cts.IsCancellationRequested)
-                return false;
-
-            // wait for result, and ensure we reacquire in case of return value or exception
-            System.Threading.Tasks.Task<bool> run;
-
-            try
-            {
-                // kick off the launcher with the configured options
-                run = ExecuteAsync(cts.Token);
-                if (run.IsCompleted)
-                    return run.GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
-
-            // yield and wait for the task to complete
-            BuildEngine3.Yield();
-
-            var result = false;
-            try
-            {
-                result = run.GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
-            finally
-            {
-                BuildEngine3.Reacquire();
-            }
-
-            // check that we exited successfully
-            return result;
+            return base.Execute();
         }
 
         /// <summary>
@@ -185,7 +147,7 @@ namespace IKVM.MSBuild.Tasks
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public System.Threading.Tasks.Task<bool> ExecuteAsync(CancellationToken cancellationToken)
+        protected override System.Threading.Tasks.Task<bool> ExecuteAsync(CancellationToken cancellationToken)
         {
             return System.Threading.Tasks.Task.Run(Compile);
         }

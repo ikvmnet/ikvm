@@ -5,6 +5,7 @@
 
     <PropertyGroup>
         <___IkvmTaskUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmTaskUtil.cs'))'))</___IkvmTaskUtilCs>
+        <___IkvmAsyncTaskCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmAsyncTask.cs'))'))</___IkvmAsyncTaskCs>
         <___IkvmFileIdentityUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmFileIdentityUtil.cs'))'))</___IkvmFileIdentityUtilCs>
         <___IkvmAssemblyInfoUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmAssemblyInfoUtil.cs'))'))</___IkvmAssemblyInfoUtilCs>
         <___IkvmJsonParserCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmJsonParser.cs'))'))</___IkvmJsonParserCs>
@@ -18,6 +19,8 @@
         <Task>
             <Code Type="Class" Language="cs">
                 <![CDATA[
+#define NETCOREAPP
+
 $([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmJsonParserCs)'))
 $([MSBuild]::Unescape('$(___IkvmResolveNearestRuntimeIdentifierCs)'))
@@ -30,6 +33,8 @@ $([MSBuild]::Unescape('$(___IkvmResolveNearestRuntimeIdentifierCs)'))
         <Task>
             <Code Type="Class" Language="cs">
                 <![CDATA[
+#define NETFRAMEWORK
+
 $([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmJsonParserCs)'))
 $([MSBuild]::Unescape('$(___IkvmResolveNearestRuntimeIdentifierCs)'))
@@ -44,10 +49,13 @@ $([MSBuild]::Unescape('$(___IkvmResolveNearestRuntimeIdentifierCs)'))
             <Reference Include="$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
+#define NETCOREAPP
+
 $([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmAssemblyInfoUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmFileIdentityUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceItemCs)'))
+$([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceItemMetadataCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))
             ]]>
@@ -61,10 +69,13 @@ $([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))
             <Reference Include="$(PkgSystem_Reflection_Metadata)\lib\net461\System.Reflection.Metadata.dll" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
+#define NETFRAMEWORK
+
 $([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmAssemblyInfoUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmFileIdentityUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceItemCs)'))
+$([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceItemMetadataCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))
             ]]>

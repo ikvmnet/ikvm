@@ -12,7 +12,7 @@ namespace IKVM.MSBuild.Tasks
     /// <summary>
     /// Base tool task.
     /// </summary>
-    public abstract class IkvmToolExecTask : Microsoft.Build.Utilities.Task, ICancelableTask
+    public abstract class IkvmToolExecTask : IkvmAsyncTask
     {
 
 #if NETCOREAPP
@@ -43,14 +43,12 @@ namespace IKVM.MSBuild.Tasks
 
 #endif
 
-        readonly CancellationTokenSource cts;
-
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         public IkvmToolExecTask()
         {
-            this.cts = new CancellationTokenSource();
+
         }
 
         /// <summary>
@@ -76,57 +74,17 @@ namespace IKVM.MSBuild.Tasks
         /// <exception cref="NullReferenceException"></exception>
         public override bool Execute()
         {
+            // check that the tools exist
+            if (ToolPath == null || Directory.Exists(ToolPath) == false)
+                throw new IkvmTaskException($"Missing tool path: '{ToolPath}'.");
+
             // normalize paths due to yields potential of allowing continuation after CWD change
             if (ToolPath != null)
                 ToolPath = Path.GetFullPath(ToolPath);
             if (LogFile != null)
                 LogFile = Path.GetFullPath(LogFile);
 
-            if (cts.IsCancellationRequested)
-                return false;
-
-            // wait for result, and ensure we reacquire in case of return value or exception
-            Task<bool> run;
-
-            try
-            {
-                // kick off the launcher with the configured options
-                run = ExecuteAsync(cts.Token);
-                if (run.IsCompleted)
-                    return run.GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
-
-            // yield and wait for the task to complete
-            BuildEngine3.Yield();
-
-            var result = false;
-            try
-            {
-                result = run.GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
-            finally
-            {
-                BuildEngine3.Reacquire();
-            }
-
-            // check that we exited successfully
-            return result;
-        }
-
-        /// <summary>
-        /// Cancels the task.
-        /// </summary>
-        public void Cancel()
-        {
-            cts.Cancel();
+            return base.Execute();
         }
 
         /// <summary>
@@ -134,12 +92,8 @@ namespace IKVM.MSBuild.Tasks
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
+        protected override async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
         {
-            // check that the tools exist
-            if (ToolPath == null || Directory.Exists(ToolPath) == false)
-                throw new IkvmTaskException($"Missing tool path: '{ToolPath}'.");
-
             TextWriter log = null;
 
             try

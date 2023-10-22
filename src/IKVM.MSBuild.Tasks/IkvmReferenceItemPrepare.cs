@@ -22,7 +22,7 @@
     /// <summary>
     /// For each <see cref="IkvmReferenceItem"/> passed in, assigns default metadata if required.
     /// </summary>
-    public class IkvmReferenceItemPrepare : Microsoft.Build.Utilities.Task, ICancelableTask
+    public class IkvmReferenceItemPrepare : IkvmAsyncTask
     {
 
         const string XML_ROOT_ELEMENT_NAME = "IkvmReferenceItemPrepareState";
@@ -85,7 +85,6 @@
             return md5.ComputeHash(buffer);
         }
 
-        readonly CancellationTokenSource cts;
         readonly IkvmAssemblyInfoUtil assemblyInfoUtil;
         readonly IkvmFileIdentityUtil fileIdentityUtil;
 
@@ -95,7 +94,6 @@
         public IkvmReferenceItemPrepare() :
             base(Resources.SR.ResourceManager, "IKVM:")
         {
-            cts = new CancellationTokenSource();
             assemblyInfoUtil = new IkvmAssemblyInfoUtil();
             fileIdentityUtil = new IkvmFileIdentityUtil(assemblyInfoUtil);
         }
@@ -157,58 +155,14 @@
             if (StateFile != null)
                 StateFile = Path.GetFullPath(StateFile);
 
-            if (cts.IsCancellationRequested)
-                return false;
-
-            // wait for result, and ensure we reacquire in case of return value or exception
-            Task<bool> run;
-
-            try
-            {
-                // kick off the launcher with the configured options
-                run = ExecuteAsync(cts.Token);
-                if (run.IsCompleted)
-                    return run.GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
-
-            // yield and wait for the task to complete
-            BuildEngine3.Yield();
-
-            var result = false;
-            try
-            {
-                result = run.GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
-            finally
-            {
-                BuildEngine3.Reacquire();
-            }
-
-            // check that we exited successfully
-            return result;
-        }
-
-        /// <summary>
-        /// Cancels the task.
-        /// </summary>
-        public void Cancel()
-        {
-            cts.Cancel();
+            return base.Execute();
         }
 
         /// <summary>
         /// Executes the task.
         /// </summary>
         /// <returns></returns>
-        async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
+        protected override async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
         {
             var sw = new Stopwatch();
             sw.Start();
@@ -547,7 +501,7 @@
             manifest.WriteLine("AssemblyFileVersion={0}", item.AssemblyFileVersion);
             manifest.WriteLine("ClassLoader={0}", item.ClassLoader);
             manifest.WriteLine("Debug={0}", item.Debug ? "true" : "false");
-            manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? await fileIdentityUtil.GetIdentityForFileAsync(item.KeyFile, Log,cancellationToken) : "");
+            manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? await fileIdentityUtil.GetIdentityForFileAsync(item.KeyFile, Log, cancellationToken) : "");
             manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
 
             // each Compile item should be a jar or class file

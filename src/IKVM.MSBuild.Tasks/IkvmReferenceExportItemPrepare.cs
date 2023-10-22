@@ -17,13 +17,12 @@
     /// <summary>
     /// For each <see cref="IkvmReferenceExportItem"/> passed in, assigns default metadata if required.
     /// </summary>
-    public class IkvmReferenceExportItemPrepare : Microsoft.Build.Utilities.Task, ICancelableTask
+    public class IkvmReferenceExportItemPrepare : IkvmAsyncTask
     {
 
         const string XML_ROOT_ELEMENT_NAME = "IkvmReferenceExportItemPrepareState";
         const string XML_ASSEMBLY_INFO_STATE_ELEMENT_NAME = "AssemblyInfoState";
         const string XML_FILE_IDENTITY_STATE_ELEMENT_NAME = "FileIdentityState";
-
 
         /// <summary>
         /// Generates a unique random number for this export item.
@@ -31,7 +30,6 @@
         /// <returns></returns>
         static int GetRandomNumber() => Guid.NewGuid().GetHashCode();
 
-        readonly CancellationTokenSource cts;
         readonly IkvmFileIdentityUtil fileIdentityUtil;
         readonly IkvmAssemblyInfoUtil assemblyInfoUtil;
         readonly Dictionary<string, IkvmAssemblyInfoUtil.AssemblyInfo> assemblyInfoByName = new();
@@ -42,7 +40,6 @@
         /// </summary>
         public IkvmReferenceExportItemPrepare()
         {
-            cts = new CancellationTokenSource();
             assemblyInfoUtil = new();
             fileIdentityUtil = new(assemblyInfoUtil);
         }
@@ -86,69 +83,14 @@
             if (StateFile != null)
                 StateFile = Path.GetFullPath(StateFile);
 
-            if (cts.IsCancellationRequested)
-                return false;
-
-            // wait for result, and ensure we reacquire in case of return value or exception
-            Task<bool> run;
-
-            try
-            {
-                // kick off the launcher with the configured options
-                run = ExecuteAsync(cts.Token);
-                if (run.IsCompleted)
-                    return run.GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
-
-            try
-            {
-                if (run.Wait(TimeSpan.FromSeconds(1)))
-                    if (run.IsCompleted)
-                        return run.GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
-
-            // yield and wait for the task to complete
-            BuildEngine3.Yield();
-
-            var result = false;
-            try
-            {
-                result = run.GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
-            finally
-            {
-                BuildEngine3.Reacquire();
-            }
-
-            // check that we exited successfully
-            return result;
-        }
-
-        /// <summary>
-        /// Signals the task to cancel.
-        /// </summary>
-        public void Cancel()
-        {
-            cts.Cancel();
+            return base.Execute();
         }
 
         /// <summary>
         /// Executes the task.
         /// </summary>
         /// <returns></returns>
-        async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
+        protected override async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
         {
             var sw = new Stopwatch();
             sw.Start();
