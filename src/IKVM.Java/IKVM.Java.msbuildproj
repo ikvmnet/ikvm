@@ -240,12 +240,12 @@
     </Target>
 
     <PropertyGroup>
-        <CompileJavaDependsOn>
+        <GenerateSourceDependsOn>
             ResolveToolsJar;
             BuildToolsResponseFile;
             BuildTools;
-            $(CompileJavaDependsOn);
-        </CompileJavaDependsOn>
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -324,11 +324,11 @@
     </Target>
 
     <PropertyGroup>
-        <CompileJavaDependsOn>
+        <GenerateSourceDependsOn>
             GenerateCharacterData;
             GenerateCharacterDataStatic;
-            $(CompileJavaDependsOn);
-        </CompileJavaDependsOn>
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -424,9 +424,78 @@
     </Target>
 
     <PropertyGroup>
-        <CompileJavaDependsOn>
+        <GenerateSourceDependsOn>
             GenerateCharsetDecoder;
             GenerateCharsetEncoder;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <GenerateCharsetMappingData>$(OpenJdkDir)jdk\make\data\charsetmapping\</GenerateCharsetMappingData>
+        <GenerateCharsetMappingJavaSource>$(OpenJdkDir)jdk\make\src\classes\build\tools\charsetmapping\</GenerateCharsetMappingJavaSource>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <GenerateCharsetMappingTemplate Include="$(GenerateCharsetMappingData)\SingleByte-X.java.template" />
+        <GenerateCharsetMappingTemplate Include="$(GenerateCharsetMappingData)\DoubleByte-X.java.template" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <GenerateCharsetMappingItem Include="sbcs" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs" />
+        <GenerateCharsetMappingItem Include="sjis0213" Source="$(GenerateCharsetMappingData)sjis0213.map" Destination="$(GenSrc)sun\nio\cs\ext\sjis0213.dat" />
+        <GenerateCharsetMappingItem Include="euctw" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs\ext" Copyright="$(GenerateCharsetMappingJavaSource)EUC_TW.java" />
+        <GenerateCharsetMappingItem Include="hkscs" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs\ext" Copyright="$(GenerateCharsetMappingJavaSource)HKSCS.java" />
+        <GenerateCharsetMappingItem Include="extsbcs" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs\ext" />
+        <GenerateCharsetMappingItem Include="dbcs" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs\ext" />
+    </ItemGroup>
+
+    <Target Name="GenerateCharsetMapping" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetMappingTemplate)" Outputs="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <_GenerateCharsetMappingArgs Include="%(GenerateCharsetMappingItem.Source)" />
+            <_GenerateCharsetMappingArgs Include="%(GenerateCharsetMappingItem.Destination)" />
+            <_GenerateCharsetMappingArgs Include="%(GenerateCharsetMappingItem.Identity)" />
+            <_GenerateCharsetMappingArgs Include="%(GenerateCharsetMappingItem.Copyright)" Condition=" '%(GenerateCharsetMappingItem.Copyright)' != '' " />
+        </ItemGroup>
+
+        <MakeDir Directories="$(GenSrc)sun\nio\cs\;$(GenSrc)sun\nio\cs\ext\" />
+        <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.charsetmapping.Main @(_GenerateCharsetMappingArgs, ' ')" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.charsetmapping.Main @(_GenerateCharsetMappingArgs, ' ')" />
+        <Touch Files="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp" AlwaysCreate="true" ForceTouch="true" />
+    </Target>
+
+    <Target Name="GenerateStandardCharsets">
+        
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateCharsetMapping;
+            GenerateStandardCharsets;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GenerateSource" DependsOnTargets="$(GenerateSourceDependsOn)">
+        <ItemGroup>
+            <Compile Include="$(GenSrc)**\*.java" />
+            <FileWrites Include="$(GenSrc)**\*.java" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <CompileJavaDependsOn>
+            GenerateSource;
             $(CompileJavaDependsOn);
         </CompileJavaDependsOn>
     </PropertyGroup>
