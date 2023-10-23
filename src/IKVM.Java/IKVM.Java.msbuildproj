@@ -240,12 +240,12 @@
     </Target>
 
     <PropertyGroup>
-        <BuildDependsOn>
+        <CompileJavaDependsOn>
             ResolveToolsJar;
             BuildToolsResponseFile;
             BuildTools;
-            $(BuildDependsOn);
-        </BuildDependsOn>
+            $(CompileJavaDependsOn);
+        </CompileJavaDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -324,19 +324,19 @@
     </Target>
 
     <PropertyGroup>
-        <BuildDependsOn>
+        <CompileJavaDependsOn>
             GenerateCharacterData;
             GenerateCharacterDataStatic;
-            $(BuildDependsOn);
-        </BuildDependsOn>
+            $(CompileJavaDependsOn);
+        </CompileJavaDependsOn>
     </PropertyGroup>
 
     <ItemGroup>
-        <_GenerateCharsetDecoderTemplateFile Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\charset\Charset-X-Coder.java.template" OutputFile="$(GenSrc)java\nio\charset\CharsetDecoder.java" />
-        <_GenerateCharsetEncoderTemplateFile Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\charset\Charset-X-Coder.java.template" OutputFile="$(GenSrc)java\nio\charset\CharsetEncoder.java" />
+        <GenerateCharsetDecoderTemplateFile Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\charset\Charset-X-Coder.java.template" OutputFile="$(GenSrc)java\nio\charset\CharsetDecoder.java" />
+        <GenerateCharsetEncoderTemplateFile Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\charset\Charset-X-Coder.java.template" OutputFile="$(GenSrc)java\nio\charset\CharsetEncoder.java" />
     </ItemGroup>
 
-    <Target Name="GenerateCharsetDecoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(_GenerateCharsetDecoderTemplateFile)" Outputs="%(_GenerateCharsetDecoderTemplateFile.OutputFile)">
+    <Target Name="GenerateCharsetDecoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetDecoderTemplateFile)" Outputs="%(GenerateCharsetDecoderTemplateFile.OutputFile)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -370,39 +370,39 @@
         </ItemGroup>
 
         <MakeDir Directories="$(GenSrc)java\nio\charset\" />
-        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetDecoderArgs, ' ') &lt; @(_GenerateCharsetDecoderTemplateFile) &gt; %(_GenerateCharsetDecoderTemplateFile.OutputFile).tmp" />
-        <Move SourceFiles="%(_GenerateCharsetDecoderTemplateFile.OutputFile).tmp" DestinationFiles="%(_GenerateCharsetDecoderTemplateFile.OutputFile)" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetDecoderArgs, ' ') &lt; @(GenerateCharsetDecoderTemplateFile) &gt; %(GenerateCharsetDecoderTemplateFile.OutputFile).tmp" />
+        <Move SourceFiles="%(GenerateCharsetDecoderTemplateFile.OutputFile).tmp" DestinationFiles="%(GenerateCharsetDecoderTemplateFile.OutputFile)" />
 
         <ItemGroup>
-            <Compile Include="%(_GenerateCharsetDecoderTemplateFile.OutputFile)" />
-            <FileWrites Include="%(_GenerateCharsetDecoderTemplateFile.OutputFile)" />
+            <Compile Include="%(GenerateCharsetDecoderTemplateFile.OutputFile)" />
+            <FileWrites Include="%(GenerateCharsetDecoderTemplateFile.OutputFile)" />
         </ItemGroup>
     </Target>
 
-    <Target Name="GenerateCharsetEncoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(_GenerateCharsetEncoderTemplateFile)" Outputs="%(_GenerateCharsetEncoderTemplateFile.OutputFile)">
+    <Target Name="GenerateCharsetEncoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetEncoderTemplateFile)" Outputs="%(GenerateCharsetEncoderTemplateFile.OutputFile)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <ItemGroup>
             <_GenerateCharsetEncoderArgs Include="-Kencoder" />
-	        <_GenerateCharsetEncoderArgs Include="-DA=&quot;An&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-Da=&quot;an&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-DCode=&quot;Encode&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-Dcode=&quot;encode&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-DitypesPhrase=&quot;sixteen-bit Unicode characters&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-DotypesPhrase=&quot;bytes in a specific charset&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-Ditype=&quot;character&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-Dotype=&quot;byte&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-DItype=&quot;Char&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-DOtype=&quot;Byte&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-Dcoder=&quot;encoder&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-DCoder=&quot;Encoder&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-Dcoding=&quot;encoding&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-DOtherCoder=&quot;Decoder&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-DreplTypeName=&quot;byte array&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-DdefaultRepl=&quot;new byte[] { (byte)'?' }&quot;" />
-	        <_GenerateCharsetEncoderArgs Include="-DdefaultReplName=&quot;&lt;tt&gt;{&lt;/tt&gt;\&amp;nbsp%3B&lt;tt&gt;(byte)'?'&lt;/tt&gt;\&amp;nbsp%3B&lt;tt&gt;}&lt;/tt&gt;&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DA=&quot;An&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Da=&quot;an&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DCode=&quot;Encode&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Dcode=&quot;encode&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DitypesPhrase=&quot;sixteen-bit Unicode characters&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DotypesPhrase=&quot;bytes in a specific charset&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Ditype=&quot;character&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Dotype=&quot;byte&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DItype=&quot;Char&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DOtype=&quot;Byte&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Dcoder=&quot;encoder&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DCoder=&quot;Encoder&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Dcoding=&quot;encoding&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DOtherCoder=&quot;Decoder&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DreplTypeName=&quot;byte array&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DdefaultRepl=&quot;new byte[] { (byte)'?' }&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DdefaultReplName=&quot;&lt;tt&gt;{&lt;/tt&gt;\&amp;nbsp%3B&lt;tt&gt;(byte)'?'&lt;/tt&gt;\&amp;nbsp%3B&lt;tt&gt;}&lt;/tt&gt;&quot;" />
             <_GenerateCharsetEncoderArgs Include="-DreplType=&quot;byte[]&quot;" />
             <_GenerateCharsetEncoderArgs Include="-DreplFQType=&quot;byte[]&quot;" />
             <_GenerateCharsetEncoderArgs Include="-DreplLength=&quot;length&quot;" />
@@ -413,22 +413,22 @@
         </ItemGroup>
 
         <MakeDir Directories="$(GenSrc)java\nio\charset\" />
-        <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetEncoderArgs, ' ') &lt; @(_GenerateCharsetEncoderTemplateFile) &gt; %(_GenerateCharsetEncoderTemplateFile.OutputFile).tmp" />
-        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetEncoderArgs, ' ') &lt; @(_GenerateCharsetEncoderTemplateFile) &gt; %(_GenerateCharsetEncoderTemplateFile.OutputFile).tmp" />
-        <Move SourceFiles="%(_GenerateCharsetEncoderTemplateFile.OutputFile).tmp" DestinationFiles="%(_GenerateCharsetEncoderTemplateFile.OutputFile)" />
+        <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetEncoderArgs, ' ') &lt; @(GenerateCharsetEncoderTemplateFile) &gt; %(GenerateCharsetEncoderTemplateFile.OutputFile).tmp" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetEncoderArgs, ' ') &lt; @(GenerateCharsetEncoderTemplateFile) &gt; %(GenerateCharsetEncoderTemplateFile.OutputFile).tmp" />
+        <Move SourceFiles="%(GenerateCharsetEncoderTemplateFile.OutputFile).tmp" DestinationFiles="%(GenerateCharsetEncoderTemplateFile.OutputFile)" />
 
         <ItemGroup>
-            <Compile Include="%(_GenerateCharsetEncoderTemplateFile.OutputFile)" />
-            <FileWrites Include="%(_GenerateCharsetEncoderTemplateFile.OutputFile)" />
+            <Compile Include="%(GenerateCharsetEncoderTemplateFile.OutputFile)" />
+            <FileWrites Include="%(GenerateCharsetEncoderTemplateFile.OutputFile)" />
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
-        <BuildDependsOn>
+        <CompileJavaDependsOn>
             GenerateCharsetDecoder;
             GenerateCharsetEncoder;
-            $(BuildDependsOn);
-        </BuildDependsOn>
+            $(CompileJavaDependsOn);
+        </CompileJavaDependsOn>
     </PropertyGroup>
 
 </Project>
