@@ -18,7 +18,6 @@
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\awt\resources\**\*.java" PackagePath="sun\awt\resources" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\management\resources\**\*.java" PackagePath="sun\management\resources" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\misc\resources\**\*.java" PackagePath="sun\misc\resources" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\nio\cs\StandardCharsets.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\print\**\*.java" PackagePath="sun\print" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\security\**\*.java" PackagePath="sun\security" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\text\**\*.java" PackagePath="sun\text" />

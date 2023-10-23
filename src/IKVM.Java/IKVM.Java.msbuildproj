@@ -18,6 +18,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="CliWrap" Version="3.5.0" GeneratePathProperty="true" Private="True" />
+    </ItemGroup>
+
+    <ItemGroup>
         <TransformValues Include="Name" Value="$(ProductName)" />
         <TransformValues Include="Version" Value="$(Version)" />
         <TransformValues Include="FileVersion" Value="$(FileVersion)" />
@@ -211,6 +215,10 @@
             <_BuildToolsJavaCompilerArgs Include="@(BuildOpenJDKToolsSource->'%(FullPath)')" />
         </ItemGroup>
         <WriteLinesToFile File="$(BuildToolsResponseFile)" Lines="@(_BuildToolsJavaCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(BuildToolsResponseFile)" />
+        </ItemGroup>
     </Target>
 
     <Target Name="BuildTools" DependsOnTargets="ResolveJavaCompiler;BuildToolsResponseFile" Inputs="$(BuildToolsResponseFile);@(BuildOpenJDKToolsSource)" Outputs="$(BuildToolsStampFile)">
@@ -236,6 +244,11 @@
 
         <ItemGroup>
             <_BuildToolsStaleFiles Remove="@(_BuildToolsStaleFiles)" />
+        </ItemGroup>
+
+        <ItemGroup>
+            <FileWrites Include="$(BuildToolsStampFile)" />
+            <FileWrites Include="$(BuildToolsOutputPath)**\*.class" />
         </ItemGroup>
     </Target>
 
@@ -267,7 +280,7 @@
         <CharacterDataStaticItem Include="CharacterDataPrivateUse" />
     </ItemGroup>
 
-    <Target Name="GenerateCharacterData" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(CharacterDataDir)%(CharacterDataItem.Identity).java.template;$(UnicodeDataDir)UnicodeData.txt;$(UnicodeDataDir)SpecialCasing.txt;$(UnicodeDataDir)PropList.txt" Outputs="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java">
+    <Target Name="GenerateCharacterData" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(CharacterDataDir)%(CharacterDataItem.Identity).java.template;$(UnicodeDataDir)UnicodeData.txt;$(UnicodeDataDir)SpecialCasing.txt;$(UnicodeDataDir)PropList.txt;$(BuildToolsOutputPath)**\*.class" Outputs="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -318,7 +331,6 @@
         <Copy SourceFiles="$(CharacterDataDir)%(CharacterDataStaticItem.Identity).java.template" DestinationFiles="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java" />
 
         <ItemGroup>
-            <Compile Include="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java" />
             <FileWrites Include="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java" />
         </ItemGroup>
     </Target>
@@ -336,7 +348,7 @@
         <GenerateCharsetEncoderTemplateFile Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\charset\Charset-X-Coder.java.template" OutputFile="$(GenSrc)java\nio\charset\CharsetEncoder.java" />
     </ItemGroup>
 
-    <Target Name="GenerateCharsetDecoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetDecoderTemplateFile)" Outputs="%(GenerateCharsetDecoderTemplateFile.OutputFile)">
+    <Target Name="GenerateCharsetDecoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetDecoderTemplateFile);$(BuildToolsOutputPath)**\*.class" Outputs="%(GenerateCharsetDecoderTemplateFile.OutputFile)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -374,12 +386,11 @@
         <Move SourceFiles="%(GenerateCharsetDecoderTemplateFile.OutputFile).tmp" DestinationFiles="%(GenerateCharsetDecoderTemplateFile.OutputFile)" />
 
         <ItemGroup>
-            <Compile Include="%(GenerateCharsetDecoderTemplateFile.OutputFile)" />
             <FileWrites Include="%(GenerateCharsetDecoderTemplateFile.OutputFile)" />
         </ItemGroup>
     </Target>
 
-    <Target Name="GenerateCharsetEncoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetEncoderTemplateFile)" Outputs="%(GenerateCharsetEncoderTemplateFile.OutputFile)">
+    <Target Name="GenerateCharsetEncoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetEncoderTemplateFile);$(BuildToolsOutputPath)**\*.class" Outputs="%(GenerateCharsetEncoderTemplateFile.OutputFile)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -418,7 +429,6 @@
         <Move SourceFiles="%(GenerateCharsetEncoderTemplateFile.OutputFile).tmp" DestinationFiles="%(GenerateCharsetEncoderTemplateFile.OutputFile)" />
 
         <ItemGroup>
-            <Compile Include="%(GenerateCharsetEncoderTemplateFile.OutputFile)" />
             <FileWrites Include="%(GenerateCharsetEncoderTemplateFile.OutputFile)" />
         </ItemGroup>
     </Target>
@@ -450,7 +460,7 @@
         <GenerateCharsetMappingItem Include="dbcs" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs\ext" />
     </ItemGroup>
 
-    <Target Name="GenerateCharsetMapping" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetMappingTemplate)" Outputs="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp">
+    <Target Name="GenerateCharsetMapping" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetMappingTemplate);$(BuildToolsOutputPath)**\*.class" Outputs="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -466,10 +476,101 @@
         <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.charsetmapping.Main @(_GenerateCharsetMappingArgs, ' ')" />
         <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.charsetmapping.Main @(_GenerateCharsetMappingArgs, ' ')" />
         <Touch Files="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp" />
+            <FileWrites Include="%(GenerateCharsetMappingItem.Destination)" Condition="Exists('%(GenerateCharsetMappingItem.Destination)')" />
+        </ItemGroup>
     </Target>
 
-    <Target Name="GenerateStandardCharsets">
-        
+    <Target Name="GenerateStandardCharsets" Inputs="$(OpenJdkDir)jdk\make\scripts\genCharsetProvider.sh;$(BuildToolsOutputPath)**\*.class" Outputs="$(GenSrc)sun\nio\cs\StandardCharsets.java">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <RemoveDir Directories="$(IntermediateOutputPath)GenerateStandardCharsets.dir" />
+        <MakeDir Directories="$(IntermediateOutputPath)GenerateStandardCharsets.dir" />
+
+        <PropertyGroup>
+            <_Script>$(OpenJdkDir)jdk\make\scripts\genCharsetProvider.sh</_Script>
+            <_TempDir>$(IntermediateOutputPath)GenerateStandardCharsets.dir</_TempDir>
+            <_JavaExe>$(JavaPath)</_JavaExe>
+            <_ScriptDir>$(OpenJdkDir)jdk\make\scripts\</_ScriptDir>
+            <_StandardCharsetsFile>$(OpenJdkDir)jdk\src\share\classes\sun\nio\cs\standard-charsets</_StandardCharsetsFile>
+            <_DestinationDir>$(GenSrc)sun\nio\cs\</_DestinationDir>
+            <_Hasher>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)GenerateStandardCharsets.hasher.sh'))</_Hasher>
+            <_BuildToolsOutputPath>$([System.IO.Path]::GetFullPath('$(BuildToolsOutputPath)'))</_BuildToolsOutputPath>
+        </PropertyGroup>
+
+        <IkvmWslPath Path="$(_Script)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+            <Output TaskParameter="Path" PropertyName="_Script" />
+        </IkvmWslPath>
+
+        <IkvmWslPath Path="$(_TempDir)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+            <Output TaskParameter="Path" PropertyName="_TempDir" />
+        </IkvmWslPath>
+
+        <IkvmWslPath Path="$(_JavaExe)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+            <Output TaskParameter="Path" PropertyName="_JavaExe" />
+        </IkvmWslPath>
+
+        <IkvmWslPath Path="$(_ScriptDir)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+            <Output TaskParameter="Path" PropertyName="_ScriptDir" />
+        </IkvmWslPath>
+
+        <IkvmWslPath Path="$(_StandardCharsetsFile)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+            <Output TaskParameter="Path" PropertyName="_StandardCharsetsFile" />
+        </IkvmWslPath>
+
+        <IkvmWslPath Path="$(_DestinationDir)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+            <Output TaskParameter="Path" PropertyName="_DestinationDir" />
+        </IkvmWslPath>
+
+        <!-- WSL version of the file launcher java.exe through /init -->
+        <WriteLinesToFile File="$(_Hasher)" Lines="/init &quot;$(_JavaExe)&quot; -- build.tools.hasher.Hasher $@" Overwrite="true" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+
+        </WriteLinesToFile>
+
+        <!-- Non-WSL version of the file launches should simply launch java -->
+        <WriteLinesToFile File="$(_Hasher)" Lines="&quot;$(_JavaExe)&quot; build.tools.hasher.Hasher $@" Overwrite="true" Condition="!$([MSBuild]::IsOsPlatform('Windows'))">
+
+        </WriteLinesToFile>
+
+        <ItemGroup>
+            <FileWrites Include="$(_Hasher)" />
+        </ItemGroup>
+
+        <IkvmWslPath Path="$(_Hasher)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+            <Output TaskParameter="Path" PropertyName="_Hasher" />
+        </IkvmWslPath>
+
+        <IkvmUnixExec Command="chmod" Arguments="+x;$(_Hasher)">
+
+        </IkvmUnixExec>
+
+        <ItemGroup>
+            <_GenerateStandardCharsetsEnv Include="CLASSPATH" Value="$(_BuildToolsOutputPath)" />
+            <_GenerateStandardCharsetsEnv Include="NAWK" Value="nawk" />
+            <_GenerateStandardCharsetsEnv Include="TEMPDIR" Value="$(_TempDir)" />
+            <_GenerateStandardCharsetsEnv Include="HASHER" Value="sh -e $(_Hasher)" />
+            <_GenerateStandardCharsetsEnv Include="SCRIPTS" Value="$(_ScriptDir)" />
+        </ItemGroup>
+
+        <ItemGroup>
+            <_GenerateStandardCharsetsArg Include="-e" />
+            <_GenerateStandardCharsetsArg Include="$(_Script)" />
+            <_GenerateStandardCharsetsArg Include="$(_StandardCharsetsFile)" />
+            <_GenerateStandardCharsetsArg Include="$(_DestinationDir)" />
+        </ItemGroup>
+
+        <IkvmUnixExec Command="sh" EnvironmentVariables="@(_GenerateStandardCharsetsEnv)" Arguments="@(_GenerateStandardCharsetsArg)" LogStandardError="false">
+
+        </IkvmUnixExec>
+
+        <ItemGroup>
+            <FileWrites Include="$(GenSrc)sun\nio\cs\StandardCharsets.java" />
+            <FileWrites Include="$(IntermediateOutputPath)GenerateStandardCharsets.dir\**\*" />
+        </ItemGroup>
     </Target>
 
     <PropertyGroup>
@@ -499,5 +600,37 @@
             $(CompileJavaDependsOn);
         </CompileJavaDependsOn>
     </PropertyGroup>
+
+    <PropertyGroup>
+        <___IkvmAsyncTaskCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'IKVM.MSBuild.Tasks', 'IkvmAsyncTask.cs'))'))</___IkvmAsyncTaskCs>
+        <___IkvmWslPathCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'IKVM.MSBuild.Tasks', 'IkvmWslPath.cs'))'))</___IkvmWslPathCs>
+        <___IkvmUnixExecCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'IKVM.MSBuild.Tasks', 'IkvmUnixExec.cs'))'))</___IkvmUnixExecCs>
+        <___CliWrapDll Condition=" '$(MSBuildRuntimeType)' == 'Core' And '$(PkgCliWrap)' != '' ">$(PkgCliWrap)\lib\netcoreapp3.0\CliWrap.dll</___CliWrapDll>
+        <___CliWrapDll Condition=" '$(MSBuildRuntimeType)' != 'Core' And '$(PkgCliWrap)' != '' ">$(PkgCliWrap)\lib\net461\CliWrap.dll</___CliWrapDll>
+    </PropertyGroup>
+
+    <UsingTask TaskName="IkvmWslPath" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(___CliWrapDll)' != '' ">
+        <Task>
+            <Reference Include="$(___CliWrapDll)" />
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+$([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
+$([MSBuild]::Unescape('$(___IkvmWslPathCs)'))
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <UsingTask TaskName="IkvmUnixExec" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(___CliWrapDll)' != '' ">
+        <Task>
+            <Reference Include="$(___CliWrapDll)" />
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+$([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
+$([MSBuild]::Unescape('$(___IkvmUnixExecCs)'))
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
 
 </Project>
