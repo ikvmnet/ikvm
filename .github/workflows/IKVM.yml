@@ -145,6 +145,9 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 7.0.x
+    - name: Setup WSL
+      if: runner.os == 'Windows'
+      uses: Vampire/setup-wsl@v2
     - name: Cache LLVM and Clang
       id: cache-llvm
       uses: actions/cache@v3
