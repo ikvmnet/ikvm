@@ -182,7 +182,7 @@
     <PropertyGroup>
         <BuildToolsResponseFile>$(IntermediateOutputPath)btclasses.javac.rsp</BuildToolsResponseFile>
         <BuildToolsOutputPath>$(IntermediateOutputPath)btclasses\</BuildToolsOutputPath>
-        <BuildToolsStampFile>$(BuildToolsOutputPath)btclasses.stamp</BuildToolsStampFile>
+        <BuildToolsStampFile>$(IntermediateOutputPath)BuildTools.stamp</BuildToolsStampFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -264,7 +264,12 @@
 
     <PropertyGroup>
         <GenSrc>$(IntermediateOutputPath)gensrc\</GenSrc>
+        <GenSrcScriptsDir>$(OpenJdkDir)jdk\make\scripts\</GenSrcScriptsDir>
     </PropertyGroup>
+
+    <ItemGroup>
+        <GenSrcScripts Include="$(GenSrcScriptsDir)**\*.sh" />
+    </ItemGroup>
 
     <PropertyGroup>
         <CharacterDataDir>$(OpenJdkDir)jdk\make\data\characterdata\</CharacterDataDir>
@@ -476,7 +481,7 @@
         <MakeDir Directories="$(GenSrc)sun\nio\cs\;$(GenSrc)sun\nio\cs\ext\" />
         <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.charsetmapping.Main @(_GenerateCharsetMappingArgs, ' ')" />
         <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.charsetmapping.Main @(_GenerateCharsetMappingArgs, ' ')" />
-        <Touch Files="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp" AlwaysCreate="true" ForceTouch="true" />
+        <Touch Files="$(IntermediateOutputPath)GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp" AlwaysCreate="true" ForceTouch="true" />
 
         <ItemGroup>
             <FileWrites Include="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp" />
@@ -484,7 +489,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GenerateStandardCharsets" Inputs="$(OpenJdkDir)jdk\make\scripts\*.sh;@(BuildToolsClassFiles)" Outputs="$(GenSrc)sun\nio\cs\StandardCharsets.java">
+    <Target Name="GenerateStandardCharsets" Inputs="@(GenSrcScripts);@(BuildToolsClassFiles)" Outputs="$(GenSrc)sun\nio\cs\StandardCharsets.java">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -493,10 +498,10 @@
         <MakeDir Directories="$(IntermediateOutputPath)GenerateStandardCharsets.dir" />
 
         <PropertyGroup>
-            <_Script>$(OpenJdkDir)jdk\make\scripts\genCharsetProvider.sh</_Script>
+            <_Script>$(GenSrcScriptsDir)genCharsetProvider.sh</_Script>
             <_TempDir>$(IntermediateOutputPath)GenerateStandardCharsets.dir</_TempDir>
             <_JavaExe>$(JavaPath)</_JavaExe>
-            <_ScriptDir>$(OpenJdkDir)jdk\make\scripts\</_ScriptDir>
+            <_ScriptDir>$(GenSrcScriptsDir)</_ScriptDir>
             <_StandardCharsetsFile>$(OpenJdkDir)jdk\src\share\classes\sun\nio\cs\standard-charsets</_StandardCharsetsFile>
             <_DestinationDir>$(GenSrc)sun\nio\cs\</_DestinationDir>
             <_Hasher>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)GenerateStandardCharsets.hasher.sh'))</_Hasher>
