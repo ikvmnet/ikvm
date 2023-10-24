@@ -25,12 +25,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.IO.Pipelines;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using System.Security.Cryptography.Xml;
 
 using IKVM.Reflection;
 using IKVM.Runtime;
@@ -223,7 +220,7 @@ namespace IKVM.Tools.Importer
 
         internal void IssueMessage(Message msgId, params string[] values)
         {
-            IssueMessage(msgId, values);
+            IssueMessage(rootTarget, msgId, values);
         }
 
         internal void IssueMessage(CompilerOptions options, Message msgId, params string[] values)
