@@ -247,6 +247,7 @@
         </ItemGroup>
 
         <ItemGroup>
+            <BuildToolsClassFiles Include="$(BuildToolsOutputPath)**\*.class" />
             <FileWrites Include="$(BuildToolsStampFile)" />
             <FileWrites Include="$(BuildToolsOutputPath)**\*.class" />
         </ItemGroup>
@@ -280,7 +281,7 @@
         <CharacterDataStaticItem Include="CharacterDataPrivateUse" />
     </ItemGroup>
 
-    <Target Name="GenerateCharacterData" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(CharacterDataDir)%(CharacterDataItem.Identity).java.template;$(UnicodeDataDir)UnicodeData.txt;$(UnicodeDataDir)SpecialCasing.txt;$(UnicodeDataDir)PropList.txt;$(BuildToolsOutputPath)**\*.class" Outputs="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java">
+    <Target Name="GenerateCharacterData" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(CharacterDataDir)%(CharacterDataItem.Identity).java.template;$(UnicodeDataDir)UnicodeData.txt;$(UnicodeDataDir)SpecialCasing.txt;$(UnicodeDataDir)PropList.txt;@(BuildToolsClassFiles)" Outputs="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -348,7 +349,7 @@
         <GenerateCharsetEncoderTemplateFile Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\charset\Charset-X-Coder.java.template" OutputFile="$(GenSrc)java\nio\charset\CharsetEncoder.java" />
     </ItemGroup>
 
-    <Target Name="GenerateCharsetDecoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetDecoderTemplateFile);$(BuildToolsOutputPath)**\*.class" Outputs="%(GenerateCharsetDecoderTemplateFile.OutputFile)">
+    <Target Name="GenerateCharsetDecoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetDecoderTemplateFile);@(BuildToolsClassFiles)" Outputs="%(GenerateCharsetDecoderTemplateFile.OutputFile)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -390,7 +391,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GenerateCharsetEncoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetEncoderTemplateFile);$(BuildToolsOutputPath)**\*.class" Outputs="%(GenerateCharsetEncoderTemplateFile.OutputFile)">
+    <Target Name="GenerateCharsetEncoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetEncoderTemplateFile);@(BuildToolsClassFiles)" Outputs="%(GenerateCharsetEncoderTemplateFile.OutputFile)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -460,7 +461,7 @@
         <GenerateCharsetMappingItem Include="dbcs" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs\ext" />
     </ItemGroup>
 
-    <Target Name="GenerateCharsetMapping" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetMappingTemplate);$(BuildToolsOutputPath)**\*.class" Outputs="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp">
+    <Target Name="GenerateCharsetMapping" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetMappingTemplate);@(BuildToolsClassFiles)" Outputs="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -483,7 +484,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GenerateStandardCharsets" Inputs="$(OpenJdkDir)jdk\make\scripts\*.sh;$(BuildToolsOutputPath)**\*.class" Outputs="$(GenSrc)sun\nio\cs\StandardCharsets.java">
+    <Target Name="GenerateStandardCharsets" Inputs="$(OpenJdkDir)jdk\make\scripts\*.sh;@(BuildToolsClassFiles)" Outputs="$(GenSrc)sun\nio\cs\StandardCharsets.java">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
