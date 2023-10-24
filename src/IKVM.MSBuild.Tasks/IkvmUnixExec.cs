@@ -1,6 +1,6 @@
 ﻿namespace IKVM.MSBuild.Tasks
 {
-
+    using System;
     using System.Collections.Generic;
     using System.Resources;
     using System.Runtime.InteropServices;
@@ -226,7 +226,7 @@
         /// <returns></returns>
         Command BuildCommand()
         {
-            var cmd = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && UseWsl ? Cli.Wrap("wsl.exe").WithArguments(BuildWslArguments) : Cli.Wrap(Command).WithArguments(BuildArguments);
+            var cmd = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && UseWsl ? Cli.Wrap(Environment.ExpandEnvironmentVariables("%SystemRoot%\\System32\\wsl.exe")).WithArguments(BuildWslArguments) : Cli.Wrap(Command).WithArguments(BuildArguments);
             cmd = cmd.WithEnvironmentVariables(BuildEnvironmentVariables).WithValidation(CommandResultValidation.None);
             cmd = cmd.WithWorkingDirectory(CurrentWorkingDirectory);
             return cmd;
