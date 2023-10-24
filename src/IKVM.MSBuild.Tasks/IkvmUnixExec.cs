@@ -62,6 +62,11 @@
         public bool LogStandardOutput { get; set; } = true;
 
         /// <summary>
+        /// Log level at which to emit standard output messages.
+        /// </summary>
+        public string StandardOutputLogLevel { get; set; }
+
+        /// <summary>
         /// Whether or not to capture the standard error of the command.
         /// </summary>
         public bool RedirectStandardError { get; set; } = false;
@@ -70,6 +75,11 @@
         /// Whether or not to log standard error of the command.
         /// </summary>
         public bool LogStandardError { get; set; } = true;
+
+        /// <summary>
+        /// Log level at which to emit standard error messages.
+        /// </summary>
+        public string StandardErrorLogLevel { get; set; }
 
         /// <summary>
         /// Lines to provide as standard input to the command.
@@ -148,7 +158,7 @@
             if (RedirectStandardOutput)
                 stdout.Add(PipeTarget.ToDelegate(s => StandardOutput.Add(new TaskItem(s))));
             if (LogStandardOutput)
-                stdout.Add(PipeTarget.ToDelegate(s => Log.LogMessage(s)));
+                stdout.Add(PipeTarget.ToDelegate(s => LogWithLevel(StandardOutputLogLevel, s)));
             if (stdout.Count == 1)
                 cli = cli.WithStandardOutputPipe(stdout[0]);
             if (stdout.Count >= 2)
@@ -159,7 +169,7 @@
             if (RedirectStandardError)
                 stderr.Add(PipeTarget.ToDelegate(s => StandardError.Add(new TaskItem(s))));
             if (LogStandardError)
-                stderr.Add(PipeTarget.ToDelegate(s => Log.LogError(s)));
+                stderr.Add(PipeTarget.ToDelegate(s => LogWithLevel(StandardErrorLogLevel, s)));
             if (stderr.Count == 1)
                 cli = cli.WithStandardErrorPipe(stderr[0]);
             if (stderr.Count >= 2)
@@ -187,6 +197,27 @@
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Logs the specified message at the given level.
+        /// </summary>
+        /// <param name="level"></param>
+        /// <param name="message"></param>
+        void LogWithLevel(string level, string message)
+        {
+            switch (level)
+            {
+                case "Warning":
+                    Log.LogWarning(message);
+                    break;
+                case "Error":
+                    Log.LogError(message);
+                    break;
+                default:
+                    Log.LogMessage(message);
+                    break;
+            }
         }
 
         /// <summary>

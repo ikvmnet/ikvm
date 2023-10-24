@@ -483,7 +483,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GenerateStandardCharsets" Inputs="$(OpenJdkDir)jdk\make\scripts\genCharsetProvider.sh;$(BuildToolsOutputPath)**\*.class" Outputs="$(GenSrc)sun\nio\cs\StandardCharsets.java">
+    <Target Name="GenerateStandardCharsets" Inputs="$(OpenJdkDir)jdk\make\scripts\*.sh;$(BuildToolsOutputPath)**\*.class" Outputs="$(GenSrc)sun\nio\cs\StandardCharsets.java">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -563,7 +563,7 @@
             <_GenerateStandardCharsetsArg Include="$(_DestinationDir)" />
         </ItemGroup>
 
-        <IkvmUnixExec Command="sh" EnvironmentVariables="@(_GenerateStandardCharsetsEnv)" Arguments="@(_GenerateStandardCharsetsArg)" LogStandardError="false">
+        <IkvmUnixExec Command="sh" EnvironmentVariables="@(_GenerateStandardCharsetsEnv)" Arguments="@(_GenerateStandardCharsetsArg)" StandardErrorLogLevel="Warning">
 
         </IkvmUnixExec>
 
