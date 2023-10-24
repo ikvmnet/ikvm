@@ -264,11 +264,12 @@
 
     <PropertyGroup>
         <GenSrc>$(IntermediateOutputPath)gensrc\</GenSrc>
-        <GenSrcScriptsDir>$(OpenJdkDir)jdk\make\scripts\</GenSrcScriptsDir>
+        <GenLib>$(IntermediateOutputPath)genlib\</GenLib>
+        <BuildScriptsDir>$(OpenJdkDir)jdk\make\scripts\</BuildScriptsDir>
     </PropertyGroup>
 
     <ItemGroup>
-        <GenSrcScripts Include="$(GenSrcScriptsDir)**\*.sh" />
+        <BuildScripts Include="$(BuildScriptsDir)**\*.sh" />
     </ItemGroup>
 
     <PropertyGroup>
@@ -489,7 +490,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GenerateStandardCharsets" Inputs="@(GenSrcScripts);@(BuildToolsClassFiles)" Outputs="$(GenSrc)sun\nio\cs\StandardCharsets.java">
+    <Target Name="GenerateStandardCharsets" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildScripts);@(BuildToolsClassFiles)" Outputs="$(GenSrc)sun\nio\cs\StandardCharsets.java">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -498,10 +499,10 @@
         <MakeDir Directories="$(IntermediateOutputPath)GenerateStandardCharsets.dir" />
 
         <PropertyGroup>
-            <_Script>$(GenSrcScriptsDir)genCharsetProvider.sh</_Script>
+            <_Script>$(BuildScriptsDir)genCharsetProvider.sh</_Script>
             <_TempDir>$(IntermediateOutputPath)GenerateStandardCharsets.dir</_TempDir>
             <_JavaExe>$(JavaPath)</_JavaExe>
-            <_ScriptDir>$(GenSrcScriptsDir)</_ScriptDir>
+            <_ScriptDir>$(BuildScriptsDir)</_ScriptDir>
             <_StandardCharsetsFile>$(OpenJdkDir)jdk\src\share\classes\sun\nio\cs\standard-charsets</_StandardCharsetsFile>
             <_DestinationDir>$(GenSrc)sun\nio\cs\</_DestinationDir>
             <_Hasher>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)GenerateStandardCharsets.hasher.sh'))</_Hasher>
@@ -587,6 +588,50 @@
         </GenerateSourceDependsOn>
     </PropertyGroup>
 
+    <Target Name="GenerateHtml32DTD" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildScripts);@(BuildToolsClassFiles)" Outputs="$(GenSrc)javax\swing\text\html\parser\html32.bdtd">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <PropertyGroup>
+            <_DtdHome>$(OpenJdkDir)jdk\make\data\dtdbuilder</_DtdHome>
+        </PropertyGroup>
+
+        <MakeDir Directories="$(GenSrc)javax\swing\text\html\parser\" />
+        <Message Text="$(JavaExec) -Ddtd_home=$(_DtdHome.Replace('\', '\\')) -Djava.awt.headless=true -cp $(BuildToolsOutputPath) build.tools.dtdbuilder.DTDBuilder html32 > $(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" />
+        <Exec Command="$(JavaExec) -Ddtd_home=$(_DtdHome.Replace('\', '\\')) -Djava.awt.headless=true -cp $(BuildToolsOutputPath) build.tools.dtdbuilder.DTDBuilder html32 > $(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" />
+        <Move SourceFiles="$(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" DestinationFiles="$(GenSrc)javax\swing\text\html\parser\html32.bdtd" OverwriteReadOnlyFiles="true" />
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateHtml32DTD;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GenerateCaCerts" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildScripts);@(BuildToolsClassFiles)" Outputs="$(GenSrc)javax\swing\text\html\parser\html32.bdtd">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <PropertyGroup>
+            <_DtdHome>$(OpenJdkDir)jdk\make\data\dtdbuilder</_DtdHome>
+        </PropertyGroup>
+
+        <MakeDir Directories="$(GenLib)javax\swing\text\html\parser\" />
+        <Message Text="$(JavaExec) -Ddtd_home=$(_DtdHome.Replace('\', '\\')) -Djava.awt.headless=true -cp $(BuildToolsOutputPath) build.tools.dtdbuilder.DTDBuilder html32 > $(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" />
+        <Exec Command="$(JavaExec) -Ddtd_home=$(_DtdHome.Replace('\', '\\')) -Djava.awt.headless=true -cp $(BuildToolsOutputPath) build.tools.dtdbuilder.DTDBuilder html32 > $(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" />
+        <Move SourceFiles="$(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" DestinationFiles="$(GenSrc)javax\swing\text\html\parser\html32.bdtd" OverwriteReadOnlyFiles="true" />
+    </Target>
+
+    <PropertyGroup>
+        <GenerateLibDependsOn>
+            GenerateCaCerts;
+            $(GenerateLibDependsOn);
+        </GenerateLibDependsOn>
+    </PropertyGroup>
+
     <PropertyGroup>
         <GenerateSourceDependsOn>
             $(GenerateSourceDependsOn);
@@ -596,13 +641,26 @@
     <Target Name="GenerateSource" DependsOnTargets="$(GenerateSourceDependsOn)">
         <ItemGroup>
             <Compile Include="$(GenSrc)**\*.java" />
-            <FileWrites Include="$(GenSrc)**\*.java" />
+            <FileWrites Include="$(GenSrc)**\*" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDataDependsOn>
+            $(GenerateDataDependsOn);
+        </GenerateDataDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GenerateData" DependsOnTargets="$(GenerateDataDependsOn)">
+        <ItemGroup>
+            <FileWrites Include="$(gendata)**\*" />
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
         <CompileJavaDependsOn>
             GenerateSource;
+            GenerateData;
             $(CompileJavaDependsOn);
         </CompileJavaDependsOn>
     </PropertyGroup>
