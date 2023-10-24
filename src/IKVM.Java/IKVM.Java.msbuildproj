@@ -76,6 +76,7 @@
             <JavaExec Condition=" '$(JavaPath)' != '' ">"$(JavaPath)" $(JavaArgs)</JavaExec>
         </PropertyGroup>
         <Message Text="Using java executable found in JAVA_HOME at '$(JavaPath)'." Importance="high" Condition=" '$(JavaPath)' != '' " />
+        <Error Text="Could not locate java executable in JAVA_HOME. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(JavaPath)' == '' " />
     </Target>
 
     <!-- IKVM.Java uses the javac executable from JAVA_HOME -->
@@ -87,6 +88,7 @@
             <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
         </PropertyGroup>
         <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
+        <Error Text="Could not locate javac executable in JAVA_HOME. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(JavaCompilerPath)' == '' " />
     </Target>
 
     <Target Name="ResolveRmiStubInputItems" DependsOnTargets="CompileJava">
@@ -104,6 +106,7 @@
             <RmiCompilerExec Condition=" '$(RmiCompilerPath)' != '' ">"$(RmiCompilerPath)" $(RmiCompilerArgs)</RmiCompilerExec>
         </PropertyGroup>
         <Message Text="Using rmic executable found in JAVA_HOME at '$(RmiCompilerPath)'." Importance="high" Condition=" '$(RmiCompilerPath)' != '' " />
+        <Error Text="Could not locate rmic executable in JAVA_HOME. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(RmiCompilerPath)' == '' " />
     </Target>
 
     <PropertyGroup>
@@ -170,6 +173,7 @@
             <RuntimeJarPath Condition="Exists('$(JAVA_HOME)\jre\lib\rt.jar')">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\jre\lib\rt.jar'))</RuntimeJarPath>
         </PropertyGroup>
         <Message Text="Using rt.jar found in JAVA_HOME at '$(RuntimeJarPath)'." Importance="high" Condition=" '$(RuntimeJarPath)' != '' " />
+        <Error Text="Could not locate rt.jar found in JAVA_HOME at '$(ToolsJarPath)'. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(ToolsJarPath)' == '' " />
     </Target>
 
     <Target Name="ResolveToolsJar" Condition=" '$(ToolsJarPath)' == '' ">
@@ -177,6 +181,7 @@
             <ToolsJarPath Condition="Exists('$(JAVA_HOME)\lib\tools.jar')">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\lib\tools.jar'))</ToolsJarPath>
         </PropertyGroup>
         <Message Text="Using tools.jar found in JAVA_HOME at '$(ToolsJarPath)'." Importance="high" Condition=" '$(ToolsJarPath)' != '' " />
+        <Error Text="Could not locate tools.jar in JAVA_HOME. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(ToolsJarPath)' == '' " />
     </Target>
 
     <PropertyGroup>
@@ -609,16 +614,67 @@
             $(GenerateSourceDependsOn);
         </GenerateSourceDependsOn>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <GenerateExceptionsItem Include="." />
+        <GenerateExceptionsItem Include="charset" />
+        <GenerateExceptionsItem Include="channels" />
+    </ItemGroup>
 
-    <Target Name="GenerateCaCerts" DependsOnTargets="BuildTools;ResolveJava">
-        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
-        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
-        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+    <Target Name="GenerateExceptions" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildScripts);@(BuildToolsClassFiles)" Outputs="$(IntermediateOutputPath)GenerateExceptions.%(GenerateExceptionsItem.Identity).stamp">
+        <PropertyGroup>
+            <_Script>$(BuildScriptsDir)genExceptions.sh</_Script>
+            <_Scripts>$(BuildScriptsDir)</_Scripts>
+            <_Exceptions>$(OpenJdkDir)jdk\src\share\classes\java\nio\%(GenerateExceptionsItem.Identity)\exceptions</_Exceptions>
+            <_DestinationDir>$(GenSrc)java\nio\%(GenerateExceptionsItem.Identity)</_DestinationDir>
+        </PropertyGroup>
+
+        <IkvmWslPath Path="$(_Script)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+            <Output TaskParameter="Path" PropertyName="_Script" />
+        </IkvmWslPath>
+
+        <IkvmWslPath Path="$(_Scripts)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+            <Output TaskParameter="Path" PropertyName="_Scripts" />
+        </IkvmWslPath>
+
+        <IkvmWslPath Path="$(_Exceptions)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+            <Output TaskParameter="Path" PropertyName="_Exceptions" />
+        </IkvmWslPath>
+
+        <IkvmWslPath Path="$(_DestinationDir)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+            <Output TaskParameter="Path" PropertyName="_DestinationDir" />
+        </IkvmWslPath>
+
+        <ItemGroup>
+            <_GenerateExceptionsEnv Include="SCRIPTS" Value="$(_Scripts)" />
+            <_GenerateExceptionsEnv Include="NAWK" Value="nawk" />
+        </ItemGroup>
+
+        <ItemGroup>
+            <_GenerateExceptionsArg Include="-e" />
+            <_GenerateExceptionsArg Include="$(_Script)" />
+            <_GenerateExceptionsArg Include="$(_Exceptions)" />
+            <_GenerateExceptionsArg Include="$(_DestinationDir)" />
+        </ItemGroup>
+
+        <MakeDir Directories="$(GenSrc)java\nio\%(GenerateExceptionsItem.Identity)" />
+        <IkvmUnixExec Command="sh" EnvironmentVariables="@(_GenerateExceptionsEnv)" Arguments="@(_GenerateExceptionsArg)" StandardErrorLogLevel="Warning" />
+        <Touch Files="$(IntermediateOutputPath)GenerateExceptions.%(GenerateExceptionsItem.Identity).stamp" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(GenSrc)java\nio\**\*.java" />
+        </ItemGroup>
     </Target>
 
     <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateExceptions;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
         <GenerateDataDependsOn>
-            GenerateCaCerts;
             $(GenerateDataDependsOn);
         </GenerateDataDependsOn>
     </PropertyGroup>

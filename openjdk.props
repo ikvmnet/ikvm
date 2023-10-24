@@ -12,6 +12,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\com\sun\swing\**\*.java" PackagePath="com\sun\swing" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\com\sun\tools\jdi\**\*.java" PackagePath="com\sun\tools\jdi" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\java\nio\**\*.java" PackagePath="java\nio" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\java\nio\**\*Exception.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\java\nio\charset\CharsetDecoder.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\java\nio\charset\CharsetEncoder.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\javax\swing\**\*.java" PackagePath="javax\swing" />
