@@ -610,26 +610,17 @@
         </GenerateSourceDependsOn>
     </PropertyGroup>
 
-    <Target Name="GenerateCaCerts" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildScripts);@(BuildToolsClassFiles)" Outputs="$(GenSrc)javax\swing\text\html\parser\html32.bdtd">
+    <Target Name="GenerateCaCerts" DependsOnTargets="BuildTools;ResolveJava">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
-
-        <PropertyGroup>
-            <_DtdHome>$(OpenJdkDir)jdk\make\data\dtdbuilder</_DtdHome>
-        </PropertyGroup>
-
-        <MakeDir Directories="$(GenLib)javax\swing\text\html\parser\" />
-        <Message Text="$(JavaExec) -Ddtd_home=$(_DtdHome.Replace('\', '\\')) -Djava.awt.headless=true -cp $(BuildToolsOutputPath) build.tools.dtdbuilder.DTDBuilder html32 > $(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" />
-        <Exec Command="$(JavaExec) -Ddtd_home=$(_DtdHome.Replace('\', '\\')) -Djava.awt.headless=true -cp $(BuildToolsOutputPath) build.tools.dtdbuilder.DTDBuilder html32 > $(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" />
-        <Move SourceFiles="$(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" DestinationFiles="$(GenSrc)javax\swing\text\html\parser\html32.bdtd" OverwriteReadOnlyFiles="true" />
     </Target>
 
     <PropertyGroup>
-        <GenerateLibDependsOn>
+        <GenerateDataDependsOn>
             GenerateCaCerts;
-            $(GenerateLibDependsOn);
-        </GenerateLibDependsOn>
+            $(GenerateDataDependsOn);
+        </GenerateDataDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -653,7 +644,7 @@
 
     <Target Name="GenerateData" DependsOnTargets="$(GenerateDataDependsOn)">
         <ItemGroup>
-            <FileWrites Include="$(gendata)**\*" />
+            <FileWrites Include="$(GenLib)**\*" />
         </ItemGroup>
     </Target>
 
