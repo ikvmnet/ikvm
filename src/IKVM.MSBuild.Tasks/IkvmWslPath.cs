@@ -69,8 +69,8 @@
                 .WithStandardOutputPipe(PipeTarget.ToDelegate(TrySetPath));
 
             // start at recorded working directory in case of relative path
-            if (string.IsNullOrEmpty(CurrentWorkingDirectory) == false && Directory.Exists(CurrentWorkingDirectory) == true)
-                cli = cli.WithWorkingDirectory(CurrentWorkingDirectory);
+            //if (string.IsNullOrEmpty(CurrentWorkingDirectory) == false && Directory.Exists(CurrentWorkingDirectory) == true)
+            //    cli = cli.WithWorkingDirectory(CurrentWorkingDirectory);
 
             Log.LogCommandLine(cli.ToString());
             var exe = await cli.ExecuteAsync(cancellationToken);
