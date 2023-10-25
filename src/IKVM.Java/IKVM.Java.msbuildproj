@@ -1046,9 +1046,31 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </PropertyGroup>
 
     <PropertyGroup>
-        <GenerateDataDependsOn>
-            $(GenerateDataDependsOn);
-        </GenerateDataDependsOn>
+        <CalendarDataVersion>21.0.1</CalendarDataVersion>
+        <CalendarSourceDir>$(OpenJdkDir)jdk\src\share\classes\sun\util\cldr\resources\$(CalendarDataVersion.Replace('.', '_'))</CalendarSourceDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CalendarSourceItem Include="$(CalendarSourceDir)\common\dtd\*.dtd" />
+        <CalendarSourceItem Include="$(CalendarSourceDir)\common\main\*.xml" />
+        <CalendarSourceItem Include="$(CalendarSourceDir)\common\supplemental\*.xml" />
+    </ItemGroup>
+
+    <Target Name="GenerateCalendarData" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildToolsClassFiles);@(CalendarSourceItem)" Outputs="$(GenSrc)\sun\util\cldr\CLDRLocaleDataMetaInfo.java">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <MakeDir Directories="$(GenSrc)\sun\util\cldr\" />
+        <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.cldrconverter.CLDRConverter -base $(CalendarSourceDir) -o $(GenSrc)" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.cldrconverter.CLDRConverter -base $(CalendarSourceDir) -o $(GenSrc)" />
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateCalendarData;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -1060,6 +1082,8 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     <Target Name="GenerateSource" DependsOnTargets="$(GenerateSourceDependsOn)">
         <ItemGroup>
             <Compile Include="$(GenSrc)**\*.java" />
+            <_GenSrcJavaResource Include="$(GenSrc)**\*" Exclude="$(GenSrc)jdk\gensrc\**\*.java;$(GenSrc)jdk\gensrc\**\*.class" />
+            <JavaResource Include="@(_GenSrcJavaResource)" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
             <FileWrites Include="$(GenSrc)**\*" />
         </ItemGroup>
     </Target>
