@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Resources;
     using System.Runtime.InteropServices;
     using System.Text;
@@ -175,18 +176,18 @@
             if (stderr.Count >= 2)
                 cli = cli.WithStandardErrorPipe(PipeTarget.Merge(stderr));
 
-            // log the final command line
-            Log.LogMessage(MessageImportance.High, cli.ToString());
-
             // log the environment variables being passed
             if (cli.EnvironmentVariables.Count > 0)
             {
                 var s = new StringBuilder();
                 foreach (var env in cli.EnvironmentVariables)
-                    s.AppendLine($"ENV {env.Key}={env.Value}");
+                    s.AppendLine($"env {env.Key}={env.Value}");
 
-                Log.LogMessage(MessageImportance.High, s.ToString());
+                Log.LogMessage(MessageImportance.Low, s.ToString());
             }
+
+            // log the final command line
+            Log.LogMessage(MessageImportance.Normal, cli.ToString());
 
             // execute executable
             var exe = await cli.ExecuteAsync(cancellationToken);
@@ -227,8 +228,13 @@
         Command BuildCommand()
         {
             var cmd = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && UseWsl ? Cli.Wrap(Environment.ExpandEnvironmentVariables(@"%SystemRoot%\System32\wsl.exe")).WithArguments(BuildWslArguments) : Cli.Wrap(Command).WithArguments(BuildArguments);
-            cmd = cmd.WithEnvironmentVariables(BuildEnvironmentVariables).WithValidation(CommandResultValidation.None);
-            cmd = cmd.WithWorkingDirectory(CurrentWorkingDirectory);
+            cmd = cmd.WithEnvironmentVariables(BuildEnvironmentVariables);
+            cmd = cmd.WithValidation(CommandResultValidation.None);
+
+            // set working directory, if available
+            if (string.IsNullOrEmpty(CurrentWorkingDirectory) == false && Directory.Exists(CurrentWorkingDirectory))
+                cmd = cmd.WithWorkingDirectory(CurrentWorkingDirectory);
+
             return cmd;
         }
 
