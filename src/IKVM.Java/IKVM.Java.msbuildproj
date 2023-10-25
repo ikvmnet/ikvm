@@ -472,7 +472,7 @@
         <GenerateCharsetMappingItem Include="dbcs" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs\ext" />
     </ItemGroup>
 
-    <Target Name="GenerateCharsetMapping" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetMappingTemplate);@(BuildToolsClassFiles)" Outputs="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp">
+    <Target Name="GenerateCharsetMappings" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetMappingTemplate);@(BuildToolsClassFiles)" Outputs="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -587,7 +587,7 @@
 
     <PropertyGroup>
         <GenerateSourceDependsOn>
-            GenerateCharsetMapping;
+            GenerateCharsetMappings;
             GenerateStandardCharsets;
             $(GenerateSourceDependsOn);
         </GenerateSourceDependsOn>
