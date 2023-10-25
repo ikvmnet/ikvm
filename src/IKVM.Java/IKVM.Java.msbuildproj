@@ -614,7 +614,7 @@
             $(GenerateSourceDependsOn);
         </GenerateSourceDependsOn>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <GenerateExceptionsItem Include="." />
         <GenerateExceptionsItem Include="charset" />
@@ -669,6 +669,378 @@
     <PropertyGroup>
         <GenerateSourceDependsOn>
             GenerateExceptions;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ByteBuffer Include="ByteBuffer" Template="X-Buffer" Type="byte" Bin="1" />
+        <ByteBuffer Include="CharBuffer" Template="X-Buffer" Type="char" />
+        <ByteBuffer Include="ShortBuffer" Template="X-Buffer" Type="short" />
+        <ByteBuffer Include="IntBuffer" Template="X-Buffer" Type="int" />
+        <ByteBuffer Include="LongBuffer" Template="X-Buffer" Type="long" />
+        <ByteBuffer Include="FloatBuffer" Template="X-Buffer" Type="float" />
+        <ByteBuffer Include="DoubleBuffer" Template="X-Buffer" Type="double" />
+
+        <!-- Buffers whose contents are heap-allocated -->
+        <ByteBuffer Include="HeapByteBuffer" Template="Heap-X-Buffer" Type="byte" />
+        <ByteBuffer Include="HeapByteBufferR" Template="Heap-X-Buffer" Type="byte" RW="R" />
+        <ByteBuffer Include="HeapCharBuffer" Template="Heap-X-Buffer" Type="char" />
+        <ByteBuffer Include="HeapCharBufferR" Template="Heap-X-Buffer" Type="char" RW="R" />
+        <ByteBuffer Include="HeapShortBuffer" Template="Heap-X-Buffer" Type="short" />
+        <ByteBuffer Include="HeapShortBufferR" Template="Heap-X-Buffer" Type="short" RW="R" />
+        <ByteBuffer Include="HeapIntBuffer" Template="Heap-X-Buffer" Type="int" />
+        <ByteBuffer Include="HeapIntBufferR" Template="Heap-X-Buffer" Type="int" RW="R" />
+        <ByteBuffer Include="HeapLongBuffer" Template="Heap-X-Buffer" Type="long" />
+        <ByteBuffer Include="HeapLongBufferR" Template="Heap-X-Buffer" Type="long" RW="R" />
+        <ByteBuffer Include="HeapFloatBuffer" Template="Heap-X-Buffer" Type="float" />
+        <ByteBuffer Include="HeapFloatBufferR" Template="Heap-X-Buffer" Type="float" RW="R" />
+        <ByteBuffer Include="HeapDoubleBuffer" Template="Heap-X-Buffer" Type="double" />
+        <ByteBuffer Include="HeapDoubleBufferR" Template="Heap-X-Buffer" Type="double" RW="R" />
+
+        <!-- Direct byte buffer -->
+        <ByteBuffer Include="DirectByteBuffer" Template="Direct-X-Buffer" Type="byte" Bin="1" />
+        <ByteBuffer Include="DirectByteBufferR" Template="Direct-X-Buffer" Type="byte" Bin="1" RW="R" />
+
+        <!-- Unswapped views of direct byte buffers -->
+        <ByteBuffer Include="DirectCharBufferU" Template="Direct-X-Buffer" Type="char" BO="U" />
+        <ByteBuffer Include="DirectCharBufferRU" Template="Direct-X-Buffer" Type="char" RW="R" BO="U" />
+        <ByteBuffer Include="DirectShortBufferU" Template="Direct-X-Buffer" Type="short" BO="U" />
+        <ByteBuffer Include="DirectShortBufferRU" Template="Direct-X-Buffer" Type="short" RW="R" BO="U" />
+        <ByteBuffer Include="DirectIntBufferU" Template="Direct-X-Buffer" Type="int" BO="U" />
+        <ByteBuffer Include="DirectIntBufferRU" Template="Direct-X-Buffer" Type="int" RW="R" BO="U" />
+        <ByteBuffer Include="DirectLongBufferU" Template="Direct-X-Buffer" Type="long" BO="U" />
+        <ByteBuffer Include="DirectLongBufferRU" Template="Direct-X-Buffer" Type="long" RW="R" BO="U" />
+        <ByteBuffer Include="DirectFloatBufferU" Template="Direct-X-Buffer" Type="float" BO="U" />
+        <ByteBuffer Include="DirectFloatBufferRU" Template="Direct-X-Buffer" Type="float" RW="R" BO="U" />
+        <ByteBuffer Include="DirectDoubleBufferU" Template="Direct-X-Buffer" Type="double" BO="U" />
+        <ByteBuffer Include="DirectDoubleBufferRU" Template="Direct-X-Buffer" Type="double" RW="R" BO="U" />
+
+        <!-- Swapped views of direct byte buffers -->
+        <ByteBuffer Include="DirectCharBufferS" Template="Direct-X-Buffer" Type="char" BO="S" />
+        <ByteBuffer Include="DirectCharBufferRS" Template="Direct-X-Buffer" Type="char" RW="R" BO="S" />
+        <ByteBuffer Include="DirectShortBufferS" Template="Direct-X-Buffer" Type="short" BO="S" />
+        <ByteBuffer Include="DirectShortBufferRS" Template="Direct-X-Buffer" Type="short" RW="R" BO="S" />
+        <ByteBuffer Include="DirectIntBufferS" Template="Direct-X-Buffer" Type="int" BO="S" />
+        <ByteBuffer Include="DirectIntBufferRS" Template="Direct-X-Buffer" Type="int" RW="R" BO="S" />
+        <ByteBuffer Include="DirectLongBufferS" Template="Direct-X-Buffer" Type="long" BO="S" />
+        <ByteBuffer Include="DirectLongBufferRS" Template="Direct-X-Buffer" Type="long" RW="R" BO="S" />
+        <ByteBuffer Include="DirectFloatBufferS" Template="Direct-X-Buffer" Type="float" BO="S" />
+        <ByteBuffer Include="DirectFloatBufferRS" Template="Direct-X-Buffer" Type="float" RW="R" BO="S" />
+        <ByteBuffer Include="DirectDoubleBufferS" Template="Direct-X-Buffer" Type="double" BO="S" />
+        <ByteBuffer Include="DirectDoubleBufferRS" Template="Direct-X-Buffer" Type="double" RW="R" BO="S" />
+
+        <!-- Big-endian views of byte buffers -->
+        <ByteBuffer Include="ByteBufferAsCharBufferB" Template="ByteBufferAs-X-Buffer" Type="char" BO="B" />
+        <ByteBuffer Include="ByteBufferAsCharBufferRB" Template="ByteBufferAs-X-Buffer" Type="char" RW="R" BO="B" />
+        <ByteBuffer Include="ByteBufferAsShortBufferB" Template="ByteBufferAs-X-Buffer" Type="short" BO="B" />
+        <ByteBuffer Include="ByteBufferAsShortBufferRB" Template="ByteBufferAs-X-Buffer" Type="short" RW="R" BO="B" />
+        <ByteBuffer Include="ByteBufferAsIntBufferB" Template="ByteBufferAs-X-Buffer" Type="int" BO="B" />
+        <ByteBuffer Include="ByteBufferAsIntBufferRB" Template="ByteBufferAs-X-Buffer" Type="int" RW="R" BO="B" />
+        <ByteBuffer Include="ByteBufferAsLongBufferB" Template="ByteBufferAs-X-Buffer" Type="long" BO="B" />
+        <ByteBuffer Include="ByteBufferAsLongBufferRB" Template="ByteBufferAs-X-Buffer" Type="long" RW="R" BO="B" />
+        <ByteBuffer Include="ByteBufferAsFloatBufferB" Template="ByteBufferAs-X-Buffer" Type="float" BO="B" />
+        <ByteBuffer Include="ByteBufferAsFloatBufferRB" Template="ByteBufferAs-X-Buffer" Type="float" RW="R" BO="B" />
+        <ByteBuffer Include="ByteBufferAsDoubleBufferB" Template="ByteBufferAs-X-Buffer" Type="double" BO="B" />
+        <ByteBuffer Include="ByteBufferAsDoubleBufferRB" Template="ByteBufferAs-X-Buffer" Type="double" RW="R" BO="B" />
+
+        <!-- Little-endian views of byte buffers -->
+        <ByteBuffer Include="ByteBufferAsCharBufferL" Template="ByteBufferAs-X-Buffer" Type="char" BO="L" />
+        <ByteBuffer Include="ByteBufferAsCharBufferRL" Template="ByteBufferAs-X-Buffer" Type="char" RW="R" BO="L" />
+        <ByteBuffer Include="ByteBufferAsShortBufferL" Template="ByteBufferAs-X-Buffer" Type="short" BO="L" />
+        <ByteBuffer Include="ByteBufferAsShortBufferRL" Template="ByteBufferAs-X-Buffer" Type="short" RW="R" BO="L" />
+        <ByteBuffer Include="ByteBufferAsIntBufferL" Template="ByteBufferAs-X-Buffer" Type="int" BO="L" />
+        <ByteBuffer Include="ByteBufferAsIntBufferRL" Template="ByteBufferAs-X-Buffer" Type="int" RW="R" BO="L" />
+        <ByteBuffer Include="ByteBufferAsLongBufferL" Template="ByteBufferAs-X-Buffer" Type="long" BO="L" />
+        <ByteBuffer Include="ByteBufferAsLongBufferRL" Template="ByteBufferAs-X-Buffer" Type="long" RW="R" BO="L" />
+        <ByteBuffer Include="ByteBufferAsFloatBufferL" Template="ByteBufferAs-X-Buffer" Type="float" BO="L" />
+        <ByteBuffer Include="ByteBufferAsFloatBufferRL" Template="ByteBufferAs-X-Buffer" Type="float" RW="R" BO="L" />
+        <ByteBuffer Include="ByteBufferAsDoubleBufferL" Template="ByteBufferAs-X-Buffer" Type="double" BO="L" />
+        <ByteBuffer Include="ByteBufferAsDoubleBufferRL" Template="ByteBufferAs-X-Buffer" Type="double" RW="R" BO="L" />
+    </ItemGroup>
+
+    <UsingTask TaskName="TransformByteBufferItems" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <ByteBuffer ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+            <OutputItem ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System"/>
+            <Using Namespace="System.IO"/>
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+void fixRw(Hashtable kv, string rw)
+{
+    kv["RW"] = rw;
+    kv["rwkey"] = "rw";
+    if (rw == "R")
+    {
+        kv["rwkey"] = "ro";
+    }
+}
+
+void typesAndBits(Hashtable kv, string type, string bo)
+{
+    kv["a"] = "a";
+    kv["A"] = "A";
+    
+    kv["type"] = type;
+    
+    if (type == "byte")
+    {
+        kv["x"] = "b";
+        kv["Type"] = "Byte";
+        kv["fulltype"] = "byte";
+        kv["Fulltype"] = "Byte";
+        kv["category"] = "integralType";
+        kv["LBPV"] = "0";
+    }
+    
+    if (type == "char")
+    {
+        kv["x"] = "c";
+        kv["Type"] = "Char";
+        kv["fulltype"] = "character";
+        kv["Fulltype"] = "Character";
+        kv["category"] = "integralType";
+        kv["streams"] = "streamableType";
+        kv["streamtype"] = "int";
+        kv["Streamtype"] = "Int";
+        kv["LBPV"] = "1";
+    }
+    
+    if (type == "short")
+    {
+        kv["x"] = "s";
+        kv["Type"] = "Short";
+        kv["fulltype"] = "short";
+        kv["Fulltype"] = "Short";
+        kv["category"] = "integralType";
+        kv["LBPV"] = "1";
+    }
+    
+    if (type == "int")
+    {
+        kv["a"] = "an";
+        kv["A"] = "An";
+        kv["x"] = "i";
+        kv["Type"] = "Int";
+        kv["fulltype"] = "integer";
+        kv["Fulltype"] = "Integer";
+        kv["category"] = "integralType";
+        kv["LBPV"] = "2";
+    }
+    
+    if (type == "long")
+    {
+        kv["x"] = "l";
+        kv["Type"] = "Long";
+        kv["fulltype"] = "long";
+        kv["Fulltype"] = "Long";
+        kv["category"] = "integralType";
+        kv["LBPV"] = "3";
+    }
+    
+    if (type == "float")
+    {
+        kv["x"] = "f";
+        kv["Type"] = "Float";
+        kv["fulltype"] = "float";
+        kv["Fulltype"] = "Float";
+        kv["category"] = "floatingPointType";
+        kv["LBPV"] = "2";
+    }
+    
+    if (type == "double")
+    {
+        kv["x"] = "d";
+        kv["Type"] = "Double";
+        kv["fulltype"] = "double";
+        kv["Fulltype"] = "Double";
+        kv["category"] = "floatingPointType";
+        kv["LBPV"] = "3";
+    }
+    
+    kv["Swaptype"] = kv["Type"];
+    kv["memtype"] = type;
+    kv["Memtype"] = kv["Type"];
+    
+    if (type == "float")
+    {
+        kv["memtype"] = "int";
+        kv["Memtype"] = "Int";
+        if (bo != "U")
+        {
+            kv["Swaptype"] = "Int";
+            kv["fromBits"] = "Float.intBitsToFloat";
+            kv["toBits"] = "Float.floatToRawIntBits";
+        }
+    }
+    
+    if (type == "double")
+    {
+        kv["memtype"] = "long";
+        kv["Memtype"] = "Long";
+        if (bo != "U")
+        {
+            kv["Swaptype"] = "Long";
+            kv["fromBits"] = "Double.longBitsToDouble";
+            kv["toBits"] = "Double.doubleToRawLongBits";
+        }
+    }
+    
+    if (bo == "S")
+    {
+        kv["swap"] = "Bits.swap";
+    }
+}
+
+string genBinOps(string type, string bo, string rw, string nbytes, string nbytesButOne)
+{
+    var kv = new Hashtable();
+
+    typesAndBits(kv, type, bo);
+    fixRw(kv, rw);
+    kv["nbytes"] = nbytes;
+    kv["nbytesButOne"] = nbytesButOne;
+    
+    var args = new List<string>();
+    args.Add($"-Dtype={kv["type"]}");
+    args.Add($"-DType={kv["Type"]}");
+    args.Add($"-Dfulltype={kv["fulltype"]}");
+    args.Add($"-Dmemtype={kv["memtype"]}");
+    args.Add($"-DMemtype={kv["Memtype"]}");
+    args.Add($"-DfromBits={kv["fromBits"]}");
+    args.Add($"-DtoBits={kv["toBits"]}");
+    args.Add($"-DLG_BYTES_PER_VALUE={kv["LBPV"]}");
+    args.Add($"-DBYTES_PER_VALUE=\"{(1 << int.Parse((string)kv["LBPV"]))}\"");
+    args.Add($"-Dnbytes={kv["nbytes"]}");
+    args.Add($"-DnbytesButOne={kv["nbytesButOne"]}");
+    args.Add($"-DRW={kv["RW"]}");
+    args.Add($"-K{kv["rwkey"]}");
+    args.Add($"-Da={kv["a"]}");
+    args.Add($"-be");
+    return string.Join(" ", args);
+}
+                
+var outputItem = new List<ITaskItem>();
+
+foreach (var bb in ByteBuffer)
+{
+    var kv = new Hashtable();
+    kv["type"] = bb.GetMetadata("Type");
+    kv["RW"] = bb.GetMetadata("RW");
+    kv["BO"] = bb.GetMetadata("BO");
+    kv["BIN"] = bb.GetMetadata("Bin");
+
+    fixRw(kv, (string)kv["RW"]);
+    typesAndBits(kv, (string)kv["type"], (string)kv["BO"]);
+    
+    var args = new List<string>();
+    args.Add($"-K{kv["type"]}");
+    args.Add($"-K{kv["category"]}");
+    args.Add($"-K{kv["streams"]}");
+	args.Add($"-Dtype={kv["type"]}");
+	args.Add($"-DType={kv["Type"]}");
+	args.Add($"-Dfulltype={kv["fulltype"]}");
+	args.Add($"-DFulltype={kv["Fulltype"]}");
+	args.Add($"-Dstreamtype={kv["streamtype"]}");
+	args.Add($"-DStreamtype={kv["Streamtype"]}");
+	args.Add($"-Dx={kv["x"]}");
+	args.Add($"-Dmemtype={kv["memtype"]}");
+	args.Add($"-DMemtype={kv["Memtype"]}");
+	args.Add($"-DSwaptype={kv["Swaptype"]}");
+	args.Add($"-DfromBits={kv["fromBits"]}");
+	args.Add($"-DtoBits={kv["toBits"]}");
+	args.Add($"-DLG_BYTES_PER_VALUE={kv["LBPV"]}");
+	args.Add($"-DBYTES_PER_VALUE=\"{(1 << int.Parse((string)kv["LBPV"]))}\"");
+	args.Add($"-DBO={kv["BO"]}");
+	args.Add($"-Dswap={kv["swap"]}");
+	args.Add($"-DRW={kv["RW"]}");
+	args.Add($"-K{kv["rwkey"]}");
+	args.Add($"-Da={kv["a"]}");
+	args.Add($"-DA={kv["A"]}");
+	args.Add($"-Kbo{kv["BO"]}");
+    
+    var t = new TaskItem(bb);
+    t.SetMetadata("CMD", string.Join(" ", args));
+    
+    if ((string)kv["BIN"] == "1")
+    {
+        t.SetMetadata("CMD_char", genBinOps("char", (string)kv["BO"], (string)kv["RW"], "two", "one"));
+        t.SetMetadata("CMD_short", genBinOps("short", (string)kv["BO"], (string)kv["RW"], "two", "one"));
+        t.SetMetadata("CMD_int", genBinOps("int", (string)kv["BO"], (string)kv["RW"], "four", "three"));
+        t.SetMetadata("CMD_long", genBinOps("long", (string)kv["BO"], (string)kv["RW"], "eight", "seven"));
+        t.SetMetadata("CMD_float", genBinOps("float", (string)kv["BO"], (string)kv["RW"], "four", "three"));
+        t.SetMetadata("CMD_double", genBinOps("double", (string)kv["BO"], (string)kv["RW"], "eight", "seven"));
+    }
+    
+    outputItem.Add(t);
+}
+
+OutputItem = outputItem.ToArray();
+
+]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <UsingTask TaskName="CutByteBufferBinItem" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Path ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System"/>
+            <Using Namespace="System.IO"/>
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN") == false));
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="TransformByteBuffersItems">
+        <TransformByteBufferItems ByteBuffer="@(ByteBuffer)">
+            <Output TaskParameter="OutputItem" ItemName="_ByteBuffer" />
+        </TransformByteBufferItems>
+    </Target>
+
+    <Target Name="GenerateByteBuffers" DependsOnTargets="BuildTools;ResolveJava;TransformByteBuffersItems" Inputs="@(BuildScripts);@(BuildToolsClassFiles);$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_ByteBuffer.Template).java.template" Outputs="$(GenSrc)java\nio\%(_ByteBuffer.Identity).java">
+        <Message Text="$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_ByteBuffer.Template).java.template --> $(GenSrc)java\nio\%(_ByteBuffer.Identity).java" />
+
+        <ItemGroup>
+            <_Src Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_ByteBuffer.Template).java.template" />
+            <_Bin Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_ByteBuffer.Template)-bin.java.template" />
+            <_Tmp Include="$(GenSrc)java\nio\%(_ByteBuffer.Identity).java.tmp" />
+            <_Dst Include="$(GenSrc)java\nio\%(_ByteBuffer.Identity).java" />
+        </ItemGroup>
+
+        <MakeDir Directories="$(GenSrc)java\nio\" />
+        <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_ByteBuffer.CMD) &lt; @(_Src) &gt; @(_Tmp)" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_ByteBuffer.CMD) &lt; @(_Src) &gt; @(_Tmp)" />
+
+        <CutByteBufferBinItem Path="@(_Tmp)" Condition=" '%(_ByteBuffer.Bin)' == '1' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_ByteBuffer.CMD_char) &lt; @(_Bin) &gt;&gt; @(_Tmp)" Condition=" '%(_ByteBuffer.CMD_char)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_ByteBuffer.CMD_short) &lt; @(_Bin) &gt;&gt; @(_Tmp)" Condition=" '%(_ByteBuffer.CMD_short)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_ByteBuffer.CMD_int) &lt; @(_Bin) &gt;&gt; @(_Tmp)" Condition=" '%(_ByteBuffer.CMD_int)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_ByteBuffer.CMD_long) &lt; @(_Bin) &gt;&gt; @(_Tmp)" Condition=" '%(_ByteBuffer.CMD_long)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_ByteBuffer.CMD_float) &lt; @(_Bin) &gt;&gt; @(_Tmp)" Condition=" '%(_ByteBuffer.CMD_float)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_ByteBuffer.CMD_double) &lt; @(_Bin) &gt;&gt; @(_Tmp)" Condition=" '%(_ByteBuffer.CMD_double)' != '' " />
+        <WriteLinesToFile File="@(_Tmp)" Lines="}" Condition=" '%(_ByteBuffer.Bin)' == '1' " />
+        
+        <Move SourceFiles="@(_Tmp)" DestinationFiles="@(_Dst)" OverwriteReadOnlyFiles="true" />
+        
+        <ItemGroup>
+            <FileWrites Include="@(_Tmp)" />
+            <FileWrites Include="@(_Dst)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            TransformByteBuffersItems;
+            GenerateByteBuffers;
             $(GenerateSourceDependsOn);
         </GenerateSourceDependsOn>
     </PropertyGroup>
