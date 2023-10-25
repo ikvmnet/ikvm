@@ -1,6 +1,7 @@
 ﻿namespace IKVM.MSBuild.Tasks
 {
     using System;
+    using System.IO;
     using System.Resources;
     using System.Threading;
     using System.Threading.Tasks;
@@ -63,9 +64,17 @@
         /// <returns></returns>
         protected override async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
         {
-            var cli = Cli.Wrap(Environment.ExpandEnvironmentVariables(@"%SystemRoot%\System32\wsl.exe")).WithWorkingDirectory(CurrentWorkingDirectory).WithArguments(AddArguments).WithStandardOutputPipe(PipeTarget.ToDelegate(TrySetPath));
+            var cli = Cli.Wrap(Environment.ExpandEnvironmentVariables(@"%SystemRoot%\System32\wsl.exe"))
+                .WithArguments(AddArguments)
+                .WithStandardOutputPipe(PipeTarget.ToDelegate(TrySetPath));
+
+            // start at recorded working directory in case of relative path
+            if (string.IsNullOrEmpty(CurrentWorkingDirectory) == false && Directory.Exists(CurrentWorkingDirectory) == true)
+                cli = cli.WithWorkingDirectory(CurrentWorkingDirectory);
+
             Log.LogCommandLine(cli.ToString());
             var exe = await cli.ExecuteAsync(cancellationToken);
+
             return true;
         }
 
