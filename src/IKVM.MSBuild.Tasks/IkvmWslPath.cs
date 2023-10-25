@@ -63,7 +63,7 @@
         /// <returns></returns>
         protected override async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
         {
-            var cli = Cli.Wrap("wsl").WithWorkingDirectory(CurrentWorkingDirectory).WithArguments(AddArguments).WithStandardOutputPipe(PipeTarget.ToDelegate(TrySetPath));
+            var cli = Cli.Wrap(Environment.ExpandEnvironmentVariables(@"%SystemRoot%\System32\wsl.exe")).WithWorkingDirectory(CurrentWorkingDirectory).WithArguments(AddArguments).WithStandardOutputPipe(PipeTarget.ToDelegate(TrySetPath));
             Log.LogCommandLine(cli.ToString());
             var exe = await cli.ExecuteAsync(cancellationToken);
             return true;
