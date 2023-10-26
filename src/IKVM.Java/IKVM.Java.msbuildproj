@@ -539,11 +539,21 @@
         </IkvmWslPath>
 
         <!-- WSL version of the hasher temporarily copies to file due to bug in WSL1 -->
-        <WriteTextToFile Path="$(_Hasher)" Text="t=%24(mktemp)%0acat /proc/self/fd/0 > %24t%0a&quot;$(_JavaExe)&quot; build.tools.hasher.Hasher %24@ &lt; %24t &gt; %24t%0acat %24t%0a" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <!--
+        t=$(mktemp)
+        cat /proc/self/fd/0 > $t
+        &quot;$(_JavaExe)&quot; build.tools.hasher.Hasher $@ < $t > $t
+        cat $t
+        rm $t
+        -->
+        <WriteTextToFile Path="$(_Hasher)" Text="t=%24(mktemp)%0acat /proc/self/fd/0 > %24t%0a&quot;$(_JavaExe)&quot; build.tools.hasher.Hasher %24@ &lt; %24t &gt; %24t%0acat %24t%0arm $24t%0a" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
 
         </WriteTextToFile>
 
-        <!-- Non-WSL version of the file launches should simply launch build tool -->
+        <!-- Non-WSL version of the hasher should simply launch build tool -->
+        <!--
+        &quot;$(_JavaExe)&quot; build.tools.hasher.Hasher $@
+        -->
         <WriteTextToFile Path="$(_Hasher)" Text="&quot;$(_JavaExe)&quot; build.tools.hasher.Hasher $@" Condition="!$([MSBuild]::IsOsPlatform('Windows'))">
 
         </WriteTextToFile>
