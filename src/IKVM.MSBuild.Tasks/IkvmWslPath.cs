@@ -28,7 +28,7 @@
         /// <summary>
         /// Optional name of the distro to use.
         /// </summary>
-        public string Distribution { get; set; }
+        public string DistributionName { get; set; }
 
         /// <summary>
         /// Initializes a new instance.
@@ -104,9 +104,10 @@
         /// <param name="builder"></param>
         void AddArguments(ArgumentsBuilder builder)
         {
-            if (Distribution != null)
-                builder.Add("-d").Add(Distribution);
+            if (string.IsNullOrEmpty(DistributionName) == false)
+                builder.Add("-d").Add(DistributionName);
 
+            builder.Add("-e");
             builder.Add("wslpath");
             builder.Add(Path.Replace("\\", "\\\\"), true);
         }

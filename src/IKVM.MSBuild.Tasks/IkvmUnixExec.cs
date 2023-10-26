@@ -40,7 +40,7 @@
         /// <summary>
         /// Optionally the distribution to use.
         /// </summary>
-        public string WslDistribution { get; set; }
+        public string WslDistributionName { get; set; }
 
         /// <summary>
         /// Path to the working directory.
@@ -253,9 +253,10 @@
         /// <param name="builder"></param>
         void BuildWslArguments(ArgumentsBuilder builder)
         {
-            if (WslDistribution != null)
-                builder.Add("-d").Add(WslDistribution);
+            if (string.IsNullOrEmpty(WslDistributionName) == false)
+                builder.Add("-d").Add(WslDistributionName);
 
+            builder.Add("-e");
             builder.Add(Command);
             BuildArguments(builder);
         }

@@ -514,51 +514,47 @@
             <_BuildToolsOutputPath>$([System.IO.Path]::GetFullPath('$(BuildToolsOutputPath)'))</_BuildToolsOutputPath>
         </PropertyGroup>
 
-        <IkvmWslPath Path="$(_Script)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <IkvmWslPath Path="$(_Script)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
             <Output TaskParameter="Path" PropertyName="_Script" />
         </IkvmWslPath>
 
-        <IkvmWslPath Path="$(_TempDir)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <IkvmWslPath Path="$(_TempDir)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
             <Output TaskParameter="Path" PropertyName="_TempDir" />
         </IkvmWslPath>
 
-        <IkvmWslPath Path="$(_JavaExe)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <IkvmWslPath Path="$(_JavaExe)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
             <Output TaskParameter="Path" PropertyName="_JavaExe" />
         </IkvmWslPath>
 
-        <IkvmWslPath Path="$(_ScriptDir)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <IkvmWslPath Path="$(_ScriptDir)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
             <Output TaskParameter="Path" PropertyName="_ScriptDir" />
         </IkvmWslPath>
 
-        <IkvmWslPath Path="$(_StandardCharsetsFile)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <IkvmWslPath Path="$(_StandardCharsetsFile)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
             <Output TaskParameter="Path" PropertyName="_StandardCharsetsFile" />
         </IkvmWslPath>
 
-        <IkvmWslPath Path="$(_DestinationDir)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <IkvmWslPath Path="$(_DestinationDir)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
             <Output TaskParameter="Path" PropertyName="_DestinationDir" />
         </IkvmWslPath>
 
-        <!-- WSL version of the file launcher java.exe through /init -->
-        <WriteLinesToFile File="$(_Hasher)" Lines="echo /init &quot;$(_JavaExe)&quot; build.tools.hasher.Hasher $@;/init &quot;$(_JavaExe)&quot; build.tools.hasher.Hasher $@" Overwrite="true" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <!-- WSL version of the hasher temporarily copies to file due to bug in WSL1 -->
+        <WriteTextToFile Path="$(_Hasher)" Text="t=%24(mktemp)%0acat /proc/self/fd/0 > %24t%0a&quot;$(_JavaExe)&quot; build.tools.hasher.Hasher %24@ &lt; %24t &gt; %24t%0acat %24t%0a" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
 
-        </WriteLinesToFile>
+        </WriteTextToFile>
 
-        <!-- Non-WSL version of the file launches should simply launch java -->
-        <WriteLinesToFile File="$(_Hasher)" Lines="&quot;$(_JavaExe)&quot; build.tools.hasher.Hasher $@" Overwrite="true" Condition="!$([MSBuild]::IsOsPlatform('Windows'))">
+        <!-- Non-WSL version of the file launches should simply launch build tool -->
+        <WriteTextToFile Path="$(_Hasher)" Text="&quot;$(_JavaExe)&quot; build.tools.hasher.Hasher $@" Condition="!$([MSBuild]::IsOsPlatform('Windows'))">
 
-        </WriteLinesToFile>
+        </WriteTextToFile>
 
         <ItemGroup>
             <FileWrites Include="$(_Hasher)" />
         </ItemGroup>
 
-        <IkvmWslPath Path="$(_Hasher)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <IkvmWslPath Path="$(_Hasher)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
             <Output TaskParameter="Path" PropertyName="_Hasher" />
         </IkvmWslPath>
-
-        <IkvmUnixExec Command="chmod" Arguments="+x;$(_Hasher)">
-
-        </IkvmUnixExec>
 
         <ItemGroup>
             <_GenerateStandardCharsetsEnv Include="CLASSPATH" Value="$(_BuildToolsOutputPath)" />
@@ -575,7 +571,7 @@
             <_GenerateStandardCharsetsArg Include="$(_DestinationDir)" />
         </ItemGroup>
 
-        <IkvmUnixExec Command="sh" EnvironmentVariables="@(_GenerateStandardCharsetsEnv)" Arguments="@(_GenerateStandardCharsetsArg)" StandardErrorLogLevel="Warning">
+        <IkvmUnixExec Command="sh" EnvironmentVariables="@(_GenerateStandardCharsetsEnv)" Arguments="@(_GenerateStandardCharsetsArg)" StandardErrorLogLevel="Warning" WslDistributionName="$(WslDistributionName)">
 
         </IkvmUnixExec>
 
@@ -629,19 +625,19 @@
             <_DestinationDir>$(GenSrc)java\nio\%(GenerateExceptionsItem.Identity)</_DestinationDir>
         </PropertyGroup>
 
-        <IkvmWslPath Path="$(_Script)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <IkvmWslPath Path="$(_Script)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
             <Output TaskParameter="Path" PropertyName="_Script" />
         </IkvmWslPath>
 
-        <IkvmWslPath Path="$(_Scripts)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <IkvmWslPath Path="$(_Scripts)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
             <Output TaskParameter="Path" PropertyName="_Scripts" />
         </IkvmWslPath>
 
-        <IkvmWslPath Path="$(_Exceptions)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <IkvmWslPath Path="$(_Exceptions)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
             <Output TaskParameter="Path" PropertyName="_Exceptions" />
         </IkvmWslPath>
 
-        <IkvmWslPath Path="$(_DestinationDir)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <IkvmWslPath Path="$(_DestinationDir)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
             <Output TaskParameter="Path" PropertyName="_DestinationDir" />
         </IkvmWslPath>
 
@@ -658,7 +654,7 @@
         </ItemGroup>
 
         <MakeDir Directories="$(GenSrc)java\nio\%(GenerateExceptionsItem.Identity)" />
-        <IkvmUnixExec Command="sh" EnvironmentVariables="@(_GenerateExceptionsEnv)" Arguments="@(_GenerateExceptionsArg)" StandardErrorLogLevel="Warning" />
+        <IkvmUnixExec Command="sh" EnvironmentVariables="@(_GenerateExceptionsEnv)" Arguments="@(_GenerateExceptionsArg)" StandardErrorLogLevel="Warning" WslDistributionName="$(WslDistributionName)" />
         <Touch Files="$(IntermediateOutputPath)GenerateExceptions.%(GenerateExceptionsItem.Identity).stamp" AlwaysCreate="true" ForceTouch="true" />
 
         <ItemGroup>
@@ -1056,12 +1052,12 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <CalendarSourceItem Include="$(CalendarSourceDir)\common\supplemental\*.xml" />
     </ItemGroup>
 
-    <Target Name="GenerateCalendarData" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildToolsClassFiles);@(CalendarSourceItem)" Outputs="$(GenSrc)\sun\util\cldr\CLDRLocaleDataMetaInfo.java">
+    <Target Name="GenerateCalendarData" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildToolsClassFiles);@(CalendarSourceItem)" Outputs="$(GenSrc)sun\util\cldr\CLDRLocaleDataMetaInfo.java">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
-        <MakeDir Directories="$(GenSrc)\sun\util\cldr\" />
+        <MakeDir Directories="$(GenSrc)sun\util\cldr\" />
         <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.cldrconverter.CLDRConverter -base $(CalendarSourceDir) -o $(GenSrc)" />
         <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.cldrconverter.CLDRConverter -base $(CalendarSourceDir) -o $(GenSrc)" />
     </Target>
@@ -1136,6 +1132,22 @@ $([MSBuild]::Unescape('$(___IkvmWslPathCs)'))
 $([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
 $([MSBuild]::Unescape('$(___IkvmUnixExecCs)'))
             ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <UsingTask TaskName="WriteTextToFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Path ParameterType="System.String" Required="true" />
+            <Text ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System"/>
+            <Using Namespace="System.IO"/>
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+File.WriteAllBytes(Path, Encoding.UTF8.GetBytes(Text));
+                ]]>
             </Code>
         </Task>
     </UsingTask>
