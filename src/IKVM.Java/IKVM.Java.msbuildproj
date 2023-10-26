@@ -539,7 +539,7 @@
         </IkvmWslPath>
 
         <!-- WSL version of the file launcher java.exe through /init -->
-        <WriteLinesToFile File="$(_Hasher)" Lines="/init &quot;$(_JavaExe)&quot; build.tools.hasher.Hasher $@" Overwrite="true" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <WriteLinesToFile File="$(_Hasher)" Lines="echo /init &quot;$(_JavaExe)&quot; build.tools.hasher.Hasher $@;/init &quot;$(_JavaExe)&quot; build.tools.hasher.Hasher $@" Overwrite="true" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
 
         </WriteLinesToFile>
 
