@@ -546,7 +546,7 @@
         cat $t
         rm $t
         -->
-        <WriteTextToFile Path="$(_Hasher)" Text="t=%24(mktemp)%0acat /proc/self/fd/0 > %24t%0a&quot;$(_JavaExe)&quot; build.tools.hasher.Hasher %24@ &lt; %24t &gt; %24t%0acat %24t%0arm $24t%0a" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <WriteTextToFile Path="$(_Hasher)" Text="t=%24(mktemp)%0acat /proc/self/fd/0 > %24t%0a&quot;$(_JavaExe)&quot; build.tools.hasher.Hasher %24@ &lt; %24t &gt; %24t%0acat %24t%0arm %24t%0a" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
 
         </WriteTextToFile>
 
