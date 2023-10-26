@@ -227,7 +227,7 @@
         /// <returns></returns>
         Command BuildCommand()
         {
-            var cmd = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && UseWsl ? Cli.Wrap(Environment.ExpandEnvironmentVariables(@"%SystemRoot%\System32\wsl.exe")).WithArguments(BuildWslArguments) : Cli.Wrap(Command).WithArguments(BuildArguments);
+            var cmd = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && UseWsl ? Cli.Wrap(GetWslExePath()).WithArguments(BuildWslArguments) : Cli.Wrap(Command).WithArguments(BuildArguments);
             cmd = cmd.WithEnvironmentVariables(BuildEnvironmentVariables);
             cmd = cmd.WithValidation(CommandResultValidation.None);
 
@@ -239,6 +239,15 @@
         }
 
         /// <summary>
+        /// Gets the path to wsl.exe based on the current environment.
+        /// </summary>
+        /// <returns></returns>
+        string GetWslExePath()
+        {
+            return Environment.ExpandEnvironmentVariables(RuntimeInformation.ProcessArchitecture == Architecture.X86 ? @"%SystemRoot%\Sysnative\wsl.exe" : @"%SystemRoot%\System32\wsl.exe");
+        }
+
+        /// <summary>
         /// Builds the arguments to execute.
         /// </summary>
         /// <param name="builder"></param>
@@ -247,7 +256,6 @@
             if (WslDistribution != null)
                 builder.Add("-d").Add(WslDistribution);
 
-            builder.Add("--");
             builder.Add(Command);
             BuildArguments(builder);
         }

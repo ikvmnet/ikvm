@@ -3,6 +3,7 @@
     using System;
     using System.IO;
     using System.Resources;
+    using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -64,18 +65,27 @@
         /// <returns></returns>
         protected override async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
         {
-            var cli = Cli.Wrap(Environment.ExpandEnvironmentVariables(@"%SystemRoot%\System32\wsl.exe"))
+            var cmd = Cli.Wrap(GetWslExePath())
                 .WithArguments(AddArguments)
                 .WithStandardOutputPipe(PipeTarget.ToDelegate(TrySetPath));
 
             // start at recorded working directory in case of relative path
-            //if (string.IsNullOrEmpty(CurrentWorkingDirectory) == false && Directory.Exists(CurrentWorkingDirectory) == true)
-            //    cli = cli.WithWorkingDirectory(CurrentWorkingDirectory);
+            if (string.IsNullOrEmpty(CurrentWorkingDirectory) == false && Directory.Exists(CurrentWorkingDirectory) == true)
+                cmd = cmd.WithWorkingDirectory(CurrentWorkingDirectory);
 
-            Log.LogCommandLine(cli.ToString());
-            var exe = await cli.ExecuteAsync(cancellationToken);
+            Log.LogCommandLine(cmd.ToString());
+            var exe = await cmd.ExecuteAsync(cancellationToken);
 
             return true;
+        }
+
+        /// <summary>
+        /// Gets the path to wsl.exe based on the current environment.
+        /// </summary>
+        /// <returns></returns>
+        string GetWslExePath()
+        {
+            return Environment.ExpandEnvironmentVariables(RuntimeInformation.ProcessArchitecture == Architecture.X86 ? @"%SystemRoot%\Sysnative\wsl.exe" : @"%SystemRoot%\System32\wsl.exe");
         }
 
         /// <summary>
