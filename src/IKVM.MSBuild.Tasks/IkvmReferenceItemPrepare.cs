@@ -442,8 +442,8 @@
             // only include major and minor by default
             var major = GetAssemblyVersionComponent(version, 0);
             var minor = GetAssemblyVersionComponent(version, 1);
-            if (minor is not null && major is not null)
-                return new Version(major ?? 0, minor ?? 0, 0, 0);
+            if (major is not null)
+                return new Version((int)major, minor ?? 0, 0, 0);
 
             return null;
         }
@@ -456,7 +456,7 @@
         /// <returns></returns>
         static int? GetAssemblyVersionComponent(ModuleVersion version, int index)
         {
-            return version.Number.Count > index && version.Number[index] is int i ? i : null;
+            return version.Number.Count > index && version.Number[index] is int i ? Math.Min(i, ushort.MaxValue) : null;
         }
 
         /// <summary>
