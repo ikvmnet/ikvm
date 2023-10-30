@@ -4,14 +4,14 @@
 
 The `ikvmc` tool converts Java bytecode to .NET DLL and EXE files.
 
-- [Usage](#usage)
-- [Options](#options)
-- [Notes](#notes)
-- [Examples](#examples)
-  - [Single jar file](#single-jar-file)
-  - [jar file and class files to a single exe](#jar-file-and-class-files-to-a-single-exe)
-  - [jar file to dll and class files to an exe](#jar-file-to-dll-and-class-files-to-an-exe)
-- [Warnings](#warnings)
+- [Usage]
+- [Options]
+- [Notes]
+- [Examples]
+  - [Single jar file]
+  - [jar file and class files to a single exe]
+  - [jar file to dll and class files to an exe]
+- [Warnings]
 
 ## Usage
 
@@ -146,7 +146,7 @@ When processing multiple input `.jar` files that contain duplicate classes / res
 
 - When converting a Java application with `ikvmc`, for best results, list the `.jar`s on the `ikvmc` command line in the same order that they appear in the Java application's classpath.
   See also the concepts of [ClassLoader](../class-loader.md).
-- [ikvmc messages](ikvmc-messages.md)
+- [ikvmc messages]
 
 
 ## Examples
