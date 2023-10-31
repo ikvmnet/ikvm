@@ -18,10 +18,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CliWrap" Version="3.5.0" GeneratePathProperty="true" Private="True" />
-    </ItemGroup>
-
-    <ItemGroup>
         <TransformValues Include="Name" Value="$(ProductName)" />
         <TransformValues Include="Version" Value="$(Version)" />
         <TransformValues Include="FileVersion" Value="$(FileVersion)" />
@@ -735,15 +731,7 @@ public class WriteStandardCharsets : Task
         <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.hasher.Hasher -i Classes &lt; $(IntermediateOutputPath)GenerateStandardCharsets.classes &gt; $(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Classes.java" />
         <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.hasher.Hasher -i -e Cache -t Charset &lt; $(IntermediateOutputPath)GenerateStandardCharsets.classes &gt; $(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Cache.java" />
 
-        <WriteStandardCharsets
-            OutputFile="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.java"
-            Copyright="$(_Copyright)"
-            Package="$(_Package)"
-            Class="$(_Class)"
-            Charsets="@(_Charsets)"
-            AliasesClassFile="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Aliases.java"
-            ClassesClassFile="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Classes.java"
-            CacheClassFile="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Cache.java" />
+        <WriteStandardCharsets OutputFile="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.java" Copyright="$(_Copyright)" Package="$(_Package)" Class="$(_Class)" Charsets="@(_Charsets)" AliasesClassFile="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Aliases.java" ClassesClassFile="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Classes.java" CacheClassFile="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Cache.java" />
 
         <MakeDir Directories="$(GenSrc)sun\nio\cs" />
         <Move SourceFiles="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.java" DestinationFiles="$(GenSrc)sun\nio\cs\StandardCharsets.java" OverwriteReadOnlyFiles="true" />
@@ -805,49 +793,7 @@ public class WriteStandardCharsets : Task
     </ItemGroup>
 
     <Target Name="GenerateExceptions" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildScripts);@(BuildToolsClassFiles)" Outputs="$(IntermediateOutputPath)GenerateExceptions.$([System.String]::Copy('%(GenerateExceptions.Identity)').Replace('.', '_')).stamp">
-        <PropertyGroup>
-            <_Script>$(BuildScriptsDir)genExceptions.sh</_Script>
-            <_Scripts>$(BuildScriptsDir)</_Scripts>
-            <_Exceptions>$(OpenJdkDir)jdk\src\share\classes\java\nio\%(GenerateExceptions.Identity)\exceptions</_Exceptions>
-            <_DestinationDir>$(GenSrc)java\nio\%(GenerateExceptions.Identity)</_DestinationDir>
-        </PropertyGroup>
-
-        <IkvmWslPath Path="$(_Script)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
-            <Output TaskParameter="Path" PropertyName="_Script" />
-        </IkvmWslPath>
-
-        <IkvmWslPath Path="$(_Scripts)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
-            <Output TaskParameter="Path" PropertyName="_Scripts" />
-        </IkvmWslPath>
-
-        <IkvmWslPath Path="$(_Exceptions)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
-            <Output TaskParameter="Path" PropertyName="_Exceptions" />
-        </IkvmWslPath>
-
-        <IkvmWslPath Path="$(_DestinationDir)" DistributionName="$(WslDistributionName)" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
-            <Output TaskParameter="Path" PropertyName="_DestinationDir" />
-        </IkvmWslPath>
-
-        <ItemGroup>
-            <_GenerateExceptionsEnv Include="SCRIPTS" Value="$(_Scripts)" />
-            <_GenerateExceptionsEnv Include="NAWK" Value="nawk" />
-        </ItemGroup>
-
-        <ItemGroup>
-            <_GenerateExceptionsArg Include="-e" />
-            <_GenerateExceptionsArg Include="$(_Script)" />
-            <_GenerateExceptionsArg Include="$(_Exceptions)" />
-            <_GenerateExceptionsArg Include="$(_DestinationDir)" />
-        </ItemGroup>
-
-        <MakeDir Directories="$(GenSrc)java\nio\%(GenerateExceptions.Identity)" />
-        <IkvmUnixExec Command="sh" EnvironmentVariables="@(_GenerateExceptionsEnv)" Arguments="@(_GenerateExceptionsArg)" StandardErrorLogLevel="Warning" WslDistributionName="$(WslDistributionName)" />
-        <Touch Files="$(IntermediateOutputPath)GenerateExceptions.$([System.String]::Copy('%(GenerateExceptions.Identity)').Replace('.', '_')).stamp" AlwaysCreate="true" ForceTouch="true" />
-
-        <ItemGroup>
-            <FileWrites Include="$(GenSrc)java\nio\**\*.java" />
-            <FileWrites Include="$(IntermediateOutputPath)GenerateExceptions.$([System.String]::Copy('%(GenerateExceptions.Identity)').Replace('.', '_')).stamp" />
-        </ItemGroup>
+        <!-- Disabled for now, otherwise we'd have to call out to POSIX shell which is expensive  -->
     </Target>
 
     <PropertyGroup>
@@ -1260,6 +1206,10 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <CalendarSourceItem Include="$(CalendarSourceDir)\common\supplemental\*.xml" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="local\java\nio\channels\" />
+    </ItemGroup>
+
     <Target Name="GenerateCalendarData" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildToolsClassFiles);@(CalendarSourceItem)" Outputs="$(GenSrc)sun\util\cldr\CLDRLocaleDataMetaInfo.java">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
@@ -1311,38 +1261,6 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
             $(CompileJavaDependsOn);
         </CompileJavaDependsOn>
     </PropertyGroup>
-
-    <PropertyGroup>
-        <___IkvmAsyncTaskCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'IKVM.MSBuild.Tasks', 'IkvmAsyncTask.cs'))'))</___IkvmAsyncTaskCs>
-        <___IkvmWslPathCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'IKVM.MSBuild.Tasks', 'IkvmWslPath.cs'))'))</___IkvmWslPathCs>
-        <___IkvmUnixExecCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'IKVM.MSBuild.Tasks', 'IkvmUnixExec.cs'))'))</___IkvmUnixExecCs>
-        <___CliWrapDll Condition=" '$(MSBuildRuntimeType)' == 'Core' And '$(PkgCliWrap)' != '' ">$(PkgCliWrap)\lib\netcoreapp3.0\CliWrap.dll</___CliWrapDll>
-        <___CliWrapDll Condition=" '$(MSBuildRuntimeType)' != 'Core' And '$(PkgCliWrap)' != '' ">$(PkgCliWrap)\lib\net461\CliWrap.dll</___CliWrapDll>
-    </PropertyGroup>
-
-    <UsingTask TaskName="IkvmWslPath" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(___CliWrapDll)' != '' ">
-        <Task>
-            <Reference Include="$(___CliWrapDll)" />
-            <Code Type="Class" Language="cs">
-                <![CDATA[
-$([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
-$([MSBuild]::Unescape('$(___IkvmWslPathCs)'))
-            ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
-    <UsingTask TaskName="IkvmUnixExec" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(___CliWrapDll)' != '' ">
-        <Task>
-            <Reference Include="$(___CliWrapDll)" />
-            <Code Type="Class" Language="cs">
-                <![CDATA[
-$([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
-$([MSBuild]::Unescape('$(___IkvmUnixExecCs)'))
-            ]]>
-            </Code>
-        </Task>
-    </UsingTask>
 
     <UsingTask TaskName="WriteTextToFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
