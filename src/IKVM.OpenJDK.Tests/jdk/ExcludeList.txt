@@ -176,7 +176,7 @@ com/sun/management/HotSpotDiagnosticMXBean/GetDiagnosticOptions.java            
 com/sun/management/HotSpotDiagnosticMXBean/GetVMOption.java                                                             generic-all
 com/sun/management/HotSpotDiagnosticMXBean/SetAllVMOptions.java                                                         generic-all
 com/sun/management/HotSpotDiagnosticMXBean/SetVMOption.java                                                             generic-all
-com/sun/management/OperatingSystemMXBean/TestTotalSwap.sh                                                               generic-all
+com/sun/management/OperatingSystemMXBean/TestTotalSwap.java                                                             generic-all
 com/sun/management/ThreadMXBean/ThreadAllocatedMemory.java                                                              generic-all
 com/sun/management/ThreadMXBean/ThreadAllocatedMemoryArray.java                                                         generic-all
 com/sun/management/ThreadMXBean/ThreadCpuTimeArray.java                                                                 generic-all
@@ -1350,12 +1350,11 @@ java/math/BigInteger/ModPowPowersof2.java                                       
 java/net/Authenticator/B4933582.sh                                                                                      generic-all
 java/net/Authenticator/B6870935.java                                                                                    generic-all
 java/net/Authenticator/Deadlock.java                                                                                    generic-all
-java/net/DatagramSocket/B6411513.java                                                                                   linux-all
+java/net/DatagramSocket/B6411513.java                                                                                   linux-all,macosx-all
 java/net/DatagramSocket/InheritHandle.java                                                                              generic-all
 java/net/DatagramSocket/SetDatagramSocketImplFactory/ADatagramSocket.java                                               generic-all
 java/net/InetAddress/ptr/lookup.sh                                                                                      generic-all
-java/net/NetworkInterface/IPv4Only.java                                                                                 generic-all
-java/net/NetworkInterface/Test.java                                                                                     generic-all
+java/net/InetAddress/IsReachableViaLoopbackTest.java                                                                    linux-all,macosx-all
 java/net/ServerSocket/AcceptCauseFileDescriptorLeak.sh                                                                  generic-all
 java/net/ServerSocket/ThreadStop.java                                                                                   generic-all
 java/net/Socket/OldSocketImpl.sh                                                                                        generic-all
@@ -1371,7 +1370,7 @@ java/net/URLPermission/OpenURL.java                                             
 java/net/URLPermission/nstest/lookup.sh                                                                                 generic-all
 java/nio/Buffer/Chew.java                                                                                               generic-all
 java/nio/Buffer/LimitDirectMemory.sh                                                                                    generic-all
-java/nio/MappedByteBuffer/Truncate.java                                                                                 linux-all
+java/nio/MappedByteBuffer/Truncate.java                                                                                 linux-all,macosx-all
 java/nio/channels/AsyncCloseAndInterrupt.java                                                                           generic-all
 java/nio/channels/AsynchronousChannelGroup/Basic.java                                                                   generic-all
 java/nio/channels/AsynchronousChannelGroup/GroupOfOne.java                                                              generic-all
@@ -1387,10 +1386,9 @@ java/nio/channels/DatagramChannel/SocketOptionTests.java                        
 java/nio/channels/DatagramChannel/SelectWhenRefused.java                                                                generic-all
 java/nio/channels/FileChannel/AtomicAppend.java                                                                         generic-all
 java/nio/channels/FileChannel/Lock.java                                                                                 generic-all
-java/nio/channels/FileChannel/MapOverEnd.java                                                                           linux-all
-java/nio/channels/FileChannel/Size.java                                                                                 linux-all
+java/nio/channels/FileChannel/MapOverEnd.java                                                                           linux-all,macosx-all
+java/nio/channels/FileChannel/Size.java                                                                                 linux-all,macosx-all
 java/nio/channels/FileChannel/Truncate.java                                                                             generic-all
-java/nio/channels/FileChannel/Write.java                                                                                generic-all
 java/nio/channels/Selector/CloseThenRegister.java                                                                       generic-all
 java/nio/channels/Selector/OutOfBand.java                                                                               generic-all
 java/nio/channels/Selector/RegAfterPreClose.java                                                                        generic-all
@@ -1408,16 +1406,16 @@ java/nio/charset/coders/CheckSJISMappingProp.sh                                 
 java/nio/charset/spi/basic.sh                                                                                           generic-all
 java/nio/file/DirectoryStream/Basic.java                                                                                generic-all
 java/nio/file/Files/CheckPermissions.java                                                                               generic-all
-java/nio/file/Files/CopyAndMove.java                                                                                    linux-all
+java/nio/file/Files/CopyAndMove.java                                                                                    linux-all,macosx-all
 java/nio/file/Files/InterruptCopy.java                                                                                  generic-all
-java/nio/file/Files/Misc.java                                                                                           linux-all
+java/nio/file/Files/Misc.java                                                                                           linux-all,macosx-all
 java/nio/file/Files/NameLimits.java                                                                                     generic-all
-java/nio/file/Files/SBC.java                                                                                            linux-all
+java/nio/file/Files/SBC.java                                                                                            linux-all,macosx-all
 java/nio/file/Files/delete_on_close.sh                                                                                  generic-all
 java/nio/file/Files/walkFileTree/find.sh                                                                                generic-all
-java/nio/file/Path/Misc.java                                                                                            linux-all
+java/nio/file/Path/Misc.java                                                                                            linux-all,macosx-all
 java/nio/file/Path/PathOps.java                                                                                         windows-all
-java/nio/file/WatchService/Basic.java                                                                                   linux-all
+java/nio/file/WatchService/Basic.java                                                                                   linux-all,macosx-all
 java/rmi/Naming/DefaultRegistryPort.java                                                                                generic-all
 java/rmi/Naming/LookupIPv6.java                                                                                         generic-all
 java/rmi/Naming/LookupNameWithColon.java                                                                                generic-all
@@ -1977,6 +1975,7 @@ javax/print/attribute/SupportedPrintableAreas.java                              
 javax/print/attribute/autosense/PrintAutoSenseData.java                                                                 generic-all
 javax/print/PrintSEUmlauts/PrintSEUmlauts.java                                                                          generic-all
 javax/rmi/ssl/SSLSocketParametersTest.sh                                                                                generic-all
+javax/rmi/PortableRemoteObject/ConcurrentHashMapTest.java                                                               generic-all
 javax/script/ProviderTest.sh                                                                                            generic-all
 javax/security/auth/Subject/doAs/Test.sh                                                                                generic-all
 javax/security/auth/kerberos/ServicePermissionTest.java                                                                 generic-all
@@ -3141,20 +3140,20 @@ java/beans/Introspector/Test7195106.java                                        
 java/beans/Introspector/Test8027905.java                                                                                generic-all
 
 # we never implemented memory MX stuff for Linux
-com/sun/management/OperatingSystemMXBean/GetCommittedVirtualMemorySize.java                                             linux-all
-com/sun/management/OperatingSystemMXBean/GetFreePhysicalMemorySize.java                                                 linux-all
-com/sun/management/OperatingSystemMXBean/GetFreeSwapSpaceSize.java                                                      linux-all
-com/sun/management/OperatingSystemMXBean/GetTotalPhysicalMemorySize.java                                                linux-all
+com/sun/management/OperatingSystemMXBean/GetCommittedVirtualMemorySize.java                                             linux-all,macosx-all
+com/sun/management/OperatingSystemMXBean/GetFreePhysicalMemorySize.java                                                 linux-all,macosx-all
+com/sun/management/OperatingSystemMXBean/GetFreeSwapSpaceSize.java                                                      linux-all,macosx-all
+com/sun/management/OperatingSystemMXBean/GetTotalPhysicalMemorySize.java                                                linux-all,macosx-all
 
-demo/zipfs/ZFSTests.java                                                                                                linux-all
+demo/zipfs/ZFSTests.java                                                                                                linux-all,macosx-all
 
-java/io/FileDescriptor/Sharing.java                                                                                     linux-all
-java/io/FileInputStream/LargeFileAvailable.java                                                                         linux-all
-java/io/pathNames/GeneralSolaris.java                                                                                   linux-all
+java/io/FileDescriptor/Sharing.java                                                                                     linux-all,macosx-all
+java/io/FileInputStream/LargeFileAvailable.java                                                                         linux-all,macosx-all
+java/io/pathNames/GeneralSolaris.java                                                                                   linux-all,macosx-all
 java/io/RandomAccessFile/ReadWritePrimitives.java                                                                       linux-all
 java/io/FileOutputStream/FileOpen.sh                                                                                    linux-all
 
-java/lang/ProcessBuilder/DestroyTest.java                                                                               linux-all
+java/lang/ProcessBuilder/DestroyTest.java                                                                               linux-all,macosx-all
 java/lang/ProcessBuilder/Zombies.java                                                                                   linux-all
 java/lang/Runtime/exec/ConcurrentRead.java                                                                              linux-all
 java/lang/Runtime/exec/LotsOfDestroys.java                                                                              linux-all
@@ -3163,15 +3162,13 @@ java/lang/Runtime/exec/ExecWithInput.java                                       
 java/lang/Runtime/exec/Status.java                                                                                      linux-all
 
 java/net/BindException/Test.java                                                                                        linux-all
-java/net/ipv6tests/B6521014.java                                                                                        linux-all
-java/net/InetAddress/IsReachable.java                                                                                   linux-all
-java/net/Inet4Address/PingThis.java                                                                                     linux-all
+java/net/ipv6tests/B6521014.java                                                                                        macosx-all
 java/net/PortUnreachableException/Concurrent.java                                                                       linux-all
 
-java/net/Socket/InheritHandle.java                                                                                      linux-all
+java/net/Socket/InheritHandle.java                                                                                      linux-all,macosx-all
 java/net/Socket/LingerTest.java                                                                                         linux-all
 java/net/Socket/NullHost.java                                                                                           linux-all
-java/net/Socket/asyncClose/AsyncClose.java                                                                              linux-all
+java/net/Socket/asyncClose/AsyncClose.java                                                                              linux-all,macosx-all
 java/net/Socket/setReuseAddress/Basic.java                                                                              linux-all
 
 java/net/URL/B5086147.sh                                                                                                linux-all
@@ -3181,25 +3178,25 @@ java/net/URLConnection/Responses.java                                           
 java/net/URLConnection/6212146/test.sh                                                                                  linux-all
 
 java/nio/channels/AsynchronousChannelGroup/Unbounded.java                                                               linux-all
-java/nio/channels/AsynchronousServerSocketChannel/Basic.java                                                            linux-all
+java/nio/channels/AsynchronousServerSocketChannel/Basic.java                                                            linux-all,macosx-all
 java/nio/channels/AsynchronousSocketChannel/DieBeforeComplete.java                                                      linux-all
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java                                                         linux-all
 java/nio/channels/Channels/Basic2.java                                                                                  linux-all
-java/nio/channels/DatagramChannel/EmptyBuffer.java                                                                      linux-all
-java/nio/channels/DatagramChannel/Promiscuous.java                                                                      linux-all
-java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     linux-all
-java/nio/channels/FileChannel/Release.java                                                                              linux-all
-java/nio/channels/FileChannel/TryLock.java                                                                              linux-all
+java/nio/channels/DatagramChannel/EmptyBuffer.java                                                                      linux-all,macosx-all
+java/nio/channels/DatagramChannel/Promiscuous.java                                                                      linux-all,macosx-all
+java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     linux-all,macosx-all
+java/nio/channels/FileChannel/Release.java                                                                              linux-all,macosx-all
+java/nio/channels/FileChannel/TryLock.java                                                                              linux-all,macosx-all
 java/nio/channels/Selector/Alias.java                                                                                   linux-all
 java/nio/channels/Selector/BasicAccept.java                                                                             linux-all
 java/nio/channels/Selector/BasicConnect.java                                                                            linux-all
-java/nio/channels/Selector/CloseWhenKeyIdle.java                                                                        linux-all
+java/nio/channels/Selector/CloseWhenKeyIdle.java                                                                        linux-all,macosx-all
 java/nio/channels/Selector/Connect.java                                                                                 linux-all
-java/nio/channels/SocketChannel/AdaptSocket.java                                                                        linux-all
-java/nio/channels/SocketChannel/AsyncCloseChannel.java                                                                  linux-all
+java/nio/channels/SocketChannel/AdaptSocket.java                                                                        linux-all,macosx-all
+java/nio/channels/SocketChannel/AsyncCloseChannel.java                                                                  linux-all,macosx-all
 java/nio/channels/SocketChannel/Basic.java                                                                              linux-all
 java/nio/channels/SocketChannel/CloseDuringWrite.java                                                                   linux-all
-java/nio/channels/SocketChannel/Shutdown.java                                                                           linux-all
+java/nio/channels/SocketChannel/Shutdown.java                                                                           linux-all,macosx-all
 java/nio/channels/SocketChannel/LocalAddress.java                                                                       linux-all
 java/nio/channels/SocketChannel/Connect.java                                                                            linux-all
 
@@ -3209,15 +3206,15 @@ java/nio/charset/Charset/AvailableCharsetNames.java                             
 # COMPOUND_TEXT is compiled in all cases, but only available on !Windows, which breaks tests on Windows
 java/nio/charset/Charset/NIOCharsetAvailabilityTest.java                                                                windows-all
 
-java/nio/file/attribute/DosFileAttributeView/Basic.java                                                                 linux-all
-java/nio/file/Files/FileAttributes.java                                                                                 linux-all
-java/nio/file/FileStore/Basic.java                                                                                      linux-all
+java/nio/file/attribute/DosFileAttributeView/Basic.java                                                                 linux-all,macosx-all
+java/nio/file/Files/FileAttributes.java                                                                                 linux-all,macosx-all
+java/nio/file/FileStore/Basic.java                                                                                      linux-all,macosx-all
 # posix isn't supported on IKVM
-java/nio/file/FileSystem/Basic.java                                                                                     linux-all
-java/nio/file/Path/UriImportExport.java                                                                                 linux-all
+java/nio/file/FileSystem/Basic.java                                                                                     linux-all,macosx-all
+java/nio/file/Path/UriImportExport.java                                                                                 linux-all,macosx-all
 
 sun/management/jmxremote/LocalRMIServerSocketFactoryTest.java                                                           linux-all
-sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh                                                               linux-all
+sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh                                                               linux-all,macosx-all
 sun/net/ftp/FtpGetContent.java                                                                                          linux-all
 
 # likely fails because java.net.preferIPv4Stack isn't implemented
@@ -3231,21 +3228,21 @@ sun/nio/cs/FindOneCharEncoderBugs.java                                          
 sun/nio/cs/DecoderOverflow.java                                                                                         linux-all
 sun/nio/cs/EncodingNothing.java                                                                                         linux-all
 
-sun/nio/ch/SelProvider.java                                                                                             linux-all
+sun/nio/ch/SelProvider.java                                                                                             linux-all,macosx-all
 
 sun/rmi/rmic/extraCompilation/run.sh                                                                                    linux-all
 
-sun/security/krb5/ccache/DefaultFile.java                                                                               linux-all
+sun/security/krb5/ccache/DefaultFile.java                                                                               linux-all,macosx-all
 sun/security/provider/PolicyFile/CanonPath.java                                                                         linux-all
 sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                                    linux-all
 
-sun/tools/native2ascii/Permission.java                                                                                  linux-all
-tools/jar/UpdateJar.java                                                                                                linux-all
+sun/tools/native2ascii/Permission.java                                                                                  linux-all,macosx-all
+tools/jar/UpdateJar.java                                                                                                linux-all,macosx-all
 
 # uses System.Drawing, not available on Linux
-javax/imageio/plugins/png/MergeStdCommentTest.java                                                                      linux-all
-javax/imageio/EmptyFileTest.java                                                                                        linux-all
-sun/java2d/cmm/ColorConvertOp/InvalidRenderIntentTest.java                                                              linux-all
+javax/imageio/plugins/png/MergeStdCommentTest.java                                                                      linux-all,macosx-all
+javax/imageio/EmptyFileTest.java                                                                                        linux-all,macosx-all
+sun/java2d/cmm/ColorConvertOp/InvalidRenderIntentTest.java                                                              linux-all,macosx-all
 
 # uses Win32 specific stuff, not available on Linux
 javax/print/PrintServiceLookup/CountPrintServices.java                                                                  linux-all
@@ -3416,6 +3413,73 @@ java/beans/Introspector/8159696/UnloadClassBeanInfo.java                        
 
 # fails with -Xbootclasspath/a (needs implement)
 java/lang/invoke/CustomizedLambdaFormTest.java                                                                          generic-all
+
+# probably related to field or method order
+javax/xml/bind/jxc/8073519/SchemagenErrorReporting.java                                                                 generic-all
+
+# Broken on OS X
+com/sun/corba/transport/KeepAliveSockets.java                                                                           macosx-all
+com/sun/crypto/provider/Cipher/AES/TestISO10126Padding.java                                                             macosx-all
+com/sun/crypto/provider/Cipher/Blowfish/BlowfishTestVector.java                                                         macosx-all
+com/sun/crypto/provider/Cipher/CTR/CounterMode.java                                                                     macosx-all
+com/sun/net/httpserver/bugs/B6393710.java                                                                               macosx-all
+java/awt/FontClass/HelvLtOblTest.java                                                                                   macosx-all
+java/net/DatagramPacket/ReuseBuf.java                                                                                   macosx-all
+java/net/DatagramSocket/PortUnreachable.java                                                                            macosx-all
+java/net/DatagramSocket/Send12k.java                                                                                    macosx-all
+java/net/DatagramSocket/SendSize.java                                                                                   macosx-all
+java/net/MulticastSocket/B6427403.java                                                                                  macosx-all
+java/net/MulticastSocket/JoinGroup.java                                                                                 macosx-all
+java/net/MulticastSocket/Leave.java                                                                                     macosx-all
+java/net/MulticastSocket/Promiscuous.java                                                                               macosx-all
+java/net/MulticastSocket/SetOutgoingIf.java                                                                             macosx-all
+java/net/PlainSocketImpl/SetBufferSize.java                                                                             macosx-all
+java/net/Socket/LinkLocal.java                                                                                          macosx-all
+java/net/Socket/SetSoLinger.java                                                                                        macosx-all
+java/net/Socket/TrafficClass.java                                                                                       macosx-all
+java/net/ipv6tests/TcpTest.java                                                                                         macosx-all
+java/net/ipv6tests/UdpTest.java                                                                                         macosx-all
+java/nio/MappedByteBuffer/Basic.java                                                                                    macosx-all
+java/nio/MappedByteBuffer/Force.java                                                                                    macosx-all
+java/nio/channels/AsynchronousSocketChannel/Basic.java                                                                  macosx-all
+java/nio/channels/AsynchronousFileChannel/Basic.java                                                                    macosx-all
+java/nio/channels/DatagramChannel/AdaptDatagramSocket.java                                                              macosx-all
+java/nio/channels/DatagramChannel/BasicMulticastTests.java                                                              macosx-all
+java/nio/channels/DatagramChannel/Connect.java                                                                          macosx-all
+java/nio/channels/DatagramChannel/ConnectedSend.java                                                                    macosx-all
+java/nio/channels/DatagramChannel/IsConnected.java                                                                      macosx-all
+java/nio/channels/DatagramChannel/NoSender.java                                                                         macosx-all
+java/nio/channels/DatagramChannel/NotBound.java                                                                         macosx-all
+java/nio/channels/DatagramChannel/ReceiveISA.java                                                                       macosx-all
+java/nio/channels/DatagramChannel/Refused.java                                                                          macosx-all
+java/nio/channels/DatagramChannel/SRTest.java                                                                           macosx-all
+java/nio/channels/DatagramChannel/Sender.java                                                                           macosx-all
+java/nio/channels/DatagramChannel/ThereCanBeOnlyOne.java                                                                macosx-all
+java/nio/channels/Selector/RacyDeregister.java                                                                          macosx-all
+java/nio/channels/ServerSocketChannel/NonBlockingAccept.java                                                            macosx-all
+java/nio/channels/ServerSocketChannel/SocketOptionTests.java                                                            macosx-all
+java/nio/channels/SocketChannel/SendUrgentData.java                                                                     macosx-all
+java/nio/channels/SocketChannel/VectorParams.java                                                                       macosx-all
+java/nio/charset/coders/Check.java                                                                                      macosx-all
+java/nio/file/Path/MacPathTest.java                                                                                     macosx-all
+java/nio/file/WatchService/LotsOfCancels.java                                                                           macosx-all
+java/nio/file/WatchService/LotsOfEvents.java                                                                            macosx-all
+java/nio/file/WatchService/MayFlies.java                                                                                macosx-all
+java/util/prefs/AddNodeChangeListener.java                                                                              macosx-all
+java/util/prefs/CommentsInXml.java                                                                                      macosx-all
+java/util/prefs/ConflictInFlush.java                                                                                    macosx-all
+java/util/prefs/ExportNode.java                                                                                         macosx-all
+java/util/prefs/ExportSubtree.java                                                                                      macosx-all
+java/util/prefs/RemoveNullKeyCheck.java                                                                                 macosx-all
+java/util/prefs/RemoveReadOnlyNode.java                                                                                 macosx-all
+java/util/prefs/RemoveUnregedListener.java                                                                              macosx-all
+jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
+sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
+sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java                                        macosx-all
+java/net/InetAddress/CheckJNI.java                                                                                      macosx-all
+java/net/Inet6Address/B6206527.java                                                                                     macosx-all
+java/net/Inet6Address/B6558853.java                                                                                     macosx-all
+
 
 # Shell fails on Windows
 sun/security/tools/keytool/keyalg.sh                                                                                    windows-all

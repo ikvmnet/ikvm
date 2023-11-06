@@ -5,8 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using IKVM.Tools.Runner;
-using IKVM.Tools.Runner.Compiler;
+using IKVM.Tools.Runner.Importer;
 
 using Microsoft.Build.Framework;
 
@@ -36,30 +35,63 @@ namespace IKVM.MSBuild.Tasks
         [Required]
         public string Output { get; set; }
 
+        /// <summary>
+        /// Name of the assembly to output.
+        /// </summary>
         public string Assembly { get; set; }
 
+        /// <summary>
+        /// Version of the assembly to output.
+        /// </summary>
         public string Version { get; set; }
 
+        /// <summary>
+        /// Target type of the assembly to output.
+        /// </summary>
         public string Target { get; set; }
 
+        /// <summary>
+        /// Platform of the assembly to output.
+        /// </summary>
         public string Platform { get; set; }
 
+        /// <summary>
+        /// Key file with which to strong name the generated assembly.
+        /// </summary>
         public string KeyFile { get; set; }
 
+        /// <summary>
+        /// Key with which to strong name the generated assembly.
+        /// </summary>
         public string Key { get; set; }
 
         public bool DelaySign { get; set; }
 
+        /// <summary>
+        /// References to use when compiling.
+        /// </summary>
         public ITaskItem[] References { get; set; }
 
         public ITaskItem[] Recurse { get; set; }
 
+        /// <summary>
+        /// Path to class exclusion file.
+        /// </summary>
         public string Exclude { get; set; }
 
+        /// <summary>
+        /// File version of assembly to output.
+        /// </summary>
         public string FileVersion { get; set; }
 
+        /// <summary>
+        /// Path to the Win32 icon file.
+        /// </summary>
         public string Win32Icon { get; set; }
 
+        /// <summary>
+        /// Path to the Win32 manifest file.
+        /// </summary>
         public string Win32Manifest { get; set; }
 
         public ITaskItem[] Resources { get; set; }
@@ -124,19 +156,88 @@ namespace IKVM.MSBuild.Tasks
 
         public bool Static { get; set; }
 
+        /// <summary>
+        /// Paths to the assembly attributes file.
+        /// </summary>
         public ITaskItem[] AssemblyAttributes { get; set; }
 
+        /// <summary>
+        /// Path to the IKVM.Runtime assembly to incorporate.
+        /// </summary>
         public string Runtime { get; set; }
-
-        public string JNI { get; set; }
 
         public string WarningLevel { get; set; }
 
         public bool NoParameterReflection { get; set; }
 
+        /// <summary>
+        /// Path to the map.xml file to use.
+        /// </summary>
         public string Remap { get; set; }
 
-        string GetAbsolutePathIfNotNull(string path) => path != null ? Path.GetFullPath(path) : null;
+        public override bool Execute()
+        {
+            if (ResponseFile != null)
+                ResponseFile = Path.GetFullPath(ResponseFile);
+
+            if (Output != null)
+                Output = Path.GetFullPath(Output);
+
+            if (KeyFile != null)
+                KeyFile = Path.GetFullPath(KeyFile);
+
+            if (References != null)
+                foreach (var reference in References)
+                    if (reference.ItemSpec != null)
+                        reference.ItemSpec = Path.GetFullPath(reference.ItemSpec);
+
+            if (Lib != null)
+                foreach (var lib in Lib)
+                    if (lib.ItemSpec != null)
+                        lib.ItemSpec = Path.GetFullPath(lib.ItemSpec);
+
+            if (Resources != null)
+                foreach (var i in Resources)
+                    if (i.ItemSpec != null)
+                        i.ItemSpec = Path.GetFullPath(i.ItemSpec);
+
+            if (ExternalResources != null)
+                foreach (var i in ExternalResources)
+                    if (i.ItemSpec != null)
+                        i.ItemSpec = Path.GetFullPath(i.ItemSpec);
+
+            if (AssemblyAttributes != null)
+                foreach (var i in AssemblyAttributes)
+                    if (i.ItemSpec != null)
+                        i.ItemSpec = Path.GetFullPath(i.ItemSpec);
+
+            if (Runtime != null)
+                Runtime = Path.GetFullPath(Runtime);
+
+            if (Remap != null)
+                Remap = Path.GetFullPath(Remap);
+
+            if (Input != null)
+                foreach (var i in Input)
+                    if (i.ItemSpec != null)
+                        i.ItemSpec = Path.GetFullPath(i.ItemSpec);
+
+            if (Recurse != null)
+                foreach (var i in Recurse)
+                    if (i.ItemSpec != null)
+                        i.ItemSpec = Path.GetFullPath(i.ItemSpec);
+
+            if (Exclude != null)
+                Exclude = Path.GetFullPath(Exclude);
+
+            if (Win32Icon != null)
+                Win32Icon = Path.GetFullPath(Win32Icon);
+
+            if (Win32Manifest != null)
+                Win32Manifest = Path.GetFullPath(Win32Manifest);
+
+            return base.Execute();
+        }
 
         protected override async Task<bool> ExecuteAsync(IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken)
         {
@@ -146,44 +247,44 @@ namespace IKVM.MSBuild.Tasks
                 Debug = false;
             }
 
-            var options = new IkvmCompilerOptions();
-            options.ResponseFile = GetAbsolutePathIfNotNull(ResponseFile);
-            options.Output = GetAbsolutePathIfNotNull(Output);
+            var options = new IkvmImporterOptions();
+            options.ResponseFile = ResponseFile;
+            options.Output = Output;
             options.Assembly = Assembly;
             options.Version = Version;
 
             options.Target = Target?.ToLowerInvariant() switch
             {
                 null => null,
-                "library" => IkvmCompilerTarget.Library,
-                "exe" => IkvmCompilerTarget.Exe,
-                "winexe" => IkvmCompilerTarget.WinExe,
-                "module" => IkvmCompilerTarget.Module,
+                "library" => IkvmImporterTarget.Library,
+                "exe" => IkvmImporterTarget.Exe,
+                "winexe" => IkvmImporterTarget.WinExe,
+                "module" => IkvmImporterTarget.Module,
                 _ => throw new NotImplementedException(),
             };
 
             options.Platform = Platform?.ToLowerInvariant() switch
             {
                 null => null,
-                "anycpu" => IkvmCompilerPlatform.AnyCPU,
-                "anycpu32bitpreferred" => IkvmCompilerPlatform.AnyCPU32BitPreferred,
-                "x86" => IkvmCompilerPlatform.X86,
-                "x64" => IkvmCompilerPlatform.X64,
-                "arm" => IkvmCompilerPlatform.ARM,
-                "arm64" => IkvmCompilerPlatform.ARM64,
+                "anycpu" => IkvmImporterPlatform.AnyCPU,
+                "anycpu32bitpreferred" => IkvmImporterPlatform.AnyCPU32BitPreferred,
+                "x86" => IkvmImporterPlatform.X86,
+                "x64" => IkvmImporterPlatform.X64,
+                "arm" => IkvmImporterPlatform.ARM,
+                "arm64" => IkvmImporterPlatform.ARM64,
                 _ => throw new NotImplementedException(),
             };
 
-            options.KeyFile = GetAbsolutePathIfNotNull(KeyFile);
+            options.KeyFile = KeyFile;
             options.Key = Key;
             options.DelaySign = DelaySign;
 
-            if (References is not null)
-                foreach (var reference in References.Select(i => GetAbsolutePathIfNotNull(i.ItemSpec)))
-                    if (options.References.Contains(reference) == false)
-                        options.References.Add(reference);
+            if (References != null)
+                foreach (var reference in References)
+                    if (options.References.Contains(reference.ItemSpec) == false)
+                        options.References.Add(reference.ItemSpec);
 
-            if (Recurse is not null)
+            if (Recurse != null)
                 foreach (var recurse in Recurse)
                     options.Recurse.Add(recurse.ItemSpec);
 
@@ -194,11 +295,11 @@ namespace IKVM.MSBuild.Tasks
 
             if (Resources is not null)
                 foreach (var resource in Resources)
-                    options.Resources.Add(new IkvmCompilerResourceItem(GetAbsolutePathIfNotNull(resource.ItemSpec), resource.GetMetadata("ResourcePath")));
+                    options.Resources.Add(new IkvmImporterResourceItem(resource.ItemSpec, resource.GetMetadata("ResourcePath")));
 
             if (ExternalResources is not null)
                 foreach (var resource in ExternalResources)
-                    options.ExternalResources.Add(new IkvmCompilerExternalResourceItem(GetAbsolutePathIfNotNull(resource.ItemSpec), resource.GetMetadata("ResourcePath")));
+                    options.ExternalResources.Add(new IkvmImporterExternalResourceItem(resource.ItemSpec, resource.GetMetadata("ResourcePath")));
 
             options.CompressResources = CompressResources;
             options.Debug = Debug;
@@ -209,13 +310,13 @@ namespace IKVM.MSBuild.Tasks
             options.RemoveAssertions = RemoveAssertions;
             options.StrictFinalFieldSemantics = StrictFinalFieldSemantics;
 
-            if (NoWarn is not null)
+            if (NoWarn != null)
                 foreach (var i in NoWarn.Split(';'))
                     options.NoWarn.Add(i);
 
             options.WarnAsError = WarnAsError;
 
-            if (WarnAsErrorWarnings is not null)
+            if (WarnAsErrorWarnings != null)
                 foreach (var i in WarnAsErrorWarnings.Split(';'))
                     options.WarnAsErrorWarnings.Add(i);
 
@@ -224,21 +325,21 @@ namespace IKVM.MSBuild.Tasks
             options.SrcPath = SrcPath;
             options.Apartment = Apartment;
 
-            if (SetProperties is not null)
+            if (SetProperties != null)
                 foreach (var p in SetProperties.Split(new[] { ';' }).Select(i => i.Split(new[] { '=' }, 2)))
                     options.SetProperties[p[0]] = p.Length == 2 ? p[1] : "";
 
             options.NoStackTraceInfo = NoStackTraceInfo;
 
-            if (XTrace is not null)
+            if (XTrace != null)
                 foreach (var i in XTrace.Split(';'))
                     options.XTrace.Add(i);
 
-            if (XMethodTrace is not null)
+            if (XMethodTrace != null)
                 foreach (var i in XMethodTrace.Split(';'))
                     options.XMethodTrace.Add(i);
 
-            if (PrivatePackages is not null)
+            if (PrivatePackages != null)
                 foreach (var i in PrivatePackages.Split(';'))
                     options.PrivatePackages.Add(i);
 
@@ -249,32 +350,32 @@ namespace IKVM.MSBuild.Tasks
             options.NoPeerCrossReference = NoPeerCrossReference;
             options.NoStdLib = NoStdLib;
 
-            if (Lib is not null)
+            if (Lib != null)
                 foreach (var i in Lib)
-                    options.Lib.Add(GetAbsolutePathIfNotNull(i.ItemSpec));
+                    options.Lib.Add(i.ItemSpec);
 
             options.HighEntropyVA = HighEntropyVA;
             options.Static = Static;
 
-            if (AssemblyAttributes is not null)
+            if (AssemblyAttributes != null)
                 foreach (var i in AssemblyAttributes)
                     options.AssemblyAttributes.Add(i.ItemSpec);
 
-            options.Runtime = GetAbsolutePathIfNotNull(Runtime);
+            options.Runtime = Runtime;
 
-            if (options.WarningLevel is not null)
+            if (options.WarningLevel != null)
                 options.WarningLevel = int.Parse(WarningLevel);
 
             options.NoParameterReflection = NoParameterReflection;
-            options.Remap = GetAbsolutePathIfNotNull(Remap);
+            options.Remap = Remap;
             options.NoLogo = true;
 
             if (Input != null)
                 foreach (var i in Input)
-                    options.Input.Add(GetAbsolutePathIfNotNull(i.ItemSpec));
+                    options.Input.Add(i.ItemSpec);
 
             // kick off the launcher with the configured options
-            return await new IkvmCompilerLauncher(ToolPath, writer).ExecuteAsync(options, cancellationToken) == 0;
+            return await new IkvmImporterLauncher(ToolPath, writer).ExecuteAsync(options, cancellationToken) == 0;
         }
 
     }

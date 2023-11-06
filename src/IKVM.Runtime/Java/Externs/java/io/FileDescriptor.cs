@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
+using System.Net.Sockets;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
@@ -17,15 +17,69 @@ namespace IKVM.Java.Externs.java.io
 #if FIRST_PASS == false
 
         static FileDescriptorAccessor fileDescriptorAccessor;
+
         static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
 
 #endif
 
-        [DllImport("kernel32")]
-        static extern IntPtr GetStdHandle(int nStdHandle);
+        /// <summary>
+        /// Implements the native method 'getStream'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static Stream getStream(object self)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return FileDescriptorAccessor.GetStream(self);
+#endif
+        }
 
         /// <summary>
-        /// Implements the native method 'getHandle0'.
+        /// Implements the native method 'getSocket'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static Socket getSocket(object self)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return FileDescriptorAccessor.GetSocket(self);
+#endif
+        }
+
+        /// <summary>
+        /// Sets the underlying pointer object. If the pointer value changes, any existing cached object is removed.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="ptr"></param>
+        static void SetPtr(object self, long ptr)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            lock (self)
+            {
+                var p = FileDescriptorAccessor.GetPtr(self);
+                if (p != ptr || ptr == -1)
+                {
+                    var obj = (IDisposable)FileDescriptorAccessor.GetObj(self);
+                    if (obj != null)
+                    {
+                        obj.Dispose();
+                        FileDescriptorAccessor.SetObj(self, null);
+                    }
+                }
+
+                FileDescriptorAccessor.SetPtr(self, ptr);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'getFd'.
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
@@ -34,52 +88,23 @@ namespace IKVM.Java.Externs.java.io
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (RuntimeUtil.IsWindows)
-            {
-                if (FileDescriptorAccessor.GetStream(self) is FileStream fs)
-                {
-                    return fs.SafeFileHandle.DangerousGetHandle().ToInt32();
-                }
-                else if (self == FileDescriptorAccessor.GetIn())
-                {
-                    return GetStdHandle(-10).ToInt32();
-                }
-                else if (self == FileDescriptorAccessor.GetOut())
-                {
-                    return GetStdHandle(-11).ToInt32();
-                }
-                else if (self == FileDescriptorAccessor.GetErr())
-                {
-                    return GetStdHandle(-12).ToInt32();
-                }
-            }
-            else
-            {
-
-                if (FileDescriptorAccessor.GetStream(self) is FileStream fs)
-                {
-                    return fs.SafeFileHandle.DangerousGetHandle().ToInt32();
-                }
-                else if (self == FileDescriptorAccessor.GetIn())
-                {
-                    return 0;
-                }
-                else if (self == FileDescriptorAccessor.GetOut())
-                {
-                    return 1;
-                }
-                else if (self == FileDescriptorAccessor.GetErr())
-                {
-                    return 2;
-                }
-            }
-
-            return -1;
+            lock (self)
+                return (int)FileDescriptorAccessor.GetPtr(self);
 #endif
         }
 
         /// <summary>
-        /// Implements the native method 'getHandle0'.
+        /// Implements the native method 'setFd'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="value"></param>
+        public static void setFd(object self, int value)
+        {
+            SetPtr(self, value);
+        }
+
+        /// <summary>
+        /// Implements the native method 'getHandle'.
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
@@ -88,74 +113,43 @@ namespace IKVM.Java.Externs.java.io
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (RuntimeUtil.IsWindows)
-            {
-                if (FileDescriptorAccessor.GetStream(self) is FileStream fs)
-                {
-                    return fs.SafeFileHandle.DangerousGetHandle().ToInt64();
-                }
-                else if (self == FileDescriptorAccessor.GetIn())
-                {
-                    return GetStdHandle(-10).ToInt64();
-                }
-                else if (self == FileDescriptorAccessor.GetOut())
-                {
-                    return GetStdHandle(-11).ToInt64();
-                }
-                else if (self == FileDescriptorAccessor.GetErr())
-                {
-                    return GetStdHandle(-12).ToInt64();
-                }
-            }
-
-            return -1;
+            lock (self)
+                return FileDescriptorAccessor.GetPtr(self);
 #endif
         }
 
-            /// <summary>
-            /// Implements the native method 'standardStream'.
-            /// </summary>
-            /// <param name="fd"></param>
-            /// <returns></returns>
-            public static object standardStream(int fd)
+        /// <summary>
+        /// Implements the native method 'setHandle'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="value"></param>
+        public static void setHandle(object self, long value)
+        {
+            SetPtr(self, value);
+        }
+
+        /// <summary>
+        /// Implements the native method 'standardStream'.
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <returns></returns>
+        public static object standardStream(int fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return FileDescriptorAccessor.FromStream(fd switch
+            var stream = fd switch
             {
                 0 => System.Console.OpenStandardInput(),
                 1 => System.Console.OpenStandardOutput(),
                 2 => System.Console.OpenStandardError(),
                 _ => throw new NotImplementedException(),
-            });
-#endif
-        }
+            };
 
-        /// <summary>
-        /// Implements the native method 'sync'.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <exception cref="global::java.io.SyncFailedException"></exception>
-        public static void sync(object self)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            var stream = FileDescriptorAccessor.GetStream(self);
-            if (stream == null)
-                throw new global::java.io.SyncFailedException("Sync failed.");
-            if (stream.CanWrite == false)
-                return;
-
-            try
-            {
-                stream.Flush();
-            }
-            catch (IOException e)
-            {
-                throw new global::java.io.SyncFailedException(e.Message);
-            }
+            var fdo = FileDescriptorAccessor.Init();
+            FileDescriptorAccessor.SetPtr(fdo, fd);
+            FileDescriptorAccessor.SetObj(fdo, stream);
+            return fdo;
 #endif
         }
 

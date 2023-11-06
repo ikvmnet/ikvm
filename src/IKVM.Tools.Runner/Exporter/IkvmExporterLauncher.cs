@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 using CliWrap;
 
-using IKVM.Tools.Runner.Compiler;
+using IKVM.Tools.Runner.Importer;
 using IKVM.Tools.Runner.Internal;
 
 namespace IKVM.Tools.Runner.Exporter
@@ -38,7 +38,7 @@ namespace IKVM.Tools.Runner.Exporter
         /// </summary>
         /// <param name="listener"></param>
         public IkvmExporterLauncher(IIkvmToolDiagnosticEventListener listener) :
-            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmCompilerLauncher).Assembly.Location), TOOLNAME), listener)
+            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterLauncher).Assembly.Location), TOOLNAME), listener)
         {
 
         }
@@ -122,9 +122,9 @@ namespace IKVM.Tools.Runner.Exporter
                 if (File.Exists(exe) == false)
                     throw new FileNotFoundException($"Could not locate tool at '{exe}'.");
 
-                // if we're running on Linux, we might need to set the execute bit on the file,
+                // if we're running on Unix, we might need to set the execute bit on the file,
                 // since the NuGet package is built on Windows
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
                     try
                     {
@@ -158,7 +158,15 @@ namespace IKVM.Tools.Runner.Exporter
 
                 // windows provides special support for killing subprocesses on termination of parent
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    WindowsChildProcessTracker.AddProcess(Process.GetProcessById(pid.ProcessId));
+                    try
+                    {
+                        if (pid.Task.IsCompleted == false)
+                            WindowsChildProcessTracker.AddProcess(Process.GetProcessById(pid.ProcessId));
+                    }
+                    catch
+                    {
+                        await LogEvent(IkvmToolDiagnosticEventLevel.Error, "Failed to attach child process.");
+                    }
 
                 // wait for the execution to finish
                 var ret = await pid;

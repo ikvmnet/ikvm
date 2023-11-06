@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-using IKVM.Runtime.JNI.Trampolines;
+using Microsoft.Win32.SafeHandles;
 
 namespace IKVM.Runtime.JNI
 {
+
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
     using jarray = System.IntPtr;
     using jboolean = System.SByte;
@@ -33,7 +35,6 @@ namespace IKVM.Runtime.JNI
     using jthrowable = System.IntPtr;
     using jweak = System.IntPtr;
 
-
     /// <summary>
     /// Manged implementation of the JNINativeInterface structure.
     /// </summary>
@@ -44,32 +45,44 @@ namespace IKVM.Runtime.JNI
         /// <summary>
         /// Maintains a <see cref="JNINativeInterface"/> structure in memory.
         /// </summary>
-        class JNINativeInterfaceMemory
+        class JNINativeInterfaceHandle : SafeHandleZeroOrMinusOneIsInvalid
         {
 
-            internal readonly JNINativeInterface* handle;
+            /// <summary>
+            /// Gets a reference to the JNINativeInterface instance.
+            /// </summary>
+            public static readonly JNINativeInterfaceHandle Instance = new();
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            public JNINativeInterfaceMemory()
+            public JNINativeInterfaceHandle() :
+                base(true)
             {
-                handle = (JNINativeInterface*)Marshal.AllocHGlobal(sizeof(JNINativeInterface));
+                SetHandle(Marshal.AllocHGlobal(sizeof(JNINativeInterface)));
             }
 
             /// <summary>
-            /// Finalizes the instance.
+            /// Gets the handle to the JNIEnv structure.
             /// </summary>
-            ~JNINativeInterfaceMemory()
+            public JNINativeInterface* Handle => (JNINativeInterface*)DangerousGetHandle();
+
+            /// <summary>
+            /// Releases the handle.
+            /// </summary>
+            /// <returns></returns>
+            protected override bool ReleaseHandle()
             {
-                Marshal.FreeHGlobal((nint)handle);
+                Marshal.FreeHGlobal(handle);
+                return true;
             }
 
         }
 
         #region Delegates
 
-        delegate int GetMethodArgsDelegateType(JNIEnv* pEnv, nint methodID, byte* sig);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate int GetMethodArgsDelegateType(JNIEnv* pEnv, jmethodID methodID, byte* sig);
 
         delegate jint GetVersionDelegateType(JNIEnv* pEnv);
         delegate jclass DefineClassDelegateType(JNIEnv* pEnv, byte* name, jobject loader, jbyte* pbuf, jint length);
@@ -280,13 +293,13 @@ namespace IKVM.Runtime.JNI
 
         #endregion
 
-        static readonly JNINativeInterfaceMemory memory = new();
-        static readonly JNINativeInterface* handle = memory.handle;
+        static readonly LibJvm libjvm = LibJvm.Instance;
+        static readonly JNINativeInterfaceHandle handle = JNINativeInterfaceHandle.Instance;
 
         /// <summary>
         /// Gets a pointer to the JNINativeInterface table.
         /// </summary>
-        public static JNINativeInterface* Handle => handle;
+        public static JNINativeInterface* Handle => handle.Handle;
 
         #region Delegates
 
@@ -501,316 +514,330 @@ namespace IKVM.Runtime.JNI
         #endregion
 
         /// <summary>
+        /// Gets the native handle for a function pointer in libjvm.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="argl"></param>
+        /// <returns></returns>
+        static nint GetLibJvmFunctionHandle(string name, int argl = -1)
+        {
+            if (libjvm.Handle.GetExport(name, argl).Handle is nint h and not 0)
+                return h;
+            else
+                throw new InternalException($"Cannot find libjvm native method '{name}'.");
+        }
+
+        /// <summary>
         /// Initializes the static instance.
         /// </summary>
         static JNINativeInterface()
         {
             JNIVM.jvmCreated = true;
 
-            handle->GetMethodArgs = (void*)Marshal.GetFunctionPointerForDelegate(GetMethodArgsDelegate);
-            handle->reserved1 = null;
-            handle->reserved2 = null;
+            Handle->reserved0 = (void*)Marshal.GetFunctionPointerForDelegate(GetMethodArgsDelegate);
+            Handle->reserved1 = null;
+            Handle->reserved2 = null;
 
-            handle->reserved3 = null;
-            handle->GetVersion = (void*)Marshal.GetFunctionPointerForDelegate(GetVersionDelegate);
+            Handle->reserved3 = null;
+            Handle->GetVersion = (void*)Marshal.GetFunctionPointerForDelegate(GetVersionDelegate);
 
-            handle->DefineClass = (void*)Marshal.GetFunctionPointerForDelegate(DefineClassDelegate);
-            handle->FindClass = (void*)Marshal.GetFunctionPointerForDelegate(FindClassDelegate);
+            Handle->DefineClass = (void*)Marshal.GetFunctionPointerForDelegate(DefineClassDelegate);
+            Handle->FindClass = (void*)Marshal.GetFunctionPointerForDelegate(FindClassDelegate);
 
-            handle->FromReflectedMethod = (void*)Marshal.GetFunctionPointerForDelegate(FromReflectedMethodDelegate);
-            handle->FromReflectedField = (void*)Marshal.GetFunctionPointerForDelegate(FromReflectedFieldDelegate);
-            handle->ToReflectedMethod = (void*)Marshal.GetFunctionPointerForDelegate(ToReflectedMethodDelegate);
+            Handle->FromReflectedMethod = (void*)Marshal.GetFunctionPointerForDelegate(FromReflectedMethodDelegate);
+            Handle->FromReflectedField = (void*)Marshal.GetFunctionPointerForDelegate(FromReflectedFieldDelegate);
+            Handle->ToReflectedMethod = (void*)Marshal.GetFunctionPointerForDelegate(ToReflectedMethodDelegate);
 
-            handle->GetSuperclass = (void*)Marshal.GetFunctionPointerForDelegate(GetSuperclassDelegate);
-            handle->IsAssignableFrom = (void*)Marshal.GetFunctionPointerForDelegate(IsAssignableFromDelegate);
+            Handle->GetSuperclass = (void*)Marshal.GetFunctionPointerForDelegate(GetSuperclassDelegate);
+            Handle->IsAssignableFrom = (void*)Marshal.GetFunctionPointerForDelegate(IsAssignableFromDelegate);
 
-            handle->ToReflectedField = (void*)Marshal.GetFunctionPointerForDelegate(ToReflectedFieldDelegate);
+            Handle->ToReflectedField = (void*)Marshal.GetFunctionPointerForDelegate(ToReflectedFieldDelegate);
 
-            handle->Throw = (void*)Marshal.GetFunctionPointerForDelegate(ThrowDelegate);
-            handle->ThrowNew = (void*)Marshal.GetFunctionPointerForDelegate(ThrowNewDelegate);
-            handle->ExceptionOccurred = (void*)Marshal.GetFunctionPointerForDelegate(ExceptionOccurredDelegate);
-            handle->ExceptionDescribe = (void*)Marshal.GetFunctionPointerForDelegate(ExceptionDescribeDelegate);
-            handle->ExceptionClear = (void*)Marshal.GetFunctionPointerForDelegate(ExceptionClearDelegate);
-            handle->FatalError = (void*)Marshal.GetFunctionPointerForDelegate(FatalErrorDelegate);
+            Handle->Throw = (void*)Marshal.GetFunctionPointerForDelegate(ThrowDelegate);
+            Handle->ThrowNew = (void*)Marshal.GetFunctionPointerForDelegate(ThrowNewDelegate);
+            Handle->ExceptionOccurred = (void*)Marshal.GetFunctionPointerForDelegate(ExceptionOccurredDelegate);
+            Handle->ExceptionDescribe = (void*)Marshal.GetFunctionPointerForDelegate(ExceptionDescribeDelegate);
+            Handle->ExceptionClear = (void*)Marshal.GetFunctionPointerForDelegate(ExceptionClearDelegate);
+            Handle->FatalError = (void*)Marshal.GetFunctionPointerForDelegate(FatalErrorDelegate);
 
-            handle->PushLocalFrame = (void*)Marshal.GetFunctionPointerForDelegate(PushLocalFrameDelegate);
-            handle->PopLocalFrame = (void*)Marshal.GetFunctionPointerForDelegate(PopLocalFrameDelegate);
+            Handle->PushLocalFrame = (void*)Marshal.GetFunctionPointerForDelegate(PushLocalFrameDelegate);
+            Handle->PopLocalFrame = (void*)Marshal.GetFunctionPointerForDelegate(PopLocalFrameDelegate);
 
-            handle->NewGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(NewGlobalRefDelegate);
-            handle->DeleteGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(DeleteGlobalRefDelegate);
-            handle->DeleteLocalRef = (void*)Marshal.GetFunctionPointerForDelegate(DeleteLocalRefDelegate);
-            handle->IsSameObject = (void*)Marshal.GetFunctionPointerForDelegate(IsSameObjectDelegate);
+            Handle->NewGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(NewGlobalRefDelegate);
+            Handle->DeleteGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(DeleteGlobalRefDelegate);
+            Handle->DeleteLocalRef = (void*)Marshal.GetFunctionPointerForDelegate(DeleteLocalRefDelegate);
+            Handle->IsSameObject = (void*)Marshal.GetFunctionPointerForDelegate(IsSameObjectDelegate);
 
-            handle->NewLocalRef = (void*)Marshal.GetFunctionPointerForDelegate(NewLocalRefDelegate);
-            handle->EnsureLocalCapacity = (void*)Marshal.GetFunctionPointerForDelegate(EnsureLocalCapacityDelegate);
+            Handle->NewLocalRef = (void*)Marshal.GetFunctionPointerForDelegate(NewLocalRefDelegate);
+            Handle->EnsureLocalCapacity = (void*)Marshal.GetFunctionPointerForDelegate(EnsureLocalCapacityDelegate);
 
-            handle->AllocObject = (void*)Marshal.GetFunctionPointerForDelegate(AllocObjectDelegate);
-            handle->NewObject = (void*)FunctionTable.Instance.JNI_NewObject;
-            handle->NewObjectV = (void*)FunctionTable.Instance.JNI_NewObjectV;
-            handle->NewObjectA = (void*)Marshal.GetFunctionPointerForDelegate(NewObjectADelegate);
-
-            handle->GetObjectClass = (void*)Marshal.GetFunctionPointerForDelegate(GetObjectClassDelegate);
-            handle->IsInstanceOf = (void*)Marshal.GetFunctionPointerForDelegate(IsInstanceOfDelegate);
-
-            handle->GetMethodID = (void*)Marshal.GetFunctionPointerForDelegate(GetMethodIDDelegate);
-
-            handle->CallObjectMethod = (void*)FunctionTable.Instance.JNI_CallObjectMethod;
-            handle->CallObjectMethodV = (void*)FunctionTable.Instance.JNI_CallObjectMethodV;
-            handle->CallObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallObjectMethodADelegate);
-
-            handle->CallBooleanMethod = (void*)FunctionTable.Instance.JNI_CallBooleanMethod;
-            handle->CallBooleanMethodV = (void*)FunctionTable.Instance.JNI_CallBooleanMethodV;
-            handle->CallBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallBooleanMethodADelegate);
-
-            handle->CallByteMethod = (void*)FunctionTable.Instance.JNI_CallByteMethod;
-            handle->CallByteMethodV = (void*)FunctionTable.Instance.JNI_CallByteMethodV;
-            handle->CallByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallByteMethodADelegate);
-
-            handle->CallCharMethod = (void*)FunctionTable.Instance.JNI_CallCharMethod;
-            handle->CallCharMethodV = (void*)FunctionTable.Instance.JNI_CallCharMethodV;
-            handle->CallCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallCharMethodADelegate);
-
-            handle->CallShortMethod = (void*)FunctionTable.Instance.JNI_CallShortMethod;
-            handle->CallShortMethodV = (void*)FunctionTable.Instance.JNI_CallShortMethodV;
-            handle->CallShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallShortMethodADelegate);
-
-            handle->CallIntMethod = (void*)FunctionTable.Instance.JNI_CallIntMethod;
-            handle->CallIntMethodV = (void*)FunctionTable.Instance.JNI_CallIntMethodV;
-            handle->CallIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallIntMethodADelegate);
-
-            handle->CallLongMethod = (void*)FunctionTable.Instance.JNI_CallLongMethod;
-            handle->CallLongMethodV = (void*)FunctionTable.Instance.JNI_CallLongMethodV;
-            handle->CallLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallLongMethodADelegate);
-
-            handle->CallFloatMethod = (void*)FunctionTable.Instance.JNI_CallFloatMethod;
-            handle->CallFloatMethodV = (void*)FunctionTable.Instance.JNI_CallFloatMethodV;
-            handle->CallFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallFloatMethodADelegate);
-
-            handle->CallDoubleMethod = (void*)FunctionTable.Instance.JNI_CallDoubleMethod;
-            handle->CallDoubleMethodV = (void*)FunctionTable.Instance.JNI_CallDoubleMethodV;
-            handle->CallDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallDoubleMethodADelegate);
-
-            handle->CallVoidMethod = (void*)FunctionTable.Instance.JNI_CallVoidMethod;
-            handle->CallVoidMethodV = (void*)FunctionTable.Instance.JNI_CallVoidMethodV;
-            handle->CallVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallVoidMethodADelegate);
-
-            handle->CallNonvirtualObjectMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualObjectMethod;
-            handle->CallNonvirtualObjectMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualObjectMethodV;
-            handle->CallNonvirtualObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualObjectMethodADelegate);
-
-            handle->CallNonvirtualBooleanMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualBooleanMethod;
-            handle->CallNonvirtualBooleanMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualBooleanMethodV;
-            handle->CallNonvirtualBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualBooleanMethodADelegate);
-
-            handle->CallNonvirtualByteMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualByteMethod;
-            handle->CallNonvirtualByteMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualByteMethodV;
-            handle->CallNonvirtualByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualByteMethodADelegate);
-
-            handle->CallNonvirtualCharMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualCharMethod;
-            handle->CallNonvirtualCharMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualCharMethodV;
-            handle->CallNonvirtualCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualCharMethodADelegate);
-
-            handle->CallNonvirtualShortMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualShortMethod;
-            handle->CallNonvirtualShortMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualShortMethodV;
-            handle->CallNonvirtualShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualShortMethodADelegate);
-
-            handle->CallNonvirtualIntMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualIntMethod;
-            handle->CallNonvirtualIntMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualIntMethodV;
-            handle->CallNonvirtualIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualIntMethodADelegate);
-
-            handle->CallNonvirtualLongMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualLongMethod;
-            handle->CallNonvirtualLongMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualLongMethodV;
-            handle->CallNonvirtualLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualLongMethodADelegate);
-
-            handle->CallNonvirtualFloatMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualFloatMethod;
-            handle->CallNonvirtualFloatMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualFloatMethodV;
-            handle->CallNonvirtualFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualFloatMethodADelegate);
-
-            handle->CallNonvirtualDoubleMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualDoubleMethod;
-            handle->CallNonvirtualDoubleMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualDoubleMethodV;
-            handle->CallNonvirtualDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualDoubleMethodADelegate);
-
-            handle->CallNonvirtualVoidMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualVoidMethod;
-            handle->CallNonvirtualVoidMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualVoidMethodV;
-            handle->CallNonvirtualVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualVoidMethodADelegate);
-
-            handle->GetFieldID = (void*)Marshal.GetFunctionPointerForDelegate(GetFieldIDDelegate);
-
-            handle->GetObjectField = (void*)Marshal.GetFunctionPointerForDelegate(GetObjectFieldDelegate);
-            handle->GetBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(GetBooleanFieldDelegate);
-            handle->GetByteField = (void*)Marshal.GetFunctionPointerForDelegate(GetByteFieldDelegate);
-            handle->GetCharField = (void*)Marshal.GetFunctionPointerForDelegate(GetCharFieldDelegate);
-            handle->GetShortField = (void*)Marshal.GetFunctionPointerForDelegate(GetShortFieldDelegate);
-            handle->GetIntField = (void*)Marshal.GetFunctionPointerForDelegate(GetIntFieldDelegate);
-            handle->GetLongField = (void*)Marshal.GetFunctionPointerForDelegate(GetLongFieldDelegate);
-            handle->GetFloatField = (void*)Marshal.GetFunctionPointerForDelegate(GetFloatFieldDelegate);
-            handle->GetDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(GetDoubleFieldDelegate);
-
-            handle->SetObjectField = (void*)Marshal.GetFunctionPointerForDelegate(SetObjectFieldDelegate);
-            handle->SetBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(SetBooleanFieldDelegate);
-            handle->SetByteField = (void*)Marshal.GetFunctionPointerForDelegate(SetByteFieldDelegate);
-            handle->SetCharField = (void*)Marshal.GetFunctionPointerForDelegate(SetCharFieldDelegate);
-            handle->SetShortField = (void*)Marshal.GetFunctionPointerForDelegate(SetShortFieldDelegate);
-            handle->SetIntField = (void*)Marshal.GetFunctionPointerForDelegate(SetIntFieldDelegate);
-            handle->SetLongField = (void*)Marshal.GetFunctionPointerForDelegate(SetLongFieldDelegate);
-            handle->SetFloatField = (void*)Marshal.GetFunctionPointerForDelegate(SetFloatFieldDelegate);
-            handle->SetDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(SetDoubleFieldDelegate);
-
-            handle->GetStaticMethodID = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticMethodIDDelegate);
-
-            handle->CallStaticObjectMethod = (void*)FunctionTable.Instance.JNI_CallStaticObjectMethod;
-            handle->CallStaticObjectMethodV = (void*)FunctionTable.Instance.JNI_CallStaticObjectMethodV;
-            handle->CallStaticObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticObjectMethodADelegate);
-
-            handle->CallStaticBooleanMethod = (void*)FunctionTable.Instance.JNI_CallStaticBooleanMethod;
-            handle->CallStaticBooleanMethodV = (void*)FunctionTable.Instance.JNI_CallStaticBooleanMethodV;
-            handle->CallStaticBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticBooleanMethodADelegate);
-
-            handle->CallStaticByteMethod = (void*)FunctionTable.Instance.JNI_CallStaticByteMethod;
-            handle->CallStaticByteMethodV = (void*)FunctionTable.Instance.JNI_CallStaticByteMethodV;
-            handle->CallStaticByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticByteMethodADelegate);
-
-            handle->CallStaticCharMethod = (void*)FunctionTable.Instance.JNI_CallStaticCharMethod;
-            handle->CallStaticCharMethodV = (void*)FunctionTable.Instance.JNI_CallStaticCharMethodV;
-            handle->CallStaticCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticCharMethodADelegate);
-
-            handle->CallStaticShortMethod = (void*)FunctionTable.Instance.JNI_CallStaticShortMethod;
-            handle->CallStaticShortMethodV = (void*)FunctionTable.Instance.JNI_CallStaticShortMethodV;
-            handle->CallStaticShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticShortMethodADelegate);
-
-            handle->CallStaticIntMethod = (void*)FunctionTable.Instance.JNI_CallStaticIntMethod;
-            handle->CallStaticIntMethodV = (void*)FunctionTable.Instance.JNI_CallStaticIntMethodV;
-            handle->CallStaticIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticIntMethodADelegate);
-
-            handle->CallStaticLongMethod = (void*)FunctionTable.Instance.JNI_CallStaticLongMethod;
-            handle->CallStaticLongMethodV = (void*)FunctionTable.Instance.JNI_CallStaticLongMethodV;
-            handle->CallStaticLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticLongMethodADelegate);
-
-            handle->CallStaticFloatMethod = (void*)FunctionTable.Instance.JNI_CallStaticFloatMethod;
-            handle->CallStaticFloatMethodV = (void*)FunctionTable.Instance.JNI_CallStaticFloatMethodV;
-            handle->CallStaticFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticFloatMethodADelegate);
-
-            handle->CallStaticDoubleMethod = (void*)FunctionTable.Instance.JNI_CallStaticDoubleMethod;
-            handle->CallStaticDoubleMethodV = (void*)FunctionTable.Instance.JNI_CallStaticDoubleMethodV;
-            handle->CallStaticDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticDoubleMethodADelegate);
-
-            handle->CallStaticVoidMethod = (void*)FunctionTable.Instance.JNI_CallStaticVoidMethod;
-            handle->CallStaticVoidMethodV = (void*)FunctionTable.Instance.JNI_CallStaticVoidMethodV;
-            handle->CallStaticVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticVoidMethodADelegate);
-
-            handle->GetStaticFieldID = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticFieldIDDelegate);
-
-            handle->GetStaticObjectField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticObjectFieldDelegate);
-            handle->GetStaticBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticBooleanFieldDelegate);
-            handle->GetStaticByteField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticByteFieldDelegate);
-            handle->GetStaticCharField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticCharFieldDelegate);
-            handle->GetStaticShortField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticShortFieldDelegate);
-            handle->GetStaticIntField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticIntFieldDelegate);
-            handle->GetStaticLongField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticLongFieldDelegate);
-            handle->GetStaticFloatField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticFloatFieldDelegate);
-            handle->GetStaticDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticDoubleFieldDelegate);
-
-            handle->SetStaticObjectField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticObjectFieldDelegate);
-            handle->SetStaticBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticBooleanFieldDelegate);
-            handle->SetStaticByteField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticByteFieldDelegate);
-            handle->SetStaticCharField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticCharFieldDelegate);
-            handle->SetStaticShortField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticShortFieldDelegate);
-            handle->SetStaticIntField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticIntFieldDelegate);
-            handle->SetStaticLongField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticLongFieldDelegate);
-            handle->SetStaticFloatField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticFloatFieldDelegate);
-            handle->SetStaticDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticDoubleFieldDelegate);
-
-            handle->NewString = (void*)Marshal.GetFunctionPointerForDelegate(NewStringDelegate);
-            handle->GetStringLength = (void*)Marshal.GetFunctionPointerForDelegate(GetStringLengthDelegate);
-            handle->GetStringChars = (void*)Marshal.GetFunctionPointerForDelegate(GetStringCharsDelegate);
-            handle->ReleaseStringChars = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseStringCharsDelegate);
-
-            handle->NewStringUTF = (void*)Marshal.GetFunctionPointerForDelegate(NewStringUTFDelegate);
-            handle->GetStringUTFLength = (void*)Marshal.GetFunctionPointerForDelegate(GetStringUTFLengthDelegate);
-            handle->GetStringUTFChars = (void*)Marshal.GetFunctionPointerForDelegate(GetStringUTFCharsDelegate);
-            handle->ReleaseStringUTFChars = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseStringUTFCharsDelegate);
-
-            handle->GetArrayLength = (void*)Marshal.GetFunctionPointerForDelegate(GetArrayLengthDelegate);
-
-            handle->NewObjectArray = (void*)Marshal.GetFunctionPointerForDelegate(NewObjectArrayDelegate);
-            handle->GetObjectArrayElement = (void*)Marshal.GetFunctionPointerForDelegate(GetObjectArrayElementDelegate);
-            handle->SetObjectArrayElement = (void*)Marshal.GetFunctionPointerForDelegate(SetObjectArrayElementDelegate);
-
-            handle->NewBooleanArray = (void*)Marshal.GetFunctionPointerForDelegate(NewBooleanArrayDelegate);
-            handle->NewByteArray = (void*)Marshal.GetFunctionPointerForDelegate(NewByteArrayDelegate);
-            handle->NewCharArray = (void*)Marshal.GetFunctionPointerForDelegate(NewCharArrayDelegate);
-            handle->NewShortArray = (void*)Marshal.GetFunctionPointerForDelegate(NewShortArrayDelegate);
-            handle->NewIntArray = (void*)Marshal.GetFunctionPointerForDelegate(NewIntArrayDelegate);
-            handle->NewLongArray = (void*)Marshal.GetFunctionPointerForDelegate(NewLongArrayDelegate);
-            handle->NewFloatArray = (void*)Marshal.GetFunctionPointerForDelegate(NewFloatArrayDelegate);
-            handle->NewDoubleArray = (void*)Marshal.GetFunctionPointerForDelegate(NewDoubleArrayDelegate);
-
-            handle->GetBooleanArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetBooleanArrayElementsDelegate);
-            handle->GetByteArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetByteArrayElementsDelegate);
-            handle->GetCharArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetCharArrayElementsDelegate);
-            handle->GetShortArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetShortArrayElementsDelegate);
-            handle->GetIntArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetIntArrayElementsDelegate);
-            handle->GetLongArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetLongArrayElementsDelegate);
-            handle->GetFloatArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetFloatArrayElementsDelegate);
-            handle->GetDoubleArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetDoubleArrayElementsDelegate);
-
-            handle->ReleaseBooleanArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseBooleanArrayElementsDelegate);
-            handle->ReleaseByteArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseByteArrayElementsDelegate);
-            handle->ReleaseCharArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseCharArrayElementsDelegate);
-            handle->ReleaseShortArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseShortArrayElementsDelegate);
-            handle->ReleaseIntArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseIntArrayElementsDelegate);
-            handle->ReleaseLongArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseLongArrayElementsDelegate);
-            handle->ReleaseFloatArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseFloatArrayElementsDelegate);
-            handle->ReleaseDoubleArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseDoubleArrayElementsDelegate);
-
-            handle->GetBooleanArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetBooleanArrayRegionDelegate);
-            handle->GetByteArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetByteArrayRegionDelegate);
-            handle->GetCharArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetCharArrayRegionDelegate);
-            handle->GetShortArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetShortArrayRegionDelegate);
-            handle->GetIntArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetIntArrayRegionDelegate);
-            handle->GetLongArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetLongArrayRegionDelegate);
-            handle->GetFloatArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetFloatArrayRegionDelegate);
-            handle->GetDoubleArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetDoubleArrayRegionDelegate);
-
-            handle->SetBooleanArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetBooleanArrayRegionDelegate);
-            handle->SetByteArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetByteArrayRegionDelegate);
-            handle->SetCharArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetCharArrayRegionDelegate);
-            handle->SetShortArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetShortArrayRegionDelegate);
-            handle->SetIntArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetIntArrayRegionDelegate);
-            handle->SetLongArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetLongArrayRegionDelegate);
-            handle->SetFloatArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetFloatArrayRegionDelegate);
-            handle->SetDoubleArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetDoubleArrayRegionDelegate);
-
-            handle->RegisterNatives = (void*)Marshal.GetFunctionPointerForDelegate(RegisterNativesDelegate);
-            handle->UnregisterNatives = (void*)Marshal.GetFunctionPointerForDelegate(UnregisterNativesDelegate);
-
-            handle->MonitorEnter = (void*)Marshal.GetFunctionPointerForDelegate(MonitorEnterDelegate);
-            handle->MonitorExit = (void*)Marshal.GetFunctionPointerForDelegate(MonitorExitDelegate);
-
-            handle->GetJavaVM = (void*)Marshal.GetFunctionPointerForDelegate(GetJavaVMDelegate);
-
-            handle->GetStringRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetStringRegionDelegate);
-            handle->GetStringUTFRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetStringUTFRegionDelegate);
-
-            handle->GetPrimitiveArrayCritical = (void*)Marshal.GetFunctionPointerForDelegate(GetPrimitiveArrayCriticalDelegate);
-            handle->ReleasePrimitiveArrayCritical = (void*)Marshal.GetFunctionPointerForDelegate(ReleasePrimitiveArrayCriticalDelegate);
-
-            handle->GetStringCritical = (void*)Marshal.GetFunctionPointerForDelegate(GetStringCriticalDelegate);
-            handle->ReleaseStringCritical = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseStringCriticalDelegate);
-
-            handle->NewWeakGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(NewWeakGlobalRefDelegate);
-            handle->DeleteWeakGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(DeleteWeakGlobalRefDelegate);
-
-            handle->ExceptionCheck = (void*)Marshal.GetFunctionPointerForDelegate(ExceptionCheckDelegate);
-
-            handle->NewDirectByteBuffer = (void*)Marshal.GetFunctionPointerForDelegate(NewDirectByteBufferDelegate);
-            handle->GetDirectBufferAddress = (void*)Marshal.GetFunctionPointerForDelegate(GetDirectBufferAddressDelegate);
-            handle->GetDirectBufferCapacity = (void*)Marshal.GetFunctionPointerForDelegate(GetDirectBufferCapacityDelegate);
-
-            handle->GetObjectRefType = (void*)Marshal.GetFunctionPointerForDelegate(GetObjectRefTypeDelegate);
+            Handle->AllocObject = (void*)Marshal.GetFunctionPointerForDelegate(AllocObjectDelegate);
+            Handle->NewObject = (void*)GetLibJvmFunctionHandle("__JNI_NewObject");
+            Handle->NewObjectV = (void*)GetLibJvmFunctionHandle("__JNI_NewObjectV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->NewObjectA = (void*)Marshal.GetFunctionPointerForDelegate(NewObjectADelegate);
+
+            Handle->GetObjectClass = (void*)Marshal.GetFunctionPointerForDelegate(GetObjectClassDelegate);
+            Handle->IsInstanceOf = (void*)Marshal.GetFunctionPointerForDelegate(IsInstanceOfDelegate);
+
+            Handle->GetMethodID = (void*)Marshal.GetFunctionPointerForDelegate(GetMethodIDDelegate);
+
+            Handle->CallObjectMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallObjectMethod");
+            Handle->CallObjectMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallObjectMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallObjectMethodADelegate);
+
+            Handle->CallBooleanMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallBooleanMethod");
+            Handle->CallBooleanMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallBooleanMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallBooleanMethodADelegate);
+
+            Handle->CallByteMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallByteMethod");
+            Handle->CallByteMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallByteMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallByteMethodADelegate);
+
+            Handle->CallCharMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallCharMethod");
+            Handle->CallCharMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallCharMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallCharMethodADelegate);
+
+            Handle->CallShortMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallShortMethod");
+            Handle->CallShortMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallShortMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallShortMethodADelegate);
+
+            Handle->CallIntMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallIntMethod");
+            Handle->CallIntMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallIntMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallIntMethodADelegate);
+
+            Handle->CallLongMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallLongMethod");
+            Handle->CallLongMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallLongMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallLongMethodADelegate);
+
+            Handle->CallFloatMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallFloatMethod");
+            Handle->CallFloatMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallFloatMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallFloatMethodADelegate);
+
+            Handle->CallDoubleMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallDoubleMethod");
+            Handle->CallDoubleMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallDoubleMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallDoubleMethodADelegate);
+
+            Handle->CallVoidMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallVoidMethod");
+            Handle->CallVoidMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallVoidMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallVoidMethodADelegate);
+
+            Handle->CallNonvirtualObjectMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualObjectMethod");
+            Handle->CallNonvirtualObjectMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualObjectMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualObjectMethodADelegate);
+
+            Handle->CallNonvirtualBooleanMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualBooleanMethod");
+            Handle->CallNonvirtualBooleanMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualBooleanMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualBooleanMethodADelegate);
+
+            Handle->CallNonvirtualByteMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualByteMethod");
+            Handle->CallNonvirtualByteMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualByteMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualByteMethodADelegate);
+
+            Handle->CallNonvirtualCharMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualCharMethod");
+            Handle->CallNonvirtualCharMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualCharMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualCharMethodADelegate);
+
+            Handle->CallNonvirtualShortMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualShortMethod");
+            Handle->CallNonvirtualShortMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualShortMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualShortMethodADelegate);
+
+            Handle->CallNonvirtualIntMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualIntMethod");
+            Handle->CallNonvirtualIntMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualIntMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualIntMethodADelegate);
+
+            Handle->CallNonvirtualLongMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualLongMethod");
+            Handle->CallNonvirtualLongMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualLongMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualLongMethodADelegate);
+
+            Handle->CallNonvirtualFloatMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualFloatMethod");
+            Handle->CallNonvirtualFloatMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualFloatMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualFloatMethodADelegate);
+
+            Handle->CallNonvirtualDoubleMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualDoubleMethod");
+            Handle->CallNonvirtualDoubleMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualDoubleMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualDoubleMethodADelegate);
+
+            Handle->CallNonvirtualVoidMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualVoidMethod");
+            Handle->CallNonvirtualVoidMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualVoidMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualVoidMethodADelegate);
+
+            Handle->GetFieldID = (void*)Marshal.GetFunctionPointerForDelegate(GetFieldIDDelegate);
+
+            Handle->GetObjectField = (void*)Marshal.GetFunctionPointerForDelegate(GetObjectFieldDelegate);
+            Handle->GetBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(GetBooleanFieldDelegate);
+            Handle->GetByteField = (void*)Marshal.GetFunctionPointerForDelegate(GetByteFieldDelegate);
+            Handle->GetCharField = (void*)Marshal.GetFunctionPointerForDelegate(GetCharFieldDelegate);
+            Handle->GetShortField = (void*)Marshal.GetFunctionPointerForDelegate(GetShortFieldDelegate);
+            Handle->GetIntField = (void*)Marshal.GetFunctionPointerForDelegate(GetIntFieldDelegate);
+            Handle->GetLongField = (void*)Marshal.GetFunctionPointerForDelegate(GetLongFieldDelegate);
+            Handle->GetFloatField = (void*)Marshal.GetFunctionPointerForDelegate(GetFloatFieldDelegate);
+            Handle->GetDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(GetDoubleFieldDelegate);
+
+            Handle->SetObjectField = (void*)Marshal.GetFunctionPointerForDelegate(SetObjectFieldDelegate);
+            Handle->SetBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(SetBooleanFieldDelegate);
+            Handle->SetByteField = (void*)Marshal.GetFunctionPointerForDelegate(SetByteFieldDelegate);
+            Handle->SetCharField = (void*)Marshal.GetFunctionPointerForDelegate(SetCharFieldDelegate);
+            Handle->SetShortField = (void*)Marshal.GetFunctionPointerForDelegate(SetShortFieldDelegate);
+            Handle->SetIntField = (void*)Marshal.GetFunctionPointerForDelegate(SetIntFieldDelegate);
+            Handle->SetLongField = (void*)Marshal.GetFunctionPointerForDelegate(SetLongFieldDelegate);
+            Handle->SetFloatField = (void*)Marshal.GetFunctionPointerForDelegate(SetFloatFieldDelegate);
+            Handle->SetDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(SetDoubleFieldDelegate);
+
+            Handle->GetStaticMethodID = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticMethodIDDelegate);
+
+            Handle->CallStaticObjectMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticObjectMethod");
+            Handle->CallStaticObjectMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticObjectMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticObjectMethodADelegate);
+
+            Handle->CallStaticBooleanMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticBooleanMethod");
+            Handle->CallStaticBooleanMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticBooleanMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticBooleanMethodADelegate);
+
+            Handle->CallStaticByteMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticByteMethod");
+            Handle->CallStaticByteMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticByteMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticByteMethodADelegate);
+
+            Handle->CallStaticCharMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticCharMethod");
+            Handle->CallStaticCharMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticCharMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticCharMethodADelegate);
+
+            Handle->CallStaticShortMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticShortMethod");
+            Handle->CallStaticShortMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticShortMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticShortMethodADelegate);
+
+            Handle->CallStaticIntMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticIntMethod");
+            Handle->CallStaticIntMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticIntMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticIntMethodADelegate);
+
+            Handle->CallStaticLongMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticLongMethod");
+            Handle->CallStaticLongMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticLongMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticLongMethodADelegate);
+
+            Handle->CallStaticFloatMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticFloatMethod");
+            Handle->CallStaticFloatMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticFloatMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticFloatMethodADelegate);
+
+            Handle->CallStaticDoubleMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticDoubleMethod");
+            Handle->CallStaticDoubleMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticDoubleMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticDoubleMethodADelegate);
+
+            Handle->CallStaticVoidMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticVoidMethod");
+            Handle->CallStaticVoidMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticVoidMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticVoidMethodADelegate);
+
+            Handle->GetStaticFieldID = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticFieldIDDelegate);
+
+            Handle->GetStaticObjectField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticObjectFieldDelegate);
+            Handle->GetStaticBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticBooleanFieldDelegate);
+            Handle->GetStaticByteField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticByteFieldDelegate);
+            Handle->GetStaticCharField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticCharFieldDelegate);
+            Handle->GetStaticShortField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticShortFieldDelegate);
+            Handle->GetStaticIntField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticIntFieldDelegate);
+            Handle->GetStaticLongField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticLongFieldDelegate);
+            Handle->GetStaticFloatField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticFloatFieldDelegate);
+            Handle->GetStaticDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticDoubleFieldDelegate);
+
+            Handle->SetStaticObjectField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticObjectFieldDelegate);
+            Handle->SetStaticBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticBooleanFieldDelegate);
+            Handle->SetStaticByteField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticByteFieldDelegate);
+            Handle->SetStaticCharField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticCharFieldDelegate);
+            Handle->SetStaticShortField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticShortFieldDelegate);
+            Handle->SetStaticIntField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticIntFieldDelegate);
+            Handle->SetStaticLongField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticLongFieldDelegate);
+            Handle->SetStaticFloatField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticFloatFieldDelegate);
+            Handle->SetStaticDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(SetStaticDoubleFieldDelegate);
+
+            Handle->NewString = (void*)Marshal.GetFunctionPointerForDelegate(NewStringDelegate);
+            Handle->GetStringLength = (void*)Marshal.GetFunctionPointerForDelegate(GetStringLengthDelegate);
+            Handle->GetStringChars = (void*)Marshal.GetFunctionPointerForDelegate(GetStringCharsDelegate);
+            Handle->ReleaseStringChars = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseStringCharsDelegate);
+
+            Handle->NewStringUTF = (void*)Marshal.GetFunctionPointerForDelegate(NewStringUTFDelegate);
+            Handle->GetStringUTFLength = (void*)Marshal.GetFunctionPointerForDelegate(GetStringUTFLengthDelegate);
+            Handle->GetStringUTFChars = (void*)Marshal.GetFunctionPointerForDelegate(GetStringUTFCharsDelegate);
+            Handle->ReleaseStringUTFChars = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseStringUTFCharsDelegate);
+
+            Handle->GetArrayLength = (void*)Marshal.GetFunctionPointerForDelegate(GetArrayLengthDelegate);
+
+            Handle->NewObjectArray = (void*)Marshal.GetFunctionPointerForDelegate(NewObjectArrayDelegate);
+            Handle->GetObjectArrayElement = (void*)Marshal.GetFunctionPointerForDelegate(GetObjectArrayElementDelegate);
+            Handle->SetObjectArrayElement = (void*)Marshal.GetFunctionPointerForDelegate(SetObjectArrayElementDelegate);
+
+            Handle->NewBooleanArray = (void*)Marshal.GetFunctionPointerForDelegate(NewBooleanArrayDelegate);
+            Handle->NewByteArray = (void*)Marshal.GetFunctionPointerForDelegate(NewByteArrayDelegate);
+            Handle->NewCharArray = (void*)Marshal.GetFunctionPointerForDelegate(NewCharArrayDelegate);
+            Handle->NewShortArray = (void*)Marshal.GetFunctionPointerForDelegate(NewShortArrayDelegate);
+            Handle->NewIntArray = (void*)Marshal.GetFunctionPointerForDelegate(NewIntArrayDelegate);
+            Handle->NewLongArray = (void*)Marshal.GetFunctionPointerForDelegate(NewLongArrayDelegate);
+            Handle->NewFloatArray = (void*)Marshal.GetFunctionPointerForDelegate(NewFloatArrayDelegate);
+            Handle->NewDoubleArray = (void*)Marshal.GetFunctionPointerForDelegate(NewDoubleArrayDelegate);
+
+            Handle->GetBooleanArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetBooleanArrayElementsDelegate);
+            Handle->GetByteArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetByteArrayElementsDelegate);
+            Handle->GetCharArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetCharArrayElementsDelegate);
+            Handle->GetShortArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetShortArrayElementsDelegate);
+            Handle->GetIntArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetIntArrayElementsDelegate);
+            Handle->GetLongArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetLongArrayElementsDelegate);
+            Handle->GetFloatArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetFloatArrayElementsDelegate);
+            Handle->GetDoubleArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(GetDoubleArrayElementsDelegate);
+
+            Handle->ReleaseBooleanArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseBooleanArrayElementsDelegate);
+            Handle->ReleaseByteArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseByteArrayElementsDelegate);
+            Handle->ReleaseCharArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseCharArrayElementsDelegate);
+            Handle->ReleaseShortArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseShortArrayElementsDelegate);
+            Handle->ReleaseIntArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseIntArrayElementsDelegate);
+            Handle->ReleaseLongArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseLongArrayElementsDelegate);
+            Handle->ReleaseFloatArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseFloatArrayElementsDelegate);
+            Handle->ReleaseDoubleArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseDoubleArrayElementsDelegate);
+
+            Handle->GetBooleanArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetBooleanArrayRegionDelegate);
+            Handle->GetByteArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetByteArrayRegionDelegate);
+            Handle->GetCharArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetCharArrayRegionDelegate);
+            Handle->GetShortArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetShortArrayRegionDelegate);
+            Handle->GetIntArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetIntArrayRegionDelegate);
+            Handle->GetLongArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetLongArrayRegionDelegate);
+            Handle->GetFloatArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetFloatArrayRegionDelegate);
+            Handle->GetDoubleArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetDoubleArrayRegionDelegate);
+
+            Handle->SetBooleanArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetBooleanArrayRegionDelegate);
+            Handle->SetByteArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetByteArrayRegionDelegate);
+            Handle->SetCharArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetCharArrayRegionDelegate);
+            Handle->SetShortArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetShortArrayRegionDelegate);
+            Handle->SetIntArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetIntArrayRegionDelegate);
+            Handle->SetLongArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetLongArrayRegionDelegate);
+            Handle->SetFloatArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetFloatArrayRegionDelegate);
+            Handle->SetDoubleArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(SetDoubleArrayRegionDelegate);
+
+            Handle->RegisterNatives = (void*)Marshal.GetFunctionPointerForDelegate(RegisterNativesDelegate);
+            Handle->UnregisterNatives = (void*)Marshal.GetFunctionPointerForDelegate(UnregisterNativesDelegate);
+
+            Handle->MonitorEnter = (void*)Marshal.GetFunctionPointerForDelegate(MonitorEnterDelegate);
+            Handle->MonitorExit = (void*)Marshal.GetFunctionPointerForDelegate(MonitorExitDelegate);
+
+            Handle->GetJavaVM = (void*)Marshal.GetFunctionPointerForDelegate(GetJavaVMDelegate);
+
+            Handle->GetStringRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetStringRegionDelegate);
+            Handle->GetStringUTFRegion = (void*)Marshal.GetFunctionPointerForDelegate(GetStringUTFRegionDelegate);
+
+            Handle->GetPrimitiveArrayCritical = (void*)Marshal.GetFunctionPointerForDelegate(GetPrimitiveArrayCriticalDelegate);
+            Handle->ReleasePrimitiveArrayCritical = (void*)Marshal.GetFunctionPointerForDelegate(ReleasePrimitiveArrayCriticalDelegate);
+
+            Handle->GetStringCritical = (void*)Marshal.GetFunctionPointerForDelegate(GetStringCriticalDelegate);
+            Handle->ReleaseStringCritical = (void*)Marshal.GetFunctionPointerForDelegate(ReleaseStringCriticalDelegate);
+
+            Handle->NewWeakGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(NewWeakGlobalRefDelegate);
+            Handle->DeleteWeakGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(DeleteWeakGlobalRefDelegate);
+
+            Handle->ExceptionCheck = (void*)Marshal.GetFunctionPointerForDelegate(ExceptionCheckDelegate);
+
+            Handle->NewDirectByteBuffer = (void*)Marshal.GetFunctionPointerForDelegate(NewDirectByteBufferDelegate);
+            Handle->GetDirectBufferAddress = (void*)Marshal.GetFunctionPointerForDelegate(GetDirectBufferAddressDelegate);
+            Handle->GetDirectBufferCapacity = (void*)Marshal.GetFunctionPointerForDelegate(GetDirectBufferCapacityDelegate);
+
+            Handle->GetObjectRefType = (void*)Marshal.GetFunctionPointerForDelegate(GetObjectRefTypeDelegate);
         }
 
-        public void* GetMethodArgs;
+        public void* reserved0;
         public void* reserved1;
         public void* reserved2;
 
@@ -1111,5 +1138,7 @@ namespace IKVM.Runtime.JNI
         public void* GetObjectRefType;
 
     }
+
+#endif
 
 }

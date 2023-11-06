@@ -1,0 +1,23 @@
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">net6.0</IkvmMSBuildTaskFolder>
+        <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmMSBuildTaskFolder>
+        <IkvmMSBuildTaskFactory Condition=" '$(MSBuildRuntimeType)' == 'Core' "></IkvmMSBuildTaskFactory>
+        <IkvmMSBuildTaskFactory Condition=" '$(MSBuildRuntimeType)' != 'Core' ">TaskHostFactory</IkvmMSBuildTaskFactory>
+        <IkvmMSBuildTaskAssembly>$(MSBuildThisFileDirectory)..\tasks\$(IkvmMSBuildTaskFolder)\IKVM.MSBuild.Tasks.dll</IkvmMSBuildTaskAssembly>
+        <IkvmCompilerToolPath>@(IkvmCompilerToolPath->WithMetadataValue('TargetFramework', '$(IkvmToolFramework)')->WithMetadataValue('RuntimeIdentifier', '$(IkvmToolRuntime)'))</IkvmCompilerToolPath>
+        <IkvmExporterToolPath>@(IkvmExporterToolPath->WithMetadataValue('TargetFramework', '$(IkvmToolFramework)')->WithMetadataValue('RuntimeIdentifier', '$(IkvmToolRuntime)'))</IkvmExporterToolPath>
+    </PropertyGroup>
+
+    <UsingTask TaskName="IkvmResolveNearestRuntimeIdentifier" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmReferenceItemPrepare" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmReferenceExportItemPrepare" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmExporter" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmJavaCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    
+</Project>

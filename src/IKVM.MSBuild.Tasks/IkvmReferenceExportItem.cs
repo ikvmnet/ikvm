@@ -33,7 +33,6 @@
             {
                 item.ItemSpec = item.Item.ItemSpec;
                 item.References = item.Item.GetMetadata(IkvmReferenceExportItemMetadata.References)?.Split(IkvmReferenceExportItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
-                item.Libraries = item.Item.GetMetadata(IkvmReferenceExportItemMetadata.Libraries)?.Split(IkvmReferenceExportItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
                 item.Namespaces = item.Item.GetMetadata(IkvmReferenceExportItemMetadata.Namespaces)?.Split(IkvmReferenceExportItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
                 item.Shared = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.Shared), "true", StringComparison.OrdinalIgnoreCase);
                 item.NoStdLib = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.NoStdLib), "true", StringComparison.OrdinalIgnoreCase);
@@ -78,11 +77,6 @@
         public List<string> References { get; set; } = new List<string>();
 
         /// <summary>
-        /// Paths to libraries.
-        /// </summary>
-        public List<string> Libraries { get; set; } = new List<string>();
-
-        /// <summary>
         /// Namespaces to export.
         /// </summary>
         public List<string> Namespaces { get; set; }
@@ -94,7 +88,9 @@
         public bool Forwarders { get; set; }
 
         public bool IncludeNonPublicTypes { get; set; }
+
         public bool IncludeNonPublicInterfaces { get; set; }
+
         public bool IncludeNonPublicMembers { get; set; }
 
         public bool IncludeParameterNames { get; set; }
@@ -115,7 +111,6 @@
         {
             Item.ItemSpec = ItemSpec;
             Item.SetMetadata(IkvmReferenceExportItemMetadata.References, string.Join(IkvmReferenceExportItemMetadata.PropertySeperatorString, References));
-            Item.SetMetadata(IkvmReferenceExportItemMetadata.Libraries, string.Join(IkvmReferenceExportItemMetadata.PropertySeperatorString, Libraries));
             Item.SetMetadata(IkvmReferenceExportItemMetadata.Namespaces, string.Join(IkvmReferenceExportItemMetadata.PropertySeperatorString, Namespaces));
             Item.SetMetadata(IkvmReferenceExportItemMetadata.Shared, Shared ? "true" : "false");
             Item.SetMetadata(IkvmReferenceExportItemMetadata.NoStdLib, NoStdLib ? "true" : "false");

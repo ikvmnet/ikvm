@@ -14,12 +14,12 @@ namespace IKVM.Java.Externs.sun.security.provider
         /// <summary>
         /// Implements the native method 'getSeedBytes'.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public static void getSeedBytes(object self, byte[] result)
+        public static bool nativeGenerateSeed(byte[] result)
         {
             rng.GetBytes(result);
+            return true;
         }
 
     }

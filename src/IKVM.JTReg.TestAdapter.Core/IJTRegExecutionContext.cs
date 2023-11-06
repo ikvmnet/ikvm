@@ -12,6 +12,11 @@ namespace IKVM.JTReg.TestAdapter.Core
         string TestRunDirectory { get; }
 
         /// <summary>
+        /// Gets the options to apply.
+        /// </summary>
+        JTRegTestOptions Options { get; }
+
+        /// <summary>
         /// Filters the test case based on the test execution.
         /// </summary>
         /// <param name="test"></param>

@@ -161,8 +161,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             // obtain new addresses
                             var local = ((IPEndPoint)acceptSocket.LocalEndPoint).ToInetSocketAddress();
                             var remote = ((IPEndPoint)acceptSocket.RemoteEndPoint).ToInetSocketAddress();
-                            var fd = FileDescriptorAccessor.FromSocket(acceptSocket);
-                            var client = CreateClientChannel(self, fd, remote);
+                            var fdo = FileDescriptorAccessor.Init();
+                            FileDescriptorAccessor.SetSocket(fdo, acceptSocket);
+                            var client = CreateClientChannel(self, fdo, remote);
 
                             // check access to specified host
                             if (accessControlContext != null)
@@ -213,17 +214,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (self.fd == null)
                 return;
 
-            var socket = FileDescriptorAccessor.GetSocket(self.fd);
-            if (socket == null)
-                return;
-
             try
             {
-                // null socket before close, as close may take a minute to flush
-                FileDescriptorAccessor.SetSocket(self.fd, null);
-                socket.Close();
+                var h = FileDescriptorAccessor.GetHandle(self.fd);
+                FileDescriptorAccessor.SetHandle(self.fd, -1);
+                LibIkvm.Instance.io_close_socket(h);
             }
-            catch (SocketException)
+            catch
             {
                 // ignore
             }

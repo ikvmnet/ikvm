@@ -337,26 +337,18 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            var socket = FileDescriptorAccessor.GetSocket(fd);
-            if (socket == null)
+            if (fd == null)
                 return;
 
             try
             {
-                FileDescriptorAccessor.SetSocket(fd, null);
-                socket.Close();
+                var h = FileDescriptorAccessor.GetHandle(fd);
+                FileDescriptorAccessor.SetHandle(fd, -1);
+                LibIkvm.Instance.io_close_socket(h);
             }
-            catch (SocketException)
+            catch
             {
-                return;
-            }
-            catch (ObjectDisposedException)
-            {
-                return;
-            }
-            catch (Exception e)
-            {
-                throw new global::java.io.IOException(e);
+                // ignore
             }
 #endif
         }

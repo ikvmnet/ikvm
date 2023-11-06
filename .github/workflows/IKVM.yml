@@ -109,7 +109,7 @@ jobs:
     name: Build IKVM
     needs:
     - build-openjdk
-    timeout-minutes: 480
+    timeout-minutes: 720
     runs-on: windows-latest
     steps:
     - name: Set Paths (Windows)
@@ -156,6 +156,11 @@ jobs:
       with:
         version: "16.0"
         cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+    - name: Install apple-codesign
+      uses: actions-rs/install@v0.1
+      with:
+        crate: apple-codesign
+        version: latest
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0
       with:
@@ -224,6 +229,7 @@ jobs:
           /p:CreateHardLinksForCopyLocalIfPossible=true `
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
+          /p:FastBuild=true `
           IKVM.dist.msbuildproj
       working-directory: ${{ env.WORKPATH }}\ikvm
     - name: Upload MSBuild Log
@@ -287,6 +293,17 @@ jobs:
     - name: Delete Tests (IKVM.ByteCode.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.ByteCode.Tests.tar.gz
+    - name: Package Tests (IKVM.Reflection.Tests)
+      run: tar czvf C:\tests--IKVM.Reflection.Tests.tar.gz tests\IKVM.Reflection.Tests
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+    - name: Upload Tests (IKVM.Reflection.Tests)
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests--IKVM.Reflection.Tests
+        path: C:\tests--IKVM.Reflection.Tests.tar.gz
+    - name: Delete Tests (IKVM.Reflection.Tests)
+      shell: pwsh
+      run: ri C:\tests--IKVM.Reflection.Tests.tar.gz
     - name: Package Tests (IKVM.Tests)
       run: tar czvf C:\tests--IKVM.Tests.tar.gz tests\IKVM.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
@@ -397,15 +414,26 @@ jobs:
     - name: Delete Tests (IKVM.OpenJDK.Tests)
       shell: pwsh
       run: ri C:\tests--IKVM.OpenJDK.Tests.tar.gz
+    - name: Package Documentation
+      shell: pwsh
+      run: Compress-Archive -Path doc\* -DestinationPath C:\doc.zip
+      working-directory: ${{ env.WORKPATH }}\ikvm
+    - name: Upload Documentation
+      uses: actions/upload-artifact@v3
+      with:
+        name: doc
+        path: C:\doc.zip
   test:
     strategy:
+      fail-fast: false
       matrix:
         run:
         - IKVM.ByteCode.Tests
+        - IKVM.Reflection.Tests
         - IKVM.Tests
         - IKVM.Java.Tests
-        - IKVM.Tools.Importer.Tests
         - IKVM.Tools.Exporter.Tests
+        - IKVM.Tools.Importer.Tests
         - IKVM.Tools.Tests
         - IKVM.JTReg.TestAdapter.Tests
         - IKVM.OpenJDK.Tests?TestPartition=0
@@ -416,100 +444,95 @@ jobs:
         - IKVM.OpenJDK.Tests?TestPartition=5
         - IKVM.OpenJDK.Tests?TestPartition=6
         - IKVM.OpenJDK.Tests?TestPartition=7
+        - IKVM.OpenJDK.Tests?TestPartition=8
+        - IKVM.OpenJDK.Tests?TestPartition=9
+        - IKVM.OpenJDK.Tests?TestPartition=10
+        - IKVM.OpenJDK.Tests?TestPartition=11
+        - IKVM.OpenJDK.Tests?TestPartition=12
+        - IKVM.OpenJDK.Tests?TestPartition=13
+        - IKVM.OpenJDK.Tests?TestPartition=14
+        - IKVM.OpenJDK.Tests?TestPartition=15
         tfm:
-        - net461
-        - netcoreapp3.1
+        - net472
         - net6.0
-        - net7.0
         sys:
-        - windows
-        - linux
+        - win-x64
+        - linux-x64
+        - osx-x64
         exclude:
-        - tfm: net461
-          sys: linux
-        - run: IKVM.Java.Tests
-          tfm: net6.0
-        - run: IKVM.Tools.Exporter.Tests
-          tfm: net6.0
-        - run: IKVM.Tools.Importer.Tests
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=0
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=1
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=2
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=3
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=4
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=5
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=6
-          tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=7
-          tfm: net6.0
-        - run: IKVM.Java.Tests
-          tfm: net7.0
-        - run: IKVM.Tools.Exporter.Tests
-          tfm: net7.0
-        - run: IKVM.Tools.Importer.Tests
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=0
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=1
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=2
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=3
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=4
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=5
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=6
-          tfm: net7.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=7
-          tfm: net7.0
+        - tfm: net472
+          sys: linux-x64
+        - tfm: net472
+          sys: osx-x64
         include:
+        - run: IKVM.ByteCode.Tests
+          tfm: net7.0
+          sys: win-x64
+        - run: IKVM.ByteCode.Tests
+          tfm: net7.0
+          sys: linux-x64
+        - run: IKVM.ByteCode.Tests
+          tfm: net7.0
+          sys: osx-x64
+        - run: IKVM.Reflection.Tests
+          tfm: net7.0
+          sys: win-x64
+        - run: IKVM.Reflection.Tests
+          tfm: net7.0
+          sys: linux-x64
+        - run: IKVM.Reflection.Tests
+          tfm: net7.0
+          sys: osx-x64
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net472
-          sys: windows
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: netcoreapp3.1
-          sys: windows
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net6.0
-          sys: windows
+          sys: win-x64
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net7.0
-          sys: windows
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: netcoreapp3.1
-          sys: linux
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net6.0
-          sys: linux
+          sys: win-x64
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net7.0
-          sys: linux
+          sys: osx-x64
         - run: IKVM.MSBuild.Tests
           tfm: net7.0
-          sys: windows
-        - run: IKVM.MSBuild.Tests
-          tfm: net7.0
-          sys: linux
+          sys: win-x64
+        # - run: IKVM.MSBuild.Tests
+        #   tfm: net7.0
+        #   sys: linux-x64
+        # - run: IKVM.MSBuild.Tests
+        #   tfm: net7.0
+        #   sys: osx-x64
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
-          sys: windows
+          sys: win-x64
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
-          sys: linux
+          sys: linux-x64
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net7.0
+          sys: osx-x64
+        - run: IKVM.Tests
+          tfm: net7.0
+          sys: win-x64
+        - run: IKVM.Tests
+          tfm: net7.0
+          sys: linux-x64
+        - run: IKVM.Tests
+          tfm: net7.0
+          sys: osx-x64
+        - run: IKVM.Tools.Tests
+          tfm: net7.0
+          sys: win-x64
+        - run: IKVM.Tools.Tests
+          tfm: net7.0
+          sys: linux-x64
+        - run: IKVM.Tools.Tests
+          tfm: net7.0
+          sys: osx-x64
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
     - build-ikvm
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
@@ -526,26 +549,26 @@ jobs:
         mkdir $dir
         mkdir $dir\temp
         mkdir $dir\dotnet
-        mkdir $dir\ikvm
-        Add-Content $env:GITHUB_ENV "`nIKVMPATH=$dir\ikvm"
+        mkdir $dir\work
+        Add-Content $env:GITHUB_ENV "`nWORKPATH=$dir\work"
         Add-Content $env:GITHUB_ENV "`nTMP=$dir\temp`nTEMP=$dir\temp`nTMPDIR=$dir\temp"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir\dotnet"
-    - name: Set Paths (Linux)
-      if: runner.os == 'Linux'
+    - name: Set Paths (Linux/OS X)
+      if: runner.os == 'Linux' || runner.os == 'macOS'
       shell: pwsh
       run: |
         $dir="${{ runner.temp }}/w"
         mkdir $dir
         mkdir $dir/temp
         mkdir $dir/dotnet
-        mkdir $dir/ikvm
-        Add-Content $env:GITHUB_ENV "`nIKVMPATH=$dir/ikvm"
+        mkdir $dir/work
+        Add-Content $env:GITHUB_ENV "`nWORKPATH=$dir/work"
         Add-Content $env:GITHUB_ENV "`nTMP=$dir/temp`nTEMP=$dir/temp`nTMPDIR=$dir/temp"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir/dotnet"
-    - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 3.1.x
+    - name: Install ProcDump
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: choco install procdump -y; Add-Content $env:GITHUB_PATH "$env:ProgramData\chocolatey\bin\"
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v3
       with:
@@ -555,7 +578,7 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Setup WSL
-      if: matrix.sys == 'windows'
+      if: runner.os == 'Windows'
       uses: Vampire/setup-wsl@v2
     - name: Get Test Name
       uses: actions/github-script@v6
@@ -572,14 +595,14 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: tests--${{ steps.test-name.outputs.result }}
-        path: ${{ env.IKVMPATH }}
+        path: ${{ env.WORKPATH }}
     - name: Restore Tests
       run: tar xzvf tests--${{ steps.test-name.outputs.result }}.tar.gz
-      working-directory: ${{ env.IKVMPATH }}
+      working-directory: ${{ env.WORKPATH }}
     - name: Delete Tests
       shell: pwsh
       run: ri tests--${{ steps.test-name.outputs.result }}.tar.gz
-      working-directory: ${{ env.IKVMPATH }}
+      working-directory: ${{ env.WORKPATH }}
     - name: Execute Tests
       timeout-minutes: 120
       shell: pwsh
@@ -598,24 +621,41 @@ jobs:
             $tst = $run
         }
 
-        # scan for test assemblies
-        $tests = $(gci .\tests\$tst\$tfm -Recurse -Filter '*.Tests.dll')
-
-        # if a query was specified, add to test command
+        # scan and process test assemblies
+        $tests = $(gi .\tests\$tst\$tfm\*.Tests.dll)
         if ($tests) {
+            $argl = @(
+                "-f", $tfm,
+                "--blame",
+                "--blame-crash",
+                "--blame-hang",
+                "--blame-hang-timeout", "30m",
+                "-v:diag",
+                "--results-directory", "TestResults",
+                "--logger:console;verbosity=diag",
+                "--logger:trx",
+                "--collect", "Code Coverage"
+            )
+            
+            $runsettings = $(gi .\tests\$tst\$tfm\*.runsettings)
+            if ($runsettings) {
+                $argl += "--settings:$runsettings"
+            }
+
             if ($qry -ne "" -and $qry -ne $null) {
+                $argl += @("--filter", $qry)
                 Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst-$qry--$tfm--$sys"
-                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" --filter "$qry" $tests
             } else {
                 Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst--$tfm--$sys"
-                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" $tests
             }
+            
+            dotnet test @argl $tests[0].FullName
         }
-      working-directory: ${{ env.IKVMPATH }}
+      working-directory: ${{ env.WORKPATH }}
     - name: Archive Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
       run: tar czvf ${{ env.TMPDIR }}/TestResults.tar.gz TestResults
-      working-directory: ${{ env.IKVMPATH }}
+      working-directory: ${{ env.WORKPATH }}
     - name: Upload Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
       uses: actions/upload-artifact@v3
@@ -689,13 +729,18 @@ jobs:
     - name: Compress Image
       shell: pwsh
       run: cd dist && gi image/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "image/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.tar.gz" .; Pop-Location }
+    - name: Download Documentation
+      uses: actions/download-artifact@v3
+      with:
+        name: doc
+        path: dist
     - name: Create Release
       if: github.ref_type == 'tag'
       uses: ncipollo/release-action@v1.10.0
       with:
         tag: ${{ github.ref_name }}
         allowUpdates: true
-        artifacts: dist/nuget/*.nupkg,dist/bin/*.zip,dist/bin/*.tar.gz,dist/image/*.zip,dist/image/*.tar.gz,dist/tools/*.zip,dist/tools/*.tar.gz
+        artifacts: dist/nuget/*.nupkg,dist/bin/*.zip,dist/bin/*.tar.gz,dist/image/*.zip,dist/image/*.tar.gz,dist/tools/*.zip,dist/tools/*.tar.gz,dist/doc.zip
         draft: false
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)

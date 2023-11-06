@@ -57,7 +57,11 @@ namespace IKVM.JTReg.TestAdapter
             this.runContext = runContext ?? throw new ArgumentNullException(nameof(runContext));
             this.frameworkHandle = frameworkHandle ?? throw new ArgumentNullException(nameof(frameworkHandle));
             this.filterExpression = runContext.GetTestCaseFilter(properties.Keys, s => properties.TryGetValue(s, out var v) ? v : null);
+
+            Options = runContext.RunSettings.ToJTRegOptions();
         }
+
+        public JTRegTestOptions Options { get; }
 
         public string TestRunDirectory => runContext.TestRunDirectory;
 

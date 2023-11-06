@@ -27,12 +27,13 @@
             <DelaySign></DelaySign>
             <Aliases></Aliases>
             <Private>true</Private>
+            <CopyLocal>true</CopyLocal>
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </IkvmReference>
     </ItemDefinitionGroup>
 
-    <ItemGroup>
-        <None Include="$(MSBuildThisFileDirectory)..\runtimes\**\*" Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))" LinkBase="runtimes">
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+        <None Include="$(MSBuildThisFileDirectory)..\runtimes\**\*" LinkBase="runtimes">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>runtimes\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
             <Visible>false</Visible>

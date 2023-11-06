@@ -25,7 +25,12 @@ namespace IKVM.MSBuild.Tasks.Tests
         /// <returns></returns>
         IkvmReferenceItemPrepare BuildTestTask(string toolFramework, string toolVersion)
         {
+            var engine = new Mock<IBuildEngine9>();
+            var errors = new List<BuildErrorEventArgs>();
+            engine.Setup(x => x.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback((BuildErrorEventArgs e) => errors.Add(e));
+
             var t = new IkvmReferenceItemPrepare();
+            t.BuildEngine = engine.Object;
             t.ToolVersion = toolVersion;
             t.ToolFramework = toolFramework;
             t.RuntimeAssembly = typeof(IKVM.Runtime.InternalException).Assembly.Location;
@@ -248,9 +253,9 @@ namespace IKVM.MSBuild.Tasks.Tests
         }
 
         [TestMethod]
-        public void Should_assign_identity_to_jar_for_netcoreapp3_1()
+        public void Should_assign_identity_to_jar_for_net60()
         {
-            var t = BuildTestTask("netcoreapp3.1", "0.0.0");
+            var t = BuildTestTask("net6.0", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t.Items = new[] { i1 };
             t.Execute().Should().BeTrue();
@@ -259,9 +264,9 @@ namespace IKVM.MSBuild.Tasks.Tests
         }
 
         [TestMethod]
-        public void Should_assign_identity_to_jar_for_net461()
+        public void Should_assign_identity_to_jar_for_net472()
         {
-            var t = BuildTestTask("net461", "0.0.0");
+            var t = BuildTestTask("net472", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t.Items = new[] { i1 };
             t.Execute().Should().BeTrue();
@@ -270,14 +275,14 @@ namespace IKVM.MSBuild.Tasks.Tests
         }
 
         [TestMethod]
-        public void Should_assign_consistent_identity_to_jar_for_netcoreapp3_1()
+        public void Should_assign_consistent_identity_to_jar_for_net60()
         {
-            var t1 = BuildTestTask("netcoreapp3.1", "0.0.0");
+            var t1 = BuildTestTask("net6.0", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t1.Items = new[] { i1 };
             t1.Execute().Should().BeTrue();
 
-            var t2 = BuildTestTask("netcoreapp3.1", "0.0.0");
+            var t2 = BuildTestTask("net6.0", "0.0.0");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
@@ -288,14 +293,14 @@ namespace IKVM.MSBuild.Tasks.Tests
         }
 
         [TestMethod]
-        public void Should_assign_consistent_identity_to_jar_for_net461()
+        public void Should_assign_consistent_identity_to_jar_for_net472()
         {
-            var t1 = BuildTestTask("net461", "0.0.0");
+            var t1 = BuildTestTask("net472", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t1.Items = new[] { i1 };
             t1.Execute().Should().BeTrue();
 
-            var t2 = BuildTestTask("net461", "0.0.0");
+            var t2 = BuildTestTask("net472", "0.0.0");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
@@ -308,12 +313,12 @@ namespace IKVM.MSBuild.Tasks.Tests
         [TestMethod]
         public void Should_vary_by_tool_framework()
         {
-            var t1 = BuildTestTask("netcoreapp3.1", "0.0.0");
+            var t1 = BuildTestTask("net6.0", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t1.Items = new[] { i1 };
             t1.Execute().Should().BeTrue();
 
-            var t2 = BuildTestTask("net461", "0.0.0");
+            var t2 = BuildTestTask("net472", "0.0.0");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
@@ -326,12 +331,12 @@ namespace IKVM.MSBuild.Tasks.Tests
         [TestMethod]
         public void Should_vary_by_tool_version()
         {
-            var t1 = BuildTestTask("netcoreapp3.1", "0.0.0");
+            var t1 = BuildTestTask("net6.0", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t1.Items = new[] { i1 };
             t1.Execute().Should().BeTrue();
 
-            var t2 = BuildTestTask("netcoreapp3.1", "0.0.1");
+            var t2 = BuildTestTask("net6.0", "0.0.1");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
@@ -344,12 +349,12 @@ namespace IKVM.MSBuild.Tasks.Tests
         [TestMethod]
         public void Should_vary_by_assembly_name()
         {
-            var t1 = BuildTestTask("netcoreapp3.1", "0.0.0");
+            var t1 = BuildTestTask("net6.0", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld1", "0.0.0.0");
             t1.Items = new[] { i1 };
             t1.Execute().Should().BeTrue();
 
-            var t2 = BuildTestTask("netcoreapp3.1", "0.0.0");
+            var t2 = BuildTestTask("net6.0", "0.0.0");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld2", "0.0.0.0");
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
@@ -362,12 +367,12 @@ namespace IKVM.MSBuild.Tasks.Tests
         [TestMethod]
         public void Should_vary_by_assembly_version()
         {
-            var t1 = BuildTestTask("netcoreapp3.1", "0.0.0");
+            var t1 = BuildTestTask("net6.0", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t1.Items = new[] { i1 };
             t1.Execute().Should().BeTrue();
 
-            var t2 = BuildTestTask("netcoreapp3.1", "0.0.1");
+            var t2 = BuildTestTask("net6.0", "0.0.1");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
@@ -380,7 +385,7 @@ namespace IKVM.MSBuild.Tasks.Tests
         [TestMethod]
         public void Should_sort_by_reference_order()
         {
-            var t = BuildTestTask("netcoreapp3.1", "0.0.0");
+            var t = BuildTestTask("net6.0", "0.0.0");
 
             var i1 = new TaskItem("helloworld1");
             i1.SetMetadata(IkvmReferenceItemMetadata.Compile, HELLOWORLD1_JAR);

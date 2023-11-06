@@ -11,7 +11,6 @@
         public static readonly string Namespaces = "Namespaces";
         public static readonly string Shared = "Shared";
         public static readonly string NoStdLib = "NoStdLib";
-        public static readonly string Libraries = "Libraries";
         public static readonly string Forwarders = "Forwarders";
         public static readonly string IncludeNonPublicTypes = "IncludeNonPublicTypes";
         public static readonly string IncludeNonPublicInterfaces = "IncludeNonPublicInterfaces";

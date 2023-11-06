@@ -22,6 +22,9 @@ namespace IKVM.JTReg.TestAdapter.Core
 
         internal static readonly string JTREG_LIB = Path.Combine(Path.GetDirectoryName(typeof(JTRegTestManager).Assembly.Location), "jtreg");
 
+        protected static readonly string[] DEFAULT_WINDOWS_ENV_VARS = { "PATH", "SystemDrive", "SystemRoot", "windir", "TMP", "TEMP", "TZ" };
+        protected static readonly string[] DEFAULT_UNIX_ENV_VARS = { "PATH", "DISPLAY", "GNOME_DESKTOP_SESSION_ID", "HOME", "LANG", "LC_ALL", "LC_CTYPE", "LPDEST", "PRINTER", "TZ", "XMODIFIERS" };
+
         internal const string BASEDIR_PREFIX = "ikvm-jtreg-";
         internal const string TEST_ROOT_FILE_NAME = "TEST.ROOT";
         internal const string TEST_PROBLEM_LIST_FILE_NAME = "ProblemList.txt";
@@ -91,7 +94,6 @@ namespace IKVM.JTReg.TestAdapter.Core
                 s.Append(b[i].ToString("x2"));
             return s.ToString();
         }
-
 
         /// <summary>
         /// Creates a new TestManager.
@@ -173,13 +175,33 @@ namespace IKVM.JTReg.TestAdapter.Core
             if (context is null)
                 throw new ArgumentNullException(nameof(context));
 
+            source = Path.GetFullPath(source);
+            DiscoverTestsImpl(source, Util.GetTestSuiteDirectories(source, context).ToArray(), context, cancellationToken);
+        }
+
+        /// <summary>
+        /// Discovers the available tests in the given root directories.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="testDirs"></param>
+        /// <param name="context"></param>
+        /// <param name="cancellationToken"></param>
+        internal void DiscoverTestsImpl(string source, string[] testDirs, IJTRegDiscoveryContext context, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(source))
+                throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
+            if (testDirs is null)
+                throw new ArgumentNullException(nameof(testDirs));
+            if (context is null)
+                throw new ArgumentNullException(nameof(context));
+
             try
             {
                 // discover test suites from test assembly
-                var testDirs = new java.util.ArrayList();
-                foreach (var testRoot in Util.GetTestSuiteDirectories(source, context))
-                    testDirs.add(new java.io.File(testRoot));
-                if (testDirs.size() == 0)
+                var testRoots = new java.util.ArrayList();
+                foreach (var testDir in testDirs)
+                    testRoots.add(new java.io.File(testDir));
+                if (testRoots.size() == 0)
                     return;
 
                 // output path for jtreg state
@@ -195,7 +217,7 @@ namespace IKVM.JTReg.TestAdapter.Core
 
                 // initialize the test manager with the discovered roots
                 var testManager = CreateTestManager(context, baseDir, new java.io.PrintWriter(output));
-                testManager.addTestFiles(testDirs, false);
+                testManager.addTestFiles(testRoots, false);
 
                 // track metrics related to tests
                 int testCount = 0;
@@ -205,7 +227,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                 // for each suite, get the results and transform a test case
                 foreach (dynamic testSuite in (IEnumerable<dynamic>)Util.GetTestSuites(source, testManager))
                 {
-                    foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite))
+                    foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite, context.Options.PartitionCount))
                     {
                         context.SendTestCase(testCase);
                         testCount++;
@@ -221,9 +243,6 @@ namespace IKVM.JTReg.TestAdapter.Core
             }
         }
 
-        protected static readonly string[] DEFAULT_WINDOWS_ENV_VARS = { "PATH", "SystemDrive", "SystemRoot", "windir", "TMP", "TEMP", "TZ" };
-        protected static readonly string[] DEFAULT_UNIX_ENV_VARS = { "PATH", "DISPLAY", "GNOME_DESKTOP_SESSION_ID", "HOME", "LANG", "LC_ALL", "LC_CTYPE", "LPDEST", "PRINTER", "TZ", "XMODIFIERS" };
-
         /// <summary>
         /// Runs the specified test cases, if provided, in the sources.
         /// </summary>
@@ -233,6 +252,11 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <param name="cancellationToken"></param>
         public void RunTests(string source, List<JTRegTestCase> tests, IJTRegExecutionContext context, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(source))
+                throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
+            if (context is null)
+                throw new ArgumentNullException(nameof(context));
+
             try
             {
                 IkvmTraceServer debug = null;
@@ -246,7 +270,8 @@ namespace IKVM.JTReg.TestAdapter.Core
                         debug.Start();
                     }
 
-                    RunTestForSource(source, context, tests?.Where(i => i.Source == source).ToList(), debug?.Uri, cancellationToken);
+                    source = Path.GetFullPath(source);
+                    RunTestsImpl(source, Util.GetTestSuiteDirectories(source, context).ToArray(), tests?.Where(i => i.Source == source).ToList(), context, debug?.Uri, cancellationToken);
                 }
                 finally
                 {
@@ -268,14 +293,15 @@ namespace IKVM.JTReg.TestAdapter.Core
         }
 
         /// <summary>
-        /// Runs the tests in the given source, optionally filtered by specific test case.
+        /// Runs the tests in the given sources, optionally filtered by specific test case.
         /// </summary>
         /// <param name="source"></param>
-        /// <param name="context"></param>
+        /// <param name="testDirs"></param>
         /// <param name="tests"></param>
+        /// <param name="context"></param>
         /// <param name="debugUri"></param>
         /// <param name="cancellationToken"></param>
-        internal void RunTestForSource(string source, IJTRegExecutionContext context, List<JTRegTestCase> tests, Uri debugUri, CancellationToken cancellationToken)
+        internal void RunTestsImpl(string source, string[] testDirs, List<JTRegTestCase> tests, IJTRegExecutionContext context, Uri debugUri, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(source))
                 throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
@@ -287,10 +313,10 @@ namespace IKVM.JTReg.TestAdapter.Core
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // discover test suites from test assembly
-                var testDirs = new java.util.ArrayList();
-                foreach (var testRoot in Util.GetTestSuiteDirectories(source, context))
-                    testDirs.add(new java.io.File(testRoot));
-                if (testDirs.size() == 0)
+                var testRoots = new java.util.ArrayList();
+                foreach (var testDir in testDirs)
+                    testRoots.add(new java.io.File(testDir));
+                if (testRoots.size() == 0)
                     return;
 
                 // output path for jtreg state
@@ -306,7 +332,7 @@ namespace IKVM.JTReg.TestAdapter.Core
 
                 // initialize the test manager with the discovered roots
                 var testManager = CreateTestManager(context, baseDir, new java.io.PrintWriter(output));
-                testManager.addTestFiles(testDirs, false);
+                testManager.addTestFiles(testRoots, false);
 
                 // load the set of suites
                 var testSuites = ((IEnumerable<dynamic>)Util.GetTestSuites(source, testManager)).ToList();
@@ -315,11 +341,11 @@ namespace IKVM.JTReg.TestAdapter.Core
                 foreach (dynamic testSuite in testSuites)
                 {
                     bool FilterByList(dynamic td) => tests == null || tests.Any(i => i.TestPathName == (string)Util.GetTestPathName(source, testSuite, td));
-                    bool FilterByContext(dynamic td) => context.FilterTestCase(Util.ToTestCase(source, testSuite, td));
+                    bool FilterByContext(dynamic td) => context.FilterTestCase(Util.ToTestCase(source, testSuite, td, context.Options.PartitionCount));
                     bool Filter(dynamic td) => FilterByList(td) && FilterByContext(td);
 
                     context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Running test suite: {(string)testSuite.getName()}");
-                    RunTests(source, testManager, testSuite, context, tests, output, CreateParameters(source, testManager, testSuite, (Func<dynamic, bool>)Filter, debugUri), cancellationToken);
+                    RunTestsImpl(source, testManager, testSuite, context, tests, output, CreateParameters(testManager, testSuite, (Func<dynamic, bool>)Filter, context.Options, debugUri), cancellationToken);
                 }
             }
             catch (Exception e)
@@ -331,16 +357,14 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <summary>
         /// Creates the parameters for a given suite.
         /// </summary>
-        /// <param name="source"></param>
         /// <param name="testManager"></param>
         /// <param name="testSuite"></param>
         /// <param name="filter"></param>
+        /// <param name="options"></param>
         /// <param name="debugUri"></param>
         /// <returns></returns>
-        dynamic CreateParameters(string source, dynamic testManager, dynamic testSuite, Func<dynamic, bool> filter, Uri debugUri)
+        dynamic CreateParameters(dynamic testManager, dynamic testSuite, Func<dynamic, bool> filter, JTRegTestOptions options, Uri debugUri)
         {
-            if (source is null)
-                throw new ArgumentNullException(nameof(source));
             if (testManager is null)
                 throw new ArgumentNullException(nameof(testManager));
             if (testSuite is null)
@@ -374,7 +398,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             rp.setFile((java.io.File)wd.getFile("config.jti"));
             rp.setEnvVars(GetEnvVars(debugUri));
             rp.setConcurrency(Environment.ProcessorCount);
-            rp.setTimeoutFactor(6);
+            rp.setTimeoutFactor(options.TimeoutFactor);
             rp.setRetainArgs(java.util.Collections.singletonList("all"));
             rp.setExcludeLists(excludeFileList.ToArray());
             rp.setMatchLists(includeFileList.ToArray());
@@ -451,7 +475,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <param name="output"></param>
         /// <param name="parameters"></param>
         /// <param name="cancellationToken"></param>
-        internal void RunTests(string source, dynamic testManager, dynamic testSuite, IJTRegExecutionContext context, IEnumerable<JTRegTestCase> tests, java.io.Writer output, dynamic parameters, CancellationToken cancellationToken)
+        internal void RunTestsImpl(string source, dynamic testManager, dynamic testSuite, IJTRegExecutionContext context, IEnumerable<JTRegTestCase> tests, java.io.Writer output, dynamic parameters, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(source))
                 throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
@@ -473,15 +497,17 @@ namespace IKVM.JTReg.TestAdapter.Core
 
             // generate a policy file for the test run
             var policyFile = (java.io.File)parameters.getWorkDirectory().getFile("jtreg.policy");
-            using (var policyFileStream = new StreamWriter(File.OpenWrite(policyFile.toString())))
+            using (var policyFileStream = new StreamWriter(File.Create(policyFile.toString())))
                 foreach (var jarName in new[] { "jtreg.jar", "javatest.jar" })
                     policyFileStream.WriteLine($@"grant codebase ""{java.nio.file.Paths.get(Path.Combine(JTREG_LIB, jarName)).toUri().toURL()}"" {{ permission java.security.AllPermission; }};");
 
             // set parameters on pool
+            var opts = context.Options;
             var pool = JTRegTypes.Agent.Pool.Instance();
+            pool.setTimeoutFactor(opts.TimeoutFactor);
             pool.setSecurityPolicy(policyFile);
 
-            // before we install our own security manager (which will restrict access to the system properties) take a copy of the system properties
+            // before we install our own security manager (which will restrict access to the system properties) take a copy of the system propearties
             JTRegTypes.TestEnvironment.AddDefaultPropTable("(system properties)", java.lang.System.getProperties());
 
             // collect events from the harness

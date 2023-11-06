@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 using FluentAssertions;
@@ -19,6 +20,10 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void ScopeShouldAppearInLinkLocalAddress()
         {
+            // https://bugs.openjdk.org/browse/JDK-8212699 fixed in u202 or some such
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var dest = NetworkInterface.getNetworkInterfaces()
                 .AsEnumerable<NetworkInterface>()
                 .Where(i => i.isUp())
@@ -27,7 +32,7 @@ namespace IKVM.Tests.Java.java.net
                 .OfType<Inet6Address>()
                 .FirstOrDefault(i => i.isLinkLocalAddress());
 
-            var sock = new ServerSocket(0);
+            using var sock = new ServerSocket(0);
             var port = sock.getLocalPort();
 
             var test = Task.Run(() =>
@@ -38,13 +43,14 @@ namespace IKVM.Tests.Java.java.net
                 n.close();
             });
 
-            var s = sock.accept();
+            using var s = sock.accept();
             var a = s.getInetAddress();
-            var o = s.getOutputStream();
-            o.write(1);
-            o.close();
             a.Should().BeOfType<Inet6Address>();
             a.getHostAddress().Should().Contain("%");
+
+            using var o = s.getOutputStream();
+            o.write(1);
+            o.close();
 
             test.Wait();
         }
@@ -52,6 +58,9 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void CanBindLocalWithoutScope()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var addr = NetworkInterface.getNetworkInterfaces().AsEnumerable<NetworkInterface>()
                 .SelectMany(i => i.getInetAddresses().AsEnumerable<InetAddress>())
                 .OfType<Inet6Address>()

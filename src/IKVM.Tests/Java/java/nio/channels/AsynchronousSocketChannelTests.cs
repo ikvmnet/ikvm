@@ -25,7 +25,7 @@ namespace IKVM.Tests.Java.java.nio.channels
         {
             // setup listener
             var listener = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(0));
-            int port = ((InetSocketAddress)(listener.getLocalAddress())).getPort();
+            int port = ((InetSocketAddress)listener.getLocalAddress()).getPort();
             var lh = InetAddress.getLocalHost();
             var remote = new InetSocketAddress(lh, port);
 
@@ -36,23 +36,15 @@ namespace IKVM.Tests.Java.java.nio.channels
             var dst = new Sink((AsynchronousByteChannel)listener.accept().get());
 
             // start the sink and source
-            dst.start();
+            dst.Start();
             src.Start();
 
             // let the test run for a while
             Thread.sleep(20 * 1000);
 
-            // wait until everyone is done
-            var failed = false;
-
             var sent = src.Finish();
             var recv = dst.Finish();
-
-            if (recv != sent)
-                failed = true;
-
-            if (failed)
-                throw new RuntimeException("Test failed - see log for details");
+            recv.Should().Be(sent);
         }
 
         sealed class Source
@@ -83,7 +75,7 @@ namespace IKVM.Tests.Java.java.nio.channels
                 return bytesSent;
             }
 
-            private class Completion : CompletionHandler
+            class Completion : CompletionHandler
             {
 
                 private readonly Source source;
@@ -119,9 +111,6 @@ namespace IKVM.Tests.Java.java.nio.channels
             }
         }
 
-        /**
-         * Read bytes from a channel until EOF is received.
-         */
         sealed class Sink
         {
 
@@ -135,7 +124,7 @@ namespace IKVM.Tests.Java.java.nio.channels
                 this.readBuffer = ByteBuffer.allocate(1024);
             }
 
-            internal void start()
+            internal void Start()
             {
                 channel.read(readBuffer, null, new Completion(this));
             }
@@ -190,7 +179,7 @@ namespace IKVM.Tests.Java.java.nio.channels
                 {
                     Thread.sleep(100);
                 }
-                catch (InterruptedException e)
+                catch
                 {
 
                 }
@@ -203,7 +192,7 @@ namespace IKVM.Tests.Java.java.nio.channels
             {
                 ch.close();
             }
-            catch (IOException e)
+            catch
             {
 
             }

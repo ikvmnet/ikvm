@@ -84,14 +84,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     if (newSocket == null)
                         throw new global::java.net.SocketException("Invalid socket.");
 
-//                    // allow socket handle to be inherited by child processes on Windows
-//                    if (RuntimeUtil.IsWindows)
-//#if NETFRAMEWORK
-//                        SetHandleInformation(newSocket.Handle, HANDLE_FLAGS.INHERIT, HANDLE_FLAGS.NONE);
-//#else
-//                        SetHandleInformation(newSocket.SafeHandle, HANDLE_FLAGS.INHERIT, HANDLE_FLAGS.NONE);
-//#endif
-
                     FileDescriptorAccessor.SetSocket(newfd, newSocket);
                     var ep = (System.Net.IPEndPoint)newSocket.RemoteEndPoint;
                     ((object[])isaa)[0] = ep.ToInetSocketAddress();

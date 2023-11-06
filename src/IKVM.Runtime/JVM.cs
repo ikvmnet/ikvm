@@ -33,6 +33,7 @@ using IKVM.Runtime.Accessors.Java.Lang;
 using System.Runtime.CompilerServices;
 
 using IKVM.Runtime.Vfs;
+using IKVM.Runtime.Accessors.Ikvm.Internal;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -48,7 +49,7 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
-    internal static partial class JVM
+    public static partial class JVM
     {
 
         internal const string JarClassList = "--ikvm-classes--/";
@@ -62,18 +63,18 @@ namespace IKVM.Runtime
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
-        static readonly RuntimeContext context = new RuntimeContext(new Resolver(), false);
+        static readonly RuntimeContext context = new RuntimeContext(new RuntimeContextOptions(), new Resolver(), false);
         static readonly VfsTable vfs = VfsTable.BuildDefaultTable(new VfsRuntimeContext(context), Properties.HomePath);
 
         /// <summary>
         /// Gets the current <see cref="RuntimeContext"/> of the JVM.
         /// </summary>
-        public static RuntimeContext Context => context;
+        internal static RuntimeContext Context => context;
 
         /// <summary>
         /// Gets the current <see cref="VfsTable"/> of the JVM.
         /// </summary>
-        public static VfsTable Vfs => vfs;
+        internal static VfsTable Vfs => vfs;
 
         static readonly object initializedLock = new object();
         static bool initialized;
@@ -81,6 +82,7 @@ namespace IKVM.Runtime
         static AccessorCache baseAccessors;
         static ThreadGroupAccessor threadGroupAccessor;
         static SystemAccessor systemAccessor;
+        static CallerIDAccessor callerIDAccessor;
 
         static Lazy<object> systemThreadGroup = new Lazy<object>(MakeSystemThreadGroup);
         static Lazy<object> mainThreadGroup = new Lazy<object>(MakeMainThreadGroup);
@@ -91,22 +93,24 @@ namespace IKVM.Runtime
 
         static SystemAccessor SystemAccessor => BaseAccessors.Get(ref systemAccessor);
 
+        static CallerIDAccessor CallerIDAccessor => BaseAccessors.Get(ref callerIDAccessor);
+
         /// <summary>
         /// Gets the 'system' thread group.
         /// </summary>
-        public static object SystemThreadGroup => systemThreadGroup.Value;
+        internal static object SystemThreadGroup => systemThreadGroup.Value;
 
         /// <summary>
         /// Gets the 'main' thread group.
         /// </summary>
-        public static object MainThreadGroup => mainThreadGroup.Value;
+        internal static object MainThreadGroup => mainThreadGroup.Value;
 
 #endif
 
         /// <summary>
         /// Ensures the JVM is initialized.
         /// </summary>
-        public static void EnsureInitialized()
+        internal static void EnsureInitialized()
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
@@ -429,20 +433,6 @@ namespace IKVM.Runtime
                 // TODO this shouldn't be here
                 return null;
             }
-#endif
-        }
-
-#endif
-
-#if !IMPORTER && !EXPORTER
-
-        // helper for JNI (which doesn't have access to core library internals)
-        internal static object NewDirectByteBuffer(long address, int capacity)
-        {
-#if FIRST_PASS
-            return null;
-#else
-            return java.nio.DirectByteBuffer.__new(address, capacity);
 #endif
         }
 

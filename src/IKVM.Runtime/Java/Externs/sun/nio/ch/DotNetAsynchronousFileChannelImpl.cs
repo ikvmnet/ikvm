@@ -215,24 +215,17 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static void Close(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self)
         {
-            var stream = FileDescriptorAccessor.GetStream(self.fdObj);
-            if (stream == null)
+            if (self.fdObj == null)
                 return;
+
+            self.closeLock.writeLock().@lock();
 
             try
             {
-                self.closeLock.writeLock().@lock();
-                FileDescriptorAccessor.SetStream(self.fdObj, null);
-                self.closed = true;
+                if (self.closed)
+                    return;
 
-                try
-                {
-                    stream.Close();
-                }
-                catch
-                {
-                    // ignore errors closing the stream
-                }
+                self.closed = true;
             }
             finally
             {
@@ -240,6 +233,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
 
             self.invalidateAllLocks();
+
+            var h = FileDescriptorAccessor.GetHandle(self.fdObj);
+            FileDescriptorAccessor.SetHandle(self.fdObj, -1);
+            LibIkvm.Instance.io_close_file(h);
         }
 
         /// <summary>
@@ -403,6 +400,68 @@ namespace IKVM.Java.Externs.sun.nio.ch
         static extern unsafe int UnlockFileEx(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, NativeOverlapped* lpOverlapped);
 
         /// <summary>
+        /// Record locking flags for OS X.
+        /// </summary>
+        enum OSX_LockType : short
+        {
+
+            F_RDLCK = 1,
+            F_UNLCK = 2,
+            F_WRLCK = 3,
+
+        }
+
+        /// <summary>
+        /// Flock structure on OSX. Fields are in a different order than Mono.Posix.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        struct OSX_Flock
+        {
+
+            public long l_start;
+            public long l_len;
+            public int l_pid;
+            public OSX_LockType l_type;
+            public SeekFlags l_whence;
+
+        }
+
+        /// <summary>
+        /// 'fcntl' command values for OS X.
+        /// </summary>
+        enum OSX_FcntlCommand
+        {
+
+            F_GETLK = 7,
+            F_SETLK = 8,
+            F_SETLKW = 9,
+
+        }
+
+        /// <summary>
+        /// 'errno' values for OS X.
+        /// </summary>
+        enum OSX_Errno
+        {
+
+            EAGAIN = 35,
+            EACCES = 13,
+            EINTR = 4,
+            EDEADLK = 11,
+
+        }
+
+        /// <summary>
+        /// Invokes the 'fcntl' function on OS X.
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <param name="cmd"></param>
+        /// <param name="lock"></param>
+        /// <returns></returns>
+        [DllImport("c", SetLastError = true, EntryPoint = "fcntl")]
+        static extern int OSX_fcntl(int fd, OSX_FcntlCommand cmd, ref OSX_Flock @lock);
+
+        /// <summary>
         /// Implements the Lock logic as an asynchronous task.
         /// </summary>
         /// <param name="self"></param>
@@ -460,7 +519,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             throw new global::java.io.IOException(e);
                         }
                     }
-                    else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
+                    else if (RuntimeUtil.IsLinux)
                     {
                         while (true)
                         {
@@ -480,14 +539,20 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                     fl.l_type = shared ? LockType.F_RDLCK : LockType.F_WRLCK;
 
                                     // fails immediately with EAGAIN or EACCES if cannot obtain
-                                    if (Syscall.fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), FcntlCommand.F_SETLK, ref fl) == 0)
-                                        return fli;
+                                    var r = Syscall.fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), FcntlCommand.F_SETLK, ref fl);
+                                    if (r == -1)
+                                    {
+                                        var errno = Stdlib.GetLastError();
+                                        if (errno == Errno.EAGAIN || errno == Errno.EACCES)
+                                        {
+                                            await Task.Delay(TimeSpan.FromMilliseconds(100));
+                                            continue;
+                                        }
 
-                                    var errno = Syscall.GetLastError();
-                                    if (errno == Errno.EAGAIN || errno == Errno.EACCES)
-                                        continue;
+                                        UnixMarshal.ThrowExceptionForError(errno);
+                                    }
 
-                                    UnixMarshal.ThrowExceptionForError(errno);
+                                    return fli;
                                 }
                                 finally
                                 {
@@ -506,8 +571,60 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             {
                                 throw new global::java.io.IOException(e);
                             }
+                        }
+                    }
+                    else if (RuntimeUtil.IsOSX)
+                    {
+                        while (true)
+                        {
+                            try
+                            {
+                                if (cancellationToken.IsCancellationRequested)
+                                    return null;
 
-                            await Task.Delay(TimeSpan.FromMilliseconds(100));
+                                try
+                                {
+                                    self.begin();
+
+                                    var fl = new OSX_Flock();
+                                    fl.l_whence = SeekFlags.SEEK_SET;
+                                    fl.l_len = size == long.MaxValue ? 0 : size;
+                                    fl.l_start = position;
+                                    fl.l_type = shared ? OSX_LockType.F_RDLCK : OSX_LockType.F_WRLCK;
+
+                                    // fails immediately with EAGAIN or EACCES if cannot obtain
+                                    var r = OSX_fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), OSX_FcntlCommand.F_SETLK, ref fl);
+                                    if (r == -1)
+                                    {
+                                        var errno = (OSX_Errno)(int)Stdlib.GetLastError();
+                                        if (errno == OSX_Errno.EAGAIN || errno == OSX_Errno.EACCES)
+                                        {
+                                            await Task.Delay(TimeSpan.FromMilliseconds(100));
+                                            continue;
+                                        }
+
+                                        UnixMarshal.ThrowExceptionForError((Errno)(int)errno);
+                                    }
+
+                                    return fli;
+                                }
+                                finally
+                                {
+                                    self.end();
+                                }
+                            }
+                            catch (ObjectDisposedException)
+                            {
+                                throw new global::java.nio.channels.AsynchronousCloseException();
+                            }
+                            catch (System.Exception) when (IsOpen(self) == false)
+                            {
+                                throw new global::java.nio.channels.AsynchronousCloseException();
+                            }
+                            catch (System.Exception e)
+                            {
+                                throw new global::java.io.IOException(e);
+                            }
                         }
                     }
                     else
@@ -615,7 +732,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                         return fli;
                     }
-                    else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
+                    else if (RuntimeUtil.IsLinux)
                     {
                         var fl = new Flock();
                         fl.l_whence = SeekFlags.SEEK_SET;
@@ -635,6 +752,27 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         }
 
                         UnixMarshal.ThrowExceptionForError(errno);
+                    }
+                    else if (RuntimeUtil.IsOSX)
+                    {
+                        var fl = new OSX_Flock();
+                        fl.l_whence = SeekFlags.SEEK_SET;
+                        fl.l_len = size == long.MaxValue ? 0 : size;
+                        fl.l_start = position;
+                        fl.l_type = shared ? OSX_LockType.F_RDLCK : OSX_LockType.F_WRLCK;
+
+                        // fails immediately with EAGAIN or EACCES if cannot obtain
+                        if (OSX_fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), OSX_FcntlCommand.F_SETLK, ref fl) == 0)
+                            return fli;
+
+                        var errno = (OSX_Errno)Stdlib.GetLastError();
+                        if (errno == OSX_Errno.EAGAIN || errno == OSX_Errno.EACCES)
+                        {
+                            self.removeFromFileLockTable(fli);
+                            return null;
+                        }
+
+                        UnixMarshal.ThrowExceptionForError((Errno)(int)errno);
                     }
                     else
                     {
@@ -715,7 +853,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         return;
                     }
                 }
-                else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
+                else if (RuntimeUtil.IsLinux)
                 {
                     var fl = new Flock();
                     fl.l_whence = SeekFlags.SEEK_SET;
@@ -724,6 +862,18 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     fl.l_type = LockType.F_UNLCK;
 
                     var r = Syscall.fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), FcntlCommand.F_SETLK, ref fl);
+                    if (r == -1)
+                        UnixMarshal.ThrowExceptionForLastErrorIf(r);
+                }
+                else if (RuntimeUtil.IsOSX)
+                {
+                    var fl = new OSX_Flock();
+                    fl.l_whence = SeekFlags.SEEK_SET;
+                    fl.l_len = size == long.MaxValue ? 0 : size;
+                    fl.l_start = pos;
+                    fl.l_type = OSX_LockType.F_UNLCK;
+
+                    var r = OSX_fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), OSX_FcntlCommand.F_SETLK, ref fl);
                     if (r == -1)
                         UnixMarshal.ThrowExceptionForLastErrorIf(r);
                 }
@@ -784,6 +934,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
             int pos = dst.position();
             int lim = dst.limit();
             int rem = pos <= lim ? lim - pos : 0;
+            if (rem == 0)
+                return Task.FromResult<Integer>(new Integer(0));
             if (pos > lim)
                 return Task.FromException<Integer>(new global::java.lang.IllegalArgumentException("Position after limit."));
 
@@ -845,13 +997,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         var mem = mgr.Memory.Slice(pos, rem);
                         var n = await stream.ReadAsync(mem, cancellationToken);
                         dst.position(pos + n);
-                        return new global::java.lang.Integer(n);
+                        return new Integer(n);
                     }
                     else
                     {
                         var n = await stream.ReadAsync(dst.array(), dst.arrayOffset() + pos, rem, cancellationToken);
                         dst.position(pos + n);
-                        return new global::java.lang.Integer(n);
+                        return new Integer(n);
                     }
 #endif
                 }
@@ -905,22 +1057,22 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 throw new global::java.lang.IllegalArgumentException("Negative position");
 
             if (IsOpen(self) == false)
-                return Task.FromException<global::java.lang.Integer>(new global::java.nio.channels.ClosedChannelException());
+                return Task.FromException<Integer>(new global::java.nio.channels.ClosedChannelException());
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
-                return Task.FromException<global::java.lang.Integer>(new global::java.nio.channels.ClosedChannelException());
+                return Task.FromException<Integer>(new global::java.nio.channels.ClosedChannelException());
             if (stream.CanWrite == false)
-                return Task.FromException<global::java.lang.Integer>(new global::java.io.IOException("Stream does not support writing."));
+                return Task.FromException<Integer>(new global::java.io.IOException("Stream does not support writing."));
 
             // check buffer
             int pos = src.position();
             int lim = src.limit();
             int rem = pos <= lim ? lim - pos : 0;
             if (rem == 0)
-                return Task.FromResult<global::java.lang.Integer>(new global::java.lang.Integer(0));
+                return Task.FromResult<Integer>(new global::java.lang.Integer(0));
             if (pos > lim)
-                return Task.FromException<global::java.lang.Integer>(new global::java.lang.IllegalArgumentException("Position after limit."));
+                return Task.FromException<Integer>(new global::java.lang.IllegalArgumentException("Position after limit."));
 
             if (cancellationToken.IsCancellationRequested)
                 return null;
@@ -980,13 +1132,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         var mem = mgr.Memory.Slice(pos, rem);
                         await stream.WriteAsync(mem, cancellationToken);
                         src.position(pos + rem);
-                        return new global::java.lang.Integer(rem);
+                        return new Integer(rem);
                     }
                     else
                     {
                         await stream.WriteAsync(src.array(), src.arrayOffset() + pos, rem, cancellationToken);
                         src.position(pos + rem);
-                        return new global::java.lang.Integer(rem);
+                        return new Integer(rem);
                     }
 #endif
                 }

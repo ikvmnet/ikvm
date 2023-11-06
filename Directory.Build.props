@@ -1,24 +1,16 @@
 <Project>
-    <PropertyGroup>
-        <LangVersion Condition=" '$(LangVersion)' == '' ">10.0</LangVersion>
-        <NoWarn>$(NoWarn);1591;1573;CS8002;NU5100;NU5118;NU5128</NoWarn>
-        <AutoGenerateBindingRedirects Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</AutoGenerateBindingRedirects>
-        <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
-        <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
-        <CopyRetryCount>60</CopyRetryCount>
-        <CopyRetryDelayMilliseconds>15000</CopyRetryDelayMilliseconds>
-        
-        <SupportedRuntimes>win7-x64;win7-x86;win81-arm;win10-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedRuntimes>
+    <PropertyGroup Label="Runtime Info">
+        <SupportedRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedRuntimes>
         <EnabledRuntimes Condition=" '$(EnabledRuntimes)' == '' ">$(SupportedRuntimes)</EnabledRuntimes>
-
-        <SupportedToolRuntimes>win7-x64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64</SupportedToolRuntimes>
+        <SupportedToolRuntimes>win-x64;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedToolRuntimes>
         <EnabledToolRuntimes Condition=" '$(EnabledToolRuntimes)' == '' ">$(SupportedToolRuntimes)</EnabledToolRuntimes>
-        
-        <SupportedImageRuntimes>win7-x64;win7-x86;win81-arm;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64</SupportedImageRuntimes>
+        <SupportedImageRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedImageRuntimes>
         <EnabledImageRuntimes Condition=" '$(EnabledImageRuntimes)' == '' ">$(SupportedImageRuntimes)</EnabledImageRuntimes>
-    </PropertyGroup>
+        
+        <!--<EnabledRuntimes>win-x64</EnabledRuntimes>
+        <EnabledToolRuntimes>win-x64</EnabledToolRuntimes>
+        <EnabledImageRuntimes>win-x64</EnabledImageRuntimes>-->
 
-    <PropertyGroup>
         <_SupportedRuntimes>;$(SupportedRuntimes);</_SupportedRuntimes>
         <_EnabledRuntimes>;$(EnabledRuntimes);</_EnabledRuntimes>
         <_SupportedToolRuntimes>;$(SupportedToolRuntimes);</_SupportedToolRuntimes>
@@ -27,14 +19,7 @@
         <_EnabledImageRuntimes>;$(EnabledImageRuntimes);</_EnabledImageRuntimes>
     </PropertyGroup>
 
-    <ItemGroup>
-        <Authors Include="Jeroen Frijters" />
-        <Authors Include="Windward Studios" />
-        <Authors Include="Jerome Haltom" />
-        <Authors Include="Shad Storhaug" />
-    </ItemGroup>
-
-    <PropertyGroup Label="OpenJDK">
+    <PropertyGroup Label="OpenJDK Info">
         <OpenJdkDir>$(MSBuildThisFileDirectory)openjdk\</OpenJdkDir>
         <OpenJdkMajorVersion>1</OpenJdkMajorVersion>
         <OpenJdkMinorVersion>8</OpenJdkMinorVersion>
@@ -49,6 +34,13 @@
         <OpenJdkSpecificationVersion>$(OpenJdkMajorVersion).$(OpenJdkMinorVersion)</OpenJdkSpecificationVersion>
         <OpenJdkSpecificationVendor>Oracle Corporation</OpenJdkSpecificationVendor>
     </PropertyGroup>
+
+    <ItemGroup>
+        <Authors Include="Jeroen Frijters" />
+        <Authors Include="Windward Studios" />
+        <Authors Include="Jerome Haltom" />
+        <Authors Include="Shad Storhaug" />
+    </ItemGroup>
 
     <PropertyGroup Label="Copyright Info">
         <ProductName>IKVM</ProductName>
@@ -68,11 +60,26 @@
     <PropertyGroup Label="Package Info">
         <RepositoryUrl Condition=" '$(RepositoryUrl)' == '' ">https://github.com/ikvmnet/ikvm.git</RepositoryUrl>
         <RepositoryType Condition=" '$(RepositoryType)' == '' ">git</RepositoryType>
-        <PackageProjectUrl  Condition=" '$(PackageProjectUrl)' == '' ">https://github.com/ikvmnet/ikvm</PackageProjectUrl>
+        <PackageProjectUrl  Condition=" '$(PackageProjectUrl)' == '' ">https://ikvm.org</PackageProjectUrl>
         <PackageVersion Condition=" '$(PackageVersion)' == '' ">$(Version)</PackageVersion>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+    
+    <PropertyGroup Label="Build Info">
+        <LangVersion Condition=" '$(LangVersion)' == '' ">10.0</LangVersion>
+        <NoWarn>$(NoWarn);1591;1573;CS8002;NU5100;NU5118;NU5128;MSB3245;NETSDK1023</NoWarn>
+        <AutoGenerateBindingRedirects Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</AutoGenerateBindingRedirects>
+        <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
+        <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
+        <CopyRetryCount>60</CopyRetryCount>
+        <CopyRetryDelayMilliseconds>15000</CopyRetryDelayMilliseconds>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     </PropertyGroup>
 
-    <PropertyGroup Label="Assembly Signing">
+    <PropertyGroup Label="Assembly Info">
         <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)ikvm.snk</AssemblyOriginatorKeyFile>
         <PublicKey>0024000004800000940000000602000000240000525341310004000001000100dd6b140e5209cae3d1c710030021ef589d0f00d05aca8771101a7e99e10ee063e66040df96e6f842f717bfc5b62d2ec2b62ceb0282e4649790dacb424db29b68adc7eaeab0356fce04702379f84400b8427edbb33dab8720b9f16a42e2cdb87f885ef413dbc4229f2bd157c9b8dc2cd14866dec5f31c764bfb9394cc3c60e6c0</PublicKey>
         <SignAssembly Condition=" '$(AssemblyOriginatorKeyFile)' != '' ">true</SignAssembly>

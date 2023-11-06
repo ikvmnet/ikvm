@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 using IKVM.Tools.Runner.Exporter;
@@ -58,6 +59,27 @@ namespace IKVM.MSBuild.Tasks
         public bool Forwarders { get; set; }
 
         public bool Bootstrap { get; set; }
+
+        public override bool Execute()
+        {
+            if (Input != null)
+                Input = Path.GetFullPath(Input);
+
+            if (Output != null)
+                Output = Path.GetFullPath(Output);
+
+            if (References != null)
+                foreach (var i in References)
+                    if (i.ItemSpec != null)
+                        i.ItemSpec = Path.GetFullPath(i.ItemSpec);
+
+            if (Lib != null)
+                foreach (var i in Lib)
+                    if (i.ItemSpec != null)
+                        i.ItemSpec = Path.GetFullPath(i.ItemSpec);
+
+            return base.Execute();
+        }
 
         protected override async Task<bool> ExecuteAsync(IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken)
         {

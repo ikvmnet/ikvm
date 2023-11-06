@@ -155,27 +155,15 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (self.fd == null)
                 return;
 
-            var socket = FileDescriptorAccessor.GetSocket(self.fd);
-            if (socket == null)
-                return;
-
             try
             {
-                // null socket before close, as close may take a minute to flush
-                FileDescriptorAccessor.SetSocket(self.fd, null);
-                socket.Close();
+                var h = FileDescriptorAccessor.GetHandle(self.fd);
+                FileDescriptorAccessor.SetHandle(self.fd, -1);
+                LibIkvm.Instance.io_close_socket(h);
             }
-            catch (System.Net.Sockets.SocketException e)
-            {
-                throw e.ToIOException();
-            }
-            catch (ObjectDisposedException)
+            catch
             {
                 // ignore
-            }
-            catch (System.Exception e)
-            {
-                throw new global::java.io.IOException(e);
             }
         }
 
@@ -645,7 +633,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 src = srcs[0];
 
             return ImplAsync();
-            
+
             async Task<Number> ImplAsync()
             {
                 try
@@ -915,6 +903,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
 #endif
 
-                    }
+    }
 
 }

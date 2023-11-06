@@ -1,0 +1,25 @@
+<!--
+
+    DotNetOSXCodeSign.targets
+    
+    Uses the 'rcodesign' utility to sign the resulting AppHost executable.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <EnableOSXCodeSign Condition=" '$(EnableOSXCodeSign)' == '' And ($(RuntimeIdentifier.StartsWith('osx')) Or $(AppHostRuntimeIdentifier.StartsWith('osx')))">true</EnableOSXCodeSign>
+        <_OSXCodeSignStampFile>$(IntermediateOutputPath)$(MSBuildProjectFile).rcodesign.stamp</_OSXCodeSignStampFile>
+    </PropertyGroup>
+
+    <Target Name="OSXCodeSignAppHost" AfterTargets="_CreateAppHost" Inputs="$(AppHostIntermediatePath)" Outputs="$(_OSXCodeSignStampFile)" Condition=" '$(EnableOSXCodeSign)' == 'true' And Exists('$(AppHostIntermediatePath)')">
+        <Message Text="rcodesign sign $(AppHostIntermediatePath)" />
+        <Exec Command="rcodesign sign $(AppHostIntermediatePath)" />
+        <Touch Files="$(_OSXCodeSignStampFile)" ForceTouch="true" AlwaysCreate="true" />
+    </Target>
+
+</Project>

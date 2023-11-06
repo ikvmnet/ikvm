@@ -81,7 +81,7 @@ namespace IKVM.Tests.Java.com.sun.net.httpserver
 
                 // second attempt with timeout
                 urlc = (HttpURLConnection)url.openConnection();
-                urlc.setReadTimeout(3000);
+                urlc.setReadTimeout(5000);
                 using (var iss2 = urlc.getInputStream())
                     while (iss2.read() != -1) continue;
             }

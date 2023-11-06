@@ -1,30 +1,10 @@
-/*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
 using System;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
+
+using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Runtime;
+using IKVM.Runtime.JNI;
 
 using static IKVM.Java.Externs.java.net.SocketImplUtil;
 
@@ -34,44 +14,64 @@ namespace IKVM.Java.Externs.java.net
     static class SocketOutputStream
     {
 
-        /// <summary>
-        /// Implements the native method for 'init'.
-        /// </summary>
-        public static void init()
-        {
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
-        }
+        static FileDescriptorAccessor fileDescriptorAccessor;
+
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+
+        static global::ikvm.@internal.CallerID __callerID;
+        delegate void __jniDelegate__socketWrite0(IntPtr jniEnv, IntPtr self, IntPtr fdObj, IntPtr data, int off, int len);
+        static __jniDelegate__socketWrite0 __jniPtr__socketWrite0;
+
+#endif
 
         /// <summary>
         /// Implements the native method for 'socketWrite0'.
         /// </summary>
         /// <param name="this_"></param>
-        /// <param name="fd"></param>
+        /// <param name="fdObj"></param>
         /// <param name="data"></param>
         /// <param name="off"></param>
         /// <param name="len"></param>
         /// <exception cref="global::java.net.SocketException"></exception>
         /// <exception cref="global::java.lang.NullPointerException"></exception>
-        public static void socketWrite0(object this_, global::java.io.FileDescriptor fd, byte[] data, int off, int len)
+        public static void socketWrite0(object this_, object fdObj, byte[] data, int off, int len)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (data == null)
-                throw new global::java.lang.NullPointerException("data argument.");
-
-            InvokeAction<global::java.net.SocketOutputStream>(this_, impl =>
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                InvokeActionWithSocket(fd, socket =>
+                if (data == null)
+                    throw new global::java.lang.NullPointerException("data argument.");
+
+                InvokeAction<global::java.net.SocketOutputStream>(this_, impl =>
                 {
+                    if (fdObj == null)
+                        throw new global::java.net.SocketException("Socket closed");
+
+                    var socket = FileDescriptorAccessor.GetSocket(fdObj);
+                    if (socket == null)
+                        throw new global::java.net.SocketException("Socket closed");
+
                     var prevBlocking = socket.Blocking;
                     var prevSendTimeout = socket.SendTimeout;
 
                     try
                     {
+                        socket.Blocking = false;
                         socket.Blocking = true;
                         socket.SendTimeout = 0;
                         socket.Send(data, off, Math.Min(len, data.Length - off), SocketFlags.None);
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                    {
+                        throw new global::java.net.SocketException("Socket closed.");
+                    }
+                    catch (SocketException)
+                    {
+                        throw;
                     }
                     finally
                     {
@@ -79,30 +79,30 @@ namespace IKVM.Java.Externs.java.net
                         socket.SendTimeout = prevSendTimeout;
                     }
                 });
-            });
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.SocketOutputStream).TypeHandle);  
+                __jniPtr__socketWrite0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__socketWrite0>(JNIFrame.GetFuncPtr(__callerID, "java/net/SocketOutputStream", nameof(socketWrite0), "(Ljava/io/FileDescriptor;[BII)V"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    __jniPtr__socketWrite0(jniEnv, jniFrm.MakeLocalRef(this_), jniFrm.MakeLocalRef(fdObj), jniFrm.MakeLocalRef(data), off, len);
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
 #endif
         }
-
-#if !FIRST_PASS
-
-        /// <summary>
-        /// Invokes the given action with the current socket, catching and mapping any resulting .NET exceptions.
-        /// </summary>
-        /// <param name="fd"></param>
-        /// <param name="action"></param>
-        /// <returns></returns>
-        /// <exception cref="global::java.lang.NullPointerException"></exception>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        static void InvokeActionWithSocket(global::java.io.FileDescriptor fd, Action<Socket> action)
-        {
-            var socket = fd?.getSocket();
-            if (socket == null)
-                throw new global::java.net.SocketException("Socket closed");
-
-            action(socket);
-        }
-
-#endif
 
     }
 

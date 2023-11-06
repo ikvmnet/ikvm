@@ -39,6 +39,17 @@ namespace IKVM.JTReg.TestAdapter.Core
         }
 
         /// <summary>
+        /// Initiates a run of the given sources, optionally with the specified tests.
+        /// </summary>
+        /// <param name="csource"></param>
+        /// <param name="context"></param>
+        /// <param name="cancellationTokenProxy"></param>
+        public void RunTests(string source, IJTRegExecutionContext context, CancellationTokenProxy cancellationTokenProxy)
+        {
+            RunTests(source, null, context, cancellationTokenProxy);
+        }
+
+        /// <summary>
         /// Initiates a run of the given source, optionally with the specified tests.
         /// </summary>
         /// <param name="source"></param>
@@ -47,6 +58,13 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <param name="cancellationTokenProxy"></param>
         public void RunTests(string source, List<JTRegTestCase> tests, IJTRegExecutionContext context, CancellationTokenProxy cancellationTokenProxy)
         {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (context is null)
+                throw new ArgumentNullException(nameof(context));
+            if (cancellationTokenProxy is null)
+                throw new ArgumentNullException(nameof(cancellationTokenProxy));
+
             var ctp = new CancellationTokenCancellationProxy();
 
             try

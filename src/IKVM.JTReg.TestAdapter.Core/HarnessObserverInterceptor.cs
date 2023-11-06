@@ -90,7 +90,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         {
             var desc = testResult.getDescription();
             var name = (string)Util.GetFullyQualifiedTestName(source, testSuite, desc);
-            var test = tests.GetOrAdd(name, _ => Util.ToTestCase(source, testSuite, desc));
+            var test = tests.GetOrAdd(name, _ => Util.ToTestCase(source, testSuite, desc, context.Options.PartitionCount));
 
             context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: starting test '{test.FullyQualifiedName}'");
             context.RecordStart(test);
@@ -110,8 +110,8 @@ namespace IKVM.JTReg.TestAdapter.Core
         {
             var desc = testResult.getDescription();
             var name = (string)Util.GetFullyQualifiedTestName(source, testSuite, desc);
-            var test = tests.GetOrAdd(name, _ => Util.ToTestCase(source, testSuite, desc));
-            var rslt = (JTRegTestResult)Util.ToTestResult(source, testSuite, testResult, test);
+            var test = tests.GetOrAdd(name, _ => Util.ToTestCase(source, testSuite, desc, context.Options.PartitionCount));
+            var rslt = (JTRegTestResult)Util.ToTestResult(source, testSuite, testResult, test, context.Options.PartitionCount);
 
             context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: finished test '{test.FullyQualifiedName}'. [{rslt.Outcome}]");
             context.RecordEnd(test, rslt.Outcome);

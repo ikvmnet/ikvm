@@ -94,73 +94,85 @@ namespace IKVM.Java.Externs.sun.nio.fs
                 if (JVM.Vfs.IsPath(path))
                 {
                     if (JVM.Vfs.GetEntry(path) is VfsFile vfsFile)
-                        return FileDescriptorAccessor.FromStream(vfsFile.Open(mode, access));
+                    {
+                        var fdo = FileDescriptorAccessor.Init();
+                        FileDescriptorAccessor.SetStream(fdo, vfsFile.Open(mode, access));
+                        return fdo;
+                    }
 
                     throw new global::java.lang.UnsupportedOperationException();
                 }
-
-#if NETFRAMEWORK
-                return FileDescriptorAccessor.FromStream(new FileStream(path, mode, rights, share, bufferSize, options));
-#else
-                if (RuntimeUtil.IsWindows)
-                {
-                    return FileDescriptorAccessor.FromStream(new FileStream(path, mode, access, share, bufferSize, options));
-                }
                 else
                 {
-                    var flags = (OpenFlags)0;
-                    if (mode == FileMode.Create)
-                        flags |= OpenFlags.O_CREAT | OpenFlags.O_TRUNC;
-                    if (mode == FileMode.Open)
-                        flags |= OpenFlags.O_EXCL;
-                    if (mode == FileMode.OpenOrCreate)
-                        flags |= OpenFlags.O_CREAT;
-                    if (mode == FileMode.Append)
-                        flags |= OpenFlags.O_APPEND;
-                    if (mode == FileMode.CreateNew)
-                        flags |= OpenFlags.O_CREAT | OpenFlags.O_EXCL;
-
-                    if ((rights & FileSystemRights.Read) != 0 && (rights & FileSystemRights.Write) != 0)
-                        flags |= OpenFlags.O_RDWR;
-                    if ((rights & FileSystemRights.Read) != 0 && (rights & FileSystemRights.Write) == 0)
-                        flags |= OpenFlags.O_RDONLY;
-                    if ((rights & FileSystemRights.Read) == 0 && (rights & FileSystemRights.Write) != 0)
-                        flags |= OpenFlags.O_WRONLY;
-
-                    if ((options & FileOptions.Asynchronous) != 0)
-                        flags |= OpenFlags.O_ASYNC;
-                    if ((options & FileOptions.WriteThrough) != 0)
-                        flags |= OpenFlags.O_SYNC;
-
-                    var r = Syscall.open(path, flags, FilePermissions.DEFFILEMODE);
-                    if (r == -1)
+#if NETFRAMEWORK
+                    var fdo = FileDescriptorAccessor.Init();
+                    FileDescriptorAccessor.SetStream(fdo, new FileStream(path, mode, rights, share, bufferSize, options));
+                    return fdo;
+#else
+                    if (RuntimeUtil.IsWindows)
                     {
-                        var error = Stdlib.GetLastError();
-                        if (error == Errno.EACCES)
-                            throw new global::java.nio.file.AccessDeniedException(path);
-                        if (error == Errno.EEXIST)
-                            throw new global::java.nio.file.FileAlreadyExistsException(path);
-                        if (error == Errno.ENOENT)
-                            throw new global::java.nio.file.NoSuchFileException(path);
-                        if (error == Errno.ENOTDIR)
-                            throw new global::java.nio.file.NoSuchFileException(path);
-                        if (error == Errno.EROFS)
-                            throw new global::java.nio.file.FileAlreadyExistsException(path);
-
-                        throw new UnixIOException(error);
+                        var fdo = FileDescriptorAccessor.Init();
+                        FileDescriptorAccessor.SetStream(fdo, new FileStream(path, mode, access, share, bufferSize, options));
+                        return fdo;
                     }
+                    else
+                    {
+                        var flags = (OpenFlags)0;
+                        if (mode == FileMode.Create)
+                            flags |= OpenFlags.O_CREAT | OpenFlags.O_TRUNC;
+                        if (mode == FileMode.Open)
+                            flags |= OpenFlags.O_EXCL;
+                        if (mode == FileMode.OpenOrCreate)
+                            flags |= OpenFlags.O_CREAT;
+                        if (mode == FileMode.Append)
+                            flags |= OpenFlags.O_APPEND;
+                        if (mode == FileMode.CreateNew)
+                            flags |= OpenFlags.O_CREAT | OpenFlags.O_EXCL;
 
-                    var h = new SafeFileHandle((IntPtr)r, true);
+                        if ((rights & FileSystemRights.Read) != 0 && (rights & FileSystemRights.Write) != 0)
+                            flags |= OpenFlags.O_RDWR;
+                        if ((rights & FileSystemRights.Read) != 0 && (rights & FileSystemRights.Write) == 0)
+                            flags |= OpenFlags.O_RDONLY;
+                        if ((rights & FileSystemRights.Read) == 0 && (rights & FileSystemRights.Write) != 0)
+                            flags |= OpenFlags.O_WRONLY;
 
-                    // .NET Core 5+ maintains an IsAsync property validated by FileStream
-                    // this property isn't set properly on Unix
-                    // https://github.com/dotnet/runtime/issues/85560
-                    if ((options & FileOptions.Asynchronous) != 0)
-                        SafeFileHandleIsAsyncPropertySetter?.Invoke(h, true);
+                        if ((options & FileOptions.Asynchronous) != 0)
+                            flags |= OpenFlags.O_ASYNC;
+                        if ((options & FileOptions.WriteThrough) != 0)
+                            flags |= OpenFlags.O_SYNC;
 
-                    return FileDescriptorAccessor.FromStream(new FileStream(h, access, bufferSize, (options & FileOptions.Asynchronous) != 0));
-                }
+                        var r = Syscall.open(path, flags, FilePermissions.DEFFILEMODE);
+                        if (r == -1)
+                        {
+                            var error = Stdlib.GetLastError();
+                            if (error == Errno.EACCES)
+                                throw new global::java.nio.file.AccessDeniedException(path);
+                            if (error == Errno.EEXIST)
+                                throw new global::java.nio.file.FileAlreadyExistsException(path);
+                            if (error == Errno.ENOENT)
+                                throw new global::java.nio.file.NoSuchFileException(path);
+                            if (error == Errno.ENOTDIR)
+                                throw new global::java.nio.file.NoSuchFileException(path);
+                            if (error == Errno.EROFS)
+                                throw new global::java.nio.file.FileAlreadyExistsException(path);
+
+                            throw new UnixIOException(error);
+                        }
+
+                        var h = new SafeFileHandle((IntPtr)r, false);
+
+                        // .NET Core 5+ maintains an IsAsync property validated by FileStream
+                        // this property isn't set properly on Unix
+                        // https://github.com/dotnet/runtime/issues/85560
+                        if ((options & FileOptions.Asynchronous) != 0)
+                            SafeFileHandleIsAsyncPropertySetter?.Invoke(h, true);
+
+                        var fdo = FileDescriptorAccessor.Init();
+                        FileDescriptorAccessor.SetStream(fdo, new FileStream(h, access, bufferSize, (options & FileOptions.Asynchronous) != 0));
+                        return fdo;
+                    }
 #endif
+                }
             }
             catch (ArgumentException e)
             {

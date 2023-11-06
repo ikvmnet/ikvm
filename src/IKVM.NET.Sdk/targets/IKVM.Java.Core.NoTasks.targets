@@ -1,4 +1,4 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project>
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
@@ -8,30 +8,53 @@
     -->
 
     <PropertyGroup>
+        <___IkvmTaskUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmTaskUtil.cs'))'))</___IkvmTaskUtilCs>
+        <___IkvmAsyncTaskCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmAsyncTask.cs'))'))</___IkvmAsyncTaskCs>
+        <___IkvmAssemblyInfoUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmAssemblyInfoUtil.cs'))'))</___IkvmAssemblyInfoUtilCs>
+        <___IkvmFileIdentityUtilCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmFileIdentityUtil.cs'))'))</___IkvmFileIdentityUtilCs>
         <___IkvmReferenceExportItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItem.cs'))'))</___IkvmReferenceExportItemCs>
         <___IkvmReferenceExportItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemMetadata.cs'))'))</___IkvmReferenceExportItemMetadataCs>
         <___IkvmReferenceExportItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemPrepare.cs'))'))</___IkvmReferenceExportItemPrepareCs>
     </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(MSBuildRuntimeType)' == 'Core' ">
-        <___System_Collections_Immutable>$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll</___System_Collections_Immutable>
-        <___System_Memory>$(PkgSystem_Memory)\lib\netstandard2.0\System.Memory.dll</___System_Memory>
-        <___System_Reflection_Metadata>$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll</___System_Reflection_Metadata>
+    
+    <PropertyGroup>
+        <___PkgSystem_Collections_Immutable>$(PkgSystem_Collections_Immutable)</___PkgSystem_Collections_Immutable>
+        <___PkgSystem_Memory>$(PkgSystem_Memory)</___PkgSystem_Memory>
+        <___PkgSystem_Reflection_Metadata>$(PkgSystem_Reflection_Metadata)</___PkgSystem_Reflection_Metadata>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
-        <___System_Collections_Immutable>System.Collections.Immutable</___System_Collections_Immutable>
-        <___System_Memory>System.Memory</___System_Memory>
-        <___System_Reflection_Metadata>System.Reflection.Metadata</___System_Reflection_Metadata>
-    </PropertyGroup>
-
-    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(TargetFramework)' != '' And '$(MSBuildRuntimeType)' == 'Core' ">
         <Task>
-            <Reference Include="$(___System_Collections_Immutable)" />
-            <Reference Include="$(___System_Memory)" />
-            <Reference Include="$(___System_Reflection_Metadata)" />
+            <Reference Include="$(___PkgSystem_Collections_Immutable)\lib\net6.0\System.Collections.Immutable.dll" />
+            <Reference Include="$(___PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
+#define NETCOREAPP
+                
+$([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
+$([MSBuild]::Unescape('$(___IkvmAssemblyInfoUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmFileIdentityUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemMetadataCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(TargetFramework)' != '' And '$(MSBuildRuntimeType)' != 'Core' ">
+        <Task>
+            <Reference Include="$(___PkgSystem_Collections_Immutable)\lib\net462\System.Collections.Immutable.dll" />
+            <Reference Include="$(___PkgSystem_Reflection_Metadata)\lib\net462\System.Reflection.Metadata.dll" />
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+#define NETFRAMEWORK
+
+$([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
+$([MSBuild]::Unescape('$(___IkvmAssemblyInfoUtilCs)'))
+$([MSBuild]::Unescape('$(___IkvmFileIdentityUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceExportItemCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceExportItemMetadataCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
@@ -128,6 +151,8 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
             <_JavaCompilerArgs Include="$(JavaVersion)" />
             <_JavaCompilerArgs Include="-d" />
             <_JavaCompilerArgs Include="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />
+            <_JavaCompilerArgs Include="-h" />
+            <_JavaCompilerArgs Include="$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))" />
             <!--<_JavaCompilerArgs Include="-verbose" />-->
             <_JavaCompilerArgs Include="@(_JavaCompilerArgsCompile->'%(FullPath)')" />
         </ItemGroup>
@@ -143,23 +168,36 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
 
     <!-- Override IKVM.NET.Sdk: directly invoke javac executable  -->
     <Target Name="_CompileJava" DependsOnTargets="_CompileJavaResponseFile;_ResolveClasspathFiles" Inputs="$(_CompileJavaResponseFile);@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
+        <Delete Files="$(_CompileJavaStampFile)" />
+        
         <!-- Store initial time. Files that remain older than this will be removed. -->
         <PropertyGroup>
             <_CompileJavaStartTime>$([System.DateTime]::Now.Ticks)</_CompileJavaStartTime>
         </PropertyGroup>
 
+        <RemoveDir Directories="$(ClassOutputPath)" />
         <MakeDir Directories="$(ClassOutputPath)" />
+        <RemoveDir Directories="$(HeaderOutputPath)" />
+        <MakeDir Directories="$(HeaderOutputPath)" />
+        
         <Message Text="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
         <Exec Command="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
 
         <!-- Remove files that were not modified by this compilation. -->
         <ItemGroup>
             <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
-            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles)" Condition=" '%(ModifiedTime)' == '' Or $([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime) " />
+            <_CompileJavaHeaderFiles Include="$(ClassOutputPath)**\*.h" />
+            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles);@(_CompileJavaHeaderFiles)" Condition=" '%(ModifiedTime)' == '' Or $([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime) " />
+            <_CompileJavaClassFiles Remove="@(_CompileJavaClassFiles)" />
+            <_CompileJavaHeaderFiles Remove="@(_CompileJavaHeaderFiles)" />
         </ItemGroup>
 
         <Delete Files="@(_CompileJavaStaleFiles)" />
         <Touch Files="$(_CompileJavaStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <_CompileJavaStaleFiles Remove="@(_CompileJavaStaleFiles)" />
+        </ItemGroup>
     </Target>
 
     <Target Name="_CoreCompileResponseFile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;CompileJava">

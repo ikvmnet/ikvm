@@ -1,14 +1,13 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM JDK Runtime Image</Description>
-    </PropertyGroup>
-
-    <PropertyGroup>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>false</IncludeSymbols>
+        <ImageRuntimeIdentifier>linux-musl-arm64</ImageRuntimeIdentifier>
+        <ImageBinProject>..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj</ImageBinProject>
+        <SupportedImageTargetFrameworks>net6.0</SupportedImageTargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -18,21 +17,6 @@
         <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' == '' ">
-        <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=linux-musl-arm64</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvm\netcoreapp3.1\linux-musl-arm64\bin</ProjectPackagePath>
-        </PublishProjectReference>
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-        <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
-            <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=linux-musl-arm64</SetRuntimeIdentifier>
-            <ProjectTargetPath>ikvm\linux-musl-arm64\bin</ProjectTargetPath>
-            <Pack>false</Pack>
-        </PublishProjectReference>
-    </ItemGroup>
-
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Image\IKVM.Image.runtime.targets" />
+    
 </Project>

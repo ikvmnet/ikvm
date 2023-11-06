@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Threading;
 
 #if IMPORTER || EXPORTER
 using Type = IKVM.Reflection.Type;
@@ -77,6 +78,11 @@ namespace IKVM.Runtime
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
+        /// <summary>
+        /// Imports the specified type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         Type Import(System.Type type)
         {
             return context.Resolver.ResolveCoreType(type.FullName);

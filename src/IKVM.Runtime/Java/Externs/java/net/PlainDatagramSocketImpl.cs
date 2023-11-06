@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Runtime.JNI;
 using IKVM.Runtime.Util.Java.Net;
 
 using static IKVM.Java.Externs.java.net.SocketImplUtil;
@@ -92,6 +93,10 @@ namespace IKVM.Java.Externs.java.net
         static readonly Action<global::java.net.Inet6Address, int> Inet6AddressCachedScopeIdSetter = MakeFieldSetter<global::java.net.Inet6Address, int>(Inet6AddressCachedScopeIdField);
         static readonly Func<global::java.net.Inet6Address, int> Inet6AddressCachedScopeIdGetter = MakeFieldGetter<global::java.net.Inet6Address, int>(Inet6AddressCachedScopeIdField);
 
+        static global::ikvm.@internal.CallerID __callerID;
+        delegate void __jniDelegate__init(IntPtr jniEnv, IntPtr self);
+        static __jniDelegate__init __jniPtr__init;
+
 #if NETCOREAPP3_1_OR_GREATER
         // HACK .NET Core has an explicit check for _isConnected https://github.com/dotnet/runtime/issues/77962
         static readonly FieldInfo SocketIsConnectedField = typeof(Socket).GetField("_isConnected", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -173,11 +178,39 @@ namespace IKVM.Java.Externs.java.net
 #endif
 
         /// <summary>
-        /// Implements the native method for 'init'.
+        /// Implements the native method for 'initProto'.
         /// </summary>
         public static void init()
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
 
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainDatagramSocketImpl).TypeHandle);
+                __jniPtr__init ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__init>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainDatagramSocketImpl", nameof(init), "()V"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    __jniPtr__init(jniEnv, jniFrm.MakeLocalRef(ClassLiteral<global::java.net.PlainDatagramSocketImpl>.Value));
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
+#endif
         }
 
         /// <summary>
@@ -220,18 +253,20 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, (impl) =>
-            {
-                var socket = FileDescriptorAccessor.GetSocket(impl.fd);
-                if (socket == null)
-                    return;
+            var impl = (global::java.net.PlainDatagramSocketImpl)this_;
+            if (impl == null || impl.fd == null)
+                return;
 
-                InvokeWithSocket(impl, socket =>
-                {
-                    FileDescriptorAccessor.SetSocket(impl.fd, null);
-                    socket.Close();
-                });
-            });
+            try
+            {
+                var h = FileDescriptorAccessor.GetHandle(impl.fd);
+                FileDescriptorAccessor.SetHandle(impl.fd, -1);
+                LibIkvm.Instance.io_close_socket(h);
+            }
+            catch
+            {
+                // ignore
+            }
 #endif
         }
 
@@ -426,12 +461,10 @@ namespace IKVM.Java.Externs.java.net
 
                     try
                     {
+                        // wait for data to be available
                         if (impl.timeout > 0)
-                        {
-                            // wait for data to be available
-                            if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
+                            if (socket.Poll((int)Math.Min(impl.timeout * 1000L, int.MaxValue), SelectMode.SelectRead) == false)
                                 throw new global::java.net.SocketTimeoutException("Peek timed out.");
-                        }
 
                         var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
                         var length = socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, 1, SocketFlags.Peek, ref remoteEndpoint, null, null), ref remoteEndpoint);
@@ -577,9 +610,24 @@ namespace IKVM.Java.Externs.java.net
                             // read and error states
                             if (RuntimeUtil.IsWindows)
                             {
-                                // wait for data to be available
-                                if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
+                                try
+                                {
+                                    // wait for data to be available
+                                    if (socket.Poll((int)Math.Min(impl.timeout * 1000L, int.MaxValue), SelectMode.SelectRead) == false)
+                                        throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                }
+                                catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                                {
                                     throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                }
+                                catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                                {
+                                    throw new global::java.net.SocketException("Socket closed.");
+                                }
+                                catch
+                                {
+                                    throw;
+                                }
                             }
                             else
                             {
@@ -587,13 +635,21 @@ namespace IKVM.Java.Externs.java.net
                                 {
                                     var rl = new List<Socket>() { socket };
                                     var el = new List<Socket>() { socket };
-                                    Socket.Select(rl, null, el, impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000);
+                                    Socket.Select(rl, null, el, (int)Math.Min(impl.timeout * 1000L, int.MaxValue));
                                     if (rl.Count == 0 && el.Count == 0)
                                         throw new global::java.net.SocketTimeoutException("Receive timed out.");
                                 }
                                 catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
                                 {
                                     throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                }
+                                catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                                {
+                                    throw new global::java.net.SocketException("Socket closed.");
+                                }
+                                catch
+                                {
+                                    throw;
                                 }
                             }
                         }
@@ -681,11 +737,25 @@ namespace IKVM.Java.Externs.java.net
                             // Windows Poll method reports errors as readable, however, Linux reports it as errored, so
                             // we can use Poll on Windows for both errors, but must use Select on Linux to trap both
                             // read and error states
-                            if (RuntimeUtil.IsWindows)
+                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                             {
-                                // wait for data to be available
-                                if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
+                                try
+                                {
+                                    if (socket.Poll((int)Math.Min(impl.timeout * 1000L, int.MaxValue), SelectMode.SelectRead) == false)
+                                        throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                }
+                                catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                                {
                                     throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                }
+                                catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                                {
+                                    throw new global::java.net.SocketException("Socket closed.");
+                                }
+                                catch
+                                {
+                                    throw;
+                                }
                             }
                             else
                             {
@@ -693,13 +763,21 @@ namespace IKVM.Java.Externs.java.net
                                 {
                                     var rl = new List<Socket>() { socket };
                                     var el = new List<Socket>() { socket };
-                                    Socket.Select(rl, null, el, impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000);
+                                    Socket.Select(rl, null, el, (int)Math.Min(impl.timeout * 1000L, int.MaxValue));
                                     if (rl.Count == 0 && el.Count == 0)
                                         throw new global::java.net.SocketTimeoutException("Receive timed out.");
                                 }
                                 catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
                                 {
                                     throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                }
+                                catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                                {
+                                    throw new global::java.net.SocketException("Socket closed.");
+                                }
+                                catch
+                                {
+                                    throw;
                                 }
                             }
                         }

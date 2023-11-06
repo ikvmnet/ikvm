@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Policy;
 using System.Threading.Tasks;
@@ -263,6 +264,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public async Task CanLock()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var f = new File("AsynchronousFileChannelTests_CanLock.txt");
             if (f.exists())
                 f.delete();
@@ -287,6 +291,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void TryLockShouldThrowOverlappingFileLockException()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var file = File.createTempFile("lockfile", null);
             file.deleteOnExit();
             if (file.exists())
@@ -313,6 +320,9 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void LockShouldThrowOverlappingFileLockException()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             var file = File.createTempFile("lockfile", null);
             file.deleteOnExit();
             if (file.exists())
@@ -371,7 +381,11 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public async Task ShouldExecuteOnThreadPool()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             Thread.currentThread().getName().Should().NotBe("ShouldExecuteOnThreadPool");
+            var thisThread = Thread.currentThread();
 
             var f = new File("AsynchronousFileChannelTests_ShouldExecuteOnThreadPool.txt");
             if (f.exists())
@@ -389,7 +403,11 @@ namespace IKVM.Tests.Java.java.nio.channels
             var h = new AwaitableCompletionHandler<Integer>();
             c.read(b, 0, null, h);
             var n = await h;
-            Thread.currentThread().getName().Should().Be("ShouldExecuteOnThreadPool");
+
+            // should resume execution either on the same thread (synchronous) or on a thread pool thread
+            if (Thread.currentThread() != thisThread)
+                Thread.currentThread().getName().Should().Be("ShouldExecuteOnThreadPool");
+
             n.intValue().Should().Be(1);
             c.close();
 

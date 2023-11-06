@@ -1,4 +1,4 @@
-﻿<!--
+<!--
 
     openjdk.lib.props
     
@@ -39,12 +39,12 @@
     <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
         <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_ALLBSD_SOURCE;_DARWIN_UNLIMITED_SELECT</PreprocessorDefinitions>
+        <EnableOSXCodeSign Condition=" '$(EnableOSXCodeSign)' == '' ">true</EnableOSXCodeSign>
     </PropertyGroup>
 
     <!-- standard OpenJDK includes -->
     <PropertyGroup Condition=" '$(TargetTriple)' != '' ">
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\common</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)build\linux-x86_64-normal-server-release\jdk\gensrc_headers</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common</IncludeDirectories>
     </PropertyGroup>
 

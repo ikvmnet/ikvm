@@ -54,6 +54,9 @@ namespace IKVM.Runtime.JNI.Memory
         static extern IntPtr VirtualAlloc(IntPtr lpAddress, IntPtr dwSize, AllocationType flAllocationType, MemoryProtection flProtect);
 
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        static extern int VirtualProtect(IntPtr lpAddress, IntPtr dwSize, MemoryProtection flNewProtect, out MemoryProtection lpflOldProtect);
+
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         static extern int VirtualFree(IntPtr lpAddress, IntPtr dwSize, FreeType freeType);
 
         /// <summary>
@@ -69,7 +72,7 @@ namespace IKVM.Runtime.JNI.Memory
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
                 throw new PlatformNotSupportedException();
 
-            var handle = VirtualAlloc(IntPtr.Zero, (IntPtr)size, AllocationType.Commit | AllocationType.Reserve, MemoryProtection.ExecuteReadWrite);
+            var handle = VirtualAlloc(IntPtr.Zero, (IntPtr)size, AllocationType.Commit | AllocationType.Reserve, MemoryProtection.ReadWrite);
             if (handle == IntPtr.Zero)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
@@ -89,12 +92,23 @@ namespace IKVM.Runtime.JNI.Memory
         }
 
         /// <summary>
+        /// Sets the memory to executable.
+        /// </summary>
+        /// <exception cref="Win32Exception"></exception>
+        public override void SetExecutable()
+        {
+            var r = VirtualProtect(handle, (IntPtr)Size, MemoryProtection.ExecuteRead, out _);
+            if (r == 0)
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+        }
+
+        /// <summary>
         /// Releases the allocated memory.
         /// </summary>
         /// <returns></returns>
         protected override bool ReleaseHandle()
         {
-            return VirtualFree(DangerousGetHandle(), (IntPtr)Size, FreeType.MEM_RELEASE) == 0;
+            return VirtualFree(DangerousGetHandle(), IntPtr.Zero, FreeType.MEM_RELEASE) != 0;
         }
 
     }

@@ -1,4 +1,6 @@
-﻿namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
+﻿using System;
+
+namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
 {
 
 #if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
@@ -9,7 +11,10 @@
     internal sealed class FileChannelImplAccessor : Accessor<object>
     {
 
+        Type ikvmInternalCallerID;
+
         FieldAccessor<object, object> fd;
+        MethodAccessor<Func<object>> ___getCallerID_;
 
         /// <summary>
         /// Initializes a new instance.
@@ -21,6 +26,8 @@
 
         }
 
+        Type IkvmInternalCallerID => Resolve(ref ikvmInternalCallerID, "ikvm.internal.CallerID");
+
         /// <summary>
         /// Gets the value for the 'fd' field.
         /// </summary>
@@ -30,6 +37,12 @@
         /// Sets the value for the 'fd' field.
         /// </summary>
         public void SetFd(object self, object value) => GetField(ref fd, nameof(fd)).SetValue(self, value);
+
+        /// <summary>
+        /// Invokes the '__<GetCallerID>' method.
+        /// </summary>
+        /// <returns></returns>
+        public object InvokeGetCallerID() => GetMethod(ref ___getCallerID_, "__<GetCallerID>", IkvmInternalCallerID).Invoker();
 
     }
 

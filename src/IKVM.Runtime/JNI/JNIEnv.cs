@@ -25,11 +25,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using IKVM.ByteCode.Text;
-using IKVM.Runtime;
 
 namespace IKVM.Runtime.JNI
 {
@@ -60,6 +58,8 @@ namespace IKVM.Runtime.JNI
     using jstring = System.IntPtr;
     using jthrowable = System.IntPtr;
     using jweak = System.IntPtr;
+
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
     [StructLayout(LayoutKind.Sequential)]
     unsafe partial struct JNIEnv
@@ -92,14 +92,6 @@ namespace IKVM.Runtime.JNI
         GCHandle* pinHandles;
         int pinHandleMaxCount;
         int pinHandleInUseCount;
-
-        /// <summary>
-        /// Initializes the static instance.
-        /// </summary>
-        static JNIEnv()
-        {
-            RuntimeHelpers.RunClassConstructor(typeof(JNIVM).TypeHandle);
-        }
 
         internal ManagedJNIEnv GetManagedJNIEnv()
         {
@@ -163,7 +155,6 @@ namespace IKVM.Runtime.JNI
 
                     JNIMemory.Free((nint)(void*)pJNIEnv);
                 }
-
             }
 
             internal struct FrameState
@@ -428,12 +419,12 @@ namespace IKVM.Runtime.JNI
         /// Outputs an encoded signature of the arguments available to the method.
         /// </summary>
         /// <param name="pEnv"></param>
-        /// <param name="method"></param>
+        /// <param name="methodID"></param>
         /// <param name="sig"></param>
         /// <returns></returns>
-        internal static int GetMethodArgs(JNIEnv* pEnv, nint method, byte* sig)
+        internal static int GetMethodArgs(JNIEnv* pEnv, jmethodID methodID, byte* sig)
         {
-            var args = RuntimeJavaMethod.FromCookie(method).GetParameters();
+            var args = RuntimeJavaMethod.FromCookie(methodID).GetParameters();
             for (var i = 0; i < args.Length; i++)
                 sig[i] = args[i].IsPrimitive ? (byte)args[i].SigName[0] : (byte)'L';
 
@@ -2600,6 +2591,9 @@ namespace IKVM.Runtime.JNI
 
         internal static jobject NewDirectByteBuffer(JNIEnv* pEnv, IntPtr address, jlong capacity)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 if (capacity < 0 || capacity > int.MaxValue)
@@ -2607,13 +2601,15 @@ namespace IKVM.Runtime.JNI
                     SetPendingException(pEnv, new java.lang.IllegalArgumentException("capacity"));
                     return IntPtr.Zero;
                 }
-                return pEnv->MakeLocalRef(JVM.NewDirectByteBuffer(address.ToInt64(), (int)capacity));
+
+                return pEnv->MakeLocalRef(global::java.nio.DirectByteBuffer.__new(address.ToInt64(), (int)capacity));
             }
             catch (Exception x)
             {
                 SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
                 return IntPtr.Zero;
             }
+#endif
         }
 
         internal static void* GetDirectBufferAddress(JNIEnv* pEnv, jobject buf)
@@ -2695,5 +2691,7 @@ namespace IKVM.Runtime.JNI
         }
 
     }
+
+#endif
 
 }

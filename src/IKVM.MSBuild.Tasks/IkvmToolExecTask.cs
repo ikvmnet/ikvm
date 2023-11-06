@@ -2,9 +2,9 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
 
 namespace IKVM.MSBuild.Tasks
 {
@@ -12,7 +12,7 @@ namespace IKVM.MSBuild.Tasks
     /// <summary>
     /// Base tool task.
     /// </summary>
-    public abstract class IkvmToolExecTask : Task
+    public abstract class IkvmToolExecTask : IkvmAsyncTask
     {
 
 #if NETCOREAPP
@@ -44,6 +44,14 @@ namespace IKVM.MSBuild.Tasks
 #endif
 
         /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        public IkvmToolExecTask()
+        {
+
+        }
+
+        /// <summary>
         /// Root of the tools directory.
         /// </summary>
         [Required]
@@ -70,6 +78,22 @@ namespace IKVM.MSBuild.Tasks
             if (ToolPath == null || Directory.Exists(ToolPath) == false)
                 throw new IkvmTaskException($"Missing tool path: '{ToolPath}'.");
 
+            // normalize paths due to yields potential of allowing continuation after CWD change
+            if (ToolPath != null)
+                ToolPath = Path.GetFullPath(ToolPath);
+            if (LogFile != null)
+                LogFile = Path.GetFullPath(LogFile);
+
+            return base.Execute();
+        }
+
+        /// <summary>
+        /// Executes the tool.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        protected override async Task<bool> ExecuteAsync(CancellationToken cancellationToken)
+        {
             TextWriter log = null;
 
             try
@@ -79,23 +103,11 @@ namespace IKVM.MSBuild.Tasks
                     log = new StreamWriter(File.OpenWrite(LogFile));
 
                 // kick off the launcher with the configured options
-                var run = ExecuteAsync(new IkvmToolTaskDiagnosticWriter(Log, log), CancellationToken.None);
-
-                // yield and wait for the task to complete
-                BuildEngine3.Yield();
-                var rsl = run.GetAwaiter().GetResult();
-                BuildEngine3.Reacquire();
-
-                // check that we exited successfully
-                return rsl;
+                return await ExecuteAsync(new IkvmToolTaskDiagnosticWriter(Log, log), cancellationToken);
             }
             finally
             {
-                if (log != null)
-                {
-                    log.Dispose();
-                    log = null;
-                }
+                log?.Dispose();
             }
         }
 
@@ -105,7 +117,7 @@ namespace IKVM.MSBuild.Tasks
         /// <param name="writer"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        protected abstract System.Threading.Tasks.Task<bool> ExecuteAsync(IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken);
+        protected abstract Task<bool> ExecuteAsync(IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken);
 
     }
 

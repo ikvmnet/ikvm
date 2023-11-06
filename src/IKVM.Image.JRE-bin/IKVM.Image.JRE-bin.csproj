@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
-    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
     
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
@@ -18,7 +17,9 @@
         <PublishProjectReference Include="@(BinProject)" Condition=" '$(TargetFramework)' != '' And '$(RuntimeIdentifier)' != '' ">
             <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=$(RuntimeIdentifier)</SetRuntimeIdentifier>
-            <ProjectTargetPath>.</ProjectTargetPath>
+            <PublishTargetPath>.</PublishTargetPath>
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
         </PublishProjectReference>
     </ItemGroup>
 

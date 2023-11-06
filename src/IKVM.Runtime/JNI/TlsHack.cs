@@ -26,6 +26,8 @@ using System;
 namespace IKVM.Runtime.JNI
 {
 
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+
     static class TlsHack
     {
 
@@ -33,5 +35,7 @@ namespace IKVM.Runtime.JNI
         internal static JNIEnv.ManagedJNIEnv ManagedJNIEnv;
 
     }
+
+#endif
 
 }

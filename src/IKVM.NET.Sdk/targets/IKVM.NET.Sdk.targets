@@ -1,7 +1,10 @@
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build">
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
+
+    <!-- Predefine targets for VS restore. -->
+    <Target Name="ResolveIkvmRuntimeAssembly" />
 
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
 
@@ -19,19 +22,15 @@
 
     <Import Project="$(MSBuildThisFileDirectory)IKVM.NET.Sdk.Java.targets" />
 
-    <ItemGroup>
-        <PackageReference Include="IKVM" Version="$(IkvmVersion)" Exclude="@(PackageReference)" Condition=" '$(DisableImplicitIkvmPackageReference)' != 'true' " />
-        <PackageReference Include="IKVM.MSBuild" Version="$(IkvmVersion)" Exclude="@(PackageReference)" Condition=" '$(DisableImplicitIkvmMSBuildPackageReference)' != 'true' " />
+    <ItemGroup Condition=" '$(DisableImplicitIkvmPackageReference)' != 'true' ">
+        <PackageReference Include="IKVM" Version="$(IkvmVersion)" IsImplicitlyDefined="true" />
+        <PackageReference Include="IKVM.MSBuild" Version="$(IkvmVersion)" IsImplicitlyDefined="true" />
     </ItemGroup>
 
     <!-- Inline tasks require some packages present. -->
     <ItemGroup Condition=" '$(UseIkvmTasks)' == 'false' ">
-        <PackageReference Include="System.Collections.Immutable" Version="6.0.0" Exclude="@(PackageReference)" PrivateAssets="all" />
-        <PackageReference Include="System.Memory" Version="4.5.5" Exclude="@(PackageReference)" PrivateAssets="all" />
-        <PackageReference Include="System.Reflection.Metadata" Version="6.0.1" Exclude="@(PackageReference)" PrivateAssets="all" />
-        <PackageReference Update="System.Collections.Immutable" GeneratePathProperty="true" />
-        <PackageReference Update="System.Memory" GeneratePathProperty="true" />
-        <PackageReference Update="System.Reflection.Metadata" GeneratePathProperty="true" />
+        <PackageReference Include="System.Collections.Immutable" Version="7.0.0" PrivateAssets="all" GeneratePathProperty="true" IsImplicitlyDefined="true" />
+        <PackageReference Include="System.Reflection.Metadata" Version="7.0.2" PrivateAssets="all" GeneratePathProperty="true" IsImplicitlyDefined="true" />
     </ItemGroup>
 
 </Project>

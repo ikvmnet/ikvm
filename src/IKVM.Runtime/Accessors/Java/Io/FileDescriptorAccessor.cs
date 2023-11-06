@@ -20,16 +20,14 @@ namespace IKVM.Runtime.Accessors.Java.Io
         FieldAccessor<object> @in;
         FieldAccessor<object> @out;
         FieldAccessor<object> @err;
-        MethodAccessor<Func<Stream, object>> fromStream;
-        MethodAccessor<Func<Socket, object>> fromSocket;
 
-        MethodAccessor<Func<object>> init;
+        FieldAccessor<object, object> obj;
+        FieldAccessor<object, long> ptr;
         PropertyAccessor<object, int> fd;
-        FieldAccessor<object, long> handle;
+        PropertyAccessor<object, long> handle;
         FieldAccessor<object, Task> task;
         FieldAccessor<object, SemaphoreSlim> semaphore;
-        FieldAccessor<object, Stream> stream;
-        FieldAccessor<object, Socket> socket;
+        MethodAccessor<Func<object>> init;
         MethodAccessor<Action<object>> sync;
 
         /// <summary>
@@ -41,8 +39,6 @@ namespace IKVM.Runtime.Accessors.Java.Io
         {
 
         }
-
-        Type JavaIoFileDescriptor => Resolve(ref javaIoFileDescriptor, "java.io.FileDescriptor");
 
         /// <summary>
         /// Invokes the constructor.
@@ -66,18 +62,24 @@ namespace IKVM.Runtime.Accessors.Java.Io
         public object GetErr() => GetField(ref @err, nameof(@err)).GetValue();
 
         /// <summary>
-        /// Invokes the 'fromStream' static method.
+        /// Gets the value for the 'obj' field.
         /// </summary>
-        /// <param name="stream"></param>
-        /// <returns></returns>
-        public object FromStream(Stream stream) => GetMethod(ref fromStream, nameof(fromStream), JavaIoFileDescriptor, typeof(Stream)).Invoker(stream);
+        public object GetObj(object self) => GetField(ref obj, nameof(obj)).GetValue(self);
 
         /// <summary>
-        /// Invokes the 'fromSocket' static method.
+        /// Sets the value for the 'obj' field.
         /// </summary>
-        /// <param name="socket"></param>
-        /// <returns></returns>
-        public object FromSocket(Socket socket) => GetMethod(ref fromSocket, nameof(fromSocket), JavaIoFileDescriptor, typeof(Socket)).Invoker(socket);
+        public void SetObj(object self, object value) => GetField(ref obj, nameof(obj)).SetValue(self, value);
+
+        /// <summary>
+        /// Gets the value for the 'ptr' field.
+        /// </summary>
+        public long GetPtr(object self) => GetField(ref ptr, nameof(ptr)).GetValue(self);
+
+        /// <summary>
+        /// Sets the value for the 'ptr' field.
+        /// </summary>
+        public void SetPtr(object self, long value) => GetField(ref ptr, nameof(ptr)).SetValue(self, value);
 
         /// <summary>
         /// Gets the value for the 'fd' property.
@@ -85,9 +87,19 @@ namespace IKVM.Runtime.Accessors.Java.Io
         public int GetFd(object self) => GetProperty(ref fd, nameof(fd)).GetValue(self);
 
         /// <summary>
+        /// Sets the value for the 'fd' property.
+        /// </summary>
+        public void SetFd(object self, int value) => GetProperty(ref fd, nameof(fd)).SetValue(self, value);
+
+        /// <summary>
         /// Gets the value for the 'handle' property.
         /// </summary>
-        public long GetHandle(object self) => GetField(ref handle, nameof(handle)).GetValue(self);
+        public long GetHandle(object self) => GetProperty(ref handle, nameof(handle)).GetValue(self);
+
+        /// <summary>
+        /// Sets the value for the 'handle' property.
+        /// </summary>
+        public void SetHandle(object self, long value) => GetProperty(ref handle, nameof(handle)).SetValue(self, value);
 
         /// <summary>
         /// Gets the value of the 'task' field.
@@ -108,7 +120,6 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// Gets the value of the 'semaphore' field.
         /// </summary>
         /// <param name="self"></param>
-        /// <param name="value"></param>
         /// <returns></returns>
         public SemaphoreSlim GetSemaphore(object self) => GetField(ref semaphore, nameof(semaphore)).GetValue(self);
 
@@ -120,26 +131,6 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// <param name="comparand"></param>
         /// <returns></returns>
         public SemaphoreSlim CompareExchangeSemaphore(object self, SemaphoreSlim value, SemaphoreSlim comparand) => GetField(ref semaphore, nameof(semaphore)).CompareExchangeValue(self, value, comparand);
-
-        /// <summary>
-        /// Gets the value for the 'stream' property.
-        /// </summary>
-        public Stream GetStream(object self) => GetField(ref stream, nameof(stream)).GetValue(self);
-
-        /// <summary>
-        /// Sets the value for the 'stream' property.
-        /// </summary>
-        public void SetStream(object self, Stream value) => GetField(ref stream, nameof(stream)).SetValue(self, value);
-
-        /// <summary>
-        /// Gets the value for the 'socket' property.
-        /// </summary>
-        public Socket GetSocket(object self) => GetField(ref socket, nameof(socket)).GetValue(self);
-
-        /// <summary>
-        /// Sets the value for the 'socket' property.
-        /// </summary>
-        public void SetSocket(object self, Socket value) => GetField(ref socket, nameof(socket)).SetValue(self, value);
 
         /// <summary>
         /// Invokes the 'sync' method.

@@ -1,4 +1,4 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project>
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
@@ -8,7 +8,12 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <ClassOutputPath>$(IntermediateOutputPath)classes\</ClassOutputPath>
+        <ClassOutputPath Condition=" '$(ClassOutputPath)' == '' ">$(IntermediateOutputPath)classes\</ClassOutputPath>
+        <HeaderOutputPath Condition=" '$(HeaderOutputPath)' == '' ">$(IntermediateOutputPath)headers\</HeaderOutputPath>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <_IkvmReferenceExportItemPrepareStateFile Condition=" '$(_IkvmReferenceExportItemPrepareStateFile)' == '' ">$(IntermediateOutputPath)$(MSBuildProjectFile).IkvmReferenceExportItemPrepare.cache</_IkvmReferenceExportItemPrepareStateFile>
     </PropertyGroup>
 
     <!-- References may be derived from various sources: ProjectReference or IkvmReference. In each case, compilation of the Java
@@ -17,6 +22,13 @@
     <Target Name="GetReferenceClasspath" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences" AfterTargets="ExportReferences">
         <ItemGroup>
             <Classpath Include="%(ReferencePathWithRefAssemblies.JavaClasspath)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' And '%(ReferencePathWithRefAssemblies.JavaClasspath)' != '' And '%(Filename)' != 'IKVM.Java' " />
+        </ItemGroup>
+    </Target>
+
+    <!-- Makes the generated header files available to Clang project types. -->
+    <Target Name="GetClangIncludeDirectories" Returns="@(GetClangIncludeDirectories)">
+        <ItemGroup>
+            <GetClangIncludeDirectories Include="$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))" />
         </ItemGroup>
     </Target>
 
@@ -30,14 +42,23 @@
             </_ReferenceExport>
         </ItemGroup>
         
-        <IkvmReferenceExportItemPrepare Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)">
-            <Output TaskParameter="Items" ItemName="ReferenceExport" />
+        <IkvmReferenceExportItemPrepare StateFile="$(_IkvmReferenceExportItemPrepareStateFile)" Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)">
+            <Output TaskParameter="Items" ItemName="__ReferenceExport" />
         </IkvmReferenceExportItemPrepare>
+        
         <ItemGroup>
-            <ReferenceExport Update="@(ReferenceExport)">
+            <__ReferenceExport Update="@(__ReferenceExport)">
                 <StagePath>$(IkvmExportStageDir)%(IkvmIdentity)\%(Filename).jar</StagePath>
                 <CachePath>$(IkvmExportCacheDir)%(IkvmIdentity)\%(Filename).jar</CachePath>
-            </ReferenceExport>
+            </__ReferenceExport>
+        </ItemGroup>
+
+        <ItemGroup>
+            <ReferenceExport Remove="@(ReferenceExport)" />
+            <ReferenceExport Include="@(__ReferenceExport)" />
+            
+            <_ReferenceExport Remove="@(_ReferenceExport)" />
+            <__ReferenceExport Remove="@(__ReferenceExport)" />
         </ItemGroup>
     </Target>
 
@@ -131,6 +152,7 @@ Files = files.ToArray();
     <Target Name="CompileJava" DependsOnTargets="$(CompileJavaDependsOn)">
         <ItemGroup>
             <Convert Include="$(ClassOutputPath)**\*.class" />
+            <Header Include="$(HeaderOutputPath)**\*.h)" />
         </ItemGroup>
     </Target>
 
@@ -138,7 +160,9 @@ Files = files.ToArray();
         <Delete Files="$(_CompileJavaCoreStampFile)" />
         <Delete Files="$(_CompileJavaCoreJavacArgFile)" />
         <Delete Files="$(ClassOutputPath)\**\*.class" />
+        <Delete Files="$(HeaderOutputPath)\**\*.h" />
         <RemoveDir Directories="$(ClassOutputPath)" />
+        <RemoveDir Directories="$(HeaderOutputPath)" />
     </Target>
 
     <PropertyGroup>

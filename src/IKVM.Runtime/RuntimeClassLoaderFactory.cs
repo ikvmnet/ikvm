@@ -25,6 +25,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using IKVM.Runtime;
+
 #if NETCOREAPP
 using System.Runtime.Loader;
 #endif

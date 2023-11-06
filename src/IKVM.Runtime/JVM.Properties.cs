@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
@@ -28,7 +29,9 @@ namespace IKVM.Runtime
             static readonly Lazy<string> homePath = new Lazy<string>(GetHomePath);
 
             /// <summary>
-            /// Gets the set of properties that are set by the user before initialization.
+            /// Gets the set of properties that are set by the user before initialization. Modification of values in this
+            /// dictionary must happen early in the program's initialization before any Java code has been accessed or
+            /// run.
             /// </summary>
             public static IDictionary<string, string> User => user;
 
@@ -359,8 +362,6 @@ namespace IKVM.Runtime
 
                 if (RuntimeUtil.IsWindows)
                 {
-                    const byte VER_NT_DOMAIN_CONTROLLER = 0x0000002;
-                    const byte VER_NT_SERVER = 0x0000003;
                     const byte VER_NT_WORKSTATION = 0x0000001;
 
                     var os = Environment.OSVersion;
@@ -525,11 +526,10 @@ namespace IKVM.Runtime
                 }
                 else if (RuntimeUtil.IsOSX)
                 {
-                    osname = "Mac OS X";
-                    osversion = "10.15";
-
                     // OpenJDK collects the version from a number of different places
                     // we should do that in the future
+                    osname = "Mac OS X";
+                    osversion = "10.15";
                 }
 
                 osname ??= Environment.OSVersion.ToString();
@@ -539,22 +539,45 @@ namespace IKVM.Runtime
             /// Gets the platform architecture.
             /// </summary>
             /// <returns></returns>
-            static string GetArch()
+            static unsafe string GetArch()
             {
-                var arch = SafeGetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
-                if (arch == null)
+#if FIRST_PASS || IMPORTER || EXPORTER
+                throw new NotSupportedException();
+#else
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    // guess based on OS and bit size
-                    if (IntPtr.Size == 4)
-                        return RuntimeUtil.IsWindows ? "x86" : "i386";
-                    else
-                        return "amd64";
+                    return RuntimeInformation.ProcessArchitecture switch
+                    {
+                        Architecture.X64 => "amd64",
+                        Architecture.X86 => "x86",
+                        Architecture.Arm => "arm",
+                        Architecture.Arm64 => "arm64",
+                        _ => "unknown",
+                    };
                 }
 
-                if (arch.Equals("AMD64", StringComparison.OrdinalIgnoreCase))
-                    return "amd64";
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    return RuntimeInformation.ProcessArchitecture switch
+                    {
+                        Architecture.X86 => "i386",
+                        Architecture.X64 => "amd64",
+                        _ => Mono.Unix.Native.Syscall.uname(out var utsname) == 0 ? utsname.machine : "unknown",
+                    };
+                }
 
-                return null;
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    return RuntimeInformation.ProcessArchitecture switch
+                    {
+                        Architecture.X64 => "x86_64",
+                        Architecture.Arm64 => "aarch64",
+                        _ => "unknown",
+                    };
+                }
+
+                return "unknown";
+#endif
             }
 
             /// <summary>
@@ -624,12 +647,41 @@ namespace IKVM.Runtime
 
                 if (RuntimeUtil.IsOSX)
                 {
+                    var home = SafeGetEnvironmentVariable("HOME");
+                    if (home != null)
+                        libraryPath.Add(Path.Combine(home, "Library/Java/Extensions"));
+
+                    libraryPath.Add("/Library/Java/Extensions");
+                    libraryPath.Add("/Network/Library/Java/Extensions");
+                    libraryPath.Add("/System/Library/Java/Extensions");
+                    libraryPath.Add("/usr/lib/java");
+
+                    // prefix with JAVA_LIBRARY_PATH
+                    var javaLibraryPath = SafeGetEnvironmentVariable("JAVA_LIBRARY_PATH");
+                    if (javaLibraryPath != null)
+                        libraryPath.Add(javaLibraryPath);
+
+                    // prefix with DYLD_LIBRARY_PATH
+                    var dyldLibraryPath = SafeGetEnvironmentVariable("DYLD_LIBRARY_PATH");
+                    if (dyldLibraryPath != null)
+                        libraryPath.Add(dyldLibraryPath);
+
+                    if (home != null)
+                        libraryPath.Add(home);
+
                     libraryPath.Add(".");
                 }
 
                 try
                 {
-                    libraryPath.Insert(0, Path.GetDirectoryName(Context.Resolver.ResolveBaseAssembly().Location));
+                    // append relative .NET search paths from IKVM.Java assembly
+                    var s = Path.GetDirectoryName(Context.Resolver.ResolveBaseAssembly().Location);
+                    var l = new List<string>() { s };
+
+                    foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
+                        l.Add(Path.Combine(s, "runtimes", rid, "native"));
+
+                    libraryPath.InsertRange(0, l);
                 }
                 catch (Exception)
                 {
@@ -649,16 +701,7 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static IEnumerable<string> GetBootLibraryPathsIter()
             {
-                var self = Directory.GetParent(typeof(JVM).Assembly.Location)?.FullName;
-                if (self == null)
-                    yield break;
-
-                // implicitly include native libraries along side application (publish)
-                yield return self;
-
-                // search in runtime specific directories
-                foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
-                    yield return Path.Combine(self, "runtimes", rid, "native");
+                yield return Path.Combine(HomePath, "bin");
             }
 
             /// <summary>
