@@ -6,7 +6,7 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>iava</TargetName>
-        <LanguageStandard>c99</LanguageStandard>
+        <LanguageStandard>c89</LanguageStandard>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\io</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io</IncludeDirectories>
     </PropertyGroup>
