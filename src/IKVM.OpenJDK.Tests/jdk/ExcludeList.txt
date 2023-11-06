@@ -3351,6 +3351,77 @@ javax/swing/plaf/nimbus/8041642/ScrollBarThumbVisibleTest.java                  
 sun/security/mscapi/IterateWindowsRootStore.java                                                                        generic-all
 sun/security/mscapi/CastError.java                                                                                      generic-all
 
+# probably related to field or method order
+javax/xml/bind/jxc/8073519/SchemagenErrorReporting.java                                                                 generic-all
+
+# Broken on OS X
+com/sun/corba/transport/KeepAliveSockets.java                                                                           macosx-all
+com/sun/crypto/provider/Cipher/AES/TestISO10126Padding.java                                                             macosx-all
+com/sun/crypto/provider/Cipher/Blowfish/BlowfishTestVector.java                                                         macosx-all
+com/sun/crypto/provider/Cipher/CTR/CounterMode.java                                                                     macosx-all
+com/sun/net/httpserver/bugs/B6393710.java                                                                               macosx-all
+java/awt/FontClass/HelvLtOblTest.java                                                                                   macosx-all
+java/net/DatagramPacket/ReuseBuf.java                                                                                   macosx-all
+java/net/DatagramSocket/PortUnreachable.java                                                                            macosx-all
+java/net/DatagramSocket/Send12k.java                                                                                    macosx-all
+java/net/DatagramSocket/SendSize.java                                                                                   macosx-all
+java/net/Inet6Address/B6206527.java                                                                                     macosx-all
+java/net/Inet6Address/B6558853.java                                                                                     macosx-all
+java/net/InetAddress/CheckJNI.java                                                                                      macosx-all
+java/net/MulticastSocket/B6427403.java                                                                                  macosx-all
+java/net/MulticastSocket/JoinGroup.java                                                                                 macosx-all
+java/net/MulticastSocket/Leave.java                                                                                     macosx-all
+java/net/MulticastSocket/Promiscuous.java                                                                               macosx-all
+java/net/MulticastSocket/SetOutgoingIf.java                                                                             macosx-all
+java/net/NetworkInterface/UniqueMacAddressesTest.java                                                                   macosx-all
+java/net/PlainSocketImpl/SetBufferSize.java                                                                             macosx-all
+java/net/Socket/LinkLocal.java                                                                                          macosx-all
+java/net/Socket/SetSoLinger.java                                                                                        macosx-all
+java/net/Socket/TrafficClass.java                                                                                       macosx-all
+java/net/ipv6tests/TcpTest.java                                                                                         macosx-all
+java/net/ipv6tests/UdpTest.java                                                                                         macosx-all
+java/nio/MappedByteBuffer/Basic.java                                                                                    macosx-all
+java/nio/MappedByteBuffer/Force.java                                                                                    macosx-all
+java/nio/channels/AsynchronousSocketChannel/Basic.java                                                                  macosx-all
+java/nio/channels/DatagramChannel/AdaptDatagramSocket.java                                                              macosx-all
+java/nio/channels/DatagramChannel/BasicMulticastTests.java                                                              macosx-all
+java/nio/channels/DatagramChannel/Connect.java                                                                          macosx-all
+java/nio/channels/DatagramChannel/ConnectedSend.java                                                                    macosx-all
+java/nio/channels/DatagramChannel/IsConnected.java                                                                      macosx-all
+java/nio/channels/DatagramChannel/NoSender.java                                                                         macosx-all
+java/nio/channels/DatagramChannel/NotBound.java                                                                         macosx-all
+java/nio/channels/DatagramChannel/ReceiveISA.java                                                                       macosx-all
+java/nio/channels/DatagramChannel/Refused.java                                                                          macosx-all
+java/nio/channels/DatagramChannel/SRTest.java                                                                           macosx-all
+java/nio/channels/DatagramChannel/Sender.java                                                                           macosx-all
+java/nio/channels/DatagramChannel/ThereCanBeOnlyOne.java                                                                macosx-all
+java/nio/channels/FileChannel/ExpandingMap.java                                                                         macosx-all
+java/nio/channels/FileChannel/LongTransferTest.java                                                                     macosx-all
+java/nio/channels/FileChannel/MapTest.java                                                                              macosx-all
+java/nio/channels/FileChannel/Transfer.java                                                                             macosx-all
+java/nio/channels/FileChannel/TransferToChannel.java                                                                    macosx-all
+java/nio/channels/FileChannel/Transfers.java                                                                            macosx-all
+java/nio/channels/Selector/RacyDeregister.java                                                                          macosx-all
+java/nio/channels/ServerSocketChannel/NonBlockingAccept.java                                                            macosx-all
+java/nio/channels/ServerSocketChannel/SocketOptionTests.java                                                            macosx-all
+java/nio/channels/SocketChannel/SendUrgentData.java                                                                     macosx-all
+java/nio/channels/SocketChannel/VectorParams.java                                                                       macosx-all
+java/nio/charset/coders/Check.java                                                                                      macosx-all
+java/nio/file/Path/MacPathTest.java                                                                                     macosx-all
+java/nio/file/WatchService/LotsOfCancels.java                                                                           macosx-all
+java/nio/file/WatchService/LotsOfEvents.java                                                                            macosx-all
+java/nio/file/WatchService/MayFlies.java                                                                                macosx-all
+java/util/prefs/AddNodeChangeListener.java                                                                              macosx-all
+java/util/prefs/CommentsInXml.java                                                                                      macosx-all
+java/util/prefs/ConflictInFlush.java                                                                                    macosx-all
+java/util/prefs/ExportNode.java                                                                                         macosx-all
+java/util/prefs/ExportSubtree.java                                                                                      macosx-all
+java/util/prefs/RemoveNullKeyCheck.java                                                                                 macosx-all
+java/util/prefs/RemoveReadOnlyNode.java                                                                                 macosx-all
+java/util/prefs/RemoveUnregedListener.java                                                                              macosx-all
+jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
+sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
+
 ## JDK8u152-b16
 # awt/swing
 com/sun/java/swing/plaf/windows/Test8173145.java                                                                        generic-all
@@ -3358,6 +3429,7 @@ java/awt/Container/MoveToOtherScreenTest/MoveToOtherScreenTest.java             
 java/awt/Dialog/DialogAboveFrame/DialogAboveFrameTest.java                                                              generic-all
 java/awt/EventQueue/6980209/bug6980209.java                                                                             generic-all
 java/awt/Focus/ModalDialogActivationTest/ModalDialogActivationTest.java                                                 generic-all
+java/awt/font/MonospacedGlyphWidth/MonospacedGlyphWidthTest.java                                                        generic-all
 java/awt/font/TextLayout/DiacriticsDrawingTest.java                                                                     generic-all
 java/awt/Frame/FrameResize/ShowChildWhileResizingTest.java                                                              generic-all
 java/awt/Frame/NormalToIconified/NormalToIconifiedTest.java                                                             generic-all
@@ -3372,6 +3444,7 @@ java/awt/print/PrinterJob/PrintCrashTest.java                                   
 java/awt/TextArea/TextAreaEditing/TextAreaEditing.java                                                                  generic-all
 java/awt/Window/WindowDeadlockTest/WindowDeadlockTest.java                                                              generic-all
 java/awt/Window/WindowJumpingTest/WindowJumpingTest.java                                                                generic-all
+javax/accessibility/JList/AccessibleJListChildNPETest.java                                                              generic-all
 javax/swing/JComboBox/8136998/bug8136998.java                                                                           generic-all
 javax/swing/JMenuItem/8152981/MenuItemIconTest.java                                                                     generic-all
 javax/swing/JProgressBar/8161664/ProgressBarMemoryLeakTest.java                                                         generic-all
@@ -3381,7 +3454,6 @@ javax/swing/plaf/nimbus/8057791/bug8057791.java                                 
 javax/swing/text/FlowView/LayoutTest.java                                                                               generic-all
 javax/swing/text/html/parser/Parser/HtmlCommentTagParseTest/HtmlCommentTagParseTest.java                                generic-all
 sun/java2d/ClassCastExceptionForInvalidSurface.java                                                                     generic-all
-javax/accessibility/JList/AccessibleJListChildNPETest.java                                                              generic-all
 
 # Windows-PRNG SecureRandom
 java/security/SecureRandom/DefaultProvider.java                                                                         generic-all
@@ -3504,4 +3576,9 @@ com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithDefaultProvider.jav
 com/sun/crypto/provider/Cipher/PBE/TestCipherPBE.java                                                                   generic-all
 com/sun/crypto/provider/Cipher/PBE/TestCipherPBECons.java                                                               generic-all
 com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithProviderChange.java                                        generic-all
-com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.java                                     generic-all
+com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.java                                     generic-alljava/util/prefs/RemoveNullKeyCheck.java                                                                                 macosx-all
+java/util/prefs/RemoveReadOnlyNode.java                                                                                 macosx-all
+java/util/prefs/RemoveUnregedListener.java                                                                              macosx-all
+jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
+sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
+>>>>>>>>> Temporary merge branch 2
