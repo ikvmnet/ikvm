@@ -206,14 +206,17 @@ final class DotNetFileSystem extends FileSystem {
         };
     }
 
-    public UserPrincipalLookupService getUserPrincipalLookupService()
-    {
+    public UserPrincipalLookupService getUserPrincipalLookupService() {
         throw new UnsupportedOperationException();
     }
 
-    public WatchService newWatchService() throws IOException
-    {
-        return new DotNetWatchService(this);
+    public WatchService newWatchService() throws IOException {
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
+            return new DotNetWatchService(this);
+        } else {
+            // FileSystemWatcher implementation on .NET for Unix consumes way too many inotify queues
+            return new PollingWatchService();
+        }
     }
 
 }

@@ -510,35 +510,26 @@ final class DotNetPath extends AbstractPath {
     
     private static native String toRealPathImpl(String path);
 
-    public WatchKey register(WatchService watcher, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers) throws IOException
-    {
-        if (!(watcher instanceof DotNetWatchService))
-        {
-            // null check
-            watcher.getClass();
-            throw new ProviderMismatchException();
-        }
+    public WatchKey register(WatchService watcher, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers) throws IOException {
+        watcher.getClass();
         
         SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-        {
+        if (sm != null) {
             boolean subtree = false;
-            for(WatchEvent.Modifier modifier : modifiers)
-            {
-                if(modifier == ExtendedWatchEventModifier.FILE_TREE)
-                {
+            for (WatchEvent.Modifier modifier : modifiers) {
+                if (modifier == ExtendedWatchEventModifier.FILE_TREE) {
                     subtree = true;
                     break;
                 }
             }
             
             sm.checkRead(path);
-            if (subtree)
-            {
+            if (subtree) {
                 sm.checkRead(path + cli.System.IO.Path.DirectorySeparatorChar + '-');
             }
         }
-        return ((DotNetWatchService)watcher).register(this, events, modifiers);
+
+        return ((AbstractWatchService)watcher).register(this, events, modifiers);
     }
 
     public int compareTo(Path other)
