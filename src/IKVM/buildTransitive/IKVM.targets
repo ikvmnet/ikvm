@@ -15,7 +15,7 @@
 
     <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn);$(ResolveAssemblyReferencesDependsOn)">
         <ItemGroup>
-            <_IkvmFrameworkAssemblyReference Include="@(Reference)" Condition=" '%(Reference.NuGetIsFrameworkReference)' == 'true' Or '%(Reference.FrameworkFile)' == 'true' Or '%(Reference.ResolvedFrom)' == '{TargetFrameworkDirectory}' Or '%(Reference.IsImplicitlyDefined)' == 'true' Or '%(Reference.FrameworkReferenceName)' != '' Or '%(Reference.FrameworkReferenceVersion)' != '' "/>
+            <_IkvmFrameworkAssemblyReference Include="@(Reference)" Condition=" '%(Reference.NuGetIsFrameworkReference)' == 'true' Or '%(Reference.FrameworkFile)' == 'true' Or '%(Reference.ResolvedFrom)' == '{TargetFrameworkDirectory}' Or '%(Reference.IsImplicitlyDefined)' == 'true' Or '%(Reference.FrameworkReferenceName)' != '' Or '%(Reference.FrameworkReferenceVersion)' != '' Or '%(Reference.Identity)' == 'mscorlib' "/>
             <_IkvmFrameworkAssemblyReference Include="@(Reference)" Condition=" '%(Reference.Filename)%(Reference.Extension)' == 'IKVM.Runtime.dll' " />
             <_IkvmFrameworkAssemblyReference Include="@(Reference)" Condition=" '%(Reference.Filename)%(Reference.Extension)' == 'IKVM.Java.dll' " />
             <_IkvmReferenceInstalledAssemblyDirectory Include="$(TargetFrameworkDirectory)" />
