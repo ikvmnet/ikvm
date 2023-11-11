@@ -44,6 +44,11 @@
         <InternalsVisibleTo Include="IKVM.Tests" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Accessors\Com\Sun\Nio\File\" />
+      <Folder Include="Util\Sun\Nio\Fs\" />
+    </ItemGroup>
+
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
 </Project>

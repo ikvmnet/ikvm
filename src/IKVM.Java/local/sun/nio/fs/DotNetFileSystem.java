@@ -206,13 +206,293 @@ final class DotNetFileSystem extends FileSystem {
         };
     }
 
-    public UserPrincipalLookupService getUserPrincipalLookupService() {
+    public UserPrincipalLookupService getUserPrincipalLookupService()
+    {
         throw new UnsupportedOperationException();
+    }
+
+    static final class NetWatchService implements WatchService
+    {
+        static final WatchEvent<?> overflowEvent = new WatchEvent<Object>() {
+            public Object context() {
+                return null;
+            }
+            public int count() {
+                return 1;
+            }
+            public WatchEvent.Kind<Object> kind() {
+                return StandardWatchEventKinds.OVERFLOW;
+            }
+        };
+        private static final WatchKey CLOSED = new WatchKey() {
+            public boolean isValid() { return false; }
+            public List<WatchEvent<?>> pollEvents() { return null; }
+            public boolean reset() { return false; }
+            public void cancel() { }
+            public Watchable watchable() { return null; }
+        };
+        private boolean closed;
+        private final ArrayList<NetWatchKey> keys = new ArrayList<>();
+        private final LinkedBlockingQueue<WatchKey> queue = new LinkedBlockingQueue<>();
+
+        public synchronized void close()
+        {
+            if (!closed)
+            {
+                closed = true;
+                for (NetWatchKey key : keys)
+                {
+                    key.close();
+                }
+                enqueue(CLOSED);
+            }
+        }
+
+        private WatchKey checkClosed(WatchKey key)
+        {
+            if (key == CLOSED)
+            {
+                enqueue(CLOSED);
+                throw new ClosedWatchServiceException();
+            }
+            return key;
+        }
+
+        public WatchKey poll()
+        {
+            return checkClosed(queue.poll());
+        }
+
+        public WatchKey poll(long timeout, TimeUnit unit) throws InterruptedException
+        {
+            return checkClosed(queue.poll(timeout, unit));
+        }
+
+        public WatchKey take() throws InterruptedException
+        {
+            return checkClosed(queue.take());
+        }
+
+        void enqueue(WatchKey key)
+        {
+            for (;;)
+            {
+                try
+                {
+                    queue.put(key);
+                    return;
+                }
+                catch (InterruptedException _)
+                {
+                }
+            }
+        }
+
+        private final class NetWatchKey implements WatchKey
+        {
+            private final DotNetPath path;
+            private FileSystemWatcher fsw;
+            private ArrayList<WatchEvent<?>> list = new ArrayList<>();
+            private HashSet<String> modified = new HashSet<>();
+            private boolean signaled;
+            
+            NetWatchKey(DotNetPath path)
+            {
+                this.path = path;
+            }
+            
+            synchronized void init(final boolean create, final boolean delete, final boolean modify, final boolean overflow, final boolean subtree)
+            {
+                if (fsw != null)
+                {
+                    // we could reuse the FileSystemWatcher, but for now we just recreate it
+                    // (and we run the risk of missing some events while we're doing that)
+                    fsw.Dispose();
+                    fsw = null;
+                }
+                fsw = new FileSystemWatcher(path.path);
+                if (create)
+                {
+                    fsw.add_Created(new FileSystemEventHandler(new FileSystemEventHandler.Method() {
+                        public void Invoke(Object sender, FileSystemEventArgs e) {
+                            addEvent(createEvent(e), null);
+                        }
+                    }));
+                }
+                if (delete)
+                {
+                    fsw.add_Deleted(new FileSystemEventHandler(new FileSystemEventHandler.Method() {
+                        public void Invoke(Object sender, FileSystemEventArgs e) {
+                            addEvent(createEvent(e), null);
+                        }
+                    }));
+                }
+                if (modify)
+                {
+                    fsw.add_Changed(new FileSystemEventHandler(new FileSystemEventHandler.Method() {
+                        public void Invoke(Object sender, FileSystemEventArgs e) {
+                            synchronized (NetWatchKey.this) {
+                                if (modified.contains(e.get_Name())) {
+                                    // we already have an ENTRY_MODIFY event pending
+                                    return;
+                                }
+                            }
+                            addEvent(createEvent(e), e.get_Name());
+                        }
+                    }));
+                }
+                fsw.add_Error(new ErrorEventHandler(new ErrorEventHandler.Method() {
+                    public void Invoke(Object sender, ErrorEventArgs e) {
+                        if (e.GetException() instanceof cli.System.ComponentModel.Win32Exception
+                            && ((cli.System.ComponentModel.Win32Exception)e.GetException()).get_ErrorCode() == -2147467259) {
+                            // the directory we were watching was deleted
+                            cancelledByError();
+                        } else if (overflow) {
+                            addEvent(overflowEvent, null);
+                        }
+                    }
+                }));
+                if (subtree)
+                {
+                    fsw.set_IncludeSubdirectories(true);
+                }
+                fsw.set_EnableRaisingEvents(true);
+            }
+
+            WatchEvent<?> createEvent(final FileSystemEventArgs e)
+            {
+                return new WatchEvent<Path>() {
+                    public Path context() {
+                        return new DotNetPath((DotNetFileSystem)path.getFileSystem(), e.get_Name());
+                    }
+                    public int count() {
+                        return 1;
+                    }
+                    public WatchEvent.Kind<Path> kind() {
+                        switch (e.get_ChangeType().Value) {
+                            case WatcherChangeTypes.Created:
+                                return StandardWatchEventKinds.ENTRY_CREATE;
+                            case WatcherChangeTypes.Deleted:
+                                return StandardWatchEventKinds.ENTRY_DELETE;
+                            default:
+                                return StandardWatchEventKinds.ENTRY_MODIFY;
+                        }
+                    }
+                };
+            }
+
+            void cancelledByError()
+            {
+                cancel();
+                synchronized (this)
+                {
+                    if (!signaled)
+                    {
+                        signaled = true;
+                        enqueue(this);
+                    }
+                }
+            }
+
+            synchronized void addEvent(WatchEvent<?> event, String modified)
+            {
+                list.add(event);
+                if (modified != null)
+                {
+                    this.modified.add(modified);
+                }
+                if (!signaled)
+                {
+                    signaled = true;
+                    enqueue(this);
+                }
+            }
+
+            public synchronized boolean isValid()
+            {
+                return fsw != null;
+            }
+
+            public synchronized List<WatchEvent<?>> pollEvents()
+            {
+                ArrayList<WatchEvent<?>> r = list;
+                list = new ArrayList<>();
+                modified.clear();
+                return r;
+            }
+
+            public synchronized boolean reset()
+            {
+                if (fsw == null)
+                {
+                    return false;
+                }
+                if (signaled)
+                {
+                    if (list.size() == 0)
+                    {
+                        signaled = false;
+                    }
+                    else
+                    {
+                        enqueue(this);
+                    }
+                }
+                return true;
+            }
+
+            void close()
+            {
+                if (fsw != null)
+                {
+                    fsw.Dispose();
+                    fsw = null;
+                }
+            }
+
+            public void cancel()
+            {
+                synchronized (NetWatchService.this)
+                {
+                    keys.remove(this);
+                    close();
+                }
+            }
+
+            public Watchable watchable()
+            {
+                return path;
+            }
+        }
+
+        synchronized WatchKey register(DotNetPath path, boolean create, boolean delete, boolean modify, boolean overflow, boolean subtree)
+        {
+            if (closed)
+            {
+                throw new ClosedWatchServiceException();
+            }
+            NetWatchKey existing = null;
+            for (NetWatchKey key : keys)
+            {
+                if (key.watchable().equals(path))
+                {
+                    existing = key;
+                    break;
+                }
+            }
+            if (existing == null)
+            {
+                existing = new NetWatchKey(path);
+                keys.add(existing);
+            }
+            existing.init(create, delete, modify, overflow, subtree);
+            return existing;
+        }
     }
 
     public WatchService newWatchService() throws IOException {
         if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
-            return new DotNetWatchService(this);
+            return new NetWatchService();
         } else {
             // FileSystemWatcher implementation on .NET for Unix consumes way too many inotify queues
             return new PollingWatchService();
