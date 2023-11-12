@@ -3464,6 +3464,9 @@ javax/management/mxbean/MXBeanLoadingTest1.java                                 
 sun/security/krb5/auto/UnboundSSL.java                                                                                  generic-all
 sun/security/krb5/auto/UnboundSSLMultipleKeys.java                                                                      generic-all
 sun/security/krb5/auto/UnboundSSLPrincipalProperty.java                                                                 generic-all
+sun/security/krb5/auto/TicketSName.java                                                                                 macosx-all
+sun/security/krb5/auto/ForwardableCheck.java                                                                            macosx-all
+sun/security/krb5/auto/RefreshKrb5Config.java                                                                           macosx-all
 
 # RMI, fails, but works in Debug with attached Debugger
 sun/rmi/server/UnicastServerRef/FilterUSRTest.java                                                                      generic-all
