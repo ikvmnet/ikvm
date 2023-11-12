@@ -1480,6 +1480,7 @@
         <!--<OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\fs\WindowsChannelFactory.java" />-->
         
         <!--<OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\**\*.java" PackagePath="sun\nio\fs" />-->
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\UnixFileKey.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\DefaultFileSystemProvider.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\DefaultFileTypeDetector.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\SolarisAclFileAttributeView.java" />

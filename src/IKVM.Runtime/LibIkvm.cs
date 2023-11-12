@@ -93,6 +93,16 @@ namespace IKVM.Runtime
             [DllImport("ikvm", SetLastError = false)]
             internal static extern void IKVM_io_close_socket(long handle);
 
+            /// <summary>
+            /// Invokes the native 'IKVM_io_close_socket' function.
+            /// </summary>
+            /// <param name="pathname"></param>
+            /// <param name="st_ino"></param>
+            /// <param name="st_dev"></param>
+            /// <returns></returns>
+            [DllImport("ikvm", SetLastError = false)]
+            internal static extern int IKVM_io_lstat(string pathname, out long st_ino, out long st_dev);
+
         }
 
         /// <summary>
@@ -269,6 +279,15 @@ namespace IKVM.Runtime
         /// <param name="handle"></param>
         /// <returns></returns>
         public long io_duplicate_socket(long handle) => Externs.IKVM_io_duplicate_socket(handle);
+
+        /// <summary>
+        /// Invokes the 'io_lstat' function.
+        /// </summary>
+        /// <param name="pathname"></param>
+        /// <param name="st_ino"></param>
+        /// <param name="st_dev"></param>
+        /// <returns></returns>
+        public int io_lstat(string pathname, out long st_ino, out long st_dev) => Externs.IKVM_io_lstat(pathname, out st_ino, out st_dev);
 
         /// <summary>
         /// Releases the instance.

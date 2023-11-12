@@ -108,3 +108,17 @@ NETEXPORT void NETCALL IKVM_io_close_socket(long long handle)
 #endif
     }
 }
+
+NETEXPORT int NETCALL IKVM_io_lstat(const char* pathname, long long* st_ino, long long* st_dev)
+{
+#ifdef WIN32
+#else
+    struct stat st;
+    if (lstat(pathname, &st) < 0)
+        return -1;
+
+    *st_ino = st.st_ino;
+    *st_dev = st.st_dev;
+    return 0;
+#endif
+}

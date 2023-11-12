@@ -3372,7 +3372,7 @@ java/net/MulticastSocket/JoinGroup.java                                         
 java/net/MulticastSocket/Leave.java                                                                                     macosx-all
 java/net/MulticastSocket/Promiscuous.java                                                                               macosx-all
 java/net/MulticastSocket/SetOutgoingIf.java                                                                             macosx-all
-java/net/NetworkInterface/UniqueMacAddressesTest.java                                                                   macosx-all
+#java/net/NetworkInterface/UniqueMacAddressesTest.java                                                                   macosx-all
 java/net/PlainSocketImpl/SetBufferSize.java                                                                             macosx-all
 java/net/Socket/LinkLocal.java                                                                                          macosx-all
 java/net/Socket/SetSoLinger.java                                                                                        macosx-all
@@ -3394,12 +3394,12 @@ java/nio/channels/DatagramChannel/Refused.java                                  
 java/nio/channels/DatagramChannel/SRTest.java                                                                           macosx-all
 java/nio/channels/DatagramChannel/Sender.java                                                                           macosx-all
 java/nio/channels/DatagramChannel/ThereCanBeOnlyOne.java                                                                macosx-all
-java/nio/channels/FileChannel/ExpandingMap.java                                                                         macosx-all
-java/nio/channels/FileChannel/LongTransferTest.java                                                                     macosx-all
-java/nio/channels/FileChannel/MapTest.java                                                                              macosx-all
-java/nio/channels/FileChannel/Transfer.java                                                                             macosx-all
-java/nio/channels/FileChannel/TransferToChannel.java                                                                    macosx-all
-java/nio/channels/FileChannel/Transfers.java                                                                            macosx-all
+#java/nio/channels/FileChannel/ExpandingMap.java                                                                         macosx-all
+#java/nio/channels/FileChannel/LongTransferTest.java                                                                     macosx-all
+#java/nio/channels/FileChannel/MapTest.java                                                                              macosx-all
+#java/nio/channels/FileChannel/Transfer.java                                                                             macosx-all
+#java/nio/channels/FileChannel/TransferToChannel.java                                                                    macosx-all
+#java/nio/channels/FileChannel/Transfers.java                                                                            macosx-all
 java/nio/channels/Selector/RacyDeregister.java                                                                          macosx-all
 java/nio/channels/ServerSocketChannel/NonBlockingAccept.java                                                            macosx-all
 java/nio/channels/ServerSocketChannel/SocketOptionTests.java                                                            macosx-all

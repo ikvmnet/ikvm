@@ -39,14 +39,10 @@ final class DotNetPath extends AbstractPath {
     private final DotNetFileSystem fs;
     final String path;
 
-    DotNetPath(DotNetFileSystem fs, String path)
-    {
-        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
-        {
+    DotNetPath(DotNetFileSystem fs, String path) {
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
             path = WindowsPathParser.parse(path).path();
-        }
-        else
-        {
+        } else {
             StringBuilder sb = null;
             int separatorCount = 0;
             boolean prevWasSeparator = false;
@@ -103,136 +99,112 @@ final class DotNetPath extends AbstractPath {
 
     public Path getRoot() {
         int len = getRootLength();
-        return len == 0 ? null : new DotNetPath(fs, path.substring(0, len));
+return len == 0 ? null : new DotNetPath(fs, path.substring(0, len));
     }
 
     private int getRootLength() {
-        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
-        {
-            if (path.length() >= 2 && path.charAt(1) == ':')
-            {
-                if (path.length() >= 3 && path.charAt(2) == '\\')
-                {
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
+            if (path.length() >= 2 && path.charAt(1) == ':') {
+                if (path.length() >= 3 && path.charAt(2) == '\\') {
                     return 3;
-                }
-                else
-                {
+                } else {
                     return 2;
                 }
-            }
-            else if (path.startsWith("\\\\"))
-            {
+            } else if (path.startsWith("\\\\")) {
                 return path.indexOf('\\', path.indexOf('\\', 2) + 1) + 1;
             }
         }
 
-        if (path.length() >= 1 && path.charAt(0) == cli.System.IO.Path.DirectorySeparatorChar)
-        {
+        if (path.length() >= 1 && path.charAt(0) == cli.System.IO.Path.DirectorySeparatorChar) {
             return 1;
-        }
-        else
-        {
+        } else {
             return 0;
         }
     }
 
     public Path getFileName() {
-        if (path.length() == 0)
-        {
+        if (path.length() == 0) {
             return this;
         }
-        if (path.length() == getRootLength())
-        {
+        if (path.length() == getRootLength()) {
             return null;
         }
         String name = cli.System.IO.Path.GetFileName(path);
-        if (name == null || name.length() == 0)
-        {
+        if (name == null || name.length() == 0) {
             return null;
         }
+
         return new DotNetPath(fs, name);
     }
 
-    public Path getParent()
-    {
-        if (path.length() == getRootLength())
-        {
+    public Path getParent() {
+        if (path.length() == getRootLength()) {
             return null;
         }
         String parent = cli.System.IO.Path.GetDirectoryName(path);
-        if (parent == null || parent.length() == 0)
-        {
+        if (parent == null || parent.length() == 0) {
             return null;
         }
+
         return new DotNetPath(fs, parent);
     }
 
-    public int getNameCount()
-    {
+    public int getNameCount() {
         int len = getRootLength();
-        if (path.length() == len)
-        {
+        if (path.length() == len) {
             return len == 0 ? 1 : 0;
         }
         int count = 1;
-        for (int i = len; i < path.length(); i++)
-        {
-            if (path.charAt(i) == cli.System.IO.Path.DirectorySeparatorChar)
-            {
+        for (int i = len; i < path.length(); i++) {
+            if (path.charAt(i) == cli.System.IO.Path.DirectorySeparatorChar) {
                 count++;
             }
         }
+
         return count;
     }
 
-    public Path getName(int index)
-    {
+    public Path getName(int index) {
         return new DotNetPath(fs, getNameImpl(index));
     }
 
-    private String getNameImpl(int index)
-    {
-        for (int pos = getRootLength(); pos < path.length(); index--)
-        {
+    private String getNameImpl(int index) {
+        for (int pos = getRootLength(); pos < path.length(); index--) {
             int next = path.indexOf(cli.System.IO.Path.DirectorySeparatorChar, pos);
-            if (index == 0)
-            {
+            if (index == 0) {
                 return next == -1 ? path.substring(pos) : path.substring(pos, next);
             }
-            if (next == -1)
-            {
+            if (next == -1) {
                 break;
             }
             pos = next + 1;
         }
-        if (path.length() == 0 && index == 0)
-        {
+
+        if (path.length() == 0 && index == 0) {
             return "";
         }
+
         throw new IllegalArgumentException();
     }
 
-    public Path subpath(int beginIndex, int endIndex)
-    {
+    public Path subpath(int beginIndex, int endIndex) {
         StringBuilder sb = new StringBuilder();
-        for (int i = beginIndex; i < endIndex; i++)
-        {
-            if (i != beginIndex)
-            {
+        for (int i = beginIndex; i < endIndex; i++) {
+            if (i != beginIndex) {
                 sb.append(cli.System.IO.Path.DirectorySeparatorChar);
             }
             sb.append(getNameImpl(i));
         }
+
         return new DotNetPath(fs, sb.toString());
     }
 
-    public boolean startsWith(Path other)
-    {
+    public boolean startsWith(Path other) {
         String npath = DotNetPath.from(other).path;
-        if (npath.length() == 0)
-        {
+        if (npath.length() == 0) {
             return path.length() == 0;
         }
+
         return path.regionMatches(cli.IKVM.Runtime.RuntimeUtil.get_IsWindows(), 0, npath, 0, npath.length())
             && (npath.length() == getRootLength()
                 || (npath.length() > getRootLength()
@@ -240,27 +212,22 @@ final class DotNetPath extends AbstractPath {
                         || (path.length() > npath.length() && path.charAt(npath.length()) == cli.System.IO.Path.DirectorySeparatorChar))));
     }
 
-    public boolean endsWith(Path other)
-    {
+    public boolean endsWith(Path other) {
         DotNetPath nother = DotNetPath.from(other);
         String npath = nother.path;
-        if (npath.length() > path.length())
-        {
+        if (npath.length() > path.length()) {
             return false;
         }
-        if (npath.length() == 0)
-        {
+        if (npath.length() == 0) {
             return path.length() == 0;
         }
         int nameCount = getNameCount();
         int otherNameCount = nother.getNameCount();
-        if (otherNameCount > nameCount)
-        {
+        if (otherNameCount > nameCount) {
             return false;
         }
         int otherRootLength = nother.getRootLength();
-        if (otherRootLength > 0)
-        {
+        if (otherRootLength > 0) {
             if (otherNameCount != nameCount
                 || getRootLength() != otherRootLength
                 || !path.regionMatches(cli.IKVM.Runtime.RuntimeUtil.get_IsWindows(), 0, npath, 0, otherRootLength))
@@ -268,6 +235,7 @@ final class DotNetPath extends AbstractPath {
                 return false;
             }
         }
+
         int skip = nameCount - otherNameCount;
         for (int i = 0; i < otherNameCount; i++)
         {
@@ -278,6 +246,7 @@ final class DotNetPath extends AbstractPath {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -473,170 +442,145 @@ final class DotNetPath extends AbstractPath {
         return new DotNetPath(fs, "");
     }
 
-    public URI toUri()
-    {
-        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
-        {
+    public URI toUri() {
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
             return DotNetWindowsUriSupport.toUri(this);
-        }
-        else
-        {
+        } else {
             return DotNetUnixUriUtils.toUri(this);
         }
     }
 
-    public DotNetPath toAbsolutePath()
-    {
-        if (isAbsolute())
-        {
+    public DotNetPath toAbsolutePath() {
+        if (isAbsolute()) {
             return this;
         }
+
         // System.getProperty("user.dir") will trigger the specified security check
         return new DotNetPath(fs, cli.System.IO.Path.GetFullPath(cli.System.IO.Path.Combine(System.getProperty("user.dir"), path)));
     }
 
-    public Path toRealPath(LinkOption... options) throws IOException
-    {
+    public Path toRealPath(LinkOption... options) throws IOException {
         SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-        {
+        if (sm != null) {
             sm.checkRead(path);
-            if (!isAbsolute())
-            {
+            if (!isAbsolute()) {
                 sm.checkPropertyAccess("user.dir");
             }
         }
+
         return new DotNetPath(fs, toRealPathImpl(path));
     }
     
     private static native String toRealPathImpl(String path);
 
-    public WatchKey register(WatchService watcher, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers) throws IOException
-    {
-        if (!(watcher instanceof DotNetFileSystem.NetWatchService))
-        {
-            // null check
-            watcher.getClass();
-            throw new ProviderMismatchException();
-        }
-        boolean create = false;
-        boolean delete = false;
-        boolean modify = false;
-        boolean overflow = false;
-        boolean subtree = false;
-        for (WatchEvent.Kind<?> kind : events)
-        {
-            if (kind == StandardWatchEventKinds.ENTRY_CREATE)
-            {
-                create = true;
-            }
-            else if (kind == StandardWatchEventKinds.ENTRY_DELETE)
-            {
-                delete = true;
-            }
-            else if (kind == StandardWatchEventKinds.ENTRY_MODIFY)
-            {
-                modify = true;
-            }
-            else if (kind == StandardWatchEventKinds.OVERFLOW)
-            {
-                overflow = true;
-            }
-            else
-            {
+    public WatchKey register(WatchService watcher, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers) throws IOException {
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
+            if (!(watcher instanceof DotNetFileSystem.NetWatchService)) {
                 // null check
-                kind.getClass();
-                throw new UnsupportedOperationException();
+                watcher.getClass();
+                throw new ProviderMismatchException();
             }
+
+            boolean create = false;
+            boolean delete = false;
+            boolean modify = false;
+            boolean overflow = false;
+            boolean subtree = false;
+            for (WatchEvent.Kind<?> kind : events) {
+                if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
+                    create = true;
+                } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
+                    delete = true;
+                } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+                    modify = true;
+                } else if (kind == StandardWatchEventKinds.OVERFLOW) {
+                    overflow = true;
+                } else {
+                    // null check
+                    kind.getClass();
+                    throw new UnsupportedOperationException();
+                }
+            }
+
+            if (!create && !delete && !modify) {
+                throw new IllegalArgumentException();
+            }
+
+            for (WatchEvent.Modifier modifier : modifiers) {
+                if (modifier == ExtendedWatchEventModifier.FILE_TREE) {
+                    subtree = true;
+                } else if (modifier instanceof SensitivityWatchEventModifier) {
+                    // ignore
+                } else {
+                    // null check
+                    modifier.getClass();
+                    throw new UnsupportedOperationException();
+                }
+            }
+
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkRead(path);
+                if (subtree) {
+                    sm.checkRead(path + cli.System.IO.Path.DirectorySeparatorChar + '-');
+                }
+            }
+
+            return ((DotNetFileSystem.NetWatchService)watcher).register(this, create, delete, modify, overflow, subtree);
+        } else {
+            return ((PollingWatchService)watcher).register(this, events, modifiers);
         }
-        if (!create && !delete && !modify)
-        {
-            throw new IllegalArgumentException();
-        }
-        for (WatchEvent.Modifier modifier : modifiers)
-        {
-            if (modifier == ExtendedWatchEventModifier.FILE_TREE)
-            {
-                subtree = true;
-            }
-            else if (modifier instanceof SensitivityWatchEventModifier)
-            {
-                // ignore
-            }
-            else
-            {
-                // null check
-                modifier.getClass();
-                throw new UnsupportedOperationException();
-            }
-        }
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-        {
-            sm.checkRead(path);
-            if (subtree)
-            {
-                sm.checkRead(path + cli.System.IO.Path.DirectorySeparatorChar + '-');
-            }
-        }
-        return ((DotNetFileSystem.NetWatchService)watcher).register(this, create, delete, modify, overflow, subtree);
     }
 
-    public int compareTo(Path other)
-    {
+    public int compareTo(Path other) {
         String path2 = ((DotNetPath)other).path;
         int len1 = path.length();
         int len2 = path2.length();
         int min = Math.min(len1, len2);
-        for (int i = 0; i < min; i++)
-        {
+        for (int i = 0; i < min; i++) {
             char c1 = path.charAt(i);
             char c2 = path2.charAt(i);
-            if (c1 != c2 && Character.toUpperCase(c1) != Character.toUpperCase(c2))
-            {
+            if (c1 != c2 && Character.toUpperCase(c1) != Character.toUpperCase(c2)) {
                 return c1 - c2;
             }
         }
+
         return len1 - len2;
     }
 
-    public boolean equals(Object other)
-    {
-        if (!(other instanceof DotNetPath))
-        {
+    public boolean equals(Object other) {
+        if (!(other instanceof DotNetPath)) {
             return false;
         }
+
         return compareTo((DotNetPath)other) == 0;
     }
 
-    public int hashCode()
-    {
+    public int hashCode() {
         int hash = 0;
-        for (int i = 0; i < path.length(); i++)
-        {
+        for (int i = 0; i < path.length(); i++) {
             hash = 97 * hash + Character.toUpperCase(path.charAt(i));
         }
+
         return hash;
     }
 
-    public String toString()
-    {
+    public String toString() {
         return path;
     }
 
-    boolean isUnc()
-    {
+    boolean isUnc() {
         return cli.IKVM.Runtime.RuntimeUtil.get_IsWindows() && getRootLength() > 3;
     }
 
-    static DotNetPath from(Path path)
-    {
-        if (!(path instanceof DotNetPath))
-        {
+    static DotNetPath from(Path path) {
+        if (!(path instanceof DotNetPath)) {
             // null check
             path.getClass();
             throw new ProviderMismatchException();
         }
+        
         return (DotNetPath)path;
     }
+
 }
