@@ -528,6 +528,28 @@ return len == 0 ? null : new DotNetPath(fs, path.substring(0, len));
 
             return ((DotNetFileSystem.NetWatchService)watcher).register(this, create, delete, modify, overflow, subtree);
         } else {
+            boolean subtree = false;
+
+            for (WatchEvent.Modifier modifier : modifiers) {
+                if (modifier == ExtendedWatchEventModifier.FILE_TREE) {
+                    subtree = true;
+                } else if (modifier instanceof SensitivityWatchEventModifier) {
+                    // ignore
+                } else {
+                    // null check
+                    modifier.getClass();
+                    throw new UnsupportedOperationException();
+                }
+            }
+
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkRead(path);
+                if (subtree) {
+                    sm.checkRead(path + cli.System.IO.Path.DirectorySeparatorChar + '-');
+                }
+            }
+
             return ((PollingWatchService)watcher).register(this, events, modifiers);
         }
     }
