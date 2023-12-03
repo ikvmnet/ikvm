@@ -1,6 +1,6 @@
 ﻿<RunSettings>
     <JTRegConfiguration>
         <PartitionCount>16</PartitionCount>
-        <TimeoutFactor>8</TimeoutFactor>
+        <TimeoutFactor>16</TimeoutFactor>
     </JTRegConfiguration>
 </RunSettings>
