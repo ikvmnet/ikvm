@@ -157,7 +157,7 @@ jobs:
         version: "16.0"
         cached: ${{ steps.cache-llvm.outputs.cache-hit }}
     - name: Install apple-codesign
-      uses: actions-rs/install@v0.1
+      uses: baptiste0928/cargo-install@v2
       with:
         crate: apple-codesign
         version: latest
