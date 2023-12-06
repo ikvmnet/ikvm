@@ -69,7 +69,7 @@ namespace IKVM.Runtime.JNI
         /// <param name="sig"></param>
         /// <returns></returns>
         /// <exception cref="java.lang.UnsatisfiedLinkError"></exception>
-        public static IntPtr GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
+        public static nint GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
@@ -81,41 +81,32 @@ namespace IKVM.Runtime.JNI
                 switch (sig[i])
                 {
                     case '[':
-                        sp += sizeof(jarray);
+                        sp += sizeof(nint);
                         while (sig[++i] == '[') ;
                         if (sig[i] == 'L')
+                        {
                             while (sig[++i] != ';') ;
+                        }
                         break;
                     case 'L':
-                        sp += sizeof(jobject);
+                        sp += sizeof(nint);
                         while (sig[++i] != ';') ;
                         break;
                     case 'J':
-                        sp += sizeof(jlong);
-                        break;
                     case 'D':
-                        sp += sizeof(jdouble);
+                        sp += 8;
                         break;
                     case 'F':
-                        sp += sizeof(jfloat);
-                        break;
                     case 'I':
-                        sp += sizeof(jint);
-                        break;
                     case 'C':
-                        sp += sizeof(jchar);
-                        break;
                     case 'Z':
-                        sp += sizeof(jboolean);
-                        break;
                     case 'S':
-                        sp += sizeof(jshort);
-                        break;
                     case 'B':
-                        sp += sizeof(jbyte);
+                        sp += 4;
                         break;
                     default:
-                        throw new InternalException("Invalid JNI method signature.");
+                        Debug.Assert(false);
+                        break;
                 }
             }
 
