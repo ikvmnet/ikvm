@@ -456,6 +456,7 @@ jobs:
         - net472
         - net6.0
         sys:
+        - win-x86
         - win-x64
         - linux-x64
         - osx-x64
@@ -640,6 +641,10 @@ jobs:
             $runsettings = $(gi .\tests\$tst\$tfm\*.runsettings)
             if ($runsettings) {
                 $argl += "--settings:$runsettings"
+            }
+
+            if ($sys -eq 'win-x86') {
+                $argl += "--platform x86"
             }
 
             if ($qry -ne "" -and $qry -ne $null) {
