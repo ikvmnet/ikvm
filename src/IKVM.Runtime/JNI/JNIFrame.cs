@@ -75,7 +75,7 @@ namespace IKVM.Runtime.JNI
             throw new NotImplementedException();
 #else
             var loader = RuntimeClassLoader.FromCallerID(callerID);
-            int sp = 0;
+            var sp = sizeof(nint) + sizeof(nint);
             for (int i = 1; sig[i] != ')'; i++)
             {
                 switch (sig[i])
@@ -84,9 +84,7 @@ namespace IKVM.Runtime.JNI
                         sp += sizeof(nint);
                         while (sig[++i] == '[') ;
                         if (sig[i] == 'L')
-                        {
                             while (sig[++i] != ';') ;
-                        }
                         break;
                     case 'L':
                         sp += sizeof(nint);
@@ -115,7 +113,7 @@ namespace IKVM.Runtime.JNI
             var mangledSig = JniMangle(sig.Substring(1, sig.IndexOf(')') - 1));
             var methodName = $"Java_{mangledClass}_{mangledName}";
             var longMethodName = $"Java_{mangledClass}_{mangledName}__{mangledSig}";
-            Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, class loader = {3}, short = {4}, long = {5}, args = {6}", clazz, name, sig, loader, methodName, longMethodName, sp + sizeof(nint) + sizeof(nint));
+            Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, class loader = {3}, short = {4}, long = {5}, args = {6}", clazz, name, sig, loader, methodName, longMethodName, sp);
 
             lock (JNINativeLoader.SyncRoot)
             {
