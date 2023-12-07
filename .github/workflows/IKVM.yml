@@ -643,7 +643,7 @@ jobs:
                 "--blame",
                 "--blame-crash",
                 "--blame-hang",
-                "--blame-hang-timeout", "30m",
+                "--blame-hang-timeout", "120m",
                 "-v:diag",
                 "--results-directory", "TestResults",
                 "--logger:console;verbosity=diag",
