@@ -627,6 +627,7 @@ jobs:
         if ($tests) {
             $argl = @(
                 "-f", $tfm,
+                "-r", $sys,
                 "--blame",
                 "--blame-crash",
                 "--blame-hang",
@@ -641,10 +642,6 @@ jobs:
             $runsettings = $(gi .\tests\$tst\$tfm\*.runsettings)
             if ($runsettings) {
                 $argl += "--settings:$runsettings"
-            }
-
-            if ($sys -eq 'win-x86') {
-                $argl += "--platform:x86"
             }
 
             if ($qry -ne "" -and $qry -ne $null) {
