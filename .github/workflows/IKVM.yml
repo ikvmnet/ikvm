@@ -644,7 +644,7 @@ jobs:
             }
 
             if ($sys -eq 'win-x86') {
-                $argl += "--platform x86"
+                $argl += "--platform:x86"
             }
 
             if ($qry -ne "" -and $qry -ne $null) {
