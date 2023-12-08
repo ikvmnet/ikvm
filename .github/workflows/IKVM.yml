@@ -571,10 +571,12 @@ jobs:
       shell: pwsh
       run: choco install procdump -y; Add-Content $env:GITHUB_PATH "$env:ProgramData\chocolatey\bin\"
     - name: Setup .NET 6.0
+      if: matrix.sys != 'win-x86'
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
     - name: Setup .NET 7.0
+      if: matrix.sys != 'win-x86'
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 7.0.x
