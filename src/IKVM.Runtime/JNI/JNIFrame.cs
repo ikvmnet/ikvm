@@ -119,13 +119,13 @@ namespace IKVM.Runtime.JNI
             {
                 foreach (var p in loader.GetNativeLibraries())
                 {
-                    if (LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName(methodName, sp + sizeof(nint) + sizeof(nint))) is nint h1 and not 0)
+                    if (LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName(methodName, sp)) is nint h1 and not 0)
                     {
                         Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (short)", clazz, name, sig, p);
                         return h1;
                     }
 
-                    if (LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName(longMethodName, sp + sizeof(nint) + sizeof(nint))) is nint h2 and not 0)
+                    if (LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName(longMethodName, sp)) is nint h2 and not 0)
                     {
                         Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (long)", clazz, name, sig, p);
                         return h2;
