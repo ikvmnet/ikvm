@@ -35,7 +35,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Gets the default instance.
         /// </summary>
-        public static LibJvm Instance = new();
+        public static readonly LibJvm Instance = new();
 
         readonly Set_JNI_GetDefaultJavaVMInitArgsDelegate _Set_JNI_GetDefaultJavaVMInitArgs;
         readonly Set_JNI_GetCreatedJavaVMsDelegate _Set_JNI_GetCreatedJavaVMs;

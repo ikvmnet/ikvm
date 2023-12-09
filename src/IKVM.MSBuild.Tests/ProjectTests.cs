@@ -269,6 +269,27 @@ namespace IKVM.MSBuild.Tests
                 foreach (var libName in new[] { "awt", "fdlibm", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
                     File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", string.Format(lib, libName))).Should().BeTrue();
             }
+
+            if (rid == "win-x86")
+            {
+                var outDir = Path.Combine(binDir, "publish");
+                Directory.GetDirectories(Path.Combine(outDir, "ikvm")).Should().HaveCount(2);
+                Directory.Exists(Path.Combine(outDir, "ikvm")).Should().BeTrue();
+                Directory.Exists(Path.Combine(outDir, "ikvm", "win-x64")).Should().BeTrue();
+                Directory.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", "IKVM.Runtime.dll")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", "IKVM.Java.dll")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", string.Format(lib, "iava"))).Should().BeTrue();
+
+                // ikvm image native libraries
+                foreach (var libName in new[] { "awt", "fdlibm", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
+                    File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", string.Format(lib, libName))).Should().BeTrue();
+            }
+            else
+            {
+                var outDir = Path.Combine(binDir, "publish");
+                Directory.GetDirectories(Path.Combine(outDir, "ikvm")).Should().HaveCount(1);
+            }
         }
 
     }
