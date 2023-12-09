@@ -582,20 +582,18 @@ jobs:
         dotnet-version: 7.0.x
     - name: Setup .NET 6.0
       if: matrix.sys == 'win-x86'
-      uses: dlemstra/setup-dotnet@add-architecture-option
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
-        dotnet-architecture: x86
+      env:
+        PROCESSOR_ARCHITECTURE: x86
     - name: Setup .NET 7.0
       if: matrix.sys == 'win-x86'
-      uses: dlemstra/setup-dotnet@add-architecture-option
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 7.0.x
-        dotnet-architecture: x86
-    - name: Set Windows x86 .NET Path
-      if: matrix.sys == 'win-x86'
-      shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nDOTNET_ROOT(x86)=C:\w\dotnet\"
+      env:
+        PROCESSOR_ARCHITECTURE: x86
     - name: Setup WSL
       if: runner.os == 'Windows'
       uses: Vampire/setup-wsl@v2
