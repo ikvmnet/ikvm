@@ -9,6 +9,7 @@
         <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.config</AllowedOutputExtensionsInPackageBuildOutputFolder>
         <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);GetProjectReferenceBuildOutputInPackage</TargetsForTfmSpecificBuildOutput>
         <TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificDebugSymbolsInPackage);GetProjectReferenceDebugSymbolsInPackage</TargetsForTfmSpecificDebugSymbolsInPackage>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);GetReferenceAssembliesInPackage</TargetsForTfmSpecificContentInPackage>
         <NoWarn>NU5118</NoWarn>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
@@ -43,6 +44,12 @@
             <TfmSpecificDebugSymbolsFile Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')-&gt;WithMetadataValue('PrivateAssets', 'all')-&gt;'%(RootDir)%(Directory)%(Filename).pdb')" Condition="Exists('%(RootDir)%(Directory)%(Filename).pdb')">
                 <TargetFramework>$(TargetFramework)</TargetFramework>
             </TfmSpecificDebugSymbolsFile>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GetReferenceAssembliesInPackage">
+        <ItemGroup Condition="Exists('..\IKVM.Java\ref\$(TargetFramework)\IKVM.Java.dll')">
+            <TfmSpecificPackageFile Include="..\IKVM.Java\ref\$(TargetFramework)\IKVM.Java.dll" PackagePath="ref/$(TargetFramework)" />
         </ItemGroup>
     </Target>
 
