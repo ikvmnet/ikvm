@@ -1,0 +1,1 @@
+[module: IKVM.Attributes.JavaModule]
