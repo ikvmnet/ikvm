@@ -26,12 +26,11 @@ using System.Threading;
 using System.Diagnostics;
 using System.Text;
 using System.Security;
+using System.Runtime.CompilerServices;
 
 using IKVM.Runtime.Accessors;
 using IKVM.Runtime.Accessors.Java.Lang;
-
-using System.Runtime.CompilerServices;
-
+using IKVM.Attributes;
 using IKVM.Runtime.Vfs;
 using IKVM.Runtime.Accessors.Ikvm.Internal;
 
@@ -107,12 +106,26 @@ namespace IKVM.Runtime
 
 #endif
 
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+
+        /// <summary>
+        /// Invoked on module initialize to load the JVM.
+        /// </summary>
+#pragma warning disable CA2255
+        [ModuleInitializer]
+#pragma warning restore CA2255
+        internal static void ModuleInitializer()
+        {
+            // if our entry point is a Java module, it will initialize the JVM after setting options
+            if (Assembly.GetEntryAssembly()?.ManifestModule?.GetCustomAttribute<JavaModuleAttribute>() == null)
+                EnsureInitialized();
+        }
+
+#endif
+
         /// <summary>
         /// Ensures the JVM is initialized.
         /// </summary>
-#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
-        [ModuleInitializer]
-#endif
         internal static void EnsureInitialized()
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
