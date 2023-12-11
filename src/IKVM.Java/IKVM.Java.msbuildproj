@@ -13,8 +13,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" IncludeNonPublicTypes="true" />
-        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" />
+        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="false" PrivateAssets="All" IncludeNonPublicTypes="true" />
+        <Reference Include="ref\$(TargetFramework)\IKVM.Java.dll" Private="false" HideFromJava="true" Condition=" '$(TargetFramework)' != '' " />
     </ItemGroup>
 
     <ItemGroup>

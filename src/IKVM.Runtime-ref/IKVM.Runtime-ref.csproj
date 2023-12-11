@@ -14,7 +14,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.ByteCode\IKVM.ByteCode.csproj" />
-        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" />
+        <Reference Include="..\IKVM.Java\ref\$(TargetFramework)\IKVM.Java.dll" Private="false" Condition=" '$(TargetFramework)' != '' " />
     </ItemGroup>
 
     <ItemGroup>
