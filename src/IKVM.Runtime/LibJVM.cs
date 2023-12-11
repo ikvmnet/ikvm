@@ -1,11 +1,7 @@
 ﻿using System.IO;
 using System.Runtime.InteropServices;
 
-using com.sun.xml.@internal.bind.v2.runtime.unmarshaller;
-
 using IKVM.Runtime.JNI;
-
-using jdk.@internal.org.objectweb.asm;
 
 using jsize = System.Int32;
 
