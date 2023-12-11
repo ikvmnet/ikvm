@@ -110,6 +110,9 @@ namespace IKVM.Runtime
         /// <summary>
         /// Ensures the JVM is initialized.
         /// </summary>
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+        [ModuleInitializer]
+#endif
         internal static void EnsureInitialized()
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
