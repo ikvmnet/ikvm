@@ -33,10 +33,15 @@ namespace IKVM.Java.Externs.java.lang.invoke
     static class MethodHandleNatives
     {
 
-        // called from map.xml as a replacement for Class.isInstance() in JlInvoke.MethodHandleImpl.castReference()
-        public static bool Class_isInstance(global::java.lang.Class clazz, object obj)
+        /// <summary>
+        /// Called as a replacement for Class.isInstance().
+        /// </summary>
+        /// <param name="clazz"></param>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public static bool Class_isInstance(object clazz, object obj)
         {
-            var tw = RuntimeJavaType.FromClass(clazz);
+            var tw = RuntimeJavaType.FromClass((global::java.lang.Class)clazz);
             // handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
             return tw.IsInstance(obj) || (tw == tw.Context.JavaBase.TypeOfCliSystemObject && obj is Array);
         }
@@ -46,34 +51,37 @@ namespace IKVM.Java.Externs.java.lang.invoke
             init(self, refObj, false);
         }
 
-        // this overload is called via a map.xml patch to the MemberName(Method, boolean) constructor, because we need wantSpecial
-        public static void init(global::java.lang.invoke.MemberName self, object refObj, bool wantSpecial)
+        /// <summary>
+        /// Called as a patch to the MemberName(Method, boolean) constructor because we need wantSpecial.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="refObj"></param>
+        /// <param name="wantSpecial"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static void init(object self, object refObj, bool wantSpecial)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            global::java.lang.reflect.Method method;
-            global::java.lang.reflect.Constructor constructor;
-            global::java.lang.reflect.Field field;
-            if ((method = refObj as global::java.lang.reflect.Method) != null)
+            var self_ = (global::java.lang.invoke.MemberName)self;
+
+            switch (refObj)
             {
-                InitMethodImpl(self, RuntimeJavaMethod.FromExecutable(method), wantSpecial);
-            }
-            else if ((constructor = refObj as global::java.lang.reflect.Constructor) != null)
-            {
-                InitMethodImpl(self, RuntimeJavaMethod.FromExecutable(constructor), wantSpecial);
-            }
-            else if ((field = refObj as global::java.lang.reflect.Field) != null)
-            {
-                RuntimeJavaField fw = RuntimeJavaField.FromField(field);
-                self._clazz(fw.DeclaringType.ClassObject);
-                int flags = (int)fw.Modifiers | global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_FIELD;
-                flags |= (fw.IsStatic ? global::java.lang.invoke.MethodHandleNatives.Constants.REF_getStatic : global::java.lang.invoke.MethodHandleNatives.Constants.REF_getField) << global::java.lang.invoke.MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
-                self._flags(flags);
-            }
-            else
-            {
-                throw new InvalidOperationException();
+                case global::java.lang.reflect.Method method:
+                    InitMethodImpl(self_, RuntimeJavaMethod.FromExecutable(method), wantSpecial);
+                    break;
+                case global::java.lang.reflect.Constructor constructor:
+                    InitMethodImpl(self_, RuntimeJavaMethod.FromExecutable(constructor), wantSpecial);
+                    break;
+                case global::java.lang.reflect.Field field:
+                    var fw = RuntimeJavaField.FromField(field);
+                    self_._clazz(fw.DeclaringType.ClassObject);
+                    int flags = (int)fw.Modifiers | global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_FIELD;
+                    flags |= (fw.IsStatic ? global::java.lang.invoke.MethodHandleNatives.Constants.REF_getStatic : global::java.lang.invoke.MethodHandleNatives.Constants.REF_getField) << global::java.lang.invoke.MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
+                    self_._flags(flags);
+                    break;
+                default:
+                    throw new InvalidOperationException();
             }
 #endif
         }

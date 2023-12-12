@@ -422,7 +422,7 @@ namespace IKVM.Runtime
         /// Called from map.xml for IKVM.Java.
         /// </remarks>
         /// <returns></returns>
-        internal static ObjectStreamField[] GetPersistentFields()
+        internal static object[] GetPersistentFields()
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -444,14 +444,16 @@ namespace IKVM.Runtime
         /// </remarks>
         /// <param name="e"></param>
         /// <param name="s"></param>
-        internal static void WriteObject(Exception e, ObjectOutputStream s)
+        internal static void WriteObject(Exception e, object stream)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            var stream_ = (ObjectOutputStream)stream;
+
             lock (e)
             {
-                ObjectOutputStream.PutField fields = s.putFields();
+                var fields = stream_.putFields();
                 if (e is not Throwable t)
                 {
                     fields.put("detailMessage", e.Message);
@@ -468,27 +470,29 @@ namespace IKVM.Runtime
                     GetOurStackTrace(e);
                     fields.put("stackTrace", t.stackTrace ?? java.lang.ThrowableHelper.SentinelHolder.STACK_TRACE_SENTINEL);
                 }
-                s.writeFields();
+                stream_.writeFields();
             }
 #endif
         }
 
-        internal static void ReadObject(Exception e, ObjectInputStream stream)
+        internal static void ReadObject(Exception e, object stream)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            var stream_ = (ObjectInputStream)stream;
+
             lock (e)
             {
                 // when you serialize a .NET exception it gets replaced by a com.sun.xml.internal.ws.developer.ServerSideException,
                 // so we know that Exception is always a Throwable
-                Throwable _this = (Throwable)e;
+                var _this = (Throwable)e;
 
                 // this the equivalent of s.defaultReadObject();
-                ObjectInputStream.GetField fields = stream.readFields();
-                object detailMessage = fields.get("detailMessage", null);
-                object cause = fields.get("cause", null);
-                ConstructorInfo ctor = typeof(Throwable).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(string), typeof(Exception), typeof(bool), typeof(bool) }, null);
+                var fields = stream_.readFields();
+                var detailMessage = fields.get("detailMessage", null);
+                var cause = fields.get("cause", null);
+                var ctor = typeof(Throwable).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(string), typeof(Exception), typeof(bool), typeof(bool) }, null);
                 if (cause == _this)
                 {
                     ctor.Invoke(_this, new object[] { detailMessage, null, false, false });
@@ -686,7 +690,7 @@ namespace IKVM.Runtime
             return GetOurStackTrace(self).Length;
         }
 
-        internal static StackTraceElement GetStackTraceElement(Exception self, int index)
+        internal static object GetStackTraceElement(Exception self, int index)
         {
             return GetOurStackTrace(self)[index];
         }
@@ -698,7 +702,7 @@ namespace IKVM.Runtime
         /// Called from map.xml for IKVM.Java.
         /// </remarks>
         /// <returns></returns>
-        internal static StackTraceElement[] GetOurStackTrace(Exception e)
+        internal static object[] GetOurStackTrace(Exception e)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -748,12 +752,14 @@ namespace IKVM.Runtime
         /// Called from map.xml for IKVM.Java.
         /// </remarks>
         /// <returns></returns>
-        internal static void SetStackTrace(Exception e, StackTraceElement[] stackTrace)
+        internal static void SetStackTrace(Exception e, object[] stackTrace)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var copy = (StackTraceElement[])stackTrace.Clone();
+            var stackTrace_ = (StackTraceElement[])stackTrace;
+
+            var copy = (StackTraceElement[])stackTrace_.Clone();
             for (int i = 0; i < copy.Length; i++)
                 if (copy[i] == null)
                     throw new java.lang.NullPointerException();

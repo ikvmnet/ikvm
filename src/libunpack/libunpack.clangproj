@@ -10,9 +10,13 @@
         <PreprocessorDefinitions>$(PreprocessorDefinitions);NO_ZLIB;UNPACK_JNI;FULL</PreprocessorDefinitions>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\IKVM.Java.Private.runtime.win\IKVM.Java.Private.runtime.win.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" Condition="$(TargetTriple.Contains('-windows-'))" />
+        <ProjectReference Include="..\IKVM.Java.Private.runtime.linux\IKVM.Java.Private.runtime.linux.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" Condition="$(TargetTriple.Contains('-linux-'))" />
+        <ProjectReference Include="..\IKVM.Java.Private.runtime.osx\IKVM.Java.Private.runtime.osx.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" Condition="$(TargetTriple.Contains('-apple-'))"/>
+    </ItemGroup>
+    <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
         <ProjectReference Include="..\libiava\libiava.clangproj" />
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\**\*.cpp" Exclude="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\main.cpp;$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\jni.cpp" LanguageStandard="c++11" />

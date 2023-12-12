@@ -29,26 +29,28 @@ namespace IKVM.Java.Externs.java.lang.invoke
 {
 
     static class DirectMethodHandle
-	{
+    {
 
-		// this is called from DirectMethodHandle.makeAllocator() via a map.xml prologue patch
-		public static global::java.lang.invoke.DirectMethodHandle makeStringAllocator(global::java.lang.invoke.MemberName member)
-		{
+        // this is called from DirectMethodHandle.makeAllocator() via a map.xml prologue patch
+        public static object makeStringAllocator(object member_)
+        {
 #if FIRST_PASS
 			throw new NotImplementedException();
 #else
-			// we cannot construct strings via the standard two-pass approach (allocateObject followed by constructor invocation),
-			// so we special case string construction here (to call our static factory method instead)
-			if (member.getDeclaringClass() == JVM.Context.JavaBase.TypeOfJavaLangString.ClassObject)
-			{
-				global::java.lang.invoke.MethodType mt = member.getMethodType().changeReturnType(JVM.Context.JavaBase.TypeOfJavaLangString.ClassObject);
-				return new global::java.lang.invoke.DirectMethodHandle(mt, global::java.lang.invoke.DirectMethodHandle._preparedLambdaForm(mt, global::java.lang.invoke.MethodTypeForm.LF_INVSTATIC), member, null);
-			}
+            var member = (global::java.lang.invoke.MemberName)member_;
 
-			return null;
+            // we cannot construct strings via the standard two-pass approach (allocateObject followed by constructor invocation),
+            // so we special case string construction here (to call our static factory method instead)
+            if (member.getDeclaringClass() == JVM.Context.JavaBase.TypeOfJavaLangString.ClassObject)
+            {
+                global::java.lang.invoke.MethodType mt = member.getMethodType().changeReturnType(JVM.Context.JavaBase.TypeOfJavaLangString.ClassObject);
+                return new global::java.lang.invoke.DirectMethodHandle(mt, global::java.lang.invoke.DirectMethodHandle._preparedLambdaForm(mt, global::java.lang.invoke.MethodTypeForm.LF_INVSTATIC), member, null);
+            }
+
+            return null;
 #endif
-		}
+        }
 
-	}
+    }
 
 }

@@ -199,13 +199,11 @@ namespace IKVM.Tools.Importer.MapXml
                         }
                     }
 
-                    Type ti = context.ClassLoader.Context.Resolver.ResolveCoreType(Type);
+                    var ti = context.ClassLoader.Context.Resolver.ResolveCoreType(Type);
                     if (ti == null)
-                    {
                         throw new InvalidOperationException("Missing type: " + Type);
-                    }
 
-                    MethodInfo mi = ti.GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
+                    var mi = ti.GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
                     if (mi == null)
                     {
                         var ta = argTypes.Select(i => i.AssemblyQualifiedName).ToArray();

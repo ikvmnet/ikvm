@@ -29,7 +29,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Reflection.Emit;
 
 using IKVM.Attributes;
@@ -53,7 +52,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
 #if FIRST_PASS
 
-        public static MemberName generateCustomizedCode(LambdaForm form, MethodType invokerType)
+        public static object generateCustomizedCode(object form, object invokerType)
         {
             return null;
         }
@@ -348,33 +347,39 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             }
         }
 
-        /**
-         * Generate customized bytecode for a given LambdaForm.
-         */
-        public static global::java.lang.invoke.MemberName generateCustomizedCode(java.lang.invoke.LambdaForm form, java.lang.invoke.MethodType invokerType)
+        /// <summary>
+        /// Generate customized bytecode for a given LambdaForm.
+        /// </summary>
+        /// <param name="form"></param>
+        /// <param name="invokerType"></param>
+        /// <returns></returns>
+        public static object generateCustomizedCode(object form, object invokerType)
         {
+            var form_ = (LambdaForm)form;
+            var invokerType_ = (MethodType)invokerType;
+
             try
             {
-                java.lang.invoke.MemberName memberName = new java.lang.invoke.MemberName();
+                var memberName = new MemberName();
                 memberName._clazz(JVM.Context.GetOrCreateSingleton(() => new AnonymousClass(JVM.Context)).ClassObject);
-                memberName._name(form.debugName);
-                memberName._type(invokerType);
+                memberName._name(form_.debugName);
+                memberName._type(invokerType_);
                 memberName._flags(MethodHandleNatives.Constants.MN_IS_METHOD | MethodHandleNatives.Constants.ACC_STATIC | (MethodHandleNatives.Constants.REF_invokeStatic << MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT));
-                memberName.vmtarget = new NativeInvokerBytecodeGenerator(JVM.Context, form, invokerType).generateCustomizedCodeBytes();
+                memberName.vmtarget = new NativeInvokerBytecodeGenerator(JVM.Context, form_, invokerType_).generateCustomizedCodeBytes();
                 return memberName;
             }
 #if DEBUG
             catch (BailoutException x)
             {
                 Console.WriteLine(x.Message);
-                Console.WriteLine("generateCustomizedCode: " + form + ", " + invokerType);
+                Console.WriteLine("generateCustomizedCode: " + form_ + ", " + invokerType_);
             }
 #else
         catch (BailoutException)
         {
         }
 #endif
-            return InvokerBytecodeGenerator.generateCustomizedCode(form, invokerType);
+            return InvokerBytecodeGenerator.generateCustomizedCode(form_, invokerType_);
         }
 
         /**

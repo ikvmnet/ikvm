@@ -958,7 +958,8 @@
             <field name="suppressedExceptions" sig="Ljava.util.List;" />
             <clinit>
                 <body>
-                    <call type="IKVM.Runtime.ExceptionHelper" name="GetPersistentFields" sig="()[Ljava.io.ObjectStreamField;" />
+                    <call type="IKVM.Runtime.ExceptionHelper" name="GetPersistentFields" sig="()[Ljava.lang.Object;" />
+                    <castclass class="[Ljava.io.ObjectStreamField;" />
                     <stsfld class="java.lang.Throwable" name="serialPersistentFields" sig="[Ljava.io.ObjectStreamField;" />
                     <ldc_i4_0 />
                     <newarr sig="Ljava.lang.StackTraceElement;" />
@@ -1016,7 +1017,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="ReadObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectInputStream;)V" />
+                    <call type="IKVM.Runtime.ExceptionHelper" name="ReadObject" sig="(Ljava.lang.Throwable;Ljava.lang.Object;)V" />
                     <ret />
                 </body>
             </method>
@@ -1025,7 +1026,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="WriteObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectOutputStream;)V" />
+                    <call type="IKVM.Runtime.ExceptionHelper" name="WriteObject" sig="(Ljava.lang.Throwable;Ljava.lang.Object;)V" />
                     <ret />
                 </body>
             </method>
@@ -1347,18 +1348,18 @@
             <method name="getStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="public">
                 <body>
                     <ldarg_0 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
+                    <call type="IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.Object;" />
                     <callvirt type="System.Array" name="Clone" sig="()Ljava.lang.Object;" />
                     <castclass class="[Ljava.lang.StackTraceElement;" />
                     <ret />
                 </body>
             </method>
             <method name="getOurStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="private">
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
+                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.Object;" />
             </method>
             <method name="setStackTrace" sig="([Ljava.lang.StackTraceElement;)V" modifiers="public">
                 <parameter name="stackTrace" />
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="SetStackTrace" sig="(Ljava.lang.Throwable;[Ljava.lang.StackTraceElement;)V" />
+                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="SetStackTrace" sig="(Ljava.lang.Throwable;[Ljava.lang.Object;)V" />
             </method>
             <method name="toString" sig="()Ljava.lang.String;" modifiers="public">
                 <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="ToString" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
@@ -1404,14 +1405,15 @@
                 <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="GetStackTraceDepth" sig="(Ljava.lang.Throwable;)I" />
             </method>
             <method name="getStackTraceElement" sig="(I)Ljava.lang.StackTraceElement;" modifiers="">
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="GetStackTraceElement" sig="(Ljava.lang.Throwable;I)Ljava.lang.StackTraceElement;" />
+                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="GetStackTraceElement" sig="(Ljava.lang.Throwable;I)Ljava.lang.Object;" />
             </method>
         </class>
         <class name="java.lang.ThrowableHelper">
             <method name="getOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;">
                 <body>
                     <ldarg_0 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
+                    <call type="IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.Object;" />
+                    <castclass class="[Ljava.lang.StackTraceElement;" />
                     <ret />
                 </body>
             </method>
@@ -1791,7 +1793,8 @@
             <method name="isTypeVisible" sig="(Ljava.lang.Class;Ljava.lang.Class;)Z">
                 <replace-method-call class="java.lang.Class" name="getClassLoader" sig="()Ljava.lang.ClassLoader;">
                     <code>
-                        <call type="IKVM.Java.Externs.sun.invoke.util.VerifyAccess" name="Class_getClassLoader" sig="(Ljava.lang.Class;)Ljava.lang.ClassLoader;" />
+                        <call type="IKVM.Java.Externs.sun.invoke.util.VerifyAccess" name="Class_getClassLoader" sig="(Ljava.lang.Object;)Ljava.lang.Object;" />
+                        <castclass class="java.lang.ClassLoader" />
                     </code>
                 </replace-method-call>
             </method>
@@ -2487,7 +2490,8 @@
             <method name="compileToBytecode" sig="()Ljava.lang.invoke.MemberName;">
                 <replace-method-call class="java.lang.invoke.InvokerBytecodeGenerator" name="generateCustomizedCode" sig="(Ljava.lang.invoke.LambdaForm;Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MemberName;">
                     <code>
-                        <call type="IKVM.Runtime.Util.Java.Lang.Invoke.NativeInvokerBytecodeGenerator" name="generateCustomizedCode" sig="(Ljava.lang.invoke.LambdaForm;Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MemberName;" />
+                        <call type="IKVM.Runtime.Util.Java.Lang.Invoke.NativeInvokerBytecodeGenerator" name="generateCustomizedCode" sig="(Ljava.lang.Object;Ljava.lang.Object;)Ljava.lang.Object;" />
+                        <castclass class="java.lang.invoke.MemberName" />
                     </code>
                 </replace-method-call>
             </method>
@@ -2525,7 +2529,7 @@
                 <replace-method-call class="java.lang.invoke.MethodHandleNatives" name="init" sig="(Ljava.lang.invoke.MemberName;Ljava.lang.Object;)V">
                     <code>
                         <ldarg_2 />
-                        <call type="IKVM.Java.Externs.java.lang.invoke.MethodHandleNatives" name="init" sig="(Ljava.lang.invoke.MemberName;Ljava.lang.Object;Z)V" />
+                        <call type="IKVM.Java.Externs.java.lang.invoke.MethodHandleNatives" name="init" sig="(Ljava.lang.Object;Ljava.lang.Object;Z)V" />
                     </code>
                 </replace-method-call>
             </constructor>
@@ -2625,14 +2629,15 @@
             <method name="castReference" sig="(Ljava.lang.Class;Ljava.lang.Object;)Ljava.lang.Object;">
                 <replace-method-call class="java.lang.Class" name="isInstance" sig="(Ljava.lang.Object;)Z">
                     <code>
-                        <call type="IKVM.Java.Externs.java.lang.invoke.MethodHandleNatives" name="Class_isInstance" sig="(Ljava.lang.Class;Ljava.lang.Object;)Z" />
+                        <call type="IKVM.Java.Externs.java.lang.invoke.MethodHandleNatives" name="Class_isInstance" sig="(Ljava.lang.Object;Ljava.lang.Object;)Z" />
                     </code>
                 </replace-method-call>
             </method>
             <method name="makePairwiseConvert" sig="(Ljava.lang.invoke.MethodHandle;Ljava.lang.invoke.MethodType;ZZ)Ljava.lang.invoke.MethodHandle;">
                 <replace-method-call class="java.lang.invoke.MethodHandleImpl" name="makePairwiseConvertByEditor" sig="(Ljava.lang.invoke.MethodHandle;Ljava.lang.invoke.MethodType;ZZ)Ljava.lang.invoke.MethodHandle;">
                     <code>
-                        <call type="IKVM.Java.Externs.java.lang.invoke.MethodHandleImpl" name="makePairwiseConvert" sig="(Ljava.lang.invoke.MethodHandle;Ljava.lang.invoke.MethodType;ZZ)Ljava.lang.invoke.MethodHandle;" />
+                        <call type="IKVM.Java.Externs.java.lang.invoke.MethodHandleImpl" name="makePairwiseConvert" sig="(Ljava.lang.Object;Ljava.lang.Object;ZZ)Ljava.lang.Object;" />
+                        <castclass class="java.lang.invoke.MethodHandle" />
                     </code>
                 </replace-method-call>
             </method>
@@ -2652,7 +2657,8 @@
             <method name="makeAllocator" sig="(Ljava.lang.invoke.MemberName;)Ljava.lang.invoke.DirectMethodHandle;">
                 <prologue>
                     <ldarg_0 />
-                    <call type="IKVM.Java.Externs.java.lang.invoke.DirectMethodHandle" name="makeStringAllocator" sig="(Ljava.lang.invoke.MemberName;)Ljava.lang.invoke.DirectMethodHandle;" />
+                    <call type="IKVM.Java.Externs.java.lang.invoke.DirectMethodHandle" name="makeStringAllocator" sig="(Ljava.lang.Object;)Ljava.lang.Object;" />
+                    <castclass class="java.lang.invoke.DirectMethodHandle" />
                     <dup />
                     <brfalse name="continue" />
                     <ret />

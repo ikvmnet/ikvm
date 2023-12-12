@@ -10,11 +10,12 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Java" />
+        <InternalsVisibleTo Include="IKVM.Java.Private" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.ByteCode\IKVM.ByteCode.csproj" />
-        <Reference Include="..\IKVM.Java\ref\$(TargetFramework)\IKVM.Java.dll" Private="false" Condition=" '$(TargetFramework)' != '' " />
+        <Reference Include="IKVM.Java" HintPath="..\IKVM.Java\ref\$(TargetFramework)\IKVM.Java.dll" Private="false" Condition=" '$(TargetFramework)' != '' " />
     </ItemGroup>
 
     <ItemGroup>
