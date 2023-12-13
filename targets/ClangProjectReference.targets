@@ -51,11 +51,11 @@
 
     </Target>
 
-    <Target Name="GetClangProjectReferenceItems" DependsOnTargets="GetClangProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_ClangProjectReference)' != '' ">
+    <Target Name="GetClangProjectReferenceItems" DependsOnTargets="GetClangProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' And '@(__ClangProjectReference)' != '' ">
         <ItemGroup>
             <_ClangProjectReferencesToTarget Remove="@(_ClangProjectReferencesToTarget)" />
-            <_ClangProjectReferencesToTarget Include="@(_ClangProjectReference)">
-                <Properties>%(_ClangProjectReference.SetConfiguration);%(_ClangProjectReference.SetPlatform);TargetIdentifier=%(_ClangProjectReference.RuntimeIdentifier)</Properties>
+            <_ClangProjectReferencesToTarget Include="@(__ClangProjectReference)">
+                <Properties>%(__ClangProjectReference.SetConfiguration);%(__ClangProjectReference.SetPlatform);TargetIdentifier=%(__ClangProjectReference.RuntimeIdentifier)</Properties>
             </_ClangProjectReferencesToTarget>
         </ItemGroup>
         <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" />
@@ -102,7 +102,7 @@
         </AssignTargetPathsDependsOn>
     </PropertyGroup>
 
-    <Target Name="ResolveClangAdditionalRuntimeNativeAssets" DependsOnTargets="GetClangProjectReferenceItems" BeforeTargets="ResolveBuildDependencyFileExtensions">
+    <Target Name="ResolveClangAdditionalRuntimeAssets" DependsOnTargets="GetClangProjectReferenceItems" BeforeTargets="ResolveBuildDependencyFileExtensions">
         <ItemGroup>
             <AdditionalRuntimeNativeAssets Include="@(_ClangProjectReferenceItems->'runtimes\%(TargetIdentifier)\native\%(Filename)%(Extension)')" Condition=" '%(_ClangProjectReferenceItems.TargetIdentifier)' != '' ">
                 <LibraryName>%(_ClangProjectReferenceItems.TargetName)</LibraryName>

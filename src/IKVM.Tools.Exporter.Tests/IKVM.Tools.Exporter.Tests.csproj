@@ -18,8 +18,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
         <ProjectReference Include="..\IKVM.Tools.Exporter\IKVM.Tools.Exporter.csproj" />
     </ItemGroup>
 
@@ -29,21 +27,20 @@
             <IncludeTargetPath>lib\net472\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
-            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
-            <IncludeTargetPath>lib\net472\</IncludeTargetPath>
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </IncludeProjectReference>
         <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <IncludeTargetPath>lib\net6.0\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
-            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
-            <IncludeTargetPath>lib\net6.0\</IncludeTargetPath>
+        <None Include="..\IKVM.Java\ref\net472\IKVM.Java.dll">
+            <TargetPath>lib\net472\</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </IncludeProjectReference>
+        </None>
+        <None Include="..\IKVM.Java\ref\net6.0\IKVM.Java.dll">
+            <TargetPath>lib\net6.0\</TargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
 </Project>

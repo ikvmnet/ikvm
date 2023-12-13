@@ -1,5 +1,6 @@
 <Project>
     <Import Project="targets\ClangProjectReference.targets" />
+    <Import Project="targets\RuntimeProjectReference.targets" />
     <Import Project="targets\DotNetOSXCodeSign.targets"/>
 
 </Project>

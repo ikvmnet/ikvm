@@ -5,14 +5,18 @@
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java\IKVM.Java.msbuildproj">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
         <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Runtime\IKVM.Runtime.csproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
+        <Reference Include="IKVM.Java" HintPath="$(MSBuildThisFileDirectory)src\IKVM.Java\ref\$(TargetFramework)\IKVM.Java.dll" Private="false" HideFromJava="true" />
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java\IKVM.Java.csproj" ReferenceOutputAssembly="false" Private="true" HideFromJava="true" />
+        <RuntimeProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.Private.runtime.win\IKVM.Java.Private.runtime.win.msbuildproj" TargetFramework="$(TargetFramework)" RuntimeIdentifier="win" />
+        <RuntimeProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.Private.runtime.linux\IKVM.Java.Private.runtime.linux.msbuildproj" TargetFramework="$(TargetFramework)"  RuntimeIdentifier="linux" />
+        <RuntimeProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.Private.runtime.osx\IKVM.Java.Private.runtime.osx.msbuildproj" TargetFramework="$(TargetFramework)"  RuntimeIdentifier="osx" />
     </ItemGroup>
 
     <Import Project="IKVM.libs.targets" />

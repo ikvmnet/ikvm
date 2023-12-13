@@ -6,6 +6,7 @@
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <AssemblyName>IKVM.Java.Private</AssemblyName>
+        <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
         <Bootstrap>true</Bootstrap>
     </PropertyGroup>
 
