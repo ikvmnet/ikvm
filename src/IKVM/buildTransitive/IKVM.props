@@ -40,4 +40,8 @@
         </None>
     </ItemGroup>
 
+    <!-- Targets to be overridden by IKVM.MSBuild package, but declaring them here reduces restore errors. -->
+    <Target Name="ResolveIkvmRuntimeAssembly" />
+    <Target Name="ResolveIkvmFrameworkReferences" />
+
 </Project>

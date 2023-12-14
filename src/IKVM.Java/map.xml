@@ -33,12 +33,6 @@
                     <parameter>Never</parameter>
                 </attribute>
             </field>
-            <clinit>
-                <body>
-                    <call type="IKVM.Runtime.JVM" name="EnsureInitialized" sig="" />
-                    <ret />
-                </body>
-            </clinit>
             <constructor sig="()V" modifiers="public">
                 <body>
                     <ldarg_0 />
