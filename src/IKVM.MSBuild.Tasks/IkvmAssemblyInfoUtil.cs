@@ -8,6 +8,7 @@
     using System.Linq;
     using System.Reflection.Metadata;
     using System.Reflection.PortableExecutable;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Xml.Linq;
@@ -184,6 +185,21 @@
                         using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                         using var perdr = new PEReader(fsstm);
                         var mrdr = perdr.GetMetadataReader();
+                        foreach (var h in mrdr.TypeDefinitions)
+                        {
+                            var t = mrdr.GetTypeDefinition(h);
+                            var ns = mrdr.GetString(t.Namespace) ?? "";
+                            var tn = mrdr.GetString(t.Name) ?? "";
+                            var fn = new StringBuilder(ns.Length + tn.Length + 1);
+                            if (t.IsNested == false)
+                            {
+                                if (ns != null)
+                                    fn.Append(ns).Append('.');
+
+                                fn.Append(tn);
+                                t.getDe
+                            }
+                        }
                         return new AssemblyInfo(path, lastWriteTimeUtc, mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).OrderBy(i => i).ToArray());
                     }
                     catch (Exception e)
