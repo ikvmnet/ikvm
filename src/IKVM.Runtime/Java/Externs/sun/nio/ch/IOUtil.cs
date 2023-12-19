@@ -18,7 +18,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
         static FileDescriptorAccessor fileDescriptorAccessor;
 
-        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.Internal.BaseAccessors.Get(ref fileDescriptorAccessor);
 
 #endif
 

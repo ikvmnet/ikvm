@@ -1,4 +1,10 @@
 <Project>
+
+    <PropertyGroup Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' And '$(_UsingDefaultRuntimeIdentifier)' == 'true' ">
+        <RuntimeIdentifier Condition=" '$(RuntimeIdentifier)' == 'win7-x64' ">win-x64</RuntimeIdentifier>
+        <RuntimeIdentifier Condition=" '$(RuntimeIdentifier)' == 'win7-x86' ">win-x86</RuntimeIdentifier>
+    </PropertyGroup>
+
     <Import Project="targets\ClangProjectReference.targets" />
     <Import Project="targets\RuntimeProjectReference.targets" />
     <Import Project="targets\DotNetOSXCodeSign.targets"/>

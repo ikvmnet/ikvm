@@ -201,7 +201,7 @@ namespace IKVM.Tools.Exporter
                     if (runtimeAssemblyPath != null)
                         runtimeAssembly = assemblyResolver.LoadFile(runtimeAssemblyPath);
 
-                    var baseAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) is "IKVM.Java" or "IKVM.Java.Private");
+                    var baseAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) is "IKVM.Java");
                     if (baseAssemblyPath != null)
                         baseAssembly = assemblyResolver.LoadFile(baseAssemblyPath);
 
@@ -213,7 +213,7 @@ namespace IKVM.Tools.Exporter
 
                     if (baseAssembly == null || runtimeAssembly.__IsMissing)
                     {
-                        Console.Error.WriteLine("Error: IKVM.Java or IKVM.Java.Private not found.");
+                        Console.Error.WriteLine("Error: IKVM.Java not found.");
                         return 1;
                     }
 

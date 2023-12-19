@@ -1,69 +1,15 @@
-﻿<Project>
-    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
+<!--
 
+    IKVM.Java.runtime.targets
+    
+    Imported by the .runtime projects.
+
+-->
+
+<Project>
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
-        <AssemblyName>IKVM.Java.Private</AssemblyName>
-        <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-        <Bootstrap>true</Bootstrap>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
-
-    <ItemGroup>
-        <InternalsVisibleTo Include="IKVM.Runtime" />
-        <InternalsVisibleTo Include="IKVM.Java" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="false" PrivateAssets="All" IncludeNonPublicTypes="true" />
-        <Reference Include="IKVM.Java" HintPath="..\IKVM.Java\ref\$(TargetFramework)\IKVM.Java.dll" Private="false" HideFromJava="true" Condition=" '$(TargetFramework)' != '' " />
-    </ItemGroup>
-
-    <ItemGroup>
-        <TransformValues Include="Name" Value="$(ProductName)" />
-        <TransformValues Include="Version" Value="$(Version)" />
-        <TransformValues Include="FileVersion" Value="$(FileVersion)" />
-        <TransformValues Include="VendorUrl" Value="$(PackageProjectUrl)" />
-        <TransformValues Include="VendorUrlBug" Value="$(PackageProjectUrl)/issues/" />
-        <TransformValues Include="OpenJdkVersion" Value="$(OpenJdkVersion)" />
-        <TransformValues Include="OpenJdkFullVersion" Value="$(OpenJdkFullVersion)" />
-        <TransformValues Include="OpenJdkVendor" Value="$(OpenJdkVendor)" />
-        <TransformValues Include="OpenJdkImplementationVendor" Value="$(OpenJdkImplementationVendor)" />
-        <TransformValues Include="OpenJdkImplementationVersion" Value="$(OpenJdkImplementationVersion)" />
-        <TransformValues Include="OpenJdkSpecificationVersion" Value="$(OpenJdkSpecificationVersion)" />
-        <TransformValues Include="OpenJdkSpecificationVendor" Value="$(OpenJdkSpecificationVendor)" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <JavaResource Include="..\IKVM.Java\local\**\*" Exclude="..\IKVM.Java\local\**\*.java;..\IKVM.Java\**\*.tt" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="..\IKVM.Java\icedtea_jce\**\*" Link="icedtea_jce\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="..\IKVM.Java\icedtea_rt\**\*" Link="icedtea_rt\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="..\IKVM.Java\local\**\*" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Compile Include="..\IKVM.Java\icedtea_jce\**\*.java" Link="icedtea_jce\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Compile Include="..\IKVM.Java\icedtea_rt\**\*.java" Link="icedtea_rt\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Compile Include="..\IKVM.Java\local\**\*.java" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="@(OpenJdkSource)" LinkBase="openjdk\%(PackagePath)" />
-        <Compile Include="@(OpenJdkSource)" LinkBase="openjdk\%(PackagePath)" />
-        <Convert Include="@(OpenJdkClass)" LinkBase="openjdk\%(PackagePath)" />
-        <None Include="@(OpenJdkClass)" LinkBase="openjdk\%(PackagePath)" />
-        <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk\%(PackagePath)" />
-        <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Transform Include="..\IKVM.Java\local\META-INF\MANIFEST.MF.tt" TargetPath="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" />
-        <JavaResource Include="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" Visible="False" ResourcePath="META-INF/MANIFEST.MF" Link="local\META-INF\MANIFEST.MF" />
-        <Transform Include="..\IKVM.Java\local\nashorn\version.properties.tt" TargetPath="$(IntermediateOutputPath)transform\local\nashorn\version.properties" />
-        <JavaResource Include="$(IntermediateOutputPath)transform\local\nashorn\version.properties" Visible="False" ResourcePath="nashorn/version.properties" Link="local\nashorn\version.properties" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <MapFile Include="..\IKVM.Java\map.xml" />
-    </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
@@ -155,5 +101,5 @@
             $(CoreCompileDependsOn);
         </CoreCompileDependsOn>
     </PropertyGroup>
-
+    
 </Project>

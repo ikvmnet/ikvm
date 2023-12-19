@@ -190,6 +190,9 @@
                             var t = mrdr.GetTypeDefinition(h);
                             var ns = mrdr.GetString(t.Namespace) ?? "";
                             var tn = mrdr.GetString(t.Name) ?? "";
+                            if (tn.IndexOf('`') is int i and > -1)
+                                tn = tn.Substring(0, i - 1);
+
                             var fn = new StringBuilder(ns.Length + tn.Length + 1);
                             if (t.IsNested == false)
                             {
@@ -197,7 +200,6 @@
                                     fn.Append(ns).Append('.');
 
                                 fn.Append(tn);
-                                t.getDe
                             }
                         }
                         return new AssemblyInfo(path, lastWriteTimeUtc, mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).OrderBy(i => i).ToArray());

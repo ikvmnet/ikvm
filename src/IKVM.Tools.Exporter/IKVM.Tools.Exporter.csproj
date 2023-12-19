@@ -38,6 +38,7 @@
         <Compile Include="..\IKVM.Runtime\RuntimeJavaType.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeJavaTypeFactory.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\JVM.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\JVM.Internal.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\JVM.Properties.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\StubGen\**\*.cs" LinkBase="IKVM.Runtime\StubGen" />
         <Compile Include="..\IKVM.Runtime\LoadMode.cs" LinkBase="IKVM.Runtime" />

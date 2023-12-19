@@ -3,19 +3,6 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <Target Name="GetRuntimeTargetItem" Returns="@(GetRuntimeTargetItem)">
-        <ItemGroup>
-            <GetRuntimeTargetItem Include="$([System.IO.Path]::GetFullPath('$(TargetPath)'))">
-                <TargetFramework>$(TargetFramework)</TargetFramework>
-                <TargetName>$(TargetName)</TargetName>
-                <TargetExt>$(TargetExt)</TargetExt>
-                <DebugSymbolsPath>$([System.IO.Path]::GetFullPath('$(_DebugSymbolsIntermediatePath)'))</DebugSymbolsPath>
-                <Version>$(Version)</Version>
-                <CopyUpToDateMarker>@(CopyUpToDateMarker)</CopyUpToDateMarker>
-            </GetRuntimeTargetItem>
-        </ItemGroup>
-    </Target>
-
     <!-- 
     
         RuntimeProjectReference
@@ -24,103 +11,65 @@
         
     -->
 
-    <Target Name="AssignRuntimeProjectConfiguration" Condition=" '$(DesignTimeBuild)' != 'true' And '@(RuntimeProjectReference)' != '' ">
+    <Target Name="UpdateRuntimeProjectReferences" BeforeTargets="AssignProjectConfiguration" Condition=" '@(ProjectReference)' != '' ">
         <ItemGroup>
-            <_RuntimeProjectReference Include="@(RuntimeProjectReference)" />
+            <ProjectReference Update="@(ProjectReference)">
+                <OutputItemType Condition=" '%(ProjectReference.RuntimeTargetReference)' != '' ">RuntimeTargetReferencePaths</OutputItemType>
+            </ProjectReference>
         </ItemGroup>
+    </Target>
+
+    <Target Name="GetRuntimeProjectReferenceItems" DependsOnTargets="UpdateRuntimeProjectReferences" AfterTargets="ResolveProjectReferences" Condition=" '@(RuntimeTargetReferencePaths)' != '' ">
         <PropertyGroup>
-            <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
-            <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
-            <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == ''">false</ShouldUnsetParentConfigurationAndPlatform>
+            <_CompatibleRuntimeIdentifiers Condition=" '$(RuntimeIdentifier)' == '' And '$(RuntimeIdentifiers)' == '' ">;any;</_CompatibleRuntimeIdentifiers>
+            <_CompatibleRuntimeIdentifiers Condition=" '$(RuntimeIdentifier)' == '' And '$(RuntimeIdentifiers)' != '' ">;$(RuntimeIdentifiers);</_CompatibleRuntimeIdentifiers>
+            <_CompatibleRuntimeIdentifiers Condition=" '$(RuntimeIdentifier)' != '' ">;$(RuntimeIdentifier);</_CompatibleRuntimeIdentifiers>
+            <_CompatibleRuntimeIdentifiers Condition="$(_CompatibleRuntimeIdentifiers.Contains(';win-x86;')) And '$(Prefer32Bit)' == 'false' ">;$(_CompatibleRuntimeIdentifiers);win-x64;</_CompatibleRuntimeIdentifiers>
+            <_CompatibleRuntimeIdentifiers Condition="$(_CompatibleRuntimeIdentifiers.Contains(';win7-x86;')) And '$(Prefer32Bit)' == 'false' ">;$(_CompatibleRuntimeIdentifiers);win7-x64;</_CompatibleRuntimeIdentifiers>
+            <_CompatibleRuntimeIdentifiers Condition="$(_CompatibleRuntimeIdentifiers.Contains(';win8-x86;')) And '$(Prefer32Bit)' == 'false' ">;$(_CompatibleRuntimeIdentifiers);win8-x64;</_CompatibleRuntimeIdentifiers>
+            <_CompatibleRuntimeIdentifiers Condition="$(_CompatibleRuntimeIdentifiers.Contains(';win10-x86;')) And '$(Prefer32Bit)' == 'false' ">;$(_CompatibleRuntimeIdentifiers);win10-x64;</_CompatibleRuntimeIdentifiers>
         </PropertyGroup>
-        <AssignProjectConfiguration ProjectReferences="@(_RuntimeProjectReference)" CurrentProject="$(MSBuildProjectFullPath)" CurrentProjectConfiguration="$(Configuration)" CurrentProjectPlatform="$(Platform)" DefaultToVcxPlatformMapping="$(DefaultToVcxPlatformMapping)" VcxToDefaultPlatformMapping="$(VcxToDefaultPlatformMapping)" OutputType="$(OutputType)" ResolveConfigurationPlatformUsingMappings="true" SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)" AddSyntheticProjectReferencesForSolutionDependencies="false" OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration="$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)" ShouldUnsetParentConfigurationAndPlatform="$(ShouldUnsetParentConfigurationAndPlatform)">
-            <Output TaskParameter="AssignedProjects" ItemName="__RuntimeProjectReferenceWithConfiguration"/>
-            <Output TaskParameter="UnassignedProjects" ItemName="__RuntimeProjectReferenceWithConfiguration"/>
-        </AssignProjectConfiguration>
+        <MatchCompatibleRuntimeIdentifierItems TargetRuntimeIdentifiers="$(_CompatibleRuntimeIdentifiers)" GroupKeyMetadataName="Filename" RuntimeIdentifierMetadataName="RuntimeTargetReference" Items="@(RuntimeTargetReferencePaths)">
+            <Output TaskParameter="Items" ItemName="_RuntimeTargetReferencePaths" />
+        </MatchCompatibleRuntimeIdentifierItems>
         <ItemGroup>
-            <_RuntimeProjectReferenceWithConfiguration Remove="@(_RuntimeProjectReferenceWithConfiguration)" />
-            <_RuntimeProjectReferenceWithConfiguration Include="@(__RuntimeProjectReferenceWithConfiguration)" />
-        </ItemGroup>
-    </Target>
-
-    <Target Name="_GetRuntimeProjectReferences" DependsOnTargets="AssignRuntimeProjectConfiguration" Condition=" '@(_RuntimeProjectReferenceWithConfiguration)' != '' ">
-        <ItemGroup>
-            <__RuntimeProjectReference Remove="@(__RuntimeProjectReference)" />
-            <__RuntimeProjectReference Include="@(_RuntimeProjectReferenceWithConfiguration)">
-                <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
-            </__RuntimeProjectReference>
-        </ItemGroup>
-    </Target>
-
-    <PropertyGroup>
-        <GetRuntimeProjectReferencesDependsOn>
-            $(GetRuntimeProjectReferencesDependsOn);
-            AssignRuntimeProjectConfiguration;
-            _GetRuntimeProjectReferences;
-        </GetRuntimeProjectReferencesDependsOn>
-    </PropertyGroup>
-
-    <Target Name="GetRuntimeProjectReferences" DependsOnTargets="$(GetRuntimeProjectReferencesDependsOn)">
-
-    </Target>
-
-    <Target Name="GetRuntimeProjectReferenceItems" DependsOnTargets="GetRuntimeProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' And '@(__RuntimeProjectReference)' != '' ">
-        <ItemGroup>
-            <_RuntimeProjectReferencesToTarget Remove="@(_RuntimeProjectReferencesToTarget)" />
-            <_RuntimeProjectReferencesToTarget Include="@(__RuntimeProjectReference)">
-                <Properties>%(__RuntimeProjectReference.SetConfiguration);%(__RuntimeProjectReference.SetPlatform);TargetFramework=%(__RuntimeProjectReference.TargetFramework)</Properties>
-            </_RuntimeProjectReferencesToTarget>
-        </ItemGroup>
-        <MSBuild Projects="@(_RuntimeProjectReferencesToTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);RuntimeIdentifier" />
-        <MSBuild Projects="@(_RuntimeProjectReferencesToTarget)" Targets="GetRuntimeTargetItem" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);RuntimeIdentifier" RebaseOutputs="true">
-            <Output TaskParameter="TargetOutputs" ItemName="_ResolvedRuntimeProjectReferenceTargetOutput" />
-        </MSBuild>
-        <ItemGroup>
-            <_RuntimeProjectReferenceItems Include="@(_ResolvedRuntimeProjectReferenceTargetOutput)" />
-        </ItemGroup>
-    </Target>
-
-    <Target Name="GetRuntimeProjectReferenceOutputItems" DependsOnTargets="GetRuntimeProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_RuntimeProjectReferenceItems)' != '' ">
-        <ItemGroup>
-            <None Include="@(_RuntimeProjectReferenceItems)" Condition=" '%(_RuntimeProjectReferenceItems.TargetFramework)' != '' ">
-                <TargetPath>runtimes\%(_RuntimeProjectReferenceItems.RuntimeIdentifier)\lib\%(_RuntimeProjectReferenceItems.TargetFramework)\%(_RuntimeProjectReferenceItems.TargetName)%(_RuntimeProjectReferenceItems.TargetExt)</TargetPath>
+            <None Include="@(_RuntimeTargetReferencePaths)" Condition=" '%(_RuntimeTargetReferencePaths._Compatible)' == 'true' ">
+                <TargetPath>runtimes\%(_RuntimeTargetReferencePaths.RuntimeTargetReference)\lib\%(_RuntimeTargetReferencePaths.Filename)%(_RuntimeTargetReferencePaths.Extension)</TargetPath>
+                <TargetPath Condition=" '%(_RuntimeTargetReferencePaths._ManyCompatible)' != 'true' ">%(_RuntimeTargetReferencePaths.Filename)%(_RuntimeTargetReferencePaths.Extension)</TargetPath>
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <PackagePath>runtimes\%(_RuntimeProjectReferenceItems.RuntimeIdentifier)\lib\%(_RuntimeProjectReferenceItems.TargetFramework)\%(_RuntimeProjectReferenceItems.TargetName)%(_RuntimeProjectReferenceItems.TargetExt)</PackagePath>
-                <Pack Condition=" '%(_RuntimeProjectReferenceItems.Pack)' == '' ">true</Pack>
+                <PackagePath>runtimes\%(_RuntimeTargetReferencePaths.RuntimeTargetReference)\lib\$(TargetFramework)\%(_RuntimeTargetReferencePaths.Filename)%(_RuntimeTargetReferencePaths.Extension)</PackagePath>
+                <Pack Condition=" '%(_RuntimeTargetReferencePaths.Pack)' == '' ">true</Pack>
             </None>
         </ItemGroup>
     </Target>
 
     <Target Name="GetRuntimeProjectReferenceItemsForPack" BeforeTargets="_GetPackageFiles" DependsOnTargets="$(GetRuntimeProjectReferenceItemsForPackDependsOn)" Condition=" '$(DesignTimeBuild)' != 'true' ">
-        
+
     </Target>
 
     <PropertyGroup>
         <GetRuntimeProjectReferenceItemsForPackDependsOn>
             $(GetRuntimeProjectReferenceItemsForPackDependsOn);
-            GetRuntimeProjectReferences;
+            UpdateRuntimeProjectReferences;
             GetRuntimeProjectReferenceItems;
-            GetRuntimeProjectReferenceOutputItems;
         </GetRuntimeProjectReferenceItemsForPackDependsOn>
     </PropertyGroup>
-    
-     <PropertyGroup>
+
+    <PropertyGroup>
         <AssignTargetPathsDependsOn>
-            GetRuntimeProjectReferences;
+            UpdateRuntimeProjectReferences;
             GetRuntimeProjectReferenceItems;
-            GetRuntimeProjectReferenceOutputItems;
             $(AssignTargetPathsDependsOn);
         </AssignTargetPathsDependsOn>
     </PropertyGroup>
 
-    <Target Name="ResolveRuntimeAdditionalRuntimeAssets" DependsOnTargets="GetRuntimeProjectReferenceItems" BeforeTargets="ResolveBuildDependencyFileExtensions">
+    <Target Name="ResolveRuntimeAdditionalRuntimeAssets" DependsOnTargets="GetRuntimeProjectReferenceItems" BeforeTargets="GenerateBuildDependencyFileExtensions">
         <ItemGroup>
-            <AdditionalRuntimeLibraryAssets Include="@(_RuntimeProjectReferenceItems->'runtimes\%(RuntimeIdentifier)\lib\%(TargetFramework)\%(TargetName)%(TargetExt)')" Condition=" '%(_RuntimeProjectReferenceItems.TargetFramework)' != '' ">
-                <LibraryName>%(_RuntimeProjectReferenceItems.ProjectName)</LibraryName>
-                <LibraryVersion>%(_RuntimeProjectReferenceItems.Version)</LibraryVersion>
+            <AdditionalRuntimeLibraryAssets Include="@(RuntimeTargetReferencePaths)">
+                <LibraryName>%(Filename)</LibraryName>
                 <LibraryType>project</LibraryType>
-                <LibraryPath>%(_RuntimeProjectReferenceItems.ProjectName)/%(_RuntimeProjectReferenceItems.Version)</LibraryPath>
-                <Runtime>%(_RuntimeProjectReferenceItems.RuntimeIdentifier)</Runtime>
+                <AssetPath>runtimes\%(RuntimeTargetReference)\lib\$(TargetFramework)\%(Filename)%(Extension)</AssetPath>
+                <Runtime>%(RuntimeTargetReference)</Runtime>
             </AdditionalRuntimeLibraryAssets>
         </ItemGroup>
     </Target>

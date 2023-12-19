@@ -18,7 +18,7 @@ namespace IKVM.Runtime.Util.Java.Nio
     {
 
         static BufferAccessor bufferAccessor;
-        static BufferAccessor BufferAccessor => JVM.BaseAccessors.Get(ref bufferAccessor);
+        static BufferAccessor BufferAccessor => JVM.Internal.BaseAccessors.Get(ref bufferAccessor);
 
         readonly object buffer;
 

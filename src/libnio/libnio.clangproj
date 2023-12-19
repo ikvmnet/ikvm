@@ -16,9 +16,9 @@
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net</IncludeDirectories>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Java.Private.runtime.win\IKVM.Java.Private.runtime.win.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" Condition="$(TargetTriple.Contains('-windows-'))" />
-        <ProjectReference Include="..\IKVM.Java.Private.runtime.linux\IKVM.Java.Private.runtime.linux.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" Condition="$(TargetTriple.Contains('-linux-'))" />
-        <ProjectReference Include="..\IKVM.Java.Private.runtime.osx\IKVM.Java.Private.runtime.osx.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" Condition="$(TargetTriple.Contains('-apple-'))"/>
+        <ProjectReference Include="..\IKVM.Java.runtime.win\IKVM.Java.runtime.win.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" Condition="$(TargetTriple.Contains('-windows-'))" />
+        <ProjectReference Include="..\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" Condition="$(TargetTriple.Contains('-linux-'))" />
+        <ProjectReference Include="..\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" Condition="$(TargetTriple.Contains('-apple-'))"/>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />

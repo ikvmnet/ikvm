@@ -855,7 +855,7 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s == "-XX:+AllowNonVirtualCalls")
                     {
-                        JVM.AllowNonVirtualCalls = true;
+                        JVM.Internal.AllowNonVirtualCalls = true;
                     }
                     else if (s == "-static")
                     {

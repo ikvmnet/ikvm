@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "java": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "IKVM_HOME": "C:\\dev\\ikvm2\\src\\IKVM.Image\\bin\\Debug\\net472\\ikvm\\win-x64"
+      }
+    }
+  }
+}

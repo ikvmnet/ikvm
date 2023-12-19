@@ -734,7 +734,7 @@ namespace IKVM.Tools.Importer
                     bw.Write(kv.Value.Count);
                     foreach (string name in kv.Value)
                     {
-                        bw.Write(JVM.PersistableHash(name));
+                        bw.Write(JVM.Internal.PersistableHash(name));
                     }
                 }
             }
@@ -779,7 +779,7 @@ namespace IKVM.Tools.Importer
                     if (stubs.Count != 0)
                     {
                         // generate the --ikvm-classes-- file in the jar
-                        ZipArchiveEntry zipEntry = zip.CreateEntry(JVM.JarClassList);
+                        ZipArchiveEntry zipEntry = zip.CreateEntry(JVM.Internal.JarClassList);
 
                         using Stream stream = zipEntry.Open();
                         using BinaryWriter bw = new BinaryWriter(stream);
@@ -3002,7 +3002,7 @@ namespace IKVM.Tools.Importer
             {
                 foreach (KeyValuePair<string, string> kv in options.externalResources)
                 {
-                    assemblyBuilder.AddResourceFile(JVM.MangleResourceName(kv.Key), kv.Value);
+                    assemblyBuilder.AddResourceFile(JVM.Internal.MangleResourceName(kv.Key), kv.Value);
                 }
             }
             if (options.fileversion != null)

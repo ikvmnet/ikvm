@@ -10,7 +10,6 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Java" />
-        <InternalsVisibleTo Include="IKVM.Java.Private" />
     </ItemGroup>
 
     <ItemGroup>
