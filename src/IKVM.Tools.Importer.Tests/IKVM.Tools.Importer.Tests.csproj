@@ -43,11 +43,11 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </IncludeProjectReference>
         <None Include="..\IKVM.Java\ref\net472\IKVM.Java.dll">
-            <TargetPath>lib\net472\</TargetPath>
+            <TargetPath>lib\net472\IKVM.Java.dll</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Include="..\IKVM.Java\ref\net6.0\IKVM.Java.dll">
-            <TargetPath>lib\net6.0\</TargetPath>
+            <TargetPath>lib\net6.0\IKVM.Java.dll</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

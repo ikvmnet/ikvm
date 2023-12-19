@@ -500,7 +500,7 @@ namespace IKVM.Tools.Importer
             // third argument: args
             ilgen.Emit(OpCodes.Ldarg_0);
 
-            // fourth argument, runtime prefix
+            // fourth argument, runtime args prefix
             ilgen.Emit(OpCodes.Ldstr, DEFAULT_RUNTIME_ARGS_PREFIX);
 
             // fifth argument, property set to initialize JVM
@@ -734,7 +734,7 @@ namespace IKVM.Tools.Importer
                     bw.Write(kv.Value.Count);
                     foreach (string name in kv.Value)
                     {
-                        bw.Write(JVM.Internal.PersistableHash(name));
+                        bw.Write(JVM.PersistableHash(name));
                     }
                 }
             }
@@ -2932,6 +2932,17 @@ namespace IKVM.Tools.Importer
         private int CompilePass3()
         {
             Tracer.Info(Tracer.Compiler, "Compiling class files (3)");
+
+            // all generated assemblies have a module initializer
+            var moduleInit = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod(".cctor", MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, Type.EmptyTypes);
+            var moduleInitIL = moduleInit.GetILGenerator();
+
+            // call initialization method of JVM; also forces module load of IKVM.Runtime
+            moduleInitIL.Emit(OpCodes.Ldtoken, Context.Resolver.ResolveRuntimeType("IKVM.Runtime.JVM"));
+            moduleInitIL.Emit(OpCodes.Call, Context.Types.Type.GetMethod(nameof(System.Type.GetTypeFromHandle)));
+            moduleInitIL.Emit(OpCodes.Call, Context.Types.Object.GetProperty(nameof(System.Type.Module)).GetGetMethod());
+            moduleInitIL.Emit(OpCodes.Call, Context.Resolver.ResolveCoreType(typeof(System.Runtime.CompilerServices.RuntimeHelpers).FullName).GetMethod(nameof(System.Runtime.CompilerServices.RuntimeHelpers.RunModuleConstructor)));
+
             if (map != null && options.bootstrap)
             {
                 fakeTypes.Finish(this);
@@ -3002,7 +3013,7 @@ namespace IKVM.Tools.Importer
             {
                 foreach (KeyValuePair<string, string> kv in options.externalResources)
                 {
-                    assemblyBuilder.AddResourceFile(JVM.Internal.MangleResourceName(kv.Key), kv.Value);
+                    assemblyBuilder.AddResourceFile(JVM.MangleResourceName(kv.Key), kv.Value);
                 }
             }
             if (options.fileversion != null)
@@ -3058,13 +3069,10 @@ namespace IKVM.Tools.Importer
                 var mwModuleInit = classLoaderType.GetMethodWrapper("InitializeModule", "(Lcli.System.Reflection.Module;)V", false);
                 if (mwModuleInit != null && mwModuleInit.IsStatic == false)
                 {
-                    var moduleInit = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod(".cctor", MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, Type.EmptyTypes);
-                    var moduleInitIL = moduleInit.GetILGenerator();
                     moduleInitIL.Emit(OpCodes.Ldtoken, moduleInit);
-                    moduleInitIL.Emit(OpCodes.Call, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MethodBase).FullName).GetMethod("GetMethodFromHandle", new[] { Context.Resolver.ResolveCoreType(typeof(RuntimeMethodHandle).FullName) }));
-                    moduleInitIL.Emit(OpCodes.Callvirt, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MemberInfo).FullName).GetProperty("Module").GetGetMethod());
+                    moduleInitIL.Emit(OpCodes.Call, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MethodBase).FullName).GetMethod(nameof(System.Reflection.MethodBase.GetMethodFromHandle), new[] { Context.Resolver.ResolveCoreType(typeof(RuntimeMethodHandle).FullName) }));
+                    moduleInitIL.Emit(OpCodes.Callvirt, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MemberInfo).FullName).GetProperty(nameof(System.Reflection.MemberInfo.Module)).GetGetMethod());
                     moduleInitIL.Emit(OpCodes.Call, Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule"));
-                    moduleInitIL.Emit(OpCodes.Ret);
                 }
             }
 
@@ -3077,6 +3085,8 @@ namespace IKVM.Tools.Importer
             {
                 assemblyBuilder.__DefineManifestResource(IkvmImporterInternal.ReadAllBytes(options.manifestFile));
             }
+
+            moduleInitIL.Emit(OpCodes.Ret);
 
             assemblyBuilder.DefineVersionInfoResource();
 
