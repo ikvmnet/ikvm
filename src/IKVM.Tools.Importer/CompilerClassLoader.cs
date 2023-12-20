@@ -2940,7 +2940,7 @@ namespace IKVM.Tools.Importer
             // call initialization method of JVM; also forces module load of IKVM.Runtime
             moduleInitIL.Emit(OpCodes.Ldtoken, Context.Resolver.ResolveRuntimeType("IKVM.Runtime.JVM"));
             moduleInitIL.Emit(OpCodes.Call, Context.Types.Type.GetMethod(nameof(System.Type.GetTypeFromHandle)));
-            moduleInitIL.Emit(OpCodes.Call, Context.Types.Object.GetProperty(nameof(System.Type.Module)).GetGetMethod());
+            moduleInitIL.Emit(OpCodes.Callvirt, Context.Types.Type.GetProperty(nameof(System.Type.Module)).GetGetMethod());
             moduleInitIL.Emit(OpCodes.Call, Context.Resolver.ResolveCoreType(typeof(System.Runtime.CompilerServices.RuntimeHelpers).FullName).GetMethod(nameof(System.Runtime.CompilerServices.RuntimeHelpers.RunModuleConstructor)));
 
             if (map != null && options.bootstrap)
