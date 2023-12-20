@@ -67,7 +67,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GetClangProjectReferenceOutputItems" DependsOnTargets="GetClangProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_ClangProjectReferenceItems)' != '' ">
+    <Target Name="GetClangProjectReferenceOutputItems" DependsOnTargets="GetClangProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_ClangProjectReferenceItems)' != '' ">
         <PropertyGroup>
             <_CompatibleRuntimeIdentifiers Condition=" '$(RuntimeIdentifier)' == '' And '$(RuntimeIdentifiers)' == '' ">;any;</_CompatibleRuntimeIdentifiers>
             <_CompatibleRuntimeIdentifiers Condition=" '$(RuntimeIdentifier)' == '' And '$(RuntimeIdentifiers)' != '' ">;$(RuntimeIdentifiers);</_CompatibleRuntimeIdentifiers>
@@ -86,6 +86,13 @@
                 <TargetPath Condition=" '%(__ClangProjectReferenceItems._ManyCompatible)' != 'true' ">%(__ClangProjectReferenceItems.Filename)%(__ClangProjectReferenceItems.Extension)</TargetPath>
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <PackagePath>runtimes\%(__ClangProjectReferenceItems.TargetIdentifier)\native\%(__ClangProjectReferenceItems.Filename)%(__ClangProjectReferenceItems.Extension)</PackagePath>
+                <Pack Condition=" '%(__ClangProjectReferenceItems.Pack)' == '' ">true</Pack>
+            </None>
+            <None Include="@(__ClangProjectReferenceItems->'%(RelativeDir)%(Filename).pdb')" Condition=" '%(__ClangProjectReferenceItems._Compatible)' == 'true' And Exists('%(__ClangProjectReferenceItems.RelativeDir)%(__ClangProjectReferenceItems.Filename).pdb') ">
+                <TargetPath>runtimes\%(__ClangProjectReferenceItems.TargetIdentifier)\native\%(__ClangProjectReferenceItems.Filename).pdb</TargetPath>
+                <TargetPath Condition=" '%(__ClangProjectReferenceItems._ManyCompatible)' != 'true' ">%(__ClangProjectReferenceItems.Filename).pdb</TargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <PackagePath>runtimes\%(__ClangProjectReferenceItems.TargetIdentifier)\native\%(__ClangProjectReferenceItems.Filename).pdb</PackagePath>
                 <Pack Condition=" '%(__ClangProjectReferenceItems.Pack)' == '' ">true</Pack>
             </None>
         </ItemGroup>

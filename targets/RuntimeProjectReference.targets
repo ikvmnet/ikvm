@@ -11,6 +11,10 @@
         
     -->
 
+    <PropertyGroup>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);GetRuntimeProjectReferenceContentInPackage</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+
     <Target Name="UpdateRuntimeProjectReferences" BeforeTargets="AssignProjectConfiguration" Condition=" '@(ProjectReference)' != '' ">
         <ItemGroup>
             <ProjectReference Update="@(ProjectReference)">
@@ -19,7 +23,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GetRuntimeProjectReferenceItems" DependsOnTargets="UpdateRuntimeProjectReferences" AfterTargets="ResolveProjectReferences" Condition=" '@(RuntimeTargetReferencePaths)' != '' ">
+    <Target Name="GetRuntimeProjectReferenceItems" DependsOnTargets="UpdateRuntimeProjectReferences" AfterTargets="ResolveProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' And '@(RuntimeTargetReferencePaths)' != '' ">
         <PropertyGroup>
             <_CompatibleRuntimeIdentifiers Condition=" '$(RuntimeIdentifier)' == '' And '$(RuntimeIdentifiers)' == '' ">;any;</_CompatibleRuntimeIdentifiers>
             <_CompatibleRuntimeIdentifiers Condition=" '$(RuntimeIdentifier)' == '' And '$(RuntimeIdentifiers)' != '' ">;$(RuntimeIdentifiers);</_CompatibleRuntimeIdentifiers>
@@ -37,14 +41,24 @@
                 <TargetPath>runtimes\%(_RuntimeTargetReferencePaths.RuntimeTargetReference)\lib\%(_RuntimeTargetReferencePaths.Filename)%(_RuntimeTargetReferencePaths.Extension)</TargetPath>
                 <TargetPath Condition=" '%(_RuntimeTargetReferencePaths._ManyCompatible)' != 'true' ">%(_RuntimeTargetReferencePaths.Filename)%(_RuntimeTargetReferencePaths.Extension)</TargetPath>
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <PackagePath>runtimes\%(_RuntimeTargetReferencePaths.RuntimeTargetReference)\lib\$(TargetFramework)\%(_RuntimeTargetReferencePaths.Filename)%(_RuntimeTargetReferencePaths.Extension)</PackagePath>
-                <Pack Condition=" '%(_RuntimeTargetReferencePaths.Pack)' == '' ">true</Pack>
+            </None>
+            <None Include="@(_RuntimeTargetReferencePaths->'%(RelativeDir)%(Filename).pdb')" Condition=" '%(_RuntimeTargetReferencePaths._Compatible)' == 'true' And Exists('%(_RuntimeTargetReferencePaths.RelativeDir)%(_RuntimeTargetReferencePaths.Filename).pdb') ">
+                <TargetPath>runtimes\%(_RuntimeTargetReferencePaths.RuntimeTargetReference)\lib\%(_RuntimeTargetReferencePaths.Filename).pdb</TargetPath>
+                <TargetPath Condition=" '%(_RuntimeTargetReferencePaths._ManyCompatible)' != 'true' ">%(_RuntimeTargetReferencePaths.Filename).pdb</TargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             </None>
         </ItemGroup>
     </Target>
 
-    <Target Name="GetRuntimeProjectReferenceItemsForPack" BeforeTargets="_GetPackageFiles" DependsOnTargets="$(GetRuntimeProjectReferenceItemsForPackDependsOn)" Condition=" '$(DesignTimeBuild)' != 'true' ">
-
+    <Target Name="GetRuntimeProjectReferenceContentInPackage" DependsOnTargets="ResolveReferences;UpdateRuntimeProjectReferences;GetRuntimeProjectReferenceItems">
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="@(_RuntimeTargetReferencePaths)" Condition=" '%(_RuntimeTargetReferencePaths._Compatible)' == 'true' ">
+                <PackagePath>runtimes\%(_RuntimeTargetReferencePaths.RuntimeTargetReference)\lib\$(TargetFramework)</PackagePath>
+            </TfmSpecificPackageFile>
+            <TfmSpecificPackageFile Include="@(_RuntimeTargetReferencePaths->'%(RelativeDir)%(Filename).pdb')" Condition=" '%(_RuntimeTargetReferencePaths._Compatible)' == 'true' And Exists('%(_RuntimeTargetReferencePaths.RelativeDir)%(_RuntimeTargetReferencePaths.Filename).pdb') ">
+                <PackagePath>runtimes\%(_RuntimeTargetReferencePaths.RuntimeTargetReference)\lib\$(TargetFramework)</PackagePath>
+            </TfmSpecificPackageFile>
+        </ItemGroup>
     </Target>
 
     <PropertyGroup>
@@ -66,7 +80,7 @@
     <Target Name="ResolveRuntimeAdditionalRuntimeAssets" DependsOnTargets="GetRuntimeProjectReferenceItems" BeforeTargets="GenerateBuildDependencyFileExtensions">
         <ItemGroup>
             <AdditionalRuntimeLibraryAssets Include="@(RuntimeTargetReferencePaths)">
-                <LibraryName>%(Filename)</LibraryName>
+                <LibraryName>$(ProjectName)</LibraryName>
                 <LibraryType>project</LibraryType>
                 <AssetPath>runtimes\%(RuntimeTargetReference)\lib\$(TargetFramework)\%(Filename)%(Extension)</AssetPath>
                 <Runtime>%(RuntimeTargetReference)</Runtime>
