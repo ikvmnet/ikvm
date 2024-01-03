@@ -87,7 +87,7 @@ namespace IKVM.Reflection.Impl
             Debug.Assert(method.endLines.Length == length);
             Debug.Assert(method.endColumns.Length == length);
 
-            // Java does not have hidden sequence points so we can soly rely on previous entry.
+            // Java does not have hidden sequence points so we can solely rely on previous entry.
 
             for (int i = 0; i < length; i++)
             {

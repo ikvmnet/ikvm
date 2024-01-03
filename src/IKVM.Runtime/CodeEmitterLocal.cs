@@ -76,13 +76,13 @@ namespace IKVM.Runtime
 			local = ilgen.DeclareLocal(type);
 			if (name != null)
 			{
-#if NETFRAMEWORK
+#if NETFRAMEWORK || IMPORTER
 				// SetLocalSymInfo does not exist in .net core
 				local.SetLocalSymInfo(name);
 #endif
-			}
+            }
 
-		}
+        }
 
 	}
 

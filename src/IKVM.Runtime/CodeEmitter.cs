@@ -110,9 +110,7 @@ namespace IKVM.Runtime
 #endif
         IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
         CodeEmitterLocal[] tempLocals = new CodeEmitterLocal[32];
-#if NETFRAMEWORK
         ISymbolDocumentWriter symbols;
-#endif
         List<OpCodeWrapper> code = new List<OpCodeWrapper>(10);
         readonly Type declaringType;
 #if LABELCHECK
@@ -480,8 +478,8 @@ namespace IKVM.Runtime
                 case CodeType.ReleaseTempLocal:
                     break;
                 case CodeType.SequencePoint:
+#if NETFRAMEWORK || IMPORTER
                     // MarkSequencePoint does not exist in .net core
-#if NETFRAMEWORK
                     ilgen_real.MarkSequencePoint(symbols, (int)data, 0, (int)data + 1, 0);
 #endif
                     // we emit a nop to make sure we always have an instruction associated with the sequence point
@@ -2350,7 +2348,7 @@ namespace IKVM.Runtime
 
         internal void DefineSymbolDocument(ModuleBuilder module, string url, Guid language, Guid languageVendor, Guid documentType)
         {
-#if NETFRAMEWORK
+#if NETFRAMEWORK || IMPORTER
             symbols = module.DefineDocument(url, language, languageVendor, documentType);
 #endif
         }
@@ -2676,12 +2674,10 @@ namespace IKVM.Runtime
 
         internal void SetLineNumber(ushort line)
         {
-#if NETFRAMEWORK
             if (symbols != null)
             {
                 EmitPseudoOpCode(CodeType.SequencePoint, (int)line);
             }
-#endif
             EmitPseudoOpCode(CodeType.LineNumber, (int)line);
         }
 
