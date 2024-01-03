@@ -37,6 +37,8 @@ namespace IKVM.Reflection.Impl
         {
 #if NETFRAMEWORK
             return new PdbWriter(moduleBuilder);
+#elif NETCOREAPP
+            return new PortablePdbWriter(moduleBuilder);
 #else
             throw new NotSupportedException("IKVM.Reflection must be compiled with MONO defined to support writing Mono debugging symbols.");
 #endif

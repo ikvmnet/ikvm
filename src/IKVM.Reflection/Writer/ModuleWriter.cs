@@ -338,13 +338,11 @@ namespace IKVM.Reflection.Writer
             if (keyPair != null)
                 StrongName(stream, keyPair, writer.HeaderSize, text.PointerToRawData, code.StrongNameSignatureRVA - text.VirtualAddress + text.PointerToRawData, code.StrongNameSignatureLength);
 
-#if NETFRAMEWORK
             if (moduleBuilder.symbolWriter != null)
             {
                 moduleBuilder.WriteSymbolTokenMap();
                 moduleBuilder.symbolWriter.Close();
             }
-#endif
         }
 
         static int ComputeStrongNameSignatureLength(byte[] publicKey)

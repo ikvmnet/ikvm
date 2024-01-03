@@ -50,9 +50,7 @@ namespace IKVM.Reflection.Emit
         readonly AssemblyBuilder asm;
         internal readonly string moduleName;
         internal readonly string fileName;
-#if NETFRAMEWORK
         internal readonly ISymbolWriterImpl symbolWriter;
-#endif
         readonly TypeBuilder moduleType;
         readonly List<TypeBuilder> types = new List<TypeBuilder>();
         readonly Dictionary<Type, int> typeTokens = new Dictionary<Type, int>();
@@ -245,16 +243,12 @@ namespace IKVM.Reflection.Emit
             this.moduleName = moduleName;
             this.fileName = fileName;
 
-#if NETFRAMEWORK
-
             if (emitSymbolInfo)
             {
                 symbolWriter = SymbolSupport.CreateSymbolWriterFor(this);
                 if (universe.Deterministic && !symbolWriter.IsDeterministic)
                     throw new NotSupportedException();
             }
-
-#endif
 
             if (!universe.Deterministic)
             {
@@ -663,11 +657,7 @@ namespace IKVM.Reflection.Emit
 
         public ISymbolDocumentWriter DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
         {
-#if NETFRAMEWORK
             return symbolWriter.DefineDocument(url, language, languageVendor, documentType);
-#else
-            throw new NotSupportedException();
-#endif
         }
 
         public int __GetAssemblyToken(Assembly assembly)
@@ -943,7 +933,6 @@ namespace IKVM.Reflection.Emit
 
         internal void WriteSymbolTokenMap()
         {
-#if NETFRAMEWORK
             for (int i = 0; i < resolvedTokens.Count; i++)
             {
                 int newToken = resolvedTokens[i];
@@ -953,9 +942,6 @@ namespace IKVM.Reflection.Emit
                 int oldToken = (i + 1) | (newToken & ~0xFFFFFF);
                 SymbolSupport.RemapToken(symbolWriter, oldToken, newToken);
             }
-#else
-            throw new NotSupportedException();
-#endif
         }
 
         internal void RegisterTokenFixup(int pseudoToken, int realToken)
@@ -1415,11 +1401,7 @@ namespace IKVM.Reflection.Emit
 
         public ISymbolWriter GetSymWriter()
         {
-#if NETFRAMEWORK
             return symbolWriter;
-#else
-            return null;
-#endif
         }
 
         public void DefineUnmanagedResource(string resourceFileName)
@@ -1443,14 +1425,10 @@ namespace IKVM.Reflection.Emit
                 token = -token | 0x06000000;
             }
 
-#if NETFRAMEWORK
-
             if (symbolWriter != null)
             {
                 symbolWriter.SetUserEntryPoint(new SymbolToken(token));
             }
-
-#endif
         }
 
         public StringToken GetStringConstant(string str)

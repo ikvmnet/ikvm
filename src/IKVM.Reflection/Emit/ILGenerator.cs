@@ -158,10 +158,8 @@ namespace IKVM.Reflection.Emit
             this.moduleBuilder = moduleBuilder;
             this.locals = SignatureHelper.GetLocalVarSigHelper(moduleBuilder);
 
-#if NETFRAMEWORK
             if (moduleBuilder.symbolWriter != null)
                 scope = new Scope(null);
-#endif
         }
 
         // non-standard API
@@ -825,13 +823,11 @@ namespace IKVM.Reflection.Emit
 
         internal int WriteBody(bool initLocals)
         {
-#if NETFRAMEWORK
             if (moduleBuilder.symbolWriter != null)
             {
                 Debug.Assert(scope != null && scope.parent == null);
                 scope.endOffset = code.Position;
             }
-#endif
 
             ResolveBranches();
 
@@ -853,8 +849,6 @@ namespace IKVM.Reflection.Emit
 
                 rva = WriteFatHeaderAndCode(bb, localVarSigTok, initLocals);
             }
-
-#if NETFRAMEWORK
 
             if (moduleBuilder.symbolWriter != null)
             {
@@ -884,8 +878,6 @@ namespace IKVM.Reflection.Emit
 
                 WriteScope(scope, localVarSigTok);
             }
-
-#endif
 
             return rva;
         }
@@ -1045,7 +1037,6 @@ namespace IKVM.Reflection.Emit
 
         void WriteScope(Scope scope, int localVarSigTok)
         {
-#if NETFRAMEWORK
             moduleBuilder.symbolWriter.OpenScope(scope.startOffset);
 
             foreach (var local in scope.locals)
@@ -1071,9 +1062,6 @@ namespace IKVM.Reflection.Emit
                 WriteScope(child, localVarSigTok);
 
             moduleBuilder.symbolWriter.CloseScope(scope.endOffset);
-#else
-            throw new NotSupportedException();
-#endif
         }
 
     }

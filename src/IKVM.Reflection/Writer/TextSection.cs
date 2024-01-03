@@ -108,13 +108,11 @@ namespace IKVM.Reflection.Writer
         {
             get
             {
-#if NETFRAMEWORK
 				if (moduleBuilder.symbolWriter != null)
 				{
 					var idd = new IMAGE_DEBUG_DIRECTORY();
 					return (uint)SymbolSupport.GetDebugInfo(moduleBuilder.symbolWriter, ref idd).Length;
 				}
-#endif
 
                 return 0;
             }
@@ -357,9 +355,8 @@ namespace IKVM.Reflection.Writer
         {
             if (DebugDirectoryLength != 0)
             {
-#if NETFRAMEWORK
 				IMAGE_DEBUG_DIRECTORY idd = new IMAGE_DEBUG_DIRECTORY();
-				idd.Characteristics = 0;
+                idd.Characteristics = 0;
 				idd.TimeDateStamp = peWriter.Headers.FileHeader.TimeDateStamp;
 				byte[] buf = SymbolSupport.GetDebugInfo(moduleBuilder.symbolWriter, ref idd);
 				idd.PointerToRawData = (DebugDirectoryRVA - BaseRVA) + DebugDirectoryLength + PointerToRawData;
@@ -373,9 +370,6 @@ namespace IKVM.Reflection.Writer
 				mw.Write(idd.AddressOfRawData);
 				mw.Write(idd.PointerToRawData);
 				mw.Write(buf);
-#else
-                throw new NotSupportedException();
-#endif
             }
         }
 

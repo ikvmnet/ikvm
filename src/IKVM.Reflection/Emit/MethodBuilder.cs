@@ -90,15 +90,11 @@ namespace IKVM.Reflection.Emit
         {
             if (ilgen != null)
             {
-#if NETFRAMEWORK
                 ModuleBuilder.symbolWriter?.OpenMethod(new SymbolToken(-pseudoToken | 0x06000000), this);
-#endif
 
                 rva = ilgen.WriteBody(initLocals);
 
-#if NETFRAMEWORK
                 ModuleBuilder.symbolWriter?.CloseMethod();
-#endif
 
                 ilgen = null;
             }
