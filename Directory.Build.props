@@ -77,6 +77,7 @@
         <CopyRetryCount>60</CopyRetryCount>
         <CopyRetryDelayMilliseconds>15000</CopyRetryDelayMilliseconds>
         <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+        <AssemblySearchPath_UseCandidateAssemblyFiles>false</AssemblySearchPath_UseCandidateAssemblyFiles>
     </PropertyGroup>
 
     <PropertyGroup Label="Assembly Info">

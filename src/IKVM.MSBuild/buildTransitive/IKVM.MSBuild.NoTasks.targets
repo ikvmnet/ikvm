@@ -43,9 +43,9 @@ $([MSBuild]::Unescape('$(___IkvmResolveNearestRuntimeIdentifierCs)'))
         </Task>
     </UsingTask>
 
-    <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(MSBuildRuntimeType)' == 'Core' ">
+    <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(MSBuildRuntimeType)' == 'Core' And Exists('$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll') And Exists('$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll')">
         <Task>
-            <Reference Include="$(PkgSystem_Collections_Immutable)\lib\net6.0\System.Collections.Immutable.dll" />
+            <Reference Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" />
             <Reference Include="$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
@@ -63,10 +63,10 @@ $([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))
         </Task>
     </UsingTask>
 
-    <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
+    <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(MSBuildRuntimeType)' != 'Core' And Exists('$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll') And Exists('$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll')">
         <Task>
-            <Reference Include="$(PkgSystem_Collections_Immutable)\lib\net461\System.Collections.Immutable.dll" />
-            <Reference Include="$(PkgSystem_Reflection_Metadata)\lib\net461\System.Reflection.Metadata.dll" />
+            <Reference Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" />
+            <Reference Include="$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
 #define NETFRAMEWORK

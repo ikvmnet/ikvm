@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ikvmstub": {
+      "commandName": "Project",
+      "commandLineArgs": "--nostdlib --parameters --reference:\"C:\\dev\\ikvm2\\src\\IKVM.Java\\ref\\net6.0\\IKVM.Java.dll\" --reference:\"C:\\dev\\ikvm2\\src\\IKVM.Runtime\\obj\\Debug\\net6.0\\ref\\IKVM.Runtime.dll\" --reference:\"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\6.0.25\\ref\\net6.0\\System.Runtime.CompilerServices.VisualC.dll\" --reference:\"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\6.0.25\\ref\\net6.0\\System.Runtime.dll\" --out:\"C:\\Users\\jhaltom\\System.Runtime.CompilerServices.VisualC.jar\" \"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\6.0.25\\ref\\net6.0\\System.Runtime.CompilerServices.VisualC.dll\""
+    }
+  }
+}

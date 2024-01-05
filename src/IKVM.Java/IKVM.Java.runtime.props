@@ -27,8 +27,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="false" PrivateAssets="All" IncludeNonPublicTypes="true" />
-        <Reference Include="IKVM.Java" HintPath="..\IKVM.Java\ref\$(TargetFramework)\IKVM.Java.dll" Private="false" HideFromJava="true" Condition=" '$(TargetFramework)' != '' " />
+        <ProjectReference Include="$(MSBuildThisFileDirectory)..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="false" PrivateAssets="All" IncludeNonPublicTypes="true" />
+        <Reference Include="IKVM.Java" HintPath="$(MSBuildThisFileDirectory)ref\$(TargetFramework)\IKVM.Java.dll" Private="false" HideFromJava="true" Condition=" '$(TargetFramework)' != '' " />
     </ItemGroup>
 
     <ItemGroup>
@@ -47,16 +47,16 @@
     </ItemGroup>
 
     <ItemGroup>
-        <JavaResource Include="..\IKVM.Java\local\**\*" Exclude="..\IKVM.Java\local\**\*.java;..\IKVM.Java\**\*.tt" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <JavaResource Include="$(MSBuildThisFileDirectory)local\**\*" Exclude="$(MSBuildThisFileDirectory)local\**\*.java;$(MSBuildThisFileDirectory)**\*.tt" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="..\IKVM.Java\icedtea_jce\**\*" Link="icedtea_jce\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="..\IKVM.Java\icedtea_rt\**\*" Link="icedtea_rt\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="..\IKVM.Java\local\**\*" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Compile Include="..\IKVM.Java\icedtea_jce\**\*.java" Link="icedtea_jce\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Compile Include="..\IKVM.Java\icedtea_rt\**\*.java" Link="icedtea_rt\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Compile Include="..\IKVM.Java\local\**\*.java" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="$(MSBuildThisFileDirectory)icedtea_jce\**\*" Link="icedtea_jce\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="$(MSBuildThisFileDirectory)icedtea_rt\**\*" Link="icedtea_rt\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="$(MSBuildThisFileDirectory)local\**\*" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="$(MSBuildThisFileDirectory)icedtea_jce\**\*.java" Link="icedtea_jce\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="$(MSBuildThisFileDirectory)icedtea_rt\**\*.java" Link="icedtea_rt\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="$(MSBuildThisFileDirectory)local\**\*.java" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
         <None Include="@(OpenJdkSource)" LinkBase="openjdk\%(PackagePath)" />
         <Compile Include="@(OpenJdkSource)" LinkBase="openjdk\%(PackagePath)" />
         <Convert Include="@(OpenJdkClass)" LinkBase="openjdk\%(PackagePath)" />
@@ -66,14 +66,14 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Transform Include="..\IKVM.Java\local\META-INF\MANIFEST.MF.tt" TargetPath="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" />
+        <Transform Include="$(MSBuildThisFileDirectory)\local\META-INF\MANIFEST.MF.tt" TargetPath="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" />
         <JavaResource Include="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" Visible="False" ResourcePath="META-INF/MANIFEST.MF" Link="local\META-INF\MANIFEST.MF" />
-        <Transform Include="..\IKVM.Java\local\nashorn\version.properties.tt" TargetPath="$(IntermediateOutputPath)transform\local\nashorn\version.properties" />
+        <Transform Include="$(MSBuildThisFileDirectory)\local\nashorn\version.properties.tt" TargetPath="$(IntermediateOutputPath)transform\local\nashorn\version.properties" />
         <JavaResource Include="$(IntermediateOutputPath)transform\local\nashorn\version.properties" Visible="False" ResourcePath="nashorn/version.properties" Link="local\nashorn\version.properties" />
     </ItemGroup>
 
     <ItemGroup>
-        <MapFile Include="..\IKVM.Java\map.xml" />
+        <MapFile Include="$(MSBuildThisFileDirectory)map.xml" />
     </ItemGroup>
     
 </Project>

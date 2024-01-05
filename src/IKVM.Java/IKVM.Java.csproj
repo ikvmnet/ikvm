@@ -3,10 +3,4 @@
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <ProduceOnlyReferenceAssembly>true</ProduceOnlyReferenceAssembly>
     </PropertyGroup>
-
-    <ItemGroup>
-        <Reference Include="IKVM.Java" HintPath="ref\$(TargetFramework)\IKVM.Java.dll" Private="false" Condition=" '$(TargetFramework)' != '' " />
-    </ItemGroup>
-
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
 </Project>

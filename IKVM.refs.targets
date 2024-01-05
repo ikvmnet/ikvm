@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
-        <Reference Include="IKVM.Java" HintPath="$(MSBuildThisFileDirectory)src\IKVM.Java\ref\$(TargetFramework)\IKVM.Java.dll" Private="false" HideFromJava="true" />
+        <Reference Include="IKVM.Java" HintPath="$(MSBuildThisFileDirectory)src\IKVM.Java\ref\$(TargetFramework)\IKVM.Java.dll" Private="false" />
     </ItemGroup>
 
     <ItemGroup>
