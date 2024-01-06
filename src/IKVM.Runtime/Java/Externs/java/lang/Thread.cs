@@ -45,9 +45,9 @@ namespace IKVM.Java.Externs.java.lang
         static AccessControllerAccessor accessControllerAccessor;
         static ThreadAccessor threadAccessor;
 
-        static AccessControllerAccessor AccessControllerAccessor => JVM.BaseAccessors.Get(ref accessControllerAccessor);
+        static AccessControllerAccessor AccessControllerAccessor => JVM.Internal.BaseAccessors.Get(ref accessControllerAccessor);
 
-        static ThreadAccessor ThreadAccessor => JVM.BaseAccessors.Get(ref threadAccessor);
+        static ThreadAccessor ThreadAccessor => JVM.Internal.BaseAccessors.Get(ref threadAccessor);
 
 #endif
 

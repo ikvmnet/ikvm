@@ -1,139 +1,42 @@
-/*
-  Copyright (C) 2002-2013 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
 using System;
-using System.Threading;
 using System.Diagnostics;
-using System.Text;
-using System.Security;
 using System.Runtime.CompilerServices;
+using System.Security;
+using System.Text;
+using System.Threading;
 
-using IKVM.Runtime.Accessors;
-using IKVM.Runtime.Accessors.Java.Lang;
-using IKVM.Attributes;
 using IKVM.Runtime.Vfs;
-using IKVM.Runtime.Accessors.Ikvm.Internal;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-#endif
-
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
 
 namespace IKVM.Runtime
 {
 
+    /// <summary>
+    /// Main state of the running JVM.
+    /// </summary>
     public static partial class JVM
     {
 
-        internal const string JarClassList = "--ikvm-classes--/";
+        static readonly object syncRoot = new object();
+        static bool initialized;
 
 #if EXPORTER == false
         static int emitSymbols;
-        internal static bool relaxedVerification = true;
+        internal static bool RelaxedVerification = true;
         internal static bool AllowNonVirtualCalls;
         internal static readonly bool DisableEagerClassLoading = SafeGetEnvironmentVariable("IKVM_DISABLE_EAGER_CLASS_LOADING") != null;
-#endif
-
-#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
-
-        static readonly RuntimeContext context = new RuntimeContext(new RuntimeContextOptions(), new Resolver(), false);
-        static readonly VfsTable vfs = VfsTable.BuildDefaultTable(new VfsRuntimeContext(context), Properties.HomePath);
-
-        /// <summary>
-        /// Gets the current <see cref="RuntimeContext"/> of the JVM.
-        /// </summary>
-        internal static RuntimeContext Context => context;
-
-        /// <summary>
-        /// Gets the current <see cref="VfsTable"/> of the JVM.
-        /// </summary>
-        internal static VfsTable Vfs => vfs;
-
-        static readonly object initializedLock = new object();
-        static bool initialized;
-
-        static AccessorCache baseAccessors;
-        static ThreadGroupAccessor threadGroupAccessor;
-        static SystemAccessor systemAccessor;
-        static CallerIDAccessor callerIDAccessor;
-
-        static Lazy<object> systemThreadGroup = new Lazy<object>(MakeSystemThreadGroup);
-        static Lazy<object> mainThreadGroup = new Lazy<object>(MakeMainThreadGroup);
-
-        internal static AccessorCache BaseAccessors => AccessorCache.Get(ref baseAccessors, context.Resolver.ResolveBaseAssembly());
-
-        static ThreadGroupAccessor ThreadGroupAccessor => BaseAccessors.Get(ref threadGroupAccessor);
-
-        static SystemAccessor SystemAccessor => BaseAccessors.Get(ref systemAccessor);
-
-        static CallerIDAccessor CallerIDAccessor => BaseAccessors.Get(ref callerIDAccessor);
-
-        /// <summary>
-        /// Gets the 'system' thread group.
-        /// </summary>
-        internal static object SystemThreadGroup => systemThreadGroup.Value;
-
-        /// <summary>
-        /// Gets the 'main' thread group.
-        /// </summary>
-        internal static object MainThreadGroup => mainThreadGroup.Value;
-
-#endif
-
-#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
-
-        /// <summary>
-        /// Invoked on module initialize to load the JVM.
-        /// </summary>
-#pragma warning disable CA2255
-        [ModuleInitializer]
-#pragma warning restore CA2255
-        internal static void ModuleInitializer()
-        {
-            // if our entry point is a Java module, it will initialize the JVM after setting options
-            if (Assembly.GetEntryAssembly()?.ManifestModule?.GetCustomAttribute<JavaModuleAttribute>() == null)
-                EnsureInitialized();
-        }
-
 #endif
 
         /// <summary>
         /// Ensures the JVM is initialized.
         /// </summary>
-        internal static void EnsureInitialized()
+        internal static void Init()
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
             if (initialized == false)
             {
-                lock (initializedLock)
+                lock (syncRoot)
                 {
                     if (initialized == false)
                     {
@@ -158,7 +61,7 @@ namespace IKVM.Runtime
                         RuntimeHelpers.RunClassConstructor(typeof(java.lang.reflect.Method).TypeHandle);
 
                         // ensure the System class is initialized
-                        SystemAccessor.InvokeInitializeSystemClass();
+                        Internal.SystemAccessor.InvokeInitializeSystemClass();
 
                         // should be done before System, but that fails for now
                         RuntimeHelpers.RunClassConstructor(typeof(java.lang.@ref.Finalizer).TypeHandle);
@@ -184,49 +87,6 @@ namespace IKVM.Runtime
                 }
             }
 #endif
-        }
-
-        /// <summary>
-        /// Creates the 'system' thread group.
-        /// </summary>
-        /// <returns></returns>
-        static object MakeSystemThreadGroup()
-        {
-#if FIRST_PASS || IMPORTER || EXPORTER
-            throw new NotImplementedException();
-#else
-            return ThreadGroupAccessor.Init();
-#endif
-        }
-
-        /// <summary>
-        /// Creates the 'main' thread group.
-        /// </summary>
-        /// <returns></returns>
-        static object MakeMainThreadGroup()
-        {
-#if FIRST_PASS || IMPORTER || EXPORTER
-            throw new NotImplementedException();
-#else
-            return ThreadGroupAccessor.Init(null, SystemThreadGroup, "main");
-#endif
-        }
-
-        /// <summary>
-        /// Gets an environmental variable.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        internal static string SafeGetEnvironmentVariable(string name)
-        {
-            try
-            {
-                return Environment.GetEnvironmentVariable(name);
-            }
-            catch (SecurityException)
-            {
-                return null;
-            }
         }
 
 #if !IMPORTER && !EXPORTER
@@ -265,14 +125,55 @@ namespace IKVM.Runtime
 
 #endif
 
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+
+        /// <summary>
+        /// Gets the current <see cref="RuntimeContext"/> of the JVM.
+        /// </summary>
+        internal static RuntimeContext Context => Internal.context;
+
+        /// <summary>
+        /// Gets the current <see cref="VfsTable"/> of the JVM.
+        /// </summary>
+        internal static VfsTable Vfs => Internal.vfs;
+
+        /// <summary>
+        /// Gets the 'system' thread group.
+        /// </summary>
+        internal static object SystemThreadGroup => Internal.systemThreadGroup.Value;
+
+        /// <summary>
+        /// Gets the 'main' thread group.
+        /// </summary>
+        internal static object MainThreadGroup => Internal.mainThreadGroup.Value;
+
+#endif
+
+        /// <summary>
+        /// Gets an environmental variable.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        internal static string SafeGetEnvironmentVariable(string name)
+        {
+            try
+            {
+                return Environment.GetEnvironmentVariable(name);
+            }
+            catch (SecurityException)
+            {
+                return null;
+            }
+        }
+
         internal static string MangleResourceName(string name)
         {
             // FXBUG there really shouldn't be any need to mangle the resource names,
             // but in order for ILDASM/ILASM round tripping to work reliably, we have
             // to make sure that we don't produce resource names that'll cause ILDASM
             // to generate invalid filenames.
-            StringBuilder sb = new StringBuilder("ikvm__", name.Length + 6);
-            foreach (char c in name)
+            var sb = new StringBuilder("ikvm__", name.Length + 6);
+            foreach (var c in name)
             {
                 if ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-+.()$#@~=&{}[]0123456789`".IndexOf(c) != -1)
                 {
@@ -291,11 +192,15 @@ namespace IKVM.Runtime
             return sb.ToString();
         }
 
-        // based on Bret Mulvey's C# port of Jenkins32
-        // note that this algorithm cannot be changed, because we persist these hashcodes in the metadata of shared class loader assemblies
+        /// <summary>
+        /// Returns a hash code for the specified string value which is guarenteed to always be the same.
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
         internal static int PersistableHash(string str)
         {
-            uint key = 1;
+            var key = 1u;
+
             foreach (char c in str)
             {
                 key += c;
@@ -308,102 +213,47 @@ namespace IKVM.Runtime
                 key += (key << 7);
                 key ^= (key >> 12);
             }
+
             return (int)key;
         }
 
         internal static object Box(object val)
         {
 #if IMPORTER || FIRST_PASS || EXPORTER
-            return null;
+            throw new NotImplementedException();
 #else
-            if (val is byte)
+            return val switch
             {
-                return java.lang.Byte.valueOf((byte)val);
-            }
-            else if (val is bool)
-            {
-                return java.lang.Boolean.valueOf((bool)val);
-            }
-            else if (val is short)
-            {
-                return java.lang.Short.valueOf((short)val);
-            }
-            else if (val is char)
-            {
-                return java.lang.Character.valueOf((char)val);
-            }
-            else if (val is int)
-            {
-                return java.lang.Integer.valueOf((int)val);
-            }
-            else if (val is float)
-            {
-                return java.lang.Float.valueOf((float)val);
-            }
-            else if (val is long)
-            {
-                return java.lang.Long.valueOf((long)val);
-            }
-            else if (val is double)
-            {
-                return java.lang.Double.valueOf((double)val);
-            }
-            else
-            {
-                throw new java.lang.IllegalArgumentException();
-            }
+                byte => java.lang.Byte.valueOf((byte)val),
+                bool => java.lang.Boolean.valueOf((bool)val),
+                short => java.lang.Short.valueOf((short)val),
+                char => java.lang.Character.valueOf((char)val),
+                int => java.lang.Integer.valueOf((int)val),
+                float => java.lang.Float.valueOf((float)val),
+                long => java.lang.Long.valueOf((long)val),
+                double => java.lang.Double.valueOf((double)val),
+                _ => throw new java.lang.IllegalArgumentException()
+            };
 #endif
         }
 
         internal static object Unbox(object val)
         {
 #if IMPORTER || FIRST_PASS || EXPORTER
-            return null;
+            throw new NotImplementedException();
 #else
-            java.lang.Byte b = val as java.lang.Byte;
-            if (b != null)
+            return val switch
             {
-                return b.byteValue();
-            }
-            java.lang.Boolean b1 = val as java.lang.Boolean;
-            if (b1 != null)
-            {
-                return b1.booleanValue();
-            }
-            java.lang.Short s = val as java.lang.Short;
-            if (s != null)
-            {
-                return s.shortValue();
-            }
-            java.lang.Character c = val as java.lang.Character;
-            if (c != null)
-            {
-                return c.charValue();
-            }
-            java.lang.Integer i = val as java.lang.Integer;
-            if (i != null)
-            {
-                return i.intValue();
-            }
-            java.lang.Float f = val as java.lang.Float;
-            if (f != null)
-            {
-                return f.floatValue();
-            }
-            java.lang.Long l = val as java.lang.Long;
-            if (l != null)
-            {
-                return l.longValue();
-            }
-            java.lang.Double d = val as java.lang.Double;
-            if (d != null)
-            {
-                return d.doubleValue();
-            }
-            else
-            {
-                throw new java.lang.IllegalArgumentException();
-            }
+                java.lang.Byte b => b.byteValue(),
+                java.lang.Boolean b1 => b1.booleanValue(),
+                java.lang.Short s => s.shortValue(),
+                java.lang.Character c => c.charValue(),
+                java.lang.Integer i => i.intValue(),
+                java.lang.Float f => f.floatValue(),
+                java.lang.Long l => l.longValue(),
+                java.lang.Double d => d.doubleValue(),
+                _ => throw new java.lang.IllegalArgumentException()
+            };
 #endif
         }
 

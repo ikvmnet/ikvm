@@ -17,7 +17,7 @@ namespace IKVM.Runtime
         static ClassAccessor classAccessor;
         static object value;
 
-        static ClassAccessor ClassAccessor => JVM.BaseAccessors.Get(ref classAccessor);
+        static ClassAccessor ClassAccessor => JVM.Internal.BaseAccessors.Get(ref classAccessor);
 
         /// <summary>
         /// Gets the class literal value, caching the result.

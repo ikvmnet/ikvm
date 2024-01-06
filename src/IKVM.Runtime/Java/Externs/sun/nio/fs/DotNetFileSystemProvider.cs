@@ -33,15 +33,15 @@ namespace IKVM.Java.Externs.sun.nio.fs
         static DotNetPathAccessor dotNetPathAccessor;
         static DotNetDirectoryStreamAccessor dotNetDirectoryStreamAccessor;
 
-        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+        static SystemAccessor SystemAccessor => JVM.Internal.BaseAccessors.Get(ref systemAccessor);
 
-        static SecurityManagerAccessor SecurityManagerAccessor => JVM.BaseAccessors.Get(ref securityManagerAccessor);
+        static SecurityManagerAccessor SecurityManagerAccessor => JVM.Internal.BaseAccessors.Get(ref securityManagerAccessor);
 
-        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.Internal.BaseAccessors.Get(ref fileDescriptorAccessor);
 
-        static DotNetPathAccessor DotNetPathAccessor => JVM.BaseAccessors.Get(ref dotNetPathAccessor);
+        static DotNetPathAccessor DotNetPathAccessor => JVM.Internal.BaseAccessors.Get(ref dotNetPathAccessor);
 
-        static DotNetDirectoryStreamAccessor DotNetDirectoryStreamAccessor => JVM.BaseAccessors.Get(ref dotNetDirectoryStreamAccessor);
+        static DotNetDirectoryStreamAccessor DotNetDirectoryStreamAccessor => JVM.Internal.BaseAccessors.Get(ref dotNetDirectoryStreamAccessor);
 
 #if NETCOREAPP
 

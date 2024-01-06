@@ -64,7 +64,7 @@ namespace IKVM.Runtime
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
 
         ClassLoaderAccessor classLoaderAccessor;
-        ClassLoaderAccessor ClassLoaderAccessor => JVM.BaseAccessors.Get(ref classLoaderAccessor);
+        ClassLoaderAccessor ClassLoaderAccessor => JVM.Internal.BaseAccessors.Get(ref classLoaderAccessor);
 
         protected java.lang.ClassLoader javaClassLoader;
 
@@ -275,7 +275,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS
                 return true;
 #else
-                return JVM.relaxedVerification && (javaClassLoader == null || IsTrusted);
+                return JVM.RelaxedVerification && (javaClassLoader == null || IsTrusted);
 #endif
             }
         }

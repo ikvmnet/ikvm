@@ -43,7 +43,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
         static SystemAccessor systemAccessor;
 
-        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+        static SystemAccessor SystemAccessor => JVM.Internal.BaseAccessors.Get(ref systemAccessor);
 
 #endif
 

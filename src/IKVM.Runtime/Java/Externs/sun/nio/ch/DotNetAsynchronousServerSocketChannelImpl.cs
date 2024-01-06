@@ -40,17 +40,17 @@ namespace IKVM.Java.Externs.sun.nio.ch
         static DotNetAsynchronousServerSocketChannelImplAccessor dotNetAsynchronousServerSocketChannelImplAccessor;
         static DotNetAsynchronousSocketChannelImplAccessor dotNetAsynchronousSocketChannelImplAccessor;
 
-        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+        static SystemAccessor SystemAccessor => JVM.Internal.BaseAccessors.Get(ref systemAccessor);
 
-        static SecurityManagerAccessor SecurityManagerAccessor => JVM.BaseAccessors.Get(ref securityManagerAccessor);
+        static SecurityManagerAccessor SecurityManagerAccessor => JVM.Internal.BaseAccessors.Get(ref securityManagerAccessor);
 
-        static AccessControllerAccessor AccessControllerAccessor => JVM.BaseAccessors.Get(ref accessControllerAccessor);
+        static AccessControllerAccessor AccessControllerAccessor => JVM.Internal.BaseAccessors.Get(ref accessControllerAccessor);
 
-        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.Internal.BaseAccessors.Get(ref fileDescriptorAccessor);
 
-        static DotNetAsynchronousServerSocketChannelImplAccessor DotNetAsynchronousServerSocketChannelImplAccessor => JVM.BaseAccessors.Get(ref dotNetAsynchronousServerSocketChannelImplAccessor);
+        static DotNetAsynchronousServerSocketChannelImplAccessor DotNetAsynchronousServerSocketChannelImplAccessor => JVM.Internal.BaseAccessors.Get(ref dotNetAsynchronousServerSocketChannelImplAccessor);
 
-        static DotNetAsynchronousSocketChannelImplAccessor DotNetAsynchronousSocketChannelImplAccessor => JVM.BaseAccessors.Get(ref dotNetAsynchronousSocketChannelImplAccessor);
+        static DotNetAsynchronousSocketChannelImplAccessor DotNetAsynchronousSocketChannelImplAccessor => JVM.Internal.BaseAccessors.Get(ref dotNetAsynchronousSocketChannelImplAccessor);
 
 #endif
 
