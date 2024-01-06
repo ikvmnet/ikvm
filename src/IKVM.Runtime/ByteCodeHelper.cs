@@ -57,7 +57,7 @@ namespace IKVM.Runtime
 
         static ObjectAccessor objectAccessor;
 
-        static ObjectAccessor ObjectAccessor => JVM.BaseAccessors.Get(ref objectAccessor);
+        static ObjectAccessor ObjectAccessor => JVM.Internal.BaseAccessors.Get(ref objectAccessor);
 
 #endif
 
@@ -209,7 +209,7 @@ namespace IKVM.Runtime
                 if (loader != null)
                 {
                     ClassLoaderAccessor cla = null;
-                    JVM.BaseAccessors.Get(ref cla);
+                    JVM.Internal.BaseAccessors.Get(ref cla);
                     cla.InvokeCheckPackageAccess(loader, wrapper.ClassObject, callerId.getCallerClass().pd);
                 }
 

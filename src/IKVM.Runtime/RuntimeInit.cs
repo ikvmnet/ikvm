@@ -26,7 +26,7 @@ namespace IKVM.Runtime
             // if our entry point is a Java application it will initialize the JVM as part of the launcher
             var isJavaApp = Assembly.GetEntryAssembly()?.ManifestModule?.GetCustomAttributes<JavaModuleAttribute>().Any() ?? false;
             if (isJavaApp == false)
-                JVM.EnsureInitialized();
+                JVM.Init();
         }
 
 #endif

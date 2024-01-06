@@ -15,7 +15,7 @@
         /// <summary>
         /// Gets the accessor value.
         /// </summary>
-        public T Value => JVM.BaseAccessors.Get(ref accessor);
+        public T Value => JVM.Internal.BaseAccessors.Get(ref accessor);
 
     }
 

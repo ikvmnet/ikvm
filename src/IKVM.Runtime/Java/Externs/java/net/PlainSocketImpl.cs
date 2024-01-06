@@ -28,9 +28,9 @@ namespace IKVM.Java.Externs.java.net
         static FileDescriptorAccessor fileDescriptorAccessor;
         static PlainSocketImplAccessor plainSocketImplAccessor;
 
-        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.Internal.BaseAccessors.Get(ref fileDescriptorAccessor);
 
-        static PlainSocketImplAccessor PlainSocketImplAccessor => JVM.BaseAccessors.Get(ref plainSocketImplAccessor);
+        static PlainSocketImplAccessor PlainSocketImplAccessor => JVM.Internal.BaseAccessors.Get(ref plainSocketImplAccessor);
 
         [Flags]
         enum HANDLE_FLAGS

@@ -23,13 +23,13 @@ namespace IKVM.Java.Externs.sun.nio.fs
         static DotNetPathAccessor dotNetPathAccessor;
         static DotNetDirectoryStreamAccessor dotNetDirectoryStreamAccessor;
 
-        static EnumeratorIteratorAccessor EnumeratorIteratorAccessor => JVM.BaseAccessors.Get(ref enumeratorIteratorAccessor);
+        static EnumeratorIteratorAccessor EnumeratorIteratorAccessor => JVM.Internal.BaseAccessors.Get(ref enumeratorIteratorAccessor);
 
-        static DirectoryStreamFilterAccessor DirectoryStreamFilterAccessor => JVM.BaseAccessors.Get(ref directoryStreamFilterAccessor);
+        static DirectoryStreamFilterAccessor DirectoryStreamFilterAccessor => JVM.Internal.BaseAccessors.Get(ref directoryStreamFilterAccessor);
 
-        static DotNetPathAccessor DotNetPathAccessor => JVM.BaseAccessors.Get(ref dotNetPathAccessor);
+        static DotNetPathAccessor DotNetPathAccessor => JVM.Internal.BaseAccessors.Get(ref dotNetPathAccessor);
 
-        static DotNetDirectoryStreamAccessor DotNetDirectoryStreamAccessor => JVM.BaseAccessors.Get(ref dotNetDirectoryStreamAccessor);
+        static DotNetDirectoryStreamAccessor DotNetDirectoryStreamAccessor => JVM.Internal.BaseAccessors.Get(ref dotNetDirectoryStreamAccessor);
 
 #endif
 
