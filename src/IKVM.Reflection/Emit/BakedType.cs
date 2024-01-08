@@ -27,8 +27,12 @@ namespace IKVM.Reflection.Emit
     sealed class BakedType : TypeInfo
     {
 
-        internal BakedType(TypeBuilder typeBuilder)
-            : base(typeBuilder)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="typeBuilder"></param>
+        internal BakedType(TypeBuilder typeBuilder) :
+            base(typeBuilder)
         {
 
         }
@@ -163,5 +167,7 @@ namespace IKVM.Reflection.Emit
         {
             get { return underlyingType.IsValueType; }
         }
+
     }
+
 }

@@ -24,45 +24,12 @@
 
 namespace IKVM.Reflection.Emit
 {
-    public struct EventToken
+
+    public readonly record struct EventToken(int Token)
 	{
 
 		public static readonly EventToken Empty;
-		private readonly int token;
 
-		internal EventToken(int token)
-		{
-			this.token = token;
-		}
-
-		public int Token
-		{
-			get { return token; }
-		}
-
-		public override bool Equals(object obj)
-		{
-			return obj as EventToken? == this;
-		}
-
-		public override int GetHashCode()
-		{
-			return token;
-		}
-
-		public bool Equals(EventToken other)
-		{
-			return this == other;
-		}
-
-		public static bool operator ==(EventToken et1, EventToken et2)
-		{
-			return et1.token == et2.token;
-		}
-
-		public static bool operator !=(EventToken et1, EventToken et2)
-		{
-			return et1.token != et2.token;
-		}
 	}
+
 }

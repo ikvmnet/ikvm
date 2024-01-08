@@ -25,100 +25,105 @@ namespace IKVM.Reflection.Emit
 {
 
     public sealed class EnumBuilder : TypeInfo
-	{
+    {
 
-		private readonly TypeBuilder typeBuilder;
-		private readonly FieldBuilder fieldBuilder;
+        readonly TypeBuilder typeBuilder;
+        readonly FieldBuilder fieldBuilder;
 
-		internal EnumBuilder(TypeBuilder typeBuilder, FieldBuilder fieldBuilder)
-			: base(typeBuilder)
-		{
-			this.typeBuilder = typeBuilder;
-			this.fieldBuilder = fieldBuilder;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="typeBuilder"></param>
+        /// <param name="fieldBuilder"></param>
+        internal EnumBuilder(TypeBuilder typeBuilder, FieldBuilder fieldBuilder) :
+            base(typeBuilder)
+        {
+            this.typeBuilder = typeBuilder;
+            this.fieldBuilder = fieldBuilder;
+        }
 
-		internal override TypeName TypeName
-		{
-			get { return typeBuilder.TypeName; }
-		}
+        internal override TypeName TypeName
+        {
+            get { return typeBuilder.TypeName; }
+        }
 
-		public override string Name
-		{
-			get { return typeBuilder.Name; }
-		}
+        public override string Name
+        {
+            get { return typeBuilder.Name; }
+        }
 
-		public override string FullName
-		{
-			get { return typeBuilder.FullName; }
-		}
+        public override string FullName
+        {
+            get { return typeBuilder.FullName; }
+        }
 
-		public override Type BaseType
-		{
-			get { return typeBuilder.BaseType; }
-		}
+        public override Type BaseType
+        {
+            get { return typeBuilder.BaseType; }
+        }
 
-		public override TypeAttributes Attributes
-		{
-			get { return typeBuilder.Attributes; }
-		}
+        public override TypeAttributes Attributes
+        {
+            get { return typeBuilder.Attributes; }
+        }
 
-		public override Module Module
-		{
-			get { return typeBuilder.Module; }
-		}
+        public override Module Module
+        {
+            get { return typeBuilder.Module; }
+        }
 
-		public FieldBuilder DefineLiteral(string literalName, object literalValue)
-		{
-			FieldBuilder fb = typeBuilder.DefineField(literalName, typeBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
-			fb.SetConstant(literalValue);
-			return fb;
-		}
+        public FieldBuilder DefineLiteral(string literalName, object literalValue)
+        {
+            FieldBuilder fb = typeBuilder.DefineField(literalName, typeBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
+            fb.SetConstant(literalValue);
+            return fb;
+        }
 
-		public Type CreateType()
-		{
-			return typeBuilder.CreateType();
-		}
+        public Type CreateType()
+        {
+            return typeBuilder.CreateType();
+        }
 
-		public TypeInfo CreateTypeInfo()
-		{
-			return typeBuilder.CreateTypeInfo();
-		}
+        public TypeInfo CreateTypeInfo()
+        {
+            return typeBuilder.CreateTypeInfo();
+        }
 
-		public TypeToken TypeToken
-		{
-			get { return typeBuilder.TypeToken; }
-		}
+        public TypeToken TypeToken
+        {
+            get { return typeBuilder.TypeToken; }
+        }
 
-		public FieldBuilder UnderlyingField
-		{
-			get { return fieldBuilder; }
-		}
+        public FieldBuilder UnderlyingField
+        {
+            get { return fieldBuilder; }
+        }
 
-		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-		{
-			typeBuilder.SetCustomAttribute(con, binaryAttribute);
-		}
+        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
+        {
+            typeBuilder.SetCustomAttribute(con, binaryAttribute);
+        }
 
-		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
-		{
-			typeBuilder.SetCustomAttribute(customBuilder);
-		}
+        public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
+        {
+            typeBuilder.SetCustomAttribute(customBuilder);
+        }
 
-		public override Type GetEnumUnderlyingType()
-		{
-			return fieldBuilder.FieldType;
-		}
+        public override Type GetEnumUnderlyingType()
+        {
+            return fieldBuilder.FieldType;
+        }
 
-		protected override bool IsValueTypeImpl
-		{
-			get { return true; }
-		}
+        protected override bool IsValueTypeImpl
+        {
+            get { return true; }
+        }
 
-		internal override bool IsBaked
-		{
-			get { return typeBuilder.IsBaked; }
-		}
+        internal override bool IsBaked
+        {
+            get { return typeBuilder.IsBaked; }
+        }
 
-	}
+    }
 
 }

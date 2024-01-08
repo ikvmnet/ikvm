@@ -24,44 +24,11 @@
 
 namespace IKVM.Reflection.Emit
 {
-    public struct MethodToken
-	{
-		public static readonly MethodToken Empty;
-		private readonly int token;
+    public readonly record struct MethodToken(int Token)
+    {
 
-		internal MethodToken(int token)
-		{
-			this.token = token;
-		}
+        public static readonly MethodToken Empty;
 
-		public int Token
-		{
-			get { return token; }
-		}
+    }
 
-		public override bool Equals(object obj)
-		{
-			return obj as MethodToken? == this;
-		}
-
-		public override int GetHashCode()
-		{
-			return token;
-		}
-
-		public bool Equals(MethodToken other)
-		{
-			return this == other;
-		}
-
-		public static bool operator ==(MethodToken mt1, MethodToken mt2)
-		{
-			return mt1.token == mt2.token;
-		}
-
-		public static bool operator !=(MethodToken mt1, MethodToken mt2)
-		{
-			return mt1.token != mt2.token;
-		}
-	}
 }

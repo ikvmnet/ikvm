@@ -30,231 +30,253 @@ namespace IKVM.Reflection.Emit
 {
 
     public sealed class GenericTypeParameterBuilder : TypeInfo
-	{
+    {
 
-		private readonly string name;
-		private readonly TypeBuilder type;
-		private readonly MethodBuilder method;
-		private readonly int paramPseudoIndex;
-		private readonly int position;
-		private int typeToken;
-		private Type baseType;
-		private GenericParameterAttributes attr;
+        readonly string name;
+        readonly TypeBuilder type;
+        readonly MethodBuilder method;
+        readonly int paramPseudoIndex;
+        readonly int position;
+        int typeToken;
+        Type baseType;
+        GenericParameterAttributes attr;
 
-		internal GenericTypeParameterBuilder(string name, TypeBuilder type, int position)
-			: this(name, type, null, position, Signature.ELEMENT_TYPE_VAR)
-		{
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="type"></param>
+        /// <param name="position"></param>
+        internal GenericTypeParameterBuilder(string name, TypeBuilder type, int position) :
+            this(name, type, null, position, Signature.ELEMENT_TYPE_VAR)
+        {
 
-		internal GenericTypeParameterBuilder(string name, MethodBuilder method, int position)
-			: this(name, null, method, position, Signature.ELEMENT_TYPE_MVAR)
-		{
-		}
+        }
 
-		private GenericTypeParameterBuilder(string name, TypeBuilder type, MethodBuilder method, int position, byte sigElementType)
-			: base(sigElementType)
-		{
-			this.name = name;
-			this.type = type;
-			this.method = method;
-			this.position = position;
-			GenericParamTable.Record rec = new GenericParamTable.Record();
-			rec.Number = (short)position;
-			rec.Flags = 0;
-			rec.Owner = type != null ? type.MetadataToken : method.MetadataToken;
-			rec.Name = this.ModuleBuilder.Strings.Add(name);
-			this.paramPseudoIndex = this.ModuleBuilder.GenericParam.AddRecord(rec);
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="method"></param>
+        /// <param name="position"></param>
+        internal GenericTypeParameterBuilder(string name, MethodBuilder method, int position) :
+            this(name, null, method, position, Signature.ELEMENT_TYPE_MVAR)
+        {
 
-		public override string AssemblyQualifiedName
-		{
-			get { return null; }
-		}
+        }
 
-		protected override bool IsValueTypeImpl
-		{
-			get { return (this.GenericParameterAttributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0; }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="type"></param>
+        /// <param name="method"></param>
+        /// <param name="position"></param>
+        /// <param name="sigElementType"></param>
+        GenericTypeParameterBuilder(string name, TypeBuilder type, MethodBuilder method, int position, byte sigElementType) :
+            base(sigElementType)
+        {
+            this.name = name;
+            this.type = type;
+            this.method = method;
+            this.position = position;
+            GenericParamTable.Record rec = new GenericParamTable.Record();
+            rec.Number = (short)position;
+            rec.Flags = 0;
+            rec.Owner = type != null ? type.MetadataToken : method.MetadataToken;
+            rec.Name = this.ModuleBuilder.Strings.Add(name);
+            this.paramPseudoIndex = this.ModuleBuilder.GenericParam.AddRecord(rec);
+        }
 
-		public override Type BaseType
-		{
-			get { return baseType; }
-		}
+        public override string AssemblyQualifiedName
+        {
+            get { return null; }
+        }
 
-		public override Type[] __GetDeclaredInterfaces()
-		{
-			throw new NotImplementedException();
-		}
+        protected override bool IsValueTypeImpl
+        {
+            get { return (this.GenericParameterAttributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0; }
+        }
 
-		public override TypeAttributes Attributes
-		{
-			get { return TypeAttributes.Public; }
-		}
+        public override Type BaseType
+        {
+            get { return baseType; }
+        }
 
-		public override string Namespace
-		{
-			get { return DeclaringType.Namespace; }
-		}
+        public override Type[] __GetDeclaredInterfaces()
+        {
+            throw new NotImplementedException();
+        }
 
-		public override string Name
-		{
-			get { return name; }
-		}
+        public override TypeAttributes Attributes
+        {
+            get { return TypeAttributes.Public; }
+        }
 
-		public override string FullName
-		{
-			get { return null; }
-		}
+        public override string Namespace
+        {
+            get { return DeclaringType.Namespace; }
+        }
 
-		public override string ToString()
-		{
-			return this.Name;
-		}
+        public override string Name
+        {
+            get { return name; }
+        }
 
-		private ModuleBuilder ModuleBuilder
-		{
-			get { return type != null ? type.ModuleBuilder : method.ModuleBuilder; }
-		}
+        public override string FullName
+        {
+            get { return null; }
+        }
 
-		public override Module Module
-		{
-			get { return ModuleBuilder; }
-		}
+        public override string ToString()
+        {
+            return this.Name;
+        }
 
-		public override int GenericParameterPosition
-		{
-			get { return position; }
-		}
+        private ModuleBuilder ModuleBuilder
+        {
+            get { return type != null ? type.ModuleBuilder : method.ModuleBuilder; }
+        }
 
-		public override Type DeclaringType
-		{
-			get { return type; }
-		}
+        public override Module Module
+        {
+            get { return ModuleBuilder; }
+        }
 
-		public override MethodBase DeclaringMethod
-		{
-			get { return method; }
-		}
+        public override int GenericParameterPosition
+        {
+            get { return position; }
+        }
 
-		public override Type[] GetGenericParameterConstraints()
-		{
-			throw new NotImplementedException();
-		}
+        public override Type DeclaringType
+        {
+            get { return type; }
+        }
 
-		public override CustomModifiers[] __GetGenericParameterConstraintCustomModifiers()
-		{
-			throw new NotImplementedException();
-		}
+        public override MethodBase DeclaringMethod
+        {
+            get { return method; }
+        }
 
-		public override GenericParameterAttributes GenericParameterAttributes
-		{
-			get
-			{
-				CheckBaked();
-				return attr;
-			}
-		}
+        public override Type[] GetGenericParameterConstraints()
+        {
+            throw new NotImplementedException();
+        }
 
-		internal override void CheckBaked()
-		{
-			if (type != null)
-			{
-				type.CheckBaked();
-			}
-			else
-			{
-				method.CheckBaked();
-			}
-		}
+        public override CustomModifiers[] __GetGenericParameterConstraintCustomModifiers()
+        {
+            throw new NotImplementedException();
+        }
 
-		private void AddConstraint(Type type)
-		{
-			GenericParamConstraintTable.Record rec = new GenericParamConstraintTable.Record();
-			rec.Owner = paramPseudoIndex;
-			rec.Constraint = this.ModuleBuilder.GetTypeTokenForMemberRef(type);
-			this.ModuleBuilder.GenericParamConstraint.AddRecord(rec);
-		}
+        public override GenericParameterAttributes GenericParameterAttributes
+        {
+            get
+            {
+                CheckBaked();
+                return attr;
+            }
+        }
 
-		public void SetBaseTypeConstraint(Type baseTypeConstraint)
-		{
-			this.baseType = baseTypeConstraint;
-			AddConstraint(baseTypeConstraint);
-		}
+        internal override void CheckBaked()
+        {
+            if (type != null)
+            {
+                type.CheckBaked();
+            }
+            else
+            {
+                method.CheckBaked();
+            }
+        }
 
-		public void SetInterfaceConstraints(params Type[] interfaceConstraints)
-		{
-			foreach (Type type in interfaceConstraints)
-			{
-				AddConstraint(type);
-			}
-		}
+        private void AddConstraint(Type type)
+        {
+            GenericParamConstraintTable.Record rec = new GenericParamConstraintTable.Record();
+            rec.Owner = paramPseudoIndex;
+            rec.Constraint = this.ModuleBuilder.GetTypeTokenForMemberRef(type);
+            this.ModuleBuilder.GenericParamConstraint.AddRecord(rec);
+        }
 
-		public void SetGenericParameterAttributes(GenericParameterAttributes genericParameterAttributes)
-		{
-			this.attr = genericParameterAttributes;
-			// for now we'll back patch the table
-			this.ModuleBuilder.GenericParam.PatchAttribute(paramPseudoIndex, genericParameterAttributes);
-		}
+        public void SetBaseTypeConstraint(Type baseTypeConstraint)
+        {
+            this.baseType = baseTypeConstraint;
+            AddConstraint(baseTypeConstraint);
+        }
 
-		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
-		{
-			this.ModuleBuilder.SetCustomAttribute((GenericParamTable.Index << 24) | paramPseudoIndex, customBuilder);
-		}
+        public void SetInterfaceConstraints(params Type[] interfaceConstraints)
+        {
+            foreach (Type type in interfaceConstraints)
+            {
+                AddConstraint(type);
+            }
+        }
 
-		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-		{
-			SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
-		}
+        public void SetGenericParameterAttributes(GenericParameterAttributes genericParameterAttributes)
+        {
+            this.attr = genericParameterAttributes;
+            // for now we'll back patch the table
+            this.ModuleBuilder.GenericParam.PatchAttribute(paramPseudoIndex, genericParameterAttributes);
+        }
 
-		public override int MetadataToken
-		{
-			get
-			{
-				CheckBaked();
-				return (GenericParamTable.Index << 24) | paramPseudoIndex;
-			}
-		}
+        public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
+        {
+            this.ModuleBuilder.SetCustomAttribute((GenericParamTable.Index << 24) | paramPseudoIndex, customBuilder);
+        }
 
-		internal override int GetModuleBuilderToken()
-		{
-			if (typeToken == 0)
-			{
-				ByteBuffer spec = new ByteBuffer(5);
-				Signature.WriteTypeSpec(this.ModuleBuilder, spec, this);
-				typeToken = 0x1B000000 | this.ModuleBuilder.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec));
-			}
-			return typeToken;
-		}
+        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
+        {
+            SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
+        }
 
-		internal override Type BindTypeParameters(IGenericBinder binder)
-		{
-			if (type != null)
-			{
-				return binder.BindTypeParameter(this);
-			}
-			else
-			{
-				return binder.BindMethodParameter(this);
-			}
-		}
+        public override int MetadataToken
+        {
+            get
+            {
+                CheckBaked();
+                return (GenericParamTable.Index << 24) | paramPseudoIndex;
+            }
+        }
 
-		internal override int GetCurrentToken()
-		{
-			if (this.ModuleBuilder.IsSaved)
-			{
-				return (GenericParamTable.Index << 24) | this.Module.GenericParam.GetIndexFixup()[paramPseudoIndex - 1] + 1;
-			}
-			else
-			{
-				return (GenericParamTable.Index << 24) | paramPseudoIndex;
-			}
-		}
+        internal override int GetModuleBuilderToken()
+        {
+            if (typeToken == 0)
+            {
+                ByteBuffer spec = new ByteBuffer(5);
+                Signature.WriteTypeSpec(this.ModuleBuilder, spec, this);
+                typeToken = 0x1B000000 | this.ModuleBuilder.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec));
+            }
+            return typeToken;
+        }
 
-		internal override bool IsBaked
-		{
-			get { return ((MemberInfo)type ?? method).IsBaked; }
-		}
+        internal override Type BindTypeParameters(IGenericBinder binder)
+        {
+            if (type != null)
+            {
+                return binder.BindTypeParameter(this);
+            }
+            else
+            {
+                return binder.BindMethodParameter(this);
+            }
+        }
 
-	}
+        internal override int GetCurrentToken()
+        {
+            if (this.ModuleBuilder.IsSaved)
+            {
+                return (GenericParamTable.Index << 24) | this.Module.GenericParam.GetIndexFixup()[paramPseudoIndex - 1] + 1;
+            }
+            else
+            {
+                return (GenericParamTable.Index << 24) | paramPseudoIndex;
+            }
+        }
+
+        internal override bool IsBaked
+        {
+            get { return ((MemberInfo)type ?? method).IsBaked; }
+        }
+
+    }
 
 }

@@ -36,55 +36,71 @@ namespace IKVM.Reflection.Emit
     public sealed class AssemblyBuilder : Assembly
     {
 
-        private readonly string name;
-        private ushort majorVersion;
-        private ushort minorVersion;
-        private ushort buildVersion;
-        private ushort revisionVersion;
-        private string culture;
-        private AssemblyNameFlags flags;
-        private AssemblyHashAlgorithm hashAlgorithm;
-        private StrongNameKeyPair keyPair;
-        private byte[] publicKey;
+        readonly string name;
+        ushort majorVersion;
+        ushort minorVersion;
+        ushort buildVersion;
+        ushort revisionVersion;
+        string culture;
+        AssemblyNameFlags flags;
+        AssemblyHashAlgorithm hashAlgorithm;
+        StrongNameKeyPair keyPair;
+        byte[] publicKey;
         internal readonly string dir;
-        private PEFileKinds fileKind = PEFileKinds.Dll;
-        private MethodInfo entryPoint;
-        private VersionInfo versionInfo;
-        private byte[] win32icon;
-        private byte[] win32manifest;
-        private byte[] win32resources;
-        private string imageRuntimeVersion;
+        PEFileKinds fileKind = PEFileKinds.Dll;
+        MethodInfo entryPoint;
+        VersionInfo versionInfo;
+        byte[] win32icon;
+        byte[] win32manifest;
+        byte[] win32resources;
+        string imageRuntimeVersion;
         internal int mdStreamVersion = 0x20000;
-        private Module pseudoManifestModule;
-        private readonly List<ResourceFile> resourceFiles = new List<ResourceFile>();
-        private readonly List<ModuleBuilder> modules = new List<ModuleBuilder>();
-        private readonly List<Module> addedModules = new List<Module>();
-        private readonly List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
-        private readonly List<CustomAttributeBuilder> declarativeSecurity = new List<CustomAttributeBuilder>();
-        private readonly List<TypeForwarder> typeForwarders = new List<TypeForwarder>();
+        Module pseudoManifestModule;
+        readonly List<ResourceFile> resourceFiles = new List<ResourceFile>();
+        readonly List<ModuleBuilder> modules = new List<ModuleBuilder>();
+        readonly List<Module> addedModules = new List<Module>();
+        readonly List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
+        readonly List<CustomAttributeBuilder> declarativeSecurity = new List<CustomAttributeBuilder>();
+        readonly List<TypeForwarder> typeForwarders = new List<TypeForwarder>();
 
-        struct TypeForwarder
+        readonly struct TypeForwarder
         {
+
             internal readonly Type Type;
             internal readonly bool IncludeNested;
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="type"></param>
+            /// <param name="includeNested"></param>
             internal TypeForwarder(Type type, bool includeNested)
             {
                 this.Type = type;
                 this.IncludeNested = includeNested;
             }
+
         }
 
-        private struct ResourceFile
+        struct ResourceFile
         {
+
             internal string Name;
             internal string FileName;
             internal ResourceAttributes Attributes;
             internal ResourceWriter Writer;
+
         }
 
-        internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, IEnumerable<CustomAttributeBuilder> customAttributes)
-            : base(universe)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="universe"></param>
+        /// <param name="name"></param>
+        /// <param name="dir"></param>
+        /// <param name="customAttributes"></param>
+        internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, IEnumerable<CustomAttributeBuilder> customAttributes) :
+            base(universe)
         {
             this.name = name.Name;
             SetVersionHelper(name.Version);
@@ -127,7 +143,7 @@ namespace IKVM.Reflection.Emit
             universe.RegisterDynamicAssembly(this);
         }
 
-        private void SetVersionHelper(Version version)
+        void SetVersionHelper(Version version)
         {
             if (version == null)
             {
@@ -145,7 +161,7 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        private void Rename(AssemblyName oldName)
+        void Rename(AssemblyName oldName)
         {
             this.fullName = null;
             universe.RenameAssembly(this, oldName);
@@ -297,13 +313,10 @@ namespace IKVM.Reflection.Emit
         public void __Save(Stream stream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
             if (!stream.CanRead || !stream.CanWrite || !stream.CanSeek || stream.Position != 0)
-            {
                 throw new ArgumentException("Stream must support read/write/seek and current position must be zero.", "stream");
-            }
             if (modules.Count != 1)
-            {
                 throw new NotSupportedException("Saving to a stream is only supported for single module assemblies.");
-            }
+
             SaveImpl(modules[0].fileName, stream, portableExecutableKind, imageFileMachine);
         }
 
@@ -317,11 +330,11 @@ namespace IKVM.Reflection.Emit
             SaveImpl(assemblyFileName, null, portableExecutableKind, imageFileMachine);
         }
 
-        private void SaveImpl(string assemblyFileName, Stream streamOrNull, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+        void SaveImpl(string assemblyFileName, Stream streamOrNull, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
             ModuleBuilder manifestModule = null;
 
-            foreach (ModuleBuilder moduleBuilder in modules)
+            foreach (var moduleBuilder in modules)
             {
                 moduleBuilder.SetIsSaved();
                 moduleBuilder.PopulatePropertyAndEventTables();
@@ -450,7 +463,7 @@ namespace IKVM.Reflection.Emit
             ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, unmanagedResources ?? manifestModule.unmanagedResources, entryPointToken, streamOrNull);
         }
 
-        private int AddFile(ModuleBuilder manifestModule, string fileName, int flags)
+        int AddFile(ModuleBuilder manifestModule, string fileName, int flags)
         {
             string fullPath = fileName;
             if (dir != null)

@@ -23,12 +23,17 @@
 */
 namespace IKVM.Reflection.Emit
 {
-    public struct Label
+
+    public readonly struct Label
     {
 
         // 1-based here, to make sure that an uninitialized Label isn't valid
-        private readonly int index1;
+        readonly int index1;
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="index"></param>
         internal Label(int index)
         {
             this.index1 = index + 1;

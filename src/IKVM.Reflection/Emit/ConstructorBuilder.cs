@@ -28,118 +28,122 @@ namespace IKVM.Reflection.Emit
 {
 
     public sealed class ConstructorBuilder : ConstructorInfo
-	{
+    {
 
-		private readonly MethodBuilder methodBuilder;
+        readonly MethodBuilder methodBuilder;
 
-		internal ConstructorBuilder(MethodBuilder mb)
-		{
-			this.methodBuilder = mb;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="mb"></param>
+        internal ConstructorBuilder(MethodBuilder mb)
+        {
+            this.methodBuilder = mb;
+        }
 
-		public override bool Equals(object obj)
-		{
-			ConstructorBuilder other = obj as ConstructorBuilder;
-			return other != null && other.methodBuilder.Equals(methodBuilder);
-		}
+        public override bool Equals(object obj)
+        {
+            ConstructorBuilder other = obj as ConstructorBuilder;
+            return other != null && other.methodBuilder.Equals(methodBuilder);
+        }
 
-		public override int GetHashCode()
-		{
-			return methodBuilder.GetHashCode();
-		}
+        public override int GetHashCode()
+        {
+            return methodBuilder.GetHashCode();
+        }
 
-		public void __SetSignature(Type returnType, CustomModifiers returnTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
-		{
-			methodBuilder.__SetSignature(returnType, returnTypeCustomModifiers, parameterTypes, parameterTypeCustomModifiers);
-		}
+        public void __SetSignature(Type returnType, CustomModifiers returnTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
+        {
+            methodBuilder.__SetSignature(returnType, returnTypeCustomModifiers, parameterTypes, parameterTypeCustomModifiers);
+        }
 
-		[Obsolete("Please use __SetSignature(Type, CustomModifiers, Type[], CustomModifiers[]) instead.")]
-		public void __SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
-		{
-			methodBuilder.SetSignature(returnType, returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers, parameterTypes, parameterTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers);
-		}
+        [Obsolete("Please use __SetSignature(Type, CustomModifiers, Type[], CustomModifiers[]) instead.")]
+        public void __SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
+        {
+            methodBuilder.SetSignature(returnType, returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers, parameterTypes, parameterTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers);
+        }
 
-		public ParameterBuilder DefineParameter(int position, ParameterAttributes attributes, string strParamName)
-		{
-			return methodBuilder.DefineParameter(position, attributes, strParamName);
-		}
+        public ParameterBuilder DefineParameter(int position, ParameterAttributes attributes, string strParamName)
+        {
+            return methodBuilder.DefineParameter(position, attributes, strParamName);
+        }
 
-		public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
-		{
-			methodBuilder.SetCustomAttribute(customBuilder);
-		}
+        public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
+        {
+            methodBuilder.SetCustomAttribute(customBuilder);
+        }
 
-		public void SetCustomAttribute(ConstructorInfo con,	byte[] binaryAttribute)
-		{
-			methodBuilder.SetCustomAttribute(con, binaryAttribute);
-		}
+        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
+        {
+            methodBuilder.SetCustomAttribute(con, binaryAttribute);
+        }
 
-		public void __AddDeclarativeSecurity(CustomAttributeBuilder customBuilder)
-		{
-			methodBuilder.__AddDeclarativeSecurity(customBuilder);
-		}
+        public void __AddDeclarativeSecurity(CustomAttributeBuilder customBuilder)
+        {
+            methodBuilder.__AddDeclarativeSecurity(customBuilder);
+        }
 
-		public void AddDeclarativeSecurity(System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
-		{
-			methodBuilder.AddDeclarativeSecurity(securityAction, permissionSet);
-		}
+        public void AddDeclarativeSecurity(System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
+        {
+            methodBuilder.AddDeclarativeSecurity(securityAction, permissionSet);
+        }
 
-		public void SetImplementationFlags(MethodImplAttributes attributes)
-		{
-			methodBuilder.SetImplementationFlags(attributes);
-		}
+        public void SetImplementationFlags(MethodImplAttributes attributes)
+        {
+            methodBuilder.SetImplementationFlags(attributes);
+        }
 
-		public ILGenerator GetILGenerator()
-		{
-			return methodBuilder.GetILGenerator();
-		}
+        public ILGenerator GetILGenerator()
+        {
+            return methodBuilder.GetILGenerator();
+        }
 
-		public ILGenerator GetILGenerator(int streamSize)
-		{
-			return methodBuilder.GetILGenerator(streamSize);
-		}
+        public ILGenerator GetILGenerator(int streamSize)
+        {
+            return methodBuilder.GetILGenerator(streamSize);
+        }
 
-		public void __ReleaseILGenerator()
-		{
-			methodBuilder.__ReleaseILGenerator();
-		}
+        public void __ReleaseILGenerator()
+        {
+            methodBuilder.__ReleaseILGenerator();
+        }
 
-		public Type ReturnType
-		{
-			get { return methodBuilder.ReturnType; }
-		}
+        public Type ReturnType
+        {
+            get { return methodBuilder.ReturnType; }
+        }
 
-		public Module GetModule()
-		{
-			return methodBuilder.GetModule();
-		}
+        public Module GetModule()
+        {
+            return methodBuilder.GetModule();
+        }
 
-		public MethodToken GetToken()
-		{
-			return methodBuilder.GetToken();
-		}
+        public MethodToken GetToken()
+        {
+            return methodBuilder.GetToken();
+        }
 
-		public bool InitLocals
-		{
-			get { return methodBuilder.InitLocals; }
-			set { methodBuilder.InitLocals = value; }
-		}
+        public bool InitLocals
+        {
+            get { return methodBuilder.InitLocals; }
+            set { methodBuilder.InitLocals = value; }
+        }
 
-		public void SetMethodBody(byte[] il, int maxStack, byte[] localSignature, IEnumerable<ExceptionHandler> exceptionHandlers, IEnumerable<int> tokenFixups)
-		{
-			methodBuilder.SetMethodBody(il, maxStack, localSignature, exceptionHandlers, tokenFixups);
-		}
+        public void SetMethodBody(byte[] il, int maxStack, byte[] localSignature, IEnumerable<ExceptionHandler> exceptionHandlers, IEnumerable<int> tokenFixups)
+        {
+            methodBuilder.SetMethodBody(il, maxStack, localSignature, exceptionHandlers, tokenFixups);
+        }
 
-		internal override MethodInfo GetMethodInfo()
-		{
-			return methodBuilder;
-		}
+        internal override MethodInfo GetMethodInfo()
+        {
+            return methodBuilder;
+        }
 
-		internal override MethodInfo GetMethodOnTypeDefinition()
-		{
-			return methodBuilder;
-		}
+        internal override MethodInfo GetMethodOnTypeDefinition()
+        {
+            return methodBuilder;
+        }
 
-	}
+    }
 
 }

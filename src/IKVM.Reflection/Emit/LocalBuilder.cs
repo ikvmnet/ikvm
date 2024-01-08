@@ -31,14 +31,29 @@ namespace IKVM.Reflection.Emit
         internal int startOffset;
         internal int endOffset;
 
-        internal LocalBuilder(Type localType, int index, bool pinned)
-            : base(index, localType, pinned)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="localType"></param>
+        /// <param name="index"></param>
+        /// <param name="pinned"></param>
+        internal LocalBuilder(Type localType, int index, bool pinned) :
+            base(index, localType, pinned)
         {
+
         }
 
-        internal LocalBuilder(Type localType, int index, bool pinned, CustomModifiers customModifiers)
-            : base(index, localType, pinned, customModifiers)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="localType"></param>
+        /// <param name="index"></param>
+        /// <param name="pinned"></param>
+        /// <param name="customModifiers"></param>
+        internal LocalBuilder(Type localType, int index, bool pinned, CustomModifiers customModifiers) :
+            base(index, localType, pinned, customModifiers)
         {
+
         }
 
         public void SetLocalSymInfo(string name)

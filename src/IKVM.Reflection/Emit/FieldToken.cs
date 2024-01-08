@@ -24,44 +24,12 @@
 
 namespace IKVM.Reflection.Emit
 {
-    public struct FieldToken
-	{
-		public static readonly FieldToken Empty;
-		private readonly int token;
 
-		internal FieldToken(int token)
-		{
-			this.token = token;
-		}
+    public readonly record struct FieldToken(int Token)
+    {
 
-		public int Token
-		{
-			get { return token; }
-		}
+        public static readonly FieldToken Empty;
 
-		public override bool Equals(object obj)
-		{
-			return obj as FieldToken? == this;
-		}
+    }
 
-		public override int GetHashCode()
-		{
-			return token;
-		}
-
-		public bool Equals(FieldToken other)
-		{
-			return this == other;
-		}
-
-		public static bool operator ==(FieldToken ft1, FieldToken ft2)
-		{
-			return ft1.token == ft2.token;
-		}
-
-		public static bool operator !=(FieldToken ft1, FieldToken ft2)
-		{
-			return ft1.token != ft2.token;
-		}
-	}
 }
