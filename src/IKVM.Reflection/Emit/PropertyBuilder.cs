@@ -23,14 +23,15 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using IKVM.Reflection.Writer;
+
 using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Emit
 {
-	public sealed class PropertyBuilder : PropertyInfo
+
+    public sealed class PropertyBuilder : PropertyInfo
 	{
+
 		private readonly TypeBuilder typeBuilder;
 		private readonly string name;
 		private PropertyAttributes attributes;
@@ -284,4 +285,5 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 	}
+
 }

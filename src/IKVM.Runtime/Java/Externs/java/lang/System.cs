@@ -20,9 +20,9 @@ namespace IKVM.Java.Externs.java.lang
         static SystemAccessor systemAccessor;
         static PropertiesAccessor propertiesAccessor;
 
-        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+        static SystemAccessor SystemAccessor => JVM.Internal.BaseAccessors.Get(ref systemAccessor);
 
-        static PropertiesAccessor PropertiesAccessor => JVM.BaseAccessors.Get(ref propertiesAccessor);
+        static PropertiesAccessor PropertiesAccessor => JVM.Internal.BaseAccessors.Get(ref propertiesAccessor);
 
 #endif
 

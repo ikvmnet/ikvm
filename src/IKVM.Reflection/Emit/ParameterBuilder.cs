@@ -21,14 +21,14 @@
   jeroen@frijters.net
   
 */
-using System;
 using IKVM.Reflection.Writer;
-using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Emit
 {
-	public sealed class ParameterBuilder
+
+    public sealed class ParameterBuilder
 	{
+
 		private readonly ModuleBuilder moduleBuilder;
 		private short flags;
 		private readonly short sequence;
@@ -138,4 +138,5 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 	}
+
 }

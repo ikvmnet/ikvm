@@ -779,7 +779,7 @@ namespace IKVM.Tools.Importer
                     if (stubs.Count != 0)
                     {
                         // generate the --ikvm-classes-- file in the jar
-                        ZipArchiveEntry zipEntry = zip.CreateEntry(JVM.JarClassList);
+                        ZipArchiveEntry zipEntry = zip.CreateEntry(JVM.Internal.JarClassList);
 
                         using Stream stream = zipEntry.Open();
                         using BinaryWriter bw = new BinaryWriter(stream);

@@ -24,13 +24,15 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using IKVM.Reflection;
+
 using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
-	public abstract class SignatureHelper
+
+    public abstract class SignatureHelper
 	{
+
 		protected readonly byte type;
 		protected ushort paramCount;
 
@@ -314,4 +316,5 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 	}
+
 }
