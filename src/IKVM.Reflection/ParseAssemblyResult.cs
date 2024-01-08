@@ -25,10 +25,13 @@
 
 namespace IKVM.Reflection
 {
+
     enum ParseAssemblyResult
     {
+
         OK,
         GenericError,
         DuplicateKey,
     }
+
 }

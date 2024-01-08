@@ -23,14 +23,14 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Configuration.Assemblies;
 using System.IO;
+
 using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
 
-	sealed class AssemblyReader : Assembly
+    sealed class AssemblyReader : Assembly
 	{
 
 		private const int ContainsNoMetaData = 0x0001;
@@ -67,7 +67,7 @@ namespace IKVM.Reflection.Reader
 			}
 			else
 			{
-				name.SetPublicKey(Empty<byte>.Array);
+				name.SetPublicKey(Array.Empty<byte>());
 			}
 			if (rec.Culture != 0)
 			{
@@ -332,4 +332,5 @@ namespace IKVM.Reflection.Reader
 			return CustomAttributeData.GetCustomAttributesImpl(null, manifestModule, 0x20000001, attributeType) ?? CustomAttributeData.EmptyList;
 		}
 	}
+
 }

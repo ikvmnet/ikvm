@@ -21,14 +21,12 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace IKVM.Reflection
 {
-	public struct CustomAttributeNamedArgument
+
+    public struct CustomAttributeNamedArgument
 	{
+
 		private readonly MemberInfo member;
 		private readonly CustomAttributeTypedArgument value;
 

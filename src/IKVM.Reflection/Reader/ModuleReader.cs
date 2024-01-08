@@ -22,38 +22,18 @@
   
 */
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Collections.Generic;
+
 using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
-	sealed class StreamHeader
-	{
-		internal uint Offset;
-		internal uint Size;
-		internal string Name;
 
-		internal void Read(BinaryReader br)
-		{
-			Offset = br.ReadUInt32();
-			Size = br.ReadUInt32();
-			byte[] buf = new byte[32];
-			byte b;
-			int len = 0;
-			while ((b = br.ReadByte()) != 0)
-			{
-				buf[len++] = b;
-			}
-			Name = Encoding.UTF8.GetString(buf, 0, len); ;
-			int padding = -1 + ((len + 4) & ~3) - len;
-			br.BaseStream.Seek(padding, SeekOrigin.Current);
-		}
-	}
-
-	sealed class ModuleReader : Module
+    sealed class ModuleReader : Module
 	{
+
 		private readonly Stream stream;
 		private readonly string location;
 		private Assembly assembly;
@@ -551,7 +531,7 @@ namespace IKVM.Reflection.Reader
 				rec.BuildNumber,
 				rec.RevisionNumber,
 				rec.Culture == 0 ? "neutral" : GetString(rec.Culture),
-				rec.PublicKeyOrToken == 0 ? Empty<byte>.Array : (rec.Flags & PublicKey) == 0 ? GetBlobCopy(rec.PublicKeyOrToken) : AssemblyName.ComputePublicKeyToken(GetBlobCopy(rec.PublicKeyOrToken)),
+				rec.PublicKeyOrToken == 0 ? Array.Empty<byte>() : (rec.Flags & PublicKey) == 0 ? GetBlobCopy(rec.PublicKeyOrToken) : AssemblyName.ComputePublicKeyToken(GetBlobCopy(rec.PublicKeyOrToken)),
 				rec.Flags);
 			return universe.Load(name, this, true);
 		}
@@ -764,7 +744,7 @@ namespace IKVM.Reflection.Reader
 				// for convenience, we support passing a MethodDef token as well, because in some places
 				// it makes sense to have a vararg method that is referred to by its methoddef (e.g. ldftn).
 				// Note that MethodSpec doesn't make sense, because generic methods cannot be vararg.
-				customModifiers = Empty<CustomModifiers>.Array;
+				customModifiers = Array.Empty<CustomModifiers>();
 				return Type.EmptyTypes;
 			}
 			else
@@ -1058,7 +1038,7 @@ namespace IKVM.Reflection.Reader
 				}
 				else
 				{
-					name.SetPublicKeyToken(Empty<byte>.Array);
+					name.SetPublicKeyToken(Array.Empty<byte>());
 				}
 				if (AssemblyRef.records[i].Culture != 0)
 				{
@@ -1311,4 +1291,5 @@ namespace IKVM.Reflection.Reader
 		}
 #endif // !NO_AUTHENTICODE
 	}
+
 }

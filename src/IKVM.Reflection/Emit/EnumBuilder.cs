@@ -21,13 +21,9 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace IKVM.Reflection.Emit
 {
-	public sealed class EnumBuilder : TypeInfo
+    public sealed class EnumBuilder : TypeInfo
 	{
 		private readonly TypeBuilder typeBuilder;
 		private readonly FieldBuilder fieldBuilder;

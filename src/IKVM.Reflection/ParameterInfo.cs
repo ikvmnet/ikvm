@@ -25,8 +25,10 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection
 {
-	public abstract class ParameterInfo : ICustomAttributeProvider
+
+    public abstract class ParameterInfo : ICustomAttributeProvider
 	{
+
 		// prevent external subclasses
 		internal ParameterInfo()
 		{

@@ -23,99 +23,16 @@
 */
 using System;
 using System.Collections.Generic;
+
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
-	public sealed class RawModule : IDisposable
+
+    public abstract class Module : ICustomAttributeProvider
 	{
-		private readonly ModuleReader module;
-		private readonly bool isManifestModule;
-		private bool imported;
 
-		internal RawModule(ModuleReader module)
-		{
-			this.module = module;
-			this.isManifestModule = module.Assembly != null;
-		}
-
-		public string Location
-		{
-			get { return module.FullyQualifiedName; }
-		}
-
-		public bool IsManifestModule
-		{
-			get { return isManifestModule; }
-		}
-
-		public Guid ModuleVersionId
-		{
-			get { return module.ModuleVersionId; }
-		}
-
-		public string ImageRuntimeVersion
-		{
-			get { return module.__ImageRuntimeVersion; }
-		}
-
-		public int MDStreamVersion
-		{
-			get { return module.MDStreamVersion; }
-		}
-
-		private void CheckManifestModule()
-		{
-			if (!IsManifestModule)
-			{
-				throw new BadImageFormatException("Module does not contain a manifest");
-			}
-		}
-
-		public AssemblyName GetAssemblyName()
-		{
-			CheckManifestModule();
-			return module.Assembly.GetName();
-		}
-
-		public AssemblyName[] GetReferencedAssemblies()
-		{
-			return module.__GetReferencedAssemblies();
-		}
-
-		public void Dispose()
-		{
-			if (!imported)
-			{
-				module.Dispose();
-			}
-		}
-
-		internal AssemblyReader ToAssembly()
-		{
-			if (imported)
-			{
-				throw new InvalidOperationException();
-			}
-			imported = true;
-			return (AssemblyReader)module.Assembly;
-		}
-
-		internal Module ToModule(Assembly assembly)
-		{
-			if (module.Assembly != null)
-			{
-				throw new InvalidOperationException();
-			}
-			imported = true;
-			module.SetAssembly(assembly);
-			return module;
-		}
-	}
-
-	public abstract class Module : ICustomAttributeProvider
-	{
 		internal readonly Universe universe;
 		internal readonly ModuleTable ModuleTable = new ModuleTable();
 		internal readonly TypeRefTable TypeRef = new TypeRefTable();
@@ -263,7 +180,7 @@ namespace IKVM.Reflection
 
 		public FieldInfo[] GetFields(BindingFlags bindingFlags)
 		{
-			return IsResource() ? Empty<FieldInfo>.Array : GetModuleType().GetFields(bindingFlags | BindingFlags.DeclaredOnly);
+			return IsResource() ? Array.Empty<FieldInfo>() : GetModuleType().GetFields(bindingFlags | BindingFlags.DeclaredOnly);
 		}
 
 		public MethodInfo GetMethod(string name)
@@ -288,7 +205,7 @@ namespace IKVM.Reflection
 
 		public MethodInfo[] GetMethods(BindingFlags bindingFlags)
 		{
-			return IsResource() ? Empty<MethodInfo>.Array : GetModuleType().GetMethods(bindingFlags | BindingFlags.DeclaredOnly);
+			return IsResource() ? Array.Empty<MethodInfo>() : GetModuleType().GetMethods(bindingFlags | BindingFlags.DeclaredOnly);
 		}
 
 		public ConstructorInfo __ModuleInitializer
@@ -483,7 +400,7 @@ namespace IKVM.Reflection
 
 		public virtual IList<CustomAttributeData> __GetPlaceholderAssemblyCustomAttributes(bool multiple, bool security)
 		{
-			return Empty<CustomAttributeData>.Array;
+			return Array.Empty<CustomAttributeData>();
 		}
 
 		public abstract AssemblyName[] __GetReferencedAssemblies();

@@ -25,6 +25,7 @@ using System;
 
 namespace IKVM.Reflection
 {
+
     // this respresents a type name as in metadata:
     // - ns will be null for empty the namespace (never the empty string)
     // - the strings are not escaped
@@ -116,6 +117,7 @@ namespace IKVM.Reflection
 				return new TypeName(name.Substring(0, dot), name.Substring(dot + 1));
 			}
 		}
+
 	}
 
 }

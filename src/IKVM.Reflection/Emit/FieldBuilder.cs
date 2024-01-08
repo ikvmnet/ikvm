@@ -22,14 +22,13 @@
   
 */
 using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
-	public sealed class FieldBuilder : FieldInfo
+    public sealed class FieldBuilder : FieldInfo
 	{
 		private readonly TypeBuilder typeBuilder;
 		private readonly string name;

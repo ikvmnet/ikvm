@@ -23,14 +23,16 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Text;
+
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
-	sealed class WindowsRuntimeProjection
+
+    sealed class WindowsRuntimeProjection
 	{
+
 		private static readonly Dictionary<TypeName, Mapping> projections = new Dictionary<TypeName, Mapping>();
 		private readonly ModuleReader module;
 		private readonly Dictionary<int, string> strings;
@@ -599,4 +601,5 @@ namespace IKVM.Reflection
 				&& module.Assembly.GetName().Name == "System.Runtime";
 		}
 	}
+
 }

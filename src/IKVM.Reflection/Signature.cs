@@ -23,19 +23,20 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Text;
-using CallingConvention = System.Runtime.InteropServices.CallingConvention;
-using IKVM.Reflection.Reader;
+
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Writer;
 using IKVM.Reflection.Metadata;
+using IKVM.Reflection.Reader;
+using IKVM.Reflection.Writer;
+
+using CallingConvention = System.Runtime.InteropServices.CallingConvention;
 
 namespace IKVM.Reflection
 {
-	abstract class Signature
+
+    abstract class Signature
 	{
+
 		internal const byte DEFAULT = 0x00;
 		internal const byte VARARG = 0x05;
 		internal const byte GENERIC = 0x10;
@@ -552,7 +553,7 @@ namespace IKVM.Reflection
 				CustomModifiers.Skip(br);
 				ReadType(module, br, context);
 			}
-			customModifiers = Empty<CustomModifiers>.Array;
+			customModifiers = Array.Empty<CustomModifiers>();
 			return Type.EmptyTypes;
 		}
 
@@ -594,4 +595,5 @@ namespace IKVM.Reflection
 			}
 		}
 	}
+
 }

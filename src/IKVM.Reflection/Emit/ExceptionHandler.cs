@@ -22,11 +22,10 @@
   
 */
 using System;
-using System.Collections.Generic;
 
 namespace IKVM.Reflection.Emit
 {
-	public struct ExceptionHandler : IEquatable<ExceptionHandler>
+    public struct ExceptionHandler : IEquatable<ExceptionHandler>
 	{
 
 		private readonly int tryOffset;

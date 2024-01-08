@@ -27,8 +27,10 @@ using System.Security.Cryptography;
 
 namespace IKVM.Reflection
 {
+
     public sealed class StrongNameKeyPair
     {
+
         private readonly byte[] keyPairArray;
         private readonly string keyPairContainer;
 

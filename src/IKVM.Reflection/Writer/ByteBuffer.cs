@@ -22,14 +22,16 @@
   
 */
 using System;
-using System.Collections.Generic;
 using System.Text;
+
 using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Writer
 {
-	sealed class ByteBuffer
+
+    sealed class ByteBuffer
 	{
+
 		private byte[] buffer;
 		private int pos;
 		private int __length;	// __length is only valid if > pos, otherwise pos is the current length
@@ -348,5 +350,7 @@ namespace IKVM.Reflection.Writer
 		{
 			return IKVM.Reflection.Reader.ByteReader.FromBlob(buffer, offset);
 		}
+
 	}
+
 }

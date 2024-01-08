@@ -1024,4 +1024,5 @@ namespace IKVM.Reflection
             get { return (options & UniverseOptions.DeterministicOutput) != 0; }
         }
     }
+
 }

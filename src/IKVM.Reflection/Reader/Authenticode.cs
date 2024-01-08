@@ -30,9 +30,9 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace IKVM.Reflection.Reader
 {
-	// This code is based on trial-and-error and some inspiration from the Mono.Security library.
-	// It almost certainly has bugs and/or design flaws.
-	static class Authenticode
+    // This code is based on trial-and-error and some inspiration from the Mono.Security library.
+    // It almost certainly has bugs and/or design flaws.
+    static class Authenticode
 	{
 		private const ushort IMAGE_NT_OPTIONAL_HDR32_MAGIC = 0x10b;
 		private const ushort IMAGE_NT_OPTIONAL_HDR64_MAGIC = 0x20b;

@@ -21,18 +21,14 @@
   jeroen@frijters.net
   
 */
-using System;
 using System.IO;
-using BYTE = System.Byte;
-using WORD = System.UInt16;
-using DWORD = System.UInt32;
-using ULONGLONG = System.UInt64;
-using IMAGE_DATA_DIRECTORY = IKVM.Reflection.Reader.IMAGE_DATA_DIRECTORY;
 
 namespace IKVM.Reflection.Writer
 {
-	sealed class PEWriter
+
+    sealed class PEWriter
 	{
+
 		private readonly BinaryWriter bw;
 		private readonly IMAGE_NT_HEADERS hdr = new IMAGE_NT_HEADERS();
 
@@ -135,154 +131,7 @@ namespace IKVM.Reflection.Writer
 			// On ARM we need to set the least significant bit of the program counter to select the Thumb instruction set
 			get { return Headers.FileHeader.Machine == IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM ? 1u : 0u; }
 		}
+
 	}
 
-	sealed class IMAGE_NT_HEADERS
-	{
-		public DWORD Signature = 0x00004550;	// "PE\0\0"
-		public IMAGE_FILE_HEADER FileHeader = new IMAGE_FILE_HEADER();
-		public IMAGE_OPTIONAL_HEADER OptionalHeader = new IMAGE_OPTIONAL_HEADER();
-	}
-
-	sealed class IMAGE_FILE_HEADER
-	{
-		public const WORD IMAGE_FILE_MACHINE_I386 = 0x014c;
-		public const WORD IMAGE_FILE_MACHINE_ARM = 0x01c4;
-		public const WORD IMAGE_FILE_MACHINE_IA64 = 0x0200;
-		public const WORD IMAGE_FILE_MACHINE_AMD64 = 0x8664;
-		public const WORD IMAGE_FILE_MACHINE_ARM64 = 0xAA64;
-
-        public const WORD IMAGE_FILE_32BIT_MACHINE = 0x0100;
-		public const WORD IMAGE_FILE_EXECUTABLE_IMAGE = 0x0002;
-		public const WORD IMAGE_FILE_LARGE_ADDRESS_AWARE = 0x0020;
-		public const WORD IMAGE_FILE_DLL = 0x2000;
-
-		public WORD Machine;
-		public WORD NumberOfSections;
-		public DWORD TimeDateStamp;
-		public DWORD PointerToSymbolTable = 0;
-		public DWORD NumberOfSymbols = 0;
-		public WORD SizeOfOptionalHeader = 0xE0;
-		public WORD Characteristics = IMAGE_FILE_EXECUTABLE_IMAGE;
-	}
-
-	sealed class IMAGE_OPTIONAL_HEADER
-	{
-		public const WORD IMAGE_NT_OPTIONAL_HDR32_MAGIC = 0x10b;
-		public const WORD IMAGE_NT_OPTIONAL_HDR64_MAGIC = 0x20b;
-
-		public const WORD IMAGE_SUBSYSTEM_WINDOWS_GUI = 2;
-		public const WORD IMAGE_SUBSYSTEM_WINDOWS_CUI = 3;
-
-		public WORD Magic = IMAGE_NT_OPTIONAL_HDR32_MAGIC;
-		public BYTE MajorLinkerVersion = 8;
-		public BYTE MinorLinkerVersion = 0;
-		public DWORD SizeOfCode;
-		public DWORD SizeOfInitializedData;
-		public DWORD SizeOfUninitializedData;
-		public DWORD AddressOfEntryPoint;
-		public DWORD BaseOfCode;
-		public DWORD BaseOfData;
-		public ULONGLONG ImageBase;
-		public DWORD SectionAlignment = 0x2000;
-		public DWORD FileAlignment;
-		public WORD MajorOperatingSystemVersion = 4;
-		public WORD MinorOperatingSystemVersion = 0;
-		public WORD MajorImageVersion = 0;
-		public WORD MinorImageVersion = 0;
-		public WORD MajorSubsystemVersion = 4;
-		public WORD MinorSubsystemVersion = 0;
-		public DWORD Win32VersionValue = 0;
-		public DWORD SizeOfImage;
-		public DWORD SizeOfHeaders;
-		public DWORD CheckSum = 0;
-		public WORD Subsystem;
-		public WORD DllCharacteristics;
-		public ULONGLONG SizeOfStackReserve;
-		public ULONGLONG SizeOfStackCommit = 0x1000;
-		public ULONGLONG SizeOfHeapReserve = 0x100000;
-		public ULONGLONG SizeOfHeapCommit = 0x1000;
-		public DWORD LoaderFlags = 0;
-		public DWORD NumberOfRvaAndSizes = 16;
-		public IMAGE_DATA_DIRECTORY[] DataDirectory = new IMAGE_DATA_DIRECTORY[16];
-
-		internal void Write(BinaryWriter bw)
-		{
-			bw.Write(Magic);
-			bw.Write(MajorLinkerVersion);
-			bw.Write(MinorLinkerVersion);
-			bw.Write(SizeOfCode);
-			bw.Write(SizeOfInitializedData);
-			bw.Write(SizeOfUninitializedData);
-			bw.Write(AddressOfEntryPoint);
-			bw.Write(BaseOfCode);
-			if (Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC)
-			{
-				bw.Write(BaseOfData);
-				bw.Write((DWORD)ImageBase);
-			}
-			else
-			{
-				bw.Write(ImageBase);
-			}
-			bw.Write(SectionAlignment);
-			bw.Write(FileAlignment);
-			bw.Write(MajorOperatingSystemVersion);
-			bw.Write(MinorOperatingSystemVersion);
-			bw.Write(MajorImageVersion);
-			bw.Write(MinorImageVersion);
-			bw.Write(MajorSubsystemVersion);
-			bw.Write(MinorSubsystemVersion);
-			bw.Write(Win32VersionValue);
-			bw.Write(SizeOfImage);
-			bw.Write(SizeOfHeaders);
-			bw.Write(CheckSum);
-			bw.Write(Subsystem);
-			bw.Write(DllCharacteristics);
-			if (Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC)
-			{
-				bw.Write((DWORD)SizeOfStackReserve);
-				bw.Write((DWORD)SizeOfStackCommit);
-				bw.Write((DWORD)SizeOfHeapReserve);
-				bw.Write((DWORD)SizeOfHeapCommit);
-			}
-			else
-			{
-				bw.Write(SizeOfStackReserve);
-				bw.Write(SizeOfStackCommit);
-				bw.Write(SizeOfHeapReserve);
-				bw.Write(SizeOfHeapCommit);
-			}
-			bw.Write(LoaderFlags);
-			bw.Write(NumberOfRvaAndSizes);
-			for (int i = 0; i < DataDirectory.Length; i++)
-			{
-				bw.Write(DataDirectory[i].VirtualAddress);
-				bw.Write(DataDirectory[i].Size);
-			}
-		}
-	}
-
-	class SectionHeader
-	{
-		public const DWORD IMAGE_SCN_CNT_CODE = 0x00000020;
-		public const DWORD IMAGE_SCN_CNT_INITIALIZED_DATA = 0x00000040;
-		public const DWORD IMAGE_SCN_MEM_DISCARDABLE = 0x02000000;
-		public const DWORD IMAGE_SCN_MEM_EXECUTE = 0x20000000;
-		public const DWORD IMAGE_SCN_MEM_READ = 0x40000000;
-		public const DWORD IMAGE_SCN_MEM_WRITE = 0x80000000;
-
-		public string Name;		// 8 byte UTF8 encoded 0-padded
-		public DWORD VirtualSize;
-		public DWORD VirtualAddress;
-		public DWORD SizeOfRawData;
-		public DWORD PointerToRawData;
-#pragma warning disable 649 // the follow fields are never assigned to
-		public DWORD PointerToRelocations;
-		public DWORD PointerToLinenumbers;
-		public WORD NumberOfRelocations;
-		public WORD NumberOfLinenumbers;
-#pragma warning restore 649
-		public DWORD Characteristics;
-	}
 }

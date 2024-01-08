@@ -21,15 +21,13 @@
   jeroen@frijters.net
   
 */
-using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+
 using IKVM.Reflection.Metadata;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
-	public sealed class EventBuilder : EventInfo
+    public sealed class EventBuilder : EventInfo
 	{
 		private readonly TypeBuilder typeBuilder;
 		private readonly string name;

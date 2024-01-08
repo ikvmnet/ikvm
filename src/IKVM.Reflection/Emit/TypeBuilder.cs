@@ -454,7 +454,7 @@ namespace IKVM.Reflection.Emit
 
 		public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
 		{
-			return gtpb == null ? Empty<CustomModifiers>.Array : new CustomModifiers[gtpb.Length];
+			return gtpb == null ? Array.Empty<CustomModifiers>() : new CustomModifiers[gtpb.Length];
 		}
 
 		internal override Type GetGenericTypeArgument(int index)
@@ -821,17 +821,17 @@ namespace IKVM.Reflection.Emit
 
 		public override FieldInfo[] __GetDeclaredFields()
 		{
-			return Util.ToArray(fields, Empty<FieldInfo>.Array);
+			return Util.ToArray(fields, Array.Empty<FieldInfo>());
 		}
 
 		public override EventInfo[] __GetDeclaredEvents()
 		{
-			return Util.ToArray(events, Empty<EventInfo>.Array);
+			return Util.ToArray(events, Array.Empty<EventInfo>());
 		}
 
 		public override PropertyInfo[] __GetDeclaredProperties()
 		{
-			return Util.ToArray(properties, Empty<PropertyInfo>.Array);
+			return Util.ToArray(properties, Array.Empty<PropertyInfo>());
 		}
 
 		internal override bool IsModulePseudoType

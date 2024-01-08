@@ -23,14 +23,14 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Text;
+
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Writer;
 using IKVM.Reflection.Reader;
+using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
-	internal abstract class Table
+    internal abstract class Table
 	{
 		internal bool Sorted;
 
@@ -388,7 +388,8 @@ namespace IKVM.Reflection.Metadata
 
 	abstract class Table<T> : Table
 	{
-		internal T[] records = Empty<T>.Array;
+
+		internal T[] records = Array.Empty<T>();
 		protected int rowCount;
 
 		internal sealed override int RowCount

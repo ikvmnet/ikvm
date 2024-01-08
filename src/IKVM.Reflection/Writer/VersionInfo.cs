@@ -27,8 +27,10 @@ using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Writer
 {
+
     sealed class VersionInfo
     {
+
         private AssemblyName name;
         private string fileName;
         internal string copyright;
@@ -275,5 +277,7 @@ namespace IKVM.Reflection.Writer
             }
             return value;
         }
+
     }
+
 }

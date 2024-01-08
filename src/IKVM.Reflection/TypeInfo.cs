@@ -21,27 +21,14 @@
   jeroen@frijters.net
   
 */
-using System;
 using System.Collections.Generic;
 
 namespace IKVM.Reflection
 {
-	public interface IReflectableType
-	{
-		TypeInfo GetTypeInfo();
-	}
 
-	public static class IntrospectionExtensions
+    public abstract class TypeInfo : Type, IReflectableType
 	{
-		// we target .NET 2.0 so we can't define an extension method
-		public static TypeInfo GetTypeInfo(/*this*/ Type type)
-		{
-			return type.GetTypeInfo();
-		}
-	}
 
-	public abstract class TypeInfo : Type, IReflectableType
-	{
 		private const BindingFlags Flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
 		internal TypeInfo()
@@ -160,4 +147,5 @@ namespace IKVM.Reflection
 			return base.IsAssignableFrom(typeInfo);
 		}
 	}
+
 }

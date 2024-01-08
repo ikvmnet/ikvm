@@ -224,7 +224,7 @@ namespace IKVM.Reflection.Emit
             n.CultureName = culture ?? "";
             n.HashAlgorithm = hashAlgorithm;
             n.RawFlags = flags;
-            n.SetPublicKey(publicKey != null ? (byte[])publicKey.Clone() : Empty<byte>.Array);
+            n.SetPublicKey(publicKey != null ? (byte[])publicKey.Clone() : Array.Empty<byte>());
             n.KeyPair = keyPair;
             return n;
         }
@@ -649,7 +649,7 @@ namespace IKVM.Reflection.Emit
 
         public override AssemblyName[] GetReferencedAssemblies()
         {
-            return Empty<AssemblyName>.Array;
+            return Array.Empty<AssemblyName>();
         }
 
         public override Module[] GetLoadedModules(bool getResourceModules)

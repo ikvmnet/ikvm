@@ -22,14 +22,13 @@
   
 */
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace IKVM.Reflection
 {
-	// this represents both generic method instantiations and non-generic methods on generic type instantations
-	// (this means that it can be a generic method declaration as well as a generic method instance)
-	sealed class GenericMethodInstance : MethodInfo
+
+    // this represents both generic method instantiations and non-generic methods on generic type instantations
+    // (this means that it can be a generic method declaration as well as a generic method instance)
+    sealed class GenericMethodInstance : MethodInfo
 	{
 		private readonly Type declaringType;
 		private readonly MethodInfo method;

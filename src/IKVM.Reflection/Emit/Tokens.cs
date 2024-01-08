@@ -24,7 +24,7 @@
 
 namespace IKVM.Reflection.Emit
 {
-	public struct EventToken
+    public struct EventToken
 	{
 		public static readonly EventToken Empty;
 		private readonly int token;

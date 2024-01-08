@@ -25,6 +25,7 @@ using System;
 
 namespace IKVM.Reflection
 {
+
     /*
 	 * UniverseOptions:
 	 *
@@ -72,6 +73,7 @@ namespace IKVM.Reflection
     [Flags]
     public enum UniverseOptions
     {
+
         None = 0,
         EnableFunctionPointers = 1,
         DisableFusion = 2,
@@ -84,4 +86,5 @@ namespace IKVM.Reflection
         DeterministicOutput = 256,
         DisableDefaultAssembliesLookup = 512,
     }
+
 }

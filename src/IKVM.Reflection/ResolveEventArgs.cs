@@ -25,6 +25,7 @@ using System;
 
 namespace IKVM.Reflection
 {
+
     public sealed class ResolveEventArgs : EventArgs
     {
 
@@ -51,5 +52,7 @@ namespace IKVM.Reflection
         {
             get { return requestingAssembly; }
         }
+
     }
+
 }

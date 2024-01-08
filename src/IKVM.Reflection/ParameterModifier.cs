@@ -27,8 +27,10 @@ using System.Text;
 
 namespace IKVM.Reflection
 {
+
 	public struct ParameterModifier
 	{
+
 		private readonly bool[] values;
 
 		public ParameterModifier(int parameterCount)
@@ -41,5 +43,7 @@ namespace IKVM.Reflection
 			get { return values[index]; }
 			set { values[index] = value; }
 		}
+
 	}
+
 }

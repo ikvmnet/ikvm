@@ -21,15 +21,14 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
 using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
-	sealed class PropertyInfoImpl : PropertyInfo
+
+    sealed class PropertyInfoImpl : PropertyInfo
 	{
+
 		private readonly ModuleReader module;
 		private readonly Type declaringType;
 		private readonly int index;
@@ -176,4 +175,5 @@ namespace IKVM.Reflection.Reader
 			return this.MetadataToken;
 		}
 	}
+
 }

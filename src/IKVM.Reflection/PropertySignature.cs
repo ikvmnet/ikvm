@@ -21,18 +21,16 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Writer;
 using IKVM.Reflection.Reader;
+using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection
 {
-	sealed class PropertySignature : Signature
+
+    sealed class PropertySignature : Signature
 	{
+
 		private CallingConventions callingConvention;
 		private readonly Type propertyType;
 		private readonly Type[] parameterTypes;

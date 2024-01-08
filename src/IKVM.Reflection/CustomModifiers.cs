@@ -25,13 +25,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
-	public struct CustomModifiers : IEquatable<CustomModifiers>, IEnumerable<CustomModifiers.Entry>
+
+    public struct CustomModifiers : IEquatable<CustomModifiers>, IEnumerable<CustomModifiers.Entry>
 	{
+
 		// note that FromReqOpt assumes that Initial == ModOpt
 		private static Type Initial { get { return MarkerType.ModOpt; } }
 		private readonly Type[] types;
@@ -354,4 +357,5 @@ namespace IKVM.Reflection
 			}
 		}
 	}
+
 }

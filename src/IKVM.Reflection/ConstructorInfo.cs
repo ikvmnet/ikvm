@@ -21,14 +21,14 @@
   jeroen@frijters.net
   
 */
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace IKVM.Reflection
 {
-	public abstract class ConstructorInfo : MethodBase
+
+    public abstract class ConstructorInfo : MethodBase
 	{
+
 		// prevent external subclasses
 		internal ConstructorInfo()
 		{
@@ -165,75 +165,4 @@ namespace IKVM.Reflection
 		}
 	}
 
-	sealed class ConstructorInfoImpl : ConstructorInfo
-	{
-		private readonly MethodInfo method;
-
-		internal ConstructorInfoImpl(MethodInfo method)
-		{
-			this.method = method;
-		}
-
-		public override bool Equals(object obj)
-		{
-			ConstructorInfoImpl other = obj as ConstructorInfoImpl;
-			return other != null && other.method.Equals(method);
-		}
-
-		public override int GetHashCode()
-		{
-			return method.GetHashCode();
-		}
-
-		internal override MethodInfo GetMethodInfo()
-		{
-			return method;
-		}
-
-		internal override MethodInfo GetMethodOnTypeDefinition()
-		{
-			return method.GetMethodOnTypeDefinition();
-		}
-	}
-
-	sealed class ConstructorInfoWithReflectedType : ConstructorInfo
-	{
-		private readonly Type reflectedType;
-		private readonly ConstructorInfo ctor;
-
-		internal ConstructorInfoWithReflectedType(Type reflectedType, ConstructorInfo ctor)
-		{
-			Debug.Assert(reflectedType != ctor.DeclaringType);
-			this.reflectedType = reflectedType;
-			this.ctor = ctor;
-		}
-
-		public override bool Equals(object obj)
-		{
-			ConstructorInfoWithReflectedType other = obj as ConstructorInfoWithReflectedType;
-			return other != null
-				&& other.reflectedType == reflectedType
-				&& other.ctor == ctor;
-		}
-
-		public override int GetHashCode()
-		{
-			return reflectedType.GetHashCode() ^ ctor.GetHashCode();
-		}
-
-		public override Type ReflectedType
-		{
-			get { return reflectedType; }
-		}
-
-		internal override MethodInfo GetMethodInfo()
-		{
-			return ctor.GetMethodInfo();
-		}
-
-		internal override MethodInfo GetMethodOnTypeDefinition()
-		{
-			return ctor.GetMethodOnTypeDefinition();
-		}
-	}
 }

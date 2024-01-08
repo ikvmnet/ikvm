@@ -26,7 +26,7 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection.Emit
 {
-	public sealed class ConstructorBuilder : ConstructorInfo
+    public sealed class ConstructorBuilder : ConstructorInfo
 	{
 		private readonly MethodBuilder methodBuilder;
 

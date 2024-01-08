@@ -22,18 +22,19 @@
   
 */
 using System;
-using System.Diagnostics;
-using System.IO;
 using System.Collections.Generic;
-using System.Text;
+using System.Diagnostics;
+
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Impl;
 using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Writer
 {
+
     sealed class TextSection
     {
+
         private readonly PEWriter peWriter;
         private readonly CliHeader cliHeader;
         private readonly ModuleBuilder moduleBuilder;
@@ -914,5 +915,7 @@ namespace IKVM.Reflection.Writer
             }
             return size;
         }
+
     }
+
 }

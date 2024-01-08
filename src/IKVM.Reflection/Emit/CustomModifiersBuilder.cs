@@ -21,13 +21,11 @@
   jeroen@frijters.net
   
 */
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace IKVM.Reflection.Emit
 {
-	public sealed class CustomModifiersBuilder
+    public sealed class CustomModifiersBuilder
 	{
 		private readonly List<Item> list = new List<Item>();
 

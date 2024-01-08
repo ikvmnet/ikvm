@@ -22,13 +22,13 @@
   
 */
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace IKVM.Reflection
 {
-	public struct CustomAttributeTypedArgument
+
+    public struct CustomAttributeTypedArgument
 	{
+
 		private readonly Type type;
 		private readonly object value;
 
@@ -67,5 +67,7 @@ namespace IKVM.Reflection
 		{
 			return !(arg1 == arg2);
 		}
+
 	}
+
 }

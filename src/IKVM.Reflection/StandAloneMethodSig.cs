@@ -21,14 +21,14 @@
   jeroen@frijters.net
   
 */
-using System;
 using System.Runtime.InteropServices;
-using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
-	public sealed class __StandAloneMethodSig
+
+    public sealed class __StandAloneMethodSig
 	{
+
 		private readonly bool unmanaged;
 		private readonly CallingConvention unmanagedCallingConvention;
 		private readonly CallingConventions callingConvention;

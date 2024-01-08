@@ -21,12 +21,9 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Diagnostics;
-
 namespace IKVM.Reflection.Emit
 {
-	public struct OpCode
+    public struct OpCode
 	{
 		private const int ValueCount = 1024;
 		private const int OperandTypeCount = 19;

@@ -24,13 +24,15 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Runtime.InteropServices;
+
 using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
-	sealed class TypeDefImpl : TypeInfo
+
+    sealed class TypeDefImpl : TypeInfo
 	{
+
 		private readonly ModuleReader module;
 		private readonly int index;
 		private readonly string typeName;
@@ -87,7 +89,7 @@ namespace IKVM.Reflection.Reader
 				}
 				return events;
 			}
-			return Empty<EventInfo>.Array;
+			return Array.Empty<EventInfo>();
 		}
 
 		public override FieldInfo[] __GetDeclaredFields()
@@ -215,7 +217,7 @@ namespace IKVM.Reflection.Reader
 				}
 				return properties;
 			}
-			return Empty<PropertyInfo>.Array;
+			return Array.Empty<PropertyInfo>();
 		}
 
 		internal override TypeName TypeName
@@ -391,5 +393,7 @@ namespace IKVM.Reflection.Reader
 				}
 			}
 		}
+
 	}
+
 }

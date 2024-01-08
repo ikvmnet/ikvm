@@ -31,9 +31,11 @@ using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
+
     public sealed class AssemblyName
         : ICloneable
     {
+
         private string name;
         private string culture;
         private Version version;
@@ -85,7 +87,7 @@ namespace IKVM.Reflection
             if (parsed.PublicKeyToken != null)
             {
                 if (parsed.PublicKeyToken.Equals("null", StringComparison.OrdinalIgnoreCase))
-                    publicKeyToken = Empty<byte>.Array;
+                    publicKeyToken = Array.Empty<byte>();
                 else if (parsed.PublicKeyToken.Length != 16)
                     throw new FileLoadException();
                 else
