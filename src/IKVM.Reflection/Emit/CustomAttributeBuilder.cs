@@ -736,28 +736,7 @@ namespace IKVM.Reflection.Emit
                 return KnownCA.Unknown;
             }
         }
+
     }
 
-    // These are the pseudo-custom attributes that are recognized by name by the runtime (i.e. the type identity is not considered).
-    // The corresponding list in the runtime is at https://github.com/dotnet/coreclr/blob/1afe5ce4f45045d724a4e129df4b816655d486fb/src/md/compiler/custattr_emit.cpp#L38
-    // Note that we only need to handle a subset of the types, since we don't need the ones that are only used for validation by the runtime.
-    enum KnownCA
-    {
-        Unknown,
-        DllImportAttribute,
-        ComImportAttribute,
-        SerializableAttribute,
-        NonSerializedAttribute,
-        MethodImplAttribute,
-        MarshalAsAttribute,
-        PreserveSigAttribute,
-        InAttribute,
-        OutAttribute,
-        OptionalAttribute,
-        StructLayoutAttribute,
-        FieldOffsetAttribute,
-        SpecialNameAttribute,
-        // the following is not part of the runtime known custom attributes, but we handle it here for efficiency and convenience
-        SuppressUnmanagedCodeSecurityAttribute,
-    }
 }

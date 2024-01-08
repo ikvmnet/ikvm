@@ -23,8 +23,10 @@
 */
 namespace IKVM.Reflection.Emit
 {
+
     public sealed class EnumBuilder : TypeInfo
 	{
+
 		private readonly TypeBuilder typeBuilder;
 		private readonly FieldBuilder fieldBuilder;
 
@@ -116,5 +118,7 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return typeBuilder.IsBaked; }
 		}
+
 	}
+
 }

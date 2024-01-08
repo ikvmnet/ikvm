@@ -28,8 +28,10 @@ using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
+
     public sealed class GenericTypeParameterBuilder : TypeInfo
 	{
+
 		private readonly string name;
 		private readonly TypeBuilder type;
 		private readonly MethodBuilder method;
@@ -252,5 +254,7 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return ((MemberInfo)type ?? method).IsBaked; }
 		}
+
 	}
+
 }

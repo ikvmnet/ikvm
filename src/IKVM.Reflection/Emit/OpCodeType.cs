@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008-2015 Jeroen Frijters
+  Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,13 +25,15 @@
 namespace IKVM.Reflection.Emit
 {
 
-    struct UnmanagedExport
+    public enum OpCodeType
 	{
 
-		internal string name;
-		internal int ordinal;
-		internal RelativeVirtualAddress rva;
-		internal MethodBuilder mb;
+		Annotation = 0,
+		Macro = 1,
+		Nternal = 2,
+		Objmodel = 3,
+		Prefix = 4,
+		Primitive = 5,
 
 	}
 

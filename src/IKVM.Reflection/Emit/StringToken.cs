@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008-2015 Jeroen Frijters
+  Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,13 +25,45 @@
 namespace IKVM.Reflection.Emit
 {
 
-    struct UnmanagedExport
+    public struct StringToken
 	{
 
-		internal string name;
-		internal int ordinal;
-		internal RelativeVirtualAddress rva;
-		internal MethodBuilder mb;
+		private readonly int token;
+
+		internal StringToken(int token)
+		{
+			this.token = token;
+		}
+
+		public int Token
+		{
+			get { return token; }
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj as StringToken? == this;
+		}
+
+		public override int GetHashCode()
+		{
+			return token;
+		}
+
+		public bool Equals(StringToken other)
+		{
+			return this == other;
+		}
+
+		public static bool operator ==(StringToken st1, StringToken st2)
+		{
+			return st1.token == st2.token;
+		}
+
+		public static bool operator !=(StringToken st1, StringToken st2)
+		{
+			return st1.token != st2.token;
+		}
 
 	}
 

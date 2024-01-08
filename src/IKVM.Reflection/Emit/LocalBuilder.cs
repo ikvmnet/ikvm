@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008-2015 Jeroen Frijters
+  Copyright (C) 2008-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,18 +21,38 @@
   jeroen@frijters.net
   
 */
-
 namespace IKVM.Reflection.Emit
 {
 
-    struct UnmanagedExport
-	{
+    public sealed class LocalBuilder : LocalVariableInfo
+    {
 
-		internal string name;
-		internal int ordinal;
-		internal RelativeVirtualAddress rva;
-		internal MethodBuilder mb;
+        internal string name;
+        internal int startOffset;
+        internal int endOffset;
 
-	}
+        internal LocalBuilder(Type localType, int index, bool pinned)
+            : base(index, localType, pinned)
+        {
+        }
+
+        internal LocalBuilder(Type localType, int index, bool pinned, CustomModifiers customModifiers)
+            : base(index, localType, pinned, customModifiers)
+        {
+        }
+
+        public void SetLocalSymInfo(string name)
+        {
+            this.name = name;
+        }
+
+        public void SetLocalSymInfo(string name, int startOffset, int endOffset)
+        {
+            this.name = name;
+            this.startOffset = startOffset;
+            this.endOffset = endOffset;
+        }
+
+    }
 
 }

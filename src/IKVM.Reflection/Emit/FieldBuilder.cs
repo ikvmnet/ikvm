@@ -28,8 +28,10 @@ using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
+
     public sealed class FieldBuilder : FieldInfo
 	{
+
 		private readonly TypeBuilder typeBuilder;
 		private readonly string name;
 		private readonly int pseudoToken;
@@ -220,5 +222,7 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return typeBuilder.IsBaked; }
 		}
+
 	}
+
 }

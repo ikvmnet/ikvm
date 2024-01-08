@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008-2015 Jeroen Frijters
+  Copyright (C) 2008-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,18 +21,48 @@
   jeroen@frijters.net
   
 */
-
 namespace IKVM.Reflection.Emit
 {
+    public struct Label
+    {
 
-    struct UnmanagedExport
-	{
+        // 1-based here, to make sure that an uninitialized Label isn't valid
+        private readonly int index1;
 
-		internal string name;
-		internal int ordinal;
-		internal RelativeVirtualAddress rva;
-		internal MethodBuilder mb;
+        internal Label(int index)
+        {
+            this.index1 = index + 1;
+        }
 
-	}
+        internal int Index
+        {
+            get { return index1 - 1; }
+        }
+
+        public bool Equals(Label other)
+        {
+            return other.index1 == index1;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return this == obj as Label?;
+        }
+
+        public override int GetHashCode()
+        {
+            return index1;
+        }
+
+        public static bool operator ==(Label arg1, Label arg2)
+        {
+            return arg1.index1 == arg2.index1;
+        }
+
+        public static bool operator !=(Label arg1, Label arg2)
+        {
+            return !(arg1 == arg2);
+        }
+    }
 
 }

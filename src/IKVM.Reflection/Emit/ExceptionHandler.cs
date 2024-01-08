@@ -25,6 +25,7 @@ using System;
 
 namespace IKVM.Reflection.Emit
 {
+
     public struct ExceptionHandler : IEquatable<ExceptionHandler>
 	{
 
@@ -117,5 +118,7 @@ namespace IKVM.Reflection.Emit
 		{
 			return !left.Equals(right);
 		}
+
 	}
+
 }

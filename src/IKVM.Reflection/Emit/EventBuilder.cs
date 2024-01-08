@@ -27,8 +27,10 @@ using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Emit
 {
+
     public sealed class EventBuilder : EventInfo
 	{
+
 		private readonly TypeBuilder typeBuilder;
 		private readonly string name;
 		private EventAttributes attributes;
@@ -274,5 +276,7 @@ namespace IKVM.Reflection.Emit
 				return lazyPseudoToken;
 			}
 		}
+
 	}
+
 }

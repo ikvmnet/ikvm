@@ -26,8 +26,10 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection.Emit
 {
+
     public sealed class ConstructorBuilder : ConstructorInfo
 	{
+
 		private readonly MethodBuilder methodBuilder;
 
 		internal ConstructorBuilder(MethodBuilder mb)
@@ -137,5 +139,7 @@ namespace IKVM.Reflection.Emit
 		{
 			return methodBuilder;
 		}
+
 	}
+
 }

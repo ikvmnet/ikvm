@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008-2015 Jeroen Frijters
+  Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,13 +25,11 @@
 namespace IKVM.Reflection.Emit
 {
 
-    struct UnmanagedExport
+    public enum AssemblyBuilderAccess
 	{
 
-		internal string name;
-		internal int ordinal;
-		internal RelativeVirtualAddress rva;
-		internal MethodBuilder mb;
+		Save = 2,
+		ReflectionOnly = 6,
 
 	}
 

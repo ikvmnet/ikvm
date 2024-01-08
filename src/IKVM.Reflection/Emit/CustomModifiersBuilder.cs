@@ -25,8 +25,10 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection.Emit
 {
+
     public sealed class CustomModifiersBuilder
 	{
+
 		private readonly List<Item> list = new List<Item>();
 
 		internal struct Item
@@ -69,5 +71,7 @@ namespace IKVM.Reflection.Emit
 		{
 			return new CustomModifiers(list);
 		}
+
 	}
+
 }

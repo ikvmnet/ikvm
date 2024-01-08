@@ -24,8 +24,10 @@
 
 namespace IKVM.Reflection.Emit
 {
+
     public struct RelativeVirtualAddress
 	{
+
 		internal readonly uint initializedDataOffset;
 
 		internal RelativeVirtualAddress(uint initializedDataOffset)
@@ -37,5 +39,7 @@ namespace IKVM.Reflection.Emit
 		{
 			return new RelativeVirtualAddress(rva.initializedDataOffset + (uint)offset);
 		}
+
 	}
+
 }

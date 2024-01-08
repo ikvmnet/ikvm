@@ -25,8 +25,10 @@ using System;
 
 namespace IKVM.Reflection.Emit
 {
+
     public sealed class OpCodes
 	{
+
 		public static readonly OpCode Nop = new OpCode(4888);
 		public static readonly OpCode Break = new OpCode(4199116);
 		public static readonly OpCode Ldarg_0 = new OpCode(8492847);
@@ -745,5 +747,7 @@ namespace IKVM.Reflection.Emit
 					return false;
 			}
 		}
+
 	}
+
 }

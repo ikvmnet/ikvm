@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008-2015 Jeroen Frijters
+  Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,13 +25,18 @@
 namespace IKVM.Reflection.Emit
 {
 
-    struct UnmanagedExport
+    public enum PackingSize
 	{
 
-		internal string name;
-		internal int ordinal;
-		internal RelativeVirtualAddress rva;
-		internal MethodBuilder mb;
+		Unspecified = 0,
+		Size1 = 1,
+		Size2 = 2,
+		Size4 = 4,
+		Size8 = 8,
+		Size16 = 16,
+		Size32 = 32,
+		Size64 = 64,
+		Size128 = 128,
 
 	}
 

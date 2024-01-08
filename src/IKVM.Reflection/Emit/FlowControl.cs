@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008-2015 Jeroen Frijters
+  Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,13 +25,17 @@
 namespace IKVM.Reflection.Emit
 {
 
-    struct UnmanagedExport
+    public enum FlowControl
 	{
 
-		internal string name;
-		internal int ordinal;
-		internal RelativeVirtualAddress rva;
-		internal MethodBuilder mb;
+		Branch = 0,
+		Break = 1,
+		Call = 2,
+		Cond_Branch = 3,
+		Meta = 4,
+		Next = 5,
+		Return = 7,
+		Throw = 8,
 
 	}
 

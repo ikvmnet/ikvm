@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008-2015 Jeroen Frijters
+  Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,15 +24,44 @@
 
 namespace IKVM.Reflection.Emit
 {
-
-    struct UnmanagedExport
+    public struct SignatureToken
 	{
+		public static readonly SignatureToken Empty;
+		private readonly int token;
 
-		internal string name;
-		internal int ordinal;
-		internal RelativeVirtualAddress rva;
-		internal MethodBuilder mb;
+		internal SignatureToken(int token)
+		{
+			this.token = token;
+		}
 
+		public int Token
+		{
+			get { return token; }
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj as SignatureToken? == this;
+		}
+
+		public override int GetHashCode()
+		{
+			return token;
+		}
+
+		public bool Equals(SignatureToken other)
+		{
+			return this == other;
+		}
+
+		public static bool operator ==(SignatureToken st1, SignatureToken st2)
+		{
+			return st1.token == st2.token;
+		}
+
+		public static bool operator !=(SignatureToken st1, SignatureToken st2)
+		{
+			return st1.token != st2.token;
+		}
 	}
-
 }
