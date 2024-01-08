@@ -24,6 +24,7 @@
 
 namespace IKVM.Reflection.Emit
 {
+
     struct UnmanagedExport
 	{
 		internal string name;
@@ -31,4 +32,5 @@ namespace IKVM.Reflection.Emit
 		internal RelativeVirtualAddress rva;
 		internal MethodBuilder mb;
 	}
+
 }
