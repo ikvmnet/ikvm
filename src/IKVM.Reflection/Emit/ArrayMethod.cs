@@ -25,8 +25,10 @@ using System;
 
 namespace IKVM.Reflection.Emit
 {
+
     class ArrayMethod : MethodInfo
 	{
+
 		private readonly Module module;
 		private readonly Type arrayClass;
 		private readonly string methodName;
@@ -138,5 +140,7 @@ namespace IKVM.Reflection.Emit
 		{
 			get { return arrayClass.IsBaked; }
 		}
+
 	}
+
 }
