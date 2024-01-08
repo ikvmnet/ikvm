@@ -286,5 +286,7 @@ namespace IKVM.Reflection
 		{
 			get { return cyclicTypeSpec; }
 		}
+
 	}
+
 }

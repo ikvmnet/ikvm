@@ -25,9 +25,11 @@ using System;
 
 namespace IKVM.Reflection
 {
+
     [Flags]
 	public enum MemberTypes
 	{
+
 		Constructor = 0x01,
 		Event = 0x02,
 		Field = 0x04,
@@ -37,5 +39,7 @@ namespace IKVM.Reflection
 		Custom = 0x40,
 		NestedType = 0x80,
 		All = Constructor | Event | Field | Method | Property | TypeInfo | NestedType
+
 	}
+
 }

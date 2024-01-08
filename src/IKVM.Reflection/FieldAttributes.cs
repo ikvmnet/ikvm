@@ -25,9 +25,11 @@ using System;
 
 namespace IKVM.Reflection
 {
+
     [Flags]
 	public enum FieldAttributes
 	{
+
 		PrivateScope = 0,
 		Private = 1,
 		FamANDAssem = 2,
@@ -47,5 +49,7 @@ namespace IKVM.Reflection
 		PinvokeImpl = 8192,
 		HasDefault = 32768,
 		ReservedMask = 38144,
+
 	}
+
 }

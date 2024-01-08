@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -22,15 +22,19 @@
   
 */
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace IKVM.Reflection
 {
-	public struct __MethodImplMap
+
+    [Flags]
+	public enum ExceptionHandlingClauseOptions
 	{
-		public Type TargetType;
-		public MethodInfo[] MethodBodies;
-		public MethodInfo[][] MethodDeclarations;
+
+		Clause  = 0x0000,
+		Filter  = 0x0001,
+		Finally = 0x0002,
+		Fault   = 0x0004,
+
 	}
+
 }

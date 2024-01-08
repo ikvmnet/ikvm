@@ -381,5 +381,7 @@ namespace IKVM.Reflection
 		{
 			get { return type.IsBaked; }
 		}
+
 	}
+
 }

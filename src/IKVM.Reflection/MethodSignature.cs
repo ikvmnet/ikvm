@@ -30,8 +30,10 @@ using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection
 {
+
 	sealed class MethodSignature : Signature
 	{
+
 		private readonly Type returnType;
 		private readonly Type[] parameterTypes;
 		private readonly PackedCustomModifiers modifiers;
@@ -501,5 +503,7 @@ namespace IKVM.Reflection
 				array[index] = mods;
 			}
 		}
+
 	}
+
 }

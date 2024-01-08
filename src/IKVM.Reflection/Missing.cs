@@ -27,26 +27,30 @@ namespace IKVM.Reflection
 {
 
     [Serializable]
-	public sealed class Missing
-		: System.Runtime.Serialization.ISerializable
-	{
+    public sealed class Missing :
+        System.Runtime.Serialization.ISerializable
+    {
 
-		public static readonly Missing Value = new Missing();
+        public static readonly Missing Value = new Missing();
 
-		private Missing() { }
+        private Missing() { }
 
-		void System.Runtime.Serialization.ISerializable.GetObjectData(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
-		{
-			info.SetType(typeof(SingletonSerializationHelper));
-		}
+        void System.Runtime.Serialization.ISerializable.GetObjectData(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+        {
+            info.SetType(typeof(SingletonSerializationHelper));
+        }
 
-		[Serializable]
-		private sealed class SingletonSerializationHelper : System.Runtime.Serialization.IObjectReference
-		{
-			public object GetRealObject(System.Runtime.Serialization.StreamingContext context)
-			{
-				return Value;
-			}
-		}
-	}
+        [Serializable]
+        private sealed class SingletonSerializationHelper : System.Runtime.Serialization.IObjectReference
+        {
+
+            public object GetRealObject(System.Runtime.Serialization.StreamingContext context)
+            {
+                return Value;
+            }
+
+        }
+
+    }
+
 }

@@ -23,13 +23,16 @@
 */
 using System;
 using System.Collections.Generic;
-using IKVM.Reflection.Reader;
 using System.IO;
+
+using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
-	public sealed class MethodBody
+
+    public sealed class MethodBody
 	{
+
 		private readonly IList<ExceptionHandlingClause> exceptionClauses;
 		private readonly IList<LocalVariableInfo> locals;
 		private readonly bool initLocals;
@@ -159,5 +162,7 @@ namespace IKVM.Reflection
 		{
 			get { return maxStack; }
 		}
+
 	}
+
 }

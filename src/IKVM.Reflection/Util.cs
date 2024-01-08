@@ -174,63 +174,7 @@ namespace IKVM.Reflection
 		{
 			return array == null ? 0 : array.Length;
 		}
+
 	}
-
-	[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
-	struct SingleConverter
-	{
-		[System.Runtime.InteropServices.FieldOffset(0)]
-		private int i;
-		[System.Runtime.InteropServices.FieldOffset(0)]
-		private float f;
-
-		internal static int SingleToInt32Bits(float v)
-		{
-			SingleConverter c = new SingleConverter();
-			c.f = v;
-			return c.i;
-		}
-
-		internal static float Int32BitsToSingle(int v)
-		{
-			SingleConverter c = new SingleConverter();
-			c.i = v;
-			return c.f;
-		}
-	}
-
-    static class TypeUtil
-    {
-        internal static bool IsEnum(System.Type type)
-        {
-            return type.IsEnum;
-        }
-
-        internal static System.Reflection.Assembly GetAssembly(System.Type type)
-        {
-            return type.Assembly;
-        }
-
-        internal static System.Reflection.MethodBase GetDeclaringMethod(System.Type type)
-        {
-            return type.DeclaringMethod;
-        }
-
-        internal static bool IsGenericType(System.Type type)
-        {
-            return type.IsGenericType;
-        }
-
-        internal static bool IsGenericTypeDefinition(System.Type type)
-        {
-            return type.IsGenericTypeDefinition;
-        }
-
-        internal static System.Type[] GetGenericArguments(System.Type type)
-        {
-            return type.GetGenericArguments();
-        }
-
-    }
 
 }

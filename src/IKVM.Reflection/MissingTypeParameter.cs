@@ -23,8 +23,10 @@
 */
 namespace IKVM.Reflection
 {
+
     sealed class MissingTypeParameter : IKVM.Reflection.Reader.TypeParameterType
 	{
+
 		private readonly MemberInfo owner;
 		private readonly int index;
 
@@ -86,5 +88,7 @@ namespace IKVM.Reflection
 		{
 			get { return owner.IsBaked; }
 		}
+
 	}
+
 }

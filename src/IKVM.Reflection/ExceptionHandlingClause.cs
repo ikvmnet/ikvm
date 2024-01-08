@@ -21,22 +21,14 @@
   jeroen@frijters.net
   
 */
-using System;
 using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
-	[Flags]
-	public enum ExceptionHandlingClauseOptions
-	{
-		Clause  = 0x0000,
-		Filter  = 0x0001,
-		Finally = 0x0002,
-		Fault   = 0x0004,
-	}
 
-	public sealed class ExceptionHandlingClause
+    public sealed class ExceptionHandlingClause
 	{
+
 		private readonly int flags;
 		private readonly int tryOffset;
 		private readonly int tryLength;
@@ -90,5 +82,7 @@ namespace IKVM.Reflection
 		{
 			get { return tryOffset; }
 		}
+
 	}
+
 }

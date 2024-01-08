@@ -21,14 +21,10 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace IKVM.Reflection
 {
 
-	public struct ParameterModifier
+    public struct ParameterModifier
 	{
 
 		private readonly bool[] values;

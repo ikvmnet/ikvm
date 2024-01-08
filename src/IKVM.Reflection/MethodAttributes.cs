@@ -25,9 +25,11 @@ using System;
 
 namespace IKVM.Reflection
 {
+
     [Flags]
 	public enum MethodAttributes
 	{
+
 		MemberAccessMask		= 0x0007,
 		PrivateScope			= 0x0000,
 		Private					= 0x0001,
@@ -55,5 +57,7 @@ namespace IKVM.Reflection
 		RequireSecObject		= 0x8000,
 
 		ReservedMask			= 0xd000,
+
 	}
+
 }

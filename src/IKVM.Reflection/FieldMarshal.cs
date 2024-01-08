@@ -32,8 +32,10 @@ using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection
 {
+
     public struct FieldMarshal
 	{
+
 		private const UnmanagedType UnmanagedType_CustomMarshaler = (UnmanagedType)0x2c;
 		private const UnmanagedType NATIVE_TYPE_MAX = (UnmanagedType)0x50;
 		public UnmanagedType UnmanagedType;
@@ -257,4 +259,5 @@ namespace IKVM.Reflection
 			bb.Write(buf);
 		}
 	}
+
 }

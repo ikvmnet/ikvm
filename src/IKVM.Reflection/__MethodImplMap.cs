@@ -1,5 +1,5 @@
-﻿/*
-  Copyright (C) 2009-2012 Jeroen Frijters
+/*
+  Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,33 +21,15 @@
   jeroen@frijters.net
   
 */
-using System;
-
 namespace IKVM.Reflection
 {
 
-    [Flags]
-	public enum MethodImplAttributes
+    public struct __MethodImplMap
 	{
 
-		CodeTypeMask		= 0x0003,
-		IL					= 0x0000,
-		Native				= 0x0001,
-		OPTIL				= 0x0002,
-		Runtime				= 0x0003,
-		ManagedMask			= 0x0004,
-		Unmanaged			= 0x0004,
-		Managed				= 0x0000,
-
-		ForwardRef			= 0x0010,
-		PreserveSig			= 0x0080,
-		InternalCall		= 0x1000,
-		Synchronized		= 0x0020,
-		NoInlining			= 0x0008,
-		NoOptimization		= 0x0040,
-		AggressiveInlining  = 0x0100,
-
-		MaxMethodImplVal	= 0xffff,
+		public Type TargetType;
+		public MethodInfo[] MethodBodies;
+		public MethodInfo[][] MethodDeclarations;
 
 	}
 

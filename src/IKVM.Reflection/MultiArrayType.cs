@@ -25,8 +25,10 @@ using System;
 
 namespace IKVM.Reflection
 {
+
     sealed class MultiArrayType : ElementHolderType
 	{
+
 		private readonly int rank;
 		private readonly int[] sizes;
 		private readonly int[] lobounds;
@@ -138,5 +140,7 @@ namespace IKVM.Reflection
 		{
 			return Make(type, rank, sizes, lobounds, mods);
 		}
+
 	}
+
 }

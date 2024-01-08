@@ -122,5 +122,7 @@ namespace IKVM.Reflection
 		{
 			throw new MissingAssemblyException(this);
 		}
+
 	}
+
 }

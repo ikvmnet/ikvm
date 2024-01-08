@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2009-2012 Jeroen Frijters
+  Copyright (C) 2008-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,34 +21,29 @@
   jeroen@frijters.net
   
 */
-using System;
-
 namespace IKVM.Reflection
 {
-
-    [Flags]
-	public enum MethodImplAttributes
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
+	struct SingleConverter
 	{
+		[System.Runtime.InteropServices.FieldOffset(0)]
+		private int i;
+		[System.Runtime.InteropServices.FieldOffset(0)]
+		private float f;
 
-		CodeTypeMask		= 0x0003,
-		IL					= 0x0000,
-		Native				= 0x0001,
-		OPTIL				= 0x0002,
-		Runtime				= 0x0003,
-		ManagedMask			= 0x0004,
-		Unmanaged			= 0x0004,
-		Managed				= 0x0000,
+		internal static int SingleToInt32Bits(float v)
+		{
+			SingleConverter c = new SingleConverter();
+			c.f = v;
+			return c.i;
+		}
 
-		ForwardRef			= 0x0010,
-		PreserveSig			= 0x0080,
-		InternalCall		= 0x1000,
-		Synchronized		= 0x0020,
-		NoInlining			= 0x0008,
-		NoOptimization		= 0x0040,
-		AggressiveInlining  = 0x0100,
-
-		MaxMethodImplVal	= 0xffff,
-
+		internal static float Int32BitsToSingle(int v)
+		{
+			SingleConverter c = new SingleConverter();
+			c.i = v;
+			return c.f;
+		}
 	}
 
 }

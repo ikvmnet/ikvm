@@ -24,15 +24,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace IKVM.Reflection
 {
-// disable warnings that complain about us having == and != operators without also overriding Equals/GetHashCode,
-// this is intentional because most subtypes use reference equality
+
+    // disable warnings that complain about us having == and != operators without also overriding Equals/GetHashCode,
+    // this is intentional because most subtypes use reference equality
 #pragma warning disable 660, 661
-	public abstract class MemberInfo : ICustomAttributeProvider
+    public abstract class MemberInfo : ICustomAttributeProvider
 	{
+
 		// prevent external subclasses
 		internal MemberInfo()
 		{
@@ -131,5 +132,7 @@ namespace IKVM.Reflection
 			}
 			return members;
 		}
+
 	}
+
 }

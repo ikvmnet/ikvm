@@ -21,12 +21,12 @@
   jeroen@frijters.net
   
 */
-using System;
-
 namespace IKVM.Reflection
 {
-	public abstract class MethodBase : MemberInfo
+
+    public abstract class MethodBase : MemberInfo
 	{
+
 		// prevent external subclasses
 		internal MethodBase()
 		{
@@ -164,5 +164,7 @@ namespace IKVM.Reflection
 				&& BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
 				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
 		}
+
 	}
+
 }

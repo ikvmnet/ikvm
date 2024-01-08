@@ -48,5 +48,7 @@ namespace IKVM.Reflection
 		{
 			get { return module; }
 		}
+
 	}
+
 }

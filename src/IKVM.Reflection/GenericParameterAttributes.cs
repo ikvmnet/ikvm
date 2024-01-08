@@ -25,9 +25,11 @@ using System;
 
 namespace IKVM.Reflection
 {
+
     [Flags]
 	public enum GenericParameterAttributes
 	{
+
 		None = 0,
 		Covariant = 1,
 		Contravariant = 2,
@@ -36,5 +38,7 @@ namespace IKVM.Reflection
 		NotNullableValueTypeConstraint = 8,
 		DefaultConstructorConstraint = 16,
 		SpecialConstraintMask = 28,
+
 	}
+
 }
