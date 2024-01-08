@@ -29,9 +29,12 @@ namespace IKVM.Reflection
     public abstract class EventInfo : MemberInfo
 	{
 
-		// prevent external subclasses
+		/// <summary>
+		/// Initializes a new instance.
+		/// </summary>
 		internal EventInfo()
 		{
+
 		}
 
 		public sealed override MemberTypes MemberType
@@ -40,14 +43,23 @@ namespace IKVM.Reflection
 		}
 
 		public abstract EventAttributes Attributes { get; }
+
 		public abstract MethodInfo GetAddMethod(bool nonPublic);
+
 		public abstract MethodInfo GetRaiseMethod(bool nonPublic);
+
 		public abstract MethodInfo GetRemoveMethod(bool nonPublic);
+
 		public abstract MethodInfo[] GetOtherMethods(bool nonPublic);
+
 		public abstract MethodInfo[] __GetMethods();
+
 		public abstract Type EventHandlerType { get; }
+
 		internal abstract bool IsPublic { get; }
+
 		internal abstract bool IsNonPrivate { get; }
+
 		internal abstract bool IsStatic { get; }
 
 		public bool IsSpecialName
@@ -123,6 +135,7 @@ namespace IKVM.Reflection
 			// events don't have pseudo custom attributes
 			return null;
 		}
+
 	}
 
 }

@@ -24,144 +24,138 @@
 namespace IKVM.Reflection
 {
     sealed class MissingField : FieldInfo
-	{
+    {
 
-		private readonly Type declaringType;
-		private readonly string name;
-		private readonly FieldSignature signature;
-		private FieldInfo forwarder;
+        readonly Type declaringType;
+        readonly string name;
+        readonly FieldSignature signature;
+        FieldInfo forwarder;
 
-		internal MissingField(Type declaringType, string name, FieldSignature signature)
-		{
-			this.declaringType = declaringType;
-			this.name = name;
-			this.signature = signature;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="declaringType"></param>
+        /// <param name="name"></param>
+        /// <param name="signature"></param>
+        internal MissingField(Type declaringType, string name, FieldSignature signature)
+        {
+            this.declaringType = declaringType;
+            this.name = name;
+            this.signature = signature;
+        }
 
-		private FieldInfo Forwarder
-		{
-			get
-			{
-				FieldInfo field = TryGetForwarder();
-				if (field == null)
-				{
-					throw new MissingMemberException(this);
-				}
-				return field;
-			}
-		}
+        FieldInfo Forwarder => TryGetForwarder() ?? throw new MissingMemberException(this);
 
-		private FieldInfo TryGetForwarder()
-		{
-			if (forwarder == null && !declaringType.__IsMissing)
-			{
-				forwarder = declaringType.FindField(name, signature);
-			}
-			return forwarder;
-		}
+        FieldInfo TryGetForwarder()
+        {
+            if (forwarder == null && !declaringType.__IsMissing)
+                forwarder = declaringType.FindField(name, signature);
 
-		public override bool __IsMissing
-		{
-			get { return TryGetForwarder() == null; }
-		}
+            return forwarder;
+        }
 
-		public override FieldAttributes Attributes
-		{
-			get { return Forwarder.Attributes; }
-		}
+        public override bool __IsMissing
+        {
+            get { return TryGetForwarder() == null; }
+        }
 
-		public override void __GetDataFromRVA(byte[] data, int offset, int length)
-		{
-			Forwarder.__GetDataFromRVA(data, offset, length);
-		}
+        public override FieldAttributes Attributes
+        {
+            get { return Forwarder.Attributes; }
+        }
 
-		public override int __FieldRVA
-		{
-			get { return Forwarder.__FieldRVA; }
-		}
+        public override void __GetDataFromRVA(byte[] data, int offset, int length)
+        {
+            Forwarder.__GetDataFromRVA(data, offset, length);
+        }
 
-		public override bool __TryGetFieldOffset(out int offset)
-		{
-			return Forwarder.__TryGetFieldOffset(out offset);
-		}
+        public override int __FieldRVA
+        {
+            get { return Forwarder.__FieldRVA; }
+        }
 
-		public override object GetRawConstantValue()
-		{
-			return Forwarder.GetRawConstantValue();
-		}
+        public override bool __TryGetFieldOffset(out int offset)
+        {
+            return Forwarder.__TryGetFieldOffset(out offset);
+        }
 
-		internal override FieldSignature FieldSignature
-		{
-			get { return signature; }
-		}
+        public override object GetRawConstantValue()
+        {
+            return Forwarder.GetRawConstantValue();
+        }
 
-		internal override int ImportTo(IKVM.Reflection.Emit.ModuleBuilder module)
-		{
-			FieldInfo field = TryGetForwarder();
-			if (field != null)
-			{
-				return field.ImportTo(module);
-			}
-			return module.ImportMethodOrField(declaringType, this.Name, this.FieldSignature);
-		}
+        internal override FieldSignature FieldSignature
+        {
+            get { return signature; }
+        }
 
-		public override string Name
-		{
-			get { return name; }
-		}
+        internal override int ImportTo(IKVM.Reflection.Emit.ModuleBuilder module)
+        {
+            var field = TryGetForwarder();
+            if (field != null)
+                return field.ImportTo(module);
 
-		public override Type DeclaringType
-		{
-			get { return declaringType.IsModulePseudoType ? null : declaringType; }
-		}
+            return module.ImportMethodOrField(declaringType, this.Name, this.FieldSignature);
+        }
 
-		public override Module Module
-		{
-			get { return declaringType.Module; }
-		}
+        public override string Name
+        {
+            get { return name; }
+        }
 
-		internal override FieldInfo BindTypeParameters(Type type)
-		{
-			FieldInfo forwarder = TryGetForwarder();
-			if (forwarder != null)
-			{
-				return forwarder.BindTypeParameters(type);
-			}
-			return new GenericFieldInstance(type, this);
-		}
+        public override Type DeclaringType
+        {
+            get { return declaringType.IsModulePseudoType ? null : declaringType; }
+        }
 
-		public override int MetadataToken
-		{
-			get { return Forwarder.MetadataToken; }
-		}
+        public override Module Module
+        {
+            get { return declaringType.Module; }
+        }
 
-		public override bool Equals(object obj)
-		{
-			MissingField other = obj as MissingField;
-			return other != null
-				&& other.declaringType == declaringType
-				&& other.name == name
-				&& other.signature.Equals(signature);
-		}
+        internal override FieldInfo BindTypeParameters(Type type)
+        {
+            var forwarder = TryGetForwarder();
+            if (forwarder != null)
+                return forwarder.BindTypeParameters(type);
 
-		public override int GetHashCode()
-		{
-			return declaringType.GetHashCode() ^ name.GetHashCode() ^ signature.GetHashCode();
-		}
+            return new GenericFieldInstance(type, this);
+        }
 
-		public override string ToString()
-		{
-			return this.FieldType.Name + " " + this.Name;
-		}
+        public override int MetadataToken
+        {
+            get { return Forwarder.MetadataToken; }
+        }
 
-		internal override int GetCurrentToken()
-		{
-			return Forwarder.GetCurrentToken();
-		}
+        public override bool Equals(object obj)
+        {
+            var other = obj as MissingField;
+            return other != null
+                && other.declaringType == declaringType
+                && other.name == name
+                && other.signature.Equals(signature);
+        }
 
-		internal override bool IsBaked
-		{
-			get { return Forwarder.IsBaked; }
-		}
-	}
+        public override int GetHashCode()
+        {
+            return declaringType.GetHashCode() ^ name.GetHashCode() ^ signature.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return FieldType.Name + " " + Name;
+        }
+
+        internal override int GetCurrentToken()
+        {
+            return Forwarder.GetCurrentToken();
+        }
+
+        internal override bool IsBaked
+        {
+            get { return Forwarder.IsBaked; }
+        }
+
+    }
+
 }

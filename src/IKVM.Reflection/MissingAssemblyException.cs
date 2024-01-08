@@ -27,28 +27,37 @@ namespace IKVM.Reflection
 {
 
     [Serializable]
-	public sealed class MissingAssemblyException : InvalidOperationException
-	{
+    public sealed class MissingAssemblyException : InvalidOperationException
+    {
 
-		[NonSerialized]
-		private readonly MissingAssembly assembly;
+        [NonSerialized]
+        readonly MissingAssembly assembly;
 
-		internal MissingAssemblyException(MissingAssembly assembly)
-			: base("Assembly '" + assembly.FullName + "' is a missing assembly and does not support the requested operation.")
-		{
-			this.assembly = assembly;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="assembly"></param>
+        internal MissingAssemblyException(MissingAssembly assembly) :
+            base("Assembly '" + assembly.FullName + "' is a missing assembly and does not support the requested operation.")
+        {
+            this.assembly = assembly;
+        }
 
-		private MissingAssemblyException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
-			: base(info, context)
-		{
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
+        MissingAssemblyException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) : base(info, context)
+        {
 
-		public Assembly Assembly
-		{
-			get { return assembly; }
-		}
+        }
 
-	}
+        public Assembly Assembly
+        {
+            get { return assembly; }
+        }
+
+    }
 
 }

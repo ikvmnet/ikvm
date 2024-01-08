@@ -25,132 +25,134 @@ namespace IKVM.Reflection
 {
 
     sealed class GenericEventInfo : EventInfo
-	{
+    {
 
-		private readonly Type typeInstance;
-		private readonly EventInfo eventInfo;
+        readonly Type typeInstance;
+        readonly EventInfo eventInfo;
 
-		internal GenericEventInfo(Type typeInstance, EventInfo eventInfo)
-		{
-			this.typeInstance = typeInstance;
-			this.eventInfo = eventInfo;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="typeInstance"></param>
+        /// <param name="eventInfo"></param>
+        internal GenericEventInfo(Type typeInstance, EventInfo eventInfo)
+        {
+            this.typeInstance = typeInstance;
+            this.eventInfo = eventInfo;
+        }
 
-		public override bool Equals(object obj)
-		{
-			GenericEventInfo other = obj as GenericEventInfo;
-			return other != null && other.typeInstance == typeInstance && other.eventInfo == eventInfo;
-		}
+        public override bool Equals(object obj)
+        {
+            var other = obj as GenericEventInfo;
+            return other != null && other.typeInstance == typeInstance && other.eventInfo == eventInfo;
+        }
 
-		public override int GetHashCode()
-		{
-			return typeInstance.GetHashCode() * 777 + eventInfo.GetHashCode();
-		}
+        public override int GetHashCode()
+        {
+            return typeInstance.GetHashCode() * 777 + eventInfo.GetHashCode();
+        }
 
-		public override EventAttributes Attributes
-		{
-			get { return eventInfo.Attributes; }
-		}
+        public override EventAttributes Attributes
+        {
+            get { return eventInfo.Attributes; }
+        }
 
-		private MethodInfo Wrap(MethodInfo method)
-		{
-			if (method == null)
-			{
-				return null;
-			}
-			return new GenericMethodInstance(typeInstance, method, null);
-		}
+        private MethodInfo Wrap(MethodInfo method)
+        {
+            if (method == null)
+                return null;
 
-		public override MethodInfo GetAddMethod(bool nonPublic)
-		{
-			return Wrap(eventInfo.GetAddMethod(nonPublic));
-		}
+            return new GenericMethodInstance(typeInstance, method, null);
+        }
 
-		public override MethodInfo GetRaiseMethod(bool nonPublic)
-		{
-			return Wrap(eventInfo.GetRaiseMethod(nonPublic));
-		}
+        public override MethodInfo GetAddMethod(bool nonPublic)
+        {
+            return Wrap(eventInfo.GetAddMethod(nonPublic));
+        }
 
-		public override MethodInfo GetRemoveMethod(bool nonPublic)
-		{
-			return Wrap(eventInfo.GetRemoveMethod(nonPublic));
-		}
+        public override MethodInfo GetRaiseMethod(bool nonPublic)
+        {
+            return Wrap(eventInfo.GetRaiseMethod(nonPublic));
+        }
 
-		public override MethodInfo[] GetOtherMethods(bool nonPublic)
-		{
-			MethodInfo[] others = eventInfo.GetOtherMethods(nonPublic);
-			for (int i = 0; i < others.Length; i++)
-			{
-				others[i] = Wrap(others[i]);
-			}
-			return others;
-		}
+        public override MethodInfo GetRemoveMethod(bool nonPublic)
+        {
+            return Wrap(eventInfo.GetRemoveMethod(nonPublic));
+        }
 
-		public override MethodInfo[] __GetMethods()
-		{
-			MethodInfo[] others = eventInfo.__GetMethods();
-			for (int i = 0; i < others.Length; i++)
-			{
-				others[i] = Wrap(others[i]);
-			}
-			return others;
-		}
+        public override MethodInfo[] GetOtherMethods(bool nonPublic)
+        {
+            var others = eventInfo.GetOtherMethods(nonPublic);
+            for (int i = 0; i < others.Length; i++)
+                others[i] = Wrap(others[i]);
 
-		public override Type EventHandlerType
-		{
-			get { return eventInfo.EventHandlerType.BindTypeParameters(typeInstance); }
-		}
+            return others;
+        }
 
-		public override string Name
-		{
-			get { return eventInfo.Name; }
-		}
+        public override MethodInfo[] __GetMethods()
+        {
+            var others = eventInfo.__GetMethods();
+            for (int i = 0; i < others.Length; i++)
+                others[i] = Wrap(others[i]);
 
-		public override Type DeclaringType
-		{
-			get { return typeInstance; }
-		}
+            return others;
+        }
 
-		public override Module Module
-		{
-			get { return eventInfo.Module; }
-		}
+        public override Type EventHandlerType
+        {
+            get { return eventInfo.EventHandlerType.BindTypeParameters(typeInstance); }
+        }
 
-		public override int MetadataToken
-		{
-			get { return eventInfo.MetadataToken; }
-		}
+        public override string Name
+        {
+            get { return eventInfo.Name; }
+        }
 
-		internal override EventInfo BindTypeParameters(Type type)
-		{
-			return new GenericEventInfo(typeInstance.BindTypeParameters(type), eventInfo);
-		}
+        public override Type DeclaringType
+        {
+            get { return typeInstance; }
+        }
 
-		internal override bool IsPublic
-		{
-			get { return eventInfo.IsPublic; }
-		}
+        public override Module Module
+        {
+            get { return eventInfo.Module; }
+        }
 
-		internal override bool IsNonPrivate
-		{
-			get { return eventInfo.IsNonPrivate; }
-		}
+        public override int MetadataToken
+        {
+            get { return eventInfo.MetadataToken; }
+        }
 
-		internal override bool IsStatic
-		{
-			get { return eventInfo.IsStatic; }
-		}
+        internal override EventInfo BindTypeParameters(Type type)
+        {
+            return new GenericEventInfo(typeInstance.BindTypeParameters(type), eventInfo);
+        }
 
-		internal override bool IsBaked
-		{
-			get { return eventInfo.IsBaked; }
-		}
+        internal override bool IsPublic
+        {
+            get { return eventInfo.IsPublic; }
+        }
 
-		internal override int GetCurrentToken()
-		{
-			return eventInfo.GetCurrentToken();
-		}
+        internal override bool IsNonPrivate
+        {
+            get { return eventInfo.IsNonPrivate; }
+        }
 
-	}
+        internal override bool IsStatic
+        {
+            get { return eventInfo.IsStatic; }
+        }
+
+        internal override bool IsBaked
+        {
+            get { return eventInfo.IsBaked; }
+        }
+
+        internal override int GetCurrentToken()
+        {
+            return eventInfo.GetCurrentToken();
+        }
+
+    }
 
 }

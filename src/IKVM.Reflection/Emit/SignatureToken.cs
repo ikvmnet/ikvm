@@ -24,44 +24,11 @@
 
 namespace IKVM.Reflection.Emit
 {
-    public struct SignatureToken
-	{
-		public static readonly SignatureToken Empty;
-		private readonly int token;
+    public readonly record struct SignatureToken(int Token)
+    {
 
-		internal SignatureToken(int token)
-		{
-			this.token = token;
-		}
+        public static readonly SignatureToken Empty;
 
-		public int Token
-		{
-			get { return token; }
-		}
+    }
 
-		public override bool Equals(object obj)
-		{
-			return obj as SignatureToken? == this;
-		}
-
-		public override int GetHashCode()
-		{
-			return token;
-		}
-
-		public bool Equals(SignatureToken other)
-		{
-			return this == other;
-		}
-
-		public static bool operator ==(SignatureToken st1, SignatureToken st2)
-		{
-			return st1.token == st2.token;
-		}
-
-		public static bool operator !=(SignatureToken st1, SignatureToken st2)
-		{
-			return st1.token != st2.token;
-		}
-	}
 }

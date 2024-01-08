@@ -28,16 +28,39 @@ namespace IKVM.Reflection
 
     // IKVM.Reflection specific type
     [Flags]
-	public enum DllCharacteristics
-	{
+    public enum DllCharacteristics
+    {
 
-		HighEntropyVA = 0x0020,			// IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA
-		DynamicBase = 0x0040,			// IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE
-		NoSEH = 0x0400,					// IMAGE_DLLCHARACTERISTICS_NO_SEH
-		NXCompat = 0x0100,				// IMAGE_DLLCHARACTERISTICS_NX_COMPAT
-		AppContainer = 0x1000,			// IMAGE_DLLCHARACTERISTICS_APPCONTAINER
-		TerminalServerAware = 0x8000,	// IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE
+        /// <summary>
+        /// IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA
+        /// </summary>
+        HighEntropyVA = 0x0020,
 
-	}
+        /// <summary>
+        /// IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE
+        /// </summary>
+        DynamicBase = 0x0040,
+
+        /// <summary>
+        /// IMAGE_DLLCHARACTERISTICS_NO_SEH
+        /// </summary>
+        NoSEH = 0x0400,
+
+        /// <summary>
+        /// IMAGE_DLLCHARACTERISTICS_NX_COMPAT
+        /// </summary>
+        NXCompat = 0x0100,
+
+        /// <summary>
+        /// IMAGE_DLLCHARACTERISTICS_APPCONTAINER
+        /// </summary>
+        AppContainer = 0x1000,
+
+        /// <summary>
+        /// IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE
+        /// </summary>
+        TerminalServerAware = 0x8000,
+
+    }
 
 }

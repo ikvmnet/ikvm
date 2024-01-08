@@ -23,27 +23,30 @@
 */
 namespace IKVM.Reflection
 {
+
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
-	struct SingleConverter
-	{
-		[System.Runtime.InteropServices.FieldOffset(0)]
-		private int i;
-		[System.Runtime.InteropServices.FieldOffset(0)]
-		private float f;
+    struct SingleConverter
+    {
 
-		internal static int SingleToInt32Bits(float v)
-		{
-			SingleConverter c = new SingleConverter();
-			c.f = v;
-			return c.i;
-		}
+        [System.Runtime.InteropServices.FieldOffset(0)]
+        int i;
+        [System.Runtime.InteropServices.FieldOffset(0)]
+        float f;
 
-		internal static float Int32BitsToSingle(int v)
-		{
-			SingleConverter c = new SingleConverter();
-			c.i = v;
-			return c.f;
-		}
-	}
+        internal static int SingleToInt32Bits(float v)
+        {
+            var c = new SingleConverter();
+            c.f = v;
+            return c.i;
+        }
+
+        internal static float Int32BitsToSingle(int v)
+        {
+            var c = new SingleConverter();
+            c.i = v;
+            return c.f;
+        }
+
+    }
 
 }

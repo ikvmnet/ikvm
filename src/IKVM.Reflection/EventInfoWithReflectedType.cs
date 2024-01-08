@@ -27,129 +27,136 @@ namespace IKVM.Reflection
 {
 
     sealed class EventInfoWithReflectedType : EventInfo
-	{
+    {
 
-		private readonly Type reflectedType;
-		private readonly EventInfo eventInfo;
+        readonly Type reflectedType;
+        readonly EventInfo eventInfo;
 
-		internal EventInfoWithReflectedType(Type reflectedType, EventInfo eventInfo)
-		{
-			Debug.Assert(reflectedType != eventInfo.DeclaringType);
-			this.reflectedType = reflectedType;
-			this.eventInfo = eventInfo;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="reflectedType"></param>
+        /// <param name="eventInfo"></param>
+        internal EventInfoWithReflectedType(Type reflectedType, EventInfo eventInfo)
+        {
+            Debug.Assert(reflectedType != eventInfo.DeclaringType);
+            this.reflectedType = reflectedType;
+            this.eventInfo = eventInfo;
+        }
 
-		public override EventAttributes Attributes
-		{
-			get { return eventInfo.Attributes; }
-		}
+        public override EventAttributes Attributes
+        {
+            get { return eventInfo.Attributes; }
+        }
 
-		public override MethodInfo GetAddMethod(bool nonPublic)
-		{
-			return SetReflectedType(eventInfo.GetAddMethod(nonPublic), reflectedType);
-		}
+        public override MethodInfo GetAddMethod(bool nonPublic)
+        {
+            return SetReflectedType(eventInfo.GetAddMethod(nonPublic), reflectedType);
+        }
 
-		public override MethodInfo GetRaiseMethod(bool nonPublic)
-		{
-			return SetReflectedType(eventInfo.GetRaiseMethod(nonPublic), reflectedType);
-		}
+        public override MethodInfo GetRaiseMethod(bool nonPublic)
+        {
+            return SetReflectedType(eventInfo.GetRaiseMethod(nonPublic), reflectedType);
+        }
 
-		public override MethodInfo GetRemoveMethod(bool nonPublic)
-		{
-			return SetReflectedType(eventInfo.GetRemoveMethod(nonPublic), reflectedType);
-		}
+        public override MethodInfo GetRemoveMethod(bool nonPublic)
+        {
+            return SetReflectedType(eventInfo.GetRemoveMethod(nonPublic), reflectedType);
+        }
 
-		public override MethodInfo[] GetOtherMethods(bool nonPublic)
-		{
-			return SetReflectedType(eventInfo.GetOtherMethods(nonPublic), reflectedType);
-		}
+        public override MethodInfo[] GetOtherMethods(bool nonPublic)
+        {
+            return SetReflectedType(eventInfo.GetOtherMethods(nonPublic), reflectedType);
+        }
 
-		public override MethodInfo[] __GetMethods()
-		{
-			return SetReflectedType(eventInfo.__GetMethods(), reflectedType);
-		}
+        public override MethodInfo[] __GetMethods()
+        {
+            return SetReflectedType(eventInfo.__GetMethods(), reflectedType);
+        }
 
-		public override Type EventHandlerType
-		{
-			get { return eventInfo.EventHandlerType; }
-		}
+        public override Type EventHandlerType
+        {
+            get { return eventInfo.EventHandlerType; }
+        }
 
-		internal override bool IsPublic
-		{
-			get { return eventInfo.IsPublic; }
-		}
+        internal override bool IsPublic
+        {
+            get { return eventInfo.IsPublic; }
+        }
 
-		internal override bool IsNonPrivate
-		{
-			get { return eventInfo.IsNonPrivate; }
-		}
+        internal override bool IsNonPrivate
+        {
+            get { return eventInfo.IsNonPrivate; }
+        }
 
-		internal override bool IsStatic
-		{
-			get { return eventInfo.IsStatic; }
-		}
+        internal override bool IsStatic
+        {
+            get { return eventInfo.IsStatic; }
+        }
 
-		internal override EventInfo BindTypeParameters(Type type)
-		{
-			return eventInfo.BindTypeParameters(type);
-		}
+        internal override EventInfo BindTypeParameters(Type type)
+        {
+            return eventInfo.BindTypeParameters(type);
+        }
 
-		public override string ToString()
-		{
-			return eventInfo.ToString();
-		}
+        public override string ToString()
+        {
+            return eventInfo.ToString();
+        }
 
-		public override bool __IsMissing
-		{
-			get { return eventInfo.__IsMissing; }
-		}
+        public override bool __IsMissing
+        {
+            get { return eventInfo.__IsMissing; }
+        }
 
-		public override Type DeclaringType
-		{
-			get { return eventInfo.DeclaringType; }
-		}
+        public override Type DeclaringType
+        {
+            get { return eventInfo.DeclaringType; }
+        }
 
-		public override Type ReflectedType
-		{
-			get { return reflectedType; }
-		}
+        public override Type ReflectedType
+        {
+            get { return reflectedType; }
+        }
 
-		public override bool Equals(object obj)
-		{
-			EventInfoWithReflectedType other = obj as EventInfoWithReflectedType;
-			return other != null
-				&& other.reflectedType == reflectedType
-				&& other.eventInfo == eventInfo;
-		}
+        public override bool Equals(object obj)
+        {
+            var other = obj as EventInfoWithReflectedType;
+            return other != null
+                && other.reflectedType == reflectedType
+                && other.eventInfo == eventInfo;
+        }
 
-		public override int GetHashCode()
-		{
-			return reflectedType.GetHashCode() ^ eventInfo.GetHashCode();
-		}
+        public override int GetHashCode()
+        {
+            return reflectedType.GetHashCode() ^ eventInfo.GetHashCode();
+        }
 
-		public override int MetadataToken
-		{
-			get { return eventInfo.MetadataToken; }
-		}
+        public override int MetadataToken
+        {
+            get { return eventInfo.MetadataToken; }
+        }
 
-		public override Module Module
-		{
-			get { return eventInfo.Module; }
-		}
+        public override Module Module
+        {
+            get { return eventInfo.Module; }
+        }
 
-		public override string Name
-		{
-			get { return eventInfo.Name; }
-		}
+        public override string Name
+        {
+            get { return eventInfo.Name; }
+        }
 
-		internal override bool IsBaked
-		{
-			get { return eventInfo.IsBaked; }
-		}
+        internal override bool IsBaked
+        {
+            get { return eventInfo.IsBaked; }
+        }
 
-		internal override int GetCurrentToken()
-		{
-			return eventInfo.GetCurrentToken();
-		}
-	}
+        internal override int GetCurrentToken()
+        {
+            return eventInfo.GetCurrentToken();
+        }
+
+    }
+
 }

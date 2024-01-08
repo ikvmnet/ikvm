@@ -27,266 +27,265 @@ namespace IKVM.Reflection
 {
 
     sealed class MissingType : Type
-	{
+    {
 
-		private readonly Module module;
-		private readonly Type declaringType;
-		private readonly string ns;
-		private readonly string name;
-		private Type[] typeArgs;
-		private int token;
-		private int flags;
-		private bool cyclicTypeForwarder;
-		private bool cyclicTypeSpec;
+        readonly Module module;
+        readonly Type declaringType;
+        readonly string ns;
+        readonly string name;
+        Type[] typeArgs;
+        int token;
+        int flags;
+        bool cyclicTypeForwarder;
+        bool cyclicTypeSpec;
 
-		internal MissingType(Module module, Type declaringType, string ns, string name)
-		{
-			this.module = module;
-			this.declaringType = declaringType;
-			this.ns = ns;
-			this.name = name;
-			MarkKnownType(ns, name);
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="declaringType"></param>
+        /// <param name="ns"></param>
+        /// <param name="name"></param>
+        internal MissingType(Module module, Type declaringType, string ns, string name)
+        {
+            this.module = module;
+            this.declaringType = declaringType;
+            this.ns = ns;
+            this.name = name;
+            MarkKnownType(ns, name);
 
-			// HACK we need to handle the Windows Runtime projected types that change from ValueType to Class or v.v.
-			if (WindowsRuntimeProjection.IsProjectedValueType(ns, name, module))
-			{
-				typeFlags |= TypeFlags.ValueType;
-			}
-			else if (WindowsRuntimeProjection.IsProjectedReferenceType(ns, name, module))
-			{
-				typeFlags |= TypeFlags.NotValueType;
-			}
-		}
+            // HACK we need to handle the Windows Runtime projected types that change from ValueType to Class or v.v.
+            if (WindowsRuntimeProjection.IsProjectedValueType(ns, name, module))
+                typeFlags |= TypeFlags.ValueType;
+            else if (WindowsRuntimeProjection.IsProjectedReferenceType(ns, name, module))
+                typeFlags |= TypeFlags.NotValueType;
+        }
 
-		internal override MethodBase FindMethod(string name, MethodSignature signature)
-		{
-			MethodInfo method = new MissingMethod(this, name, signature);
-			if (name == ".ctor")
-			{
-				return new ConstructorInfoImpl(method);
-			}
-			return method;
-		}
+        internal override MethodBase FindMethod(string name, MethodSignature signature)
+        {
+            var method = new MissingMethod(this, name, signature);
+            if (name == ".ctor")
+                return new ConstructorInfoImpl(method);
 
-		internal override FieldInfo FindField(string name, FieldSignature signature)
-		{
-			return new MissingField(this, name, signature);
-		}
+            return method;
+        }
 
-		internal override Type FindNestedType(TypeName name)
-		{
-			return null;
-		}
+        internal override FieldInfo FindField(string name, FieldSignature signature)
+        {
+            return new MissingField(this, name, signature);
+        }
 
-		internal override Type FindNestedTypeIgnoreCase(TypeName lowerCaseName)
-		{
-			return null;
-		}
+        internal override Type FindNestedType(TypeName name)
+        {
+            return null;
+        }
 
-		public override bool __IsMissing
-		{
-			get { return true; }
-		}
+        internal override Type FindNestedTypeIgnoreCase(TypeName lowerCaseName)
+        {
+            return null;
+        }
 
-		public override Type DeclaringType
-		{
-			get { return declaringType; }
-		}
+        public override bool __IsMissing
+        {
+            get { return true; }
+        }
 
-		internal override TypeName TypeName
-		{
-			get { return new TypeName(ns, name); }
-		}
+        public override Type DeclaringType
+        {
+            get { return declaringType; }
+        }
 
-		public override string Name
-		{
-			get { return TypeNameParser.Escape(name); }
-		}
+        internal override TypeName TypeName
+        {
+            get { return new TypeName(ns, name); }
+        }
 
-		public override string FullName
-		{
-			get { return GetFullName(); }
-		}
+        public override string Name
+        {
+            get { return TypeNameParser.Escape(name); }
+        }
 
-		public override Module Module
-		{
-			get { return module; }
-		}
+        public override string FullName
+        {
+            get { return GetFullName(); }
+        }
 
-		public override int MetadataToken
-		{
-			get { return token; }
-		}
+        public override Module Module
+        {
+            get { return module; }
+        }
 
-		protected override bool IsValueTypeImpl
-		{
-			get
-			{
-				switch (typeFlags & (TypeFlags.ValueType | TypeFlags.NotValueType))
-				{
-					case TypeFlags.ValueType:
-						return true;
-					case TypeFlags.NotValueType:
-						return false;
-					case TypeFlags.ValueType | TypeFlags.NotValueType:
-						if (WindowsRuntimeProjection.IsProjectedValueType(ns, name, module))
-						{
-							typeFlags &= ~TypeFlags.NotValueType;
-							return true;
-						}
-						if (WindowsRuntimeProjection.IsProjectedReferenceType(ns, name, module))
-						{
-							typeFlags &= ~TypeFlags.ValueType;
-							return false;
-						}
-						goto default;
-					default:
-						if (module.universe.ResolveMissingTypeIsValueType(this))
-						{
-							typeFlags |= TypeFlags.ValueType;
-						}
-						else
-						{
-							typeFlags |= TypeFlags.NotValueType;
-						}
-						return (typeFlags & TypeFlags.ValueType) != 0;
-				}
-			}
-		}
+        public override int MetadataToken
+        {
+            get { return token; }
+        }
 
-		public override Type BaseType
-		{
-			get { throw new MissingMemberException(this); }
-		}
+        protected override bool IsValueTypeImpl
+        {
+            get
+            {
+                switch (typeFlags & (TypeFlags.ValueType | TypeFlags.NotValueType))
+                {
+                    case TypeFlags.ValueType:
+                        return true;
+                    case TypeFlags.NotValueType:
+                        return false;
+                    case TypeFlags.ValueType | TypeFlags.NotValueType:
+                        if (WindowsRuntimeProjection.IsProjectedValueType(ns, name, module))
+                        {
+                            typeFlags &= ~TypeFlags.NotValueType;
+                            return true;
+                        }
+                        else if (WindowsRuntimeProjection.IsProjectedReferenceType(ns, name, module))
+                        {
+                            typeFlags &= ~TypeFlags.ValueType;
+                            return false;
+                        }
+                        else
+                        {
+                            goto default;
+                        }
+                    default:
+                        if (module.universe.ResolveMissingTypeIsValueType(this))
+                            typeFlags |= TypeFlags.ValueType;
+                        else
+                            typeFlags |= TypeFlags.NotValueType;
 
-		public override TypeAttributes Attributes
-		{
-			get { throw new MissingMemberException(this); }
-		}
+                        return (typeFlags & TypeFlags.ValueType) != 0;
+                }
+            }
+        }
 
-		public override Type[] __GetDeclaredTypes()
-		{
-			throw new MissingMemberException(this);
-		}
+        public override Type BaseType
+        {
+            get { throw new MissingMemberException(this); }
+        }
 
-		public override Type[] __GetDeclaredInterfaces()
-		{
-			throw new MissingMemberException(this);
-		}
+        public override TypeAttributes Attributes
+        {
+            get { throw new MissingMemberException(this); }
+        }
 
-		public override MethodBase[] __GetDeclaredMethods()
-		{
-			throw new MissingMemberException(this);
-		}
+        public override Type[] __GetDeclaredTypes()
+        {
+            throw new MissingMemberException(this);
+        }
 
-		public override __MethodImplMap __GetMethodImplMap()
-		{
-			throw new MissingMemberException(this);
-		}
+        public override Type[] __GetDeclaredInterfaces()
+        {
+            throw new MissingMemberException(this);
+        }
 
-		public override FieldInfo[] __GetDeclaredFields()
-		{
-			throw new MissingMemberException(this);
-		}
+        public override MethodBase[] __GetDeclaredMethods()
+        {
+            throw new MissingMemberException(this);
+        }
 
-		public override EventInfo[] __GetDeclaredEvents()
-		{
-			throw new MissingMemberException(this);
-		}
+        public override __MethodImplMap __GetMethodImplMap()
+        {
+            throw new MissingMemberException(this);
+        }
 
-		public override PropertyInfo[] __GetDeclaredProperties()
-		{
-			throw new MissingMemberException(this);
-		}
+        public override FieldInfo[] __GetDeclaredFields()
+        {
+            throw new MissingMemberException(this);
+        }
 
-		public override CustomModifiers __GetCustomModifiers()
-		{
-			throw new MissingMemberException(this);
-		}
+        public override EventInfo[] __GetDeclaredEvents()
+        {
+            throw new MissingMemberException(this);
+        }
 
-		public override Type[] GetGenericArguments()
-		{
-			throw new MissingMemberException(this);
-		}
+        public override PropertyInfo[] __GetDeclaredProperties()
+        {
+            throw new MissingMemberException(this);
+        }
 
-		public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
-		{
-			throw new MissingMemberException(this);
-		}
+        public override CustomModifiers __GetCustomModifiers()
+        {
+            throw new MissingMemberException(this);
+        }
 
-		public override bool __GetLayout(out int packingSize, out int typeSize)
-		{
-			throw new MissingMemberException(this);
-		}
+        public override Type[] GetGenericArguments()
+        {
+            throw new MissingMemberException(this);
+        }
 
-		public override bool IsGenericType
-		{
-			get { throw new MissingMemberException(this); }
-		}
+        public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
+        {
+            throw new MissingMemberException(this);
+        }
 
-		public override bool IsGenericTypeDefinition
-		{
-			get { throw new MissingMemberException(this); }
-		}
+        public override bool __GetLayout(out int packingSize, out int typeSize)
+        {
+            throw new MissingMemberException(this);
+        }
 
-		internal override Type GetGenericTypeArgument(int index)
-		{
-			if (typeArgs == null)
-			{
-				typeArgs = new Type[index + 1];
-			}
-			else if (typeArgs.Length <= index)
-			{
-				Array.Resize(ref typeArgs, index + 1);
-			}
-			return typeArgs[index] ?? (typeArgs[index] = new MissingTypeParameter(this, index));
-		}
+        public override bool IsGenericType
+        {
+            get { throw new MissingMemberException(this); }
+        }
 
-		internal override Type BindTypeParameters(IGenericBinder binder)
-		{
-			return this;
-		}
+        public override bool IsGenericTypeDefinition
+        {
+            get { throw new MissingMemberException(this); }
+        }
 
-		internal override Type SetMetadataTokenForMissing(int token, int flags)
-		{
-			this.token = token;
-			this.flags = flags;
-			return this;
-		}
+        internal override Type GetGenericTypeArgument(int index)
+        {
+            if (typeArgs == null)
+                typeArgs = new Type[index + 1];
+            else if (typeArgs.Length <= index)
+                Array.Resize(ref typeArgs, index + 1);
 
-		internal override Type SetCyclicTypeForwarder()
-		{
-			this.cyclicTypeForwarder = true;
-			return this;
-		}
+            return typeArgs[index] ?? (typeArgs[index] = new MissingTypeParameter(this, index));
+        }
 
-		internal override Type SetCyclicTypeSpec()
-		{
-			this.cyclicTypeSpec = true;
-			return this;
-		}
+        internal override Type BindTypeParameters(IGenericBinder binder)
+        {
+            return this;
+        }
 
-		internal override bool IsBaked
-		{
-			get { throw new MissingMemberException(this); }
-		}
+        internal override Type SetMetadataTokenForMissing(int token, int flags)
+        {
+            this.token = token;
+            this.flags = flags;
+            return this;
+        }
 
-		public override bool __IsTypeForwarder
-		{
-			// CorTypeAttr.tdForwarder
-			get { return (flags & 0x00200000) != 0; }
-		}
+        internal override Type SetCyclicTypeForwarder()
+        {
+            this.cyclicTypeForwarder = true;
+            return this;
+        }
 
-		public override bool __IsCyclicTypeForwarder
-		{
-			get { return cyclicTypeForwarder; }
-		}
+        internal override Type SetCyclicTypeSpec()
+        {
+            this.cyclicTypeSpec = true;
+            return this;
+        }
 
-		public override bool __IsCyclicTypeSpec
-		{
-			get { return cyclicTypeSpec; }
-		}
+        internal override bool IsBaked
+        {
+            get { throw new MissingMemberException(this); }
+        }
 
-	}
+        public override bool __IsTypeForwarder
+        {
+            // CorTypeAttr.tdForwarder
+            get { return (flags & 0x00200000) != 0; }
+        }
+
+        public override bool __IsCyclicTypeForwarder
+        {
+            get { return cyclicTypeForwarder; }
+        }
+
+        public override bool __IsCyclicTypeSpec
+        {
+            get { return cyclicTypeSpec; }
+        }
+
+    }
 
 }

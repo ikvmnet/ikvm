@@ -32,6 +32,7 @@ namespace IKVM.Reflection
         OK,
         GenericError,
         DuplicateKey,
+
     }
 
 }

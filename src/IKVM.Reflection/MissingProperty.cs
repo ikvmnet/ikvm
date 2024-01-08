@@ -26,97 +26,105 @@ namespace IKVM.Reflection
 
     // NOTE this is currently only used by CustomAttributeData (because there is no other way to refer to a property)
     sealed class MissingProperty : PropertyInfo
-	{
-		private readonly Type declaringType;
-		private readonly string name;
-		private readonly PropertySignature signature;
+    {
 
-		internal MissingProperty(Type declaringType, string name, PropertySignature signature)
-		{
-			this.declaringType = declaringType;
-			this.name = name;
-			this.signature = signature;
-		}
+        readonly Type declaringType;
+        readonly string name;
+        readonly PropertySignature signature;
 
-		public override PropertyAttributes Attributes
-		{
-			get { throw new MissingMemberException(this); }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="declaringType"></param>
+        /// <param name="name"></param>
+        /// <param name="signature"></param>
+        internal MissingProperty(Type declaringType, string name, PropertySignature signature)
+        {
+            this.declaringType = declaringType;
+            this.name = name;
+            this.signature = signature;
+        }
 
-		public override bool CanRead
-		{
-			get { throw new MissingMemberException(this); }
-		}
+        public override PropertyAttributes Attributes
+        {
+            get { throw new MissingMemberException(this); }
+        }
 
-		public override bool CanWrite
-		{
-			get { throw new MissingMemberException(this); }
-		}
+        public override bool CanRead
+        {
+            get { throw new MissingMemberException(this); }
+        }
 
-		public override MethodInfo GetGetMethod(bool nonPublic)
-		{
-			throw new MissingMemberException(this);
-		}
+        public override bool CanWrite
+        {
+            get { throw new MissingMemberException(this); }
+        }
 
-		public override MethodInfo GetSetMethod(bool nonPublic)
-		{
-			throw new MissingMemberException(this);
-		}
+        public override MethodInfo GetGetMethod(bool nonPublic)
+        {
+            throw new MissingMemberException(this);
+        }
 
-		public override MethodInfo[] GetAccessors(bool nonPublic)
-		{
-			throw new MissingMemberException(this);
-		}
+        public override MethodInfo GetSetMethod(bool nonPublic)
+        {
+            throw new MissingMemberException(this);
+        }
 
-		public override object GetRawConstantValue()
-		{
-			throw new MissingMemberException(this);
-		}
+        public override MethodInfo[] GetAccessors(bool nonPublic)
+        {
+            throw new MissingMemberException(this);
+        }
 
-		internal override bool IsPublic
-		{
-			get { throw new MissingMemberException(this); }
-		}
+        public override object GetRawConstantValue()
+        {
+            throw new MissingMemberException(this);
+        }
 
-		internal override bool IsNonPrivate
-		{
-			get { throw new MissingMemberException(this); }
-		}
+        internal override bool IsPublic
+        {
+            get { throw new MissingMemberException(this); }
+        }
 
-		internal override bool IsStatic
-		{
-			get { throw new MissingMemberException(this); }
-		}
+        internal override bool IsNonPrivate
+        {
+            get { throw new MissingMemberException(this); }
+        }
 
-		internal override PropertySignature PropertySignature
-		{
-			get { return signature; }
-		}
+        internal override bool IsStatic
+        {
+            get { throw new MissingMemberException(this); }
+        }
 
-		public override string Name
-		{
-			get { return name; }
-		}
+        internal override PropertySignature PropertySignature
+        {
+            get { return signature; }
+        }
 
-		public override Type DeclaringType
-		{
-			get { return declaringType; }
-		}
+        public override string Name
+        {
+            get { return name; }
+        }
 
-		public override Module Module
-		{
-			get { return declaringType.Module; }
-		}
+        public override Type DeclaringType
+        {
+            get { return declaringType; }
+        }
 
-		internal override bool IsBaked
-		{
-			get { return declaringType.IsBaked; }
-		}
+        public override Module Module
+        {
+            get { return declaringType.Module; }
+        }
 
-		internal override int GetCurrentToken()
-		{
-			throw new MissingMemberException(this);
-		}
-	}
+        internal override bool IsBaked
+        {
+            get { return declaringType.IsBaked; }
+        }
+
+        internal override int GetCurrentToken()
+        {
+            throw new MissingMemberException(this);
+        }
+
+    }
 
 }

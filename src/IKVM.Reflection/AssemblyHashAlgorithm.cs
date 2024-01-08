@@ -23,10 +23,14 @@
 */
 namespace IKVM.Reflection
 {
+
     public enum AssemblyHashAlgorithm
 	{
+
 		None = 0,
 		MD5 = 0x8003,
 		SHA1 = 0x8004,
+
 	}
+
 }

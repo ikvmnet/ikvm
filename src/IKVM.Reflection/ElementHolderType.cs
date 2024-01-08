@@ -27,138 +27,139 @@ namespace IKVM.Reflection
 {
 
     abstract class ElementHolderType : TypeInfo
-	{
+    {
 
-		protected readonly Type elementType;
-		private int token;
-		private readonly CustomModifiers mods;
+        protected readonly Type elementType;
+        int token;
+        readonly CustomModifiers mods;
 
-		protected ElementHolderType(Type elementType, CustomModifiers mods, byte sigElementType)
-			: base(sigElementType)
-		{
-			this.elementType = elementType;
-			this.mods = mods;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="elementType"></param>
+        /// <param name="mods"></param>
+        /// <param name="sigElementType"></param>
+        protected ElementHolderType(Type elementType, CustomModifiers mods, byte sigElementType) :
+            base(sigElementType)
+        {
+            this.elementType = elementType;
+            this.mods = mods;
+        }
 
-		protected bool EqualsHelper(ElementHolderType other)
-		{
-			return other != null
-				&& other.elementType.Equals(elementType)
-				&& other.mods.Equals(mods);
-		}
+        protected bool EqualsHelper(ElementHolderType other)
+        {
+            return other != null
+                && other.elementType.Equals(elementType)
+                && other.mods.Equals(mods);
+        }
 
-		public override CustomModifiers __GetCustomModifiers()
-		{
-			return mods;
-		}
+        public override CustomModifiers __GetCustomModifiers()
+        {
+            return mods;
+        }
 
-		public sealed override string Name
-		{
-			get { return elementType.Name + GetSuffix(); }
-		}
+        public sealed override string Name
+        {
+            get { return elementType.Name + GetSuffix(); }
+        }
 
-		public sealed override string Namespace
-		{
-			get { return elementType.Namespace; }
-		}
+        public sealed override string Namespace
+        {
+            get { return elementType.Namespace; }
+        }
 
-		public sealed override string FullName
-		{
-			get { return elementType.FullName + GetSuffix(); }
-		}
+        public sealed override string FullName
+        {
+            get { return elementType.FullName + GetSuffix(); }
+        }
 
-		public sealed override string ToString()
-		{
-			return elementType.ToString() + GetSuffix();
-		}
+        public sealed override string ToString()
+        {
+            return elementType.ToString() + GetSuffix();
+        }
 
-		public sealed override Type GetElementType()
-		{
-			return elementType;
-		}
+        public sealed override Type GetElementType()
+        {
+            return elementType;
+        }
 
-		public sealed override Module Module
-		{
-			get { return elementType.Module; }
-		}
+        public sealed override Module Module
+        {
+            get { return elementType.Module; }
+        }
 
-		internal sealed override int GetModuleBuilderToken()
-		{
-			if (token == 0)
-			{
-				token = ((ModuleBuilder)elementType.Module).ImportType(this);
-			}
-			return token;
-		}
+        internal sealed override int GetModuleBuilderToken()
+        {
+            if (token == 0)
+                token = ((ModuleBuilder)elementType.Module).ImportType(this);
 
-		public sealed override bool ContainsGenericParameters
-		{
-			get
-			{
-				Type type = elementType;
-				while (type.HasElementType)
-				{
-					type = type.GetElementType();
-				}
-				return type.ContainsGenericParameters;
-			}
-		}
+            return token;
+        }
 
-		protected sealed override bool ContainsMissingTypeImpl
-		{
-			get
-			{
-				Type type = elementType;
-				while (type.HasElementType)
-				{
-					type = type.GetElementType();
-				}
-				return type.__ContainsMissingType
-					|| mods.ContainsMissingType;
-			}
-		}
+        public sealed override bool ContainsGenericParameters
+        {
+            get
+            {
+                var type = elementType;
+                while (type.HasElementType)
+                    type = type.GetElementType();
 
-		protected sealed override bool IsValueTypeImpl
-		{
-			get { return false; }
-		}
+                return type.ContainsGenericParameters;
+            }
+        }
 
-		internal sealed override Type BindTypeParameters(IGenericBinder binder)
-		{
-			Type type = elementType.BindTypeParameters(binder);
-			CustomModifiers mods = this.mods.Bind(binder);
-			if (ReferenceEquals(type, elementType)
-				&& mods.Equals(this.mods))
-			{
-				return this;
-			}
-			return Wrap(type, mods);
-		}
+        protected sealed override bool ContainsMissingTypeImpl
+        {
+            get
+            {
+                var type = elementType;
+                while (type.HasElementType)
+                    type = type.GetElementType();
 
-		internal override void CheckBaked()
-		{
-			elementType.CheckBaked();
-		}
+                return type.__ContainsMissingType || mods.ContainsMissingType;
+            }
+        }
 
-		internal sealed override Universe Universe
-		{
-			get { return elementType.Universe; }
-		}
+        protected sealed override bool IsValueTypeImpl
+        {
+            get { return false; }
+        }
 
-		internal sealed override bool IsBaked
-		{
-			get { return elementType.IsBaked; }
-		}
+        internal sealed override Type BindTypeParameters(IGenericBinder binder)
+        {
+            var type = elementType.BindTypeParameters(binder);
+            var mods = this.mods.Bind(binder);
+            if (ReferenceEquals(type, elementType) && mods.Equals(this.mods))
+                return this;
 
-		internal sealed override int GetCurrentToken()
-		{
-			// we don't have a token, so we return 0 (which is never a valid token)
-			return 0;
-		}
+            return Wrap(type, mods);
+        }
 
-		internal abstract string GetSuffix();
+        internal override void CheckBaked()
+        {
+            elementType.CheckBaked();
+        }
 
-		protected abstract Type Wrap(Type type, CustomModifiers mods);
-	}
+        internal sealed override Universe Universe
+        {
+            get { return elementType.Universe; }
+        }
+
+        internal sealed override bool IsBaked
+        {
+            get { return elementType.IsBaked; }
+        }
+
+        internal sealed override int GetCurrentToken()
+        {
+            // we don't have a token, so we return 0 (which is never a valid token)
+            return 0;
+        }
+
+        internal abstract string GetSuffix();
+
+        protected abstract Type Wrap(Type type, CustomModifiers mods);
+
+    }
 
 }

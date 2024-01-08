@@ -25,13 +25,17 @@ using System;
 
 namespace IKVM.Reflection
 {
+
     [Flags]
 	public enum AssemblyNameFlags
 	{
+
 		None = 0,
 		PublicKey = 1,
 		Retargetable = 256,
 		EnableJITcompileOptimizer = 16384,
 		EnableJITcompileTracking = 32768,
+
 	}
+
 }

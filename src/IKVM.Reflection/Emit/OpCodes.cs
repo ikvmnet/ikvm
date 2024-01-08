@@ -256,467 +256,238 @@ namespace IKVM.Reflection.Emit
 		public static readonly OpCode Refanytype = new OpCode(-2025531014);
 		public static readonly OpCode Readonly = new OpCode(-2021650514);
 
-		internal static string GetName(int value)
-		{
-			switch (value)
-			{
-				case 0:
-					return "nop";
-				case 1:
-					return "break";
-				case 2:
-					return "ldarg.0";
-				case 3:
-					return "ldarg.1";
-				case 4:
-					return "ldarg.2";
-				case 5:
-					return "ldarg.3";
-				case 6:
-					return "ldloc.0";
-				case 7:
-					return "ldloc.1";
-				case 8:
-					return "ldloc.2";
-				case 9:
-					return "ldloc.3";
-				case 10:
-					return "stloc.0";
-				case 11:
-					return "stloc.1";
-				case 12:
-					return "stloc.2";
-				case 13:
-					return "stloc.3";
-				case 14:
-					return "ldarg.s";
-				case 15:
-					return "ldarga.s";
-				case 16:
-					return "starg.s";
-				case 17:
-					return "ldloc.s";
-				case 18:
-					return "ldloca.s";
-				case 19:
-					return "stloc.s";
-				case 20:
-					return "ldnull";
-				case 21:
-					return "ldc.i4.m1";
-				case 22:
-					return "ldc.i4.0";
-				case 23:
-					return "ldc.i4.1";
-				case 24:
-					return "ldc.i4.2";
-				case 25:
-					return "ldc.i4.3";
-				case 26:
-					return "ldc.i4.4";
-				case 27:
-					return "ldc.i4.5";
-				case 28:
-					return "ldc.i4.6";
-				case 29:
-					return "ldc.i4.7";
-				case 30:
-					return "ldc.i4.8";
-				case 31:
-					return "ldc.i4.s";
-				case 32:
-					return "ldc.i4";
-				case 33:
-					return "ldc.i8";
-				case 34:
-					return "ldc.r4";
-				case 35:
-					return "ldc.r8";
-				case 37:
-					return "dup";
-				case 38:
-					return "pop";
-				case 39:
-					return "jmp";
-				case 40:
-					return "call";
-				case 41:
-					return "calli";
-				case 42:
-					return "ret";
-				case 43:
-					return "br.s";
-				case 44:
-					return "brfalse.s";
-				case 45:
-					return "brtrue.s";
-				case 46:
-					return "beq.s";
-				case 47:
-					return "bge.s";
-				case 48:
-					return "bgt.s";
-				case 49:
-					return "ble.s";
-				case 50:
-					return "blt.s";
-				case 51:
-					return "bne.un.s";
-				case 52:
-					return "bge.un.s";
-				case 53:
-					return "bgt.un.s";
-				case 54:
-					return "ble.un.s";
-				case 55:
-					return "blt.un.s";
-				case 56:
-					return "br";
-				case 57:
-					return "brfalse";
-				case 58:
-					return "brtrue";
-				case 59:
-					return "beq";
-				case 60:
-					return "bge";
-				case 61:
-					return "bgt";
-				case 62:
-					return "ble";
-				case 63:
-					return "blt";
-				case 64:
-					return "bne.un";
-				case 65:
-					return "bge.un";
-				case 66:
-					return "bgt.un";
-				case 67:
-					return "ble.un";
-				case 68:
-					return "blt.un";
-				case 69:
-					return "switch";
-				case 70:
-					return "ldind.i1";
-				case 71:
-					return "ldind.u1";
-				case 72:
-					return "ldind.i2";
-				case 73:
-					return "ldind.u2";
-				case 74:
-					return "ldind.i4";
-				case 75:
-					return "ldind.u4";
-				case 76:
-					return "ldind.i8";
-				case 77:
-					return "ldind.i";
-				case 78:
-					return "ldind.r4";
-				case 79:
-					return "ldind.r8";
-				case 80:
-					return "ldind.ref";
-				case 81:
-					return "stind.ref";
-				case 82:
-					return "stind.i1";
-				case 83:
-					return "stind.i2";
-				case 84:
-					return "stind.i4";
-				case 85:
-					return "stind.i8";
-				case 86:
-					return "stind.r4";
-				case 87:
-					return "stind.r8";
-				case 88:
-					return "add";
-				case 89:
-					return "sub";
-				case 90:
-					return "mul";
-				case 91:
-					return "div";
-				case 92:
-					return "div.un";
-				case 93:
-					return "rem";
-				case 94:
-					return "rem.un";
-				case 95:
-					return "and";
-				case 96:
-					return "or";
-				case 97:
-					return "xor";
-				case 98:
-					return "shl";
-				case 99:
-					return "shr";
-				case 100:
-					return "shr.un";
-				case 101:
-					return "neg";
-				case 102:
-					return "not";
-				case 103:
-					return "conv.i1";
-				case 104:
-					return "conv.i2";
-				case 105:
-					return "conv.i4";
-				case 106:
-					return "conv.i8";
-				case 107:
-					return "conv.r4";
-				case 108:
-					return "conv.r8";
-				case 109:
-					return "conv.u4";
-				case 110:
-					return "conv.u8";
-				case 111:
-					return "callvirt";
-				case 112:
-					return "cpobj";
-				case 113:
-					return "ldobj";
-				case 114:
-					return "ldstr";
-				case 115:
-					return "newobj";
-				case 116:
-					return "castclass";
-				case 117:
-					return "isinst";
-				case 118:
-					return "conv.r.un";
-				case 121:
-					return "unbox";
-				case 122:
-					return "throw";
-				case 123:
-					return "ldfld";
-				case 124:
-					return "ldflda";
-				case 125:
-					return "stfld";
-				case 126:
-					return "ldsfld";
-				case 127:
-					return "ldsflda";
-				case 128:
-					return "stsfld";
-				case 129:
-					return "stobj";
-				case 130:
-					return "conv.ovf.i1.un";
-				case 131:
-					return "conv.ovf.i2.un";
-				case 132:
-					return "conv.ovf.i4.un";
-				case 133:
-					return "conv.ovf.i8.un";
-				case 134:
-					return "conv.ovf.u1.un";
-				case 135:
-					return "conv.ovf.u2.un";
-				case 136:
-					return "conv.ovf.u4.un";
-				case 137:
-					return "conv.ovf.u8.un";
-				case 138:
-					return "conv.ovf.i.un";
-				case 139:
-					return "conv.ovf.u.un";
-				case 140:
-					return "box";
-				case 141:
-					return "newarr";
-				case 142:
-					return "ldlen";
-				case 143:
-					return "ldelema";
-				case 144:
-					return "ldelem.i1";
-				case 145:
-					return "ldelem.u1";
-				case 146:
-					return "ldelem.i2";
-				case 147:
-					return "ldelem.u2";
-				case 148:
-					return "ldelem.i4";
-				case 149:
-					return "ldelem.u4";
-				case 150:
-					return "ldelem.i8";
-				case 151:
-					return "ldelem.i";
-				case 152:
-					return "ldelem.r4";
-				case 153:
-					return "ldelem.r8";
-				case 154:
-					return "ldelem.ref";
-				case 155:
-					return "stelem.i";
-				case 156:
-					return "stelem.i1";
-				case 157:
-					return "stelem.i2";
-				case 158:
-					return "stelem.i4";
-				case 159:
-					return "stelem.i8";
-				case 160:
-					return "stelem.r4";
-				case 161:
-					return "stelem.r8";
-				case 162:
-					return "stelem.ref";
-				case 163:
-					return "ldelem";
-				case 164:
-					return "stelem";
-				case 165:
-					return "unbox.any";
-				case 179:
-					return "conv.ovf.i1";
-				case 180:
-					return "conv.ovf.u1";
-				case 181:
-					return "conv.ovf.i2";
-				case 182:
-					return "conv.ovf.u2";
-				case 183:
-					return "conv.ovf.i4";
-				case 184:
-					return "conv.ovf.u4";
-				case 185:
-					return "conv.ovf.i8";
-				case 186:
-					return "conv.ovf.u8";
-				case 194:
-					return "refanyval";
-				case 195:
-					return "ckfinite";
-				case 198:
-					return "mkrefany";
-				case 208:
-					return "ldtoken";
-				case 209:
-					return "conv.u2";
-				case 210:
-					return "conv.u1";
-				case 211:
-					return "conv.i";
-				case 212:
-					return "conv.ovf.i";
-				case 213:
-					return "conv.ovf.u";
-				case 214:
-					return "add.ovf";
-				case 215:
-					return "add.ovf.un";
-				case 216:
-					return "mul.ovf";
-				case 217:
-					return "mul.ovf.un";
-				case 218:
-					return "sub.ovf";
-				case 219:
-					return "sub.ovf.un";
-				case 220:
-					return "endfinally";
-				case 221:
-					return "leave";
-				case 222:
-					return "leave.s";
-				case 223:
-					return "stind.i";
-				case 224:
-					return "conv.u";
-				case 248:
-					return "prefix7";
-				case 249:
-					return "prefix6";
-				case 250:
-					return "prefix5";
-				case 251:
-					return "prefix4";
-				case 252:
-					return "prefix3";
-				case 253:
-					return "prefix2";
-				case 254:
-					return "prefix1";
-				case 255:
-					return "prefixref";
-				case -512:
-					return "arglist";
-				case -511:
-					return "ceq";
-				case -510:
-					return "cgt";
-				case -509:
-					return "cgt.un";
-				case -508:
-					return "clt";
-				case -507:
-					return "clt.un";
-				case -506:
-					return "ldftn";
-				case -505:
-					return "ldvirtftn";
-				case -503:
-					return "ldarg";
-				case -502:
-					return "ldarga";
-				case -501:
-					return "starg";
-				case -500:
-					return "ldloc";
-				case -499:
-					return "ldloca";
-				case -498:
-					return "stloc";
-				case -497:
-					return "localloc";
-				case -495:
-					return "endfilter";
-				case -494:
-					return "unaligned.";
-				case -493:
-					return "volatile.";
-				case -492:
-					return "tail.";
-				case -491:
-					return "initobj";
-				case -490:
-					return "constrained.";
-				case -489:
-					return "cpblk";
-				case -488:
-					return "initblk";
-				case -486:
-					return "rethrow";
-				case -484:
-					return "sizeof";
-				case -483:
-					return "refanytype";
-				case -482:
-					return "readonly.";
-			}
-			throw new ArgumentOutOfRangeException();
-		}
+        internal static string GetName(int value) => value switch
+        {
+            0 => "nop",
+            1 => "break",
+            2 => "ldarg.0",
+            3 => "ldarg.1",
+            4 => "ldarg.2",
+            5 => "ldarg.3",
+            6 => "ldloc.0",
+            7 => "ldloc.1",
+            8 => "ldloc.2",
+            9 => "ldloc.3",
+            10 => "stloc.0",
+            11 => "stloc.1",
+            12 => "stloc.2",
+            13 => "stloc.3",
+            14 => "ldarg.s",
+            15 => "ldarga.s",
+            16 => "starg.s",
+            17 => "ldloc.s",
+            18 => "ldloca.s",
+            19 => "stloc.s",
+            20 => "ldnull",
+            21 => "ldc.i4.m1",
+            22 => "ldc.i4.0",
+            23 => "ldc.i4.1",
+            24 => "ldc.i4.2",
+            25 => "ldc.i4.3",
+            26 => "ldc.i4.4",
+            27 => "ldc.i4.5",
+            28 => "ldc.i4.6",
+            29 => "ldc.i4.7",
+            30 => "ldc.i4.8",
+            31 => "ldc.i4.s",
+            32 => "ldc.i4",
+            33 => "ldc.i8",
+            34 => "ldc.r4",
+            35 => "ldc.r8",
+            37 => "dup",
+            38 => "pop",
+            39 => "jmp",
+            40 => "call",
+            41 => "calli",
+            42 => "ret",
+            43 => "br.s",
+            44 => "brfalse.s",
+            45 => "brtrue.s",
+            46 => "beq.s",
+            47 => "bge.s",
+            48 => "bgt.s",
+            49 => "ble.s",
+            50 => "blt.s",
+            51 => "bne.un.s",
+            52 => "bge.un.s",
+            53 => "bgt.un.s",
+            54 => "ble.un.s",
+            55 => "blt.un.s",
+            56 => "br",
+            57 => "brfalse",
+            58 => "brtrue",
+            59 => "beq",
+            60 => "bge",
+            61 => "bgt",
+            62 => "ble",
+            63 => "blt",
+            64 => "bne.un",
+            65 => "bge.un",
+            66 => "bgt.un",
+            67 => "ble.un",
+            68 => "blt.un",
+            69 => "switch",
+            70 => "ldind.i1",
+            71 => "ldind.u1",
+            72 => "ldind.i2",
+            73 => "ldind.u2",
+            74 => "ldind.i4",
+            75 => "ldind.u4",
+            76 => "ldind.i8",
+            77 => "ldind.i",
+            78 => "ldind.r4",
+            79 => "ldind.r8",
+            80 => "ldind.ref",
+            81 => "stind.ref",
+            82 => "stind.i1",
+            83 => "stind.i2",
+            84 => "stind.i4",
+            85 => "stind.i8",
+            86 => "stind.r4",
+            87 => "stind.r8",
+            88 => "add",
+            89 => "sub",
+            90 => "mul",
+            91 => "div",
+            92 => "div.un",
+            93 => "rem",
+            94 => "rem.un",
+            95 => "and",
+            96 => "or",
+            97 => "xor",
+            98 => "shl",
+            99 => "shr",
+            100 => "shr.un",
+            101 => "neg",
+            102 => "not",
+            103 => "conv.i1",
+            104 => "conv.i2",
+            105 => "conv.i4",
+            106 => "conv.i8",
+            107 => "conv.r4",
+            108 => "conv.r8",
+            109 => "conv.u4",
+            110 => "conv.u8",
+            111 => "callvirt",
+            112 => "cpobj",
+            113 => "ldobj",
+            114 => "ldstr",
+            115 => "newobj",
+            116 => "castclass",
+            117 => "isinst",
+            118 => "conv.r.un",
+            121 => "unbox",
+            122 => "throw",
+            123 => "ldfld",
+            124 => "ldflda",
+            125 => "stfld",
+            126 => "ldsfld",
+            127 => "ldsflda",
+            128 => "stsfld",
+            129 => "stobj",
+            130 => "conv.ovf.i1.un",
+            131 => "conv.ovf.i2.un",
+            132 => "conv.ovf.i4.un",
+            133 => "conv.ovf.i8.un",
+            134 => "conv.ovf.u1.un",
+            135 => "conv.ovf.u2.un",
+            136 => "conv.ovf.u4.un",
+            137 => "conv.ovf.u8.un",
+            138 => "conv.ovf.i.un",
+            139 => "conv.ovf.u.un",
+            140 => "box",
+            141 => "newarr",
+            142 => "ldlen",
+            143 => "ldelema",
+            144 => "ldelem.i1",
+            145 => "ldelem.u1",
+            146 => "ldelem.i2",
+            147 => "ldelem.u2",
+            148 => "ldelem.i4",
+            149 => "ldelem.u4",
+            150 => "ldelem.i8",
+            151 => "ldelem.i",
+            152 => "ldelem.r4",
+            153 => "ldelem.r8",
+            154 => "ldelem.ref",
+            155 => "stelem.i",
+            156 => "stelem.i1",
+            157 => "stelem.i2",
+            158 => "stelem.i4",
+            159 => "stelem.i8",
+            160 => "stelem.r4",
+            161 => "stelem.r8",
+            162 => "stelem.ref",
+            163 => "ldelem",
+            164 => "stelem",
+            165 => "unbox.any",
+            179 => "conv.ovf.i1",
+            180 => "conv.ovf.u1",
+            181 => "conv.ovf.i2",
+            182 => "conv.ovf.u2",
+            183 => "conv.ovf.i4",
+            184 => "conv.ovf.u4",
+            185 => "conv.ovf.i8",
+            186 => "conv.ovf.u8",
+            194 => "refanyval",
+            195 => "ckfinite",
+            198 => "mkrefany",
+            208 => "ldtoken",
+            209 => "conv.u2",
+            210 => "conv.u1",
+            211 => "conv.i",
+            212 => "conv.ovf.i",
+            213 => "conv.ovf.u",
+            214 => "add.ovf",
+            215 => "add.ovf.un",
+            216 => "mul.ovf",
+            217 => "mul.ovf.un",
+            218 => "sub.ovf",
+            219 => "sub.ovf.un",
+            220 => "endfinally",
+            221 => "leave",
+            222 => "leave.s",
+            223 => "stind.i",
+            224 => "conv.u",
+            248 => "prefix7",
+            249 => "prefix6",
+            250 => "prefix5",
+            251 => "prefix4",
+            252 => "prefix3",
+            253 => "prefix2",
+            254 => "prefix1",
+            255 => "prefixref",
+            -512 => "arglist",
+            -511 => "ceq",
+            -510 => "cgt",
+            -509 => "cgt.un",
+            -508 => "clt",
+            -507 => "clt.un",
+            -506 => "ldftn",
+            -505 => "ldvirtftn",
+            -503 => "ldarg",
+            -502 => "ldarga",
+            -501 => "starg",
+            -500 => "ldloc",
+            -499 => "ldloca",
+            -498 => "stloc",
+            -497 => "localloc",
+            -495 => "endfilter",
+            -494 => "unaligned.",
+            -493 => "volatile.",
+            -492 => "tail.",
+            -491 => "initobj",
+            -490 => "constrained.",
+            -489 => "cpblk",
+            -488 => "initblk",
+            -486 => "rethrow",
+            -484 => "sizeof",
+            -483 => "refanytype",
+            -482 => "readonly.",
+            _ => throw new ArgumentOutOfRangeException(),
+        };
 
-		public static bool TakesSingleByteArgument(OpCode inst)
+        public static bool TakesSingleByteArgument(OpCode inst)
 		{
 			switch (inst.Value)
 			{

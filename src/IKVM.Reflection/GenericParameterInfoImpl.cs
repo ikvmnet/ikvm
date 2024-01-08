@@ -25,67 +25,72 @@ namespace IKVM.Reflection
 {
 
     sealed class GenericParameterInfoImpl : ParameterInfo
-	{
+    {
 
-		private readonly GenericMethodInstance method;
-		private readonly ParameterInfo parameterInfo;
+        readonly GenericMethodInstance method;
+        readonly ParameterInfo parameterInfo;
 
-		internal GenericParameterInfoImpl(GenericMethodInstance method, ParameterInfo parameterInfo)
-		{
-			this.method = method;
-			this.parameterInfo = parameterInfo;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="parameterInfo"></param>
+        internal GenericParameterInfoImpl(GenericMethodInstance method, ParameterInfo parameterInfo)
+        {
+            this.method = method;
+            this.parameterInfo = parameterInfo;
+        }
 
-		public override string Name
-		{
-			get { return parameterInfo.Name; }
-		}
+        public override string Name
+        {
+            get { return parameterInfo.Name; }
+        }
 
-		public override Type ParameterType
-		{
-			get { return parameterInfo.ParameterType.BindTypeParameters(method); }
-		}
+        public override Type ParameterType
+        {
+            get { return parameterInfo.ParameterType.BindTypeParameters(method); }
+        }
 
-		public override ParameterAttributes Attributes
-		{
-			get { return parameterInfo.Attributes; }
-		}
+        public override ParameterAttributes Attributes
+        {
+            get { return parameterInfo.Attributes; }
+        }
 
-		public override int Position
-		{
-			get { return parameterInfo.Position; }
-		}
+        public override int Position
+        {
+            get { return parameterInfo.Position; }
+        }
 
-		public override object RawDefaultValue
-		{
-			get { return parameterInfo.RawDefaultValue; }
-		}
+        public override object RawDefaultValue
+        {
+            get { return parameterInfo.RawDefaultValue; }
+        }
 
-		public override CustomModifiers __GetCustomModifiers()
-		{
-			return parameterInfo.__GetCustomModifiers().Bind(method);
-		}
+        public override CustomModifiers __GetCustomModifiers()
+        {
+            return parameterInfo.__GetCustomModifiers().Bind(method);
+        }
 
-		public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-		{
-			return parameterInfo.__TryGetFieldMarshal(out fieldMarshal);
-		}
+        public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
+        {
+            return parameterInfo.__TryGetFieldMarshal(out fieldMarshal);
+        }
 
-		public override MemberInfo Member
-		{
-			get { return method; }
-		}
+        public override MemberInfo Member
+        {
+            get { return method; }
+        }
 
-		public override int MetadataToken
-		{
-			get { return parameterInfo.MetadataToken; }
-		}
+        public override int MetadataToken
+        {
+            get { return parameterInfo.MetadataToken; }
+        }
 
-		internal override Module Module
-		{
-			get { return method.Module; }
-		}
+        internal override Module Module
+        {
+            get { return method.Module; }
+        }
 
-	}
+    }
 
 }

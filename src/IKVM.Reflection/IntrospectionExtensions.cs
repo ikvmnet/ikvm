@@ -23,12 +23,15 @@
 */
 namespace IKVM.Reflection
 {
+
     public static class IntrospectionExtensions
 	{
-		// we target .NET 2.0 so we can't define an extension method
-		public static TypeInfo GetTypeInfo(/*this*/ Type type)
+
+		public static TypeInfo GetTypeInfo(this Type type)
 		{
 			return type.GetTypeInfo();
 		}
+
 	}
+
 }

@@ -26,110 +26,130 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Reflection
 {
     sealed class BuiltinArrayMethod : ArrayMethod
-	{
-		internal BuiltinArrayMethod(Module module, Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
-			: base(module, arrayClass, methodName, callingConvention, returnType, parameterTypes)
-		{
-		}
+    {
 
-		public override MethodAttributes Attributes
-		{
-			get { return this.Name == ".ctor" ? MethodAttributes.RTSpecialName | MethodAttributes.Public : MethodAttributes.Public; }
-		}
+        sealed class ParameterInfoImpl : ParameterInfo
+        {
 
-		public override MethodImplAttributes GetMethodImplementationFlags()
-		{
-			return MethodImplAttributes.IL;
-		}
+            readonly MethodInfo method;
+            readonly Type type;
+            readonly int pos;
 
-		public override int MetadataToken
-		{
-			get { return 0x06000000; }
-		}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="method"></param>
+            /// <param name="type"></param>
+            /// <param name="pos"></param>
+            internal ParameterInfoImpl(MethodInfo method, Type type, int pos)
+            {
+                this.method = method;
+                this.type = type;
+                this.pos = pos;
+            }
 
-		public override MethodBody GetMethodBody()
-		{
-			return null;
-		}
+            public override Type ParameterType
+            {
+                get { return type; }
+            }
 
-		public override ParameterInfo[] GetParameters()
-		{
-			ParameterInfo[] parameterInfos = new ParameterInfo[parameterTypes.Length];
-			for (int i = 0; i < parameterInfos.Length; i++)
-			{
-				parameterInfos[i] = new ParameterInfoImpl(this, parameterTypes[i], i);
-			}
-			return parameterInfos;
-		}
+            public override string Name
+            {
+                get { return null; }
+            }
 
-		public override ParameterInfo ReturnParameter
-		{
-			get { return new ParameterInfoImpl(this, this.ReturnType, -1); }
-		}
+            public override ParameterAttributes Attributes
+            {
+                get { return ParameterAttributes.None; }
+            }
 
-		private sealed class ParameterInfoImpl : ParameterInfo
-		{
-			private readonly MethodInfo method;
-			private readonly Type type;
-			private readonly int pos;
+            public override int Position
+            {
+                get { return pos; }
+            }
 
-			internal ParameterInfoImpl(MethodInfo method, Type type, int pos)
-			{
-				this.method = method;
-				this.type = type;
-				this.pos = pos;
-			}
+            public override object RawDefaultValue
+            {
+                get { return null; }
+            }
 
-			public override Type ParameterType
-			{
-				get { return type; }
-			}
+            public override CustomModifiers __GetCustomModifiers()
+            {
+                return new CustomModifiers();
+            }
 
-			public override string Name
-			{
-				get { return null; }
-			}
+            public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
+            {
+                fieldMarshal = new FieldMarshal();
+                return false;
+            }
 
-			public override ParameterAttributes Attributes
-			{
-				get { return ParameterAttributes.None; }
-			}
+            public override MemberInfo Member
+            {
+                get { return method.IsConstructor ? (MethodBase)new ConstructorInfoImpl(method) : method; }
+            }
 
-			public override int Position
-			{
-				get { return pos; }
-			}
+            public override int MetadataToken
+            {
+                get { return 0x08000000; }
+            }
 
-			public override object RawDefaultValue
-			{
-				get { return null; }
-			}
+            internal override Module Module
+            {
+                get { return method.Module; }
+            }
 
-			public override CustomModifiers __GetCustomModifiers()
-			{
-				return new CustomModifiers();
-			}
+        }
 
-			public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-			{
-				fieldMarshal = new FieldMarshal();
-				return false;
-			}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="arrayClass"></param>
+        /// <param name="methodName"></param>
+        /// <param name="callingConvention"></param>
+        /// <param name="returnType"></param>
+        /// <param name="parameterTypes"></param>
+        internal BuiltinArrayMethod(Module module, Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes) :
+            base(module, arrayClass, methodName, callingConvention, returnType, parameterTypes)
+        {
 
-			public override MemberInfo Member
-			{
-				get { return method.IsConstructor ? (MethodBase)new ConstructorInfoImpl(method) : method; }
-			}
+        }
 
-			public override int MetadataToken
-			{
-				get { return 0x08000000; }
-			}
+        public override MethodAttributes Attributes
+        {
+            get { return this.Name == ".ctor" ? MethodAttributes.RTSpecialName | MethodAttributes.Public : MethodAttributes.Public; }
+        }
 
-			internal override Module Module
-			{
-				get { return method.Module; }
-			}
-		}
-	}
+        public override MethodImplAttributes GetMethodImplementationFlags()
+        {
+            return MethodImplAttributes.IL;
+        }
+
+        public override int MetadataToken
+        {
+            get { return 0x06000000; }
+        }
+
+        public override MethodBody GetMethodBody()
+        {
+            return null;
+        }
+
+        public override ParameterInfo[] GetParameters()
+        {
+            var parameterInfos = new ParameterInfo[parameterTypes.Length];
+            for (int i = 0; i < parameterInfos.Length; i++)
+                parameterInfos[i] = new ParameterInfoImpl(this, parameterTypes[i], i);
+
+            return parameterInfos;
+        }
+
+        public override ParameterInfo ReturnParameter
+        {
+            get { return new ParameterInfoImpl(this, this.ReturnType, -1); }
+        }
+
+    }
+
 }

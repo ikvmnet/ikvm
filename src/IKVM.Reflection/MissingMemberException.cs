@@ -27,27 +27,38 @@ namespace IKVM.Reflection
 {
 
     [Serializable]
-	public sealed class MissingMemberException : InvalidOperationException
-	{
-		[NonSerialized]
-		private readonly MemberInfo member;
+    public sealed class MissingMemberException : InvalidOperationException
+    {
 
-		internal MissingMemberException(MemberInfo member)
-			: base("Member '" + member + "' is a missing member and does not support the requested operation.")
-		{
-			this.member = member;
-		}
+        [NonSerialized]
+        readonly MemberInfo member;
 
-		private MissingMemberException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
-			: base(info, context)
-		{
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="member"></param>
+        internal MissingMemberException(MemberInfo member) :
+            base("Member '" + member + "' is a missing member and does not support the requested operation.")
+        {
+            this.member = member;
+        }
 
-		public MemberInfo MemberInfo
-		{
-			get { return member; }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
+        MissingMemberException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) :
+            base(info, context)
+        {
 
-	}
+        }
+
+        public MemberInfo MemberInfo
+        {
+            get { return member; }
+        }
+
+    }
 
 }

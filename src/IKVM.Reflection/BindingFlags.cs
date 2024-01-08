@@ -25,9 +25,11 @@ using System;
 
 namespace IKVM.Reflection
 {
+
     [Flags]
 	public enum BindingFlags
 	{
+
 		Default = 0,
 		IgnoreCase = 1,
 		DeclaredOnly = 2,
@@ -36,5 +38,7 @@ namespace IKVM.Reflection
 		Public = 16,
 		NonPublic = 32,
 		FlattenHierarchy = 64,
+
 	}
+
 }

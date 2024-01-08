@@ -27,20 +27,23 @@ namespace IKVM.Reflection
 {
 
     public abstract class ConstructorInfo : MethodBase
-	{
+    {
 
-		// prevent external subclasses
-		internal ConstructorInfo()
+        public static readonly string ConstructorName = ".ctor";
+        public static readonly string TypeConstructorName = ".cctor";
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        internal ConstructorInfo()
 		{
+
 		}
 
 		public sealed override string ToString()
 		{
 			return GetMethodInfo().ToString();
 		}
-
-		public static readonly string ConstructorName = ".ctor";
-		public static readonly string TypeConstructorName = ".cctor";
 
 		internal abstract MethodInfo GetMethodInfo();
 
@@ -76,11 +79,10 @@ namespace IKVM.Reflection
 
 		public sealed override ParameterInfo[] GetParameters()
 		{
-			ParameterInfo[] parameters = GetMethodInfo().GetParameters();
+			var parameters = GetMethodInfo().GetParameters();
 			for (int i = 0; i < parameters.Length; i++)
-			{
 				parameters[i] = new ParameterInfoWrapper(this, parameters[i]);
-			}
+
 			return parameters;
 		}
 
@@ -163,6 +165,7 @@ namespace IKVM.Reflection
 		{
 			return GetMethodInfo().ImportTo(module);
 		}
+
 	}
 
 }

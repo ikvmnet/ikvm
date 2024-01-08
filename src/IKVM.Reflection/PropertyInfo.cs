@@ -28,191 +28,208 @@ namespace IKVM.Reflection
 {
 
     public abstract class PropertyInfo : MemberInfo
-	{
+    {
 
-		// prevent external subclasses
-		internal PropertyInfo()
-		{
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        internal PropertyInfo()
+        {
 
-		public sealed override MemberTypes MemberType
-		{
-			get { return MemberTypes.Property; }
-		}
+        }
 
-		public abstract PropertyAttributes Attributes { get; }
-		public abstract bool CanRead { get; }
-		public abstract bool CanWrite { get; }
-		public abstract MethodInfo GetGetMethod(bool nonPublic);
-		public abstract MethodInfo GetSetMethod(bool nonPublic);
-		public abstract MethodInfo[] GetAccessors(bool nonPublic);
-		public abstract object GetRawConstantValue();
-		internal abstract bool IsPublic { get; }
-		internal abstract bool IsNonPrivate { get; }
-		internal abstract bool IsStatic { get; }
-		internal abstract PropertySignature PropertySignature { get; }
+        public sealed override MemberTypes MemberType => MemberTypes.Property;
 
-		private sealed class ParameterInfoImpl : ParameterInfo
-		{
-			private readonly PropertyInfo property;
-			private readonly int parameter;
+        public abstract PropertyAttributes Attributes { get; }
 
-			internal ParameterInfoImpl(PropertyInfo property, int parameter)
-			{
-				this.property = property;
-				this.parameter = parameter;
-			}
+        public abstract bool CanRead { get; }
 
-			public override string Name
-			{
-				get { return null; }
-			}
+        public abstract bool CanWrite { get; }
 
-			public override Type ParameterType
-			{
-				get { return property.PropertySignature.GetParameter(parameter); }
-			}
+        public abstract MethodInfo GetGetMethod(bool nonPublic);
 
-			public override ParameterAttributes Attributes
-			{
-				get { return ParameterAttributes.None; }
-			}
+        public abstract MethodInfo GetSetMethod(bool nonPublic);
 
-			public override int Position
-			{
-				get { return parameter; }
-			}
+        public abstract MethodInfo[] GetAccessors(bool nonPublic);
 
-			public override object RawDefaultValue
-			{
-				get { throw new InvalidOperationException(); }
-			}
+        public abstract object GetRawConstantValue();
 
-			public override CustomModifiers __GetCustomModifiers()
-			{
-				return property.PropertySignature.GetParameterCustomModifiers(parameter);
-			}
+        internal abstract bool IsPublic { get; }
 
-			public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-			{
-				fieldMarshal = new FieldMarshal();
-				return false;
-			}
+        internal abstract bool IsNonPrivate { get; }
 
-			public override MemberInfo Member
-			{
-				get { return property; }
-			}
+        internal abstract bool IsStatic { get; }
 
-			public override int MetadataToken
-			{
-				get { return 0x08000000; }
-			}
+        internal abstract PropertySignature PropertySignature { get; }
 
-			internal override Module Module
-			{
-				get { return property.Module; }
-			}
-		}
+        sealed class ParameterInfoImpl : ParameterInfo
+        {
 
-		public virtual ParameterInfo[] GetIndexParameters()
-		{
-			ParameterInfo[] parameters = new ParameterInfo[this.PropertySignature.ParameterCount];
-			for (int i = 0; i < parameters.Length; i++)
-			{
-				parameters[i] = new ParameterInfoImpl(this, i);
-			}
-			return parameters;
-		}
+            readonly PropertyInfo property;
+            readonly int parameter;
 
-		public Type PropertyType
-		{
-			get { return this.PropertySignature.PropertyType; }
-		}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="property"></param>
+            /// <param name="parameter"></param>
+            internal ParameterInfoImpl(PropertyInfo property, int parameter)
+            {
+                this.property = property;
+                this.parameter = parameter;
+            }
 
-		public CustomModifiers __GetCustomModifiers()
-		{
-			return this.PropertySignature.GetCustomModifiers();
-		}
+            public override string Name
+            {
+                get { return null; }
+            }
 
-		public Type[] GetRequiredCustomModifiers()
-		{
-			return __GetCustomModifiers().GetRequired();
-		}
+            public override Type ParameterType
+            {
+                get { return property.PropertySignature.GetParameter(parameter); }
+            }
 
-		public Type[] GetOptionalCustomModifiers()
-		{
-			return __GetCustomModifiers().GetOptional();
-		}
+            public override ParameterAttributes Attributes
+            {
+                get { return ParameterAttributes.None; }
+            }
 
-		public bool IsSpecialName
-		{
-			get { return (Attributes & PropertyAttributes.SpecialName) != 0; }
-		}
+            public override int Position
+            {
+                get { return parameter; }
+            }
 
-		public MethodInfo GetMethod
-		{
-			get { return GetGetMethod(true); }
-		}
+            public override object RawDefaultValue
+            {
+                get { throw new InvalidOperationException(); }
+            }
 
-		public MethodInfo SetMethod
-		{
-			get { return GetSetMethod(true); }
-		}
+            public override CustomModifiers __GetCustomModifiers()
+            {
+                return property.PropertySignature.GetParameterCustomModifiers(parameter);
+            }
 
-		public MethodInfo GetGetMethod()
-		{
-			return GetGetMethod(false);
-		}
+            public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
+            {
+                fieldMarshal = new FieldMarshal();
+                return false;
+            }
 
-		public MethodInfo GetSetMethod()
-		{
-			return GetSetMethod(false);
-		}
+            public override MemberInfo Member
+            {
+                get { return property; }
+            }
 
-		public MethodInfo[] GetAccessors()
-		{
-			return GetAccessors(false);
-		}
+            public override int MetadataToken
+            {
+                get { return 0x08000000; }
+            }
 
-		public CallingConventions __CallingConvention
-		{
-			get { return this.PropertySignature.CallingConvention; }
-		}
+            internal override Module Module
+            {
+                get { return property.Module; }
+            }
 
-		internal virtual PropertyInfo BindTypeParameters(Type type)
-		{
-			return new GenericPropertyInfo(this.DeclaringType.BindTypeParameters(type), this);
-		}
+        }
 
-		public override string ToString()
-		{
-			return this.DeclaringType.ToString() + " " + Name;
-		}
+        public virtual ParameterInfo[] GetIndexParameters()
+        {
+            var parameters = new ParameterInfo[PropertySignature.ParameterCount];
+            for (var i = 0; i < parameters.Length; i++)
+                parameters[i] = new ParameterInfoImpl(this, i);
 
-		internal sealed override bool BindingFlagsMatch(BindingFlags flags)
-		{
-			return BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
-				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static, BindingFlags.Instance);
-		}
+            return parameters;
+        }
 
-		internal sealed override bool BindingFlagsMatchInherited(BindingFlags flags)
-		{
-			return IsNonPrivate
-				&& BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
-				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
-		}
+        public Type PropertyType
+        {
+            get { return PropertySignature.PropertyType; }
+        }
 
-		internal sealed override MemberInfo SetReflectedType(Type type)
-		{
-			return new PropertyInfoWithReflectedType(type, this);
-		}
+        public CustomModifiers __GetCustomModifiers()
+        {
+            return PropertySignature.GetCustomModifiers();
+        }
 
-		internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType)
-		{
-			// properties don't have pseudo custom attributes
-			return null;
-		}
-	}
+        public Type[] GetRequiredCustomModifiers()
+        {
+            return __GetCustomModifiers().GetRequired();
+        }
+
+        public Type[] GetOptionalCustomModifiers()
+        {
+            return __GetCustomModifiers().GetOptional();
+        }
+
+        public bool IsSpecialName
+        {
+            get { return (Attributes & PropertyAttributes.SpecialName) != 0; }
+        }
+
+        public MethodInfo GetMethod
+        {
+            get { return GetGetMethod(true); }
+        }
+
+        public MethodInfo SetMethod
+        {
+            get { return GetSetMethod(true); }
+        }
+
+        public MethodInfo GetGetMethod()
+        {
+            return GetGetMethod(false);
+        }
+
+        public MethodInfo GetSetMethod()
+        {
+            return GetSetMethod(false);
+        }
+
+        public MethodInfo[] GetAccessors()
+        {
+            return GetAccessors(false);
+        }
+
+        public CallingConventions __CallingConvention
+        {
+            get { return this.PropertySignature.CallingConvention; }
+        }
+
+        internal virtual PropertyInfo BindTypeParameters(Type type)
+        {
+            return new GenericPropertyInfo(this.DeclaringType.BindTypeParameters(type), this);
+        }
+
+        public override string ToString()
+        {
+            return DeclaringType.ToString() + " " + Name;
+        }
+
+        internal sealed override bool BindingFlagsMatch(BindingFlags flags)
+        {
+            return BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
+                && BindingFlagsMatch(IsStatic, flags, BindingFlags.Static, BindingFlags.Instance);
+        }
+
+        internal sealed override bool BindingFlagsMatchInherited(BindingFlags flags)
+        {
+            return IsNonPrivate
+                && BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
+                && BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
+        }
+
+        internal sealed override MemberInfo SetReflectedType(Type type)
+        {
+            return new PropertyInfoWithReflectedType(type, this);
+        }
+
+        internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType)
+        {
+            // properties don't have pseudo custom attributes
+            return null;
+        }
+
+    }
 
 }

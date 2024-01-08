@@ -33,7 +33,13 @@ namespace IKVM.Reflection
 
         public static readonly Missing Value = new Missing();
 
-        private Missing() { }
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        Missing()
+        {
+
+        }
 
         void System.Runtime.Serialization.ISerializable.GetObjectData(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
         {
@@ -41,7 +47,7 @@ namespace IKVM.Reflection
         }
 
         [Serializable]
-        private sealed class SingletonSerializationHelper : System.Runtime.Serialization.IObjectReference
+        sealed class SingletonSerializationHelper : System.Runtime.Serialization.IObjectReference
         {
 
             public object GetRealObject(System.Runtime.Serialization.StreamingContext context)

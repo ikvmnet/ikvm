@@ -26,48 +26,53 @@ using System;
 namespace IKVM.Reflection
 {
 
-    public struct CustomAttributeTypedArgument
-	{
+    public readonly struct CustomAttributeTypedArgument
+    {
 
-		private readonly Type type;
-		private readonly object value;
+        readonly Type type;
+        readonly object value;
 
-		internal CustomAttributeTypedArgument(Type type, object value)
-		{
-			this.type = type;
-			this.value = value;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="value"></param>
+        internal CustomAttributeTypedArgument(Type type, object value)
+        {
+            this.type = type;
+            this.value = value;
+        }
 
-		public override bool Equals(object obj)
-		{
-			return this == obj as CustomAttributeTypedArgument?;
-		}
+        public override bool Equals(object obj)
+        {
+            return this == obj as CustomAttributeTypedArgument?;
+        }
 
-		public override int GetHashCode()
-		{
-			return type.GetHashCode() ^ 77 * (value == null ? 0 : value.GetHashCode());
-		}
+        public override int GetHashCode()
+        {
+            return type.GetHashCode() ^ 77 * (value == null ? 0 : value.GetHashCode());
+        }
 
-		public Type ArgumentType
-		{
-			get { return type; }
-		}
+        public Type ArgumentType
+        {
+            get { return type; }
+        }
 
-		public Object Value
-		{
-			get { return value; }
-		}
+        public Object Value
+        {
+            get { return value; }
+        }
 
-		public static bool operator ==(CustomAttributeTypedArgument arg1, CustomAttributeTypedArgument arg2)
-		{
-			return arg1.type.Equals(arg2.type) && (arg1.value == arg2.value || (arg1.value != null && arg1.value.Equals(arg2.value)));
-		}
+        public static bool operator ==(CustomAttributeTypedArgument arg1, CustomAttributeTypedArgument arg2)
+        {
+            return arg1.type.Equals(arg2.type) && (arg1.value == arg2.value || (arg1.value != null && arg1.value.Equals(arg2.value)));
+        }
 
-		public static bool operator !=(CustomAttributeTypedArgument arg1, CustomAttributeTypedArgument arg2)
-		{
-			return !(arg1 == arg2);
-		}
+        public static bool operator !=(CustomAttributeTypedArgument arg1, CustomAttributeTypedArgument arg2)
+        {
+            return !(arg1 == arg2);
+        }
 
-	}
+    }
 
 }

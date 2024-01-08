@@ -25,199 +25,207 @@ using System.Diagnostics;
 
 namespace IKVM.Reflection
 {
+
     sealed class MethodInfoWithReflectedType : MethodInfo
-	{
-		private readonly Type reflectedType;
-		private readonly MethodInfo method;
+    {
 
-		internal MethodInfoWithReflectedType(Type reflectedType, MethodInfo method)
-		{
-			Debug.Assert(reflectedType != method.DeclaringType);
-			this.reflectedType = reflectedType;
-			this.method = method;
-		}
+        readonly Type reflectedType;
+        readonly MethodInfo method;
 
-		public override bool Equals(object obj)
-		{
-			MethodInfoWithReflectedType other = obj as MethodInfoWithReflectedType;
-			return other != null
-				&& other.reflectedType == reflectedType
-				&& other.method == method;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="reflectedType"></param>
+        /// <param name="method"></param>
+        internal MethodInfoWithReflectedType(Type reflectedType, MethodInfo method)
+        {
+            Debug.Assert(reflectedType != method.DeclaringType);
+            this.reflectedType = reflectedType;
+            this.method = method;
+        }
 
-		public override int GetHashCode()
-		{
-			return reflectedType.GetHashCode() ^ method.GetHashCode();
-		}
+        public override bool Equals(object obj)
+        {
+            var other = obj as MethodInfoWithReflectedType;
+            return other != null
+                && other.reflectedType == reflectedType
+                && other.method == method;
+        }
 
-		internal override MethodSignature MethodSignature
-		{
-			get { return method.MethodSignature; }
-		}
+        public override int GetHashCode()
+        {
+            return reflectedType.GetHashCode() ^ method.GetHashCode();
+        }
 
-		internal override int ParameterCount
-		{
-			get { return method.ParameterCount; }
-		}
+        internal override MethodSignature MethodSignature
+        {
+            get { return method.MethodSignature; }
+        }
 
-		public override ParameterInfo[] GetParameters()
-		{
-			ParameterInfo[] parameters = method.GetParameters();
-			for (int i = 0; i < parameters.Length; i++)
-			{
-				parameters[i] = new ParameterInfoWrapper(this, parameters[i]);
-			}
-			return parameters;
-		}
+        internal override int ParameterCount
+        {
+            get { return method.ParameterCount; }
+        }
 
-		public override MethodAttributes Attributes
-		{
-			get { return method.Attributes; }
-		}
+        public override ParameterInfo[] GetParameters()
+        {
+            var parameters = method.GetParameters();
+            for (int i = 0; i < parameters.Length; i++)
+                parameters[i] = new ParameterInfoWrapper(this, parameters[i]);
 
-		public override MethodImplAttributes GetMethodImplementationFlags()
-		{
-			return method.GetMethodImplementationFlags();
-		}
+            return parameters;
+        }
 
-		public override MethodBody GetMethodBody()
-		{
-			return method.GetMethodBody();
-		}
+        public override MethodAttributes Attributes
+        {
+            get { return method.Attributes; }
+        }
 
-		public override CallingConventions CallingConvention
-		{
-			get { return method.CallingConvention; }
-		}
+        public override MethodImplAttributes GetMethodImplementationFlags()
+        {
+            return method.GetMethodImplementationFlags();
+        }
 
-		public override int __MethodRVA
-		{
-			get { return method.__MethodRVA; }
-		}
+        public override MethodBody GetMethodBody()
+        {
+            return method.GetMethodBody();
+        }
 
-		public override Type ReturnType
-		{
-			get { return method.ReturnType; }
-		}
+        public override CallingConventions CallingConvention
+        {
+            get { return method.CallingConvention; }
+        }
 
-		public override ParameterInfo ReturnParameter
-		{
-			get { return new ParameterInfoWrapper(this, method.ReturnParameter); }
-		}
+        public override int __MethodRVA
+        {
+            get { return method.__MethodRVA; }
+        }
 
-		public override MethodInfo MakeGenericMethod(params Type[] typeArguments)
-		{
-			return SetReflectedType(method.MakeGenericMethod(typeArguments), reflectedType);
-		}
+        public override Type ReturnType
+        {
+            get { return method.ReturnType; }
+        }
 
-		public override MethodInfo GetGenericMethodDefinition()
-		{
-			return method.GetGenericMethodDefinition();
-		}
+        public override ParameterInfo ReturnParameter
+        {
+            get { return new ParameterInfoWrapper(this, method.ReturnParameter); }
+        }
 
-		public override string ToString()
-		{
-			return method.ToString();
-		}
+        public override MethodInfo MakeGenericMethod(params Type[] typeArguments)
+        {
+            return SetReflectedType(method.MakeGenericMethod(typeArguments), reflectedType);
+        }
 
-		public override MethodInfo[] __GetMethodImpls()
-		{
-			return method.__GetMethodImpls();
-		}
+        public override MethodInfo GetGenericMethodDefinition()
+        {
+            return method.GetGenericMethodDefinition();
+        }
 
-		internal override Type GetGenericMethodArgument(int index)
-		{
-			return method.GetGenericMethodArgument(index);
-		}
+        public override string ToString()
+        {
+            return method.ToString();
+        }
 
-		internal override int GetGenericMethodArgumentCount()
-		{
-			return method.GetGenericMethodArgumentCount();
-		}
+        public override MethodInfo[] __GetMethodImpls()
+        {
+            return method.__GetMethodImpls();
+        }
 
-		internal override MethodInfo GetMethodOnTypeDefinition()
-		{
-			return method.GetMethodOnTypeDefinition();
-		}
+        internal override Type GetGenericMethodArgument(int index)
+        {
+            return method.GetGenericMethodArgument(index);
+        }
 
-		internal override bool HasThis
-		{
-			get { return method.HasThis; }
-		}
+        internal override int GetGenericMethodArgumentCount()
+        {
+            return method.GetGenericMethodArgumentCount();
+        }
 
-		public override Module Module
-		{
-			get { return method.Module; }
-		}
+        internal override MethodInfo GetMethodOnTypeDefinition()
+        {
+            return method.GetMethodOnTypeDefinition();
+        }
 
-		public override Type DeclaringType
-		{
-			get { return method.DeclaringType; }
-		}
+        internal override bool HasThis
+        {
+            get { return method.HasThis; }
+        }
 
-		public override Type ReflectedType
-		{
-			get { return reflectedType; }
-		}
+        public override Module Module
+        {
+            get { return method.Module; }
+        }
 
-		public override string Name
-		{
-			get { return method.Name; }
-		}
+        public override Type DeclaringType
+        {
+            get { return method.DeclaringType; }
+        }
 
-		internal override int ImportTo(IKVM.Reflection.Emit.ModuleBuilder module)
-		{
-			return method.ImportTo(module);
-		}
+        public override Type ReflectedType
+        {
+            get { return reflectedType; }
+        }
 
-		public override MethodBase __GetMethodOnTypeDefinition()
-		{
-			return method.__GetMethodOnTypeDefinition();
-		}
+        public override string Name
+        {
+            get { return method.Name; }
+        }
 
-		public override bool __IsMissing
-		{
-			get { return method.__IsMissing; }
-		}
+        internal override int ImportTo(IKVM.Reflection.Emit.ModuleBuilder module)
+        {
+            return method.ImportTo(module);
+        }
 
-		internal override MethodBase BindTypeParameters(Type type)
-		{
-			return method.BindTypeParameters(type);
-		}
+        public override MethodBase __GetMethodOnTypeDefinition()
+        {
+            return method.__GetMethodOnTypeDefinition();
+        }
 
-		public override bool ContainsGenericParameters
-		{
-			get { return method.ContainsGenericParameters; }
-		}
+        public override bool __IsMissing
+        {
+            get { return method.__IsMissing; }
+        }
 
-		public override Type[] GetGenericArguments()
-		{
-			return method.GetGenericArguments();
-		}
+        internal override MethodBase BindTypeParameters(Type type)
+        {
+            return method.BindTypeParameters(type);
+        }
 
-		public override bool IsGenericMethod
-		{
-			get { return method.IsGenericMethod; }
-		}
+        public override bool ContainsGenericParameters
+        {
+            get { return method.ContainsGenericParameters; }
+        }
 
-		public override bool IsGenericMethodDefinition
-		{
-			get { return method.IsGenericMethodDefinition; }
-		}
+        public override Type[] GetGenericArguments()
+        {
+            return method.GetGenericArguments();
+        }
 
-		public override int MetadataToken
-		{
-			get { return method.MetadataToken; }
-		}
+        public override bool IsGenericMethod
+        {
+            get { return method.IsGenericMethod; }
+        }
 
-		internal override int GetCurrentToken()
-		{
-			return method.GetCurrentToken();
-		}
+        public override bool IsGenericMethodDefinition
+        {
+            get { return method.IsGenericMethodDefinition; }
+        }
 
-		internal override bool IsBaked
-		{
-			get { return method.IsBaked; }
-		}
-	}
+        public override int MetadataToken
+        {
+            get { return method.MetadataToken; }
+        }
+
+        internal override int GetCurrentToken()
+        {
+            return method.GetCurrentToken();
+        }
+
+        internal override bool IsBaked
+        {
+            get { return method.IsBaked; }
+        }
+
+    }
+
 }

@@ -25,103 +25,108 @@ namespace IKVM.Reflection
 {
 
     sealed class GenericFieldInstance : FieldInfo
-	{
+    {
 
-		private readonly Type declaringType;
-		private readonly FieldInfo field;
+        readonly Type declaringType;
+        readonly FieldInfo field;
 
-		internal GenericFieldInstance(Type declaringType, FieldInfo field)
-		{
-			this.declaringType = declaringType;
-			this.field = field;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="declaringType"></param>
+        /// <param name="field"></param>
+        internal GenericFieldInstance(Type declaringType, FieldInfo field)
+        {
+            this.declaringType = declaringType;
+            this.field = field;
+        }
 
-		public override bool Equals(object obj)
-		{
-			GenericFieldInstance other = obj as GenericFieldInstance;
-			return other != null && other.declaringType.Equals(declaringType) && other.field.Equals(field);
-		}
+        public override bool Equals(object obj)
+        {
+            var other = obj as GenericFieldInstance;
+            return other != null && other.declaringType.Equals(declaringType) && other.field.Equals(field);
+        }
 
-		public override int GetHashCode()
-		{
-			return declaringType.GetHashCode() * 3 ^ field.GetHashCode();
-		}
+        public override int GetHashCode()
+        {
+            return declaringType.GetHashCode() * 3 ^ field.GetHashCode();
+        }
 
-		public override FieldAttributes Attributes
-		{
-			get { return field.Attributes; }
-		}
+        public override FieldAttributes Attributes
+        {
+            get { return field.Attributes; }
+        }
 
-		public override string Name
-		{
-			get { return field.Name; }
-		}
+        public override string Name
+        {
+            get { return field.Name; }
+        }
 
-		public override Type DeclaringType
-		{
-			get { return declaringType; }
-		}
+        public override Type DeclaringType
+        {
+            get { return declaringType; }
+        }
 
-		public override Module Module
-		{
-			get { return declaringType.Module; }
-		}
+        public override Module Module
+        {
+            get { return declaringType.Module; }
+        }
 
-		public override int MetadataToken
-		{
-			get { return field.MetadataToken; }
-		}
+        public override int MetadataToken
+        {
+            get { return field.MetadataToken; }
+        }
 
-		public override object GetRawConstantValue()
-		{
-			return field.GetRawConstantValue();
-		}
+        public override object GetRawConstantValue()
+        {
+            return field.GetRawConstantValue();
+        }
 
-		public override void __GetDataFromRVA(byte[] data, int offset, int length)
-		{
-			field.__GetDataFromRVA(data, offset, length);
-		}
+        public override void __GetDataFromRVA(byte[] data, int offset, int length)
+        {
+            field.__GetDataFromRVA(data, offset, length);
+        }
 
-		public override int __FieldRVA
-		{
-			get { return field.__FieldRVA; }
-		}
+        public override int __FieldRVA
+        {
+            get { return field.__FieldRVA; }
+        }
 
-		public override bool __TryGetFieldOffset(out int offset)
-		{
-			return field.__TryGetFieldOffset(out offset);
-		}
+        public override bool __TryGetFieldOffset(out int offset)
+        {
+            return field.__TryGetFieldOffset(out offset);
+        }
 
-		public override FieldInfo __GetFieldOnTypeDefinition()
-		{
-			return field;
-		}
+        public override FieldInfo __GetFieldOnTypeDefinition()
+        {
+            return field;
+        }
 
-		internal override FieldSignature FieldSignature
-		{
-			get { return field.FieldSignature.ExpandTypeParameters(declaringType); }
-		}
+        internal override FieldSignature FieldSignature
+        {
+            get { return field.FieldSignature.ExpandTypeParameters(declaringType); }
+        }
 
-		internal override int ImportTo(Emit.ModuleBuilder module)
-		{
-			return module.ImportMethodOrField(declaringType, field.Name, field.FieldSignature);
-		}
+        internal override int ImportTo(Emit.ModuleBuilder module)
+        {
+            return module.ImportMethodOrField(declaringType, field.Name, field.FieldSignature);
+        }
 
-		internal override FieldInfo BindTypeParameters(Type type)
-		{
-			return new GenericFieldInstance(declaringType.BindTypeParameters(type), field);
-		}
+        internal override FieldInfo BindTypeParameters(Type type)
+        {
+            return new GenericFieldInstance(declaringType.BindTypeParameters(type), field);
+        }
 
-		internal override int GetCurrentToken()
-		{
-			return field.GetCurrentToken();
-		}
+        internal override int GetCurrentToken()
+        {
+            return field.GetCurrentToken();
+        }
 
-		internal override bool IsBaked
-		{
-			get { return field.IsBaked; }
-		}
+        internal override bool IsBaked
+        {
+            get { return field.IsBaked; }
+        }
 
-	}
+    }
 
 }

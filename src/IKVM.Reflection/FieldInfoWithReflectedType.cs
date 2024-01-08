@@ -28,121 +28,126 @@ namespace IKVM.Reflection
 {
 
     sealed class FieldInfoWithReflectedType : FieldInfo
-	{
+    {
 
-		private readonly Type reflectedType;
-		private readonly FieldInfo field;
+        readonly Type reflectedType;
+        readonly FieldInfo field;
 
-		internal FieldInfoWithReflectedType(Type reflectedType, FieldInfo field)
-		{
-			Debug.Assert(reflectedType != field.DeclaringType);
-			this.reflectedType = reflectedType;
-			this.field = field;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="reflectedType"></param>
+        /// <param name="field"></param>
+        internal FieldInfoWithReflectedType(Type reflectedType, FieldInfo field)
+        {
+            Debug.Assert(reflectedType != field.DeclaringType);
+            this.reflectedType = reflectedType;
+            this.field = field;
+        }
 
-		public override FieldAttributes Attributes
-		{
-			get { return field.Attributes; }
-		}
+        public override FieldAttributes Attributes
+        {
+            get { return field.Attributes; }
+        }
 
-		public override void __GetDataFromRVA(byte[] data, int offset, int length)
-		{
-			field.__GetDataFromRVA(data, offset, length);
-		}
+        public override void __GetDataFromRVA(byte[] data, int offset, int length)
+        {
+            field.__GetDataFromRVA(data, offset, length);
+        }
 
-		public override int __FieldRVA
-		{
-			get { return field.__FieldRVA; }
-		}
+        public override int __FieldRVA
+        {
+            get { return field.__FieldRVA; }
+        }
 
-		public override bool __TryGetFieldOffset(out int offset)
-		{
-			return field.__TryGetFieldOffset(out offset);
-		}
+        public override bool __TryGetFieldOffset(out int offset)
+        {
+            return field.__TryGetFieldOffset(out offset);
+        }
 
-		public override Object GetRawConstantValue()
-		{
-			return field.GetRawConstantValue();
-		}
+        public override Object GetRawConstantValue()
+        {
+            return field.GetRawConstantValue();
+        }
 
-		internal override FieldSignature FieldSignature
-		{
-			get { return field.FieldSignature; }
-		}
+        internal override FieldSignature FieldSignature
+        {
+            get { return field.FieldSignature; }
+        }
 
-		public override FieldInfo __GetFieldOnTypeDefinition()
-		{
-			return field.__GetFieldOnTypeDefinition();
-		}
+        public override FieldInfo __GetFieldOnTypeDefinition()
+        {
+            return field.__GetFieldOnTypeDefinition();
+        }
 
-		internal override int ImportTo(Emit.ModuleBuilder module)
-		{
-			return field.ImportTo(module);
-		}
+        internal override int ImportTo(Emit.ModuleBuilder module)
+        {
+            return field.ImportTo(module);
+        }
 
-		internal override FieldInfo BindTypeParameters(Type type)
-		{
-			return field.BindTypeParameters(type);
-		}
+        internal override FieldInfo BindTypeParameters(Type type)
+        {
+            return field.BindTypeParameters(type);
+        }
 
-		public override bool __IsMissing
-		{
-			get { return field.__IsMissing; }
-		}
+        public override bool __IsMissing
+        {
+            get { return field.__IsMissing; }
+        }
 
-		public override Type DeclaringType
-		{
-			get { return field.DeclaringType; }
-		}
+        public override Type DeclaringType
+        {
+            get { return field.DeclaringType; }
+        }
 
-		public override Type ReflectedType
-		{
-			get { return reflectedType; }
-		}
+        public override Type ReflectedType
+        {
+            get { return reflectedType; }
+        }
 
-		public override bool Equals(object obj)
-		{
-			FieldInfoWithReflectedType other = obj as FieldInfoWithReflectedType;
-			return other != null
-				&& other.reflectedType == reflectedType
-				&& other.field == field;
-		}
+        public override bool Equals(object obj)
+        {
+            var other = obj as FieldInfoWithReflectedType;
+            return other != null
+                && other.reflectedType == reflectedType
+                && other.field == field;
+        }
 
-		public override int GetHashCode()
-		{
-			return reflectedType.GetHashCode() ^ field.GetHashCode();
-		}
+        public override int GetHashCode()
+        {
+            return reflectedType.GetHashCode() ^ field.GetHashCode();
+        }
 
-		public override int MetadataToken
-		{
-			get { return field.MetadataToken; }
-		}
+        public override int MetadataToken
+        {
+            get { return field.MetadataToken; }
+        }
 
-		public override Module Module
-		{
-			get { return field.Module; }
-		}
+        public override Module Module
+        {
+            get { return field.Module; }
+        }
 
-		public override string Name
-		{
-			get { return field.Name; }
-		}
+        public override string Name
+        {
+            get { return field.Name; }
+        }
 
-		public override string ToString()
-		{
-			return field.ToString();
-		}
+        public override string ToString()
+        {
+            return field.ToString();
+        }
 
-		internal override int GetCurrentToken()
-		{
-			return field.GetCurrentToken();
-		}
+        internal override int GetCurrentToken()
+        {
+            return field.GetCurrentToken();
+        }
 
-		internal override bool IsBaked
-		{
-			get { return field.IsBaked; }
-		}
+        internal override bool IsBaked
+        {
+            get { return field.IsBaked; }
+        }
 
-	}
+    }
 
 }

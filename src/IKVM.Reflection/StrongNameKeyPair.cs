@@ -31,45 +31,54 @@ namespace IKVM.Reflection
     public sealed class StrongNameKeyPair
     {
 
-        private readonly byte[] keyPairArray;
-        private readonly string keyPairContainer;
+        readonly byte[] keyPairArray;
+        readonly string keyPairContainer;
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="keyPairContainer"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="NotSupportedException"></exception>
         public StrongNameKeyPair(string keyPairContainer)
         {
             if (keyPairContainer == null)
-            {
                 throw new ArgumentNullException("keyPairContainer");
-            }
 
             if (Universe.MonoRuntime && Environment.OSVersion.Platform == PlatformID.Win32NT)
-            {
                 throw new NotSupportedException("IKVM.Reflection does not support key containers when running on Mono");
-            }
 
             this.keyPairContainer = keyPairContainer;
         }
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="keyPairArray"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         public StrongNameKeyPair(byte[] keyPairArray)
         {
             if (keyPairArray == null)
-            {
                 throw new ArgumentNullException("keyPairArray");
-            }
+
             this.keyPairArray = (byte[])keyPairArray.Clone();
         }
 
-        public StrongNameKeyPair(FileStream keyPairFile)
-            : this(ReadAllBytes(keyPairFile))
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="keyPairFile"></param>
+        public StrongNameKeyPair(FileStream keyPairFile) : this(ReadAllBytes(keyPairFile))
         {
+
         }
 
-        private static byte[] ReadAllBytes(FileStream keyPairFile)
+        static byte[] ReadAllBytes(FileStream keyPairFile)
         {
             if (keyPairFile == null)
-            {
                 throw new ArgumentNullException("keyPairFile");
-            }
-            byte[] buf = new byte[keyPairFile.Length - keyPairFile.Position];
+
+            var buf = new byte[keyPairFile.Length - keyPairFile.Position];
             keyPairFile.Read(buf, 0, buf.Length);
             return buf;
         }
@@ -78,27 +87,23 @@ namespace IKVM.Reflection
         {
             get
             {
+                // MONOBUG workaround for https://bugzilla.xamarin.com/show_bug.cgi?id=5299
                 if (Universe.MonoRuntime)
-                {
-                    // MONOBUG workaround for https://bugzilla.xamarin.com/show_bug.cgi?id=5299
                     return MonoGetPublicKey();
-                }
 
-                using (RSACryptoServiceProvider rsa = CreateRSA())
-                {
-                    var rsaParameters = rsa.ExportParameters(false);
-                    byte[] cspBlob = ExportPublicKey(rsaParameters);
-                    byte[] publicKey = new byte[12 + cspBlob.Length];
-                    Buffer.BlockCopy(cspBlob, 0, publicKey, 12, cspBlob.Length);
-                    publicKey[1] = 36;
-                    publicKey[4] = 4;
-                    publicKey[5] = 128;
-                    publicKey[8] = (byte)(cspBlob.Length >> 0);
-                    publicKey[9] = (byte)(cspBlob.Length >> 8);
-                    publicKey[10] = (byte)(cspBlob.Length >> 16);
-                    publicKey[11] = (byte)(cspBlob.Length >> 24);
-                    return publicKey;
-                }
+                using RSACryptoServiceProvider rsa = CreateRSA();
+                var rsaParameters = rsa.ExportParameters(false);
+                var cspBlob = ExportPublicKey(rsaParameters);
+                var publicKey = new byte[12 + cspBlob.Length];
+                Buffer.BlockCopy(cspBlob, 0, publicKey, 12, cspBlob.Length);
+                publicKey[1] = 36;
+                publicKey[4] = 4;
+                publicKey[5] = 128;
+                publicKey[8] = (byte)(cspBlob.Length >> 0);
+                publicKey[9] = (byte)(cspBlob.Length >> 8);
+                publicKey[10] = (byte)(cspBlob.Length >> 16);
+                publicKey[11] = (byte)(cspBlob.Length >> 24);
+                return publicKey;
             }
         }
 
@@ -108,7 +113,7 @@ namespace IKVM.Reflection
             {
                 if (keyPairArray != null)
                 {
-                    RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+                    var rsa = new RSACryptoServiceProvider();
                     // we import from parameters, as using ImportCspBlob
                     // causes the exception "KeySet not found" when signing a hash later.
                     rsa.ImportParameters(RSAParametersFromByteArray(keyPairArray));
@@ -116,14 +121,16 @@ namespace IKVM.Reflection
                 }
                 else
                 {
-                    CspParameters parm = new CspParameters();
+                    var parm = new CspParameters();
                     parm.KeyContainerName = keyPairContainer;
+
                     // MONOBUG Mono doesn't like it when Flags or KeyNumber are set
                     if (!Universe.MonoRuntime)
                     {
                         parm.Flags = CspProviderFlags.UseMachineKeyStore | CspProviderFlags.UseExistingKey;
                         parm.KeyNumber = 2; // Signature
                     }
+
                     return new RSACryptoServiceProvider(parm);
                 }
             }
@@ -139,30 +146,24 @@ namespace IKVM.Reflection
         static byte[] ExportPublicKey(RSAParameters rsaParameters)
         {
             if (rsaParameters.Modulus == null || rsaParameters.Exponent == null)
-            {
                 throw new ArgumentNullException(nameof(rsaParameters));
-            }
 
-            using (MemoryStream ms = new MemoryStream())
-            {
-                using (BinaryWriter bw = new BinaryWriter(ms))
-                {
-                    var keyBitLength = rsaParameters.Modulus.Length * 8;
-                    bw.Write((byte)0x06);
-                    bw.Write((byte)0x02);
-                    bw.Write((UInt16)0x0000);
-                    bw.Write((UInt32)0x2400);
-                    bw.Write("RSA1".ToCharArray());
-                    bw.Write((UInt32)keyBitLength);
-                    bw.Write(rsaParameters.Exponent);
-                    bw.Write((byte)0x00);
-                    byte[] modulus = (byte[])rsaParameters.Modulus.Clone();
-                    Array.Reverse(modulus);
-                    bw.Write(modulus);
+            using MemoryStream ms = new MemoryStream();
+            using BinaryWriter bw = new BinaryWriter(ms);
+            var keyBitLength = rsaParameters.Modulus.Length * 8;
+            bw.Write((byte)0x06);
+            bw.Write((byte)0x02);
+            bw.Write((ushort)0x0000);
+            bw.Write((UInt32)0x2400);
+            bw.Write("RSA1".ToCharArray());
+            bw.Write((UInt32)keyBitLength);
+            bw.Write(rsaParameters.Exponent);
+            bw.Write((byte)0x00);
+            byte[] modulus = (byte[])rsaParameters.Modulus.Clone();
+            Array.Reverse(modulus);
+            bw.Write(modulus);
 
-                    return ms.ToArray();
-                }
-            }
+            return ms.ToArray();
         }
 
         static RSAParameters RSAParametersFromByteArray(byte[] array)

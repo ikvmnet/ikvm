@@ -25,70 +25,84 @@ namespace IKVM.Reflection
 {
 
     sealed class MissingTypeParameter : IKVM.Reflection.Reader.TypeParameterType
-	{
+    {
 
-		private readonly MemberInfo owner;
-		private readonly int index;
+        readonly MemberInfo owner;
+        readonly int index;
 
-		internal MissingTypeParameter(Type owner, int index)
-			: this(owner, index, Signature.ELEMENT_TYPE_VAR)
-		{
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="owner"></param>
+        /// <param name="index"></param>
+        internal MissingTypeParameter(Type owner, int index) :
+            this(owner, index, Signature.ELEMENT_TYPE_VAR)
+        {
 
-		internal MissingTypeParameter(MethodInfo owner, int index)
-			: this(owner, index, Signature.ELEMENT_TYPE_MVAR)
-		{
-		}
+        }
 
-		private MissingTypeParameter(MemberInfo owner, int index, byte sigElementType)
-			: base(sigElementType)
-		{
-			this.owner = owner;
-			this.index = index;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="owner"></param>
+        /// <param name="index"></param>
+        internal MissingTypeParameter(MethodInfo owner, int index) :
+            this(owner, index, Signature.ELEMENT_TYPE_MVAR)
+        {
 
-		public override Module Module
-		{
-			get { return owner.Module; }
-		}
+        }
 
-		public override string Name
-		{
-			get { return null; }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="owner"></param>
+        /// <param name="index"></param>
+        /// <param name="sigElementType"></param>
+        MissingTypeParameter(MemberInfo owner, int index, byte sigElementType) :
+            base(sigElementType)
+        {
+            this.owner = owner;
+            this.index = index;
+        }
 
-		public override int GenericParameterPosition
-		{
-			get { return index; }
-		}
+        public override Module Module
+        {
+            get { return owner.Module; }
+        }
 
-		public override MethodBase DeclaringMethod
-		{
-			get { return owner as MethodBase; }
-		}
+        public override string Name
+        {
+            get { return null; }
+        }
 
-		public override Type DeclaringType
-		{
-			get { return owner as Type; }
-		}
+        public override int GenericParameterPosition
+        {
+            get { return index; }
+        }
 
-		internal override Type BindTypeParameters(IGenericBinder binder)
-		{
-			if (owner is MethodBase)
-			{
-				return binder.BindMethodParameter(this);
-			}
-			else
-			{
-				return binder.BindTypeParameter(this);
-			}
-		}
+        public override MethodBase DeclaringMethod
+        {
+            get { return owner as MethodBase; }
+        }
 
-		internal override bool IsBaked
-		{
-			get { return owner.IsBaked; }
-		}
+        public override Type DeclaringType
+        {
+            get { return owner as Type; }
+        }
 
-	}
+        internal override Type BindTypeParameters(IGenericBinder binder)
+        {
+            if (owner is MethodBase)
+                return binder.BindMethodParameter(this);
+            else
+                return binder.BindTypeParameter(this);
+        }
+
+        internal override bool IsBaked
+        {
+            get { return owner.IsBaked; }
+        }
+
+    }
 
 }

@@ -25,46 +25,10 @@
 namespace IKVM.Reflection.Emit
 {
 
-    public struct TypeToken
+    public readonly record struct TypeToken(int Token)
 	{
 
 		public static readonly TypeToken Empty;
-		private readonly int token;
-
-		internal TypeToken(int token)
-		{
-			this.token = token;
-		}
-
-		public int Token
-		{
-			get { return token; }
-		}
-
-		public override bool Equals(object obj)
-		{
-			return obj as TypeToken? == this;
-		}
-
-		public override int GetHashCode()
-		{
-			return token;
-		}
-
-		public bool Equals(TypeToken other)
-		{
-			return this == other;
-		}
-
-		public static bool operator ==(TypeToken tt1, TypeToken tt2)
-		{
-			return tt1.token == tt2.token;
-		}
-
-		public static bool operator !=(TypeToken tt1, TypeToken tt2)
-		{
-			return tt1.token != tt2.token;
-		}
 
 	}
 

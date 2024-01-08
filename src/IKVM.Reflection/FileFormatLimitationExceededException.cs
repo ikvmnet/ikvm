@@ -25,25 +25,37 @@ using System;
 
 namespace IKVM.Reflection
 {
+
     [Serializable]
-	public sealed class FileFormatLimitationExceededException : InvalidOperationException
-	{
-		public const int META_E_STRINGSPACE_FULL = unchecked((int)0x80131198);
+    public sealed class FileFormatLimitationExceededException : InvalidOperationException
+    {
 
-		public FileFormatLimitationExceededException(string message, int hresult)
-			: base(message)
-		{
-			this.HResult = hresult;
-		}
+        public const int META_E_STRINGSPACE_FULL = unchecked((int)0x80131198);
 
-		private FileFormatLimitationExceededException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
-			: base(info, context)
-		{
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="hresult"></param>
+        public FileFormatLimitationExceededException(string message, int hresult) :
+            base(message)
+        {
+            HResult = hresult;
+        }
 
-		public int ErrorCode
-		{
-			get { return this.HResult; }
-		}
-	}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
+        FileFormatLimitationExceededException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) :
+            base(info, context)
+        {
+
+        }
+
+        public int ErrorCode => HResult;
+
+    }
+
 }

@@ -21,126 +21,129 @@
   jeroen@frijters.net
   
 */
-using System;
-
 namespace IKVM.Reflection
 {
 
     sealed class MultiArrayType : ElementHolderType
-	{
+    {
 
-		private readonly int rank;
-		private readonly int[] sizes;
-		private readonly int[] lobounds;
+        readonly int rank;
+        readonly int[] sizes;
+        readonly int[] lobounds;
 
-		internal static Type Make(Type type, int rank, int[] sizes, int[] lobounds, CustomModifiers mods)
-		{
-			return type.Universe.CanonicalizeType(new MultiArrayType(type, rank, sizes, lobounds, mods));
-		}
+        internal static Type Make(Type type, int rank, int[] sizes, int[] lobounds, CustomModifiers mods)
+        {
+            return type.Universe.CanonicalizeType(new MultiArrayType(type, rank, sizes, lobounds, mods));
+        }
 
-		private MultiArrayType(Type type, int rank, int[] sizes, int[] lobounds, CustomModifiers mods)
-			: base(type, mods, Signature.ELEMENT_TYPE_ARRAY)
-		{
-			this.rank = rank;
-			this.sizes = sizes;
-			this.lobounds = lobounds;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lobounds"></param>
+        /// <param name="mods"></param>
+        MultiArrayType(Type type, int rank, int[] sizes, int[] lobounds, CustomModifiers mods) :
+            base(type, mods, Signature.ELEMENT_TYPE_ARRAY)
+        {
+            this.rank = rank;
+            this.sizes = sizes;
+            this.lobounds = lobounds;
+        }
 
-		public override Type BaseType
-		{
-			get { return elementType.Module.universe.System_Array; }
-		}
+        public override Type BaseType
+        {
+            get { return elementType.Module.universe.System_Array; }
+        }
 
-		public override MethodBase[] __GetDeclaredMethods()
-		{
-			Type int32 = this.Module.universe.System_Int32;
-			Type[] setArgs = new Type[rank + 1];
-			Type[] getArgs = new Type[rank];
-			Type[] ctorArgs = new Type[rank * 2];
-			for (int i = 0; i < rank; i++)
-			{
-				setArgs[i] = int32;
-				getArgs[i] = int32;
-				ctorArgs[i * 2 + 0] = int32;
-				ctorArgs[i * 2 + 1] = int32;
-			}
-			setArgs[rank] = elementType;
-			return new MethodBase[] {
-				new ConstructorInfoImpl(new BuiltinArrayMethod(this.Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, this.Module.universe.System_Void, getArgs)),
-				new ConstructorInfoImpl(new BuiltinArrayMethod(this.Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, this.Module.universe.System_Void, ctorArgs)),
-				new BuiltinArrayMethod(this.Module, this, "Set", CallingConventions.Standard | CallingConventions.HasThis, this.Module.universe.System_Void, setArgs),
-				new BuiltinArrayMethod(this.Module, this, "Address", CallingConventions.Standard | CallingConventions.HasThis, elementType.MakeByRefType(), getArgs),
-				new BuiltinArrayMethod(this.Module, this, "Get", CallingConventions.Standard | CallingConventions.HasThis, elementType, getArgs),
-			};
-		}
+        public override MethodBase[] __GetDeclaredMethods()
+        {
+            var int32 = Module.universe.System_Int32;
+            var setArgs = new Type[rank + 1];
+            var getArgs = new Type[rank];
+            var ctorArgs = new Type[rank * 2];
+            for (int i = 0; i < rank; i++)
+            {
+                setArgs[i] = int32;
+                getArgs[i] = int32;
+                ctorArgs[i * 2 + 0] = int32;
+                ctorArgs[i * 2 + 1] = int32;
+            }
 
-		public override TypeAttributes Attributes
-		{
-			get { return TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Serializable; }
-		}
+            setArgs[rank] = elementType;
 
-		public override int GetArrayRank()
-		{
-			return rank;
-		}
+            return new MethodBase[]
+            {
+                new ConstructorInfoImpl(new BuiltinArrayMethod(Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, Module.universe.System_Void, getArgs)),
+                new ConstructorInfoImpl(new BuiltinArrayMethod(Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, Module.universe.System_Void, ctorArgs)),
+                new BuiltinArrayMethod(Module, this, "Set", CallingConventions.Standard | CallingConventions.HasThis, Module.universe.System_Void, setArgs),
+                new BuiltinArrayMethod(Module, this, "Address", CallingConventions.Standard | CallingConventions.HasThis, elementType.MakeByRefType(), getArgs),
+                new BuiltinArrayMethod(Module, this, "Get", CallingConventions.Standard | CallingConventions.HasThis, elementType, getArgs),
+            };
+        }
 
-		public override int[] __GetArraySizes()
-		{
-			return Util.Copy(sizes);
-		}
+        public override TypeAttributes Attributes
+        {
+            get { return TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Serializable; }
+        }
 
-		public override int[] __GetArrayLowerBounds()
-		{
-			return Util.Copy(lobounds);
-		}
+        public override int GetArrayRank()
+        {
+            return rank;
+        }
 
-		public override bool Equals(object o)
-		{
-			MultiArrayType at = o as MultiArrayType;
-			return EqualsHelper(at)
-				&& at.rank == rank
-				&& ArrayEquals(at.sizes, sizes)
-				&& ArrayEquals(at.lobounds, lobounds);
-		}
+        public override int[] __GetArraySizes()
+        {
+            return Util.Copy(sizes);
+        }
 
-		private static bool ArrayEquals(int[] i1, int[] i2)
-		{
-			if (i1.Length == i2.Length)
-			{
-				for (int i = 0; i < i1.Length; i++)
-				{
-					if (i1[i] != i2[i])
-					{
-						return false;
-					}
-				}
-				return true;
-			}
-			return false;
-		}
+        public override int[] __GetArrayLowerBounds()
+        {
+            return Util.Copy(lobounds);
+        }
 
-		public override int GetHashCode()
-		{
-			return elementType.GetHashCode() * 9 + rank;
-		}
+        public override bool Equals(object o)
+        {
+            var at = o as MultiArrayType;
+            return EqualsHelper(at)
+                && at.rank == rank
+                && ArrayEquals(at.sizes, sizes)
+                && ArrayEquals(at.lobounds, lobounds);
+        }
 
-		internal override string GetSuffix()
-		{
-			if (rank == 1)
-			{
-				return "[*]";
-			}
-			else
-			{
-				return "[" + new String(',', rank - 1) + "]";
-			}
-		}
+        static bool ArrayEquals(int[] i1, int[] i2)
+        {
+            if (i1.Length == i2.Length)
+            {
+                for (int i = 0; i < i1.Length; i++)
+                    if (i1[i] != i2[i])
+                        return false;
 
-		protected override Type Wrap(Type type, CustomModifiers mods)
-		{
-			return Make(type, rank, sizes, lobounds, mods);
-		}
+                return true;
+            }
 
-	}
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return elementType.GetHashCode() * 9 + rank;
+        }
+
+        internal override string GetSuffix()
+        {
+            if (rank == 1)
+                return "[*]";
+            else
+                return "[" + new string(',', rank - 1) + "]";
+        }
+
+        protected override Type Wrap(Type type, CustomModifiers mods)
+        {
+            return Make(type, rank, sizes, lobounds, mods);
+        }
+
+    }
 
 }

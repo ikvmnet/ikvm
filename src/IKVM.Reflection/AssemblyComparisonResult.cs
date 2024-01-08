@@ -27,6 +27,7 @@ namespace IKVM.Reflection
 
     public enum AssemblyComparisonResult
     {
+
         Unknown = 0,
         EquivalentFullMatch = 1,
         EquivalentWeakNamed = 2,
@@ -39,6 +40,7 @@ namespace IKVM.Reflection
         EquivalentPartialUnified = 9,
         EquivalentPartialFXUnified = 10,
         NonEquivalentPartialVersion = 11,
+
     }
 
 }

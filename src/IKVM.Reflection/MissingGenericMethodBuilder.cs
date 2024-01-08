@@ -27,44 +27,53 @@ namespace IKVM.Reflection
 {
 
     public struct MissingGenericMethodBuilder
-	{
+    {
 
-		private readonly MissingMethod method;
+        readonly MissingMethod method;
 
-		public MissingGenericMethodBuilder(Type declaringType, CallingConventions callingConvention, string name, int genericParameterCount)
-		{
-			method = new MissingMethod(declaringType, name, new MethodSignature(null, null, new PackedCustomModifiers(), callingConvention, genericParameterCount));
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="declaringType"></param>
+        /// <param name="callingConvention"></param>
+        /// <param name="name"></param>
+        /// <param name="genericParameterCount"></param>
+        public MissingGenericMethodBuilder(Type declaringType, CallingConventions callingConvention, string name, int genericParameterCount)
+        {
+            method = new MissingMethod(declaringType, name, new MethodSignature(null, null, new PackedCustomModifiers(), callingConvention, genericParameterCount));
+        }
 
-		public Type[] GetGenericArguments()
-		{
-			return method.GetGenericArguments();
-		}
+        public Type[] GetGenericArguments()
+        {
+            return method.GetGenericArguments();
+        }
 
-		public void SetSignature(Type returnType, CustomModifiers returnTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
-		{
-			method.signature = new MethodSignature(
-				returnType ?? method.Module.universe.System_Void,
-				Util.Copy(parameterTypes),
-				PackedCustomModifiers.CreateFromExternal(returnTypeCustomModifiers, parameterTypeCustomModifiers, parameterTypes.Length),
-				method.signature.CallingConvention,
-				method.signature.GenericParameterCount);
-		}
+        public void SetSignature(Type returnType, CustomModifiers returnTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
+        {
+            method.signature = new MethodSignature(
+                returnType ?? method.Module.universe.System_Void,
+                Util.Copy(parameterTypes),
+                PackedCustomModifiers.CreateFromExternal(returnTypeCustomModifiers, parameterTypeCustomModifiers, parameterTypes.Length),
+                method.signature.CallingConvention,
+                method.signature.GenericParameterCount);
+        }
 
-		[Obsolete("Please use SetSignature(Type, CustomModifiers, Type[], CustomModifiers[]) instead.")]
-		public void SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
-		{
-			method.signature = new MethodSignature(
-				returnType ?? method.Module.universe.System_Void,
-				Util.Copy(parameterTypes),
-				PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, parameterTypes.Length),
-				method.signature.CallingConvention,
-				method.signature.GenericParameterCount);
-		}
+        [Obsolete("Please use SetSignature(Type, CustomModifiers, Type[], CustomModifiers[]) instead.")]
+        public void SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
+        {
+            method.signature = new MethodSignature(
+                returnType ?? method.Module.universe.System_Void,
+                Util.Copy(parameterTypes),
+                PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, parameterTypes.Length),
+                method.signature.CallingConvention,
+                method.signature.GenericParameterCount);
+        }
 
-		public MethodInfo Finish()
-		{
-			return method;
-		}
-	}
+        public MethodInfo Finish()
+        {
+            return method;
+        }
+
+    }
+
 }

@@ -25,316 +25,311 @@ namespace IKVM.Reflection
 {
 
     sealed class MissingMethod : MethodInfo
-	{
+    {
 
-		private readonly Type declaringType;
-		private readonly string name;
-		internal MethodSignature signature;
-		private MethodInfo forwarder;
-		private Type[] typeArgs;
+        readonly Type declaringType;
+        readonly string name;
+        internal MethodSignature signature;
+        MethodInfo forwarder;
+        Type[] typeArgs;
 
-		internal MissingMethod(Type declaringType, string name, MethodSignature signature)
-		{
-			this.declaringType = declaringType;
-			this.name = name;
-			this.signature = signature;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="declaringType"></param>
+        /// <param name="name"></param>
+        /// <param name="signature"></param>
+        internal MissingMethod(Type declaringType, string name, MethodSignature signature)
+        {
+            this.declaringType = declaringType;
+            this.name = name;
+            this.signature = signature;
+        }
 
-		private MethodInfo Forwarder
-		{
-			get
-			{
-				MethodInfo method = TryGetForwarder();
-				if (method == null)
-				{
-					throw new MissingMemberException(this);
-				}
-				return method;
-			}
-		}
+        MethodInfo Forwarder => TryGetForwarder() ?? throw new MissingMemberException(this);
 
-		private MethodInfo TryGetForwarder()
-		{
-			if (forwarder == null && !declaringType.__IsMissing)
-			{
-				MethodBase mb = declaringType.FindMethod(name, signature);
-				ConstructorInfo ci = mb as ConstructorInfo;
-				if (ci != null)
-				{
-					forwarder = ci.GetMethodInfo();
-				}
-				else
-				{
-					forwarder = (MethodInfo)mb;
-				}
-			}
-			return forwarder;
-		}
+        MethodInfo TryGetForwarder()
+        {
+            if (forwarder == null && !declaringType.__IsMissing)
+            {
+                var mb = declaringType.FindMethod(name, signature);
+                var ci = mb as ConstructorInfo;
+                if (ci != null)
+                    forwarder = ci.GetMethodInfo();
+                else
+                    forwarder = (MethodInfo)mb;
+            }
 
-		public override bool __IsMissing
-		{
-			get { return TryGetForwarder() == null; }
-		}
+            return forwarder;
+        }
 
-		public override Type ReturnType
-		{
-			get { return signature.GetReturnType(this); }
-		}
+        public override bool __IsMissing
+        {
+            get { return TryGetForwarder() == null; }
+        }
 
-		public override ParameterInfo ReturnParameter
-		{
-			get { return new ParameterInfoImpl(this, -1); }
-		}
+        public override Type ReturnType
+        {
+            get { return signature.GetReturnType(this); }
+        }
 
-		internal override MethodSignature MethodSignature
-		{
-			get { return signature; }
-		}
+        public override ParameterInfo ReturnParameter
+        {
+            get { return new ParameterInfoImpl(this, -1); }
+        }
 
-		internal override int ParameterCount
-		{
-			get { return signature.GetParameterCount(); }
-		}
+        internal override MethodSignature MethodSignature
+        {
+            get { return signature; }
+        }
 
-		private sealed class ParameterInfoImpl : ParameterInfo
-		{
-			private readonly MissingMethod method;
-			private readonly int index;
+        internal override int ParameterCount
+        {
+            get { return signature.GetParameterCount(); }
+        }
 
-			internal ParameterInfoImpl(MissingMethod method, int index)
-			{
-				this.method = method;
-				this.index = index;
-			}
+        sealed class ParameterInfoImpl : ParameterInfo
+        {
 
-			private ParameterInfo Forwarder
-			{
-				get { return index == -1 ? method.Forwarder.ReturnParameter : method.Forwarder.GetParameters()[index]; }
-			}
+            readonly MissingMethod method;
+            readonly int index;
 
-			public override string Name
-			{
-				get { return Forwarder.Name; }
-			}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="method"></param>
+            /// <param name="index"></param>
+            internal ParameterInfoImpl(MissingMethod method, int index)
+            {
+                this.method = method;
+                this.index = index;
+            }
 
-			public override Type ParameterType
-			{
-				get { return index == -1 ? method.signature.GetReturnType(method) : method.signature.GetParameterType(method, index); }
-			}
+            ParameterInfo Forwarder
+            {
+                get { return index == -1 ? method.Forwarder.ReturnParameter : method.Forwarder.GetParameters()[index]; }
+            }
 
-			public override ParameterAttributes Attributes
-			{
-				get { return Forwarder.Attributes; }
-			}
+            public override string Name
+            {
+                get { return Forwarder.Name; }
+            }
 
-			public override int Position
-			{
-				get { return index; }
-			}
+            public override Type ParameterType
+            {
+                get { return index == -1 ? method.signature.GetReturnType(method) : method.signature.GetParameterType(method, index); }
+            }
 
-			public override object RawDefaultValue
-			{
-				get { return Forwarder.RawDefaultValue; }
-			}
+            public override ParameterAttributes Attributes
+            {
+                get { return Forwarder.Attributes; }
+            }
 
-			public override CustomModifiers __GetCustomModifiers()
-			{
-				return index == -1
-					? method.signature.GetReturnTypeCustomModifiers(method)
-					: method.signature.GetParameterCustomModifiers(method, index);
-			}
+            public override int Position
+            {
+                get { return index; }
+            }
 
-			public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-			{
-				return Forwarder.__TryGetFieldMarshal(out fieldMarshal);
-			}
+            public override object RawDefaultValue
+            {
+                get { return Forwarder.RawDefaultValue; }
+            }
 
-			public override MemberInfo Member
-			{
-				get { return method; }
-			}
+            public override CustomModifiers __GetCustomModifiers()
+            {
+                return index == -1
+                    ? method.signature.GetReturnTypeCustomModifiers(method)
+                    : method.signature.GetParameterCustomModifiers(method, index);
+            }
 
-			public override int MetadataToken
-			{
-				get { return Forwarder.MetadataToken; }
-			}
+            public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
+            {
+                return Forwarder.__TryGetFieldMarshal(out fieldMarshal);
+            }
 
-			internal override Module Module
-			{
-				get { return method.Module; }
-			}
+            public override MemberInfo Member
+            {
+                get { return method; }
+            }
 
-			public override string ToString()
-			{
-				return Forwarder.ToString();
-			}
-		}
+            public override int MetadataToken
+            {
+                get { return Forwarder.MetadataToken; }
+            }
 
-		public override ParameterInfo[] GetParameters()
-		{
-			ParameterInfo[] parameters = new ParameterInfo[signature.GetParameterCount()];
-			for (int i = 0; i < parameters.Length; i++)
-			{
-				parameters[i] = new ParameterInfoImpl(this, i);
-			}
-			return parameters;
-		}
+            internal override Module Module
+            {
+                get { return method.Module; }
+            }
 
-		public override MethodAttributes Attributes
-		{
-			get { return Forwarder.Attributes; }
-		}
+            public override string ToString()
+            {
+                return Forwarder.ToString();
+            }
 
-		public override MethodImplAttributes GetMethodImplementationFlags()
-		{
-			return Forwarder.GetMethodImplementationFlags();
-		}
+        }
 
-		public override MethodBody GetMethodBody()
-		{
-			return Forwarder.GetMethodBody();
-		}
+        public override ParameterInfo[] GetParameters()
+        {
+            var parameters = new ParameterInfo[signature.GetParameterCount()];
+            for (int i = 0; i < parameters.Length; i++)
+                parameters[i] = new ParameterInfoImpl(this, i);
 
-		public override int __MethodRVA
-		{
-			get { return Forwarder.__MethodRVA; }
-		}
+            return parameters;
+        }
 
-		public override CallingConventions CallingConvention
-		{
-			get { return signature.CallingConvention; }
-		}
+        public override MethodAttributes Attributes
+        {
+            get { return Forwarder.Attributes; }
+        }
 
-		internal override int ImportTo(IKVM.Reflection.Emit.ModuleBuilder module)
-		{
-			MethodInfo method = TryGetForwarder();
-			if (method != null)
-			{
-				return method.ImportTo(module);
-			}
-			return module.ImportMethodOrField(declaringType, this.Name, this.MethodSignature);
-		}
+        public override MethodImplAttributes GetMethodImplementationFlags()
+        {
+            return Forwarder.GetMethodImplementationFlags();
+        }
 
-		public override string Name
-		{
-			get { return name; }
-		}
+        public override MethodBody GetMethodBody()
+        {
+            return Forwarder.GetMethodBody();
+        }
 
-		public override Type DeclaringType
-		{
-			get { return declaringType.IsModulePseudoType ? null : declaringType; }
-		}
+        public override int __MethodRVA
+        {
+            get { return Forwarder.__MethodRVA; }
+        }
 
-		public override Module Module
-		{
-			get { return declaringType.Module; }
-		}
+        public override CallingConventions CallingConvention
+        {
+            get { return signature.CallingConvention; }
+        }
 
-		public override bool Equals(object obj)
-		{
-			MissingMethod other = obj as MissingMethod;
-			return other != null
-				&& other.declaringType == declaringType
-				&& other.name == name
-				&& other.signature.Equals(signature);
-		}
+        internal override int ImportTo(IKVM.Reflection.Emit.ModuleBuilder module)
+        {
+            var method = TryGetForwarder();
+            if (method != null)
+                return method.ImportTo(module);
 
-		public override int GetHashCode()
-		{
-			return declaringType.GetHashCode() ^ name.GetHashCode() ^ signature.GetHashCode();
-		}
+            return module.ImportMethodOrField(declaringType, this.Name, this.MethodSignature);
+        }
 
-		internal override MethodBase BindTypeParameters(Type type)
-		{
-			MethodInfo forwarder = TryGetForwarder();
-			if (forwarder != null)
-			{
-				return forwarder.BindTypeParameters(type);
-			}
-			return new GenericMethodInstance(type, this, null);
-		}
+        public override string Name
+        {
+            get { return name; }
+        }
 
-		public override bool ContainsGenericParameters
-		{
-			get { return Forwarder.ContainsGenericParameters; }
-		}
+        public override Type DeclaringType
+        {
+            get { return declaringType.IsModulePseudoType ? null : declaringType; }
+        }
 
-		public override Type[] GetGenericArguments()
-		{
-			MethodInfo method = TryGetForwarder();
-			if (method != null)
-			{
-				return Forwarder.GetGenericArguments();
-			}
-			if (typeArgs == null)
-			{
-				typeArgs = new Type[signature.GenericParameterCount];
-				for (int i = 0; i < typeArgs.Length; i++)
-				{
-					typeArgs[i] = new MissingTypeParameter(this, i);
-				}
-			}
-			return Util.Copy(typeArgs);
-		}
+        public override Module Module
+        {
+            get { return declaringType.Module; }
+        }
 
-		internal override Type GetGenericMethodArgument(int index)
-		{
-			return GetGenericArguments()[index];
-		}
+        public override bool Equals(object obj)
+        {
+            var other = obj as MissingMethod;
+            return other != null
+                && other.declaringType == declaringType
+                && other.name == name
+                && other.signature.Equals(signature);
+        }
 
-		internal override int GetGenericMethodArgumentCount()
-		{
-			return Forwarder.GetGenericMethodArgumentCount();
-		}
+        public override int GetHashCode()
+        {
+            return declaringType.GetHashCode() ^ name.GetHashCode() ^ signature.GetHashCode();
+        }
 
-		public override MethodInfo GetGenericMethodDefinition()
-		{
-			return Forwarder.GetGenericMethodDefinition();
-		}
+        internal override MethodBase BindTypeParameters(Type type)
+        {
+            var forwarder = TryGetForwarder();
+            if (forwarder != null)
+                return forwarder.BindTypeParameters(type);
 
-		internal override MethodInfo GetMethodOnTypeDefinition()
-		{
-			return Forwarder.GetMethodOnTypeDefinition();
-		}
+            return new GenericMethodInstance(type, this, null);
+        }
 
-		internal override bool HasThis
-		{
-			get { return (signature.CallingConvention & (CallingConventions.HasThis | CallingConventions.ExplicitThis)) == CallingConventions.HasThis; }
-		}
+        public override bool ContainsGenericParameters
+        {
+            get { return Forwarder.ContainsGenericParameters; }
+        }
 
-		public override bool IsGenericMethod
-		{
-			get { return IsGenericMethodDefinition; }
-		}
+        public override Type[] GetGenericArguments()
+        {
+            var method = TryGetForwarder();
+            if (method != null)
+                return Forwarder.GetGenericArguments();
 
-		public override bool IsGenericMethodDefinition
-		{
-			get { return signature.GenericParameterCount != 0; }
-		}
+            if (typeArgs == null)
+            {
+                typeArgs = new Type[signature.GenericParameterCount];
+                for (int i = 0; i < typeArgs.Length; i++)
+                    typeArgs[i] = new MissingTypeParameter(this, i);
+            }
 
-		public override MethodInfo MakeGenericMethod(params Type[] typeArguments)
-		{
-			MethodInfo method = TryGetForwarder();
-			if (method != null)
-			{
-				return method.MakeGenericMethod(typeArguments);
-			}
-			return new GenericMethodInstance(declaringType, this, typeArguments);
-		}
+            return Util.Copy(typeArgs);
+        }
 
-		public override int MetadataToken
-		{
-			get { return Forwarder.MetadataToken; }
-		}
+        internal override Type GetGenericMethodArgument(int index)
+        {
+            return GetGenericArguments()[index];
+        }
 
-		internal override int GetCurrentToken()
-		{
-			return Forwarder.GetCurrentToken();
-		}
+        internal override int GetGenericMethodArgumentCount()
+        {
+            return Forwarder.GetGenericMethodArgumentCount();
+        }
 
-		internal override bool IsBaked
-		{
-			get { return Forwarder.IsBaked; }
-		}
-	}
+        public override MethodInfo GetGenericMethodDefinition()
+        {
+            return Forwarder.GetGenericMethodDefinition();
+        }
+
+        internal override MethodInfo GetMethodOnTypeDefinition()
+        {
+            return Forwarder.GetMethodOnTypeDefinition();
+        }
+
+        internal override bool HasThis
+        {
+            get { return (signature.CallingConvention & (CallingConventions.HasThis | CallingConventions.ExplicitThis)) == CallingConventions.HasThis; }
+        }
+
+        public override bool IsGenericMethod
+        {
+            get { return IsGenericMethodDefinition; }
+        }
+
+        public override bool IsGenericMethodDefinition
+        {
+            get { return signature.GenericParameterCount != 0; }
+        }
+
+        public override MethodInfo MakeGenericMethod(params Type[] typeArguments)
+        {
+            var method = TryGetForwarder();
+            if (method != null)
+                return method.MakeGenericMethod(typeArguments);
+
+            return new GenericMethodInstance(declaringType, this, typeArguments);
+        }
+
+        public override int MetadataToken
+        {
+            get { return Forwarder.MetadataToken; }
+        }
+
+        internal override int GetCurrentToken()
+        {
+            return Forwarder.GetCurrentToken();
+        }
+
+        internal override bool IsBaked
+        {
+            get { return Forwarder.IsBaked; }
+        }
+
+    }
+
 }

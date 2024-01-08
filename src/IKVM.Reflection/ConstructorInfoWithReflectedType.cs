@@ -27,46 +27,49 @@ namespace IKVM.Reflection
 {
 
     sealed class ConstructorInfoWithReflectedType : ConstructorInfo
-	{
+    {
 
-		private readonly Type reflectedType;
-		private readonly ConstructorInfo ctor;
+        readonly Type reflectedType;
+        readonly ConstructorInfo ctor;
 
-		internal ConstructorInfoWithReflectedType(Type reflectedType, ConstructorInfo ctor)
-		{
-			Debug.Assert(reflectedType != ctor.DeclaringType);
-			this.reflectedType = reflectedType;
-			this.ctor = ctor;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="reflectedType"></param>
+        /// <param name="ctor"></param>
+        internal ConstructorInfoWithReflectedType(Type reflectedType, ConstructorInfo ctor)
+        {
+            Debug.Assert(reflectedType != ctor.DeclaringType);
+            this.reflectedType = reflectedType;
+            this.ctor = ctor;
+        }
 
-		public override bool Equals(object obj)
-		{
-			ConstructorInfoWithReflectedType other = obj as ConstructorInfoWithReflectedType;
-			return other != null
-				&& other.reflectedType == reflectedType
-				&& other.ctor == ctor;
-		}
+        public override bool Equals(object obj)
+        {
+            var other = obj as ConstructorInfoWithReflectedType;
+            return other != null && other.reflectedType == reflectedType && other.ctor == ctor;
+        }
 
-		public override int GetHashCode()
-		{
-			return reflectedType.GetHashCode() ^ ctor.GetHashCode();
-		}
+        public override int GetHashCode()
+        {
+            return reflectedType.GetHashCode() ^ ctor.GetHashCode();
+        }
 
-		public override Type ReflectedType
-		{
-			get { return reflectedType; }
-		}
+        public override Type ReflectedType
+        {
+            get { return reflectedType; }
+        }
 
-		internal override MethodInfo GetMethodInfo()
-		{
-			return ctor.GetMethodInfo();
-		}
+        internal override MethodInfo GetMethodInfo()
+        {
+            return ctor.GetMethodInfo();
+        }
 
-		internal override MethodInfo GetMethodOnTypeDefinition()
-		{
-			return ctor.GetMethodOnTypeDefinition();
-		}
+        internal override MethodInfo GetMethodOnTypeDefinition()
+        {
+            return ctor.GetMethodOnTypeDefinition();
+        }
 
-	}
+    }
 
 }

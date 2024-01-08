@@ -25,45 +25,10 @@
 namespace IKVM.Reflection.Emit
 {
 
-    public struct StringToken
+    public readonly record struct StringToken(int Token)
 	{
 
-		private readonly int token;
 
-		internal StringToken(int token)
-		{
-			this.token = token;
-		}
-
-		public int Token
-		{
-			get { return token; }
-		}
-
-		public override bool Equals(object obj)
-		{
-			return obj as StringToken? == this;
-		}
-
-		public override int GetHashCode()
-		{
-			return token;
-		}
-
-		public bool Equals(StringToken other)
-		{
-			return this == other;
-		}
-
-		public static bool operator ==(StringToken st1, StringToken st2)
-		{
-			return st1.token == st2.token;
-		}
-
-		public static bool operator !=(StringToken st1, StringToken st2)
-		{
-			return st1.token != st2.token;
-		}
 
 	}
 

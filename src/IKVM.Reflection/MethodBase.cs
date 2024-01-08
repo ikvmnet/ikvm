@@ -27,9 +27,12 @@ namespace IKVM.Reflection
     public abstract class MethodBase : MemberInfo
 	{
 
-		// prevent external subclasses
+		/// <summary>
+		/// Initializes a new instance.
+		/// </summary>
 		internal MethodBase()
 		{
+
 		}
 
 		internal abstract MethodSignature MethodSignature { get; }
@@ -45,11 +48,12 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-				if ((this.Attributes & MethodAttributes.RTSpecialName) != 0)
+				if ((Attributes & MethodAttributes.RTSpecialName) != 0)
 				{
-					string name = this.Name;
+					var name = Name;
 					return name == ConstructorInfo.ConstructorName || name == ConstructorInfo.TypeConstructorName;
 				}
+
 				return false;
 			}
 		}

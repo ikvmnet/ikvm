@@ -23,46 +23,56 @@
 */
 namespace IKVM.Reflection
 {
+
     sealed class PointerType : ElementHolderType
-	{
-		internal static Type Make(Type type, CustomModifiers mods)
-		{
-			return type.Universe.CanonicalizeType(new PointerType(type, mods));
-		}
+    {
 
-		private PointerType(Type type, CustomModifiers mods)
-			: base(type, mods, Signature.ELEMENT_TYPE_PTR)
-		{
-		}
+        internal static Type Make(Type type, CustomModifiers mods)
+        {
+            return type.Universe.CanonicalizeType(new PointerType(type, mods));
+        }
 
-		public override bool Equals(object o)
-		{
-			return EqualsHelper(o as PointerType);
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="mods"></param>
+        PointerType(Type type, CustomModifiers mods) :
+            base(type, mods, Signature.ELEMENT_TYPE_PTR)
+        {
 
-		public override int GetHashCode()
-		{
-			return elementType.GetHashCode() * 7;
-		}
+        }
 
-		public override Type BaseType
-		{
-			get { return null; }
-		}
+        public override bool Equals(object o)
+        {
+            return EqualsHelper(o as PointerType);
+        }
 
-		public override TypeAttributes Attributes
-		{
-			get { return 0; }
-		}
+        public override int GetHashCode()
+        {
+            return elementType.GetHashCode() * 7;
+        }
 
-		internal override string GetSuffix()
-		{
-			return "*";
-		}
+        public override Type BaseType
+        {
+            get { return null; }
+        }
 
-		protected override Type Wrap(Type type, CustomModifiers mods)
-		{
-			return Make(type, mods);
-		}
-	}
+        public override TypeAttributes Attributes
+        {
+            get { return 0; }
+        }
+
+        internal override string GetSuffix()
+        {
+            return "*";
+        }
+
+        protected override Type Wrap(Type type, CustomModifiers mods)
+        {
+            return Make(type, mods);
+        }
+
+    }
+
 }

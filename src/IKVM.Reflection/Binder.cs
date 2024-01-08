@@ -30,8 +30,12 @@ namespace IKVM.Reflection
     public abstract class Binder
 	{
 
-		protected Binder()
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        protected Binder()
 		{
+
 		}
 
 		public virtual MethodBase BindToMethod(BindingFlags bindingAttr, MethodBase[] match, ref object[] args, ParameterModifier[] modifiers, CultureInfo culture, string[] names, out object state)
@@ -55,7 +59,9 @@ namespace IKVM.Reflection
 		}
 
 		public abstract MethodBase SelectMethod(BindingFlags bindingAttr, MethodBase[] match, Type[] types, ParameterModifier[] modifiers);
+
 		public abstract PropertyInfo SelectProperty(BindingFlags bindingAttr, PropertyInfo[] match, Type returnType, Type[] indexes, ParameterModifier[] modifiers);
+
 	}
 
 }

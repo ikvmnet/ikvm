@@ -25,132 +25,135 @@ namespace IKVM.Reflection
 {
 
     sealed class GenericPropertyInfo : PropertyInfo
-	{
+    {
 
-		private readonly Type typeInstance;
-		private readonly PropertyInfo property;
+        readonly Type typeInstance;
+        readonly PropertyInfo property;
 
-		internal GenericPropertyInfo(Type typeInstance, PropertyInfo property)
-		{
-			this.typeInstance = typeInstance;
-			this.property = property;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="typeInstance"></param>
+        /// <param name="property"></param>
+        internal GenericPropertyInfo(Type typeInstance, PropertyInfo property)
+        {
+            this.typeInstance = typeInstance;
+            this.property = property;
+        }
 
-		public override bool Equals(object obj)
-		{
-			GenericPropertyInfo other = obj as GenericPropertyInfo;
-			return other != null && other.typeInstance == typeInstance && other.property == property;
-		}
+        public override bool Equals(object obj)
+        {
+            var other = obj as GenericPropertyInfo;
+            return other != null && other.typeInstance == typeInstance && other.property == property;
+        }
 
-		public override int GetHashCode()
-		{
-			return typeInstance.GetHashCode() * 537 + property.GetHashCode();
-		}
+        public override int GetHashCode()
+        {
+            return typeInstance.GetHashCode() * 537 + property.GetHashCode();
+        }
 
-		public override PropertyAttributes Attributes
-		{
-			get { return property.Attributes; }
-		}
+        public override PropertyAttributes Attributes
+        {
+            get { return property.Attributes; }
+        }
 
-		public override bool CanRead
-		{
-			get { return property.CanRead; }
-		}
+        public override bool CanRead
+        {
+            get { return property.CanRead; }
+        }
 
-		public override bool CanWrite
-		{
-			get { return property.CanWrite; }
-		}
+        public override bool CanWrite
+        {
+            get { return property.CanWrite; }
+        }
 
-		private MethodInfo Wrap(MethodInfo method)
-		{
-			if (method == null)
-			{
-				return null;
-			}
-			return new GenericMethodInstance(typeInstance, method, null);
-		}
+        private MethodInfo Wrap(MethodInfo method)
+        {
+            if (method == null)
+                return null;
 
-		public override MethodInfo GetGetMethod(bool nonPublic)
-		{
-			return Wrap(property.GetGetMethod(nonPublic));
-		}
+            return new GenericMethodInstance(typeInstance, method, null);
+        }
 
-		public override MethodInfo GetSetMethod(bool nonPublic)
-		{
-			return Wrap(property.GetSetMethod(nonPublic));
-		}
+        public override MethodInfo GetGetMethod(bool nonPublic)
+        {
+            return Wrap(property.GetGetMethod(nonPublic));
+        }
 
-		public override MethodInfo[] GetAccessors(bool nonPublic)
-		{
-			MethodInfo[] accessors = property.GetAccessors(nonPublic);
-			for (int i = 0; i < accessors.Length; i++)
-			{
-				accessors[i] = Wrap(accessors[i]);
-			}
-			return accessors;
-		}
+        public override MethodInfo GetSetMethod(bool nonPublic)
+        {
+            return Wrap(property.GetSetMethod(nonPublic));
+        }
 
-		public override object GetRawConstantValue()
-		{
-			return property.GetRawConstantValue();
-		}
+        public override MethodInfo[] GetAccessors(bool nonPublic)
+        {
+            var accessors = property.GetAccessors(nonPublic);
+            for (int i = 0; i < accessors.Length; i++)
+                accessors[i] = Wrap(accessors[i]);
 
-		internal override bool IsPublic
-		{
-			get { return property.IsPublic; }
-		}
+            return accessors;
+        }
 
-		internal override bool IsNonPrivate
-		{
-			get { return property.IsNonPrivate; }
-		}
+        public override object GetRawConstantValue()
+        {
+            return property.GetRawConstantValue();
+        }
 
-		internal override bool IsStatic
-		{
-			get { return property.IsStatic; }
-		}
+        internal override bool IsPublic
+        {
+            get { return property.IsPublic; }
+        }
 
-		internal override PropertySignature PropertySignature
-		{
-			get { return property.PropertySignature.ExpandTypeParameters(typeInstance); }
-		}
+        internal override bool IsNonPrivate
+        {
+            get { return property.IsNonPrivate; }
+        }
 
-		public override string Name
-		{
-			get { return property.Name; }
-		}
+        internal override bool IsStatic
+        {
+            get { return property.IsStatic; }
+        }
 
-		public override Type DeclaringType
-		{
-			get { return typeInstance; }
-		}
+        internal override PropertySignature PropertySignature
+        {
+            get { return property.PropertySignature.ExpandTypeParameters(typeInstance); }
+        }
 
-		public override Module Module
-		{
-			get { return typeInstance.Module; }
-		}
+        public override string Name
+        {
+            get { return property.Name; }
+        }
 
-		public override int MetadataToken
-		{
-			get { return property.MetadataToken; }
-		}
+        public override Type DeclaringType
+        {
+            get { return typeInstance; }
+        }
 
-		internal override PropertyInfo BindTypeParameters(Type type)
-		{
-			return new GenericPropertyInfo(typeInstance.BindTypeParameters(type), property);
-		}
+        public override Module Module
+        {
+            get { return typeInstance.Module; }
+        }
 
-		internal override bool IsBaked
-		{
-			get { return property.IsBaked; }
-		}
+        public override int MetadataToken
+        {
+            get { return property.MetadataToken; }
+        }
 
-		internal override int GetCurrentToken()
-		{
-			return property.GetCurrentToken();
-		}
+        internal override PropertyInfo BindTypeParameters(Type type)
+        {
+            return new GenericPropertyInfo(typeInstance.BindTypeParameters(type), property);
+        }
 
-	}
+        internal override bool IsBaked
+        {
+            get { return property.IsBaked; }
+        }
+
+        internal override int GetCurrentToken()
+        {
+            return property.GetCurrentToken();
+        }
+
+    }
 
 }

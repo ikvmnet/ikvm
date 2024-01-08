@@ -25,143 +25,149 @@ namespace IKVM.Reflection
 {
 
     sealed class PropertyInfoWithReflectedType : PropertyInfo
-	{
+    {
 
-		private readonly Type reflectedType;
-		private readonly PropertyInfo property;
+        readonly Type reflectedType;
+        readonly PropertyInfo property;
 
-		internal PropertyInfoWithReflectedType(Type reflectedType, PropertyInfo property)
-		{
-			this.reflectedType = reflectedType;
-			this.property = property;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="reflectedType"></param>
+        /// <param name="property"></param>
+        internal PropertyInfoWithReflectedType(Type reflectedType, PropertyInfo property)
+        {
+            this.reflectedType = reflectedType;
+            this.property = property;
+        }
 
-		public override PropertyAttributes Attributes
-		{
-			get { return property.Attributes; }
-		}
+        public override PropertyAttributes Attributes
+        {
+            get { return property.Attributes; }
+        }
 
-		public override bool CanRead
-		{
-			get { return property.CanRead; }
-		}
+        public override bool CanRead
+        {
+            get { return property.CanRead; }
+        }
 
-		public override bool CanWrite
-		{
-			get { return property.CanWrite; }
-		}
+        public override bool CanWrite
+        {
+            get { return property.CanWrite; }
+        }
 
-		public override MethodInfo GetGetMethod(bool nonPublic)
-		{
-			return SetReflectedType(property.GetGetMethod(nonPublic), reflectedType);
-		}
+        public override MethodInfo GetGetMethod(bool nonPublic)
+        {
+            return SetReflectedType(property.GetGetMethod(nonPublic), reflectedType);
+        }
 
-		public override MethodInfo GetSetMethod(bool nonPublic)
-		{
-			return SetReflectedType(property.GetSetMethod(nonPublic), reflectedType);
-		}
+        public override MethodInfo GetSetMethod(bool nonPublic)
+        {
+            return SetReflectedType(property.GetSetMethod(nonPublic), reflectedType);
+        }
 
-		public override MethodInfo[] GetAccessors(bool nonPublic)
-		{
-			return SetReflectedType(property.GetAccessors(nonPublic), reflectedType);
-		}
+        public override MethodInfo[] GetAccessors(bool nonPublic)
+        {
+            return SetReflectedType(property.GetAccessors(nonPublic), reflectedType);
+        }
 
-		public override object GetRawConstantValue()
-		{
-			return property.GetRawConstantValue();
-		}
+        public override object GetRawConstantValue()
+        {
+            return property.GetRawConstantValue();
+        }
 
-		internal override bool IsPublic
-		{
-			get { return property.IsPublic; }
-		}
+        internal override bool IsPublic
+        {
+            get { return property.IsPublic; }
+        }
 
-		internal override bool IsNonPrivate
-		{
-			get { return property.IsNonPrivate; }
-		}
+        internal override bool IsNonPrivate
+        {
+            get { return property.IsNonPrivate; }
+        }
 
-		internal override bool IsStatic
-		{
-			get { return property.IsStatic; }
-		}
+        internal override bool IsStatic
+        {
+            get { return property.IsStatic; }
+        }
 
-		internal override PropertySignature PropertySignature
-		{
-			get { return property.PropertySignature; }
-		}
+        internal override PropertySignature PropertySignature
+        {
+            get { return property.PropertySignature; }
+        }
 
-		public override ParameterInfo[] GetIndexParameters()
-		{
-			ParameterInfo[] parameters = property.GetIndexParameters();
-			for (int i = 0; i < parameters.Length; i++)
-			{
-				parameters[i] = new ParameterInfoWrapper(this, parameters[i]);
-			}
-			return parameters;
-		}
+        public override ParameterInfo[] GetIndexParameters()
+        {
+            var parameters = property.GetIndexParameters();
+            for (int i = 0; i < parameters.Length; i++)
+                parameters[i] = new ParameterInfoWrapper(this, parameters[i]);
 
-		internal override PropertyInfo BindTypeParameters(Type type)
-		{
-			return property.BindTypeParameters(type);
-		}
+            return parameters;
+        }
 
-		public override string ToString()
-		{
-			return property.ToString();
-		}
+        internal override PropertyInfo BindTypeParameters(Type type)
+        {
+            return property.BindTypeParameters(type);
+        }
 
-		public override bool __IsMissing
-		{
-			get { return property.__IsMissing; }
-		}
+        public override string ToString()
+        {
+            return property.ToString();
+        }
 
-		public override Type DeclaringType
-		{
-			get { return property.DeclaringType; }
-		}
+        public override bool __IsMissing
+        {
+            get { return property.__IsMissing; }
+        }
 
-		public override Type ReflectedType
-		{
-			get { return reflectedType; }
-		}
+        public override Type DeclaringType
+        {
+            get { return property.DeclaringType; }
+        }
 
-		public override bool Equals(object obj)
-		{
-			PropertyInfoWithReflectedType other = obj as PropertyInfoWithReflectedType;
-			return other != null
-				&& other.reflectedType == reflectedType
-				&& other.property == property;
-		}
+        public override Type ReflectedType
+        {
+            get { return reflectedType; }
+        }
 
-		public override int GetHashCode()
-		{
-			return reflectedType.GetHashCode() ^ property.GetHashCode();
-		}
+        public override bool Equals(object obj)
+        {
+            var other = obj as PropertyInfoWithReflectedType;
+            return other != null
+                && other.reflectedType == reflectedType
+                && other.property == property;
+        }
 
-		public override int MetadataToken
-		{
-			get { return property.MetadataToken; }
-		}
+        public override int GetHashCode()
+        {
+            return reflectedType.GetHashCode() ^ property.GetHashCode();
+        }
 
-		public override Module Module
-		{
-			get { return property.Module; }
-		}
+        public override int MetadataToken
+        {
+            get { return property.MetadataToken; }
+        }
 
-		public override string Name
-		{
-			get { return property.Name; }
-		}
+        public override Module Module
+        {
+            get { return property.Module; }
+        }
 
-		internal override bool IsBaked
-		{
-			get { return property.IsBaked; }
-		}
+        public override string Name
+        {
+            get { return property.Name; }
+        }
 
-		internal override int GetCurrentToken()
-		{
-			return property.GetCurrentToken();
-		}
-	}
+        internal override bool IsBaked
+        {
+            get { return property.IsBaked; }
+        }
+
+        internal override int GetCurrentToken()
+        {
+            return property.GetCurrentToken();
+        }
+
+    }
+
 }
