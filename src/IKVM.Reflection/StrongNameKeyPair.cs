@@ -148,18 +148,18 @@ namespace IKVM.Reflection
             if (rsaParameters.Modulus == null || rsaParameters.Exponent == null)
                 throw new ArgumentNullException(nameof(rsaParameters));
 
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter bw = new BinaryWriter(ms);
+            using var ms = new MemoryStream();
+            using var bw = new BinaryWriter(ms);
             var keyBitLength = rsaParameters.Modulus.Length * 8;
             bw.Write((byte)0x06);
             bw.Write((byte)0x02);
             bw.Write((ushort)0x0000);
-            bw.Write((UInt32)0x2400);
+            bw.Write((uint)0x2400);
             bw.Write("RSA1".ToCharArray());
-            bw.Write((UInt32)keyBitLength);
+            bw.Write((uint)keyBitLength);
             bw.Write(rsaParameters.Exponent);
             bw.Write((byte)0x00);
-            byte[] modulus = (byte[])rsaParameters.Modulus.Clone();
+            var modulus = (byte[])rsaParameters.Modulus.Clone();
             Array.Reverse(modulus);
             bw.Write(modulus);
 
@@ -168,63 +168,61 @@ namespace IKVM.Reflection
 
         static RSAParameters RSAParametersFromByteArray(byte[] array)
         {
-            using (MemoryStream ms = new MemoryStream(array))
-            {
-                return RSAParametersFromStream(ms);
-            }
+            using var ms = new MemoryStream(array);
+            return RSAParametersFromStream(ms);
         }
 
         static RSAParameters RSAParametersFromStream(Stream str)
         {
             var rsaParameters = new RSAParameters();
+            using var br = new BinaryReader(str);
 
-            using (var br = new BinaryReader(str))
+            // Read BLOBHEADER
+            var keyType = br.ReadByte();
+            if (keyType != 6 && keyType != 7)
+                throw new CryptographicException("SNK file not in correct format");
+
+            var blobVersion = br.ReadByte();
+            var reserverd = br.ReadUInt16();
+            var algorithmID = br.ReadUInt32();
+
+            // Read RSAPUBKEY
+            var magic = new string(br.ReadChars(4));
+            if (!magic.Equals("RSA1") && !magic.Equals("RSA2"))
+                throw new CryptographicException("SNK file not in correct format");
+
+            var keyBitLength = br.ReadUInt32();
+            var publicExponent = br.ReadBytes(3);
+            br.ReadByte();
+            rsaParameters.Exponent = publicExponent;
+
+            // Read Modulus
+            var modulus = br.ReadBytes((int)keyBitLength / 8);
+            Array.Reverse(modulus);
+            rsaParameters.Modulus = modulus;
+
+            if (keyType == 7)
             {
-                // Read BLOBHEADER
-                var keyType = br.ReadByte();
-                if (keyType != 6 && keyType != 7)
-                    throw new CryptographicException("SNK file not in correct format");
+                // Read Private Key Parameters
+                var prime1 = br.ReadBytes((int)keyBitLength / 16);
+                var prime2 = br.ReadBytes((int)keyBitLength / 16);
+                var exponent1 = br.ReadBytes((int)keyBitLength / 16);
+                var exponent2 = br.ReadBytes((int)keyBitLength / 16);
+                var coefficient = br.ReadBytes((int)keyBitLength / 16);
+                var privateExponent = br.ReadBytes((int)keyBitLength / 8);
 
-                var blobVersion = br.ReadByte();
-                var reserverd = br.ReadUInt16();
-                var algorithmID = br.ReadUInt32();
-                // Read RSAPUBKEY
-                var magic = new string(br.ReadChars(4));
-                if (!magic.Equals("RSA1") && !magic.Equals("RSA2"))
-                    throw new CryptographicException("SNK file not in correct format");
-                var keyBitLength = br.ReadUInt32();
-                var publicExponent = br.ReadBytes(3);
-                br.ReadByte();
-                rsaParameters.Exponent = publicExponent;
-
-                // Read Modulus
-                byte[] modulus = br.ReadBytes((int)keyBitLength / 8);
-                Array.Reverse(modulus);
-                rsaParameters.Modulus = modulus;
-
-                if (keyType == 7)
-                {
-                    // Read Private Key Parameters
-                    byte[] prime1 = br.ReadBytes((int)keyBitLength / 16);
-                    byte[] prime2 = br.ReadBytes((int)keyBitLength / 16);
-                    byte[] exponent1 = br.ReadBytes((int)keyBitLength / 16);
-                    byte[] exponent2 = br.ReadBytes((int)keyBitLength / 16);
-                    byte[] coefficient = br.ReadBytes((int)keyBitLength / 16);
-                    byte[] privateExponent = br.ReadBytes((int)keyBitLength / 8);
-
-                    Array.Reverse(prime1);
-                    Array.Reverse(prime2);
-                    Array.Reverse(exponent1);
-                    Array.Reverse(exponent2);
-                    Array.Reverse(coefficient);
-                    Array.Reverse(privateExponent);
-                    rsaParameters.P = prime1;
-                    rsaParameters.Q = prime2;
-                    rsaParameters.DP = exponent1;
-                    rsaParameters.DQ = exponent2;
-                    rsaParameters.InverseQ = coefficient;
-                    rsaParameters.D = privateExponent;
-                }
+                Array.Reverse(prime1);
+                Array.Reverse(prime2);
+                Array.Reverse(exponent1);
+                Array.Reverse(exponent2);
+                Array.Reverse(coefficient);
+                Array.Reverse(privateExponent);
+                rsaParameters.P = prime1;
+                rsaParameters.Q = prime2;
+                rsaParameters.DP = exponent1;
+                rsaParameters.DQ = exponent2;
+                rsaParameters.InverseQ = coefficient;
+                rsaParameters.D = privateExponent;
             }
 
             return rsaParameters;

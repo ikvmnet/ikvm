@@ -27,125 +27,137 @@ namespace IKVM.Reflection
 {
 
     public abstract class TypeInfo : Type, IReflectableType
-	{
+    {
 
-		private const BindingFlags Flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
-		internal TypeInfo()
-		{
-		}
+        const BindingFlags Flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
-		internal TypeInfo(Type underlyingType)
-			: base(underlyingType)
-		{
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        internal TypeInfo()
+        {
 
-		internal TypeInfo(byte sigElementType)
-			: base(sigElementType)
-		{
-		}
+        }
 
-		public IEnumerable<ConstructorInfo> DeclaredConstructors
-		{
-			get { return GetConstructors(Flags); }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="underlyingType"></param>
+        internal TypeInfo(Type underlyingType) :
+            base(underlyingType)
+        {
 
-		public IEnumerable<EventInfo> DeclaredEvents
-		{
-			get { return GetEvents(Flags); }
-		}
+        }
 
-		public IEnumerable<FieldInfo> DeclaredFields
-		{
-			get { return GetFields(Flags); }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="sigElementType"></param>
+        internal TypeInfo(byte sigElementType) :
+            base(sigElementType)
+        {
 
-		public IEnumerable<MemberInfo> DeclaredMembers
-		{
-			get { return GetMembers(Flags); }
-		}
+        }
 
-		public IEnumerable<MethodInfo> DeclaredMethods
-		{
-			get { return GetMethods(Flags); }
-		}
+        public IEnumerable<ConstructorInfo> DeclaredConstructors
+        {
+            get { return GetConstructors(Flags); }
+        }
 
-		public IEnumerable<TypeInfo> DeclaredNestedTypes
-		{
-			get
-			{
-				Type[] types = GetNestedTypes(Flags);
-				TypeInfo[] typeInfos = new TypeInfo[types.Length];
-				for (int i = 0; i < types.Length; i++)
-				{
-					typeInfos[i] = types[i].GetTypeInfo();
-				}
-				return typeInfos;
-			}
-		}
+        public IEnumerable<EventInfo> DeclaredEvents
+        {
+            get { return GetEvents(Flags); }
+        }
 
-		public IEnumerable<PropertyInfo> DeclaredProperties
-		{
-			get { return GetProperties(Flags); }
-		}
+        public IEnumerable<FieldInfo> DeclaredFields
+        {
+            get { return GetFields(Flags); }
+        }
 
-		public Type[] GenericTypeParameters
-		{
-			get { return IsGenericTypeDefinition ? GetGenericArguments() : Type.EmptyTypes; }
-		}
+        public IEnumerable<MemberInfo> DeclaredMembers
+        {
+            get { return GetMembers(Flags); }
+        }
 
-		public IEnumerable<Type> ImplementedInterfaces
-		{
-			get { return __GetDeclaredInterfaces(); }
-		}
+        public IEnumerable<MethodInfo> DeclaredMethods
+        {
+            get { return GetMethods(Flags); }
+        }
 
-		public Type AsType()
-		{
-			return this;
-		}
+        public IEnumerable<TypeInfo> DeclaredNestedTypes
+        {
+            get
+            {
+                var types = GetNestedTypes(Flags);
+                var typeInfos = new TypeInfo[types.Length];
+                for (int i = 0; i < types.Length; i++)
+                    typeInfos[i] = types[i].GetTypeInfo();
 
-		public EventInfo GetDeclaredEvent(string name)
-		{
-			return GetEvent(name, Flags);
-		}
+                return typeInfos;
+            }
+        }
 
-		public FieldInfo GetDeclaredField(string name)
-		{
-			return GetField(name, Flags);
-		}
+        public IEnumerable<PropertyInfo> DeclaredProperties
+        {
+            get { return GetProperties(Flags); }
+        }
 
-		public MethodInfo GetDeclaredMethod(string name)
-		{
-			return GetMethod(name, Flags);
-		}
+        public Type[] GenericTypeParameters
+        {
+            get { return IsGenericTypeDefinition ? GetGenericArguments() : Type.EmptyTypes; }
+        }
 
-		public IEnumerable<MethodInfo> GetDeclaredMethods(string name)
-		{
-			List<MethodInfo> methods = new List<MethodInfo>();
-			foreach (MethodInfo method in GetMethods(Flags))
-			{
-				if (method.Name == name)
-				{
-					methods.Add(method);
-				}
-			}
-			return methods;
-		}
+        public IEnumerable<Type> ImplementedInterfaces
+        {
+            get { return __GetDeclaredInterfaces(); }
+        }
 
-		public TypeInfo GetDeclaredNestedType(string name)
-		{
-			return GetNestedType(name, Flags).GetTypeInfo();
-		}
+        public Type AsType()
+        {
+            return this;
+        }
 
-		public PropertyInfo GetDeclaredProperty(string name)
-		{
-			return GetProperty(name, Flags);
-		}
+        public EventInfo GetDeclaredEvent(string name)
+        {
+            return GetEvent(name, Flags);
+        }
 
-		public bool IsAssignableFrom(TypeInfo typeInfo)
-		{
-			return base.IsAssignableFrom(typeInfo);
-		}
-	}
+        public FieldInfo GetDeclaredField(string name)
+        {
+            return GetField(name, Flags);
+        }
+
+        public MethodInfo GetDeclaredMethod(string name)
+        {
+            return GetMethod(name, Flags);
+        }
+
+        public IEnumerable<MethodInfo> GetDeclaredMethods(string name)
+        {
+            var methods = new List<MethodInfo>();
+            foreach (var method in GetMethods(Flags))
+                if (method.Name == name)
+                    methods.Add(method);
+
+            return methods;
+        }
+
+        public TypeInfo GetDeclaredNestedType(string name)
+        {
+            return GetNestedType(name, Flags).GetTypeInfo();
+        }
+
+        public PropertyInfo GetDeclaredProperty(string name)
+        {
+            return GetProperty(name, Flags);
+        }
+
+        public bool IsAssignableFrom(TypeInfo typeInfo)
+        {
+            return base.IsAssignableFrom(typeInfo);
+        }
+
+    }
 
 }
