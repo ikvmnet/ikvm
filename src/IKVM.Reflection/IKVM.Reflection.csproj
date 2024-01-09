@@ -5,6 +5,7 @@
         <Description>IKVM implementation of System.Reflection[.Emit]</Description>
         <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
