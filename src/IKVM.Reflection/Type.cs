@@ -650,7 +650,7 @@ namespace IKVM.Reflection
 
         public MemberInfo[] FindMembers(MemberTypes memberType, BindingFlags bindingAttr, MemberFilter filter, object filterCriteria)
         {
-            Var members = new List<MemberInfo>();
+            var members = new List<MemberInfo>();
             if ((memberType & MemberTypes.Constructor) != 0)
                 AddMembers(members, filter, filterCriteria, GetConstructors(bindingAttr));
             if ((memberType & MemberTypes.Method) != 0)
