@@ -695,7 +695,7 @@ namespace IKVM.Reflection
 
             if ((flags & BindingFlags.DeclaredOnly) == 0)
             {
-                for (Type type = BaseType; type != null; type = type.BaseType)
+                for (var type = BaseType; type != null; type = type.BaseType)
                 {
                     type.CheckBaked();
 
@@ -1739,9 +1739,15 @@ namespace IKVM.Reflection
             return false;
         }
 
-        // This returns true if this type directly (i.e. not inherited from the base class) implements the interface.
-        // Note that a complicating factor is that the interface itself can be implemented by an interface that extends it.
-        private bool IsDirectlyImplementedInterface(Type interfaceType)
+        /// <summary>
+        /// This returns true if this type directly (i.e. not inherited from the base class) implements the interface.
+        /// </summary>
+        /// <remarks>
+        /// Note that a complicating factor is that the interface itself can be implemented by an interface that extends it.
+        /// </remarks>
+        /// <param name="interfaceType"></param>
+        /// <returns></returns>
+        bool IsDirectlyImplementedInterface(Type interfaceType)
         {
             foreach (var iface in __GetDeclaredInterfaces())
                 if (interfaceType.IsAssignableFrom(iface))
@@ -1766,6 +1772,7 @@ namespace IKVM.Reflection
         void FillInInterfaceMethods(Type interfaceType, MethodInfo[] interfaceMethods, MethodInfo[] targetMethods)
         {
             FillInExplicitInterfaceMethods(interfaceMethods, targetMethods);
+
             var direct = IsDirectlyImplementedInterface(interfaceType);
             if (direct)
                 FillInImplicitInterfaceMethods(interfaceMethods, targetMethods);
@@ -1782,7 +1789,7 @@ namespace IKVM.Reflection
                     type.FillInImplicitInterfaceMethods(interfaceMethods, targetMethods);
         }
 
-        private void FillInImplicitInterfaceMethods(MethodInfo[] interfaceMethods, MethodInfo[] targetMethods)
+         void FillInImplicitInterfaceMethods(MethodInfo[] interfaceMethods, MethodInfo[] targetMethods)
         {
             MethodBase[] methods = null;
 
@@ -1943,7 +1950,7 @@ namespace IKVM.Reflection
             return CreateMissingMethod(name, callingConvention, returnType, parameterTypes, PackedCustomModifiers.CreateFromExternal(returnTypeCustomModifiers, parameterTypeCustomModifiers, parameterTypes.Length));
         }
 
-        private MethodBase CreateMissingMethod(string name, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
+         MethodBase CreateMissingMethod(string name, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
         {
             var sig = new MethodSignature(returnType ?? Module.universe.System_Void, Util.Copy(parameterTypes), customModifiers, callingConvention, 0);
             var method = new MissingMethod(this, name, sig);
