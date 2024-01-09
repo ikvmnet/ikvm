@@ -142,54 +142,36 @@ namespace IKVM.Reflection.Writer
 
         internal static int GetCompressedUIntLength(int value)
         {
-            if (value <= 0x7F)
+            return value switch
             {
-                return 1;
-            }
-            else if (value <= 0x3FFF)
-            {
-                return 2;
-            }
-            else
-            {
-                return 4;
-            }
+                <= 0x7F => 1,
+                <= 0x3FFF => 2,
+                _ => 4
+            };
         }
 
         internal void WriteStringIndex(int index)
         {
             if (bigStrings)
-            {
                 Write(index);
-            }
             else
-            {
                 Write((short)index);
-            }
         }
 
         internal void WriteGuidIndex(int index)
         {
             if (bigGuids)
-            {
                 Write(index);
-            }
             else
-            {
                 Write((short)index);
-            }
         }
 
         internal void WriteBlobIndex(int index)
         {
             if (bigBlobs)
-            {
                 Write(index);
-            }
             else
-            {
                 Write((short)index);
-            }
         }
 
         internal void WriteTypeDefOrRef(int token)
@@ -211,18 +193,27 @@ namespace IKVM.Reflection.Writer
                     throw new InvalidOperationException();
             }
 
-            Write(bigTypeDefOrRef ? token : (short)token);
+            if (bigTypeDefOrRef)
+                Write(token);
+            else
+                Write((short)token);
         }
 
         internal void WriteEncodedTypeDefOrRef(int encodedToken)
         {
-            Write(bigTypeDefOrRef ? encodedToken : (short)encodedToken);
+            if (bigTypeDefOrRef)
+                Write(encodedToken);
+            else
+                Write((short)encodedToken);
         }
 
         internal void WriteHasCustomAttribute(int token)
         {
             var encodedToken = CustomAttributeTable.EncodeHasCustomAttribute(token);
-            Write(bigHasCustomAttribute ? encodedToken : (short)encodedToken);
+            if (bigHasCustomAttribute)
+                Write(encodedToken);
+            else
+                Write((short)encodedToken);
         }
 
         internal void WriteCustomAttributeType(int token)
@@ -234,47 +225,74 @@ namespace IKVM.Reflection.Writer
                 _ => throw new InvalidOperationException(),
             };
 
-            Write(bigCustomAttributeType ? token : (short)token);
+            if (bigCustomAttributeType)
+                Write(token);
+            else
+                Write((short)token);
         }
 
         internal void WriteField(int index)
         {
-            Write(bigField ? (index & 0xFFFFFF) : (short)index);
+            if (bigField)
+                Write(index & 0xFFFFFF);
+            else
+                Write((short)index);
         }
 
         internal void WriteMethodDef(int index)
         {
-            Write(bigMethodDef ? (index & 0xFFFFFF) : (short)index);
+            if (bigMethodDef)
+                Write(index & 0xFFFFFF);
+            else
+                Write((short)index);
         }
 
         internal void WriteParam(int index)
         {
-            Write(bigParam ? (index & 0xFFFFFF) : (short)index);
+            if (bigParam)
+                Write(index & 0xFFFFFF);
+            else
+                Write((short)index);
         }
 
         internal void WriteTypeDef(int index)
         {
-            Write(bigTypeDef ? (index & 0xFFFFFF) : (short)index);
+            if (bigTypeDef)
+                Write(index & 0xFFFFFF);
+            else
+                Write((short)index);
         }
 
         internal void WriteEvent(int index)
         {
-            Write(bigEvent ? (index & 0xFFFFFF) : (short)index);
+            if (bigEvent)
+                Write(index & 0xFFFFFF);
+            else
+                Write((short)index);
         }
 
         internal void WriteProperty(int index)
         {
-            Write(bigProperty ? (index & 0xFFFFFF) : (short)index);
+            if (bigProperty)
+                Write((index & 0xFFFFFF));
+            else
+                Write((short)index);
         }
 
         internal void WriteGenericParam(int index)
         {
-            Write(bigGenericParam ? (index & 0xFFFFFF) : (short)index);
+            if (bigGenericParam)
+                Write((index & 0xFFFFFF));
+            else
+                Write((short)index);
         }
 
         internal void WriteModuleRef(int index)
         {
-            Write(bigModuleRef ? (index & 0xFFFFFF) : (short)index);
+            if (bigModuleRef)
+                Write(index & 0xFFFFFF);
+            else
+                Write((short)index);
         }
 
         internal void WriteResolutionScope(int token)
@@ -288,7 +306,10 @@ namespace IKVM.Reflection.Writer
                 _ => throw new InvalidOperationException(),
             };
 
-            Write(bigResolutionScope ? token : (short)token);
+            if (bigResolutionScope)
+                Write(token);
+            else
+                Write((short)token);
         }
 
         internal void WriteMemberRefParent(int token)
@@ -303,7 +324,10 @@ namespace IKVM.Reflection.Writer
                 _ => throw new InvalidOperationException(),
             };
 
-            Write(bigMemberRefParent ? token : (short)token);
+            if (bigMemberRefParent)
+                Write(token);
+            else
+                Write((short)token);
         }
 
         internal void WriteMethodDefOrRef(int token)
@@ -315,19 +339,28 @@ namespace IKVM.Reflection.Writer
                 _ => throw new InvalidOperationException(),
             };
 
-            Write(bigMethodDefOrRef ? token : (short)token);
+            if (bigMethodDefOrRef)
+                Write(token);
+            else
+                Write((short)token);
         }
 
         internal void WriteHasConstant(int token)
         {
             var encodedToken = ConstantTable.EncodeHasConstant(token);
-            Write(bigHasConstant ? encodedToken : (short)encodedToken);
+            if (bigHasConstant)
+                Write(encodedToken);
+            else
+                Write((short)encodedToken);
         }
 
         internal void WriteHasSemantics(int encodedToken)
         {
             // because we've already had to do the encoding (to be able to sort the table) here we simple write the value
-            Write(bigHasSemantics ? encodedToken : (short)encodedToken);
+            if (bigHasSemantics)
+                Write(encodedToken);
+            else
+                Write((short)encodedToken);
         }
 
         internal void WriteImplementation(int token)
@@ -349,19 +382,28 @@ namespace IKVM.Reflection.Writer
                     throw new InvalidOperationException();
             }
 
-            Write(bigImplementation ? token : (short)token);
+            if (bigImplementation)
+                Write(token);
+            else
+                Write((short)token);
         }
 
         internal void WriteTypeOrMethodDef(int encodedToken)
         {
             // because we've already had to do the encoding (to be able to sort the table) here we simple write the value
-            Write(bigTypeOrMethodDef ? encodedToken : (short)encodedToken);
+            if (bigTypeOrMethodDef)
+                Write(encodedToken);
+            else
+                Write((short)encodedToken);
         }
 
         internal void WriteHasDeclSecurity(int encodedToken)
         {
             // because we've already had to do the encoding (to be able to sort the table) here we simple write the value
-            Write(bigHasDeclSecurity ? encodedToken : (short)encodedToken);
+            if (bigHasDeclSecurity)
+                Write(encodedToken);
+            else
+                Write((short)encodedToken);
         }
 
         internal void WriteMemberForwarded(int token)
@@ -372,13 +414,20 @@ namespace IKVM.Reflection.Writer
                 MethodDefTable.Index => (token & 0xFFFFFF) << 1 | 1,
                 _ => throw new InvalidOperationException(),
             };
-            Write(bigMemberForwarded ? token : (short)token);
+
+            if (bigMemberForwarded)
+                Write(token);
+            else
+                Write((short)token);
         }
 
         internal void WriteHasFieldMarshal(int token)
         {
-            int encodedToken = FieldMarshalTable.EncodeHasFieldMarshal(token);
-            Write(bigHasFieldMarshal ? encodedToken : (short)encodedToken);
+            var encodedToken = FieldMarshalTable.EncodeHasFieldMarshal(token);
+            if (bigHasFieldMarshal)
+                Write(encodedToken);
+            else
+                Write((short)encodedToken);
         }
 
     }

@@ -635,14 +635,14 @@ namespace IKVM.Reflection.Emit
             var fieldType = ModuleBuilder.GetType("$ArrayType$" + data.Length);
             if (fieldType == null)
             {
-                var tb = ModuleBuilder.DefineType("$ArrayType$" + data.Length, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.ExplicitLayout, Module.universe.System_ValueType, PackingSize.Size1, data.Length);
-                tb.CreateType();
-                fieldType = tb;
+                var typeBuilder = ModuleBuilder.DefineType("$ArrayType$" + data.Length, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.ExplicitLayout, Module.universe.System_ValueType, PackingSize.Size1, data.Length);
+                typeBuilder.CreateType();
+                fieldType = typeBuilder;
             }
 
-            var fb = DefineField(name, fieldType, attributes | FieldAttributes.Static);
-            fb.__SetDataAndRVA(data);
-            return fb;
+            var fieldBuilder = DefineField(name, fieldType, attributes | FieldAttributes.Static);
+            fieldBuilder.__SetDataAndRVA(data);
+            return fieldBuilder;
         }
 
         public static MethodInfo GetMethod(Type type, MethodInfo method)

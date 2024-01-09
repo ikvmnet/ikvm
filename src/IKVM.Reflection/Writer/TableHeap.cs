@@ -44,10 +44,12 @@ namespace IKVM.Reflection.Writer
             var tables = mw.ModuleBuilder.GetTables();
 
             // Header
-            mw.Write(0);        // Reserved
+            mw.Write(0);                    // Reserved
+
             int ver = mw.ModuleBuilder.MDStreamVersion;
             mw.Write((byte)(ver >> 16));    // MajorVersion
             mw.Write((byte)ver);            // MinorVersion
+
             byte heapSizes = 0;
             if (mw.ModuleBuilder.Strings.IsBig)
                 heapSizes |= 0x01;
@@ -55,9 +57,10 @@ namespace IKVM.Reflection.Writer
                 heapSizes |= 0x02;
             if (mw.ModuleBuilder.Blobs.IsBig)
                 heapSizes |= 0x04;
-            mw.Write(heapSizes);// HeapSizes
-                                // LAMESPEC spec says reserved, but .NET 2.0 Ref.Emit sets it to 0x10
-            mw.Write((byte)0x10);   // Reserved
+            mw.Write(heapSizes);            // HeapSizes
+
+            // LAMESPEC spec says reserved, but .NET 2.0 Ref.Emit sets it to 0x10
+            mw.Write((byte)0x10);           // Reserved
 
             long bit = 1;
             long valid = 0;
