@@ -38,6 +38,7 @@ namespace IKVM.Reflection.Writer
         /// </summary>
         internal GuidHeap()
         {
+
         }
 
         internal int Add(Guid guid)
