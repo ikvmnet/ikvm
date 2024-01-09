@@ -28,72 +28,62 @@ namespace IKVM.Reflection.Writer
 {
 
     sealed class UserStringHeap : SimpleHeap
-	{
+    {
 
-		private List<string> list = new List<string>();
-		private Dictionary<string, int> strings = new Dictionary<string, int>();
-		private int nextOffset;
+        readonly List<string> list = new List<string>();
+        readonly Dictionary<string, int> strings = new Dictionary<string, int>();
+        int nextOffset;
 
-		internal UserStringHeap()
-		{
-			nextOffset = 1;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        internal UserStringHeap()
+        {
+            nextOffset = 1;
+        }
 
-		internal bool IsEmpty
-		{
-			get { return nextOffset == 1; }
-		}
+        internal bool IsEmpty => nextOffset == 1;
 
-		internal int Add(string str)
-		{
-			Debug.Assert(!frozen);
-			int offset;
-			if (!strings.TryGetValue(str, out offset))
-			{
-				int length = str.Length * 2 + 1 + MetadataWriter.GetCompressedUIntLength(str.Length * 2 + 1);
-				if (nextOffset + length > 0xFFFFFF)
-				{
-					throw new FileFormatLimitationExceededException("No logical space left to create more user strings.", FileFormatLimitationExceededException.META_E_STRINGSPACE_FULL);
-				}
-				offset = nextOffset;
-				nextOffset += length;
-				list.Add(str);
-				strings.Add(str, offset);
-			}
-			return offset;
-		}
+        internal int Add(string str)
+        {
+            Debug.Assert(frozen == false);
 
-		protected override int GetLength()
-		{
-			return nextOffset;
-		}
+            if (strings.TryGetValue(str, out var offset) == false)
+            {
+                int length = str.Length * 2 + 1 + MetadataWriter.GetCompressedUIntLength(str.Length * 2 + 1);
+                if (nextOffset + length > 0xFFFFFF)
+                    throw new FileFormatLimitationExceededException("No logical space left to create more user strings.", FileFormatLimitationExceededException.META_E_STRINGSPACE_FULL);
 
-		protected override void WriteImpl(MetadataWriter mw)
-		{
-			mw.Write((byte)0);
-			foreach (string str in list)
-			{
-				mw.WriteCompressedUInt(str.Length * 2 + 1);
-				byte hasSpecialChars = 0;
-				foreach (char ch in str)
-				{
-					mw.Write((ushort)ch);
-					if (hasSpecialChars == 0 && (ch < 0x20 || ch > 0x7E))
-					{
-						if (ch > 0x7E
-							|| (ch >= 0x01 && ch <= 0x08)
-							|| (ch >= 0x0E && ch <= 0x1F)
-							|| ch == 0x27
-							|| ch == 0x2D)
-						{
-							hasSpecialChars = 1;
-						}
-					}
-				}
-				mw.Write(hasSpecialChars);
-			}
-		}
+                offset = nextOffset;
+                nextOffset += length;
+                list.Add(str);
+                strings.Add(str, offset);
+            }
 
-	}
+            return offset;
+        }
+
+        protected override int GetLength() => nextOffset;
+
+        protected override void WriteImpl(MetadataWriter mw)
+        {
+            mw.Write((byte)0);
+            foreach (var str in list)
+            {
+                mw.WriteCompressedUInt(str.Length * 2 + 1);
+                byte hasSpecialChars = 0;
+                foreach (var ch in str)
+                {
+                    mw.Write((ushort)ch);
+                    if (hasSpecialChars == 0 && (ch < 0x20 || ch > 0x7E))
+                        if (ch > 0x7E || (ch >= 0x01 && ch <= 0x08) || (ch >= 0x0E && ch <= 0x1F) || ch == 0x27 || ch == 0x2D)
+                            hasSpecialChars = 1;
+                }
+
+                mw.Write(hasSpecialChars);
+            }
+        }
+
+    }
 
 }

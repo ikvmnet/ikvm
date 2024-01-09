@@ -29,34 +29,35 @@ namespace IKVM.Reflection.Writer
 {
 
     sealed class GuidHeap : SimpleHeap
-	{
+    {
 
-		private List<Guid> list = new List<Guid>();
+        readonly List<Guid> list = new List<Guid>();
 
-		internal GuidHeap()
-		{
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        internal GuidHeap()
+        {
+        }
 
-		internal int Add(Guid guid)
-		{
-			Debug.Assert(!frozen);
-			list.Add(guid);
-			return list.Count;
-		}
+        internal int Add(Guid guid)
+        {
+            Debug.Assert(!frozen);
+            list.Add(guid);
+            return list.Count;
+        }
 
-		protected override int GetLength()
-		{
-			return list.Count * 16;
-		}
+        protected override int GetLength()
+        {
+            return list.Count * 16;
+        }
 
-		protected override void WriteImpl(MetadataWriter mw)
-		{
-			foreach (Guid guid in list)
-			{
-				mw.Write(guid.ToByteArray());
-			}
-		}
+        protected override void WriteImpl(MetadataWriter mw)
+        {
+            foreach (var guid in list)
+                mw.Write(guid.ToByteArray());
+        }
 
-	}
+    }
 
 }

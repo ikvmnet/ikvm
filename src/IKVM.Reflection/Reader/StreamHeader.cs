@@ -21,6 +21,8 @@
   jeroen@frijters.net
   
 */
+using System;
+using System.Buffers;
 using System.IO;
 using System.Text;
 
@@ -28,28 +30,60 @@ namespace IKVM.Reflection.Reader
 {
 
     sealed class StreamHeader
-	{
+    {
 
-		internal uint Offset;
-		internal uint Size;
-		internal string Name;
+        internal uint Offset;
+        internal uint Size;
+        internal string Name;
 
-		internal void Read(BinaryReader br)
-		{
-			Offset = br.ReadUInt32();
-			Size = br.ReadUInt32();
-			byte[] buf = new byte[32];
-			byte b;
-			int len = 0;
-			while ((b = br.ReadByte()) != 0)
-			{
-				buf[len++] = b;
-			}
-			Name = Encoding.UTF8.GetString(buf, 0, len); ;
-			int padding = -1 + ((len + 4) & ~3) - len;
-			br.BaseStream.Seek(padding, SeekOrigin.Current);
-		}
+        internal void Read(BinaryReader br)
+        {
+            Offset = br.ReadUInt32();
+            Size = br.ReadUInt32();
+            Name = ReadName(br);
+        }
 
-	}
+#if NETFRAMEWORK
+
+        string ReadName(BinaryReader br)
+        {
+            var buf = ArrayPool<byte>.Shared.Rent(32);
+
+            try
+            {
+                byte b;
+                int len = 0;
+                while ((b = br.ReadByte()) != 0)
+                    buf[len++] = b;
+
+                int padding = -1 + ((len + 4) & ~3) - len;
+                br.BaseStream.Seek(padding, SeekOrigin.Current);
+                return Encoding.UTF8.GetString(buf, 0, len);
+            }
+            finally
+            {
+                if (buf != null)
+                    ArrayPool<byte>.Shared.Return(buf);
+            }
+        }
+
+#else
+
+        unsafe string ReadName(BinaryReader br)
+        {
+            var buf = (Span<byte>)stackalloc byte[32];
+            byte b;
+            int len = 0;
+            while ((b = br.ReadByte()) != 0)
+                buf[len++] = b;
+
+            int padding = -1 + ((len + 4) & ~3) - len;
+            br.BaseStream.Seek(padding, SeekOrigin.Current);
+            return Encoding.UTF8.GetString(buf.Slice(0, len));
+        }
+
+#endif
+
+    }
 
 }

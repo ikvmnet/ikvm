@@ -27,89 +27,91 @@ namespace IKVM.Reflection.Writer
 {
 
     sealed class BlobHeap : SimpleHeap
-	{
+    {
 
-		private Key[] map = new Key[8179];
-		private readonly ByteBuffer buf = new ByteBuffer(32);
+        Key[] map = new Key[8179];
+        readonly ByteBuffer buf = new ByteBuffer(32);
 
-		private struct Key
-		{
-			internal Key[] next;
-			internal int len;
-			internal int hash;
-			internal int offset;
-		}
+        struct Key
+        {
 
-		internal BlobHeap()
-		{
-			buf.Write((byte)0);
-		}
+            internal Key[] next;
+            internal int len;
+            internal int hash;
+            internal int offset;
 
-		internal int Add(ByteBuffer bb)
-		{
-			Debug.Assert(!frozen);
-			int bblen = bb.Length;
-			if (bblen == 0)
-			{
-				return 0;
-			}
-			int lenlen = MetadataWriter.GetCompressedUIntLength(bblen);
-			int hash = bb.Hash();
-			int index = (hash & 0x7FFFFFFF) % map.Length;
-			Key[] keys = map;
-			int last = index;
-			while (keys[index].offset != 0)
-			{
-				if (keys[index].hash == hash
-					&& keys[index].len == bblen
-					&& buf.Match(keys[index].offset + lenlen, bb, 0, bblen))
-				{
-					return keys[index].offset;
-				}
-				if (index == last)
-				{
-					if (keys[index].next == null)
-					{
-						keys[index].next = new Key[4];
-						keys = keys[index].next;
-						index = 0;
-						break;
-					}
-					keys = keys[index].next;
-					index = -1;
-					last = keys.Length - 1;
-				}
-				index++;
-			}
-			int offset = buf.Position;
-			buf.WriteCompressedUInt(bblen);
-			buf.Write(bb);
-			keys[index].len = bblen;
-			keys[index].hash = hash;
-			keys[index].offset = offset;
-			return offset;
-		}
+        }
 
-		protected override int GetLength()
-		{
-			return buf.Position;
-		}
+        internal BlobHeap()
+        {
+            buf.Write((byte)0);
+        }
 
-		protected override void WriteImpl(MetadataWriter mw)
-		{
-			mw.Write(buf);
-		}
+        internal int Add(ByteBuffer bb)
+        {
+            Debug.Assert(!frozen);
 
-		internal bool IsEmpty
-		{
-			get { return buf.Position == 1; }
-		}
+            var bblen = bb.Length;
+            if (bblen == 0)
+                return 0;
 
-		internal IKVM.Reflection.Reader.ByteReader GetBlob(int blobIndex)
-		{
-			return buf.GetBlob(blobIndex);
-		}
+            var lenlen = MetadataWriter.GetCompressedUIntLength(bblen);
+            var hash = bb.Hash();
+            var index = (hash & 0x7FFFFFFF) % map.Length;
+            var keys = map;
+            int last = index;
+            while (keys[index].offset != 0)
+            {
+                if (keys[index].hash == hash && keys[index].len == bblen && buf.Match(keys[index].offset + lenlen, bb, 0, bblen))
+                    return keys[index].offset;
 
-	}
+                if (index == last)
+                {
+                    if (keys[index].next == null)
+                    {
+                        keys[index].next = new Key[4];
+                        keys = keys[index].next;
+                        index = 0;
+                        break;
+                    }
+
+                    keys = keys[index].next;
+                    index = -1;
+                    last = keys.Length - 1;
+                }
+
+                index++;
+            }
+
+            var offset = buf.Position;
+            buf.WriteCompressedUInt(bblen);
+            buf.Write(bb);
+            keys[index].len = bblen;
+            keys[index].hash = hash;
+            keys[index].offset = offset;
+            return offset;
+        }
+
+        protected override int GetLength()
+        {
+            return buf.Position;
+        }
+
+        protected override void WriteImpl(MetadataWriter mw)
+        {
+            mw.Write(buf);
+        }
+
+        internal bool IsEmpty
+        {
+            get { return buf.Position == 1; }
+        }
+
+        internal IKVM.Reflection.Reader.ByteReader GetBlob(int blobIndex)
+        {
+            return buf.GetBlob(blobIndex);
+        }
+
+    }
 
 }

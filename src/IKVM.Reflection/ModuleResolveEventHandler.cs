@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2008 Jeroen Frijters
+  Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,44 +21,9 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Diagnostics;
-
-namespace IKVM.Reflection.Writer
+namespace IKVM.Reflection
 {
 
-    abstract class Heap
-	{
-
-		protected bool frozen;
-		protected int unalignedlength;
-
-		internal void Write(MetadataWriter mw)
-		{
-			var pos = mw.Position;
-			WriteImpl(mw);
-
-			Debug.Assert(mw.Position == pos + unalignedlength);
-			var align = Length - unalignedlength;
-			for (int i = 0; i < align; i++)
-				mw.Write((byte)0);
-		}
-
-        internal bool IsBig => Length > 65535;
-
-        internal int Length
-		{
-			get
-			{
-				if (!frozen)
-					throw new InvalidOperationException();
-
-				return (unalignedlength + 3) & ~3;
-			}
-		}
-
-		protected abstract void WriteImpl(MetadataWriter mw);
-
-	}
+    public delegate Module ModuleResolveEventHandler(object sender, ResolveEventArgs args);
 
 }

@@ -30,6 +30,7 @@ namespace IKVM.Reflection.Reader
 
     struct IMAGE_DATA_DIRECTORY
 	{
+
 		public DWORD VirtualAddress;
 		public DWORD Size;
 

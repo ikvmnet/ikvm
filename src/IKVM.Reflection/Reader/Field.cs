@@ -27,108 +27,120 @@ using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
+
     sealed class FieldDefImpl : FieldInfo
-	{
-		private readonly ModuleReader module;
-		private readonly TypeDefImpl declaringType;
-		private readonly int index;
-		private FieldSignature lazyFieldSig;
+    {
 
-		internal FieldDefImpl(ModuleReader module, TypeDefImpl declaringType, int index)
-		{
-			this.module = module;
-			this.declaringType = declaringType;
-			this.index = index;
-		}
+        readonly ModuleReader module;
+        readonly TypeDefImpl declaringType;
+        readonly int index;
 
-		public override FieldAttributes Attributes
-		{
-			get { return (FieldAttributes)module.Field.records[index].Flags; }
-		}
+        FieldSignature lazyFieldSig;
 
-		public override Type DeclaringType
-		{
-			get { return declaringType.IsModulePseudoType ? null : declaringType; }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="declaringType"></param>
+        /// <param name="index"></param>
+        internal FieldDefImpl(ModuleReader module, TypeDefImpl declaringType, int index)
+        {
+            this.module = module;
+            this.declaringType = declaringType;
+            this.index = index;
+        }
 
-		public override string Name
-		{
-			get { return module.GetString(module.Field.records[index].Name); }
-		}
+        public override FieldAttributes Attributes
+        {
+            get { return (FieldAttributes)module.Field.records[index].Flags; }
+        }
 
-		public override string ToString()
-		{
-			return this.FieldType.Name + " " + this.Name;
-		}
+        public override Type DeclaringType
+        {
+            get { return declaringType.IsModulePseudoType ? null : declaringType; }
+        }
 
-		public override Module Module
-		{
-			get { return module; }
-		}
+        public override string Name
+        {
+            get { return module.GetString(module.Field.records[index].Name); }
+        }
 
-		public override int MetadataToken
-		{
-			get { return (FieldTable.Index << 24) + index + 1; }
-		}
+        public override string ToString()
+        {
+            return this.FieldType.Name + " " + this.Name;
+        }
 
-		public override object GetRawConstantValue()
-		{
-			return module.Constant.GetRawConstantValue(module, this.MetadataToken);
-		}
+        public override Module Module
+        {
+            get { return module; }
+        }
 
-		public override void __GetDataFromRVA(byte[] data, int offset, int length)
-		{
-			int rva = this.__FieldRVA;
-			if (rva == 0)
-			{
-				// C++ assemblies can have fields that have an RVA that is zero
-				Array.Clear(data, offset, length);
-				return;
-			}
-			module.__ReadDataFromRVA(rva, data, offset, length);
-		}
+        public override int MetadataToken
+        {
+            get { return (FieldTable.Index << 24) + index + 1; }
+        }
 
-		public override int __FieldRVA
-		{
-			get
-			{
-				foreach (int i in module.FieldRVA.Filter(index + 1))
-				{
-					return module.FieldRVA.records[i].RVA;
-				}
-				throw new InvalidOperationException();
-			}
-		}
+        public override object GetRawConstantValue()
+        {
+            return module.Constant.GetRawConstantValue(module, this.MetadataToken);
+        }
 
-		public override bool __TryGetFieldOffset(out int offset)
-		{
-			foreach (int i in this.Module.FieldLayout.Filter(index + 1))
-			{
-				offset = this.Module.FieldLayout.records[i].Offset;
-				return true;
-			}
-			offset = 0;
-			return false;
-		}
+        public override void __GetDataFromRVA(byte[] data, int offset, int length)
+        {
+            int rva = this.__FieldRVA;
+            if (rva == 0)
+            {
+                // C++ assemblies can have fields that have an RVA that is zero
+                Array.Clear(data, offset, length);
+                return;
+            }
 
-		internal override FieldSignature FieldSignature
-		{
-			get { return lazyFieldSig ?? (lazyFieldSig = FieldSignature.ReadSig(module, module.GetBlob(module.Field.records[index].Signature), declaringType)); }
-		}
+            module.__ReadDataFromRVA(rva, data, offset, length);
+        }
 
-		internal override int ImportTo(Emit.ModuleBuilder module)
-		{
-			return module.ImportMethodOrField(declaringType, this.Name, this.FieldSignature);
-		}
+        public override int __FieldRVA
+        {
+            get
+            {
+                foreach (var i in module.FieldRVA.Filter(index + 1))
+                    return module.FieldRVA.records[i].RVA;
 
-		internal override int GetCurrentToken()
-		{
-			return this.MetadataToken;
-		}
+                throw new InvalidOperationException();
+            }
+        }
 
-		internal override bool IsBaked
-		{
-			get { return true; }
-		}
-	}
+        public override bool __TryGetFieldOffset(out int offset)
+        {
+            foreach (int i in this.Module.FieldLayout.Filter(index + 1))
+            {
+                offset = Module.FieldLayout.records[i].Offset;
+                return true;
+            }
+
+            offset = 0;
+            return false;
+        }
+
+        internal override FieldSignature FieldSignature
+        {
+            get { return lazyFieldSig ??= FieldSignature.ReadSig(module, module.GetBlob(module.Field.records[index].Signature), declaringType); }
+        }
+
+        internal override int ImportTo(Emit.ModuleBuilder module)
+        {
+            return module.ImportMethodOrField(declaringType, this.Name, this.FieldSignature);
+        }
+
+        internal override int GetCurrentToken()
+        {
+            return this.MetadataToken;
+        }
+
+        internal override bool IsBaked
+        {
+            get { return true; }
+        }
+
+    }
+
 }
