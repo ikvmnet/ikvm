@@ -163,7 +163,7 @@ namespace IKVM.Reflection
                 throw new NotImplementedException("CustomAttribute table must be sorted");
             }
 
-            bool clr = imageRuntimeVersion.Contains(';');
+            var clr = imageRuntimeVersion.Contains(";");
             if (clr)
             {
                 imageRuntimeVersion = imageRuntimeVersion.Substring(imageRuntimeVersion.IndexOf(';') + 1);
