@@ -25,118 +25,131 @@ using System;
 
 namespace IKVM.Reflection.Emit
 {
+
     class ArrayMethod : MethodInfo
-	{
-		private readonly Module module;
-		private readonly Type arrayClass;
-		private readonly string methodName;
-		private readonly CallingConventions callingConvention;
-		private readonly Type returnType;
-		protected readonly Type[] parameterTypes;
-		private MethodSignature methodSignature;
+    {
 
-		internal ArrayMethod(Module module, Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
-		{
-			this.module = module;
-			this.arrayClass = arrayClass;
-			this.methodName = methodName;
-			this.callingConvention = callingConvention;
-			this.returnType = returnType ?? module.universe.System_Void;
-			this.parameterTypes = Util.Copy(parameterTypes);
-		}
+        readonly Module module;
+        readonly Type arrayClass;
+        readonly string methodName;
+        readonly CallingConventions callingConvention;
+        readonly Type returnType;
+        protected readonly Type[] parameterTypes;
+        MethodSignature methodSignature;
 
-		public override MethodBody GetMethodBody()
-		{
-			throw new InvalidOperationException();
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="arrayClass"></param>
+        /// <param name="methodName"></param>
+        /// <param name="callingConvention"></param>
+        /// <param name="returnType"></param>
+        /// <param name="parameterTypes"></param>
+        internal ArrayMethod(Module module, Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
+        {
+            this.module = module;
+            this.arrayClass = arrayClass;
+            this.methodName = methodName;
+            this.callingConvention = callingConvention;
+            this.returnType = returnType ?? module.universe.System_Void;
+            this.parameterTypes = Util.Copy(parameterTypes);
+        }
 
-		public override int __MethodRVA
-		{
-			get { throw new InvalidOperationException(); }
-		}
+        public override MethodBody GetMethodBody()
+        {
+            throw new InvalidOperationException();
+        }
 
-		public override MethodImplAttributes GetMethodImplementationFlags()
-		{
-			throw new NotSupportedException();
-		}
+        public override int __MethodRVA
+        {
+            get { throw new InvalidOperationException(); }
+        }
 
-		public override ParameterInfo[] GetParameters()
-		{
-			throw new NotSupportedException();
-		}
+        public override MethodImplAttributes GetMethodImplementationFlags()
+        {
+            throw new NotSupportedException();
+        }
 
-		internal override int ImportTo(ModuleBuilder module)
-		{
-			return module.ImportMethodOrField(arrayClass, methodName, MethodSignature);
-		}
+        public override ParameterInfo[] GetParameters()
+        {
+            throw new NotSupportedException();
+        }
 
-		public override MethodAttributes Attributes
-		{
-			get { throw new NotSupportedException(); }
-		}
+        internal override int ImportTo(ModuleBuilder module)
+        {
+            return module.ImportMethodOrField(arrayClass, methodName, MethodSignature);
+        }
 
-		public override CallingConventions CallingConvention
-		{
-			get { return callingConvention; }
-		}
+        public override MethodAttributes Attributes
+        {
+            get { throw new NotSupportedException(); }
+        }
 
-		public override Type DeclaringType
-		{
-			get { return arrayClass; }
-		}
+        public override CallingConventions CallingConvention
+        {
+            get { return callingConvention; }
+        }
 
-		internal override MethodSignature MethodSignature
-		{
-			get
-			{
-				if (methodSignature == null)
-				{
-					methodSignature = MethodSignature.MakeFromBuilder(returnType, parameterTypes, new PackedCustomModifiers(), callingConvention, 0);
-				}
-				return methodSignature;
-			}
-		}
+        public override Type DeclaringType
+        {
+            get { return arrayClass; }
+        }
 
-		public override Module Module
-		{
-			// FXBUG like .NET, we return the module that GetArrayMethod was called on, not the module associated with the array type
-			get { return module; }
-		}
+        internal override MethodSignature MethodSignature
+        {
+            get
+            {
+                if (methodSignature == null)
+                {
+                    methodSignature = MethodSignature.MakeFromBuilder(returnType, parameterTypes, new PackedCustomModifiers(), callingConvention, 0);
+                }
+                return methodSignature;
+            }
+        }
 
-		public override string Name
-		{
-			get { return methodName; }
-		}
+        public override Module Module
+        {
+            // FXBUG like .NET, we return the module that GetArrayMethod was called on, not the module associated with the array type
+            get { return module; }
+        }
 
-		internal override int ParameterCount
-		{
-			get { return parameterTypes.Length; }
-		}
+        public override string Name
+        {
+            get { return methodName; }
+        }
 
-		public override ParameterInfo ReturnParameter
-		{
-			// FXBUG like .NET, we throw NotImplementedException
-			get { throw new NotImplementedException(); }
-		}
+        internal override int ParameterCount
+        {
+            get { return parameterTypes.Length; }
+        }
 
-		public override Type ReturnType
-		{
-			get { return returnType; }
-		}
+        public override ParameterInfo ReturnParameter
+        {
+            // FXBUG like .NET, we throw NotImplementedException
+            get { throw new NotImplementedException(); }
+        }
 
-		internal override bool HasThis
-		{
-			get { return (callingConvention & (CallingConventions.HasThis | CallingConventions.ExplicitThis)) == CallingConventions.HasThis; }
-		}
+        public override Type ReturnType
+        {
+            get { return returnType; }
+        }
 
-		internal override int GetCurrentToken()
-		{
-			return this.MetadataToken;
-		}
+        internal override bool HasThis
+        {
+            get { return (callingConvention & (CallingConventions.HasThis | CallingConventions.ExplicitThis)) == CallingConventions.HasThis; }
+        }
 
-		internal override bool IsBaked
-		{
-			get { return arrayClass.IsBaked; }
-		}
-	}
+        internal override int GetCurrentToken()
+        {
+            return this.MetadataToken;
+        }
+
+        internal override bool IsBaked
+        {
+            get { return arrayClass.IsBaked; }
+        }
+
+    }
+
 }

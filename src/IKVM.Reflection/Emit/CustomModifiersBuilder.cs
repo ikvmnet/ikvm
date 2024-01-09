@@ -21,55 +21,57 @@
   jeroen@frijters.net
   
 */
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace IKVM.Reflection.Emit
 {
-	public sealed class CustomModifiersBuilder
-	{
-		private readonly List<Item> list = new List<Item>();
 
-		internal struct Item
-		{
-			internal Type type;
-			internal bool required;
-		}
+    public sealed class CustomModifiersBuilder
+    {
 
-		public void AddRequired(Type type)
-		{
-			Item item;
-			item.type = type;
-			item.required = true;
-			list.Add(item);
-		}
+        readonly List<Item> list = new List<Item>();
 
-		public void AddOptional(Type type)
-		{
-			Item item;
-			item.type = type;
-			item.required = false;
-			list.Add(item);
-		}
+        internal struct Item
+        {
+            internal Type type;
+            internal bool required;
+        }
 
-		// this adds the custom modifiers in the same order as the normal SRE APIs
-		// (the advantage over using the SRE APIs is that a CustomModifiers object is slightly more efficient,
-		// because unlike the Type arrays it doesn't need to be copied)
-		public void Add(Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
-		{
-			foreach (CustomModifiers.Entry entry in CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers))
-			{
-				Item item;
-				item.type = entry.Type;
-				item.required = entry.IsRequired;
-				list.Add(item);
-			}
-		}
+        public void AddRequired(Type type)
+        {
+            Item item;
+            item.type = type;
+            item.required = true;
+            list.Add(item);
+        }
 
-		public CustomModifiers Create()
-		{
-			return new CustomModifiers(list);
-		}
-	}
+        public void AddOptional(Type type)
+        {
+            Item item;
+            item.type = type;
+            item.required = false;
+            list.Add(item);
+        }
+
+        // this adds the custom modifiers in the same order as the normal SRE APIs
+        // (the advantage over using the SRE APIs is that a CustomModifiers object is slightly more efficient,
+        // because unlike the Type arrays it doesn't need to be copied)
+        public void Add(Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
+        {
+            foreach (CustomModifiers.Entry entry in CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers))
+            {
+                Item item;
+                item.type = entry.Type;
+                item.required = entry.IsRequired;
+                list.Add(item);
+            }
+        }
+
+        public CustomModifiers Create()
+        {
+            return new CustomModifiers(list);
+        }
+
+    }
+
 }

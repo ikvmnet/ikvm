@@ -21,14 +21,11 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
 using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
-	sealed class EventInfoImpl : EventInfo
+    sealed class EventInfoImpl : EventInfo
 	{
 		private readonly ModuleReader module;
 		private readonly Type declaringType;

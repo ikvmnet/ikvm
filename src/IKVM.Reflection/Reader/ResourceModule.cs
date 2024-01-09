@@ -23,12 +23,13 @@
 */
 using System;
 using System.Collections.Generic;
-using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
-	sealed class ResourceModule : NonPEModule
+
+    sealed class ResourceModule : NonPEModule
 	{
+
 		private readonly ModuleReader manifest;
 		private readonly int index;
 		private readonly string location;
@@ -81,7 +82,7 @@ namespace IKVM.Reflection.Reader
 			get
 			{
 				int blob = manifest.File.records[index].HashValue;
-				return blob == 0 ? Empty<byte>.Array : manifest.GetBlobCopy(blob);
+				return blob == 0 ? Array.Empty<byte>() : manifest.GetBlobCopy(blob);
 			}
 		}
 
@@ -103,5 +104,7 @@ namespace IKVM.Reflection.Reader
 		{
 			return new NotSupportedException();
 		}
+
 	}
+
 }

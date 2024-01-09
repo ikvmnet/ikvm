@@ -25,7 +25,8 @@ using System;
 
 namespace IKVM.Reflection
 {
-	[Serializable]
+
+    [Serializable]
 	public sealed class AmbiguousMatchException : Exception
 	{
 		public AmbiguousMatchException()
@@ -46,5 +47,7 @@ namespace IKVM.Reflection
 			: base(info, context)
 		{
 		}
+
 	}
+
 }

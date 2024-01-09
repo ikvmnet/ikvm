@@ -22,12 +22,11 @@
   
 */
 using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace IKVM.Reflection.Reader
 {
-	sealed class ByteReader
+    sealed class ByteReader
 	{
 		private byte[] buffer;
 		private int pos;

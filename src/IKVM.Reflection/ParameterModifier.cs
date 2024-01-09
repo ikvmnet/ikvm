@@ -21,25 +21,29 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace IKVM.Reflection
 {
-	public struct ParameterModifier
-	{
-		private readonly bool[] values;
 
-		public ParameterModifier(int parameterCount)
-		{
-			values = new bool[parameterCount];
-		}
+    public readonly struct ParameterModifier
+    {
 
-		public bool this[int index]
-		{
-			get { return values[index]; }
-			set { values[index] = value; }
-		}
-	}
+        readonly bool[] values;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="parameterCount"></param>
+        public ParameterModifier(int parameterCount)
+        {
+            values = new bool[parameterCount];
+        }
+
+        public bool this[int index]
+        {
+            get => values[index];
+            set => values[index] = value;
+        }
+
+    }
+
 }

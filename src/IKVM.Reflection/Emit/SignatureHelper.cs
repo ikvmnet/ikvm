@@ -31,290 +31,288 @@ namespace IKVM.Reflection.Emit
 {
 
     public abstract class SignatureHelper
-	{
+    {
 
-		protected readonly byte type;
-		protected ushort paramCount;
+        protected readonly byte type;
+        protected ushort paramCount;
 
-		sealed class Lazy : SignatureHelper
-		{
-			private readonly List<Type> args = new List<Type>();
+        sealed class Lazy : SignatureHelper
+        {
 
-			internal Lazy(byte type)
-				: base(type)
-			{
-			}
+            readonly List<Type> args = new List<Type>();
 
-			internal override Type ReturnType
-			{
-				get { return args[0]; }
-			}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="type"></param>
+            internal Lazy(byte type) :
+                base(type)
+            {
 
-			public override byte[] GetSignature()
-			{
-				throw new NotSupportedException();
-			}
+            }
 
-			internal override ByteBuffer GetSignature(ModuleBuilder module)
-			{
-				ByteBuffer bb = new ByteBuffer(16);
-				Signature.WriteSignatureHelper(module, bb, type, paramCount, args);
-				return bb;
-			}
+            internal override Type ReturnType
+            {
+                get { return args[0]; }
+            }
 
-			public override void AddSentinel()
-			{
-				args.Add(MarkerType.Sentinel);
-			}
+            public override byte[] GetSignature()
+            {
+                throw new NotSupportedException();
+            }
 
-			public override void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers)
-			{
-				if (pinned)
-				{
-					args.Add(MarkerType.Pinned);
-				}
-				foreach (CustomModifiers.Entry mod in customModifiers)
-				{
-					args.Add(mod.IsRequired ? MarkerType.ModReq : MarkerType.ModOpt);
-					args.Add(mod.Type);
-				}
-				args.Add(argument);
-				paramCount++;
-			}
-		}
+            internal override ByteBuffer GetSignature(ModuleBuilder module)
+            {
+                var bb = new ByteBuffer(16);
+                Signature.WriteSignatureHelper(module, bb, type, paramCount, args);
+                return bb;
+            }
 
-		sealed class Eager : SignatureHelper
-		{
-			private readonly ModuleBuilder module;
-			private readonly ByteBuffer bb = new ByteBuffer(16);
-			private readonly Type returnType;
+            public override void AddSentinel()
+            {
+                args.Add(MarkerType.Sentinel);
+            }
 
-			internal Eager(ModuleBuilder module, byte type, Type returnType)
-				: base(type)
-			{
-				this.module = module;
-				this.returnType = returnType;
-				bb.Write(type);
-				if (type != Signature.FIELD)
-				{
-					// space for parameterCount
-					bb.Write((byte)0);
-				}
-			}
+            public override void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers)
+            {
+                if (pinned)
+                    args.Add(MarkerType.Pinned);
 
-			internal override Type ReturnType
-			{
-				get { return returnType; }
-			}
+                foreach (var mod in customModifiers)
+                {
+                    args.Add(mod.IsRequired ? MarkerType.ModReq : MarkerType.ModOpt);
+                    args.Add(mod.Type);
+                }
 
-			public override byte[] GetSignature()
-			{
-				return GetSignature(null).ToArray();
-			}
+                args.Add(argument);
+                paramCount++;
+            }
 
-			internal override ByteBuffer GetSignature(ModuleBuilder module)
-			{
-				if (type != Signature.FIELD)
-				{
-					bb.Position = 1;
-					bb.Insert(MetadataWriter.GetCompressedUIntLength(paramCount) - bb.GetCompressedUIntLength());
-					bb.WriteCompressedUInt(paramCount);
-				}
-				return bb;
-			}
+        }
 
-			public override void AddSentinel()
-			{
-				bb.Write(Signature.SENTINEL);
-			}
+        sealed class Eager : SignatureHelper
+        {
 
-			public override void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers)
-			{
-				if (pinned)
-				{
-					bb.Write(Signature.ELEMENT_TYPE_PINNED);
-				}
-				foreach (CustomModifiers.Entry mod in customModifiers)
-				{
-					bb.Write(mod.IsRequired ? Signature.ELEMENT_TYPE_CMOD_REQD : Signature.ELEMENT_TYPE_CMOD_OPT);
-					Signature.WriteTypeSpec(module, bb, mod.Type);
-				}
-				Signature.WriteTypeSpec(module, bb, argument ?? module.universe.System_Void);
-				paramCount++;
-			}
-		}
+            readonly ModuleBuilder module;
+            readonly ByteBuffer bb = new ByteBuffer(16);
+            readonly Type returnType;
 
-		private SignatureHelper(byte type)
-		{
-			this.type = type;
-		}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="module"></param>
+            /// <param name="type"></param>
+            /// <param name="returnType"></param>
+            internal Eager(ModuleBuilder module, byte type, Type returnType) :
+                base(type)
+            {
+                this.module = module;
+                this.returnType = returnType;
 
-		internal bool HasThis
-		{
-			get { return (type & Signature.HASTHIS) != 0; }
-		}
+                bb.Write(type);
+                if (type != Signature.FIELD)
+                    bb.Write((byte)0); // space for parameterCount
+            }
 
-		internal abstract Type ReturnType
-		{
-			get;
-		}
+            internal override Type ReturnType
+            {
+                get { return returnType; }
+            }
 
-		internal int ParameterCount
-		{
-			get { return paramCount; }
-		}
+            public override byte[] GetSignature()
+            {
+                return GetSignature(null).ToArray();
+            }
 
-		private static SignatureHelper Create(Module mod, byte type, Type returnType)
-		{
-			ModuleBuilder mb = mod as ModuleBuilder;
-			return mb == null
-				? (SignatureHelper)new Lazy(type)
-				: new Eager(mb, type, returnType);
-		}
+            internal override ByteBuffer GetSignature(ModuleBuilder module)
+            {
+                if (type != Signature.FIELD)
+                {
+                    bb.Position = 1;
+                    bb.Insert(MetadataWriter.GetCompressedUIntLength(paramCount) - bb.GetCompressedUIntLength());
+                    bb.WriteCompressedUInt(paramCount);
+                }
 
-		public static SignatureHelper GetFieldSigHelper(Module mod)
-		{
-			return Create(mod, Signature.FIELD, null);
-		}
+                return bb;
+            }
 
-		public static SignatureHelper GetLocalVarSigHelper()
-		{
-			return new Lazy(Signature.LOCAL_SIG);
-		}
+            public override void AddSentinel()
+            {
+                bb.Write(Signature.SENTINEL);
+            }
 
-		public static SignatureHelper GetLocalVarSigHelper(Module mod)
-		{
-			return Create(mod, Signature.LOCAL_SIG, null);
-		}
+            public override void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers)
+            {
+                if (pinned)
+                    bb.Write(Signature.ELEMENT_TYPE_PINNED);
 
-		public static SignatureHelper GetPropertySigHelper(Module mod, Type returnType, Type[] parameterTypes)
-		{
-			SignatureHelper sig = Create(mod, Signature.PROPERTY, returnType);
-			sig.AddArgument(returnType);
-			sig.paramCount = 0;
-			sig.AddArguments(parameterTypes, null, null);
-			return sig;
-		}
+                foreach (var mod in customModifiers)
+                {
+                    bb.Write(mod.IsRequired ? Signature.ELEMENT_TYPE_CMOD_REQD : Signature.ELEMENT_TYPE_CMOD_OPT);
+                    Signature.WriteTypeSpec(module, bb, mod.Type);
+                }
 
-		public static SignatureHelper GetPropertySigHelper(Module mod, Type returnType, Type[] requiredReturnTypeCustomModifiers, Type[] optionalReturnTypeCustomModifiers, Type[] parameterTypes, Type[][] requiredParameterTypeCustomModifiers, Type[][] optionalParameterTypeCustomModifiers)
-		{
-			return GetPropertySigHelper(mod, CallingConventions.Standard, returnType, requiredReturnTypeCustomModifiers, optionalReturnTypeCustomModifiers, parameterTypes, requiredParameterTypeCustomModifiers, optionalParameterTypeCustomModifiers);
-		}
+                Signature.WriteTypeSpec(module, bb, argument ?? module.universe.System_Void);
+                paramCount++;
+            }
+        }
 
-		public static SignatureHelper GetPropertySigHelper(Module mod, CallingConventions callingConvention, Type returnType, Type[] requiredReturnTypeCustomModifiers, Type[] optionalReturnTypeCustomModifiers, Type[] parameterTypes, Type[][] requiredParameterTypeCustomModifiers, Type[][] optionalParameterTypeCustomModifiers)
-		{
-			byte type = Signature.PROPERTY;
-			if ((callingConvention & CallingConventions.HasThis) != 0)
-			{
-				type |= Signature.HASTHIS;
-			}
-			SignatureHelper sig = Create(mod, type, returnType);
-			sig.AddArgument(returnType, requiredReturnTypeCustomModifiers, optionalReturnTypeCustomModifiers);
-			sig.paramCount = 0;
-			sig.AddArguments(parameterTypes, requiredParameterTypeCustomModifiers, optionalParameterTypeCustomModifiers);
-			return sig;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="type"></param>
+        SignatureHelper(byte type)
+        {
+            this.type = type;
+        }
 
-		public static SignatureHelper GetMethodSigHelper(CallingConvention unmanagedCallingConvention, Type returnType)
-		{
-			return GetMethodSigHelper(null, unmanagedCallingConvention, returnType);
-		}
+        internal bool HasThis
+        {
+            get { return (type & Signature.HASTHIS) != 0; }
+        }
 
-		public static SignatureHelper GetMethodSigHelper(CallingConventions callingConvention, Type returnType)
-		{
-			return GetMethodSigHelper(null, callingConvention, returnType);
-		}
+        internal abstract Type ReturnType
+        {
+            get;
+        }
 
-		public static SignatureHelper GetMethodSigHelper(Module mod, CallingConvention unmanagedCallConv, Type returnType)
-		{
-			byte type;
-			switch (unmanagedCallConv)
-			{
-				case CallingConvention.Cdecl:
-					type = 0x01;	// C
-					break;
-				case CallingConvention.StdCall:
-				case CallingConvention.Winapi:
-					type = 0x02;	// STDCALL
-					break;
-				case CallingConvention.ThisCall:
-					type = 0x03;	// THISCALL
-					break;
-				case CallingConvention.FastCall:
-					type = 0x04;	// FASTCALL
-					break;
-				default:
-					throw new ArgumentOutOfRangeException("unmanagedCallConv");
-			}
-			SignatureHelper sig = Create(mod, type, returnType);
-			sig.AddArgument(returnType);
-			sig.paramCount = 0;
-			return sig;
-		}
+        internal int ParameterCount
+        {
+            get { return paramCount; }
+        }
 
-		public static SignatureHelper GetMethodSigHelper(Module mod, CallingConventions callingConvention, Type returnType)
-		{
-			byte type = 0;
-			if ((callingConvention & CallingConventions.HasThis) != 0)
-			{
-				type |= Signature.HASTHIS;
-			}
-			if ((callingConvention & CallingConventions.ExplicitThis) != 0)
-			{
-				type |= Signature.EXPLICITTHIS;
-			}
-			if ((callingConvention & CallingConventions.VarArgs) != 0)
-			{
-				type |= Signature.VARARG;
-			}
-			SignatureHelper sig = Create(mod, type, returnType);
-			sig.AddArgument(returnType);
-			sig.paramCount = 0;
-			return sig;
-		}
+        private static SignatureHelper Create(Module mod, byte type, Type returnType)
+        {
+            return mod is not ModuleBuilder mb ? new Lazy(type) : new Eager(mb, type, returnType);
+        }
 
-		public static SignatureHelper GetMethodSigHelper(Module mod, Type returnType, Type[] parameterTypes)
-		{
-			SignatureHelper sig = Create(mod, 0, returnType);
-			sig.AddArgument(returnType);
-			sig.paramCount = 0;
-			sig.AddArguments(parameterTypes, null, null);
-			return sig;
-		}
+        public static SignatureHelper GetFieldSigHelper(Module mod)
+        {
+            return Create(mod, Signature.FIELD, null);
+        }
 
-		public abstract byte[] GetSignature();
+        public static SignatureHelper GetLocalVarSigHelper()
+        {
+            return new Lazy(Signature.LOCAL_SIG);
+        }
 
-		internal abstract ByteBuffer GetSignature(ModuleBuilder module);
+        public static SignatureHelper GetLocalVarSigHelper(Module mod)
+        {
+            return Create(mod, Signature.LOCAL_SIG, null);
+        }
 
-		public abstract void AddSentinel();
+        public static SignatureHelper GetPropertySigHelper(Module mod, Type returnType, Type[] parameterTypes)
+        {
+            var sig = Create(mod, Signature.PROPERTY, returnType);
+            sig.AddArgument(returnType);
+            sig.paramCount = 0;
+            sig.AddArguments(parameterTypes, null, null);
+            return sig;
+        }
 
-		public void AddArgument(Type clsArgument)
-		{
-			AddArgument(clsArgument, false);
-		}
+        public static SignatureHelper GetPropertySigHelper(Module mod, Type returnType, Type[] requiredReturnTypeCustomModifiers, Type[] optionalReturnTypeCustomModifiers, Type[] parameterTypes, Type[][] requiredParameterTypeCustomModifiers, Type[][] optionalParameterTypeCustomModifiers)
+        {
+            return GetPropertySigHelper(mod, CallingConventions.Standard, returnType, requiredReturnTypeCustomModifiers, optionalReturnTypeCustomModifiers, parameterTypes, requiredParameterTypeCustomModifiers, optionalParameterTypeCustomModifiers);
+        }
 
-		public void AddArgument(Type argument, bool pinned)
-		{
-			__AddArgument(argument, pinned, new CustomModifiers());
-		}
+        public static SignatureHelper GetPropertySigHelper(Module mod, CallingConventions callingConvention, Type returnType, Type[] requiredReturnTypeCustomModifiers, Type[] optionalReturnTypeCustomModifiers, Type[] parameterTypes, Type[][] requiredParameterTypeCustomModifiers, Type[][] optionalParameterTypeCustomModifiers)
+        {
+            var type = Signature.PROPERTY;
+            if ((callingConvention & CallingConventions.HasThis) != 0)
+                type |= Signature.HASTHIS;
 
-		public void AddArgument(Type argument, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
-		{
-			__AddArgument(argument, false, CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
-		}
+            var sig = Create(mod, type, returnType);
+            sig.AddArgument(returnType, requiredReturnTypeCustomModifiers, optionalReturnTypeCustomModifiers);
+            sig.paramCount = 0;
+            sig.AddArguments(parameterTypes, requiredParameterTypeCustomModifiers, optionalParameterTypeCustomModifiers);
+            return sig;
+        }
 
-		public abstract void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers);
+        public static SignatureHelper GetMethodSigHelper(CallingConvention unmanagedCallingConvention, Type returnType)
+        {
+            return GetMethodSigHelper(null, unmanagedCallingConvention, returnType);
+        }
 
-		public void AddArguments(Type[] arguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
-		{
-			if (arguments != null)
-			{
-				for (int i = 0; i < arguments.Length; i++)
-				{
-					__AddArgument(arguments[i], false, CustomModifiers.FromReqOpt(Util.NullSafeElementAt(requiredCustomModifiers, i), Util.NullSafeElementAt(optionalCustomModifiers, i)));
-				}
-			}
-		}
-	}
+        public static SignatureHelper GetMethodSigHelper(CallingConventions callingConvention, Type returnType)
+        {
+            return GetMethodSigHelper(null, callingConvention, returnType);
+        }
+
+        public static SignatureHelper GetMethodSigHelper(Module mod, CallingConvention unmanagedCallConv, Type returnType)
+        {
+            var type = unmanagedCallConv switch
+            {
+                CallingConvention.Cdecl => (byte)0x01,// C
+                CallingConvention.StdCall or CallingConvention.Winapi => (byte)0x02,// STDCALL
+                CallingConvention.ThisCall => (byte)0x03,// THISCALL
+                CallingConvention.FastCall => (byte)0x04,// FASTCALL
+                _ => throw new ArgumentOutOfRangeException("unmanagedCallConv"),
+            };
+
+            var sig = Create(mod, type, returnType);
+            sig.AddArgument(returnType);
+            sig.paramCount = 0;
+            return sig;
+        }
+
+        public static SignatureHelper GetMethodSigHelper(Module mod, CallingConventions callingConvention, Type returnType)
+        {
+            byte type = 0;
+
+            if ((callingConvention & CallingConventions.HasThis) != 0)
+                type |= Signature.HASTHIS;
+
+            if ((callingConvention & CallingConventions.ExplicitThis) != 0)
+                type |= Signature.EXPLICITTHIS;
+
+            if ((callingConvention & CallingConventions.VarArgs) != 0)
+                type |= Signature.VARARG;
+
+            var sig = Create(mod, type, returnType);
+            sig.AddArgument(returnType);
+            sig.paramCount = 0;
+            return sig;
+        }
+
+        public static SignatureHelper GetMethodSigHelper(Module mod, Type returnType, Type[] parameterTypes)
+        {
+            var sig = Create(mod, 0, returnType);
+            sig.AddArgument(returnType);
+            sig.paramCount = 0;
+            sig.AddArguments(parameterTypes, null, null);
+            return sig;
+        }
+
+        public abstract byte[] GetSignature();
+
+        internal abstract ByteBuffer GetSignature(ModuleBuilder module);
+
+        public abstract void AddSentinel();
+
+        public void AddArgument(Type clsArgument)
+        {
+            AddArgument(clsArgument, false);
+        }
+
+        public void AddArgument(Type argument, bool pinned)
+        {
+            __AddArgument(argument, pinned, new CustomModifiers());
+        }
+
+        public void AddArgument(Type argument, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
+        {
+            __AddArgument(argument, false, CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
+        }
+
+        public abstract void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers);
+
+        public void AddArguments(Type[] arguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
+        {
+            if (arguments != null)
+                for (int i = 0; i < arguments.Length; i++)
+                    __AddArgument(arguments[i], false, CustomModifiers.FromReqOpt(Util.NullSafeElementAt(requiredCustomModifiers, i), Util.NullSafeElementAt(optionalCustomModifiers, i)));
+        }
+
+    }
 
 }

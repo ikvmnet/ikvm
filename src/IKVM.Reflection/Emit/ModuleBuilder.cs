@@ -936,7 +936,7 @@ namespace IKVM.Reflection.Emit
             }
             if (publicKeyOrToken == null || publicKeyOrToken.Length == 0)
             {
-                publicKeyOrToken = name.GetPublicKeyToken() ?? Empty<byte>.Array;
+                publicKeyOrToken = name.GetPublicKeyToken() ?? Array.Empty<byte>();
             }
             else
             {

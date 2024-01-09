@@ -26,69 +26,14 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection
 {
-    public interface ICustomAttributeProvider
-	{
-		bool IsDefined(Type attributeType, bool inherit);
-		IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit);
-	}
 
-	[Serializable]
-	public sealed class FileFormatLimitationExceededException : InvalidOperationException
-	{
-		public const int META_E_STRINGSPACE_FULL = unchecked((int)0x80131198);
-
-		public FileFormatLimitationExceededException(string message, int hresult)
-			: base(message)
-		{
-			this.HResult = hresult;
-		}
-
-		private FileFormatLimitationExceededException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
-			: base(info, context)
-		{
-		}
-
-		public int ErrorCode
-		{
-			get { return this.HResult; }
-		}
-	}
-
-	[Serializable]
-	public sealed class Missing
-		: System.Runtime.Serialization.ISerializable
-	{
-		public static readonly Missing Value = new Missing();
-
-		private Missing() { }
-
-		void System.Runtime.Serialization.ISerializable.GetObjectData(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
-		{
-			info.SetType(typeof(SingletonSerializationHelper));
-		}
-
-		[Serializable]
-		private sealed class SingletonSerializationHelper : System.Runtime.Serialization.IObjectReference
-		{
-			public object GetRealObject(System.Runtime.Serialization.StreamingContext context)
-			{
-				return Value;
-			}
-		}
-	}
-
-	static class Empty<T>
-	{
-		internal static readonly T[] Array = new T[0];
-	}
-
-	static class Util
+    static class Util
 	{
 		internal static int[] Copy(int[] array)
 		{
 			if (array == null || array.Length == 0)
 			{
-				return Empty<int>.Array;
+				return Array.Empty<int>();
 			}
 			int[] copy = new int[array.Length];
 			Array.Copy(array, copy, array.Length);
@@ -123,7 +68,7 @@ namespace IKVM.Reflection
 		internal static T[] ToArray<T>(IEnumerable<T> values)
 		{
 			return values == null
-				? Empty<T>.Array
+				? Array.Empty<T>()
 				: new List<T>(values).ToArray();
 		}
 
@@ -229,61 +174,7 @@ namespace IKVM.Reflection
 		{
 			return array == null ? 0 : array.Length;
 		}
+
 	}
 
-	[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
-	struct SingleConverter
-	{
-		[System.Runtime.InteropServices.FieldOffset(0)]
-		private int i;
-		[System.Runtime.InteropServices.FieldOffset(0)]
-		private float f;
-
-		internal static int SingleToInt32Bits(float v)
-		{
-			SingleConverter c = new SingleConverter();
-			c.f = v;
-			return c.i;
-		}
-
-		internal static float Int32BitsToSingle(int v)
-		{
-			SingleConverter c = new SingleConverter();
-			c.i = v;
-			return c.f;
-		}
-	}
-
-    static class TypeUtil
-    {
-        internal static bool IsEnum(System.Type type)
-        {
-            return type.IsEnum;
-        }
-
-        internal static System.Reflection.Assembly GetAssembly(System.Type type)
-        {
-            return type.Assembly;
-        }
-
-        internal static System.Reflection.MethodBase GetDeclaringMethod(System.Type type)
-        {
-            return type.DeclaringMethod;
-        }
-
-        internal static bool IsGenericType(System.Type type)
-        {
-            return type.IsGenericType;
-        }
-
-        internal static bool IsGenericTypeDefinition(System.Type type)
-        {
-            return type.IsGenericTypeDefinition;
-        }
-
-        internal static System.Type[] GetGenericArguments(System.Type type)
-        {
-            return type.GetGenericArguments();
-        }
-    }
 }

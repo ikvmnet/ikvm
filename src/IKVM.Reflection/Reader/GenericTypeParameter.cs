@@ -23,12 +23,12 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Text;
+
 using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
-	abstract class TypeParameterType : TypeInfo
+    abstract class TypeParameterType : TypeInfo
 	{
 		protected TypeParameterType(byte sigElementType)
 			: base(sigElementType)

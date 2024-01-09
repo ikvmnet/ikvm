@@ -25,7 +25,7 @@ using System.IO;
 
 namespace IKVM.Reflection.Metadata
 {
-	struct RvaSize
+    struct RvaSize
 	{
 		internal uint VirtualAddress;
 		internal uint Size;

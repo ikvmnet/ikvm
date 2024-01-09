@@ -33,10 +33,6 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
-    public delegate Assembly ResolveEventHandler(object sender, ResolveEventArgs args);
-
-    public delegate void ResolvedMissingMemberHandler(Module requestingModule, MemberInfo member);
-
     /// <summary>
     /// Provides a view of the types available to the reflection infrastructure.
     /// </summary>
@@ -1023,5 +1019,7 @@ namespace IKVM.Reflection
         {
             get { return (options & UniverseOptions.DeterministicOutput) != 0; }
         }
+
     }
+
 }

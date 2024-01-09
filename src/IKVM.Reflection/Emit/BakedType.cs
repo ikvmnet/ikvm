@@ -23,142 +23,151 @@
 */
 namespace IKVM.Reflection.Emit
 {
+
     sealed class BakedType : TypeInfo
-	{
-		internal BakedType(TypeBuilder typeBuilder)
-			: base(typeBuilder)
-		{
-		}
+    {
 
-		public override string AssemblyQualifiedName
-		{
-			get { return underlyingType.AssemblyQualifiedName; }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="typeBuilder"></param>
+        internal BakedType(TypeBuilder typeBuilder) :
+            base(typeBuilder)
+        {
 
-		public override Type BaseType
-		{
-			get { return underlyingType.BaseType; }
-		}
+        }
 
-		internal override TypeName TypeName
-		{
-			get { return underlyingType.TypeName; }
-		}
+        public override string AssemblyQualifiedName
+        {
+            get { return underlyingType.AssemblyQualifiedName; }
+        }
 
-		public override string Name
-		{
-			// we need to escape here, because TypeBuilder.Name does not escape
-			get { return TypeNameParser.Escape(underlyingType.__Name); }
-		}
+        public override Type BaseType
+        {
+            get { return underlyingType.BaseType; }
+        }
 
-		public override string FullName
-		{
-			get { return GetFullName(); }
-		}
+        internal override TypeName TypeName
+        {
+            get { return underlyingType.TypeName; }
+        }
 
-		public override TypeAttributes Attributes
-		{
-			get { return underlyingType.Attributes; }
-		}
+        public override string Name
+        {
+            // we need to escape here, because TypeBuilder.Name does not escape
+            get { return TypeNameParser.Escape(underlyingType.__Name); }
+        }
 
-		public override Type[] __GetDeclaredInterfaces()
-		{
-			return underlyingType.__GetDeclaredInterfaces();
-		}
+        public override string FullName
+        {
+            get { return GetFullName(); }
+        }
 
-		public override MethodBase[] __GetDeclaredMethods()
-		{
-			return underlyingType.__GetDeclaredMethods();
-		}
+        public override TypeAttributes Attributes
+        {
+            get { return underlyingType.Attributes; }
+        }
 
-		public override __MethodImplMap __GetMethodImplMap()
-		{
-			return underlyingType.__GetMethodImplMap();
-		}
+        public override Type[] __GetDeclaredInterfaces()
+        {
+            return underlyingType.__GetDeclaredInterfaces();
+        }
 
-		public override FieldInfo[] __GetDeclaredFields()
-		{
-			return underlyingType.__GetDeclaredFields();
-		}
+        public override MethodBase[] __GetDeclaredMethods()
+        {
+            return underlyingType.__GetDeclaredMethods();
+        }
 
-		public override EventInfo[] __GetDeclaredEvents()
-		{
-			return underlyingType.__GetDeclaredEvents();
-		}
+        public override __MethodImplMap __GetMethodImplMap()
+        {
+            return underlyingType.__GetMethodImplMap();
+        }
 
-		public override PropertyInfo[] __GetDeclaredProperties()
-		{
-			return underlyingType.__GetDeclaredProperties();
-		}
+        public override FieldInfo[] __GetDeclaredFields()
+        {
+            return underlyingType.__GetDeclaredFields();
+        }
 
-		public override Type[] __GetDeclaredTypes()
-		{
-			return underlyingType.__GetDeclaredTypes();
-		}
+        public override EventInfo[] __GetDeclaredEvents()
+        {
+            return underlyingType.__GetDeclaredEvents();
+        }
 
-		public override Type DeclaringType
-		{
-			get { return underlyingType.DeclaringType; }
-		}
+        public override PropertyInfo[] __GetDeclaredProperties()
+        {
+            return underlyingType.__GetDeclaredProperties();
+        }
 
-		public override bool __GetLayout(out int packingSize, out int typeSize)
-		{
-			return underlyingType.__GetLayout(out packingSize, out typeSize);
-		}
+        public override Type[] __GetDeclaredTypes()
+        {
+            return underlyingType.__GetDeclaredTypes();
+        }
 
-		public override Type[] GetGenericArguments()
-		{
-			return underlyingType.GetGenericArguments();
-		}
+        public override Type DeclaringType
+        {
+            get { return underlyingType.DeclaringType; }
+        }
 
-		internal override Type GetGenericTypeArgument(int index)
-		{
-			return underlyingType.GetGenericTypeArgument(index);
-		}
+        public override bool __GetLayout(out int packingSize, out int typeSize)
+        {
+            return underlyingType.__GetLayout(out packingSize, out typeSize);
+        }
 
-		public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
-		{
-			return underlyingType.__GetGenericArgumentsCustomModifiers();
-		}
+        public override Type[] GetGenericArguments()
+        {
+            return underlyingType.GetGenericArguments();
+        }
 
-		public override bool IsGenericType
-		{
-			get { return underlyingType.IsGenericType; }
-		}
+        internal override Type GetGenericTypeArgument(int index)
+        {
+            return underlyingType.GetGenericTypeArgument(index);
+        }
 
-		public override bool IsGenericTypeDefinition
-		{
-			get { return underlyingType.IsGenericTypeDefinition; }
-		}
+        public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
+        {
+            return underlyingType.__GetGenericArgumentsCustomModifiers();
+        }
 
-		public override bool ContainsGenericParameters
-		{
-			get { return underlyingType.ContainsGenericParameters; }
-		}
+        public override bool IsGenericType
+        {
+            get { return underlyingType.IsGenericType; }
+        }
 
-		public override int MetadataToken
-		{
-			get { return underlyingType.MetadataToken; }
-		}
+        public override bool IsGenericTypeDefinition
+        {
+            get { return underlyingType.IsGenericTypeDefinition; }
+        }
 
-		public override Module Module
-		{
-			get { return underlyingType.Module; }
-		}
+        public override bool ContainsGenericParameters
+        {
+            get { return underlyingType.ContainsGenericParameters; }
+        }
 
-		internal override int GetModuleBuilderToken()
-		{
-			return underlyingType.GetModuleBuilderToken();
-		}
+        public override int MetadataToken
+        {
+            get { return underlyingType.MetadataToken; }
+        }
 
-		internal override bool IsBaked
-		{
-			get { return true; }
-		}
+        public override Module Module
+        {
+            get { return underlyingType.Module; }
+        }
 
-		protected override bool IsValueTypeImpl
-		{
-			get { return underlyingType.IsValueType; }
-		}
-	}
+        internal override int GetModuleBuilderToken()
+        {
+            return underlyingType.GetModuleBuilderToken();
+        }
+
+        internal override bool IsBaked
+        {
+            get { return true; }
+        }
+
+        protected override bool IsValueTypeImpl
+        {
+            get { return underlyingType.IsValueType; }
+        }
+
+    }
+
 }

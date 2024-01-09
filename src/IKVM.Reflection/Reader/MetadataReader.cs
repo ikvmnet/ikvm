@@ -22,14 +22,13 @@
   
 */
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
+
 using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
-	sealed class MetadataReader : MetadataRW
+    sealed class MetadataReader : MetadataRW
 	{
 		private readonly Stream stream;
 		private const int bufferLength = 2048;

@@ -21,166 +21,154 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Writer;
 using IKVM.Reflection.Reader;
+using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection
 {
-	sealed class PropertySignature : Signature
-	{
-		private CallingConventions callingConvention;
-		private readonly Type propertyType;
-		private readonly Type[] parameterTypes;
-		private readonly PackedCustomModifiers customModifiers;
 
-		internal static PropertySignature Create(CallingConventions callingConvention, Type propertyType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
-		{
-			return new PropertySignature(callingConvention, propertyType, Util.Copy(parameterTypes), customModifiers);
-		}
+    sealed class PropertySignature : Signature
+    {
 
-		private PropertySignature(CallingConventions callingConvention, Type propertyType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
-		{
-			this.callingConvention = callingConvention;
-			this.propertyType = propertyType;
-			this.parameterTypes = parameterTypes;
-			this.customModifiers = customModifiers;
-		}
+        CallingConventions callingConvention;
+        readonly Type propertyType;
+        readonly Type[] parameterTypes;
+        readonly PackedCustomModifiers customModifiers;
 
-		public override bool Equals(object obj)
-		{
-			PropertySignature other = obj as PropertySignature;
-			return other != null
-				&& other.propertyType.Equals(propertyType)
-				&& other.customModifiers.Equals(customModifiers);
-		}
+        internal static PropertySignature Create(CallingConventions callingConvention, Type propertyType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
+        {
+            return new PropertySignature(callingConvention, propertyType, Util.Copy(parameterTypes), customModifiers);
+        }
 
-		public override int GetHashCode()
-		{
-			return propertyType.GetHashCode() ^ customModifiers.GetHashCode();
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="callingConvention"></param>
+        /// <param name="propertyType"></param>
+        /// <param name="parameterTypes"></param>
+        /// <param name="customModifiers"></param>
+        PropertySignature(CallingConventions callingConvention, Type propertyType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
+        {
+            this.callingConvention = callingConvention;
+            this.propertyType = propertyType;
+            this.parameterTypes = parameterTypes;
+            this.customModifiers = customModifiers;
+        }
 
-		internal int ParameterCount
-		{
-			get { return parameterTypes.Length; }
-		}
+        public override bool Equals(object obj)
+        {
+            var other = obj as PropertySignature;
+            return other != null
+                && other.propertyType.Equals(propertyType)
+                && other.customModifiers.Equals(customModifiers);
+        }
 
-		internal bool HasThis
-		{
-			set
-			{
-				if (value)
-				{
-					callingConvention |= CallingConventions.HasThis;
-				}
-				else
-				{
-					callingConvention &= ~CallingConventions.HasThis;
-				}
-			}
-		}
+        public override int GetHashCode()
+        {
+            return propertyType.GetHashCode() ^ customModifiers.GetHashCode();
+        }
 
-		internal Type PropertyType
-		{
-			get { return propertyType; }
-		}
+        internal int ParameterCount
+        {
+            get { return parameterTypes.Length; }
+        }
 
-		internal CustomModifiers GetCustomModifiers()
-		{
-			return customModifiers.GetReturnTypeCustomModifiers();
-		}
+        internal bool HasThis
+        {
+            set
+            {
+                if (value)
+                    callingConvention |= CallingConventions.HasThis;
+                else
+                    callingConvention &= ~CallingConventions.HasThis;
+            }
+        }
 
-		internal PropertySignature ExpandTypeParameters(Type declaringType)
-		{
-			return new PropertySignature(
-				callingConvention,
-				propertyType.BindTypeParameters(declaringType),
-				BindTypeParameters(declaringType, parameterTypes),
-				customModifiers.Bind(declaringType));
-		}
+        internal Type PropertyType
+        {
+            get { return propertyType; }
+        }
 
-		internal override void WriteSig(ModuleBuilder module, ByteBuffer bb)
-		{
-			byte flags = PROPERTY;
-			if ((callingConvention & CallingConventions.HasThis) != 0)
-			{
-				flags |= HASTHIS;
-			}
-			if ((callingConvention & CallingConventions.ExplicitThis) != 0)
-			{
-				flags |= EXPLICITTHIS;
-			}
-			if ((callingConvention & CallingConventions.VarArgs) != 0)
-			{
-				flags |= VARARG;
-			}
-			bb.Write(flags);
-			bb.WriteCompressedUInt(parameterTypes == null ? 0 : parameterTypes.Length);
-			WriteCustomModifiers(module, bb, customModifiers.GetReturnTypeCustomModifiers());
-			WriteType(module, bb, propertyType);
-			if (parameterTypes != null)
-			{
-				for (int i = 0; i < parameterTypes.Length; i++)
-				{
-					WriteCustomModifiers(module, bb, customModifiers.GetParameterCustomModifiers(i));
-					WriteType(module, bb, parameterTypes[i]);
-				}
-			}
-		}
+        internal CustomModifiers GetCustomModifiers()
+        {
+            return customModifiers.GetReturnTypeCustomModifiers();
+        }
 
-		internal Type GetParameter(int parameter)
-		{
-			return parameterTypes[parameter];
-		}
+        internal PropertySignature ExpandTypeParameters(Type declaringType)
+        {
+            return new PropertySignature(callingConvention, propertyType.BindTypeParameters(declaringType), BindTypeParameters(declaringType, parameterTypes), customModifiers.Bind(declaringType));
+        }
 
-		internal CustomModifiers GetParameterCustomModifiers(int parameter)
-		{
-			return customModifiers.GetParameterCustomModifiers(parameter);
-		}
+        internal override void WriteSig(ModuleBuilder module, ByteBuffer bb)
+        {
+            var flags = PROPERTY;
+            if ((callingConvention & CallingConventions.HasThis) != 0)
+                flags |= HASTHIS;
+            if ((callingConvention & CallingConventions.ExplicitThis) != 0)
+                flags |= EXPLICITTHIS;
+            if ((callingConvention & CallingConventions.VarArgs) != 0)
+                flags |= VARARG;
 
-		internal CallingConventions CallingConvention
-		{
-			get { return callingConvention; }
-		}
+            bb.Write(flags);
+            bb.WriteCompressedUInt(parameterTypes == null ? 0 : parameterTypes.Length);
+            WriteCustomModifiers(module, bb, customModifiers.GetReturnTypeCustomModifiers());
+            WriteType(module, bb, propertyType);
 
-		internal bool MatchParameterTypes(Type[] types)
-		{
-			return Util.ArrayEquals(types, parameterTypes);
-		}
+            if (parameterTypes != null)
+            {
+                for (var i = 0; i < parameterTypes.Length; i++)
+                {
+                    WriteCustomModifiers(module, bb, customModifiers.GetParameterCustomModifiers(i));
+                    WriteType(module, bb, parameterTypes[i]);
+                }
+            }
+        }
 
-		internal static PropertySignature ReadSig(ModuleReader module, ByteReader br, IGenericContext context)
-		{
-			byte flags = br.ReadByte();
-			if ((flags & PROPERTY) == 0)
-			{
-				throw new BadImageFormatException();
-			}
-			CallingConventions callingConvention = CallingConventions.Standard;
-			if ((flags & HASTHIS) != 0)
-			{
-				callingConvention |= CallingConventions.HasThis;
-			}
-			if ((flags & EXPLICITTHIS) != 0)
-			{
-				callingConvention |= CallingConventions.ExplicitThis;
-			}
-			Type returnType;
-			Type[] parameterTypes;
-			int paramCount = br.ReadCompressedUInt();
-			CustomModifiers[] mods = null;
-			PackedCustomModifiers.Pack(ref mods, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
-			returnType = ReadRetType(module, br, context);
-			parameterTypes = new Type[paramCount];
-			for (int i = 0; i < parameterTypes.Length; i++)
-			{
-				PackedCustomModifiers.Pack(ref mods, i + 1, CustomModifiers.Read(module, br, context), paramCount + 1);
-				parameterTypes[i] = ReadParam(module, br, context);
-			}
-			return new PropertySignature(callingConvention, returnType, parameterTypes, PackedCustomModifiers.Wrap(mods));
-		}
-	}
+        internal Type GetParameter(int parameter)
+        {
+            return parameterTypes[parameter];
+        }
+
+        internal CustomModifiers GetParameterCustomModifiers(int parameter)
+        {
+            return customModifiers.GetParameterCustomModifiers(parameter);
+        }
+
+        internal CallingConventions CallingConvention
+        {
+            get { return callingConvention; }
+        }
+
+        internal bool MatchParameterTypes(Type[] types)
+        {
+            return Util.ArrayEquals(types, parameterTypes);
+        }
+
+        internal static PropertySignature ReadSig(ModuleReader module, ByteReader br, IGenericContext context)
+        {
+            var flags = br.ReadByte();
+            if ((flags & PROPERTY) == 0)
+                throw new BadImageFormatException();
+
+            var callingConvention = CallingConventions.Standard;
+            if ((flags & HASTHIS) != 0)
+                callingConvention |= CallingConventions.HasThis;
+            if ((flags & EXPLICITTHIS) != 0)
+                callingConvention |= CallingConventions.ExplicitThis;
+
+            int paramCount = br.ReadCompressedUInt();
+            CustomModifiers[] mods = null;
+            PackedCustomModifiers.Pack(ref mods, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
+            var returnType = ReadRetType(module, br, context);
+            var parameterTypes = new Type[paramCount];
+            for (int i = 0; i < parameterTypes.Length; i++)
+            {
+                PackedCustomModifiers.Pack(ref mods, i + 1, CustomModifiers.Read(module, br, context), paramCount + 1);
+                parameterTypes[i] = ReadParam(module, br, context);
+            }
+
+            return new PropertySignature(callingConvention, returnType, parameterTypes, PackedCustomModifiers.Wrap(mods));
+        }
+    }
 }
