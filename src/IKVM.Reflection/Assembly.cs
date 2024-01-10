@@ -27,8 +27,6 @@ using System.Collections.Generic;
 namespace IKVM.Reflection
 {
 
-    public delegate Module ModuleResolveEventHandler(object sender, ResolveEventArgs e);
-
     public abstract class Assembly : ICustomAttributeProvider
     {
 
@@ -90,7 +88,7 @@ namespace IKVM.Reflection
 
         public string FullName
         {
-            get { return fullName ?? (fullName = GetName().FullName); }
+            get { return fullName ??= GetName().FullName; }
         }
 
         public Module[] GetModules()

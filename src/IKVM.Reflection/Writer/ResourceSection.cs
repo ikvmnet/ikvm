@@ -31,111 +31,110 @@ namespace IKVM.Reflection.Writer
 {
 
     sealed class ResourceSection
-	{
+    {
 
-		private const int RT_ICON = 3;
-		private const int RT_GROUP_ICON = 14;
-		private const int RT_VERSION = 16;
-		private const int RT_MANIFEST = 24;
-		private ResourceDirectoryEntry root = new ResourceDirectoryEntry(new OrdinalOrName("root"));
-		private ByteBuffer bb;
-		private List<int> linkOffsets;
+        const int RT_ICON = 3;
+        const int RT_GROUP_ICON = 14;
+        const int RT_VERSION = 16;
+        const int RT_MANIFEST = 24;
 
-		internal void AddVersionInfo(ByteBuffer versionInfo)
-		{
-			root[new OrdinalOrName(RT_VERSION)][new OrdinalOrName(1)][new OrdinalOrName(0)].Data = versionInfo;
-		}
+        ResourceDirectoryEntry root = new ResourceDirectoryEntry(new OrdinalOrName("root"));
+        ByteBuffer bb;
+        List<int> linkOffsets;
 
-		internal void AddIcon(byte[] iconFile)
-		{
-			BinaryReader br = new BinaryReader(new MemoryStream(iconFile));
-			ushort idReserved = br.ReadUInt16();
-			ushort idType = br.ReadUInt16();
-			ushort idCount = br.ReadUInt16();
-			if (idReserved != 0 || idType != 1)
-			{
-				throw new ArgumentException("The supplied byte array is not a valid .ico file.");
-			}
-			ByteBuffer group = new ByteBuffer(6 + 14 * idCount);
-			group.Write(idReserved);
-			group.Write(idType);
-			group.Write(idCount);
-			for (int i = 0; i < idCount; i++)
-			{
-				byte bWidth = br.ReadByte();
-				byte bHeight = br.ReadByte();
-				byte bColorCount = br.ReadByte();
-				byte bReserved = br.ReadByte();
-				ushort wPlanes = br.ReadUInt16();
-				ushort wBitCount = br.ReadUInt16();
-				uint dwBytesInRes = br.ReadUInt32();
-				uint dwImageOffset = br.ReadUInt32();
+        internal void AddVersionInfo(ByteBuffer versionInfo)
+        {
+            root[new OrdinalOrName(RT_VERSION)][new OrdinalOrName(1)][new OrdinalOrName(0)].Data = versionInfo;
+        }
 
-				// we start the icon IDs at 2
-				ushort id = (ushort)(2 + i);
+        internal void AddIcon(byte[] iconFile)
+        {
+            var br = new BinaryReader(new MemoryStream(iconFile));
+            var idReserved = br.ReadUInt16();
+            var idType = br.ReadUInt16();
+            var idCount = br.ReadUInt16();
+            if (idReserved != 0 || idType != 1)
+                throw new ArgumentException("The supplied byte array is not a valid .ico file.");
 
-				group.Write(bWidth);
-				group.Write(bHeight);
-				group.Write(bColorCount);
-				group.Write(bReserved);
-				group.Write(wPlanes);
-				group.Write(wBitCount);
-				group.Write(dwBytesInRes);
-				group.Write(id);
+            var group = new ByteBuffer(6 + 14 * idCount);
+            group.Write(idReserved);
+            group.Write(idType);
+            group.Write(idCount);
+            for (int i = 0; i < idCount; i++)
+            {
+                var bWidth = br.ReadByte();
+                var bHeight = br.ReadByte();
+                var bColorCount = br.ReadByte();
+                var bReserved = br.ReadByte();
+                var wPlanes = br.ReadUInt16();
+                var wBitCount = br.ReadUInt16();
+                var dwBytesInRes = br.ReadUInt32();
+                var dwImageOffset = br.ReadUInt32();
 
-				byte[] icon = new byte[dwBytesInRes];
-				Buffer.BlockCopy(iconFile, (int)dwImageOffset, icon, 0, icon.Length);
-				root[new OrdinalOrName(RT_ICON)][new OrdinalOrName(id)][new OrdinalOrName(0)].Data = ByteBuffer.Wrap(icon);
-			}
-			root[new OrdinalOrName(RT_GROUP_ICON)][new OrdinalOrName(32512)][new OrdinalOrName(0)].Data = group;
-		}
+                // we start the icon IDs at 2
+                var id = (ushort)(2 + i);
 
-		internal void AddManifest(byte[] manifest, ushort resourceID)
-		{
-			root[new OrdinalOrName(RT_MANIFEST)][new OrdinalOrName(resourceID)][new OrdinalOrName(0)].Data = ByteBuffer.Wrap(manifest);
-		}
+                group.Write(bWidth);
+                group.Write(bHeight);
+                group.Write(bColorCount);
+                group.Write(bReserved);
+                group.Write(wPlanes);
+                group.Write(wBitCount);
+                group.Write(dwBytesInRes);
+                group.Write(id);
 
-		internal void ExtractResources(byte[] buf)
-		{
-			ByteReader br = new ByteReader(buf, 0, buf.Length);
-			while (br.Length >= 32)
-			{
-				br.Align(4);
-				RESOURCEHEADER hdr = new RESOURCEHEADER(br);
-				if (hdr.DataSize != 0)
-				{
-					root[hdr.TYPE][hdr.NAME][new OrdinalOrName(hdr.LanguageId)].Data = ByteBuffer.Wrap(br.ReadBytes(hdr.DataSize));
-				}
-			}
-		}
+                var icon = new byte[dwBytesInRes];
+                Buffer.BlockCopy(iconFile, (int)dwImageOffset, icon, 0, icon.Length);
+                root[new OrdinalOrName(RT_ICON)][new OrdinalOrName(id)][new OrdinalOrName(0)].Data = ByteBuffer.Wrap(icon);
+            }
 
-		internal void Finish()
-		{
-			if (bb != null)
-			{
-				throw new InvalidOperationException();
-			}
-			bb = new ByteBuffer(1024);
-			linkOffsets = new List<int>();
-			root.Write(bb, linkOffsets);
-			root = null;
-		}
+            root[new OrdinalOrName(RT_GROUP_ICON)][new OrdinalOrName(32512)][new OrdinalOrName(0)].Data = group;
+        }
 
-		internal int Length
-		{
-			get { return bb.Length; }
-		}
+        internal void AddManifest(byte[] manifest, ushort resourceID)
+        {
+            root[new OrdinalOrName(RT_MANIFEST)][new OrdinalOrName(resourceID)][new OrdinalOrName(0)].Data = ByteBuffer.Wrap(manifest);
+        }
 
-		internal void Write(MetadataWriter mw, uint rva)
-		{
-			foreach (int offset in linkOffsets)
-			{
-				bb.Position = offset;
-				bb.Write(bb.GetInt32AtCurrentPosition() + (int)rva);
-			}
-			mw.Write(bb);
-		}
+        internal void ExtractResources(byte[] buf)
+        {
+            var br = new ByteReader(buf, 0, buf.Length);
+            while (br.Length >= 32)
+            {
+                br.Align(4);
+                var hdr = new RESOURCEHEADER(br);
+                if (hdr.DataSize != 0)
+                    root[hdr.TYPE][hdr.NAME][new OrdinalOrName(hdr.LanguageId)].Data = ByteBuffer.Wrap(br.ReadBytes(hdr.DataSize));
+            }
+        }
 
-	}
+        internal void Finish()
+        {
+            if (bb != null)
+                throw new InvalidOperationException();
+
+            bb = new ByteBuffer(1024);
+            linkOffsets = new List<int>();
+            root.Write(bb, linkOffsets);
+            root = null;
+        }
+
+        internal int Length
+        {
+            get { return bb.Length; }
+        }
+
+        internal void Write(MetadataWriter mw, uint rva)
+        {
+            foreach (int offset in linkOffsets)
+            {
+                bb.Position = offset;
+                bb.Write(bb.GetInt32AtCurrentPosition() + (int)rva);
+            }
+
+            mw.Write(bb);
+        }
+
+    }
 
 }

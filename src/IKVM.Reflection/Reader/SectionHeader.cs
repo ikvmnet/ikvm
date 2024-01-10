@@ -53,18 +53,17 @@ namespace IKVM.Reflection.Reader
 
 		internal void Read(BinaryReader br)
 		{
-			char[] name = new char[8];
+			var name = new char[8];
 			int len = 8;
 			for (int i = 0; i < 8; i++)
 			{
-				byte b = br.ReadByte();
+				var b = br.ReadByte();
 				name[i] = (char)b;
 				if (b == 0 && len == 8)
-				{
 					len = i;
-				}
 			}
-			Name = new String(name, 0, len);
+
+			Name = new string(name, 0, len);
 			VirtualSize = br.ReadUInt32();
 			VirtualAddress = br.ReadUInt32();
 			SizeOfRawData = br.ReadUInt32();

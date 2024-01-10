@@ -50,7 +50,7 @@ namespace IKVM.Reflection
             StringBuilder sb = null;
             for (int pos = 0; pos < name.Length; pos++)
             {
-                char c = name[pos];
+                var c = name[pos];
                 switch (c)
                 {
                     case '\\':
@@ -64,10 +64,7 @@ namespace IKVM.Reflection
                         sb.Append("\\").Append(c);
                         break;
                     default:
-                        if (sb != null)
-                        {
-                            sb.Append(c);
-                        }
+                        sb?.Append(c);
                         break;
                 }
             }
@@ -117,52 +114,57 @@ namespace IKVM.Reflection
 
         TypeNameParser(ref Parser parser, bool withAssemblyName)
         {
-            bool genericParameter = parser.pos != 0;
+            var genericParameter = parser.pos != 0;
             name = parser.NextNamePart();
+
             nested = null;
             parser.ParseNested(ref nested);
+
             genericParameters = null;
             parser.ParseGenericParameters(ref genericParameters);
+
             modifiers = null;
             parser.ParseModifiers(ref modifiers);
+
             assemblyName = null;
             if (withAssemblyName)
-            {
                 parser.ParseAssemblyName(genericParameter, ref assemblyName);
-            }
         }
 
-        internal bool Error => name == null;
+        internal readonly bool Error => name == null;
 
-        internal string FirstNamePart => name;
+        internal readonly string FirstNamePart => name;
 
-        internal string AssemblyName => assemblyName;
+        internal readonly string AssemblyName => assemblyName;
 
         private struct Parser
         {
-            private readonly string typeName;
+
+            readonly string typeName;
             internal int pos;
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="typeName"></param>
             internal Parser(string typeName)
             {
                 this.typeName = typeName;
                 this.pos = 0;
             }
 
-            private void Check(bool condition)
+            void Check(bool condition)
             {
                 if (!condition)
-                {
                     throw new ArgumentException("Invalid type name '" + typeName + "'");
-                }
             }
 
-            private void Consume(char c)
+            void Consume(char c)
             {
                 Check(pos < typeName.Length && typeName[pos++] == c);
             }
 
-            private bool TryConsume(char c)
+            bool TryConsume(char c)
             {
                 if (pos < typeName.Length && typeName[pos] == c)
                 {
@@ -178,10 +180,11 @@ namespace IKVM.Reflection
             internal string NextNamePart()
             {
                 SkipWhiteSpace();
+
                 int start = pos;
                 for (; pos < typeName.Length; pos++)
                 {
-                    char c = typeName[pos];
+                    var c = typeName[pos];
                     if (c == '\\')
                     {
                         pos++;
@@ -192,23 +195,18 @@ namespace IKVM.Reflection
                         break;
                     }
                 }
+
                 Check(pos - start != 0);
                 if (start == 0 && pos == typeName.Length)
-                {
                     return typeName;
-                }
                 else
-                {
                     return typeName.Substring(start, pos - start);
-                }
             }
 
             internal void ParseNested(ref string[] nested)
             {
                 while (TryConsume('+'))
-                {
                     Add(ref nested, NextNamePart());
-                }
             }
 
             internal void ParseGenericParameters(ref TypeNameParser[] genericParameters)
@@ -217,15 +215,18 @@ namespace IKVM.Reflection
                 if (TryConsume('['))
                 {
                     SkipWhiteSpace();
+
                     if (TryConsume(']') || TryConsume('*') || TryConsume(','))
                     {
                         // it's not a generic parameter list, but an array instead
                         pos = saved;
                         return;
                     }
+
                     do
                     {
                         SkipWhiteSpace();
+
                         if (TryConsume('['))
                         {
                             Add(ref genericParameters, new TypeNameParser(ref this, true));
@@ -236,7 +237,9 @@ namespace IKVM.Reflection
                             Add(ref genericParameters, new TypeNameParser(ref this, false));
                         }
                     }
+
                     while (TryConsume(','));
+
                     Consume(']');
                     SkipWhiteSpace();
                 }
@@ -264,6 +267,7 @@ namespace IKVM.Reflection
                         default:
                             return;
                     }
+
                     SkipWhiteSpace();
                 }
             }
@@ -280,6 +284,7 @@ namespace IKVM.Reflection
                     {
                         Consume(',');
                         SkipWhiteSpace();
+
                         if (genericParameter)
                         {
                             int start = pos;
@@ -318,11 +323,12 @@ namespace IKVM.Reflection
                 }
             }
 
-            private short ParseArray()
+            short ParseArray()
             {
                 SkipWhiteSpace();
                 Check(pos < typeName.Length);
-                char c = typeName[pos];
+
+                var c = typeName[pos];
                 if (c == ']')
                 {
                     return SZARRAY;
@@ -342,25 +348,25 @@ namespace IKVM.Reflection
                         rank++;
                         SkipWhiteSpace();
                     }
+
                     return rank;
                 }
             }
 
-            private void SkipWhiteSpace()
+            void SkipWhiteSpace()
             {
                 while (pos < typeName.Length && Char.IsWhiteSpace(typeName[pos]))
-                {
                     pos++;
-                }
             }
 
-            private static void Add<T>(ref T[] array, T elem)
+            static void Add<T>(ref T[] array, T elem)
             {
                 if (array == null)
                 {
                     array = new T[] { elem };
                     return;
                 }
+
                 Array.Resize(ref array, array.Length + 1);
                 array[array.Length - 1] = elem;
             }
@@ -441,6 +447,7 @@ namespace IKVM.Reflection
                     }
                 }
             }
+
             return Expand(type, context, throwOnError, originalName, resolve, ignoreCase);
         }
 
@@ -493,21 +500,13 @@ namespace IKVM.Reflection
             {
                 foreach (var modifier in modifiers)
                 {
-                    switch (modifier)
+                    type = modifier switch
                     {
-                        case SZARRAY:
-                            type = type.MakeArrayType();
-                            break;
-                        case BYREF:
-                            type = type.MakeByRefType();
-                            break;
-                        case POINTER:
-                            type = type.MakePointerType();
-                            break;
-                        default:
-                            type = type.MakeArrayType(modifier);
-                            break;
-                    }
+                        SZARRAY => type.MakeArrayType(),
+                        BYREF => type.MakeByRefType(),
+                        POINTER => type.MakePointerType(),
+                        _ => type.MakeArrayType(modifier),
+                    };
                 }
             }
 

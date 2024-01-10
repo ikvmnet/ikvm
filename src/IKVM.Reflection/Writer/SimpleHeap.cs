@@ -33,6 +33,7 @@ namespace IKVM.Reflection.Writer
 		{
 			if (frozen)
 				throw new InvalidOperationException();
+
 			frozen = true;
 			unalignedlength = GetLength();
 		}

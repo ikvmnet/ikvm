@@ -41,16 +41,15 @@ namespace IKVM.Reflection.Reader
 		{
 			Signature = br.ReadUInt32();
 			if (Signature != IMAGE_NT_HEADERS.MAGIC_SIGNATURE)
-			{
 				throw new BadImageFormatException();
-			}
+
 			FileHeader.Read(br);
-			long optionalHeaderPosition = br.BaseStream.Position;
+			var optionalHeaderPosition = br.BaseStream.Position;
 			OptionalHeader.Read(br);
+
 			if (br.BaseStream.Position > optionalHeaderPosition + FileHeader.SizeOfOptionalHeader)
-			{
 				throw new BadImageFormatException();
-			}
+
 			br.BaseStream.Seek(optionalHeaderPosition + FileHeader.SizeOfOptionalHeader, SeekOrigin.Begin);
 		}
 

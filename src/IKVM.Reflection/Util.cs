@@ -28,153 +28,130 @@ namespace IKVM.Reflection
 {
 
     static class Util
-	{
-		internal static int[] Copy(int[] array)
-		{
-			if (array == null || array.Length == 0)
-			{
-				return Array.Empty<int>();
-			}
-			int[] copy = new int[array.Length];
-			Array.Copy(array, copy, array.Length);
-			return copy;
-		}
+    {
+        internal static int[] Copy(int[] array)
+        {
+            if (array == null || array.Length == 0)
+                return Array.Empty<int>();
 
-		internal static Type[] Copy(Type[] array)
-		{
-			if (array == null || array.Length == 0)
-			{
-				return Type.EmptyTypes;
-			}
-			Type[] copy = new Type[array.Length];
-			Array.Copy(array, copy, array.Length);
-			return copy;
-		}
+            var copy = new int[array.Length];
+            Array.Copy(array, copy, array.Length);
+            return copy;
+        }
 
-		internal static T[] ToArray<T, V>(List<V> list, T[] empty) where V : T
-		{
-			if (list == null || list.Count == 0)
-			{
-				return empty;
-			}
-			T[] array = new T[list.Count];
-			for (int i = 0; i < array.Length; i++)
-			{
-				array[i] = list[i];
-			}
-			return array;
-		}
+        internal static Type[] Copy(Type[] array)
+        {
+            if (array == null || array.Length == 0)
+                return Type.EmptyTypes;
 
-		internal static T[] ToArray<T>(IEnumerable<T> values)
-		{
-			return values == null
-				? Array.Empty<T>()
-				: new List<T>(values).ToArray();
-		}
+            var copy = new Type[array.Length];
+            Array.Copy(array, copy, array.Length);
+            return copy;
+        }
 
-		// note that an empty array matches a null reference
-		internal static bool ArrayEquals(Type[] t1, Type[] t2)
-		{
-			if (t1 == t2)
-			{
-				return true;
-			}
-			if (t1 == null)
-			{
-				return t2.Length == 0;
-			}
-			else if (t2 == null)
-			{
-				return t1.Length == 0;
-			}
-			if (t1.Length == t2.Length)
-			{
-				for (int i = 0; i < t1.Length; i++)
-				{
-					if (!TypeEquals(t1[i], t2[i]))
-					{
-						return false;
-					}
-				}
-				return true;
-			}
-			return false;
-		}
+        internal static T[] ToArray<T, V>(List<V> list, T[] empty) where V : T
+        {
+            if (list == null || list.Count == 0)
+                return empty;
 
-		internal static bool TypeEquals(Type t1, Type t2)
-		{
-			if (t1 == t2)
-			{
-				return true;
-			}
-			if (t1 == null)
-			{
-				return false;
-			}
-			return t1.Equals(t2);
-		}
+            var array = new T[list.Count];
+            for (int i = 0; i < array.Length; i++)
+                array[i] = list[i];
 
-		internal static int GetHashCode(Type[] types)
-		{
-			if (types == null)
-			{
-				return 0;
-			}
-			int h = 0;
-			foreach (Type t in types)
-			{
-				if (t != null)
-				{
-					h *= 3;
-					h ^= t.GetHashCode();
-				}
-			}
-			return h;
-		}
+            return array;
+        }
 
-		internal static bool ArrayEquals(CustomModifiers[] m1, CustomModifiers[] m2)
-		{
-			if (m1 == null || m2 == null)
-			{
-				return m1 == m2;
-			}
-			if (m1.Length != m2.Length)
-			{
-				return false;
-			}
-			for (int i = 0; i < m1.Length; i++)
-			{
-				if (!m1[i].Equals(m2[i]))
-				{
-					return false;
-				}
-			}
-			return true;
-		}
+        internal static T[] ToArray<T>(IEnumerable<T> values)
+        {
+            return values == null ? Array.Empty<T>() : new List<T>(values).ToArray();
+        }
 
-		internal static int GetHashCode(CustomModifiers[] mods)
-		{
-			int h = 0;
-			if (mods != null)
-			{
-				foreach (CustomModifiers mod in mods)
-				{
-					h ^= mod.GetHashCode();
-				}
-			}
-			return h;
-		}
+        // note that an empty array matches a null reference
+        internal static bool ArrayEquals(Type[] t1, Type[] t2)
+        {
+            if (t1 == t2)
+                return true;
 
-		internal static T NullSafeElementAt<T>(T[] array, int index)
-		{
-			return array == null ? default(T) : array[index];
-		}
+            if (t1 == null)
+                return t2.Length == 0;
+            else if (t2 == null)
+                return t1.Length == 0;
 
-		internal static int NullSafeLength<T>(T[] array)
-		{
-			return array == null ? 0 : array.Length;
-		}
+            if (t1.Length == t2.Length)
+            {
+                for (int i = 0; i < t1.Length; i++)
+                    if (!TypeEquals(t1[i], t2[i]))
+                        return false;
 
-	}
+                return true;
+            }
+
+            return false;
+        }
+
+        internal static bool TypeEquals(Type t1, Type t2)
+        {
+            if (t1 == t2)
+                return true;
+            if (t1 == null)
+                return false;
+
+            return t1.Equals(t2);
+        }
+
+        internal static int GetHashCode(Type[] types)
+        {
+            if (types == null)
+                return 0;
+
+            int h = 0;
+            foreach (var t in types)
+            {
+                if (t != null)
+                {
+                    h *= 3;
+                    h ^= t.GetHashCode();
+                }
+            }
+
+            return h;
+        }
+
+        internal static bool ArrayEquals(CustomModifiers[] m1, CustomModifiers[] m2)
+        {
+            if (m1 == null || m2 == null)
+                return m1 == m2;
+
+            if (m1.Length != m2.Length)
+                return false;
+
+            for (int i = 0; i < m1.Length; i++)
+                if (!m1[i].Equals(m2[i]))
+                    return false;
+
+            return true;
+        }
+
+        internal static int GetHashCode(CustomModifiers[] mods)
+        {
+            int h = 0;
+            if (mods != null)
+                foreach (var mod in mods)
+                    h ^= mod.GetHashCode();
+
+            return h;
+        }
+
+        internal static T NullSafeElementAt<T>(T[] array, int index)
+        {
+            return array == null ? default : array[index];
+        }
+
+        internal static int NullSafeLength<T>(T[] array)
+        {
+            return array == null ? 0 : array.Length;
+        }
+
+    }
 
 }

@@ -31,10 +31,10 @@ namespace IKVM.Reflection.Reader
     sealed class PEReader
 	{
 
-		private MSDOS_HEADER msdos = new MSDOS_HEADER();
-		private IMAGE_NT_HEADERS headers = new IMAGE_NT_HEADERS();
-		private SectionHeader[] sections;
-		private bool mapped;
+		MSDOS_HEADER msdos = new MSDOS_HEADER();
+		IMAGE_NT_HEADERS headers = new IMAGE_NT_HEADERS();
+		SectionHeader[] sections;
+		bool mapped;
 
 		internal void Read(BinaryReader br, bool mapped)
 		{
@@ -44,9 +44,7 @@ namespace IKVM.Reflection.Reader
 			msdos.peSignatureOffset = br.ReadUInt32();
 
 			if (msdos.signature != MSDOS_HEADER.MAGIC_MZ)
-			{
 				throw new BadImageFormatException();
-			}
 
 			br.BaseStream.Seek(msdos.peSignatureOffset, SeekOrigin.Begin);
 			headers.Read(br);
@@ -82,16 +80,12 @@ namespace IKVM.Reflection.Reader
 		internal long RvaToFileOffset(DWORD rva)
 		{
 			if (mapped)
-			{
 				return rva;
-			}
+
 			for (int i = 0; i < sections.Length; i++)
-			{
 				if (rva >= sections[i].VirtualAddress && rva < sections[i].VirtualAddress + sections[i].VirtualSize)
-				{
 					return sections[i].PointerToRawData + rva - sections[i].VirtualAddress;
-				}
-			}
+
 			throw new BadImageFormatException();
 		}
 
@@ -99,7 +93,7 @@ namespace IKVM.Reflection.Reader
 		{
 			for (int i = 0; i < sections.Length; i++)
 			{
-				if (rva >= sections[i].VirtualAddress && rva < sections[i].VirtualAddress + sections[i].VirtualSize)
+                if (rva >= sections[i].VirtualAddress && rva < sections[i].VirtualAddress + sections[i].VirtualSize)
 				{
 					name = sections[i].Name;
 					characteristics = (int)sections[i].Characteristics;
@@ -110,6 +104,7 @@ namespace IKVM.Reflection.Reader
 					return true;
 				}
 			}
+
 			name = null;
 			characteristics = 0;
 			virtualAddress = 0;

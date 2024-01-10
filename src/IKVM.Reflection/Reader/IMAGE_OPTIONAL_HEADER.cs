@@ -76,9 +76,8 @@ namespace IKVM.Reflection.Reader
 		{
 			Magic = br.ReadUInt16();
 			if (Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC && Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC)
-			{
 				throw new BadImageFormatException();
-			}
+
 			MajorLinkerVersion = br.ReadByte();
 			MinorLinkerVersion = br.ReadByte();
 			SizeOfCode = br.ReadUInt32();

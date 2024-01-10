@@ -27,201 +27,194 @@ namespace IKVM.Reflection.Writer
 {
 
     sealed class ResourceDirectoryEntry
-	{
+    {
 
-		internal readonly OrdinalOrName OrdinalOrName;
-		internal ByteBuffer Data;
-		private int namedEntries;
-		private readonly List<ResourceDirectoryEntry> entries = new List<ResourceDirectoryEntry>();
+        internal readonly OrdinalOrName OrdinalOrName;
+        internal ByteBuffer Data;
+        int namedEntries;
+        readonly List<ResourceDirectoryEntry> entries = new List<ResourceDirectoryEntry>();
 
-		internal ResourceDirectoryEntry(OrdinalOrName id)
-		{
-			this.OrdinalOrName = id;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="id"></param>
+        internal ResourceDirectoryEntry(OrdinalOrName id)
+        {
+            this.OrdinalOrName = id;
+        }
 
-		internal ResourceDirectoryEntry this[OrdinalOrName id]
-		{
-			get
-			{
-				foreach (ResourceDirectoryEntry entry in entries)
-				{
-					if (entry.OrdinalOrName.IsEqual(id))
-					{
-						return entry;
-					}
-				}
-				// the entries must be sorted
-				ResourceDirectoryEntry newEntry = new ResourceDirectoryEntry(id);
-				if (id.Name == null)
-				{
-					for (int i = namedEntries; i < entries.Count; i++)
-					{
-						if (entries[i].OrdinalOrName.IsGreaterThan(id))
-						{
-							entries.Insert(i, newEntry);
-							return newEntry;
-						}
-					}
-					entries.Add(newEntry);
-					return newEntry;
-				}
-				else
-				{
-					for (int i = 0; i < namedEntries; i++)
-					{
-						if (entries[i].OrdinalOrName.IsGreaterThan(id))
-						{
-							entries.Insert(i, newEntry);
-							namedEntries++;
-							return newEntry;
-						}
-					}
-					entries.Insert(namedEntries++, newEntry);
-					return newEntry;
-				}
-			}
-		}
+        internal ResourceDirectoryEntry this[OrdinalOrName id]
+        {
+            get
+            {
+                foreach (var entry in entries)
+                    if (entry.OrdinalOrName.IsEqual(id))
+                        return entry;
 
-		private int DirectoryLength
-		{
-			get
-			{
-				if (Data != null)
-				{
-					return 16;
-				}
-				else
-				{
-					int length = 16 + entries.Count * 8;
-					foreach (ResourceDirectoryEntry entry in entries)
-					{
-						length += entry.DirectoryLength;
-					}
-					return length;
-				}
-			}
-		}
+                // the entries must be sorted
+                var newEntry = new ResourceDirectoryEntry(id);
+                if (id.Name == null)
+                {
+                    for (int i = namedEntries; i < entries.Count; i++)
+                    {
+                        if (entries[i].OrdinalOrName.IsGreaterThan(id))
+                        {
+                            entries.Insert(i, newEntry);
+                            return newEntry;
+                        }
+                    }
 
-		internal void Write(ByteBuffer bb, List<int> linkOffsets)
-		{
-			if (entries.Count != 0)
-			{
-				int stringTableOffset = this.DirectoryLength;
-				Dictionary<string, int> strings = new Dictionary<string, int>();
-				ByteBuffer stringTable = new ByteBuffer(16);
-				int offset = 16 + entries.Count * 8;
-				for (int pass = 0; pass < 3; pass++)
-				{
-					Write(bb, pass, 0, ref offset, strings, ref stringTableOffset, stringTable);
-				}
-				// the pecoff spec says that the string table is between the directory entries and the data entries,
-				// but the windows linker puts them after the data entries, so we do too.
-				stringTable.Align(4);
-				offset += stringTable.Length;
-				WriteResourceDataEntries(bb, linkOffsets, ref offset);
-				bb.Write(stringTable);
-				WriteData(bb);
-			}
-		}
+                    entries.Add(newEntry);
+                    return newEntry;
+                }
+                else
+                {
+                    for (int i = 0; i < namedEntries; i++)
+                    {
+                        if (entries[i].OrdinalOrName.IsGreaterThan(id))
+                        {
+                            entries.Insert(i, newEntry);
+                            namedEntries++;
+                            return newEntry;
+                        }
+                    }
 
-		private void WriteResourceDataEntries(ByteBuffer bb, List<int> linkOffsets, ref int offset)
-		{
-			foreach (ResourceDirectoryEntry entry in entries)
-			{
-				if (entry.Data != null)
-				{
-					linkOffsets.Add(bb.Position);
-					bb.Write(offset);
-					bb.Write(entry.Data.Length);
-					bb.Write(0);	// code page
-					bb.Write(0);	// reserved
-					offset += (entry.Data.Length + 3) & ~3;
-				}
-				else
-				{
-					entry.WriteResourceDataEntries(bb, linkOffsets, ref offset);
-				}
-			}
-		}
+                    entries.Insert(namedEntries++, newEntry);
+                    return newEntry;
+                }
+            }
+        }
 
-		private void WriteData(ByteBuffer bb)
-		{
-			foreach (ResourceDirectoryEntry entry in entries)
-			{
-				if (entry.Data != null)
-				{
-					bb.Write(entry.Data);
-					bb.Align(4);
-				}
-				else
-				{
-					entry.WriteData(bb);
-				}
-			}
-		}
+        private int DirectoryLength
+        {
+            get
+            {
+                if (Data != null)
+                {
+                    return 16;
+                }
+                else
+                {
+                    var length = 16 + entries.Count * 8;
+                    foreach (var entry in entries)
+                        length += entry.DirectoryLength;
 
-		private void Write(ByteBuffer bb, int writeDepth, int currentDepth, ref int offset, Dictionary<string, int> strings, ref int stringTableOffset, ByteBuffer stringTable)
-		{
-			if (currentDepth == writeDepth)
-			{
-				// directory header
-				bb.Write(0);	// Characteristics
-				bb.Write(0);	// Time/Date Stamp
-				bb.Write(0);	// Version (Major / Minor)
-				bb.Write((ushort)namedEntries);
-				bb.Write((ushort)(entries.Count - namedEntries));
-			}
-			foreach (ResourceDirectoryEntry entry in entries)
-			{
-				if (currentDepth == writeDepth)
-				{
-					entry.WriteEntry(bb, ref offset, strings, ref stringTableOffset, stringTable);
-				}
-				else
-				{
-					entry.Write(bb, writeDepth, currentDepth + 1, ref offset, strings, ref stringTableOffset, stringTable);
-				}
-			}
-		}
+                    return length;
+                }
+            }
+        }
 
-		private void WriteEntry(ByteBuffer bb, ref int offset, Dictionary<string, int> strings, ref int stringTableOffset, ByteBuffer stringTable)
-		{
-			WriteNameOrOrdinal(bb, OrdinalOrName, strings, ref stringTableOffset, stringTable);
-			if (Data == null)
-			{
-				bb.Write(0x80000000U | (uint)offset);
-			}
-			else
-			{
-				bb.Write(offset);
-			}
-			offset += 16 + entries.Count * 8;
-		}
+        internal void Write(ByteBuffer bb, List<int> linkOffsets)
+        {
+            if (entries.Count != 0)
+            {
+                var stringTableOffset = DirectoryLength;
+                var strings = new Dictionary<string, int>();
+                var stringTable = new ByteBuffer(16);
+                int offset = 16 + entries.Count * 8;
+                for (int pass = 0; pass < 3; pass++)
+                    Write(bb, pass, 0, ref offset, strings, ref stringTableOffset, stringTable);
 
-		private static void WriteNameOrOrdinal(ByteBuffer bb, OrdinalOrName id, Dictionary<string, int> strings, ref int stringTableOffset, ByteBuffer stringTable)
-		{
-			if (id.Name == null)
-			{
-				bb.Write((int)id.Ordinal);
-			}
-			else
-			{
-				int stringOffset;
-				if (!strings.TryGetValue(id.Name, out stringOffset))
-				{
-					stringOffset = stringTableOffset;
-					strings.Add(id.Name, stringOffset);
-					stringTableOffset += id.Name.Length * 2 + 2;
-					stringTable.Write((ushort)id.Name.Length);
-					foreach (char c in id.Name)
-					{
-						stringTable.Write((short)c);
-					}
-				}
-				bb.Write(0x80000000U | (uint)stringOffset);
-			}
-		}
+                // the pecoff spec says that the string table is between the directory entries and the data entries,
+                // but the windows linker puts them after the data entries, so we do too.
+                stringTable.Align(4);
+                offset += stringTable.Length;
+                WriteResourceDataEntries(bb, linkOffsets, ref offset);
+                bb.Write(stringTable);
+                WriteData(bb);
+            }
+        }
 
-	}
+        void WriteResourceDataEntries(ByteBuffer bb, List<int> linkOffsets, ref int offset)
+        {
+            foreach (ResourceDirectoryEntry entry in entries)
+            {
+                if (entry.Data != null)
+                {
+                    linkOffsets.Add(bb.Position);
+                    bb.Write(offset);
+                    bb.Write(entry.Data.Length);
+                    bb.Write(0);    // code page
+                    bb.Write(0);    // reserved
+                    offset += (entry.Data.Length + 3) & ~3;
+                }
+                else
+                {
+                    entry.WriteResourceDataEntries(bb, linkOffsets, ref offset);
+                }
+            }
+        }
+
+        void WriteData(ByteBuffer bb)
+        {
+            foreach (var entry in entries)
+            {
+                if (entry.Data != null)
+                {
+                    bb.Write(entry.Data);
+                    bb.Align(4);
+                }
+                else
+                {
+                    entry.WriteData(bb);
+                }
+            }
+        }
+
+        void Write(ByteBuffer bb, int writeDepth, int currentDepth, ref int offset, Dictionary<string, int> strings, ref int stringTableOffset, ByteBuffer stringTable)
+        {
+            if (currentDepth == writeDepth)
+            {
+                // directory header
+                bb.Write(0);    // Characteristics
+                bb.Write(0);    // Time/Date Stamp
+                bb.Write(0);    // Version (Major / Minor)
+                bb.Write((ushort)namedEntries);
+                bb.Write((ushort)(entries.Count - namedEntries));
+            }
+
+            foreach (var entry in entries)
+            {
+                if (currentDepth == writeDepth)
+                    entry.WriteEntry(bb, ref offset, strings, ref stringTableOffset, stringTable);
+                else
+                    entry.Write(bb, writeDepth, currentDepth + 1, ref offset, strings, ref stringTableOffset, stringTable);
+            }
+        }
+
+        void WriteEntry(ByteBuffer bb, ref int offset, Dictionary<string, int> strings, ref int stringTableOffset, ByteBuffer stringTable)
+        {
+            WriteNameOrOrdinal(bb, OrdinalOrName, strings, ref stringTableOffset, stringTable);
+            if (Data == null)
+                bb.Write(0x80000000U | (uint)offset);
+            else
+                bb.Write(offset);
+
+            offset += 16 + entries.Count * 8;
+        }
+
+        static void WriteNameOrOrdinal(ByteBuffer bb, OrdinalOrName id, Dictionary<string, int> strings, ref int stringTableOffset, ByteBuffer stringTable)
+        {
+            if (id.Name == null)
+            {
+                bb.Write((int)id.Ordinal);
+            }
+            else
+            {
+                if (strings.TryGetValue(id.Name, out var stringOffset) == false)
+                {
+                    stringOffset = stringTableOffset;
+                    strings.Add(id.Name, stringOffset);
+                    stringTableOffset += id.Name.Length * 2 + 2;
+                    stringTable.Write((ushort)id.Name.Length);
+                    foreach (var c in id.Name)
+                        stringTable.Write((short)c);
+                }
+
+                bb.Write(0x80000000U | (uint)stringOffset);
+            }
+        }
+
+    }
 
 }

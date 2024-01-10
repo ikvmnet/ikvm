@@ -27,111 +27,112 @@ namespace IKVM.Reflection.Writer
 {
 
     sealed class PEWriter
-	{
+    {
 
-		private readonly BinaryWriter bw;
-		private readonly IMAGE_NT_HEADERS hdr = new IMAGE_NT_HEADERS();
+        readonly BinaryWriter bw;
+        readonly IMAGE_NT_HEADERS hdr = new IMAGE_NT_HEADERS();
 
-		internal PEWriter(Stream stream)
-		{
-			bw = new BinaryWriter(stream);
-			WriteMSDOSHeader();
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="stream"></param>
+        internal PEWriter(Stream stream)
+        {
+            bw = new BinaryWriter(stream);
+            WriteMSDOSHeader();
+        }
 
-		public IMAGE_NT_HEADERS Headers
-		{
-			get { return hdr; }
-		}
+        public IMAGE_NT_HEADERS Headers => hdr;
 
-		public uint HeaderSize
-		{
-			get
-			{
-				return (uint)
-					((8 * 16) +	// MSDOS header
-					4 +				// signature
-					20 +			// IMAGE_FILE_HEADER
-					hdr.FileHeader.SizeOfOptionalHeader +
-					hdr.FileHeader.NumberOfSections * 40);
-			}
-		}
+        public uint HeaderSize
+        {
+            get
+            {
+                return (uint)
+                    ((8 * 16) + // MSDOS header
+                    4 +             // signature
+                    20 +            // IMAGE_FILE_HEADER
+                    hdr.FileHeader.SizeOfOptionalHeader +
+                    hdr.FileHeader.NumberOfSections * 40);
+            }
+        }
 
-		private void WriteMSDOSHeader()
-		{
-			bw.Write(new byte[] {
-				0x4D, 0x5A, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00,
-				0x04, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00,
-				0xB8, 0x00, 0x00, 0x00, 0x00, 0x00,	0x00, 0x00,
-				0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00,
-				0x0E, 0x1F, 0xBA, 0x0E, 0x00, 0xB4, 0x09, 0xCD,
-				0x21, 0xB8, 0x01, 0x4C, 0xCD, 0x21, 0x54, 0x68,
-				0x69, 0x73, 0x20, 0x70, 0x72, 0x6F, 0x67, 0x72,
-				0x61, 0x6D, 0x20, 0x63, 0x61, 0x6E, 0x6E, 0x6F,
-				0x74, 0x20, 0x62, 0x65, 0x20, 0x72, 0x75, 0x6E,
-				0x20, 0x69, 0x6E, 0x20, 0x44, 0x4F, 0x53, 0x20,
-				0x6D, 0x6F, 0x64, 0x65, 0x2E, 0x0D, 0x0D, 0x0A,
-				0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-			});
-		}
+        private void WriteMSDOSHeader()
+        {
+            bw.Write(new byte[] {
+                0x4D, 0x5A, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00,
+                0x04, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00,
+                0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00,
+                0x0E, 0x1F, 0xBA, 0x0E, 0x00, 0xB4, 0x09, 0xCD,
+                0x21, 0xB8, 0x01, 0x4C, 0xCD, 0x21, 0x54, 0x68,
+                0x69, 0x73, 0x20, 0x70, 0x72, 0x6F, 0x67, 0x72,
+                0x61, 0x6D, 0x20, 0x63, 0x61, 0x6E, 0x6E, 0x6F,
+                0x74, 0x20, 0x62, 0x65, 0x20, 0x72, 0x75, 0x6E,
+                0x20, 0x69, 0x6E, 0x20, 0x44, 0x4F, 0x53, 0x20,
+                0x6D, 0x6F, 0x64, 0x65, 0x2E, 0x0D, 0x0D, 0x0A,
+                0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+            });
+        }
 
-		internal void WritePEHeaders()
-		{
-			bw.Write(hdr.Signature);
+        internal void WritePEHeaders()
+        {
+            bw.Write(hdr.Signature);
 
-			// IMAGE_FILE_HEADER
-			bw.Write(hdr.FileHeader.Machine);
-			bw.Write(hdr.FileHeader.NumberOfSections);
-			bw.Write(hdr.FileHeader.TimeDateStamp);
-			bw.Write(hdr.FileHeader.PointerToSymbolTable);
-			bw.Write(hdr.FileHeader.NumberOfSymbols);
-			bw.Write(hdr.FileHeader.SizeOfOptionalHeader);
-			bw.Write(hdr.FileHeader.Characteristics);
+            // IMAGE_FILE_HEADER
+            bw.Write(hdr.FileHeader.Machine);
+            bw.Write(hdr.FileHeader.NumberOfSections);
+            bw.Write(hdr.FileHeader.TimeDateStamp);
+            bw.Write(hdr.FileHeader.PointerToSymbolTable);
+            bw.Write(hdr.FileHeader.NumberOfSymbols);
+            bw.Write(hdr.FileHeader.SizeOfOptionalHeader);
+            bw.Write(hdr.FileHeader.Characteristics);
 
-			// IMAGE_OPTIONAL_HEADER
-			hdr.OptionalHeader.Write(bw);
-		}
+            // IMAGE_OPTIONAL_HEADER
+            hdr.OptionalHeader.Write(bw);
+        }
 
-		internal void WriteSectionHeader(SectionHeader sectionHeader)
-		{
-			byte[] name = new byte[8];
-			System.Text.Encoding.UTF8.GetBytes(sectionHeader.Name, 0, sectionHeader.Name.Length, name, 0);
-			bw.Write(name);
-			bw.Write(sectionHeader.VirtualSize);
-			bw.Write(sectionHeader.VirtualAddress);
-			bw.Write(sectionHeader.SizeOfRawData);
-			bw.Write(sectionHeader.PointerToRawData);
-			bw.Write(sectionHeader.PointerToRelocations);
-			bw.Write(sectionHeader.PointerToLinenumbers);
-			bw.Write(sectionHeader.NumberOfRelocations);
-			bw.Write(sectionHeader.NumberOfLinenumbers);
-			bw.Write(sectionHeader.Characteristics);
-		}
+        internal void WriteSectionHeader(SectionHeader sectionHeader)
+        {
+            var name = new byte[8];
+            System.Text.Encoding.UTF8.GetBytes(sectionHeader.Name, 0, sectionHeader.Name.Length, name, 0);
+            bw.Write(name);
+            bw.Write(sectionHeader.VirtualSize);
+            bw.Write(sectionHeader.VirtualAddress);
+            bw.Write(sectionHeader.SizeOfRawData);
+            bw.Write(sectionHeader.PointerToRawData);
+            bw.Write(sectionHeader.PointerToRelocations);
+            bw.Write(sectionHeader.PointerToLinenumbers);
+            bw.Write(sectionHeader.NumberOfRelocations);
+            bw.Write(sectionHeader.NumberOfLinenumbers);
+            bw.Write(sectionHeader.Characteristics);
+        }
 
-		internal uint ToFileAlignment(uint p)
-		{
-			return (p + (Headers.OptionalHeader.FileAlignment - 1)) & ~(Headers.OptionalHeader.FileAlignment - 1);
-		}
+        internal uint ToFileAlignment(uint p)
+        {
+            return (p + (Headers.OptionalHeader.FileAlignment - 1)) & ~(Headers.OptionalHeader.FileAlignment - 1);
+        }
 
-		internal uint ToSectionAlignment(uint p)
-		{
-			return (p + (Headers.OptionalHeader.SectionAlignment - 1)) & ~(Headers.OptionalHeader.SectionAlignment - 1);
-		}
+        internal uint ToSectionAlignment(uint p)
+        {
+            return (p + (Headers.OptionalHeader.SectionAlignment - 1)) & ~(Headers.OptionalHeader.SectionAlignment - 1);
+        }
 
-		internal bool Is32Bit
-		{
-			get { return (Headers.FileHeader.Characteristics & IMAGE_FILE_HEADER.IMAGE_FILE_32BIT_MACHINE) != 0; }
-		}
+        internal bool Is32Bit
+        {
+            get { return (Headers.FileHeader.Characteristics & IMAGE_FILE_HEADER.IMAGE_FILE_32BIT_MACHINE) != 0; }
+        }
 
-		internal uint Thumb
-		{
-			// On ARM we need to set the least significant bit of the program counter to select the Thumb instruction set
-			get { return Headers.FileHeader.Machine == IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM ? 1u : 0u; }
-		}
+        internal uint Thumb
+        {
+            // On ARM we need to set the least significant bit of the program counter to select the Thumb instruction set
+            get { return Headers.FileHeader.Machine == IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM ? 1u : 0u; }
+        }
 
-	}
+    }
 
 }

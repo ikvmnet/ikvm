@@ -29,51 +29,56 @@ namespace IKVM.Reflection.Writer
 {
 
     struct RESOURCEHEADER
-	{
+    {
 
-		internal int DataSize;
-		internal int HeaderSize;
-		internal OrdinalOrName TYPE;
-		internal OrdinalOrName NAME;
-		internal int DataVersion;
-		internal ushort MemoryFlags;
-		internal ushort LanguageId;
-		internal int Version;
-		internal int Characteristics;
+        internal int DataSize;
+        internal int HeaderSize;
+        internal OrdinalOrName TYPE;
+        internal OrdinalOrName NAME;
+        internal int DataVersion;
+        internal ushort MemoryFlags;
+        internal ushort LanguageId;
+        internal int Version;
+        internal int Characteristics;
 
-		internal RESOURCEHEADER(ByteReader br)
-		{
-			DataSize = br.ReadInt32();
-			HeaderSize = br.ReadInt32();
-			TYPE = ReadOrdinalOrName(br);
-			NAME = ReadOrdinalOrName(br);
-			br.Align(4);
-			DataVersion = br.ReadInt32();
-			MemoryFlags = br.ReadUInt16();
-			LanguageId = br.ReadUInt16();
-			Version = br.ReadInt32();
-			Characteristics = br.ReadInt32();
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="br"></param>
+        internal RESOURCEHEADER(ByteReader br)
+        {
+            DataSize = br.ReadInt32();
+            HeaderSize = br.ReadInt32();
+            TYPE = ReadOrdinalOrName(br);
+            NAME = ReadOrdinalOrName(br);
+            br.Align(4);
+            DataVersion = br.ReadInt32();
+            MemoryFlags = br.ReadUInt16();
+            LanguageId = br.ReadUInt16();
+            Version = br.ReadInt32();
+            Characteristics = br.ReadInt32();
+        }
 
-		private static OrdinalOrName ReadOrdinalOrName(ByteReader br)
-		{
-			char c = br.ReadChar();
-			if (c == 0xFFFF)
-			{
-				return new OrdinalOrName(br.ReadUInt16());
-			}
-			else
-			{
-				StringBuilder sb = new StringBuilder();
-				while (c != 0)
-				{
-					sb.Append(c);
-					c = br.ReadChar();
-				}
-				return new OrdinalOrName(sb.ToString());
-			}
-		}
+        static OrdinalOrName ReadOrdinalOrName(ByteReader br)
+        {
+            var c = br.ReadChar();
+            if (c == 0xFFFF)
+            {
+                return new OrdinalOrName(br.ReadUInt16());
+            }
+            else
+            {
+                var sb = new StringBuilder();
+                while (c != 0)
+                {
+                    sb.Append(c);
+                    c = br.ReadChar();
+                }
 
-	}
+                return new OrdinalOrName(sb.ToString());
+            }
+        }
+
+    }
 
 }
