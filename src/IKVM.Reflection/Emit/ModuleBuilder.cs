@@ -850,6 +850,7 @@ namespace IKVM.Reflection.Emit
                     // (in order words the method and type have already been decoupled by the caller)
                     rec.Method = ImportMethodOrField(declaringType, method.Name, method.MethodSignature);
                 }
+
                 var spec = new ByteBuffer(10);
                 Signature.WriteMethodSpec(this, spec, genericParameters);
                 rec.Instantiation = Blobs.Add(spec);
