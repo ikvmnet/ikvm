@@ -26,38 +26,42 @@ using System;
 namespace IKVM.Reflection.Writer
 {
 
-    struct OrdinalOrName
-	{
+    readonly struct OrdinalOrName
+    {
 
-		internal readonly ushort Ordinal;
-		internal readonly string Name;
+        internal readonly ushort Ordinal;
+        internal readonly string Name;
 
-		internal OrdinalOrName(ushort value)
-		{
-			Ordinal = value;
-			Name = null;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="value"></param>
+        internal OrdinalOrName(ushort value)
+        {
+            Ordinal = value;
+            Name = null;
+        }
 
-		internal OrdinalOrName(string value)
-		{
-			Ordinal = 0xFFFF;
-			Name = value;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="value"></param>
+        internal OrdinalOrName(string value)
+        {
+            Ordinal = 0xFFFF;
+            Name = value;
+        }
 
-		internal bool IsGreaterThan(OrdinalOrName other)
-		{
-			return this.Name == null
-				? this.Ordinal > other.Ordinal
-				: String.Compare(this.Name, other.Name, StringComparison.OrdinalIgnoreCase) > 0;
-		}
+        internal readonly bool IsGreaterThan(OrdinalOrName other)
+        {
+            return Name == null ? Ordinal > other.Ordinal : string.Compare(Name, other.Name, StringComparison.OrdinalIgnoreCase) > 0;
+        }
 
-		internal bool IsEqual(OrdinalOrName other)
-		{
-			return this.Name == null
-				? this.Ordinal == other.Ordinal
-				: String.Compare(this.Name, other.Name, StringComparison.OrdinalIgnoreCase) == 0;
-		}
+        internal readonly bool IsEqual(OrdinalOrName other)
+        {
+            return Name == null ? Ordinal == other.Ordinal : String.Compare(this.Name, other.Name, StringComparison.OrdinalIgnoreCase) == 0;
+        }
 
-	}
+    }
 
 }

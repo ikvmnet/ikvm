@@ -28,57 +28,63 @@ namespace IKVM.Reflection.Writer
 {
 
     sealed class StringHeap : SimpleHeap
-	{
+    {
 
-		private List<string> list = new List<string>();
-		private Dictionary<string, int> strings = new Dictionary<string, int>();
-		private int nextOffset;
+        readonly List<string> list = new List<string>();
+        readonly Dictionary<string, int> strings = new Dictionary<string, int>();
+        int nextOffset;
 
-		internal StringHeap()
-		{
-			Add("");
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        internal StringHeap()
+        {
+            Add("");
+        }
 
-		internal int Add(string str)
-		{
-			Debug.Assert(!frozen);
-			int offset;
-			if (!strings.TryGetValue(str, out offset))
-			{
-				offset = nextOffset;
-				nextOffset += System.Text.Encoding.UTF8.GetByteCount(str) + 1;
-				list.Add(str);
-				strings.Add(str, offset);
-			}
-			return offset;
-		}
+        /// <summary>
+        /// Adds a new string to the heap.
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        internal int Add(string str)
+        {
+            Debug.Assert(frozen == false);
 
-		internal string Find(int index)
-		{
-			foreach (KeyValuePair<string, int> kv in strings)
-			{
-				if (kv.Value == index)
-				{
-					return kv.Key;
-				}
-			}
-			return null;
-		}
+            if (strings.TryGetValue(str, out var offset) == false)
+            {
+                offset = nextOffset;
+                nextOffset += System.Text.Encoding.UTF8.GetByteCount(str) + 1;
+                list.Add(str);
+                strings.Add(str, offset);
+            }
 
-		protected override int GetLength()
-		{
-			return nextOffset;
-		}
+            return offset;
+        }
 
-		protected override void WriteImpl(MetadataWriter mw)
-		{
-			foreach (string str in list)
-			{
-				mw.Write(System.Text.Encoding.UTF8.GetBytes(str));
-				mw.Write((byte)0);
-			}
-		}
+        internal string Find(int index)
+        {
+            foreach (var kv in strings)
+                if (kv.Value == index)
+                    return kv.Key;
 
-	}
+            return null;
+        }
+
+        protected override int GetLength()
+        {
+            return nextOffset;
+        }
+
+        protected override void WriteImpl(MetadataWriter mw)
+        {
+            foreach (var str in list)
+            {
+                mw.Write(System.Text.Encoding.UTF8.GetBytes(str));
+                mw.Write((byte)0);
+            }
+        }
+
+    }
 
 }

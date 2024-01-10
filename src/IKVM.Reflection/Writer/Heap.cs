@@ -26,36 +26,33 @@ using System.Diagnostics;
 
 namespace IKVM.Reflection.Writer
 {
+
     abstract class Heap
 	{
-
 
 		protected bool frozen;
 		protected int unalignedlength;
 
 		internal void Write(MetadataWriter mw)
 		{
-			uint pos = mw.Position;
+			var pos = mw.Position;
 			WriteImpl(mw);
+
 			Debug.Assert(mw.Position == pos + unalignedlength);
-			int align = Length - unalignedlength;
+			var align = Length - unalignedlength;
 			for (int i = 0; i < align; i++)
-			{
 				mw.Write((byte)0);
-			}
 		}
 
-		internal bool IsBig
-		{
-			get { return Length > 65535; }
-		}
+        internal bool IsBig => Length > 65535;
 
-		internal int Length
+        internal int Length
 		{
 			get
 			{
 				if (!frozen)
 					throw new InvalidOperationException();
+
 				return (unalignedlength + 3) & ~3;
 			}
 		}

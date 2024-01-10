@@ -23,9 +23,10 @@
 */
 using System.IO;
 
+using IKVM.Reflection.Reader;
+
 using BYTE = System.Byte;
 using DWORD = System.UInt32;
-using IMAGE_DATA_DIRECTORY = IKVM.Reflection.Reader.IMAGE_DATA_DIRECTORY;
 using ULONGLONG = System.UInt64;
 using WORD = System.UInt16;
 

@@ -28,83 +28,88 @@ namespace IKVM.Reflection.Reader
 {
 
     sealed class ResourceModule : NonPEModule
-	{
+    {
 
-		private readonly ModuleReader manifest;
-		private readonly int index;
-		private readonly string location;
+        readonly ModuleReader manifest;
+        readonly int index;
+        readonly string location;
 
-		internal ResourceModule(ModuleReader manifest, int index, string location)
-			: base(manifest.universe)
-		{
-			this.manifest = manifest;
-			this.index = index;
-			this.location = location;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="manifest"></param>
+        /// <param name="index"></param>
+        /// <param name="location"></param>
+        internal ResourceModule(ModuleReader manifest, int index, string location) : base(manifest.universe)
+        {
+            this.manifest = manifest;
+            this.index = index;
+            this.location = location;
+        }
 
-		public override int MDStreamVersion
-		{
-			get { throw new NotSupportedException(); }
-		}
+        public override int MDStreamVersion
+        {
+            get { throw new NotSupportedException(); }
+        }
 
-		public override bool IsResource()
-		{
-			return true;
-		}
+        public override bool IsResource()
+        {
+            return true;
+        }
 
-		public override Assembly Assembly
-		{
-			get { return manifest.Assembly; }
-		}
+        public override Assembly Assembly
+        {
+            get { return manifest.Assembly; }
+        }
 
-		public override string FullyQualifiedName
-		{
-			get { return location ?? "<Unknown>"; }
-		}
+        public override string FullyQualifiedName
+        {
+            get { return location ?? "<Unknown>"; }
+        }
 
-		public override string Name
-		{
-			get { return location == null ? "<Unknown>" : System.IO.Path.GetFileName(location); }
-		}
+        public override string Name
+        {
+            get { return location == null ? "<Unknown>" : System.IO.Path.GetFileName(location); }
+        }
 
-		public override string ScopeName
-		{
-			get { return manifest.GetString(manifest.File.records[index].Name); }
-		}
+        public override string ScopeName
+        {
+            get { return manifest.GetString(manifest.File.records[index].Name); }
+        }
 
-		public override Guid ModuleVersionId
-		{
-			get { throw new NotSupportedException(); }
-		}
+        public override Guid ModuleVersionId
+        {
+            get { throw new NotSupportedException(); }
+        }
 
-		public override byte[] __ModuleHash
-		{
-			get
-			{
-				int blob = manifest.File.records[index].HashValue;
-				return blob == 0 ? Array.Empty<byte>() : manifest.GetBlobCopy(blob);
-			}
-		}
+        public override byte[] __ModuleHash
+        {
+            get
+            {
+                var blob = manifest.File.records[index].HashValue;
+                return blob == 0 ? Array.Empty<byte>() : manifest.GetBlobCopy(blob);
+            }
+        }
 
-		internal override Type FindType(TypeName typeName)
-		{
-			return null;
-		}
+        internal override Type FindType(TypeName typeName)
+        {
+            return null;
+        }
 
-		internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
-		{
-			return null;
-		}
+        internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
+        {
+            return null;
+        }
 
-		internal override void GetTypesImpl(List<Type> list)
-		{
-		}
+        internal override void GetTypesImpl(List<Type> list)
+        {
+        }
 
-		protected override Exception ArgumentOutOfRangeException()
-		{
-			return new NotSupportedException();
-		}
+        protected override Exception ArgumentOutOfRangeException()
+        {
+            return new NotSupportedException();
+        }
 
-	}
+    }
 
 }

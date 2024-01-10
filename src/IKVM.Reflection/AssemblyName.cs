@@ -32,20 +32,20 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
-    public sealed class AssemblyName
-        : ICloneable
+    public sealed class AssemblyName :
+        ICloneable
     {
 
-        private string name;
-        private string culture;
-        private Version version;
-        private byte[] publicKeyToken;
-        private byte[] publicKey;
-        private StrongNameKeyPair keyPair;
-        private AssemblyNameFlags flags;
-        private AssemblyHashAlgorithm hashAlgorithm;
-        private AssemblyVersionCompatibility versionCompatibility = AssemblyVersionCompatibility.SameMachine;
-        private string codeBase;
+        string name;
+        string culture;
+        Version version;
+        byte[] publicKeyToken;
+        byte[] publicKey;
+        StrongNameKeyPair keyPair;
+        AssemblyNameFlags flags;
+        AssemblyHashAlgorithm hashAlgorithm;
+        AssemblyVersionCompatibility versionCompatibility = AssemblyVersionCompatibility.SameMachine;
+        string codeBase;
         internal byte[] hash;
 
         /// <summary>
@@ -56,6 +56,13 @@ namespace IKVM.Reflection
 
         }
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="assemblyName"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="FileLoadException"></exception>
         public AssemblyName(string assemblyName)
         {
             if (assemblyName == null)
@@ -383,7 +390,7 @@ namespace IKVM.Reflection
             return sb.ToString();
         }
 
-        private static void AppendPublicKey(StringBuilder sb, byte[] publicKey)
+        static void AppendPublicKey(StringBuilder sb, byte[] publicKey)
         {
             for (int i = 0; i < publicKey.Length; i++)
             {

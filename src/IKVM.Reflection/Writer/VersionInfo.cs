@@ -31,16 +31,16 @@ namespace IKVM.Reflection.Writer
     sealed class VersionInfo
     {
 
-        private AssemblyName name;
-        private string fileName;
+        AssemblyName name;
+        string fileName;
         internal string copyright;
         internal string trademark;
         internal string product;
         internal string company;
-        private string description;
-        private string title;
+        string description;
+        string title;
         internal string informationalVersion;
-        private string fileVersion;
+        string fileVersion;
 
         internal void SetName(AssemblyName name)
         {
@@ -54,8 +54,8 @@ namespace IKVM.Reflection.Writer
 
         internal void SetAttribute(AssemblyBuilder asm, CustomAttributeBuilder cab)
         {
-            Universe u = cab.Constructor.Module.universe;
-            Type type = cab.Constructor.DeclaringType;
+            var u = cab.Constructor.Module.universe;
+            var type = cab.Constructor.DeclaringType;
             if (copyright == null && type == u.System_Reflection_AssemblyCopyrightAttribute)
             {
                 copyright = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
@@ -110,25 +110,23 @@ namespace IKVM.Reflection.Writer
             try
             {
                 if (name.CultureInfo != null)
-                {
                     lcid = name.CultureInfo.LCID;
-                }
             }
             catch (ArgumentException)
             {
                 // AssemblyName.CultureInfo throws an ArgumentException if AssemblyBuilder.__SetAssemblyCulture() was used to specify a non-existing culture
             }
 
-            Version filever = ParseVersionRobust(fileVersion);
-            int fileVersionMajor = filever.Major;
-            int fileVersionMinor = filever.Minor;
-            int fileVersionBuild = filever.Build;
-            int fileVersionRevision = filever.Revision;
+            var filever = ParseVersionRobust(fileVersion);
+            var fileVersionMajor = filever.Major;
+            var fileVersionMinor = filever.Minor;
+            var fileVersionBuild = filever.Build;
+            var fileVersionRevision = filever.Revision;
 
-            int productVersionMajor = fileVersionMajor;
-            int productVersionMinor = fileVersionMinor;
-            int productVersionBuild = fileVersionBuild;
-            int productVersionRevision = fileVersionRevision;
+            var productVersionMajor = fileVersionMajor;
+            var productVersionMinor = fileVersionMinor;
+            var productVersionBuild = fileVersionBuild;
+            var productVersionRevision = fileVersionRevision;
             if (informationalVersion != null)
             {
                 Version productver = ParseVersionRobust(informationalVersion);
@@ -138,7 +136,7 @@ namespace IKVM.Reflection.Writer
                 productVersionRevision = productver.Revision;
             }
 
-            ByteBuffer stringTable = new ByteBuffer(512);
+            var stringTable = new ByteBuffer(512);
             stringTable.Write((short)0);    // wLength (placeholder)
             stringTable.Write((short)0);    // wValueLength
             stringTable.Write((short)1);    // wType
@@ -159,7 +157,7 @@ namespace IKVM.Reflection.Writer
             stringTable.Position = 0;
             stringTable.Write((short)stringTable.Length);
 
-            ByteBuffer stringFileInfo = new ByteBuffer(512);
+            var stringFileInfo = new ByteBuffer(512);
             stringFileInfo.Write((short)0); // wLength (placeholder)
             stringFileInfo.Write((short)0); // wValueLength
             stringFileInfo.Write((short)1); // wType
@@ -169,7 +167,7 @@ namespace IKVM.Reflection.Writer
             stringFileInfo.Position = 0;
             stringFileInfo.Write((short)stringFileInfo.Length);
 
-            byte[] preamble1 = new byte[] {
+            var preamble1 = new byte[] {
 			  // VS_VERSIONINFO (platform SDK)
 			  0x34, 0x00,				// wValueLength
 			  0x00, 0x00,				// wType
@@ -179,6 +177,7 @@ namespace IKVM.Reflection.Writer
 			  0xBD, 0x04, 0xEF, 0xFE,	// dwSignature (0xFEEF04BD)
 			  0x00, 0x00, 0x01, 0x00,	// dwStrucVersion
 			};
+
             byte[] preamble2 = new byte[] {
               0x3F, 0x00, 0x00, 0x00,	// dwFileFlagsMask (??)
 			  0x00, 0x00, 0x00, 0x00,	// dwFileFlags (??)
@@ -201,6 +200,7 @@ namespace IKVM.Reflection.Writer
 			  0x54, 0x00, 0x72, 0x00, 0x61, 0x00, 0x6E, 0x00, 0x73, 0x00, 0x6C, 0x00, 0x61, 0x00, 0x74, 0x00, 0x69, 0x00, 0x6F, 0x00, 0x6E, 0x00, 0x00, 0x00,	// "Translation\0"
 			  0x00, 0x00,				// Padding (32 bit alignment)
 			};
+
             bb.Write((short)(2 + preamble1.Length + 8 + 8 + preamble2.Length + 4 + stringFileInfo.Length));
             bb.Write(preamble1);
             bb.Write((short)fileVersionMinor);
@@ -217,19 +217,18 @@ namespace IKVM.Reflection.Writer
             bb.Write(stringFileInfo);
         }
 
-        private static void WriteUTF16Z(ByteBuffer bb, string str)
+        static void WriteUTF16Z(ByteBuffer bb, string str)
         {
             foreach (char c in str)
-            {
                 bb.Write((short)c);
-            }
+
             bb.Write((short)0);
         }
 
-        private static void WriteString(ByteBuffer bb, string name, string value)
+        static void WriteString(ByteBuffer bb, string name, string value)
         {
-            value = value ?? " ";
-            int pos = bb.Position;
+            value ??= " ";
+            var pos = bb.Position;
             bb.Write((short)0);                 // wLength (placeholder)
             bb.Write((short)(value.Length + 1));// wValueLength
             bb.Write((short)1);                 // wType
@@ -237,23 +236,23 @@ namespace IKVM.Reflection.Writer
             bb.Align(4);
             WriteUTF16Z(bb, value);
             bb.Align(4);
-            int savedPos = bb.Position;
+            var savedPos = bb.Position;
             bb.Position = pos;
             bb.Write((short)(savedPos - pos));
             bb.Position = savedPos;
         }
 
-        private static Version ParseVersionRobust(string ver)
+        static Version ParseVersionRobust(string ver)
         {
             int index = 0;
-            ushort major = ParseVersionPart(ver, ref index);
-            ushort minor = ParseVersionPart(ver, ref index);
-            ushort build = ParseVersionPart(ver, ref index);
-            ushort revision = ParseVersionPart(ver, ref index);
+            var major = ParseVersionPart(ver, ref index);
+            var minor = ParseVersionPart(ver, ref index);
+            var build = ParseVersionPart(ver, ref index);
+            var revision = ParseVersionPart(ver, ref index);
             return new Version(major, minor, build, revision);
         }
 
-        private static ushort ParseVersionPart(string str, ref int pos)
+        static ushort ParseVersionPart(string str, ref int pos)
         {
             ushort value = 0;
             while (pos < str.Length)

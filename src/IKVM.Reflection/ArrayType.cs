@@ -26,77 +26,89 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection
 {
+
     sealed class ArrayType : ElementHolderType
-	{
-		internal static Type Make(Type type, CustomModifiers mods)
-		{
-			return type.Universe.CanonicalizeType(new ArrayType(type, mods));
-		}
+    {
 
-		private ArrayType(Type type, CustomModifiers mods)
-			: base(type, mods, Signature.ELEMENT_TYPE_SZARRAY)
-		{
-		}
+        internal static Type Make(Type type, CustomModifiers mods)
+        {
+            return type.Universe.CanonicalizeType(new ArrayType(type, mods));
+        }
 
-		public override Type BaseType
-		{
-			get { return elementType.Module.universe.System_Array; }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="mods"></param>
+        ArrayType(Type type, CustomModifiers mods) :
+           base(type, mods, Signature.ELEMENT_TYPE_SZARRAY)
+        {
 
-		public override Type[] __GetDeclaredInterfaces()
-		{
-			return new Type[] {
-				this.Module.universe.Import(typeof(IList<>)).MakeGenericType(elementType),
-				this.Module.universe.Import(typeof(ICollection<>)).MakeGenericType(elementType),
-				this.Module.universe.Import(typeof(IEnumerable<>)).MakeGenericType(elementType)
-			};
-		}
+        }
 
-		public override MethodBase[] __GetDeclaredMethods()
-		{
-			Type[] int32 = new Type[] { this.Module.universe.System_Int32 };
-			List<MethodBase> list = new List<MethodBase>();
-			list.Add(new BuiltinArrayMethod(this.Module, this, "Set", CallingConventions.Standard | CallingConventions.HasThis, this.Module.universe.System_Void, new Type[] { this.Module.universe.System_Int32, elementType }));
-			list.Add(new BuiltinArrayMethod(this.Module, this, "Address", CallingConventions.Standard | CallingConventions.HasThis, elementType.MakeByRefType(), int32));
-			list.Add(new BuiltinArrayMethod(this.Module, this, "Get", CallingConventions.Standard | CallingConventions.HasThis, elementType, int32));
-			list.Add(new ConstructorInfoImpl(new BuiltinArrayMethod(this.Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, this.Module.universe.System_Void, int32)));
-			for (Type type = elementType; type.__IsVector; type = type.GetElementType())
-			{
-				Array.Resize(ref int32, int32.Length + 1);
-				int32[int32.Length - 1] = int32[0];
-				list.Add(new ConstructorInfoImpl(new BuiltinArrayMethod(this.Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, this.Module.universe.System_Void, int32)));
-			}
-			return list.ToArray();
-		}
+        public override Type BaseType
+        {
+            get { return elementType.Module.universe.System_Array; }
+        }
 
-		public override TypeAttributes Attributes
-		{
-			get { return TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Serializable; }
-		}
+        public override Type[] __GetDeclaredInterfaces()
+        {
+            return new Type[] {
+                Module.universe.Import(typeof(IList<>)).MakeGenericType(elementType),
+                Module.universe.Import(typeof(ICollection<>)).MakeGenericType(elementType),
+                Module.universe.Import(typeof(IEnumerable<>)).MakeGenericType(elementType)
+            };
+        }
 
-		public override int GetArrayRank()
-		{
-			return 1;
-		}
+        public override MethodBase[] __GetDeclaredMethods()
+        {
+            var int32 = new Type[] { Module.universe.System_Int32 };
+            var list = new List<MethodBase>();
+            list.Add(new BuiltinArrayMethod(Module, this, "Set", CallingConventions.Standard | CallingConventions.HasThis, Module.universe.System_Void, new Type[] { Module.universe.System_Int32, elementType }));
+            list.Add(new BuiltinArrayMethod(Module, this, "Address", CallingConventions.Standard | CallingConventions.HasThis, elementType.MakeByRefType(), int32));
+            list.Add(new BuiltinArrayMethod(Module, this, "Get", CallingConventions.Standard | CallingConventions.HasThis, elementType, int32));
+            list.Add(new ConstructorInfoImpl(new BuiltinArrayMethod(Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, Module.universe.System_Void, int32)));
 
-		public override bool Equals(object o)
-		{
-			return EqualsHelper(o as ArrayType);
-		}
+            for (var type = elementType; type.__IsVector; type = type.GetElementType())
+            {
+                Array.Resize(ref int32, int32.Length + 1);
+                int32[int32.Length - 1] = int32[0];
+                list.Add(new ConstructorInfoImpl(new BuiltinArrayMethod(Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, Module.universe.System_Void, int32)));
+            }
 
-		public override int GetHashCode()
-		{
-			return elementType.GetHashCode() * 5;
-		}
+            return list.ToArray();
+        }
 
-		internal override string GetSuffix()
-		{
-			return "[]";
-		}
+        public override TypeAttributes Attributes
+        {
+            get { return TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Serializable; }
+        }
 
-		protected override Type Wrap(Type type, CustomModifiers mods)
-		{
-			return Make(type, mods);
-		}
-	}
+        public override int GetArrayRank()
+        {
+            return 1;
+        }
+
+        public override bool Equals(object o)
+        {
+            return EqualsHelper(o as ArrayType);
+        }
+
+        public override int GetHashCode()
+        {
+            return elementType.GetHashCode() * 5;
+        }
+
+        internal override string GetSuffix()
+        {
+            return "[]";
+        }
+
+        protected override Type Wrap(Type type, CustomModifiers mods)
+        {
+            return Make(type, mods);
+        }
+
+    }
+
 }

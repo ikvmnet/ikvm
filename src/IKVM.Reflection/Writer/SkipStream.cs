@@ -27,46 +27,41 @@ using System.IO;
 namespace IKVM.Reflection.Writer
 {
 
+    /// <summary>
+    /// Read-only stream that presents a windowed view of another stream.
+    /// </summary>
     sealed class SkipStream : Stream
     {
 
-        private readonly Stream stream;
-        private long skipOffset;
-        private long skipLength;
+        readonly Stream stream;
 
+        long skipOffset;
+        long skipLength;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="skipOffset"></param>
+        /// <param name="skipLength"></param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         internal SkipStream(Stream stream, long skipOffset, long skipLength)
         {
-            if (skipOffset < 0 || skipLength < 0)
-            {
-                throw new ArgumentOutOfRangeException();
-            }
+            if (skipOffset < 0)
+                throw new ArgumentOutOfRangeException(nameof(skipOffset));
+            if (skipLength < 0)
+                throw new ArgumentOutOfRangeException(nameof(skipLength));
+
             this.stream = stream;
             this.skipOffset = skipOffset;
             this.skipLength = skipLength;
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                stream.Dispose();
-            }
-        }
+        public override bool CanRead => stream.CanRead;
 
-        public override bool CanRead
-        {
-            get { return stream.CanRead; }
-        }
+        public override bool CanSeek => false;
 
-        public override bool CanSeek
-        {
-            get { return false; }
-        }
-
-        public override bool CanWrite
-        {
-            get { return false; }
-        }
+        public override bool CanWrite => false;
 
         public override int Read(byte[] buffer, int offset, int count)
         {
@@ -86,40 +81,32 @@ namespace IKVM.Reflection.Writer
                     }
                 }
             }
-            int totalBytesRead = stream.Read(buffer, offset, count);
+
+            var totalBytesRead = stream.Read(buffer, offset, count);
             skipOffset -= totalBytesRead;
             return totalBytesRead;
         }
 
-        public override long Length
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public override long Length => throw new NotSupportedException();
 
         public override long Position
         {
-            get { throw new NotSupportedException(); }
-            set { throw new NotSupportedException(); }
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
         }
 
-        public override void Flush()
-        {
-            throw new NotSupportedException();
-        }
+        public override void Flush() => throw new NotSupportedException();
 
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            throw new NotSupportedException();
-        }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
 
-        public override void SetLength(long value)
-        {
-            throw new NotSupportedException();
-        }
+        public override void SetLength(long value) => throw new NotSupportedException();
 
-        public override void Write(byte[] buffer, int offset, int count)
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        protected override void Dispose(bool disposing)
         {
-            throw new NotSupportedException();
+            if (disposing)
+                stream.Dispose();
         }
 
     }
