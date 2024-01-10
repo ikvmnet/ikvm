@@ -113,10 +113,9 @@ namespace IKVM.Reflection.Emit
                 this.attributes = attributes;
             }
 
-            internal void Emit(ModuleBuilder mb, int offset)
+            internal readonly void Emit(ModuleBuilder mb, int offset)
             {
-                if (rw != null)
-                    rw.Generate();
+                rw?.Generate();
 
                 var rec = new ManifestResourceTable.Record();
                 rec.Offset = offset;
@@ -126,25 +125,21 @@ namespace IKVM.Reflection.Emit
                 mb.ManifestResource.AddRecord(rec);
             }
 
-            internal int GetLength()
-            {
-                return 4 + (int)stream.Length;
-            }
+            internal readonly int GetLength() => 4 + (int)stream.Length;
 
-            internal void Write(MetadataWriter mw)
+            internal readonly void Write(MetadataWriter mw)
             {
                 mw.Write((int)stream.Length);
                 stream.Position = 0;
-                byte[] buffer = new byte[8192];
+                var buffer = new byte[8192];
                 int length;
                 while ((length = stream.Read(buffer, 0, buffer.Length)) != 0)
                     mw.Write(buffer, 0, length);
             }
 
-            internal void Close()
+            internal readonly void Close()
             {
-                if (rw != null)
-                    rw.Close();
+                rw?.Close();
             }
 
         }
@@ -156,10 +151,7 @@ namespace IKVM.Reflection.Emit
             internal ushort count;
             internal ushort type;
 
-            internal int SlotWidth
-            {
-                get { return (type & 0x02) == 0 ? 4 : 8; }
-            }
+            internal readonly int SlotWidth => (type & 0x02) == 0 ? 4 : 8;
 
         }
 
@@ -172,7 +164,7 @@ namespace IKVM.Reflection.Emit
 
         }
 
-        struct MemberRefKey : IEquatable<MemberRefKey>
+        readonly struct MemberRefKey : IEquatable<MemberRefKey>
         {
 
             readonly Type type;
@@ -192,32 +184,20 @@ namespace IKVM.Reflection.Emit
                 this.signature = signature;
             }
 
-            public bool Equals(MemberRefKey other)
-            {
-                return other.type.Equals(type)
-                    && other.name == name
-                    && other.signature.Equals(signature);
-            }
+            public bool Equals(MemberRefKey other) => other.type.Equals(type) && other.name == name && other.signature.Equals(signature);
 
-            public override bool Equals(object obj)
-            {
-                MemberRefKey? other = obj as MemberRefKey?;
-                return other != null && Equals(other.Value);
-            }
+            public override bool Equals(object obj) => obj is MemberRefKey other && Equals(other);
 
             public override int GetHashCode()
             {
                 return type.GetHashCode() + name.GetHashCode() + signature.GetHashCode();
             }
 
-            internal MethodBase LookupMethod()
-            {
-                return type.FindMethod(name, (MethodSignature)signature);
-            }
+            internal MethodBase LookupMethod() => type.FindMethod(name, (MethodSignature)signature);
 
         }
 
-        struct MethodSpecKey : IEquatable<MethodSpecKey>
+        readonly struct MethodSpecKey : IEquatable<MethodSpecKey>
         {
 
             readonly Type type;
@@ -225,6 +205,13 @@ namespace IKVM.Reflection.Emit
             readonly MethodSignature signature;
             readonly Type[] genericParameters;
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="type"></param>
+            /// <param name="name"></param>
+            /// <param name="signature"></param>
+            /// <param name="genericParameters"></param>
             internal MethodSpecKey(Type type, string name, MethodSignature signature, Type[] genericParameters)
             {
                 this.type = type;
@@ -238,16 +225,9 @@ namespace IKVM.Reflection.Emit
                 return other.type.Equals(type) && other.name == name && other.signature.Equals(signature) && Util.ArrayEquals(other.genericParameters, genericParameters);
             }
 
-            public override bool Equals(object obj)
-            {
-                var other = obj as MethodSpecKey?;
-                return other != null && Equals(other.Value);
-            }
+            public override bool Equals(object obj) => obj is MethodSpecKey other && Equals(other);
 
-            public override int GetHashCode()
-            {
-                return type.GetHashCode() + name.GetHashCode() + signature.GetHashCode() + Util.GetHashCode(genericParameters);
-            }
+            public override int GetHashCode() => type.GetHashCode() + name.GetHashCode() + signature.GetHashCode() + Util.GetHashCode(genericParameters);
 
         }
 
@@ -459,6 +439,7 @@ namespace IKVM.Reflection.Emit
         internal void AddTypeForwarder(Type type, bool includeNested)
         {
             ExportType(type);
+
             if (includeNested && !type.__IsMissing)
             {
                 foreach (Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
@@ -490,13 +471,14 @@ namespace IKVM.Reflection.Emit
                 rec.Flags = 0x00200000; // CorTypeAttr.tdForwarder
                 rec.Implementation = ImportAssemblyRef(type.Assembly);
             }
-            return 0x27000000 | this.ExportedType.FindOrAddRecord(rec);
+
+            return 0x27000000 | ExportedType.FindOrAddRecord(rec);
         }
 
         void SetTypeNameAndTypeNamespace(TypeName name, out int typeName, out int typeNamespace)
         {
-            typeName = this.Strings.Add(name.Name);
-            typeNamespace = name.Namespace == null ? 0 : this.Strings.Add(name.Namespace);
+            typeName = Strings.Add(name.Name);
+            typeNamespace = name.Namespace == null ? 0 : Strings.Add(name.Namespace);
         }
 
         public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
@@ -569,11 +551,11 @@ namespace IKVM.Reflection.Emit
 
         int WriteDeclSecurityBlob(List<CustomAttributeBuilder> list)
         {
-            ByteBuffer namedArgs = new ByteBuffer(100);
-            ByteBuffer bb = new ByteBuffer(list.Count * 100);
+            var namedArgs = new ByteBuffer(100);
+            var bb = new ByteBuffer(list.Count * 100);
             bb.Write((byte)'.');
             bb.WriteCompressedUInt(list.Count);
-            foreach (CustomAttributeBuilder cab in list)
+            foreach (var cab in list)
             {
                 bb.Write(cab.Constructor.DeclaringType.AssemblyQualifiedName);
                 namedArgs.Clear();
@@ -581,7 +563,8 @@ namespace IKVM.Reflection.Emit
                 bb.WriteCompressedUInt(namedArgs.Length);
                 bb.Write(namedArgs);
             }
-            return this.Blobs.Add(bb);
+
+            return Blobs.Add(bb);
         }
 
         public void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute)
