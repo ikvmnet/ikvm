@@ -22,6 +22,7 @@
   
 */
 using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Metadata;
 
@@ -30,6 +31,14 @@ namespace IKVM.Reflection.Emit
 
     public sealed class EventBuilder : EventInfo
     {
+
+        struct Accessor
+        {
+
+            internal short Semantics;
+            internal MethodBuilder Method;
+
+        }
 
         readonly TypeBuilder typeBuilder;
         readonly string name;
@@ -40,14 +49,6 @@ namespace IKVM.Reflection.Emit
         MethodBuilder fireMethod;
         readonly List<Accessor> accessors = new List<Accessor>();
         int lazyPseudoToken;
-
-        struct Accessor
-        {
-
-            internal short Semantics;
-            internal MethodBuilder Method;
-
-        }
 
         /// <summary>
         /// Initializes a new instance.
@@ -191,9 +192,9 @@ namespace IKVM.Reflection.Emit
         {
             var rec = new EventTable.Record();
             rec.EventFlags = (short)attributes;
-            rec.Name = typeBuilder.ModuleBuilder.Strings.Add(name);
+            rec.Name = typeBuilder.ModuleBuilder.GetOrAddString(name);
             rec.EventType = eventtype;
-            var token = 0x14000000 | typeBuilder.ModuleBuilder.Event.AddRecord(rec);
+            var token = MetadataTokens.GetToken(MetadataTokens.EventDefinitionHandle(typeBuilder.ModuleBuilder.Event.AddRecord(rec)));
 
             if (lazyPseudoToken == 0)
                 lazyPseudoToken = token;

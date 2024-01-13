@@ -21,6 +21,8 @@
   jeroen@frijters.net
   
 */
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
 using IKVM.Reflection.Writer;
@@ -44,40 +46,31 @@ namespace IKVM.Reflection.Metadata
 
         internal const int Index = 0x10;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Offset = mr.ReadInt32();
-				records[i].Field = mr.ReadField();
-			}
-		}
+        internal override void Read(Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Offset = mr.ReadInt32();
+                records[i].Field = mr.ReadField();
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.Write(records[i].Offset);
-				mw.WriteField(records[i].Field);
-			}
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+                module.Metadata.AddFieldLayout(
+                    System.Reflection.Metadata.Ecma335.MetadataTokens.FieldDefinitionHandle(records[i].Field),
+                    records[i].Offset);
+        }
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.AddFixed(4)
-				.WriteField()
-				.Value;
-		}
+        internal void Fixup(ModuleBuilder moduleBuilder)
+        {
+            for (int i = 0; i < rowCount; i++)
+                records[i].Field = moduleBuilder.ResolvePseudoToken(records[i].Field) & 0xFFFFFF;
 
-		internal void Fixup(ModuleBuilder moduleBuilder)
-		{
-			for (int i = 0; i < rowCount; i++)
-				records[i].Field = moduleBuilder.ResolvePseudoToken(records[i].Field) & 0xFFFFFF;
-			
-			Sort();
-		}
+            Sort();
+        }
 
-	}
+    }
 
 }

@@ -21,6 +21,8 @@
   jeroen@frijters.net
   
 */
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
 using IKVM.Reflection.Writer;
@@ -44,7 +46,7 @@ namespace IKVM.Reflection.Metadata
 
         internal const int Index = 0x1D;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
@@ -53,28 +55,19 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+                module.Metadata.AddFieldRelativeVirtualAddress(
+                    System.Reflection.Metadata.Ecma335.MetadataTokens.FieldDefinitionHandle(records[i].Field),
+                    records[i].RVA);
+        }
+
+        internal void Fixup(ModuleBuilder moduleBuilder)
         {
             for (int i = 0; i < rowCount; i++)
             {
-                mw.Write(records[i].RVA);
-                mw.WriteField(records[i].Field);
-            }
-        }
-
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .AddFixed(4)
-                .WriteField()
-                .Value;
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder, int sdataRVA, int cilRVA)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                records[i].RVA = records[i].RVA < 0 ? (records[i].RVA & 0x7fffffff) + cilRVA : sdataRVA;
+                //records[i].RVA = records[i].RVA < 0 ? (records[i].RVA & 0x7fffffff) + cilRVA : sdataRVA;
                 moduleBuilder.FixupPseudoToken(ref records[i].Field);
             }
 

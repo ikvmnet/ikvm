@@ -123,7 +123,7 @@ namespace IKVM.Reflection.Reader
 
         internal override FieldSignature FieldSignature
         {
-            get { return lazyFieldSig ??= FieldSignature.ReadSig(module, module.GetBlob(module.Field.records[index].Signature), declaringType); }
+            get { return lazyFieldSig ??= FieldSignature.ReadSig(module, module.GetBlobReader(module.Field.records[index].Signature), declaringType); }
         }
 
         internal override int ImportTo(Emit.ModuleBuilder module)

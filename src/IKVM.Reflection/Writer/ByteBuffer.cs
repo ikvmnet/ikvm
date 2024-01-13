@@ -373,11 +373,6 @@ namespace IKVM.Reflection.Writer
             return hash;
         }
 
-        internal IKVM.Reflection.Reader.ByteReader GetBlob(int offset)
-        {
-            return IKVM.Reflection.Reader.ByteReader.FromBlob(buffer, offset);
-        }
-
     }
 
 }

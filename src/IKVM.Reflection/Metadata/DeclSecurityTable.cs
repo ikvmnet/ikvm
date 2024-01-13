@@ -22,10 +22,11 @@
   
 */
 using System;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -34,9 +35,10 @@ namespace IKVM.Reflection.Metadata
 
         internal struct Record : IRecord
         {
+
             internal short Action;
             internal int Parent;
-            internal int PermissionSet;
+            internal BlobHandle PermissionSet;
 
             readonly int IRecord.SortKey => Parent;
 
@@ -46,41 +48,35 @@ namespace IKVM.Reflection.Metadata
 
         internal const int Index = 0x0E;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Action = mr.ReadInt16();
-				records[i].Parent = mr.ReadHasDeclSecurity();
-				records[i].PermissionSet = mr.ReadBlobIndex();
-			}
-		}
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Action = mr.ReadInt16();
+                records[i].Parent = mr.ReadHasDeclSecurity();
+                records[i].PermissionSet = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.Write(records[i].Action);
-				mw.WriteHasDeclSecurity(records[i].Parent);
-				mw.WriteBlobIndex(records[i].PermissionSet);
-			}
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                var h = module.Metadata.AddDeclarativeSecurityAttribute(
+                    MetadataTokens.EntityHandle(records[i].Parent),
+                    (System.Reflection.DeclarativeSecurityAction)records[i].Action,
+                    records[i].PermissionSet);
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.AddFixed(2)
-				.WriteHasDeclSecurity()
-				.WriteBlobIndex()
-				.Value;
-		}
+                Debug.Assert(h == MetadataTokens.DeclarativeSecurityAttributeHandle(i + 1));
+            }
+        }
 
-		internal void Fixup(ModuleBuilder moduleBuilder)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				var token = records[i].Parent;
-				moduleBuilder.FixupPseudoToken(ref token);
+        internal void Fixup(ModuleBuilder moduleBuilder)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                var token = records[i].Parent;
+                moduleBuilder.FixupPseudoToken(ref token);
 
                 // do the HasDeclSecurity encoding, so that we can sort the table
                 token = (token >> 24) switch
@@ -90,12 +86,13 @@ namespace IKVM.Reflection.Metadata
                     AssemblyTable.Index => (token & 0xFFFFFF) << 2 | 2,
                     _ => throw new InvalidOperationException(),
                 };
+
                 records[i].Parent = token;
-			}
+            }
 
-			Sort();
-		}
+            Sort();
+        }
 
-	}
+    }
 
 }

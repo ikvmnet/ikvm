@@ -21,8 +21,11 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
+using System;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
+using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -37,14 +40,14 @@ namespace IKVM.Reflection.Metadata
             internal ushort BuildNumber;
             internal ushort RevisionNumber;
             internal int Flags;
-            internal int PublicKey;
-            internal int Name;
-            internal int Culture;
+            internal BlobHandle PublicKey;
+            internal StringHandle Name;
+            internal StringHandle Culture;
         }
 
         internal const int Index = 0x20;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
@@ -54,36 +57,22 @@ namespace IKVM.Reflection.Metadata
                 records[i].BuildNumber = mr.ReadUInt16();
                 records[i].RevisionNumber = mr.ReadUInt16();
                 records[i].Flags = mr.ReadInt32();
-                records[i].PublicKey = mr.ReadBlobIndex();
-                records[i].Name = mr.ReadStringIndex();
-                records[i].Culture = mr.ReadStringIndex();
+                records[i].PublicKey = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
+                records[i].Name = MetadataTokens.StringHandle(mr.ReadStringIndex());
+                records[i].Culture = MetadataTokens.StringHandle(mr.ReadStringIndex());
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
-            {
-                mw.Write(records[i].HashAlgId);
-                mw.Write(records[i].MajorVersion);
-                mw.Write(records[i].MinorVersion);
-                mw.Write(records[i].BuildNumber);
-                mw.Write(records[i].RevisionNumber);
-                mw.Write(records[i].Flags);
-                mw.WriteBlobIndex(records[i].PublicKey);
-                mw.WriteStringIndex(records[i].Name);
-                mw.WriteStringIndex(records[i].Culture);
-            }
-        }
-
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .AddFixed(16)
-                .WriteBlobIndex()
-                .WriteStringIndex()
-                .WriteStringIndex()
-                .Value;
+                module.Metadata.AddAssembly(
+                    records[i].Name,
+                    new Version(records[i].MajorVersion, records[i].MinorVersion, records[i].BuildNumber, records[i].RevisionNumber),
+                    records[i].Culture,
+                    records[i].PublicKey,
+                    (System.Reflection.AssemblyFlags)records[i].Flags,
+                    (System.Reflection.AssemblyHashAlgorithm)records[i].HashAlgId);
         }
 
     }

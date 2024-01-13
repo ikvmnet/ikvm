@@ -21,9 +21,11 @@
   jeroen@frijters.net
   
 */
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -31,46 +33,45 @@ namespace IKVM.Reflection.Metadata
     sealed class MemberRefTable : Table<MemberRefTable.Record>
     {
 
-        internal const int Index = 0x0A;
-
         internal struct Record
         {
 
             internal int Class;
-            internal int Name;
-            internal int Signature;
+            internal StringHandle Name;
+            internal BlobHandle Signature;
 
         }
 
-        internal override void Read(MetadataReader mr)
+        internal const int Index = 0x0A;
+
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
                 records[i].Class = mr.ReadMemberRefParent();
-                records[i].Name = mr.ReadStringIndex();
-                records[i].Signature = mr.ReadBlobIndex();
+                records[i].Name = MetadataTokens.StringHandle(mr.ReadStringIndex());
+                records[i].Signature = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
             {
-                mw.WriteMemberRefParent(records[i].Class);
-                mw.WriteStringIndex(records[i].Name);
-                mw.WriteBlobIndex(records[i].Signature);
+                var h = module.Metadata.AddMemberReference(
+                    MetadataTokens.EntityHandle(records[i].Class),
+                    records[i].Name,
+                    records[i].Signature);
+
+                Debug.Assert(h == MetadataTokens.MemberReferenceHandle(i + 1));
             }
         }
 
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .WriteMemberRefParent()
-                .WriteStringIndex()
-                .WriteBlobIndex()
-                .Value;
-        }
-
+        /// <summary>
+        /// Finds the specified record in the table and returns the row number.
+        /// </summary>
+        /// <param name="record"></param>
+        /// <returns></returns>
         internal int FindOrAddRecord(Record record)
         {
             for (int i = 0; i < rowCount; i++)

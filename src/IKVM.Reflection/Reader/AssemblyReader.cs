@@ -67,8 +67,8 @@ namespace IKVM.Reflection.Reader
             var name = new AssemblyName();
             name.Name = manifestModule.GetString(rec.Name);
             name.Version = new Version(rec.MajorVersion, rec.MinorVersion, rec.BuildNumber, rec.RevisionNumber);
-            name.SetPublicKey(rec.PublicKey != 0 ? manifestModule.GetBlobCopy(rec.PublicKey) : Array.Empty<byte>());
-            name.CultureName = rec.Culture != 0 ? manifestModule.GetString(rec.Culture) : "";
+            name.SetPublicKey(rec.PublicKey.IsNil == false ? manifestModule.GetBlobCopy(rec.PublicKey) : Array.Empty<byte>());
+            name.CultureName = rec.Culture.IsNil == false ? manifestModule.GetString(rec.Culture) : "";
             name.HashAlgorithm = (AssemblyHashAlgorithm)rec.HashAlgId;
             name.CodeBase = CodeBase;
 
@@ -133,6 +133,7 @@ namespace IKVM.Reflection.Reader
                     type = GetModule(i).FindType(typeName);
                 }
             }
+
             return type;
         }
 
@@ -197,35 +198,29 @@ namespace IKVM.Reflection.Reader
         public override Module GetModule(string name)
         {
             if (name.Equals(manifestModule.ScopeName, StringComparison.OrdinalIgnoreCase))
-            {
                 return manifestModule;
-            }
-            int index = GetModuleIndex(name);
+
+            var index = GetModuleIndex(name);
             if (index != -1)
-            {
                 return GetModule(index);
-            }
+
             return null;
         }
 
-        private int GetModuleIndex(string name)
+        int GetModuleIndex(string name)
         {
             for (int i = 0; i < manifestModule.File.records.Length; i++)
-            {
                 if (name.Equals(manifestModule.GetString(manifestModule.File.records[i].Name), StringComparison.OrdinalIgnoreCase))
-                {
                     return i;
-                }
-            }
+
             return -1;
         }
 
-        private Module GetModule(int index)
+        Module GetModule(int index)
         {
             if (externalModules[index] != null)
-            {
                 return externalModules[index];
-            }
+
             return LoadModule(index, null, manifestModule.GetString(manifestModule.File.records[index].Name));
         }
 

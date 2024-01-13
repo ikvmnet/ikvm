@@ -22,6 +22,9 @@
   
 */
 using System;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Writer;
@@ -36,8 +39,8 @@ namespace IKVM.Reflection.Emit
         readonly string name;
         readonly int pseudoToken;
         FieldAttributes attribs;
-        readonly int nameIndex;
-        readonly int signature;
+        readonly StringHandle nameIndex;
+        readonly BlobHandle signature;
         readonly FieldSignature fieldSig;
 
         /// <summary>
@@ -53,11 +56,11 @@ namespace IKVM.Reflection.Emit
             this.typeBuilder = type;
             this.name = name;
             this.pseudoToken = type.ModuleBuilder.AllocPseudoToken();
-            this.nameIndex = type.ModuleBuilder.Strings.Add(name);
+            this.nameIndex = type.ModuleBuilder.GetOrAddString(name);
             this.fieldSig = FieldSignature.Create(fieldType, customModifiers);
-            ByteBuffer sig = new ByteBuffer(5);
-            fieldSig.WriteSig(this.typeBuilder.ModuleBuilder, sig);
-            this.signature = this.typeBuilder.ModuleBuilder.Blobs.Add(sig);
+            var sig = new ByteBuffer(5);
+            fieldSig.WriteSig(typeBuilder.ModuleBuilder, sig);
+            this.signature = typeBuilder.ModuleBuilder.GetOrAddBlob(sig.ToArray());
             this.attribs = attribs;
             this.typeBuilder.ModuleBuilder.Field.AddVirtualRecord();
         }
@@ -193,16 +196,17 @@ namespace IKVM.Reflection.Emit
             return new FieldToken(pseudoToken);
         }
 
-        internal void WriteFieldRecords(MetadataWriter mw)
+        internal void WriteFieldRecords(MetadataBuilder metadata)
         {
-            mw.Write((short)attribs);
-            mw.WriteStringIndex(nameIndex);
-            mw.WriteBlobIndex(signature);
+            metadata.AddFieldDefinition(
+                (System.Reflection.FieldAttributes)attribs,
+                nameIndex,
+                signature);
         }
 
         internal void FixupToken(int token)
         {
-            typeBuilder.ModuleBuilder.RegisterTokenFixup(this.pseudoToken, token);
+            typeBuilder.ModuleBuilder.RegisterTokenFixup(pseudoToken, token);
         }
 
         internal override FieldSignature FieldSignature

@@ -23,11 +23,13 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 
 using IKVM.Reflection.Impl;
 using IKVM.Reflection.Metadata;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
@@ -41,8 +43,8 @@ namespace IKVM.Reflection.Emit
         readonly int token;
         int extends;
         Type lazyBaseType;      // (lazyBaseType == null && attribs & TypeAttributes.Interface) == 0) => BaseType == System.Object
-        readonly int typeName;
-        readonly int typeNameSpace;
+        readonly StringHandle typeName;
+        readonly StringHandle typeNameSpace;
         readonly string ns;
         readonly string name;
         readonly List<MethodBuilder> methods = new List<MethodBuilder>();
@@ -66,11 +68,11 @@ namespace IKVM.Reflection.Emit
         internal TypeBuilder(ITypeOwner owner, string ns, string name)
         {
             this.owner = owner;
-            this.token = this.ModuleBuilder.TypeDef.AllocToken();
+            this.token = ModuleBuilder.TypeDef.AllocToken();
             this.ns = ns;
             this.name = name;
-            this.typeNameSpace = ns == null ? 0 : this.ModuleBuilder.Strings.Add(ns);
-            this.typeName = this.ModuleBuilder.Strings.Add(name);
+            this.typeNameSpace = ns == null ? default : ModuleBuilder.GetOrAddString(ns);
+            this.typeName = ModuleBuilder.GetOrAddString(name);
             MarkKnownType(ns, name);
         }
 
@@ -470,18 +472,14 @@ namespace IKVM.Reflection.Emit
             }
 
             if (!hasConstructor && !IsModulePseudoType && !IsInterface && !IsValueType && !(IsAbstract && IsSealed) && Universe.AutomaticallyProvideDefaultConstructor)
-            {
                 ((MethodBuilder)DefineDefaultConstructor(MethodAttributes.Public).GetMethodInfo()).Bake();
-            }
 
             if (declarativeSecurity != null)
-            {
                 ModuleBuilder.AddDeclarativeSecurity(token, declarativeSecurity);
-            }
 
             if (!IsModulePseudoType)
             {
-                var baseType = this.BaseType;
+                var baseType = BaseType;
                 if (baseType != null)
                     extends = ModuleBuilder.GetTypeToken(baseType).Token;
             }
@@ -670,22 +668,27 @@ namespace IKVM.Reflection.Emit
             get { return new TypeToken(token); }
         }
 
-        internal void WriteTypeDefRecord(MetadataWriter mw, ref int fieldList, ref int methodList)
+        internal void WriteTypeDefRecord(MetadataBuilder metadata, ref int fieldList, ref int methodList)
         {
-            mw.Write((int)attribs);
-            mw.WriteStringIndex(typeName);
-            mw.WriteStringIndex(typeNameSpace);
-            mw.WriteTypeDefOrRef(extends);
-            mw.WriteField(fieldList);
-            mw.WriteMethodDef(methodList);
-            methodList += methods.Count;
+            var h = metadata.AddTypeDefinition(
+                (System.Reflection.TypeAttributes)attribs,
+                typeNameSpace,
+                typeName,
+                MetadataTokens.EntityHandle(extends),
+                MetadataTokens.FieldDefinitionHandle(fieldList),
+                MetadataTokens.MethodDefinitionHandle(methodList));
+
+            Debug.Assert(h == MetadataTokens.TypeDefinitionHandle(token));
+
+            // increment next expected method and field row numbers
             fieldList += fields.Count;
+            methodList += methods.Count;
         }
 
-        internal void WriteMethodDefRecords(int baseRVA, MetadataWriter mw, ref int paramList)
+        internal void WriteMethodDefRecords(MetadataBuilder metadata, ref int paramList)
         {
             foreach (var mb in methods)
-                mb.WriteMethodDefRecord(baseRVA, mw, ref paramList);
+                mb.WriteMethodDefRecord(metadata, ref paramList);
         }
 
         internal void ResolveMethodAndFieldTokens(ref int methodToken, ref int fieldToken, ref int parameterToken)
@@ -696,16 +699,16 @@ namespace IKVM.Reflection.Emit
                 field.FixupToken(fieldToken++);
         }
 
-        internal void WriteParamRecords(MetadataWriter mw)
+        internal void WriteParamRecords(MetadataBuilder metadata)
         {
             foreach (var mb in methods)
-                mb.WriteParamRecords(mw);
+                mb.WriteParamRecords(metadata);
         }
 
-        internal void WriteFieldRecords(MetadataWriter mw)
+        internal void WriteFieldRecords(MetadataBuilder metadata)
         {
             foreach (var fb in fields)
-                fb.WriteFieldRecords(mw);
+                fb.WriteFieldRecords(metadata);
         }
 
         internal ModuleBuilder ModuleBuilder

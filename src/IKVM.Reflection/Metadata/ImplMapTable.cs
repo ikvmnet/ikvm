@@ -21,9 +21,10 @@
   jeroen@frijters.net
   
 */
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -36,7 +37,7 @@ namespace IKVM.Reflection.Metadata
 
             internal short MappingFlags;
             internal int MemberForwarded;
-            internal int ImportName;
+            internal StringHandle ImportName;
             internal int ImportScope;
 
             readonly int IRecord.SortKey => MemberForwarded;
@@ -47,46 +48,35 @@ namespace IKVM.Reflection.Metadata
 
         internal const int Index = 0x1C;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].MappingFlags = mr.ReadInt16();
-				records[i].MemberForwarded = mr.ReadMemberForwarded();
-				records[i].ImportName = mr.ReadStringIndex();
-				records[i].ImportScope = mr.ReadModuleRef();
-			}
-		}
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].MappingFlags = mr.ReadInt16();
+                records[i].MemberForwarded = mr.ReadMemberForwarded();
+                records[i].ImportName = MetadataTokens.StringHandle(mr.ReadStringIndex());
+                records[i].ImportScope = mr.ReadModuleRef();
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.Write(records[i].MappingFlags);
-				mw.WriteMemberForwarded(records[i].MemberForwarded);
-				mw.WriteStringIndex(records[i].ImportName);
-				mw.WriteModuleRef(records[i].ImportScope);
-			}
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+                module.Metadata.AddMethodImport(
+                    MetadataTokens.MethodDefinitionHandle(records[i].MemberForwarded),
+                    (System.Reflection.MethodImportAttributes)records[i].MappingFlags,
+                    records[i].ImportName,
+                    MetadataTokens.ModuleReferenceHandle(records[i].ImportScope));
+        }
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.AddFixed(2)
-				.WriteMemberForwarded()
-				.WriteStringIndex()
-				.WriteModuleRef()
-				.Value;
-		}
+        internal void Fixup(ModuleBuilder moduleBuilder)
+        {
+            for (int i = 0; i < rowCount; i++)
+                moduleBuilder.FixupPseudoToken(ref records[i].MemberForwarded);
 
-		internal void Fixup(ModuleBuilder moduleBuilder)
-		{
-			for (int i = 0; i < rowCount; i++)
-				moduleBuilder.FixupPseudoToken(ref records[i].MemberForwarded);
+            Sort();
+        }
 
-			Sort();
-		}
-
-	}
+    }
 
 }

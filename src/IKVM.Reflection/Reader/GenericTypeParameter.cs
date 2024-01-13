@@ -121,7 +121,7 @@ namespace IKVM.Reflection.Reader
                 if ((metadataToken >> 24) == TypeSpecTable.Index)
                 {
                     var index = (metadataToken & 0xFFFFFF) - 1;
-                    mods = CustomModifiers.Read(module, module.GetBlob(module.TypeSpec.records[index]), context);
+                    mods = CustomModifiers.Read(module, module.GetBlobReader(module.TypeSpec.records[index]), context);
                 }
 
                 list.Add(mods);

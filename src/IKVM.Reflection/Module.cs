@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
 
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Reader;
@@ -85,7 +86,7 @@ namespace IKVM.Reflection
 
         internal Table[] GetTables()
         {
-            Table[] tables = new Table[64];
+            var tables = new Table[64];
             tables[ModuleTable.Index] = ModuleTable;
             tables[TypeRefTable.Index] = TypeRef;
             tables[TypeDefTable.Index] = TypeDef;
@@ -518,7 +519,7 @@ namespace IKVM.Reflection
 
         internal abstract Type GetModuleType();
 
-        internal abstract ByteReader GetBlob(int blobIndex);
+        internal abstract ByteReader GetBlobReader(BlobHandle handle);
 
         internal IList<CustomAttributeData> GetDeclarativeSecurity(int metadataToken)
         {
@@ -534,12 +535,12 @@ namespace IKVM.Reflection
 
         }
 
-        internal virtual void ExportTypes(int fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
+        internal virtual void ExportTypes(AssemblyFileHandle handle, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
         {
 
         }
 
-        internal virtual string GetString(int index)
+        internal virtual string GetString(StringHandle handle)
         {
             throw new NotSupportedException();
         }
@@ -579,7 +580,7 @@ namespace IKVM.Reflection
             throw InvalidOperationException();
         }
 
-        internal sealed override ByteReader GetBlob(int blobIndex)
+        internal sealed override ByteReader GetBlobReader(BlobHandle handle)
         {
             throw InvalidOperationException();
         }

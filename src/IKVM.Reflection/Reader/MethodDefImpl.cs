@@ -228,7 +228,7 @@ namespace IKVM.Reflection.Reader
 
         internal override MethodSignature MethodSignature
         {
-            get { return lazyMethodSignature ?? (lazyMethodSignature = MethodSignature.ReadSig(module, module.GetBlob(module.MethodDef.records[index].Signature), this)); }
+            get { return lazyMethodSignature ?? (lazyMethodSignature = MethodSignature.ReadSig(module, module.GetBlobReader(module.MethodDef.records[index].Signature), this)); }
         }
 
         internal override int ImportTo(Emit.ModuleBuilder module)

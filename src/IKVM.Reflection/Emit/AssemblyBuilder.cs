@@ -24,6 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Resources;
 using System.Security.Cryptography;
 
@@ -330,24 +332,35 @@ namespace IKVM.Reflection.Emit
             SaveImpl(assemblyFileName, null, portableExecutableKind, imageFileMachine);
         }
 
+        /// <summary>
+        /// Implements the logic to save all of the modules within the assembly.
+        /// </summary>
+        /// <param name="assemblyFileName"></param>
+        /// <param name="streamOrNull"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
         void SaveImpl(string assemblyFileName, Stream streamOrNull, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
             ModuleBuilder manifestModule = null;
 
+            // finalize and populate all modules
             foreach (var moduleBuilder in modules)
             {
                 moduleBuilder.SetIsSaved();
                 moduleBuilder.PopulatePropertyAndEventTables();
 
+                // is this the default manifest module?
                 if (manifestModule == null && string.Compare(moduleBuilder.fileName, assemblyFileName, StringComparison.OrdinalIgnoreCase) == 0)
                     manifestModule = moduleBuilder;
             }
 
+            // generate new manifest module
             manifestModule ??= DefineDynamicModule("RefEmit_OnDiskManifestModule", assemblyFileName, false);
 
+            // assembly record goes on manifest module
             var assemblyRecord = new AssemblyTable.Record();
             assemblyRecord.HashAlgId = (int)hashAlgorithm;
-            assemblyRecord.Name = manifestModule.Strings.Add(name);
+            assemblyRecord.Name = manifestModule.GetOrAddString(name);
             assemblyRecord.MajorVersion = majorVersion;
             assemblyRecord.MinorVersion = minorVersion;
             assemblyRecord.BuildNumber = buildVersion;
@@ -355,7 +368,7 @@ namespace IKVM.Reflection.Emit
 
             if (publicKey != null)
             {
-                assemblyRecord.PublicKey = manifestModule.Blobs.Add(ByteBuffer.Wrap(publicKey));
+                assemblyRecord.PublicKey = manifestModule.GetOrAddBlob(publicKey);
                 assemblyRecord.Flags = (int)(flags | AssemblyNameFlags.PublicKey);
             }
             else
@@ -364,9 +377,8 @@ namespace IKVM.Reflection.Emit
             }
 
             if (culture != null)
-            {
-                assemblyRecord.Culture = manifestModule.Strings.Add(culture);
-            }
+                assemblyRecord.Culture = manifestModule.GetOrAddString(culture);
+
             manifestModule.AssemblyTable.AddRecord(assemblyRecord);
 
             var unmanagedResources = versionInfo != null || win32icon != null || win32manifest != null || win32resources != null ? new ResourceSection() : null;
@@ -381,6 +393,7 @@ namespace IKVM.Reflection.Emit
                     if (!cab.HasBlob || universe.DecodeVersionInfoAttributeBlobs)
                         versionInfo.SetAttribute(this, cab);
                 }
+
                 var versionInfoData = new ByteBuffer(512);
                 versionInfo.Write(versionInfoData);
                 unmanagedResources.AddVersionInfo(versionInfoData);
@@ -395,11 +408,9 @@ namespace IKVM.Reflection.Emit
             if (win32resources != null)
                 unmanagedResources.ExtractResources(win32resources);
 
+            // we intentionally don't filter out the version info (pseudo) custom attributes (to be compatible with .NET)
             foreach (var cab in customAttributes)
-            {
-                // we intentionally don't filter out the version info (pseudo) custom attributes (to be compatible with .NET)
                 manifestModule.SetCustomAttribute(0x20000001, cab);
-            }
 
             manifestModule.AddDeclarativeSecurity(0x20000001, declarativeSecurity);
 
@@ -414,16 +425,16 @@ namespace IKVM.Reflection.Emit
                     resfile.Writer.Close();
                 }
 
-                int fileToken = AddFile(manifestModule, resfile.FileName, 1 /*ContainsNoMetaData*/);
+                var fileToken = AddFile(manifestModule, resfile.FileName, 1 /*ContainsNoMetaData*/);
                 var rec = new ManifestResourceTable.Record();
                 rec.Offset = 0;
                 rec.Flags = (int)resfile.Attributes;
-                rec.Name = manifestModule.Strings.Add(resfile.Name);
-                rec.Implementation = fileToken;
+                rec.Name = manifestModule.GetOrAddString(resfile.Name);
+                rec.Implementation = MetadataTokens.GetToken(fileToken);
                 manifestModule.ManifestResource.AddRecord(rec);
             }
 
-            int entryPointToken = 0;
+            var entryPointToken = MetadataTokens.MethodDefinitionHandle(0);
 
             foreach (var moduleBuilder in modules)
             {
@@ -432,15 +443,14 @@ namespace IKVM.Reflection.Emit
 
                 if (moduleBuilder != manifestModule)
                 {
-                    int fileToken;
+                    var fileToken = default(AssemblyFileHandle);
                     if (entryPoint != null && entryPoint.Module == moduleBuilder)
                     {
-                        ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, moduleBuilder.unmanagedResources, entryPoint.MetadataToken);
-                        entryPointToken = fileToken = AddFile(manifestModule, moduleBuilder.fileName, 0 /*ContainsMetaData*/);
+                        throw new NotSupportedException("Multi-module assemblies cannot have an entry point in a module other than the manifest module.");
                     }
                     else
                     {
-                        ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, moduleBuilder.unmanagedResources, 0);
+                        ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, moduleBuilder.unmanagedResources, default);
                         fileToken = AddFile(manifestModule, moduleBuilder.fileName, 0 /*ContainsMetaData*/);
                     }
 
@@ -452,31 +462,28 @@ namespace IKVM.Reflection.Emit
 
             foreach (var module in addedModules)
             {
-                int fileToken = AddFile(manifestModule, module.FullyQualifiedName, 0 /*ContainsMetaData*/);
+                var fileToken = AddFile(manifestModule, module.FullyQualifiedName, 0 /*ContainsMetaData*/);
                 module.ExportTypes(fileToken, manifestModule);
             }
 
-            if (entryPointToken == 0 && entryPoint != null)
-                entryPointToken = entryPoint.MetadataToken;
+            if (entryPointToken.IsNil && entryPoint != null)
+                entryPointToken = MetadataTokens.MethodDefinitionHandle(entryPoint.MetadataToken);
 
             // finally, write the manifest module
             ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, unmanagedResources ?? manifestModule.unmanagedResources, entryPointToken, streamOrNull);
         }
 
-        int AddFile(ModuleBuilder manifestModule, string fileName, int flags)
+        AssemblyFileHandle AddFile(ModuleBuilder manifestModule, string fileName, int flags)
         {
-            string fullPath = fileName;
+            var fullPath = fileName;
             if (dir != null)
-            {
                 fullPath = Path.Combine(dir, fileName);
-            }
-            byte[] hash;
-            using (SHA1 sha1 = SHA1.Create())
-            using (FileStream fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read))
-            {
-                hash = sha1.ComputeHash(fs);
-            }
-            return manifestModule.__AddModule(flags, Path.GetFileName(fileName), hash);
+
+            using var sha1 = SHA1.Create();
+            using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
+            var hash = sha1.ComputeHash(fs);
+
+            return MetadataTokens.AssemblyFileHandle(manifestModule.__AddModule(flags, Path.GetFileName(fileName), hash));
         }
 
         public void AddResourceFile(string name, string fileName)
@@ -486,7 +493,7 @@ namespace IKVM.Reflection.Emit
 
         public void AddResourceFile(string name, string fileName, ResourceAttributes attribs)
         {
-            ResourceFile resfile = new ResourceFile();
+            var resfile = new ResourceFile();
             resfile.Name = name;
             resfile.FileName = fileName;
             resfile.Attributes = attribs;

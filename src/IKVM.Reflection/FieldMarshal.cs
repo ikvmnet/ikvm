@@ -22,6 +22,8 @@
   
 */
 
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -56,7 +58,7 @@ namespace IKVM.Reflection
 
             foreach (var i in module.FieldMarshal.Filter(token))
             {
-                var blob = module.GetBlob(module.FieldMarshal.records[i].NativeType);
+                var blob = module.GetBlobReader(module.FieldMarshal.records[i].NativeType);
 
                 fm.UnmanagedType = (UnmanagedType)blob.ReadCompressedUInt();
                 switch (fm.UnmanagedType)
@@ -128,7 +130,7 @@ namespace IKVM.Reflection
             module.FieldMarshal.AddRecord(rec);
         }
 
-        static int WriteMarshallingDescriptor(ModuleBuilder module, CustomAttributeBuilder attribute)
+        static BlobHandle WriteMarshallingDescriptor(ModuleBuilder module, CustomAttributeBuilder attribute)
         {
             var val = attribute.GetConstructorArgument(0);
             var unmanagedType = val switch
@@ -218,7 +220,7 @@ namespace IKVM.Reflection
                     }
             }
 
-            return module.Blobs.Add(bb);
+            return module.GetOrAddBlob(bb.ToArray());
         }
 
         static Type ReadType(Module module, ByteReader br)

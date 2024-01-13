@@ -21,9 +21,11 @@
   jeroen@frijters.net
   
 */
+using System.Diagnostics;
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -44,39 +46,36 @@ namespace IKVM.Reflection.Metadata
 
         internal const int Index = 0x2C;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Owner = mr.ReadGenericParam();
-				records[i].Constraint = mr.ReadTypeDefOrRef();
-			}
-		}
+        internal override void Read(Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Owner = mr.ReadGenericParam();
+                records[i].Constraint = mr.ReadTypeDefOrRef();
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.WriteGenericParam(records[i].Owner);
-				mw.WriteTypeDefOrRef(records[i].Constraint);
-			}
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                var h = module.Metadata.AddGenericParameterConstraint(
+                    System.Reflection.Metadata.Ecma335.MetadataTokens.GenericParameterHandle(records[i].Owner),
+                    System.Reflection.Metadata.Ecma335.MetadataTokens.EntityHandle(records[i].Constraint));
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.WriteGenericParam()
-				.WriteTypeDefOrRef()
-				.Value;
-		}
+                Debug.Assert(h == System.Reflection.Metadata.Ecma335.MetadataTokens.GenericParameterConstraintHandle(i + 1));
+            }
+        }
 
-		internal void Fixup(ModuleBuilder moduleBuilder)
-		{
-			var fixups = moduleBuilder.GenericParam.GetIndexFixup();
-			for (int i = 0; i < rowCount; i++)
-				records[i].Owner = fixups[records[i].Owner - 1] + 1;
+        internal void Fixup(ModuleBuilder moduleBuilder)
+        {
+            var fixups = moduleBuilder.GenericParam.GetIndexFixup();
+            for (int i = 0; i < rowCount; i++)
+                records[i].Owner = fixups[records[i].Owner - 1] + 1;
 
-			Sort();
-		}
-	}
+            Sort();
+        }
+
+    }
+
 }

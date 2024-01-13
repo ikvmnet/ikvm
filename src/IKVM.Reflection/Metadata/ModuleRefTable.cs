@@ -21,43 +21,44 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
+using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
 
-    sealed class ModuleRefTable : Table<int>
+    sealed class ModuleRefTable : Table<StringHandle>
     {
 
         internal const int Index = 0x1A;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
-                records[i] = mr.ReadStringIndex();
+                records[i] = MetadataTokens.StringHandle(mr.ReadStringIndex());
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
-                mw.WriteStringIndex(records[i]);
+            {
+                var h = module.Metadata.AddModuleReference(
+                    records[i]);
+
+                Debug.Assert(h == MetadataTokens.ModuleReferenceHandle(i + 1));
+            }
         }
 
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .WriteStringIndex()
-                .Value;
-        }
-
-        internal int FindOrAddRecord(int str)
+        internal int FindOrAddRecord(StringHandle handle)
         {
             for (int i = 0; i < rowCount; i++)
-                if (records[i] == str)
+                if (records[i] == handle)
                     return i + 1;
 
-            return AddRecord(str);
+            return AddRecord(handle);
         }
 
     }

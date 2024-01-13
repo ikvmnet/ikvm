@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
@@ -49,49 +50,39 @@ namespace IKVM.Reflection.Metadata
 
         internal const int Index = 0x18;
 
-		// semantics
-		internal const short Setter = 0x0001;
-		internal const short Getter = 0x0002;
-		internal const short Other = 0x0004;
-		internal const short AddOn = 0x0008;
-		internal const short RemoveOn = 0x0010;
-		internal const short Fire = 0x0020;
+        // semantics
+        internal const short Setter = 0x0001;
+        internal const short Getter = 0x0002;
+        internal const short Other = 0x0004;
+        internal const short AddOn = 0x0008;
+        internal const short RemoveOn = 0x0010;
+        internal const short Fire = 0x0020;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Semantics = mr.ReadInt16();
-				records[i].Method = mr.ReadMethodDef();
-				records[i].Association = mr.ReadHasSemantics();
-			}
-		}
+        internal override void Read(Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Semantics = mr.ReadInt16();
+                records[i].Method = mr.ReadMethodDef();
+                records[i].Association = mr.ReadHasSemantics();
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.Write(records[i].Semantics);
-				mw.WriteMethodDef(records[i].Method);
-				mw.WriteHasSemantics(records[i].Association);
-			}
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+                module.Metadata.AddMethodSemantics(
+                    System.Reflection.Metadata.Ecma335.MetadataTokens.EntityHandle(records[i].Association),
+                    (System.Reflection.MethodSemanticsAttributes)records[i].Semantics,
+                    System.Reflection.Metadata.Ecma335.MetadataTokens.MethodDefinitionHandle(records[i].Method));
+        }
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.AddFixed(2)
-				.WriteMethodDef()
-				.WriteHasSemantics()
-				.Value;
-		}
-
-		internal void Fixup(ModuleBuilder moduleBuilder)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				moduleBuilder.FixupPseudoToken(ref records[i].Method);
-				int token = records[i].Association;
+        internal void Fixup(ModuleBuilder moduleBuilder)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                moduleBuilder.FixupPseudoToken(ref records[i].Method);
+                int token = records[i].Association;
                 // do the HasSemantics encoding, so that we can sort the table
                 token = (token >> 24) switch
                 {
@@ -99,58 +90,59 @@ namespace IKVM.Reflection.Metadata
                     PropertyTable.Index => (token & 0xFFFFFF) << 1 | 1,
                     _ => throw new InvalidOperationException(),
                 };
+
                 records[i].Association = token;
-			}
+            }
 
-			Sort();
-		}
+            Sort();
+        }
 
-		internal MethodInfo GetMethod(Module module, int token, bool nonPublic, short semantics)
-		{
-			foreach (int i in Filter(token))
-			{
-				if ((records[i].Semantics & semantics) != 0)
-				{
-					var method = module.ResolveMethod((MethodDefTable.Index << 24) + records[i].Method);
-					if (nonPublic || method.IsPublic)
-						return (MethodInfo)method;
-				}
-			}
+        internal MethodInfo GetMethod(Module module, int token, bool nonPublic, short semantics)
+        {
+            foreach (int i in Filter(token))
+            {
+                if ((records[i].Semantics & semantics) != 0)
+                {
+                    var method = module.ResolveMethod((MethodDefTable.Index << 24) + records[i].Method);
+                    if (nonPublic || method.IsPublic)
+                        return (MethodInfo)method;
+                }
+            }
 
-			return null;
-		}
+            return null;
+        }
 
-		internal MethodInfo[] GetMethods(Module module, int token, bool nonPublic, short semantics)
-		{
-			var methods = new List<MethodInfo>();
-			foreach (int i in Filter(token))
-			{
-				if ((records[i].Semantics & semantics) != 0)
-				{
-					var method = (MethodInfo)module.ResolveMethod((MethodDefTable.Index << 24) + records[i].Method);
-					if (nonPublic || method.IsPublic)
-						methods.Add(method);
-				}
-			}
+        internal MethodInfo[] GetMethods(Module module, int token, bool nonPublic, short semantics)
+        {
+            var methods = new List<MethodInfo>();
+            foreach (int i in Filter(token))
+            {
+                if ((records[i].Semantics & semantics) != 0)
+                {
+                    var method = (MethodInfo)module.ResolveMethod((MethodDefTable.Index << 24) + records[i].Method);
+                    if (nonPublic || method.IsPublic)
+                        methods.Add(method);
+                }
+            }
 
-			return methods.ToArray();
-		}
+            return methods.ToArray();
+        }
 
-		internal void ComputeFlags(Module module, int token, out bool isPublic, out bool isNonPrivate, out bool isStatic)
-		{
-			isPublic = false;
-			isNonPrivate = false;
-			isStatic = false;
+        internal void ComputeFlags(Module module, int token, out bool isPublic, out bool isNonPrivate, out bool isStatic)
+        {
+            isPublic = false;
+            isNonPrivate = false;
+            isStatic = false;
 
-			foreach (int i in Filter(token))
-			{
-				var method = module.ResolveMethod((MethodDefTable.Index << 24) + records[i].Method);
-				isPublic |= method.IsPublic;
-				isNonPrivate |= (method.Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private;
-				isStatic |= method.IsStatic;
-			}
-		}
+            foreach (int i in Filter(token))
+            {
+                var method = module.ResolveMethod((MethodDefTable.Index << 24) + records[i].Method);
+                isPublic |= method.IsPublic;
+                isNonPrivate |= (method.Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private;
+                isStatic |= method.IsStatic;
+            }
+        }
 
-	}
+    }
 
 }

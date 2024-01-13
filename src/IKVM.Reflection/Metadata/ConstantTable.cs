@@ -22,13 +22,16 @@
   
 */
 using System;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
+
     sealed class ConstantTable : SortedTable<ConstantTable.Record>
     {
 
@@ -37,42 +40,39 @@ namespace IKVM.Reflection.Metadata
 
             internal short Type;
             internal int Parent;
-            internal int Value;
+            internal BlobHandle Offset;
+            internal object Value;
 
-            int IRecord.SortKey => EncodeHasConstant(Parent);
+            readonly int IRecord.SortKey => EncodeHasConstant(Parent);
 
-            int IRecord.FilterKey => Parent;
+            readonly int IRecord.FilterKey => Parent;
+
         }
 
         internal const int Index = 0x0B;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
                 records[i].Type = mr.ReadInt16();
                 records[i].Parent = mr.ReadHasConstant();
-                records[i].Value = mr.ReadBlobIndex();
+                records[i].Offset = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
             {
-                mw.Write(records[i].Type);
-                mw.WriteHasConstant(records[i].Parent);
-                mw.WriteBlobIndex(records[i].Value);
-            }
-        }
+                // check that blob handle ends up the same
+                var b = module.Metadata.GetOrAddConstantBlob(records[i].Value);
+                Debug.Assert(b == records[i].Offset);
 
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .AddFixed(2)
-                .WriteHasConstant()
-                .WriteBlobIndex()
-                .Value;
+                // insert constant, and allow reencoding; should use same blob
+                var h = module.Metadata.AddConstant(MetadataTokens.EntityHandle(records[i].Parent), records[i].Value);
+                Debug.Assert(h == MetadataTokens.ConstantHandle(i + 1));
+            }
         }
 
         internal void Fixup(ModuleBuilder moduleBuilder)
@@ -98,7 +98,8 @@ namespace IKVM.Reflection.Metadata
         {
             foreach (var i in Filter(parent))
             {
-                var br = module.GetBlob(module.Constant.records[i].Value);
+                var br = module.GetBlobReader(module.Constant.records[i].Offset);
+
                 switch (module.Constant.records[i].Type)
                 {
                     // see ModuleBuilder.AddConstant for the encodings

@@ -22,9 +22,11 @@
   
 */
 using System;
+using System.Diagnostics;
+using System.Reflection.Metadata.Ecma335;
 
+using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -43,65 +45,60 @@ namespace IKVM.Reflection.Metadata
             int IRecord.FilterKey => Class;
         }
 
-        internal const int Index = 0x09;
+        internal const int Index = (int)TableIndex.InterfaceImpl;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Class = mr.ReadTypeDef();
-				records[i].Interface = mr.ReadTypeDefOrRef();
-			}
-		}
+        internal override void Read(Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Class = mr.ReadTypeDef();
+                records[i].Interface = mr.ReadTypeDefOrRef();
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.WriteTypeDef(records[i].Class);
-				mw.WriteEncodedTypeDefOrRef(records[i].Interface);
-			}
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                var h = module.Metadata.AddInterfaceImplementation(
+                    System.Reflection.Metadata.Ecma335.MetadataTokens.TypeDefinitionHandle(records[i].Class),
+                    System.Reflection.Metadata.Ecma335.MetadataTokens.EntityHandle(records[i].Interface));
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.WriteTypeDef()
-				.WriteTypeDefOrRef()
-				.Value;
-		}
+                Debug.Assert(h == System.Reflection.Metadata.Ecma335.MetadataTokens.InterfaceImplementationHandle(i + 1));
+            }
+        }
 
-		internal void Fixup()
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				var token = records[i].Interface;
-				switch (token >> 24)
-				{
-					case 0:
-						break;
-					case TypeDefTable.Index:
-						token = (token & 0xFFFFFF) << 2 | 0;
-						break;
-					case TypeRefTable.Index:
-						token = (token & 0xFFFFFF) << 2 | 1;
-						break;
-					case TypeSpecTable.Index:
-						token = (token & 0xFFFFFF) << 2 | 2;
-						break;
-					default:
-						throw new InvalidOperationException();
-				}
+        internal void Fixup()
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                var token = records[i].Interface;
+                switch (token >> 24)
+                {
+                    case 0:
+                        break;
+                    case TypeDefTable.Index:
+                        token = (token & 0xFFFFFF) << 2 | 0;
+                        break;
+                    case TypeRefTable.Index:
+                        token = (token & 0xFFFFFF) << 2 | 1;
+                        break;
+                    case TypeSpecTable.Index:
+                        token = (token & 0xFFFFFF) << 2 | 2;
+                        break;
+                    default:
+                        throw new InvalidOperationException();
+                }
 
-				records[i].Interface = token;
-			}
+                records[i].Interface = token;
+            }
 
-			// LAMESPEC the CLI spec says that InterfaceImpl should be sorted by { Class, Interface },
-			// but it appears to only be necessary to sort by Class (and csc emits InterfaceImpl records in
-			// source file order, so to be able to support round tripping, we need to retain ordering as well).
-			Sort();
-		}
+            // LAMESPEC the CLI spec says that InterfaceImpl should be sorted by { Class, Interface },
+            // but it appears to only be necessary to sort by Class (and csc emits InterfaceImpl records in
+            // source file order, so to be able to support round tripping, we need to retain ordering as well).
+            Sort();
+        }
 
-	}
+    }
 
 }

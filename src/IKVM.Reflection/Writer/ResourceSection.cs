@@ -124,17 +124,6 @@ namespace IKVM.Reflection.Writer
             get { return bb.Length; }
         }
 
-        internal void Write(MetadataWriter mw, uint rva)
-        {
-            foreach (int offset in linkOffsets)
-            {
-                bb.Position = offset;
-                bb.Write(bb.GetInt32AtCurrentPosition() + (int)rva);
-            }
-
-            mw.Write(bb);
-        }
-
     }
 
 }

@@ -24,11 +24,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.SymbolStore;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using IKVM.Reflection.Metadata;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
@@ -39,8 +40,8 @@ namespace IKVM.Reflection.Emit
         readonly TypeBuilder typeBuilder;
         readonly string name;
         readonly int pseudoToken;
-        int nameIndex;
-        int signature;
+        StringHandle nameIndex;
+        BlobHandle signature;
         Type returnType;
         Type[] parameterTypes;
         PackedCustomModifiers customModifiers;
@@ -205,8 +206,8 @@ namespace IKVM.Reflection.Emit
             var rec = new ImplMapTable.Record();
             rec.MappingFlags = flags;
             rec.MemberForwarded = pseudoToken;
-            rec.ImportName = this.ModuleBuilder.Strings.Add(entryName ?? name);
-            rec.ImportScope = this.ModuleBuilder.ModuleRef.FindOrAddRecord(dllName == null ? 0 : this.ModuleBuilder.Strings.Add(dllName));
+            rec.ImportName = ModuleBuilder.GetOrAddString(entryName ?? name);
+            rec.ImportScope = MetadataTokens.GetToken(MetadataTokens.ModuleReferenceHandle(ModuleBuilder.ModuleRef.FindOrAddRecord(dllName == null ? default : ModuleBuilder.GetOrAddString(dllName))));
             ModuleBuilder.ImplMap.AddRecord(rec);
         }
 
@@ -259,7 +260,7 @@ namespace IKVM.Reflection.Emit
                     attributes |= MethodAttributes.HasSecurity;
                     goto default;
                 default:
-                    this.ModuleBuilder.SetCustomAttribute(pseudoToken, customBuilder);
+                    ModuleBuilder.SetCustomAttribute(pseudoToken, customBuilder);
                     break;
             }
         }
@@ -286,15 +287,15 @@ namespace IKVM.Reflection.Emit
         {
             parameters ??= new List<ParameterBuilder>();
 
-            this.ModuleBuilder.Param.AddVirtualRecord();
-            var pb = new ParameterBuilder(this.ModuleBuilder, position, attributes, strParamName);
+            ModuleBuilder.Param.AddVirtualRecord();
+            var pb = new ParameterBuilder(ModuleBuilder, position, attributes, strParamName);
             if (parameters.Count == 0 || position >= parameters[parameters.Count - 1].Position)
             {
                 parameters.Add(pb);
             }
             else
             {
-                for (int i = 0; i < parameters.Count; i++)
+                for (var i = 0; i < parameters.Count; i++)
                 {
                     if (parameters[i].Position > position)
                     {
@@ -303,6 +304,7 @@ namespace IKVM.Reflection.Emit
                     }
                 }
             }
+
             return pb;
         }
 
@@ -642,7 +644,7 @@ namespace IKVM.Reflection.Emit
 
         internal void Bake()
         {
-            nameIndex = ModuleBuilder.Strings.Add(name);
+            nameIndex = ModuleBuilder.GetOrAddString(name);
             signature = ModuleBuilder.GetSignatureBlobIndex(MethodSignature);
 
             __ReleaseILGenerator();
@@ -656,33 +658,32 @@ namespace IKVM.Reflection.Emit
             get { return typeBuilder.ModuleBuilder; }
         }
 
-        internal void WriteMethodDefRecord(int baseRVA, MetadataWriter mw, ref int paramList)
+        internal void WriteMethodDefRecord(MetadataBuilder metadata, ref int paramList)
         {
-            if (rva != -1)
-                mw.Write(rva + baseRVA);
-            else
-                mw.Write(0);
-            mw.Write((short)implFlags);
-            mw.Write((short)attributes);
-            mw.WriteStringIndex(nameIndex);
-            mw.WriteBlobIndex(signature);
-            mw.WriteParam(paramList);
+            metadata.AddMethodDefinition(
+                (System.Reflection.MethodAttributes)attributes,
+                (System.Reflection.MethodImplAttributes)implFlags,
+                nameIndex,
+                signature,
+                rva,
+                MetadataTokens.ParameterHandle(paramList));
+
             if (parameters != null)
                 paramList += parameters.Count;
         }
 
-        internal void WriteParamRecords(MetadataWriter mw)
+        internal void WriteParamRecords(MetadataBuilder metadata)
         {
             if (parameters != null)
-                foreach (ParameterBuilder pb in parameters)
-                    pb.WriteParamRecord(mw);
+                foreach (var pb in parameters)
+                    pb.WriteParamRecord(metadata);
         }
 
         internal void FixupToken(int token, ref int parameterToken)
         {
             typeBuilder.ModuleBuilder.RegisterTokenFixup(this.pseudoToken, token);
             if (parameters != null)
-                foreach (ParameterBuilder pb in parameters)
+                foreach (var pb in parameters)
                     pb.FixupToken(parameterToken++);
         }
 
