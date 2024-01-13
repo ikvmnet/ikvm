@@ -263,9 +263,9 @@ namespace IKVM.Reflection.Emit
 
         internal override int GetCurrentToken()
         {
-            if (this.ModuleBuilder.IsSaved)
+            if (ModuleBuilder.IsSaved)
             {
-                return (GenericParamTable.Index << 24) | this.Module.GenericParam.GetIndexFixup()[paramPseudoIndex - 1] + 1;
+                return (GenericParamTable.Index << 24) | Module.GenericParam.GetIndexFixup()[paramPseudoIndex - 1] + 1;
             }
             else
             {

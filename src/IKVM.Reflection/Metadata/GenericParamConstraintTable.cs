@@ -25,7 +25,6 @@ using System.Diagnostics;
 using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -60,10 +59,10 @@ namespace IKVM.Reflection.Metadata
             for (int i = 0; i < rowCount; i++)
             {
                 var h = module.Metadata.AddGenericParameterConstraint(
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.GenericParameterHandle(records[i].Owner),
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.EntityHandle(records[i].Constraint));
+                    MetadataTokens.GenericParameterHandle(records[i].Owner),
+                    MetadataTokens.EntityHandle(records[i].Constraint));
 
-                Debug.Assert(h == System.Reflection.Metadata.Ecma335.MetadataTokens.GenericParameterConstraintHandle(i + 1));
+                Debug.Assert(h == MetadataTokens.GenericParameterConstraintHandle(i + 1));
             }
         }
 

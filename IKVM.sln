@@ -325,6 +325,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.runtime.win-arm6
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Reflection.Tests", "src\IKVM.Reflection.Tests\IKVM.Reflection.Tests.csproj", "{17755A44-22EC-4D28-B219-3C5CAE6317C8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Java.Tests.Util", "src\IKVM.Java.Tests.Util\IKVM.Java.Tests.Util.csproj", "{00AFE142-5F4F-48DD-90C1-20CC0512C43C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -803,6 +805,10 @@ Global
 		{17755A44-22EC-4D28-B219-3C5CAE6317C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{17755A44-22EC-4D28-B219-3C5CAE6317C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{17755A44-22EC-4D28-B219-3C5CAE6317C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

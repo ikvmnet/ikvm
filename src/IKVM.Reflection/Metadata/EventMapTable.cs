@@ -21,11 +21,7 @@
   jeroen@frijters.net
   
 */
-using System.Reflection.Metadata.Ecma335;
-
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {

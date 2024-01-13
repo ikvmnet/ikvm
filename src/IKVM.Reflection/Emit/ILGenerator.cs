@@ -385,7 +385,7 @@ namespace IKVM.Reflection.Emit
             if (opc.Value < 0)
                 code.Write((byte)(opc.Value >> 8));
 
-            code.Write((byte)opc.Value);
+            code.Write((byte)opc.Value);    
             switch (opc.FlowControl)
             {
                 case FlowControl.Branch:

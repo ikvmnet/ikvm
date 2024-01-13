@@ -26,8 +26,6 @@ using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -42,7 +40,7 @@ namespace IKVM.Reflection.Metadata
             internal int Method;
             internal int Association;
 
-            readonly int IRecord.SortKey => Association;
+            readonly int IRecord.SortKey => EncodeHasSemantics(Association);
 
             readonly int IRecord.FilterKey => Association;
 
@@ -72,27 +70,22 @@ namespace IKVM.Reflection.Metadata
         {
             for (int i = 0; i < rowCount; i++)
                 module.Metadata.AddMethodSemantics(
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.EntityHandle(records[i].Association),
+                    MetadataTokens.EntityHandle(records[i].Association),
                     (System.Reflection.MethodSemanticsAttributes)records[i].Semantics,
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.MethodDefinitionHandle(records[i].Method));
+                    MetadataTokens.MethodDefinitionHandle(records[i].Method));
         }
+
+        static internal int EncodeHasSemantics(int token) => (token >> 24) switch
+        {
+            EventTable.Index => (token & 0xFFFFFF) << 1 | 0,
+            PropertyTable.Index => (token & 0xFFFFFF) << 1 | 1,
+            _ => throw new InvalidOperationException(),
+        };
 
         internal void Fixup(ModuleBuilder moduleBuilder)
         {
             for (int i = 0; i < rowCount; i++)
-            {
                 moduleBuilder.FixupPseudoToken(ref records[i].Method);
-                int token = records[i].Association;
-                // do the HasSemantics encoding, so that we can sort the table
-                token = (token >> 24) switch
-                {
-                    EventTable.Index => (token & 0xFFFFFF) << 1 | 0,
-                    PropertyTable.Index => (token & 0xFFFFFF) << 1 | 1,
-                    _ => throw new InvalidOperationException(),
-                };
-
-                records[i].Association = token;
-            }
 
             Sort();
         }

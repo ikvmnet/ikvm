@@ -23,7 +23,6 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -61,7 +60,7 @@ namespace IKVM.Reflection.Metadata
             public Enumerator GetEnumerator()
             {
                 var records = table.records;
-                if (!table.Sorted)
+                if (table.Sorted == false)
                     return new Enumerator(records, table.RowCount - 1, -1, token);
 
                 int index = BinarySearch(records, table.RowCount, token & 0xFFFFFF);

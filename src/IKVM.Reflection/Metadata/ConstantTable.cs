@@ -83,16 +83,13 @@ namespace IKVM.Reflection.Metadata
             Sort();
         }
 
-        internal static int EncodeHasConstant(int token)
+        internal static int EncodeHasConstant(int token) => (token >> 24) switch
         {
-            return (token >> 24) switch
-            {
-                FieldTable.Index => (token & 0xFFFFFF) << 2 | 0,
-                ParamTable.Index => (token & 0xFFFFFF) << 2 | 1,
-                PropertyTable.Index => (token & 0xFFFFFF) << 2 | 2,
-                _ => throw new InvalidOperationException(),
-            };
-        }
+            FieldTable.Index => (token & 0xFFFFFF) << 2 | 0,
+            ParamTable.Index => (token & 0xFFFFFF) << 2 | 1,
+            PropertyTable.Index => (token & 0xFFFFFF) << 2 | 2,
+            _ => throw new InvalidOperationException(),
+        };
 
         internal object GetRawConstantValue(Module module, int parent)
         {

@@ -8,7 +8,7 @@ using java.util;
 
 using javax.tools;
 
-namespace IKVM.Tests.Util
+namespace IKVM.Java.Tests.Util
 {
 
     /// <summary>

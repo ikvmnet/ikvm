@@ -90,36 +90,33 @@ namespace IKVM.Reflection.Metadata
             Sort();
         }
 
-        internal static int EncodeHasCustomAttribute(int token)
+        internal static int EncodeHasCustomAttribute(int token) => (token >> 24) switch
         {
-            return (token >> 24) switch
-            {
-                MethodDefTable.Index => (token & 0xFFFFFF) << 5 | 0,
-                FieldTable.Index => (token & 0xFFFFFF) << 5 | 1,
-                TypeRefTable.Index => (token & 0xFFFFFF) << 5 | 2,
-                TypeDefTable.Index => (token & 0xFFFFFF) << 5 | 3,
-                ParamTable.Index => (token & 0xFFFFFF) << 5 | 4,
-                InterfaceImplTable.Index => (token & 0xFFFFFF) << 5 | 5,
-                MemberRefTable.Index => (token & 0xFFFFFF) << 5 | 6,
-                ModuleTable.Index => (token & 0xFFFFFF) << 5 | 7,
-                // LAMESPEC spec calls this Permission table
-                DeclSecurityTable.Index => throw new NotImplementedException(), //return (token & 0xFFFFFF) << 5 | 8;
-                PropertyTable.Index => (token & 0xFFFFFF) << 5 | 9,
-                EventTable.Index => (token & 0xFFFFFF) << 5 | 10,
-                StandAloneSigTable.Index => (token & 0xFFFFFF) << 5 | 11,
-                ModuleRefTable.Index => (token & 0xFFFFFF) << 5 | 12,
-                TypeSpecTable.Index => (token & 0xFFFFFF) << 5 | 13,
-                AssemblyTable.Index => (token & 0xFFFFFF) << 5 | 14,
-                AssemblyRefTable.Index => (token & 0xFFFFFF) << 5 | 15,
-                FileTable.Index => (token & 0xFFFFFF) << 5 | 16,
-                ExportedTypeTable.Index => (token & 0xFFFFFF) << 5 | 17,
-                ManifestResourceTable.Index => (token & 0xFFFFFF) << 5 | 18,
-                GenericParamTable.Index => (token & 0xFFFFFF) << 5 | 19,
-                GenericParamConstraintTable.Index => throw new NotImplementedException(), //return (token & 0xFFFFFF) << 5 | 20;
-                MethodSpecTable.Index => (token & 0xFFFFFF) << 5 | 21,
-                _ => throw new InvalidOperationException(),
-            };
-        }
+            MethodDefTable.Index => (token & 0xFFFFFF) << 5 | 0,
+            FieldTable.Index => (token & 0xFFFFFF) << 5 | 1,
+            TypeRefTable.Index => (token & 0xFFFFFF) << 5 | 2,
+            TypeDefTable.Index => (token & 0xFFFFFF) << 5 | 3,
+            ParamTable.Index => (token & 0xFFFFFF) << 5 | 4,
+            InterfaceImplTable.Index => (token & 0xFFFFFF) << 5 | 5,
+            MemberRefTable.Index => (token & 0xFFFFFF) << 5 | 6,
+            ModuleTable.Index => (token & 0xFFFFFF) << 5 | 7,
+            // LAMESPEC spec calls this Permission table
+            DeclSecurityTable.Index => throw new NotImplementedException(), //return (token & 0xFFFFFF) << 5 | 8;
+            PropertyTable.Index => (token & 0xFFFFFF) << 5 | 9,
+            EventTable.Index => (token & 0xFFFFFF) << 5 | 10,
+            StandAloneSigTable.Index => (token & 0xFFFFFF) << 5 | 11,
+            ModuleRefTable.Index => (token & 0xFFFFFF) << 5 | 12,
+            TypeSpecTable.Index => (token & 0xFFFFFF) << 5 | 13,
+            AssemblyTable.Index => (token & 0xFFFFFF) << 5 | 14,
+            AssemblyRefTable.Index => (token & 0xFFFFFF) << 5 | 15,
+            FileTable.Index => (token & 0xFFFFFF) << 5 | 16,
+            ExportedTypeTable.Index => (token & 0xFFFFFF) << 5 | 17,
+            ManifestResourceTable.Index => (token & 0xFFFFFF) << 5 | 18,
+            GenericParamTable.Index => (token & 0xFFFFFF) << 5 | 19,
+            GenericParamConstraintTable.Index => throw new NotImplementedException(), //return (token & 0xFFFFFF) << 5 | 20;
+            MethodSpecTable.Index => (token & 0xFFFFFF) << 5 | 21,
+            _ => throw new InvalidOperationException(),
+        };
 
     }
 

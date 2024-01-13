@@ -46,7 +46,7 @@ namespace IKVM.Reflection.Metadata
             // not part of the table, we use it to be able to fixup the GenericParamConstraint table
             internal int unsortedIndex;
 
-            readonly int IRecord.SortKey => Owner;
+            readonly int IRecord.SortKey => EncodeOwner(Owner);
 
             readonly int IRecord.FilterKey => Owner;
 
@@ -83,22 +83,19 @@ namespace IKVM.Reflection.Metadata
         {
             for (int i = 0; i < rowCount; i++)
             {
-                int token = records[i].Owner;
-                moduleBuilder.FixupPseudoToken(ref token);
-
-                // do the TypeOrMethodDef encoding, so that we can sort the table
-                records[i].Owner = (token >> 24) switch
-                {
-                    TypeDefTable.Index => (token & 0xFFFFFF) << 1 | 0,
-                    MethodDefTable.Index => (token & 0xFFFFFF) << 1 | 1,
-                    _ => throw new InvalidOperationException(),
-                };
-
+                moduleBuilder.FixupPseudoToken(ref records[i].Owner);
                 records[i].unsortedIndex = i;
             }
 
-            Array.Sort(records, 0, rowCount, this);
+            Sort();
         }
+
+        internal static int EncodeOwner(int token) => (token >> 24) switch
+        {
+            TypeDefTable.Index => (token & 0xFFFFFF) << 1 | 0,
+            MethodDefTable.Index => (token & 0xFFFFFF) << 1 | 1,
+            _ => throw new InvalidOperationException(),
+        };
 
         int IComparer<Record>.Compare(Record x, Record y)
         {

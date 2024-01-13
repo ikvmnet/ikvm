@@ -39,13 +39,16 @@ namespace IKVM.Reflection
     public sealed class Universe : IDisposable
     {
 
+        public static readonly string NetCoreLibName = "System.Runtime";
+        public static readonly string NetFxCoreLibName = "mscorlib";
+
 #if NETCOREAPP3_1_OR_GREATER
 
-        public static readonly string DefaultCoreLibName = "System.Runtime";
+        public static readonly string DefaultCoreLibName = NetCoreLibName;
 
 #elif NETFRAMEWORK
 
-        public static readonly string DefaultCoreLibName = "mscorlib";
+        public static readonly string DefaultCoreLibName = NetFxCoreLibName;
 
 #endif
 
