@@ -77,7 +77,7 @@ namespace IKVM.Reflection.Writer
             moduleBuilder.FixupMethodBodyTokens();
 
             int moduleVersionIdIndex = moduleBuilder.Guids.Add(moduleBuilder.GetModuleVersionIdOrEmpty());
-            moduleBuilder.ModuleTable.Add(0, moduleBuilder.Strings.Add(moduleBuilder.moduleName), moduleVersionIdIndex, 0, 0);
+            moduleBuilder.Metadata.GetOrAddUserString("");
 
             if (moduleBuilder.UserStrings.IsEmpty)
             {
