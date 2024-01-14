@@ -509,7 +509,7 @@ namespace IKVM.Reflection.Emit
             {
                 var rec = new PropertyMapTable.Record();
                 rec.Parent = token;
-                rec.PropertyList = ModuleBuilder.Property.RowCount + 1;
+                rec.PropertyList = MetadataTokens.GetToken(MetadataTokens.PropertyDefinitionHandle(ModuleBuilder.Property.RowCount + 1));
                 ModuleBuilder.PropertyMap.AddRecord(rec);
                 foreach (var pb in properties)
                     pb.Bake();
@@ -519,7 +519,7 @@ namespace IKVM.Reflection.Emit
             {
                 var rec = new EventMapTable.Record();
                 rec.Parent = token;
-                rec.EventList = ModuleBuilder.Event.RowCount + 1;
+                rec.EventList = MetadataTokens.GetToken(MetadataTokens.EventDefinitionHandle(ModuleBuilder.Event.RowCount + 1));
                 ModuleBuilder.EventMap.AddRecord(rec);
                 foreach (var eb in events)
                     eb.Bake();

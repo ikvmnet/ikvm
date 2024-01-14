@@ -192,9 +192,9 @@ namespace IKVM.Reflection.Emit
 
         private void AddConstraint(Type type)
         {
-            GenericParamConstraintTable.Record rec = new GenericParamConstraintTable.Record();
-            rec.Owner = paramPseudoIndex;
-            rec.Constraint = this.ModuleBuilder.GetTypeTokenForMemberRef(type);
+            var rec = new GenericParamConstraintTable.Record();
+            rec.Owner = MetadataTokens.GetToken(MetadataTokens.GenericParameterHandle(paramPseudoIndex));
+            rec.Constraint = ModuleBuilder.GetTypeTokenForMemberRef(type);
             this.ModuleBuilder.GenericParamConstraint.AddRecord(rec);
         }
 

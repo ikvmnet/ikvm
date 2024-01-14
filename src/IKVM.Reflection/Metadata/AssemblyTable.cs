@@ -34,6 +34,7 @@ namespace IKVM.Reflection.Metadata
 
         internal struct Record
         {
+
             internal int HashAlgId;
             internal ushort MajorVersion;
             internal ushort MinorVersion;
@@ -43,6 +44,7 @@ namespace IKVM.Reflection.Metadata
             internal BlobHandle PublicKey;
             internal StringHandle Name;
             internal StringHandle Culture;
+
         }
 
         internal const int Index = 0x20;

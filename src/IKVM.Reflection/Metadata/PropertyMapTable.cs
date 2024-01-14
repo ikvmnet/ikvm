@@ -21,13 +21,15 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Generic;
+using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection.Metadata
 {
+
     sealed class PropertyMapTable : SortedTable<PropertyMapTable.Record>
     {
 
@@ -37,9 +39,9 @@ namespace IKVM.Reflection.Metadata
             internal int Parent;
             internal int PropertyList;
 
-            readonly int IRecord.SortKey => Parent;
-
             readonly int IRecord.FilterKey => Parent;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(Parent, other.Parent);
 
         }
 
@@ -58,8 +60,8 @@ namespace IKVM.Reflection.Metadata
         {
             for (int i = 0; i < rowCount; i++)
                 module.Metadata.AddPropertyMap(
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.TypeDefinitionHandle(records[i].Parent),
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.PropertyDefinitionHandle(records[i].PropertyList));
+                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].Parent),
+                    (PropertyDefinitionHandle)MetadataTokens.EntityHandle(records[i].PropertyList));
         }
     }
 

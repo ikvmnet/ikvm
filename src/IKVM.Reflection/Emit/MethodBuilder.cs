@@ -681,7 +681,7 @@ namespace IKVM.Reflection.Emit
 
         internal void FixupToken(int token, ref int parameterToken)
         {
-            typeBuilder.ModuleBuilder.RegisterTokenFixup(this.pseudoToken, token);
+            typeBuilder.ModuleBuilder.RegisterTokenFixup(pseudoToken, token);
             if (parameters != null)
                 foreach (var pb in parameters)
                     pb.FixupToken(parameterToken++);

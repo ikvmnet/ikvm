@@ -21,6 +21,10 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
@@ -35,9 +39,10 @@ namespace IKVM.Reflection.Metadata
             internal int Offset;
             internal int Field;
 
-            readonly int IRecord.SortKey => Field;
-
             readonly int IRecord.FilterKey => Field;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(Field, other.Field);
+
         }
 
         internal const int Index = 0x10;
@@ -55,7 +60,7 @@ namespace IKVM.Reflection.Metadata
         {
             for (int i = 0; i < rowCount; i++)
                 module.Metadata.AddFieldLayout(
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.FieldDefinitionHandle(records[i].Field),
+                    (FieldDefinitionHandle)MetadataTokens.EntityHandle(records[i].Field),
                     records[i].Offset);
         }
 

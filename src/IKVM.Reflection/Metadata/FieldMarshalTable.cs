@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections.Generic;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 
@@ -29,6 +30,7 @@ using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
+
     sealed class FieldMarshalTable : SortedTable<FieldMarshalTable.Record>
     {
 
@@ -38,9 +40,9 @@ namespace IKVM.Reflection.Metadata
             internal int Parent;
             internal BlobHandle NativeType;
 
-            readonly int IRecord.SortKey => EncodeHasFieldMarshal(Parent);
-
             readonly int IRecord.FilterKey => Parent;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(EncodeHasFieldMarshal(Parent), EncodeHasFieldMarshal(other.Parent));
 
         }
 

@@ -43,7 +43,7 @@ namespace IKVM.Reflection.Emit
         readonly TypeBuilder typeBuilder;
         readonly string name;
         EventAttributes attributes;
-        readonly int eventtype;
+        readonly int eventType;
         MethodBuilder addOnMethod;
         MethodBuilder removeOnMethod;
         MethodBuilder fireMethod;
@@ -62,7 +62,7 @@ namespace IKVM.Reflection.Emit
             this.typeBuilder = typeBuilder;
             this.name = name;
             this.attributes = attributes;
-            this.eventtype = typeBuilder.ModuleBuilder.GetTypeTokenForMemberRef(eventtype);
+            this.eventType = typeBuilder.ModuleBuilder.GetTypeTokenForMemberRef(eventtype);
         }
 
         public void SetAddOnMethod(MethodBuilder mdBuilder)
@@ -185,7 +185,7 @@ namespace IKVM.Reflection.Emit
 
         public override Type EventHandlerType
         {
-            get { return typeBuilder.ModuleBuilder.ResolveType(eventtype); }
+            get { return typeBuilder.ModuleBuilder.ResolveType(eventType); }
         }
 
         internal void Bake()
@@ -193,9 +193,9 @@ namespace IKVM.Reflection.Emit
             var rec = new EventTable.Record();
             rec.EventFlags = (short)attributes;
             rec.Name = typeBuilder.ModuleBuilder.GetOrAddString(name);
-            rec.EventType = eventtype;
-            var token = MetadataTokens.GetToken(MetadataTokens.EventDefinitionHandle(typeBuilder.ModuleBuilder.Event.AddRecord(rec)));
+            rec.EventType = eventType;
 
+            var token = MetadataTokens.GetToken(MetadataTokens.EventDefinitionHandle(typeBuilder.ModuleBuilder.Event.AddRecord(rec)));
             if (lazyPseudoToken == 0)
                 lazyPseudoToken = token;
             else

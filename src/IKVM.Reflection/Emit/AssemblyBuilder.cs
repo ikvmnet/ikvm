@@ -439,7 +439,6 @@ namespace IKVM.Reflection.Emit
             foreach (var moduleBuilder in modules)
             {
                 moduleBuilder.FillAssemblyRefTable();
-                moduleBuilder.EmitResources();
 
                 if (moduleBuilder != manifestModule)
                 {
@@ -456,8 +455,6 @@ namespace IKVM.Reflection.Emit
 
                     moduleBuilder.ExportTypes(fileToken, manifestModule);
                 }
-
-                moduleBuilder.CloseResources();
             }
 
             foreach (var module in addedModules)
@@ -467,7 +464,7 @@ namespace IKVM.Reflection.Emit
             }
 
             if (entryPointToken.IsNil && entryPoint != null)
-                entryPointToken = MetadataTokens.MethodDefinitionHandle(entryPoint.MetadataToken);
+                entryPointToken = (MethodDefinitionHandle)MetadataTokens.EntityHandle(entryPoint.MetadataToken);
 
             // finally, write the manifest module
             ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, unmanagedResources ?? manifestModule.unmanagedResources, entryPointToken, streamOrNull);
@@ -509,13 +506,12 @@ namespace IKVM.Reflection.Emit
         {
             // FXBUG we ignore the description, because there is no such thing
 
-            string fullPath = fileName;
+            var fullPath = fileName;
             if (dir != null)
-            {
                 fullPath = Path.Combine(dir, fileName);
-            }
-            ResourceWriter rw = new ResourceWriter(fullPath);
-            ResourceFile resfile;
+
+            var rw = new ResourceWriter(fullPath);
+            var resfile = new ResourceFile();
             resfile.Name = name;
             resfile.FileName = fileName;
             resfile.Attributes = attribute;

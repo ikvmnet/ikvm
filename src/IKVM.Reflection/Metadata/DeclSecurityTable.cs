@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -40,9 +41,9 @@ namespace IKVM.Reflection.Metadata
             internal int Parent;
             internal BlobHandle PermissionSet;
 
-            readonly int IRecord.SortKey => Parent;
-
             readonly int IRecord.FilterKey => Parent;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(Parent, other.Parent);
 
         }
 

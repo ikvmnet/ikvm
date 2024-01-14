@@ -32,7 +32,7 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Reflection.Metadata
 {
 
-    sealed class GenericParamTable : SortedTable<GenericParamTable.Record>, IComparer<GenericParamTable.Record>
+    sealed class GenericParamTable : SortedTable<GenericParamTable.Record>
     {
 
         internal struct Record : IRecord
@@ -43,12 +43,20 @@ namespace IKVM.Reflection.Metadata
             internal int Owner;
             internal StringHandle Name;
 
-            // not part of the table, we use it to be able to fixup the GenericParamConstraint table
-            internal int unsortedIndex;
-
-            readonly int IRecord.SortKey => EncodeOwner(Owner);
+            /// <summary>
+            /// Original index of the record before sort.
+            /// </summary>
+            internal int UnsortedIndex;
 
             readonly int IRecord.FilterKey => Owner;
+
+            public readonly int CompareTo(Record other)
+            {
+                if (Owner == other.Owner)
+                    return Comparer<short>.Default.Compare(Number, other.Number);
+                else
+                    return Comparer<int>.Default.Compare(EncodeOwner(Owner), EncodeOwner(other.Owner));
+            }
 
         }
 
@@ -84,7 +92,7 @@ namespace IKVM.Reflection.Metadata
             for (int i = 0; i < rowCount; i++)
             {
                 moduleBuilder.FixupPseudoToken(ref records[i].Owner);
-                records[i].unsortedIndex = i;
+                records[i].UnsortedIndex = i;
             }
 
             Sort();
@@ -97,14 +105,6 @@ namespace IKVM.Reflection.Metadata
             _ => throw new InvalidOperationException(),
         };
 
-        int IComparer<Record>.Compare(Record x, Record y)
-        {
-            if (x.Owner == y.Owner)
-                return x.Number == y.Number ? 0 : (x.Number > y.Number ? 1 : -1);
-
-            return x.Owner > y.Owner ? 1 : -1;
-        }
-
         internal void PatchAttribute(int token, GenericParameterAttributes genericParameterAttributes)
         {
             records[(token & 0xFFFFFF) - 1].Flags = (short)genericParameterAttributes;
@@ -114,7 +114,7 @@ namespace IKVM.Reflection.Metadata
         {
             var array = new int[rowCount];
             for (int i = 0; i < rowCount; i++)
-                array[records[i].unsortedIndex] = i;
+                array[records[i].UnsortedIndex] = i;
 
             return array;
         }

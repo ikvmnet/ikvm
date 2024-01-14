@@ -608,6 +608,7 @@ namespace IKVM.Tools.Importer
             else
             {
                 Tracer.Info(Tracer.Compiler, "CompilerClassLoader saving {0} in {1}", assemblyFile, assemblyDir);
+
                 try
                 {
                     assemblyBuilder.Save(assemblyFile, options.pekind, options.imageFileMachine);
@@ -623,104 +624,90 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private void AddJavaModuleAttribute(ModuleBuilder mb)
+        void AddJavaModuleAttribute(ModuleBuilder mb)
         {
-            Type typeofJavaModuleAttribute = Context.Resolver.ResolveRuntimeType(typeof(JavaModuleAttribute).FullName);
-            PropertyInfo[] propInfos = new PropertyInfo[] {
-                typeofJavaModuleAttribute.GetProperty("Jars")
-            };
-            object[] propValues = new object[] {
-                jarList.ToArray()
-            };
+            var typeofJavaModuleAttribute = Context.Resolver.ResolveRuntimeType(typeof(JavaModuleAttribute).FullName);
+            var propInfos = new[] { typeofJavaModuleAttribute.GetProperty("Jars") };
+            var propValues = new object[] { jarList.ToArray() };
+
             if (nameMappings.Count > 0)
             {
-                string[] list = new string[nameMappings.Count * 2];
+                var list = new string[nameMappings.Count * 2];
                 int i = 0;
-                foreach (KeyValuePair<string, string> kv in nameMappings)
+                foreach (var kv in nameMappings)
                 {
                     list[i++] = kv.Key;
                     list[i++] = kv.Value;
                 }
+
                 list = UnicodeUtil.EscapeInvalidSurrogates(list);
-                CustomAttributeBuilder cab = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor(new Type[] { Context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType() }), new object[] { list }, propInfos, propValues);
+                var cab = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor(new Type[] { Context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType() }), new object[] { list }, propInfos, propValues);
                 mb.SetCustomAttribute(cab);
             }
             else
             {
-                CustomAttributeBuilder cab = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor(Type.EmptyTypes), new object[0], propInfos, propValues);
+                var cab = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor(Type.EmptyTypes), new object[0], propInfos, propValues);
                 mb.SetCustomAttribute(cab);
             }
         }
 
-        private static void AddExportMapEntry(Dictionary<string, List<string>> map, CompilerClassLoader ccl, string name)
+        static void AddExportMapEntry(Dictionary<string, List<string>> map, CompilerClassLoader ccl, string name)
         {
             string assemblyName = ccl.assemblyBuilder.FullName;
-            List<string> list;
-            if (!map.TryGetValue(assemblyName, out list))
+
+            if (map.TryGetValue(assemblyName, out var list) == false)
             {
                 list = new List<string>();
                 map.Add(assemblyName, list);
             }
+
             if (list != null) // if list is null, we already have a wildcard export for this assembly
-            {
                 list.Add(name);
-            }
         }
 
-        private void AddWildcardExports(Dictionary<string, List<string>> exportedNamesPerAssembly)
+        void AddWildcardExports(Dictionary<string, List<string>> exportedNamesPerAssembly)
         {
-            foreach (RuntimeAssemblyClassLoader acl in referencedAssemblies)
-            {
+            foreach (var acl in referencedAssemblies)
                 exportedNamesPerAssembly[acl.MainAssembly.FullName] = null;
-            }
         }
 
-        private void WriteExportMap()
+        void WriteExportMap()
         {
-            Dictionary<string, List<string>> exportedNamesPerAssembly = new Dictionary<string, List<string>>();
+            var exportedNamesPerAssembly = new Dictionary<string, List<string>>();
+
             AddWildcardExports(exportedNamesPerAssembly);
             foreach (var tw in dynamicallyImportedTypes)
-            {
                 AddExportMapEntry(exportedNamesPerAssembly, (CompilerClassLoader)tw.GetClassLoader(), tw.Name);
-            }
+
             if (options.sharedclassloader == null)
             {
-                foreach (CompilerClassLoader ccl in peerReferences)
-                {
+                foreach (var ccl in peerReferences)
                     exportedNamesPerAssembly[ccl.assemblyBuilder.FullName] = null;
-                }
             }
             else
             {
-                foreach (CompilerClassLoader ccl in options.sharedclassloader)
+                foreach (var ccl in options.sharedclassloader)
                 {
                     if (ccl != this)
                     {
                         ccl.AddWildcardExports(exportedNamesPerAssembly);
-                        foreach (Jar jar in ccl.options.jars)
-                        {
-                            foreach (Jar.Item item in jar)
-                            {
-                                if (!item.IsStub)
-                                {
+                        foreach (var jar in ccl.options.jars)
+                            foreach (var item in jar)
+                                if (item.IsStub == false)
                                     AddExportMapEntry(exportedNamesPerAssembly, ccl, item.Name);
-                                }
-                            }
-                        }
+
                         if (ccl.options.externalResources != null)
-                        {
                             foreach (string name in ccl.options.externalResources.Keys)
-                            {
                                 AddExportMapEntry(exportedNamesPerAssembly, ccl, name);
-                            }
-                        }
                     }
                 }
             }
-            MemoryStream ms = new MemoryStream();
-            BinaryWriter bw = new BinaryWriter(ms);
+
+            var ms = new MemoryStream();
+            var bw = new BinaryWriter(ms);
             bw.Write(exportedNamesPerAssembly.Count);
-            foreach (KeyValuePair<string, List<string>> kv in exportedNamesPerAssembly)
+
+            foreach (var kv in exportedNamesPerAssembly)
             {
                 bw.Write(kv.Key);
                 if (kv.Value == null)
@@ -732,17 +719,15 @@ namespace IKVM.Tools.Importer
                 {
                     Debug.Assert(kv.Value.Count != 0);
                     bw.Write(kv.Value.Count);
-                    foreach (string name in kv.Value)
-                    {
+                    foreach (var name in kv.Value)
                         bw.Write(JVM.PersistableHash(name));
-                    }
                 }
             }
             ms.Position = 0;
-            this.GetTypeWrapperFactory().ModuleBuilder.DefineManifestResource("ikvm.exports", ms, ResourceAttributes.Public);
+            GetTypeWrapperFactory().ModuleBuilder.DefineManifestResource("ikvm.exports", ms, ResourceAttributes.Public);
         }
 
-        private void WriteResources()
+        void WriteResources()
         {
             Tracer.Info(Tracer.Compiler, "CompilerClassLoader adding resources...");
 
@@ -753,7 +738,7 @@ namespace IKVM.Tools.Importer
             {
                 var hasEntries = false;
                 var mem = new MemoryStream();
-                using (ZipArchive zip = new ZipArchive(mem, ZipArchiveMode.Create))
+                using (var zip = new ZipArchive(mem, ZipArchiveMode.Create))
                 {
                     var stubs = new List<string>();
                     foreach (Jar.Item item in options.jars[i])
@@ -779,29 +764,27 @@ namespace IKVM.Tools.Importer
                     if (stubs.Count != 0)
                     {
                         // generate the --ikvm-classes-- file in the jar
-                        ZipArchiveEntry zipEntry = zip.CreateEntry(JVM.Internal.JarClassList);
+                        var zipEntry = zip.CreateEntry(JVM.Internal.JarClassList);
 
                         using Stream stream = zipEntry.Open();
                         using BinaryWriter bw = new BinaryWriter(stream);
 
                         bw.Write(stubs.Count);
                         foreach (string classFile in stubs)
-                        {
                             bw.Write(classFile);
-                        }
 
                         hasEntries = true;
                     }
                 }
+
                 // don't include empty classes.jar
                 if (i != options.classesJar || hasEntries)
                 {
                     mem = new MemoryStream(mem.ToArray());
-                    string name = options.jars[i].Name;
+                    var name = options.jars[i].Name;
                     if (options.targetIsModule)
-                    {
                         name = Path.GetFileNameWithoutExtension(name) + "-" + moduleBuilder.ModuleVersionId.ToString("N") + Path.GetExtension(name);
-                    }
+
                     jarList.Add(name);
                     moduleBuilder.DefineManifestResource(name, mem, ResourceAttributes.Public);
                 }
@@ -2998,13 +2981,11 @@ namespace IKVM.Tools.Importer
             }
             Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
             WriteResources();
+
             if (options.externalResources != null)
-            {
                 foreach (KeyValuePair<string, string> kv in options.externalResources)
-                {
                     assemblyBuilder.AddResourceFile(JVM.MangleResourceName(kv.Key), kv.Value);
-                }
-            }
+
             if (options.fileversion != null)
             {
                 CustomAttributeBuilder filever = new CustomAttributeBuilder(Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyFileVersionAttribute).FullName).GetConstructor(new Type[] { Context.Types.String }), new object[] { options.fileversion });

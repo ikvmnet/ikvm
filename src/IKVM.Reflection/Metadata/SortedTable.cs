@@ -31,10 +31,8 @@ namespace IKVM.Reflection.Metadata
         where T : SortedTable<T>.IRecord
     {
 
-        internal interface IRecord
+        internal interface IRecord : IComparable<T>
         {
-
-            int SortKey { get; }
 
             int FilterKey { get; }
 
@@ -147,54 +145,7 @@ namespace IKVM.Reflection.Metadata
         /// </summary>
         protected void Sort()
         {
-#if NETFRAMEWORK
-            HeapSort();
-#else
-            if (rowCount < 256)
-                StackSort();
-            else
-                HeapSort();
-#endif
-        }
-
-#if NETFRAMEWORK == false
-
-        /// <summary>
-        /// Sorts the rows without allocating a temporary array on the heap.
-        /// </summary>
-        unsafe void StackSort()
-        {
-            var map = (Span<ulong>)stackalloc ulong[rowCount];
-            for (int i = 0; i < rowCount; i++)
-                map[i] = ((ulong)records[i].SortKey << 32) | (uint)i;
-
-            map.Sort(Comparer<ulong>.Default);
-            var newRecords = new T[rowCount];
-            for (int i = 0; i < rowCount; i++)
-                newRecords[i] = records[(int)map[i]];
-
-            records = newRecords;
-            return;
-        }
-
-#endif
-
-        /// <summary>
-        /// Sorts the rows while allocating a temporary array on the heap.
-        /// </summary>
-        void HeapSort()
-        {
-            var map = new ulong[rowCount];
-            for (uint i = 0; i < map.Length; i++)
-                map[i] = ((ulong)records[i].SortKey << 32) | i;
-
-            Array.Sort(map, Comparer<ulong>.Default);
-            var newRecords = new T[rowCount];
-            for (int i = 0; i < map.Length; i++)
-                newRecords[i] = records[(int)map[i]];
-
-            records = newRecords;
-            return;
+            Array.Sort(records, 0, rowCount, Comparer<T>.Default);
         }
 
     }

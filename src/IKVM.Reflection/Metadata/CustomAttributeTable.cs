@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -40,9 +41,9 @@ namespace IKVM.Reflection.Metadata
             internal int Constructor;
             internal BlobHandle Value;
 
-            readonly int IRecord.SortKey => EncodeHasCustomAttribute(Parent);
-
             readonly int IRecord.FilterKey => Parent;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(EncodeHasCustomAttribute(Parent), EncodeHasCustomAttribute(other.Parent));
 
         }
 
@@ -68,7 +69,7 @@ namespace IKVM.Reflection.Metadata
                     MetadataTokens.EntityHandle(records[i].Constructor),
                     records[i].Value);
 
-                Debug.Assert(h == MetadataTokens.CustomAttributeHandle(i));
+                Debug.Assert(h == MetadataTokens.CustomAttributeHandle(i + 1));
             }
         }
 
@@ -80,7 +81,7 @@ namespace IKVM.Reflection.Metadata
             {
                 moduleBuilder.FixupPseudoToken(ref records[i].Constructor);
                 moduleBuilder.FixupPseudoToken(ref records[i].Parent);
-                if (records[i].Parent >> 24 == GenericParamTable.Index)
+                if (MetadataTokens.EntityHandle(records[i].Parent).Kind == HandleKind.GenericParameter)
                     records[i].Parent = (GenericParamTable.Index << 24) + genericParamFixup[(records[i].Parent & 0xFFFFFF) - 1] + 1;
 
                 // TODO if we ever add support for custom attributes on DeclSecurity or GenericParamConstraint

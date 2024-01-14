@@ -21,10 +21,13 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Generic;
+
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
+
     sealed class FieldRVATable : SortedTable<FieldRVATable.Record>
     {
 
@@ -34,9 +37,9 @@ namespace IKVM.Reflection.Metadata
             internal int RVA; // we set the high bit to signify that the RVA is in the CIL stream (instead of .sdata)
             internal int Field;
 
-            int IRecord.SortKey => Field;
+            readonly int IRecord.FilterKey => Field;
 
-            int IRecord.FilterKey => Field;
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(Field, other.Field);
 
         }
 

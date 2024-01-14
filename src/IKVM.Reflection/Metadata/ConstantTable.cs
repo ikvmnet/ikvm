@@ -22,12 +22,12 @@
   
 */
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -43,9 +43,9 @@ namespace IKVM.Reflection.Metadata
             internal BlobHandle Offset;
             internal object Value;
 
-            readonly int IRecord.SortKey => EncodeHasConstant(Parent);
-
             readonly int IRecord.FilterKey => Parent;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(EncodeHasConstant(Parent), EncodeHasConstant(other.Parent));
 
         }
 
@@ -75,10 +75,10 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal void Fixup(ModuleBuilder moduleBuilder)
+        internal void Fixup(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
-                moduleBuilder.FixupPseudoToken(ref records[i].Parent);
+                module.FixupPseudoToken(ref records[i].Parent);
 
             Sort();
         }

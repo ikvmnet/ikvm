@@ -205,9 +205,172 @@ namespace IKVM.Reflection.Tests
             var t = a.GetType("Impl");
             t.IsInterface.Should().BeFalse();
             t.IsClass.Should().BeTrue();
+            t.GetInterfaces().Should().Contain(i);
             var m = t.GetMethod("Method");
             m.Should().NotBeNull();
             m.Should().Return(tempLoad.CoreAssembly.GetType("System.Object"));
+        }
+
+        /// <summary>
+        /// Due to the unique sorting requirements of InterfaceImpl, we check that we can emit two different sorted by a differnt class.
+        /// </summary>
+        /// <param name="framework"></param>
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void CanWriteMultipleInterfaceImplementation(FrameworkSpec framework)
+        {
+            if (Init(framework, out var universe, out var resolver, out var verifier, out var tempPath, out var tempLoad) == false)
+                return;
+
+            var assembly = universe.DefineDynamicAssembly(new AssemblyName("Test"), AssemblyBuilderAccess.Save, tempPath);
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+
+            var iface1Type = module.DefineType("Iface1", TypeAttributes.Interface);
+            var iface1Method = iface1Type.DefineMethod("Method1", MethodAttributes.Abstract, universe.Import(typeof(object)), Array.Empty<Type>());
+
+            var iface2Type = module.DefineType("Iface2", TypeAttributes.Interface);
+            var iface2Method = iface2Type.DefineMethod("Method2", MethodAttributes.Abstract, universe.Import(typeof(object)), Array.Empty<Type>());
+
+            var impl1Type = module.DefineType("Impl1", TypeAttributes.Public, null, new[] { iface1Type });
+            var impl1Method = impl1Type.DefineMethod("Method1", MethodAttributes.Public, universe.Import(typeof(object)), Array.Empty<Type>());
+
+            var il1 = impl1Method.GetILGenerator();
+            il1.Emit(OpCodes.Ldnull);
+            il1.Emit(OpCodes.Ret);
+
+            var impl2Type = module.DefineType("Impl2", TypeAttributes.Public, null, new[] { iface2Type });
+            var impl2Method = impl2Type.DefineMethod("Method2", MethodAttributes.Public, universe.Import(typeof(object)), Array.Empty<Type>());
+
+            impl2Type.DefineMethodOverride(iface2Method, impl2Method);
+            impl1Type.DefineMethodOverride(iface1Method, impl1Method);
+
+            var il2 = impl2Method.GetILGenerator();
+            il2.Emit(OpCodes.Ldnull);
+            il2.Emit(OpCodes.Ret);
+
+            iface1Type.CreateType();
+            iface2Type.CreateType();
+            impl1Type.CreateType();
+            impl2Type.CreateType();
+            assembly.Save("Test.dll");
+
+            foreach (var v in verifier.Verify(new PEReader(File.OpenRead(Path.Combine(tempPath, "Test.dll")))))
+                v.Code.Should().Be(ILVerify.VerifierError.None);
+
+            var a = tempLoad.LoadFromAssemblyPath(Path.Combine(tempPath, "Test.dll"));
+            var i1 = a.GetType("Iface1");
+            i1.IsInterface.Should().BeTrue();
+            i1.Should().HaveMethod("Method1", Array.Empty<System.Type>());
+            var i2 = a.GetType("Iface2");
+            i2.IsInterface.Should().BeTrue();
+            i2.Should().HaveMethod("Method2", Array.Empty<System.Type>());
+            var t1 = a.GetType("Impl1");
+            t1.IsInterface.Should().BeFalse();
+            t1.IsClass.Should().BeTrue();
+            t1.GetInterfaces().Should().Contain(i1);
+            var m1 = t1.GetMethod("Method1");
+            m1.Should().NotBeNull();
+            m1.Should().Return(tempLoad.CoreAssembly.GetType("System.Object"));
+            var t2 = a.GetType("Impl2");
+            t2.IsInterface.Should().BeFalse();
+            t2.IsClass.Should().BeTrue();
+            t2.GetInterfaces().Should().Contain(i2);
+            var m2 = t2.GetMethod("Method2");
+            m2.Should().NotBeNull();
+            m2.Should().Return(tempLoad.CoreAssembly.GetType("System.Object"));
+        }
+
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void CanWriteConstantFieldValue(FrameworkSpec framework)
+        {
+            if (Init(framework, out var universe, out var resolver, out var verifier, out var tempPath, out var tempLoad) == false)
+                return;
+
+            var assembly = universe.DefineDynamicAssembly(new AssemblyName("Test"), AssemblyBuilderAccess.Save, tempPath);
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+
+            var type = module.DefineType("Test");
+            var field = type.DefineField("value", universe.Import(typeof(int)), FieldAttributes.Public | FieldAttributes.Static);
+            field.SetConstant(128);
+            type.CreateType();
+            assembly.Save("Test.dll");
+
+            foreach (var v in verifier.Verify(new PEReader(File.OpenRead(Path.Combine(tempPath, "Test.dll")))))
+                v.Code.Should().Be(ILVerify.VerifierError.None);
+
+            var a = tempLoad.LoadFromAssemblyPath(Path.Combine(tempPath, "Test.dll"));
+            var t = a.GetType("Test");
+            var f = t.GetField("value");
+            f.FieldType.Should().Be(tempLoad.CoreAssembly.GetType("System.Int32"));
+        }
+
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void CanWriteCustomAttributeWithArgument(FrameworkSpec framework)
+        {
+            if (Init(framework, out var universe, out var resolver, out var verifier, out var tempPath, out var tempLoad) == false)
+                return;
+
+            var assembly = universe.DefineDynamicAssembly(new AssemblyName("Test"), AssemblyBuilderAccess.Save, tempPath);
+            var cab = new CustomAttributeBuilder(universe.Import(typeof(AssemblyVersionAttribute)).GetConstructor(new[] { universe.Import(typeof(string)) }), new[] { "1.0.0.0" });
+            assembly.SetCustomAttribute(cab);
+
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+            var type = module.DefineType("Test");
+            type.CreateType();
+            assembly.Save("Test.dll");
+
+            foreach (var v in verifier.Verify(new PEReader(File.OpenRead(Path.Combine(tempPath, "Test.dll")))))
+                v.Code.Should().Be(ILVerify.VerifierError.None);
+
+            var a = tempLoad.LoadFromAssemblyPath(Path.Combine(tempPath, "Test.dll"));
+            var d = a.GetCustomAttributesData();
+            d.Should().HaveCount(1);
+            d[0].ConstructorArguments.Should().HaveCount(1);
+            d[0].ConstructorArguments[0].Value.Should().Be("1.0.0.0");
+            d[0].Constructor.Should().BeSameAs(tempLoad.CoreAssembly.GetType("System.Reflection.AssemblyVersionAttribute").GetConstructor(new[] { tempLoad.CoreAssembly.GetType("System.String") }));
+        }
+
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void CanWriteManifestResources(FrameworkSpec framework)
+        {
+            if (Init(framework, out var universe, out var resolver, out var verifier, out var tempPath, out var tempLoad) == false)
+                return;
+
+            var assembly = universe.DefineDynamicAssembly(new AssemblyName("Test"), AssemblyBuilderAccess.Save, tempPath);
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+            var type = module.DefineType("Test");
+            module.DefineManifestResource("Resource1", new MemoryStream(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 }), ResourceAttributes.Public);
+            module.DefineManifestResource("Resource2", new MemoryStream(new byte[] { 0x06, 0x07, 0x08, 0x09, 0x0a }), ResourceAttributes.Public);
+            module.DefineManifestResource("Resource3", new MemoryStream(new byte[] { 0x0b, 0x0c, 0x0d, 0x0e, 0x0f }), ResourceAttributes.Public);
+            type.CreateType();
+            assembly.Save("Test.dll");
+
+            foreach (var v in verifier.Verify(new PEReader(File.OpenRead(Path.Combine(tempPath, "Test.dll")))))
+                v.Code.Should().Be(ILVerify.VerifierError.None);
+
+            var a = tempLoad.LoadFromAssemblyPath(Path.Combine(tempPath, "Test.dll"));
+            a.GetManifestResourceNames().Should().HaveCount(3);
+
+            var res1 = a.GetManifestResourceStream("Resource1");
+            res1.Should().HaveLength(5);
+            var buf1 = new byte[res1.Length];
+            res1.Read(buf1, 0, (int)res1.Length);
+            buf1.Should().BeEquivalentTo(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 });
+
+            var res2 = a.GetManifestResourceStream("Resource2");
+            res2.Should().HaveLength(5);
+            var buf2 = new byte[res2.Length];
+            res2.Read(buf2, 0, (int)res2.Length);
+            buf2.Should().BeEquivalentTo(new byte[] { 0x06, 0x07, 0x08, 0x09, 0x0a });
+
+            var res3 = a.GetManifestResourceStream("Resource3");
+            res3.Should().HaveLength(5);
+            var buf3 = new byte[res3.Length];
+            res3.Read(buf3, 0, (int)res3.Length);
+            buf3.Should().BeEquivalentTo(new byte[] { 0x0b, 0x0c, 0x0d, 0x0e, 0x0f });
         }
 
     }

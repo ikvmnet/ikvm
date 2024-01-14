@@ -68,7 +68,8 @@ namespace IKVM.Reflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="keyPairFile"></param>
-        public StrongNameKeyPair(FileStream keyPairFile) : this(ReadAllBytes(keyPairFile))
+        public StrongNameKeyPair(FileStream keyPairFile) :
+            this(ReadAllBytes(keyPairFile))
         {
 
         }
@@ -91,7 +92,7 @@ namespace IKVM.Reflection
                 if (Universe.MonoRuntime)
                     return MonoGetPublicKey();
 
-                using RSACryptoServiceProvider rsa = CreateRSA();
+                using var rsa = CreateRSA();
                 var rsaParameters = rsa.ExportParameters(false);
                 var cspBlob = ExportPublicKey(rsaParameters);
                 var publicKey = new byte[12 + cspBlob.Length];
@@ -107,13 +108,13 @@ namespace IKVM.Reflection
             }
         }
 
-        internal RSACryptoServiceProvider CreateRSA()
+        internal RSA CreateRSA()
         {
             try
             {
                 if (keyPairArray != null)
                 {
-                    var rsa = new RSACryptoServiceProvider();
+                    var rsa = RSA.Create();
                     // we import from parameters, as using ImportCspBlob
                     // causes the exception "KeySet not found" when signing a hash later.
                     rsa.ImportParameters(RSAParametersFromByteArray(keyPairArray));

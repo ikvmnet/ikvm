@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Generic;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 
@@ -40,9 +41,9 @@ namespace IKVM.Reflection.Metadata
             internal StringHandle ImportName;
             internal int ImportScope;
 
-            readonly int IRecord.SortKey => MemberForwarded;
-
             readonly int IRecord.FilterKey => MemberForwarded;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(MemberForwarded, other.MemberForwarded);
 
         }
 
@@ -63,10 +64,10 @@ namespace IKVM.Reflection.Metadata
         {
             for (int i = 0; i < rowCount; i++)
                 module.Metadata.AddMethodImport(
-                    MetadataTokens.MethodDefinitionHandle(records[i].MemberForwarded),
+                    (MethodDefinitionHandle)MetadataTokens.EntityHandle(records[i].MemberForwarded),
                     (System.Reflection.MethodImportAttributes)records[i].MappingFlags,
                     records[i].ImportName,
-                    MetadataTokens.ModuleReferenceHandle(records[i].ImportScope));
+                    (ModuleReferenceHandle)MetadataTokens.EntityHandle(records[i].ImportScope));
         }
 
         internal void Fixup(ModuleBuilder moduleBuilder)

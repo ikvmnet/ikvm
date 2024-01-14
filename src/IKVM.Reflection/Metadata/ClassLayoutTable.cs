@@ -21,10 +21,11 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Generic;
+using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -38,13 +39,13 @@ namespace IKVM.Reflection.Metadata
             internal int ClassSize;
             internal int Parent;
 
-            int IRecord.SortKey => Parent;
+            readonly int IRecord.FilterKey => Parent;
 
-            int IRecord.FilterKey => Parent;
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(Parent, other.Parent);
 
         }
 
-        internal const int Index = 0x0f;
+        internal const int Index = (int)TableIndex.ClassLayout;
 
         internal override void Read(Reader.MetadataReader mr)
         {
@@ -62,7 +63,7 @@ namespace IKVM.Reflection.Metadata
 
             for (int i = 0; i < rowCount; i++)
                 module.Metadata.AddTypeLayout(
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.TypeDefinitionHandle(records[i].Parent),
+                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].Parent),
                     (ushort)records[i].PackingSize,
                     (uint)records[i].ClassSize);
         }

@@ -40,9 +40,9 @@ namespace IKVM.Reflection.Metadata
             internal int Method;
             internal int Association;
 
-            readonly int IRecord.SortKey => EncodeHasSemantics(Association);
-
             readonly int IRecord.FilterKey => Association;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(EncodeHasSemantics(Association), EncodeHasSemantics(other.Association));
 
         }
 

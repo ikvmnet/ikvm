@@ -21,10 +21,15 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
+
     sealed class EventMapTable : SortedTable<EventMapTable.Record>
     {
 
@@ -34,9 +39,10 @@ namespace IKVM.Reflection.Metadata
             internal int Parent;
             internal int EventList;
 
-            readonly int IRecord.SortKey => Parent;
-
             readonly int IRecord.FilterKey => Parent;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(Parent, other.Parent);
+
         }
 
         internal const int Index = 0x12;
@@ -54,8 +60,8 @@ namespace IKVM.Reflection.Metadata
         {
             for (int i = 0; i < rowCount; i++)
                 module.Metadata.AddEventMap(
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.TypeDefinitionHandle(records[i].Parent),
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.EventDefinitionHandle(records[i].EventList));
+                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].Parent),
+                    (EventDefinitionHandle)MetadataTokens.EntityHandle(records[i].EventList));
         }
 
     }

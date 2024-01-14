@@ -77,23 +77,36 @@ namespace IKVM.Reflection.Emit
                 this.attributes = attributes;
             }
 
-            internal readonly void Emit(ModuleBuilder mb, int offset)
+            internal readonly int GetLength() => 4 + (int)stream.Length;
+            
+            /// <summary>
+            /// Writes the resource to the resource stream.
+            /// </summary>
+            /// <param name="module"></param>
+            internal readonly void Write(ModuleBuilder module)
             {
+                // write resource to internal stream
                 rw?.Generate();
 
+                // align the start of the resource
+                module.resourceStream.Align(8);
+                var offset = module.resourceStream.Count;
+
+                // resource begins with a length, followed by the data
+                module.resourceStream.WriteInt32((int)stream.Length);
+                stream.Position = 0;
+                var buffer = new byte[8192];
+                int length;
+                while ((length = stream.Read(buffer, 0, buffer.Length)) != 0)
+                    module.resourceStream.WriteBytes(buffer, 0, length);
+
+                // add the resource record
                 var rec = new ManifestResourceTable.Record();
                 rec.Offset = offset;
                 rec.Flags = (int)attributes;
-                rec.Name = mb.GetOrAddString(name);
+                rec.Name = module.GetOrAddString(name);
                 rec.Implementation = 0;
-                mb.ManifestResource.AddRecord(rec);
-            }
-
-            internal readonly int GetLength() => 4 + (int)stream.Length;
-
-            internal readonly void Write(ModuleBuilder module)
-            {
-                throw new NotImplementedException();
+                module.ManifestResource.AddRecord(rec);
             }
 
             internal readonly void Close()
@@ -194,6 +207,7 @@ namespace IKVM.Reflection.Emit
 
         readonly MetadataBuilder metadata;
         readonly BlobBuilder ilStream;
+        readonly BlobBuilder resourceStream;
         readonly AssemblyBuilder asm;
         Guid mvid;
         uint timestamp;
@@ -242,6 +256,7 @@ namespace IKVM.Reflection.Emit
         {
             this.metadata = new MetadataBuilder();
             this.ilStream = new BlobBuilder();
+            this.resourceStream = new BlobBuilder();
 
             this.asm = asm ?? throw new ArgumentNullException(nameof(asm));
             this.metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
@@ -282,6 +297,11 @@ namespace IKVM.Reflection.Emit
         /// Gets a reference to the <see cref="BlobBuilder"/> for the IL stream. As of now, this data is written into the <see cref="methodBodies"/> and later copied to the IL stream.
         /// </summary>
         internal BlobBuilder ILStream => ilStream;
+
+        /// <summary>
+        /// Gets a reference to the <see cref="BlobBuilder"/> for the resource stream.
+        /// </summary>
+        internal BlobBuilder ResourceStream => resourceStream;
 
         /// <summary>
         /// Gets a new string handle from the metadata.
@@ -663,52 +683,17 @@ namespace IKVM.Reflection.Emit
             return rw;
         }
 
-        internal void EmitResources()
-        {
-            int offset = 0;
-            foreach (var rwr in resourceWriters)
-            {
-                // resources must be 8-byte aligned
-                offset = (offset + 7) & ~7;
-                rwr.Emit(this, offset);
-                offset += rwr.GetLength();
-            }
-        }
-
+        /// <summary>
+        /// Writes the defined resources to the resource blob and metadata tables.
+        /// </summary>
+        /// <exception cref="NotImplementedException"></exception>
         internal void WriteResources()
         {
-            int offset = 0;
-
             foreach (var rwr in resourceWriters)
             {
-                throw new NotImplementedException();
-
-                //// resources must be 8-byte aligned
-                //int alignment = ((offset + 7) & ~7) - offset;
-                //for (int i = 0; i < alignment; i++)
-                //    mw.Write((byte)0);
-                //rwr.Write(mw);
-                //offset += rwr.GetLength() + alignment;
-            }
-        }
-
-        internal void CloseResources()
-        {
-            foreach (var rwr in resourceWriters)
+                rwr.Write(this);
                 rwr.Close();
-        }
-
-        internal int GetManifestResourcesLength()
-        {
-            int length = 0;
-            foreach (var rwr in resourceWriters)
-            {
-                // resources must be 8-byte aligned
-                length = (length + 7) & ~7;
-                length += rwr.GetLength();
             }
-
-            return length;
         }
 
         public override Assembly Assembly
@@ -1274,7 +1259,7 @@ namespace IKVM.Reflection.Emit
             // encode index into blobs, as well as pass along value, since SRME does not have an AddConstant override that takes a handle
             // final blob should be deduplicated, leading to the same index value on write
             rec.Offset = GetOrAddBlob(val.ToArray());
-            rec.Value = val;
+            rec.Value = defaultValue;
             Constant.AddRecord(rec);
         }
 
@@ -1562,13 +1547,12 @@ namespace IKVM.Reflection.Emit
         public void __Save(Stream stream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
             if (!stream.CanRead || !stream.CanWrite || !stream.CanSeek || stream.Position != 0)
-            {
                 throw new ArgumentException("Stream must support read/write/seek and current position must be zero.", "stream");
-            }
+
             SaveImpl(stream, portableExecutableKind, imageFileMachine);
         }
 
-        private void SaveImpl(Stream streamOrNull, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+        void SaveImpl(Stream streamOrNull, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
             SetIsSaved();
             PopulatePropertyAndEventTables();
@@ -1610,9 +1594,7 @@ namespace IKVM.Reflection.Emit
             }
 
             FillAssemblyRefTable();
-            EmitResources();
             ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, unmanagedResources, default, streamOrNull);
-            CloseResources();
         }
 
         public void __AddAssemblyReference(AssemblyName assemblyName)
@@ -1741,8 +1723,8 @@ namespace IKVM.Reflection.Emit
 
             var rec = new InterfaceImplCustomAttribute();
             rec.type = typeBuilder.MetadataToken;
-            var token = GetTypeToken(interfaceType).Token;
 
+            var token = GetTypeToken(interfaceType).Token;
             token = (token >> 24) switch
             {
                 TypeDefTable.Index => (token & 0xFFFFFF) << 2 | 0,
@@ -1762,13 +1744,13 @@ namespace IKVM.Reflection.Emit
         {
             if (interfaceImplCustomAttributes != null)
             {
-                foreach (InterfaceImplCustomAttribute rec in interfaceImplCustomAttributes)
+                foreach (var rec in interfaceImplCustomAttributes)
                 {
                     for (int i = 0; i < InterfaceImpl.records.Length; i++)
                     {
                         if (InterfaceImpl.records[i].Class == rec.type && InterfaceImpl.records[i].Interface == rec.interfaceType)
                         {
-                            RegisterTokenFixup(rec.pseudoToken, (InterfaceImplTable.Index << 24) | (i + 1));
+                            RegisterTokenFixup(rec.pseudoToken, MetadataTokens.GetToken(MetadataTokens.InterfaceImplementationHandle(i + 1)));
                             break;
                         }
                     }

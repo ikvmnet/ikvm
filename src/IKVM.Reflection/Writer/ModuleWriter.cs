@@ -107,7 +107,7 @@ namespace IKVM.Reflection.Writer
         /// </summary>
         /// <param name="keyPair"></param>
         /// <param name="publicKey"></param>
-        /// <param name="moduleBuilder"></param>
+        /// <param name="module"></param>
         /// <param name="fileKind"></param>
         /// <param name="portableExecutableKind"></param>
         /// <param name="imageFileMachine"></param>
@@ -115,46 +115,49 @@ namespace IKVM.Reflection.Writer
         /// <param name="entryPoint"></param>
         /// <param name="stream"></param>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSection resources, MethodDefinitionHandle entryPoint, Stream stream)
+        static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSection resources, MethodDefinitionHandle entryPoint, Stream stream)
         {
-            moduleBuilder.ApplyUnmanagedExports(imageFileMachine);
-            moduleBuilder.FixupMethodBodyTokens();
+            module.ApplyUnmanagedExports(imageFileMachine);
+            module.FixupMethodBodyTokens();
 
             // for compatibility with Reflection.Emit, if there aren't any user strings, we add one
-            moduleBuilder.Metadata.GetOrAddUserString("");
+            module.Metadata.GetOrAddUserString("");
 
             if (resources != null)
                 resources.Finish();
 
 #if NETFRAMEWORK
-            if (moduleBuilder.symbolWriter != null)
+            if (module.symbolWriter != null)
             {
-                moduleBuilder.WriteSymbolTokenMap();
-                moduleBuilder.symbolWriter.Close();
+                module.WriteSymbolTokenMap();
+                module.symbolWriter.Close();
             }
 #endif
 
             // write the module content
-            WriteModuleImpl(moduleBuilder);
+            WriteModuleImpl(module);
 
             // initialize PE header builder
             var peHeaderBuilder = new PEHeaderBuilder(
                 machine: GetMachine(imageFileMachine),
-                fileAlignment: moduleBuilder.__FileAlignment,
-                imageBase: (ulong)moduleBuilder.__ImageBase,
+                fileAlignment: module.__FileAlignment,
+                imageBase: (ulong)module.__ImageBase,
                 subsystem: GetSubsystem(fileKind),
-                dllCharacteristics: (System.Reflection.PortableExecutable.DllCharacteristics)(int)moduleBuilder.__DllCharacteristics,
+                dllCharacteristics: (System.Reflection.PortableExecutable.DllCharacteristics)(int)module.__DllCharacteristics,
                 imageCharacteristics: GetImageCharacteristics(imageFileMachine, fileKind),
-                sizeOfStackReserve: moduleBuilder.GetStackReserve(1048576));
+                sizeOfStackReserve: module.GetStackReserve(1048576));
 
             // initialize PE builder
+            var strongNameSignatureSize = ComputeStrongNameSignatureLength(publicKey);
             var peBuilder = new ManagedPEBuilder(
                 peHeaderBuilder,
-                new MetadataRootBuilder(moduleBuilder.Metadata),
-                moduleBuilder.ILStream,
+                new MetadataRootBuilder(module.Metadata),
+                module.ILStream,
+                managedResources: module.ResourceStream,
+                strongNameSignatureSize: strongNameSignatureSize,
                 entryPoint: entryPoint,
                 flags: GetCorFlags(portableExecutableKind, keyPair),
-                deterministicIdProvider: GetDeterministicIdProvider(moduleBuilder));
+                deterministicIdProvider: GetDeterministicIdProvider(module));
 
             // serialize the image
             var pe = new BlobBuilder();
@@ -162,7 +165,7 @@ namespace IKVM.Reflection.Writer
 
             // strong name specified, sign the blobs
             if (keyPair != null)
-                peBuilder.Sign(pe, blobs => GetSignature(keyPair, blobs));
+                peBuilder.Sign(pe, blobs => GetSignature(keyPair, blobs, strongNameSignatureSize));
 
             // write the final content to the output stream
             pe.WriteContentTo(stream);
@@ -178,7 +181,7 @@ namespace IKVM.Reflection.Writer
             moduleBuilder.TypeRef.Fixup(moduleBuilder);
             moduleBuilder.MethodImpl.Fixup(moduleBuilder);
             moduleBuilder.MethodSemantics.Fixup(moduleBuilder);
-            moduleBuilder.InterfaceImpl.Fixup();
+            moduleBuilder.InterfaceImpl.Fixup(moduleBuilder);
             moduleBuilder.ResolveInterfaceImplPseudoTokens();
             moduleBuilder.MemberRef.Fixup(moduleBuilder);
             moduleBuilder.Constant.Fixup(moduleBuilder);
@@ -194,81 +197,9 @@ namespace IKVM.Reflection.Writer
             moduleBuilder.MethodSpec.Fixup(moduleBuilder);
             moduleBuilder.GenericParamConstraint.Fixup(moduleBuilder);
 
-            //// Import Address Table
-            //AssertRVA(mw, ImportAddressTableRVA);
-            //if (ImportAddressTableLength != 0)
-            //{
-            //    WriteRVA(mw, ImportHintNameTableRVA);
-            //    WriteRVA(mw, 0);
-            //}
-
-            //// CLI Header
-            //AssertRVA(mw, ComDescriptorRVA);
-            //cliHeader.MetaData.VirtualAddress = MetadataRVA;
-            //cliHeader.MetaData.Size = MetadataLength;
-            //if (ResourcesLength != 0)
-            //{
-            //    cliHeader.Resources.VirtualAddress = ResourcesRVA;
-            //    cliHeader.Resources.Size = ResourcesLength;
-            //}
-            //if (StrongNameSignatureLength != 0)
-            //{
-            //    cliHeader.StrongNameSignature.VirtualAddress = StrongNameSignatureRVA;
-            //    cliHeader.StrongNameSignature.Size = StrongNameSignatureLength;
-            //}
-            //if (VTableFixupsLength != 0)
-            //{
-            //    cliHeader.VTableFixups.VirtualAddress = VTableFixupsRVA;
-            //    cliHeader.VTableFixups.Size = VTableFixupsLength;
-            //}
-            //cliHeader.Write(mw);
-
-            //// alignment padding
-            //for (int i = (int)(MethodBodiesRVA - (ComDescriptorRVA + ComDescriptorLength)); i > 0; i--)
-            //    mw.Write((byte)0);
-
-            // Method Bodies
-            //mw.Write(moduleBuilder.methodBodies);
             moduleBuilder.ILStream.WriteBytes(moduleBuilder.methodBodies.ToArray());
-
-            // Resources
-            //moduleBuilder.WriteResources(mw);
-
-            // The strong name signature live here (if it exists), but it will written later
-            // and the following alignment padding will take care of reserving the space.
-
-            //// alignment padding
-            //for (int i = (int)(MetadataRVA - (ResourcesRVA + ResourcesLength)); i > 0; i--)
-            //    mw.Write((byte)0);
-
-            // Metadata
-            //AssertRVA(mw, MetadataRVA);
+            moduleBuilder.WriteResources();
             moduleBuilder.WriteMetadata();
-
-            //// alignment padding
-            //for (int i = (int)(VTableFixupsRVA - (MetadataRVA + MetadataLength)); i > 0; i--)
-            //    mw.Write((byte)0);
-
-            //// VTableFixups
-            //AssertRVA(mw, VTableFixupsRVA);
-            //WriteVTableFixups(mw, sdataRVA);
-
-            //// Debug Directory
-            //AssertRVA(mw, DebugDirectoryRVA);
-            //WriteDebugDirectory(mw);
-
-            //// Export Directory
-            //AssertRVA(mw, ExportDirectoryRVA);
-            //WriteExportDirectory(mw);
-
-            //// Export Tables
-            //AssertRVA(mw, ExportTablesRVA);
-            //WriteExportTables(mw, sdataRVA);
-
-            //// Import Directory
-            //AssertRVA(mw, ImportDirectoryRVA);
-            //if (ImportDirectoryLength != 0)
-            //    WriteImportDirectory(mw);
         }
 
         /// <summary>
@@ -374,16 +305,10 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
-        /// 
+        /// Computes the length of the strong name signature.
         /// </summary>
-        /// <param name="enumerable"></param>
+        /// <param name="publicKey"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        static BlobContentId DeterministicIdProvider(IEnumerable<Blob> enumerable)
-        {
-            throw new NotImplementedException();
-        }
-
         static int ComputeStrongNameSignatureLength(byte[] publicKey)
         {
             if (publicKey == null)
@@ -426,15 +351,21 @@ namespace IKVM.Reflection.Writer
         /// <summary>
         /// Calculates the strong name signature for the specified blobs.
         /// </summary>
+        /// <param name="keyPair"></param>
         /// <param name="blobs"></param>
+        /// <param name="strongNameSignatureSize"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        static byte[] GetSignature(StrongNameKeyPair keyPair, IEnumerable<Blob> blobs)
+        static byte[] GetSignature(StrongNameKeyPair keyPair, IEnumerable<Blob> blobs, int strongNameSignatureSize)
         {
             // sign the hash with the keypair
             using var rsa = keyPair.CreateRSA();
-            var signature = rsa.SignHash(GetSHA1Hash(blobs), "1.3.14.3.2.26");
+            var signature = rsa.SignHash(GetSHA1Hash(blobs), HashAlgorithmName.SHA1, RSASignaturePadding.Pss);
             Array.Reverse(signature);
+
+            // check that our signature length matches
+            if (signature.Length != strongNameSignatureSize)
+                throw new InvalidOperationException("Signature length mismatch.");
 
             return signature;
         }

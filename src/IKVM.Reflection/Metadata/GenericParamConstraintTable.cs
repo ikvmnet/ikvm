@@ -21,7 +21,9 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
@@ -37,9 +39,9 @@ namespace IKVM.Reflection.Metadata
             internal int Owner;
             internal int Constraint;
 
-            readonly int IRecord.SortKey => Owner;
-
             readonly int IRecord.FilterKey => Owner;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(Owner, other.Owner);
 
         }
 
@@ -59,7 +61,7 @@ namespace IKVM.Reflection.Metadata
             for (int i = 0; i < rowCount; i++)
             {
                 var h = module.Metadata.AddGenericParameterConstraint(
-                    MetadataTokens.GenericParameterHandle(records[i].Owner),
+                    (GenericParameterHandle)MetadataTokens.EntityHandle(records[i].Owner),
                     MetadataTokens.EntityHandle(records[i].Constraint));
 
                 Debug.Assert(h == MetadataTokens.GenericParameterConstraintHandle(i + 1));
@@ -70,7 +72,7 @@ namespace IKVM.Reflection.Metadata
         {
             var fixups = moduleBuilder.GenericParam.GetIndexFixup();
             for (int i = 0; i < rowCount; i++)
-                records[i].Owner = fixups[records[i].Owner - 1] + 1;
+                records[i].Owner = MetadataTokens.GetToken(MetadataTokens.GenericParameterHandle(fixups[MetadataTokens.GetRowNumber(MetadataTokens.EntityHandle(records[i].Owner)) - 1] + 1));
 
             Sort();
         }

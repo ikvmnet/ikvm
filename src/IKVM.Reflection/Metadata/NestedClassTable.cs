@@ -22,11 +22,10 @@
   
 */
 using System.Collections.Generic;
+using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
-
-using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -39,9 +38,9 @@ namespace IKVM.Reflection.Metadata
             internal int NestedClass;
             internal int EnclosingClass;
 
-            readonly int IRecord.SortKey => NestedClass;
-
             readonly int IRecord.FilterKey => NestedClass;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(NestedClass, other.NestedClass);
 
         }
 
@@ -60,8 +59,8 @@ namespace IKVM.Reflection.Metadata
         {
             for (int i = 0; i < rowCount; i++)
                 module.Metadata.AddNestedType(
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.TypeDefinitionHandle(records[i].NestedClass),
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.TypeDefinitionHandle(records[i].EnclosingClass));
+                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].NestedClass),
+                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].EnclosingClass));
         }
 
         internal List<int> GetNestedClasses(int enclosingClass)

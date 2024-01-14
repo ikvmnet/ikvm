@@ -21,11 +21,12 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -40,9 +41,9 @@ namespace IKVM.Reflection.Metadata
             internal int MethodBody;
             internal int MethodDeclaration;
 
-            readonly int IRecord.SortKey => Class;
-
             readonly int IRecord.FilterKey => Class;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(Class, other.Class);
 
         }
 
@@ -63,11 +64,11 @@ namespace IKVM.Reflection.Metadata
             for (int i = 0; i < rowCount; i++)
             {
                 var h = module.Metadata.AddMethodImplementation(
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.TypeDefinitionHandle(records[i].Class),
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.EntityHandle(records[i].MethodBody),
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.EntityHandle(records[i].MethodDeclaration));
+                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].Class),
+                    MetadataTokens.EntityHandle(records[i].MethodBody),
+                    MetadataTokens.EntityHandle(records[i].MethodDeclaration));
 
-                Debug.Assert(h == System.Reflection.Metadata.Ecma335.MetadataTokens.MethodImplementationHandle(i + 1));
+                Debug.Assert(h == MetadataTokens.MethodImplementationHandle(i + 1));
             }
         }
 
