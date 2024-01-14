@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net7.0</TargetFrameworks>
     </PropertyGroup>
@@ -13,9 +13,17 @@
         <PackageReference Include="System.Reflection.MetadataLoadContext" Version="8.0.0" />
         <PackageReference Include="xunit" Version="2.6.5" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.5.6">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="sample.ico" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="sample.ico" />
     </ItemGroup>
 
     <ItemGroup>

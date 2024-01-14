@@ -373,6 +373,33 @@ namespace IKVM.Reflection.Tests
             buf3.Should().BeEquivalentTo(new byte[] { 0x0b, 0x0c, 0x0d, 0x0e, 0x0f });
         }
 
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void CanWriteWin32Icon(FrameworkSpec framework)
+        {
+            if (Init(framework, out var universe, out var resolver, out var verifier, out var tempPath, out var tempLoad) == false)
+                return;
+
+            // obtain sample ico file
+            var ico = typeof(ModuleWriterTests).Assembly.GetManifestResourceStream("IKVM.Reflection.Tests.sample.ico");
+            var buf = new byte[ico.Length];
+            ico.Read(buf, 0, (int)ico.Length);
+
+            // define assembly with an ico file
+            var assembly = universe.DefineDynamicAssembly(new AssemblyName("Test"), AssemblyBuilderAccess.Save, tempPath);
+            assembly.__DefineIconResource(buf);
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+            var type = module.DefineType("Test");
+            type.CreateType();
+            assembly.Save("Test.dll");
+
+            foreach (var v in verifier.Verify(new PEReader(File.OpenRead(Path.Combine(tempPath, "Test.dll")))))
+                v.Code.Should().Be(ILVerify.VerifierError.None);
+
+            // reload the assembly
+            var a = tempLoad.LoadFromAssemblyPath(Path.Combine(tempPath, "Test.dll"));
+        }
+
     }
 
 }

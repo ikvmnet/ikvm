@@ -228,27 +228,29 @@ namespace IKVM.Tools.Importer
 
         static void ResolveStrongNameKeys(List<CompilerOptions> targets)
         {
-            foreach (CompilerOptions options in targets)
+            foreach (var options in targets)
             {
                 if (options.keyfile != null && options.keycontainer != null)
-                {
                     throw new FatalCompilerErrorException(Message.CannotSpecifyBothKeyFileAndContainer);
-                }
+
                 if (options.keyfile == null && options.keycontainer == null && options.delaysign)
-                {
                     throw new FatalCompilerErrorException(Message.DelaySignRequiresKey);
-                }
+
                 if (options.keyfile != null)
                 {
                     if (options.delaysign)
                     {
-                        byte[] buf = ReadAllBytes(options.keyfile);
+                        var buf = ReadAllBytes(options.keyfile);
                         try
                         {
                             // maybe it is a key pair, if so we need to extract just the public key
                             buf = new StrongNameKeyPair(buf).PublicKey;
                         }
-                        catch { }
+                        catch
+                        {
+
+                        }
+
                         options.publicKey = buf;
                     }
                     else
@@ -261,13 +263,9 @@ namespace IKVM.Tools.Importer
                     StrongNameKeyPair keyPair = null;
                     SetStrongNameKeyPair(ref keyPair, null, options.keycontainer);
                     if (options.delaysign)
-                    {
                         options.publicKey = keyPair.PublicKey;
-                    }
                     else
-                    {
                         options.keyPair = keyPair;
-                    }
                 }
             }
         }
@@ -1055,15 +1053,15 @@ namespace IKVM.Tools.Importer
             try
             {
                 if (keyFile != null)
-                {
                     strongNameKeyPair = new StrongNameKeyPair(ReadAllBytes(keyFile));
-                }
                 else
-                {
                     strongNameKeyPair = new StrongNameKeyPair(keyContainer);
-                }
+
                 // FXBUG we explicitly try to access the public key force a check (the StrongNameKeyPair constructor doesn't validate the key)
-                if (strongNameKeyPair.PublicKey != null) { }
+                if (strongNameKeyPair.PublicKey != null)
+                {
+
+                }
             }
             catch (Exception x)
             {

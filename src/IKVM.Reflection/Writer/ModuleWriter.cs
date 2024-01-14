@@ -47,11 +47,11 @@ namespace IKVM.Reflection.Writer
         /// <param name="fileKind"></param>
         /// <param name="portableExecutableKind"></param>
         /// <param name="imageFileMachine"></param>
-        /// <param name="resources"></param>
+        /// <param name="nativeResources"></param>
         /// <param name="entryPointToken"></param>
-        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSection resources, MethodDefinitionHandle entryPointToken)
+        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSectionBuilder nativeResources, MethodDefinitionHandle entryPointToken)
         {
-            WriteModule(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, resources, entryPointToken, null);
+            WriteModule(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPointToken, null);
         }
 
         /// <summary>
@@ -63,10 +63,10 @@ namespace IKVM.Reflection.Writer
         /// <param name="fileKind"></param>
         /// <param name="portableExecutableKind"></param>
         /// <param name="imageFileMachine"></param>
-        /// <param name="resources"></param>
+        /// <param name="nativeResources"></param>
         /// <param name="entryPointToken"></param>
         /// <param name="stream"></param>
-        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSection resources, MethodDefinitionHandle entryPointToken, Stream stream)
+        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSectionBuilder nativeResources, MethodDefinitionHandle entryPointToken, Stream stream)
         {
             if (stream == null)
             {
@@ -88,7 +88,7 @@ namespace IKVM.Reflection.Writer
                 using (var fs = new FileStream(fileName, FileMode.Create))
                 {
                     var entryPoint = entryPointToken.IsNil == false ? entryPointToken : default;
-                    WriteModuleImpl(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, resources, entryPoint, fs);
+                    WriteModuleImpl(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, fs);
                 }
 
                 // if we're running on Mono, mark the module as executable by using a Mono private API extension
@@ -98,7 +98,7 @@ namespace IKVM.Reflection.Writer
             else
             {
                 var entryPoint = entryPointToken.IsNil == false ? entryPointToken : default;
-                WriteModuleImpl(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, resources, entryPoint, stream);
+                WriteModuleImpl(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, stream);
             }
         }
 
@@ -111,20 +111,17 @@ namespace IKVM.Reflection.Writer
         /// <param name="fileKind"></param>
         /// <param name="portableExecutableKind"></param>
         /// <param name="imageFileMachine"></param>
-        /// <param name="resources"></param>
+        /// <param name="nativeResources"></param>
         /// <param name="entryPoint"></param>
         /// <param name="stream"></param>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSection resources, MethodDefinitionHandle entryPoint, Stream stream)
+        static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSectionBuilder nativeResources, MethodDefinitionHandle entryPoint, Stream stream)
         {
             module.ApplyUnmanagedExports(imageFileMachine);
             module.FixupMethodBodyTokens();
 
             // for compatibility with Reflection.Emit, if there aren't any user strings, we add one
             module.Metadata.GetOrAddUserString("");
-
-            if (resources != null)
-                resources.Finish();
 
 #if NETFRAMEWORK
             if (module.symbolWriter != null)
@@ -154,6 +151,7 @@ namespace IKVM.Reflection.Writer
                 new MetadataRootBuilder(module.Metadata),
                 module.ILStream,
                 managedResources: module.ResourceStream,
+                nativeResources: nativeResources,
                 strongNameSignatureSize: strongNameSignatureSize,
                 entryPoint: entryPoint,
                 flags: GetCorFlags(portableExecutableKind, keyPair),
@@ -360,7 +358,7 @@ namespace IKVM.Reflection.Writer
         {
             // sign the hash with the keypair
             using var rsa = keyPair.CreateRSA();
-            var signature = rsa.SignHash(GetSHA1Hash(blobs), HashAlgorithmName.SHA1, RSASignaturePadding.Pss);
+            var signature = rsa.SignHash(GetSHA1Hash(blobs), HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
             Array.Reverse(signature);
 
             // check that our signature length matches

@@ -381,8 +381,10 @@ namespace IKVM.Reflection.Emit
 
             manifestModule.AssemblyTable.AddRecord(assemblyRecord);
 
-            var unmanagedResources = versionInfo != null || win32icon != null || win32manifest != null || win32resources != null ? new ResourceSection() : null;
+            // final copy of manifest module native resources
+            var nativeResources = manifestModule.nativeResources != null ? new ModuleResourceSectionBuilder(manifestModule.nativeResources) : new ModuleResourceSectionBuilder();
 
+            // version info specified on assembly: insert into manifest module
             if (versionInfo != null)
             {
                 versionInfo.SetName(GetName());
@@ -390,23 +392,25 @@ namespace IKVM.Reflection.Emit
                 foreach (var cab in customAttributes)
                 {
                     // .NET doesn't support copying blob custom attributes into the version info
-                    if (!cab.HasBlob || universe.DecodeVersionInfoAttributeBlobs)
+                    if (cab.HasBlob == false || universe.DecodeVersionInfoAttributeBlobs)
                         versionInfo.SetAttribute(this, cab);
                 }
 
                 var versionInfoData = new ByteBuffer(512);
                 versionInfo.Write(versionInfoData);
-                unmanagedResources.AddVersionInfo(versionInfoData);
+                nativeResources.AddVersionInfo(versionInfoData);
             }
 
+            // win32 icon specified on assembly: insert into manifest module
             if (win32icon != null)
-                unmanagedResources.AddIcon(win32icon);
+                nativeResources.AddIcon(win32icon);
 
+            // win32 manifest specified on assembly: insert into manifest module
             if (win32manifest != null)
-                unmanagedResources.AddManifest(win32manifest, fileKind == PEFileKinds.Dll ? (ushort)2 : (ushort)1);
+                nativeResources.AddManifest(win32manifest, fileKind == PEFileKinds.Dll ? (ushort)2 : (ushort)1);
 
             if (win32resources != null)
-                unmanagedResources.ExtractResources(win32resources);
+                nativeResources.ImportWin32ResourceFile(win32resources);
 
             // we intentionally don't filter out the version info (pseudo) custom attributes (to be compatible with .NET)
             foreach (var cab in customAttributes)
@@ -417,6 +421,7 @@ namespace IKVM.Reflection.Emit
             foreach (var fwd in typeForwarders)
                 manifestModule.AddTypeForwarder(fwd.Type, fwd.IncludeNested);
 
+            // add resource files for assembly to manifest module
             foreach (var resfile in resourceFiles)
             {
                 if (resfile.Writer != null)
@@ -434,8 +439,7 @@ namespace IKVM.Reflection.Emit
                 manifestModule.ManifestResource.AddRecord(rec);
             }
 
-            var entryPointToken = MetadataTokens.MethodDefinitionHandle(0);
-
+            // write each non-manifest module
             foreach (var moduleBuilder in modules)
             {
                 moduleBuilder.FillAssemblyRefTable();
@@ -449,7 +453,7 @@ namespace IKVM.Reflection.Emit
                     }
                     else
                     {
-                        ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, moduleBuilder.unmanagedResources, default);
+                        ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, moduleBuilder.nativeResources, default);
                         fileToken = AddFile(manifestModule, moduleBuilder.fileName, 0 /*ContainsMetaData*/);
                     }
 
@@ -457,17 +461,20 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
+            // import existing modules
             foreach (var module in addedModules)
             {
                 var fileToken = AddFile(manifestModule, module.FullyQualifiedName, 0 /*ContainsMetaData*/);
                 module.ExportTypes(fileToken, manifestModule);
             }
 
-            if (entryPointToken.IsNil && entryPoint != null)
+            // start with an empty entry point
+            var entryPointToken = MetadataTokens.MethodDefinitionHandle(0);
+            if (entryPoint != null)
                 entryPointToken = (MethodDefinitionHandle)MetadataTokens.EntityHandle(entryPoint.MetadataToken);
 
             // finally, write the manifest module
-            ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, unmanagedResources ?? manifestModule.unmanagedResources, entryPointToken, streamOrNull);
+            ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPointToken, streamOrNull);
         }
 
         AssemblyFileHandle AddFile(ModuleBuilder manifestModule, string fileName, int flags)
@@ -531,9 +538,8 @@ namespace IKVM.Reflection.Emit
         public void DefineVersionInfoResource(string product, string productVersion, string company, string copyright, string trademark)
         {
             if (versionInfo != null || win32resources != null)
-            {
                 throw new ArgumentException("Native resource has already been defined.");
-            }
+
             versionInfo = new VersionInfo();
             versionInfo.product = product;
             versionInfo.informationalVersion = productVersion;
@@ -545,27 +551,24 @@ namespace IKVM.Reflection.Emit
         public void __DefineIconResource(byte[] iconFile)
         {
             if (win32icon != null || win32resources != null)
-            {
                 throw new ArgumentException("Native resource has already been defined.");
-            }
+
             win32icon = (byte[])iconFile.Clone();
         }
 
         public void __DefineManifestResource(byte[] manifest)
         {
             if (win32manifest != null || win32resources != null)
-            {
                 throw new ArgumentException("Native resource has already been defined.");
-            }
+
             win32manifest = (byte[])manifest.Clone();
         }
 
         public void __DefineUnmanagedResource(byte[] resource)
         {
             if (versionInfo != null || win32icon != null || win32manifest != null || win32resources != null)
-            {
                 throw new ArgumentException("Native resource has already been defined.");
-            }
+
             // The standard .NET DefineUnmanagedResource(byte[]) is useless, because it embeds "resource" (as-is) as the .rsrc section,
             // but it doesn't set the PE file Resource Directory entry to point to it. That's why we have a renamed version, which behaves
             // like DefineUnmanagedResource(string).
@@ -581,57 +584,52 @@ namespace IKVM.Reflection.Emit
 
         public override Type[] GetTypes()
         {
-            List<Type> list = new List<Type>();
-            foreach (ModuleBuilder module in modules)
-            {
+            var list = new List<Type>();
+
+            foreach (var module in modules)
                 module.GetTypesImpl(list);
-            }
-            foreach (Module module in addedModules)
-            {
+
+            foreach (var module in addedModules)
                 module.GetTypesImpl(list);
-            }
+
             return list.ToArray();
         }
 
         internal override Type FindType(TypeName typeName)
         {
-            foreach (ModuleBuilder mb in modules)
+            foreach (var mb in modules)
             {
-                Type type = mb.FindType(typeName);
+                var type = mb.FindType(typeName);
                 if (type != null)
-                {
                     return type;
-                }
             }
+
             foreach (Module module in addedModules)
             {
-                Type type = module.FindType(typeName);
+                var type = module.FindType(typeName);
                 if (type != null)
-                {
                     return type;
-                }
             }
+
             return null;
         }
 
         internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
         {
-            foreach (ModuleBuilder mb in modules)
+            foreach (var mb in modules)
             {
-                Type type = mb.FindTypeIgnoreCase(lowerCaseName);
+                var type = mb.FindTypeIgnoreCase(lowerCaseName);
                 if (type != null)
-                {
                     return type;
-                }
             }
+
             foreach (Module module in addedModules)
             {
-                Type type = module.FindTypeIgnoreCase(lowerCaseName);
+                var type = module.FindTypeIgnoreCase(lowerCaseName);
                 if (type != null)
-                {
                     return type;
-                }
             }
+
             return null;
         }
 
@@ -646,27 +644,11 @@ namespace IKVM.Reflection.Emit
             this.mdStreamVersion = mdStreamVersion;
         }
 
-        public override Module ManifestModule
-        {
-            get
-            {
-                if (pseudoManifestModule == null)
-                {
-                    pseudoManifestModule = new ManifestModule(this);
-                }
-                return pseudoManifestModule;
-            }
-        }
+        public override Module ManifestModule => pseudoManifestModule ??= new ManifestModule(this);
 
-        public override MethodInfo EntryPoint
-        {
-            get { return entryPoint; }
-        }
+        public override MethodInfo EntryPoint => entryPoint;
 
-        public override AssemblyName[] GetReferencedAssemblies()
-        {
-            return Array.Empty<AssemblyName>();
-        }
+        public override AssemblyName[] GetReferencedAssemblies() => Array.Empty<AssemblyName>();
 
         public override Module[] GetLoadedModules(bool getResourceModules)
         {
@@ -675,40 +657,29 @@ namespace IKVM.Reflection.Emit
 
         public override Module[] GetModules(bool getResourceModules)
         {
-            List<Module> list = new List<Module>();
-            foreach (ModuleBuilder module in modules)
-            {
+            var list = new List<Module>();
+
+            foreach (var module in modules)
                 if (getResourceModules || !module.IsResource())
-                {
                     list.Add(module);
-                }
-            }
-            foreach (Module module in addedModules)
-            {
+
+            foreach (var module in addedModules)
                 if (getResourceModules || !module.IsResource())
-                {
                     list.Add(module);
-                }
-            }
+
             return list.ToArray();
         }
 
         public override Module GetModule(string name)
         {
-            foreach (ModuleBuilder module in modules)
-            {
+            foreach (var module in modules)
                 if (module.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                {
                     return module;
-                }
-            }
-            foreach (Module module in addedModules)
-            {
+
+            foreach (var module in addedModules)
                 if (module.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                {
                     return module;
-                }
-            }
+
             return null;
         }
 
@@ -751,14 +722,11 @@ namespace IKVM.Reflection.Emit
 
         internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
         {
-            List<CustomAttributeData> list = new List<CustomAttributeData>();
-            foreach (CustomAttributeBuilder cab in customAttributes)
-            {
+            var list = new List<CustomAttributeData>();
+            foreach (var cab in customAttributes)
                 if (attributeType == null || attributeType.IsAssignableFrom(cab.Constructor.DeclaringType))
-                {
                     list.Add(cab.ToData(this));
-                }
-            }
+
             return list;
         }
 

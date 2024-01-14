@@ -78,7 +78,7 @@ namespace IKVM.Reflection.Emit
             }
 
             internal readonly int GetLength() => 4 + (int)stream.Length;
-            
+
             /// <summary>
             /// Writes the resource to the resource stream.
             /// </summary>
@@ -227,7 +227,7 @@ namespace IKVM.Reflection.Emit
         internal readonly ByteBuffer methodBodies = new ByteBuffer(128 * 1024);
         internal readonly List<int> tokenFixupOffsets = new List<int>();
         internal readonly ByteBuffer initializedData = new ByteBuffer(512);
-        internal ResourceSection unmanagedResources;
+        internal ModuleResourceSectionBuilder nativeResources;
         readonly Dictionary<MemberRefKey, int> importedMemberRefs = new Dictionary<MemberRefKey, int>();
         readonly Dictionary<MethodSpecKey, int> importedMethodSpecs = new Dictionary<MethodSpecKey, int>();
         readonly Dictionary<Assembly, int> referencedAssemblies = new Dictionary<Assembly, int>();
@@ -1400,12 +1400,23 @@ namespace IKVM.Reflection.Emit
 #endif
         }
 
+        /// <summary>
+        /// Defines an unmanaged embedded resource given an opaque binary large object (BLOB) of bytes.
+        /// </summary>
+        /// <param name="resource"></param>
+        public void DefineUnmanagedResource(byte[] resource)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Defines an unmanaged resource given the name of Win32 resource file.
+        /// </summary>
+        /// <param name="resource"></param>
         public void DefineUnmanagedResource(string resourceFileName)
         {
-            // This method reads the specified resource file (Win32 .res file) and converts it into the appropriate format and embeds it in the .rsrc section,
-            // also setting the Resource Directory entry.
-            unmanagedResources = new ResourceSection();
-            unmanagedResources.ExtractResources(System.IO.File.ReadAllBytes(resourceFileName));
+            nativeResources = new ModuleResourceSectionBuilder();
+            nativeResources.ImportWin32ResourceFile(System.IO.File.ReadAllBytes(resourceFileName));
         }
 
         public bool IsTransient()
@@ -1594,7 +1605,7 @@ namespace IKVM.Reflection.Emit
             }
 
             FillAssemblyRefTable();
-            ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, unmanagedResources, default, streamOrNull);
+            ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, nativeResources, default, streamOrNull);
         }
 
         public void __AddAssemblyReference(AssemblyName assemblyName)

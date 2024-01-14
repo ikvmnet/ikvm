@@ -26,40 +26,51 @@ using System;
 namespace IKVM.Reflection.Writer
 {
 
-    readonly struct OrdinalOrName
+    readonly record struct OrdinalOrName(ushort Ordinal, string Name)
     {
 
-        internal readonly ushort Ordinal;
-        internal readonly string Name;
-
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="value"></param>
-        internal OrdinalOrName(ushort value)
+        /// <param name="ordinal"></param>
+        internal OrdinalOrName(ushort ordinal) : 
+            this(ordinal, null)
         {
-            Ordinal = value;
-            Name = null;
+
         }
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="value"></param>
-        internal OrdinalOrName(string value)
+        /// <param name="name"></param>
+        internal OrdinalOrName(string name) : 
+            this(0xFFFF, name)
         {
-            Ordinal = 0xFFFF;
-            Name = value;
+
         }
 
+        /// <summary>
+        /// Returns whether or not this ordinal is greater than the other ordinal.
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
         internal readonly bool IsGreaterThan(OrdinalOrName other)
         {
-            return Name == null ? Ordinal > other.Ordinal : string.Compare(Name, other.Name, StringComparison.OrdinalIgnoreCase) > 0;
+            if (Name != null)
+                return StringComparer.OrdinalIgnoreCase.Compare(Name, other.Name) > 0;
+            else
+                return Ordinal > other.Ordinal;
         }
 
-        internal readonly bool IsEqual(OrdinalOrName other)
+        public readonly bool Equals(OrdinalOrName other)
         {
-            return Name == null ? Ordinal == other.Ordinal : String.Compare(this.Name, other.Name, StringComparison.OrdinalIgnoreCase) == 0;
+            return Ordinal == other.Ordinal && StringComparer.OrdinalIgnoreCase.Equals(Name, other.Name);
+        }
+
+        /// <inheritdoc />
+        public override readonly int GetHashCode()
+        {
+            return Ordinal.GetHashCode() ^ StringComparer.OrdinalIgnoreCase.GetHashCode(Name);
         }
 
     }
