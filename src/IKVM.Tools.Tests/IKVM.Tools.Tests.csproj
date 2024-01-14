@@ -74,6 +74,19 @@
         </PublishProjectReference>
 
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))">
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win-arm64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmc\net472\win-arm64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))">
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win-arm64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmstub\net472\win-arm64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win-arm64</SetRuntimeIdentifier>
             <PublishTargetPath>ikvmc\net6.0\win-arm64</PublishTargetPath>
