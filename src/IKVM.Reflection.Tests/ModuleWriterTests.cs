@@ -400,6 +400,64 @@ namespace IKVM.Reflection.Tests
             var a = tempLoad.LoadFromAssemblyPath(Path.Combine(tempPath, "Test.dll"));
         }
 
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void CanWriteConsoleApplication(FrameworkSpec framework)
+        {
+            if (Init(framework, out var universe, out var resolver, out var verifier, out var tempPath, out var tempLoad) == false)
+                return;
+
+            var assembly = universe.DefineDynamicAssembly(new AssemblyName("Test"), AssemblyBuilderAccess.Save, tempPath);
+            var module = assembly.DefineDynamicModule("Test", "Test.exe", false);
+            var type = module.DefineType("Type");
+
+            var mainMethod = type.DefineMethod("Main", MethodAttributes.Public | MethodAttributes.Static, universe.Import(typeof(void)), new[] { universe.Import(typeof(string[])) });
+            var mainMethodIL = mainMethod.GetILGenerator();
+            mainMethodIL.Emit(OpCodes.Ret);
+            assembly.SetEntryPoint(mainMethod, PEFileKinds.ConsoleApplication);
+
+            type.CreateType();
+            assembly.Save("Test.exe", PortableExecutableKinds.ILOnly | PortableExecutableKinds.PE32Plus, ImageFileMachine.AMD64);
+
+            foreach (var v in verifier.Verify(new PEReader(File.OpenRead(Path.Combine(tempPath, "Test.exe")))))
+                v.Code.Should().Be(ILVerify.VerifierError.None);
+
+            var a = tempLoad.LoadFromAssemblyPath(Path.Combine(tempPath, "Test.exe"));
+            a.GetName().Name.Should().Be("Test");
+            a.GetModule("Test").Should().NotBeNull();
+            var t = a.GetType("Type");
+            t.Should().HaveMethod("Main", new[] { tempLoad.CoreAssembly.GetType("System.String").MakeArrayType() }).Which.Should().Return(tempLoad.CoreAssembly.GetType("System.Void"));
+        }
+
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void CanWriteWindowsApplication(FrameworkSpec framework)
+        {
+            if (Init(framework, out var universe, out var resolver, out var verifier, out var tempPath, out var tempLoad) == false)
+                return;
+
+            var assembly = universe.DefineDynamicAssembly(new AssemblyName("Test"), AssemblyBuilderAccess.Save, tempPath);
+            var module = assembly.DefineDynamicModule("Test", "Test.exe", false);
+            var type = module.DefineType("Type");
+
+            var mainMethod = type.DefineMethod("Main", MethodAttributes.Public | MethodAttributes.Static, universe.Import(typeof(void)), new[] { universe.Import(typeof(string[])) });
+            var mainMethodIL = mainMethod.GetILGenerator();
+            mainMethodIL.Emit(OpCodes.Ret);
+            assembly.SetEntryPoint(mainMethod, PEFileKinds.WindowApplication);
+
+            type.CreateType();
+            assembly.Save("Test.exe", PortableExecutableKinds.ILOnly, ImageFileMachine.AMD64);
+
+            foreach (var v in verifier.Verify(new PEReader(File.OpenRead(Path.Combine(tempPath, "Test.exe")))))
+                v.Code.Should().Be(ILVerify.VerifierError.None);
+
+            var a = tempLoad.LoadFromAssemblyPath(Path.Combine(tempPath, "Test.exe"));
+            a.GetName().Name.Should().Be("Test");
+            a.GetModule("Test").Should().NotBeNull();
+            var t = a.GetType("Type");
+            t.Should().HaveMethod("Main", new[] { tempLoad.CoreAssembly.GetType("System.String").MakeArrayType() }).Which.Should().Return(tempLoad.CoreAssembly.GetType("System.Void"));
+        }
+
     }
 
 }

@@ -110,12 +110,12 @@ namespace IKVM.Reflection.Emit
             {
                 this.culture = name.CultureName;
             }
+
             this.flags = name.RawFlags;
             this.hashAlgorithm = name.HashAlgorithm;
             if (this.hashAlgorithm == AssemblyHashAlgorithm.None)
-            {
                 this.hashAlgorithm = AssemblyHashAlgorithm.SHA1;
-            }
+
             this.keyPair = name.KeyPair;
             if (this.keyPair != null)
             {
@@ -123,25 +123,20 @@ namespace IKVM.Reflection.Emit
             }
             else
             {
-                byte[] publicKey = name.GetPublicKey();
+                var publicKey = name.GetPublicKey();
                 if (publicKey != null && publicKey.Length != 0)
-                {
                     this.publicKey = (byte[])publicKey.Clone();
-                }
             }
+
             this.dir = dir ?? ".";
             if (customAttributes != null)
-            {
                 this.customAttributes.AddRange(customAttributes);
-            }
+
             if (universe.HasCoreLib && !universe.CoreLib.__IsMissing && universe.CoreLib.ImageRuntimeVersion != null)
-            {
                 this.imageRuntimeVersion = universe.CoreLib.ImageRuntimeVersion;
-            }
             else
-            {
                 this.imageRuntimeVersion = TypeUtil.GetAssembly(typeof(object)).ImageRuntimeVersion;
-            }
+
             universe.RegisterDynamicAssembly(this);
         }
 
@@ -468,13 +463,8 @@ namespace IKVM.Reflection.Emit
                 module.ExportTypes(fileToken, manifestModule);
             }
 
-            // start with an empty entry point
-            var entryPointToken = MetadataTokens.MethodDefinitionHandle(0);
-            if (entryPoint != null)
-                entryPointToken = (MethodDefinitionHandle)MetadataTokens.EntityHandle(entryPoint.MetadataToken);
-
             // finally, write the manifest module
-            ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPointToken, streamOrNull);
+            ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, streamOrNull);
         }
 
         AssemblyFileHandle AddFile(ModuleBuilder manifestModule, string fileName, int flags)

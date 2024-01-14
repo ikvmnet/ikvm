@@ -430,26 +430,20 @@ namespace IKVM.Reflection
             get { return false; }
         }
 
-        public long __ImageBase
+        public ulong __ImageBase
         {
             get { return GetImageBaseImpl(); }
         }
 
-        protected abstract long GetImageBaseImpl();
+        protected abstract ulong GetImageBaseImpl();
 
-        public long __StackReserve
-        {
-            get { return GetStackReserveImpl(); }
-        }
+        public ulong __StackReserve => GetStackReserveImpl();
 
-        protected abstract long GetStackReserveImpl();
+        protected abstract ulong GetStackReserveImpl();
 
-        public int __FileAlignment
-        {
-            get { return GetFileAlignmentImpl(); }
-        }
+        public uint __FileAlignment => GetFileAlignmentImpl();
 
-        protected abstract int GetFileAlignmentImpl();
+        protected abstract uint GetFileAlignmentImpl();
 
         public DllCharacteristics __DllCharacteristics
         {
@@ -605,17 +599,17 @@ namespace IKVM.Reflection
             throw NotSupportedException();
         }
 
-        protected sealed override long GetImageBaseImpl()
+        protected sealed override ulong GetImageBaseImpl()
         {
             throw NotSupportedException();
         }
 
-        protected sealed override long GetStackReserveImpl()
+        protected sealed override ulong GetStackReserveImpl()
         {
             throw NotSupportedException();
         }
 
-        protected sealed override int GetFileAlignmentImpl()
+        protected sealed override uint GetFileAlignmentImpl()
         {
             throw NotSupportedException();
         }

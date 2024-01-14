@@ -404,10 +404,10 @@ namespace IKVM.Tools.Importer
 
         void ContinueParseCommandLine(RuntimeContext context, StaticCompiler compiler, IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
         {
-            List<string> fileNames = new List<string>();
+            var fileNames = new List<string>();
             while (arglist.MoveNext())
             {
-                string s = arglist.Current;
+                var s = arglist.Current;
                 if (s == "{")
                 {
                     if (!nonleaf)
@@ -494,11 +494,11 @@ namespace IKVM.Tools.Importer
                                 break;
                             case "-platform:anycpu32bitpreferred":
                                 options.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.Preferred32Bit;
-                                options.imageFileMachine = ImageFileMachine.I386;
+                                options.imageFileMachine = ImageFileMachine.UNKNOWN;
                                 break;
                             case "-platform:anycpu":
                                 options.pekind = PortableExecutableKinds.ILOnly;
-                                options.imageFileMachine = ImageFileMachine.I386;
+                                options.imageFileMachine = ImageFileMachine.UNKNOWN;
                                 break;
                             default:
                                 throw new FatalCompilerErrorException(Message.UnrecognizedPlatform, s.Substring(10));
@@ -527,11 +527,10 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s.StartsWith("-D"))
                     {
-                        string[] keyvalue = s.Substring(2).Split('=');
+                        var keyvalue = s.Substring(2).Split('=');
                         if (keyvalue.Length != 2)
-                        {
                             keyvalue = new string[] { keyvalue[0], "" };
-                        }
+
                         options.props[keyvalue[0]] = keyvalue[1];
                     }
                     else if (s == "-ea" || s == "-enableassertions")
@@ -560,7 +559,7 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s.StartsWith("-reference:") || s.StartsWith("-r:"))
                     {
-                        string r = s.Substring(s.IndexOf(':') + 1);
+                        var r = s.Substring(s.IndexOf(':') + 1);
                         if (r == "")
                             throw new FatalCompilerErrorException(Message.MissingFileSpecification, s);
 
@@ -568,8 +567,9 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s.StartsWith("-recurse:"))
                     {
-                        string spec = s.Substring(9);
-                        bool exists = false;
+                        var spec = s.Substring(9);
+                        var exists = false;
+
                         // MONOBUG On Mono 1.0.2, Directory.Exists throws an exception if we pass an invalid directory name
                         try
                         {
@@ -577,18 +577,20 @@ namespace IKVM.Tools.Importer
                         }
                         catch (IOException)
                         {
+
                         }
+
                         bool found;
                         if (exists)
                         {
-                            DirectoryInfo dir = new DirectoryInfo(spec);
+                            var dir = new DirectoryInfo(spec);
                             found = Recurse(context, compiler, options, dir, dir, "*");
                         }
                         else
                         {
                             try
                             {
-                                DirectoryInfo dir = new DirectoryInfo(Path.GetDirectoryName(spec));
+                                var dir = new DirectoryInfo(Path.GetDirectoryName(spec));
                                 if (dir.Exists)
                                 {
                                     found = Recurse(context, compiler, options, dir, dir, Path.GetFileName(spec));
@@ -611,10 +613,9 @@ namespace IKVM.Tools.Importer
                                 throw new FatalCompilerErrorException(Message.InvalidPath, spec);
                             }
                         }
+
                         if (!found)
-                        {
                             throw new FatalCompilerErrorException(Message.FileNotFound, spec);
-                        }
                     }
                     else if (s.StartsWith("-resource:"))
                     {
@@ -628,24 +629,16 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s.StartsWith("-externalresource:"))
                     {
-                        string[] spec = s.Substring(18).Split('=');
+                        var spec = s.Substring(18).Split('=');
                         if (spec.Length != 2)
-                        {
                             throw new FatalCompilerErrorException(Message.InvalidOptionSyntax, s);
-                        }
                         if (!File.Exists(spec[1]))
-                        {
                             throw new FatalCompilerErrorException(Message.ExternalResourceNotFound, spec[1]);
-                        }
                         if (Path.GetFileName(spec[1]) != spec[1])
-                        {
                             throw new FatalCompilerErrorException(Message.ExternalResourceNameInvalid, spec[1]);
-                        }
-                        if (options.externalResources == null)
-                        {
-                            options.externalResources = new Dictionary<string, string>();
-                        }
+
                         // TODO resource name clashes should be tested
+                        options.externalResources ??= new Dictionary<string, string>();
                         options.externalResources.Add(spec[0], spec[1]);
                     }
                     else if (s == "-nojni")
@@ -658,11 +651,9 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s.StartsWith("-version:"))
                     {
-                        string str = s.Substring(9);
+                        var str = s.Substring(9);
                         if (!TryParseVersion(s.Substring(9), out options.version))
-                        {
                             throw new FatalCompilerErrorException(Message.InvalidVersionFormat, str);
-                        }
                     }
                     else if (s.StartsWith("-fileversion:"))
                     {
@@ -719,24 +710,23 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s.StartsWith("-privatepackage:"))
                     {
-                        string prefix = s.Substring(16);
+                        var prefix = s.Substring(16);
                         ArrayAppend(ref options.privatePackages, prefix);
                     }
                     else if (s.StartsWith("-publicpackage:"))
                     {
-                        string prefix = s.Substring(15);
+                        var prefix = s.Substring(15);
                         ArrayAppend(ref options.publicPackages, prefix);
                     }
                     else if (s.StartsWith("-nowarn:"))
                     {
-                        foreach (string w in s.Substring(8).Split(','))
+                        foreach (var w in s.Substring(8).Split(','))
                         {
-                            string ws = w;
                             // lame way to chop off the leading zeroes
+                            string ws = w;
                             while (ws.StartsWith("0"))
-                            {
                                 ws = ws.Substring(1);
-                            }
+
                             options.suppressWarnings[ws] = ws;
                         }
                     }
@@ -748,12 +738,11 @@ namespace IKVM.Tools.Importer
                     {
                         foreach (string w in s.Substring(13).Split(','))
                         {
-                            string ws = w;
                             // lame way to chop off the leading zeroes
+                            string ws = w;
                             while (ws.StartsWith("0"))
-                            {
                                 ws = ws.Substring(1);
-                            }
+
                             options.errorWarnings[ws] = ws;
                         }
                     }
@@ -772,36 +761,24 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s == "-sharedclassloader")
                     {
-                        if (options.sharedclassloader == null)
-                        {
-                            options.sharedclassloader = new List<CompilerClassLoader>();
-                        }
+                        options.sharedclassloader ??= new List<CompilerClassLoader>();
                     }
                     else if (s.StartsWith("-baseaddress:"))
                     {
-                        string baseAddress = s.Substring(13);
+                        var baseAddress = s.Substring(13);
                         ulong baseAddressParsed;
                         if (baseAddress.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-                        {
-                            baseAddressParsed = UInt64.Parse(baseAddress.Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier);
-                        }
+                            baseAddressParsed = ulong.Parse(baseAddress.Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier);
                         else
-                        {
-                            // note that unlike CSC we don't support octal
-                            baseAddressParsed = UInt64.Parse(baseAddress);
-                        }
-                        options.baseAddress = (long)(baseAddressParsed & 0xFFFFFFFFFFFF0000UL);
+                            baseAddressParsed = ulong.Parse(baseAddress); // note that unlike CSC we don't support octal
+
+                        options.baseAddress = (baseAddressParsed & 0xFFFFFFFFFFFF0000UL);
                     }
                     else if (s.StartsWith("-filealign:"))
                     {
-                        int filealign;
-                        if (!Int32.TryParse(s.Substring(11), out filealign)
-                            || filealign < 512
-                            || filealign > 8192
-                            || (filealign & (filealign - 1)) != 0)
-                        {
+                        if (!uint.TryParse(s.Substring(11), out var filealign) || filealign < 512 || filealign > 8192 || (filealign & (filealign - 1)) != 0)
                             throw new FatalCompilerErrorException(Message.InvalidFileAlignment, s.Substring(11));
-                        }
+
                         options.fileAlignment = filealign;
                     }
                     else if (s == "-nopeercrossreference")
@@ -829,6 +806,7 @@ namespace IKVM.Tools.Importer
                     else if (s.StartsWith("-writeSuppressWarningsFile:"))
                     {
                         options.writeSuppressWarningsFile = GetFileInfo(s.Substring(27));
+
                         try
                         {
                             options.writeSuppressWarningsFile.Delete();
@@ -840,11 +818,10 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s.StartsWith("-proxy:")) // currently undocumented!
                     {
-                        string proxy = s.Substring(7);
+                        var proxy = s.Substring(7);
                         if (options.proxies.Contains(proxy))
-                        {
                             IssueMessage(compiler, Message.DuplicateProxy, proxy);
-                        }
+
                         options.proxies.Add(proxy);
                     }
                     else if (s == "-nologo")
@@ -904,29 +881,25 @@ namespace IKVM.Tools.Importer
 
             if (options.assembly == null)
             {
-                string basename = options.path == null ? defaultAssemblyName : options.path.Name;
+                var basename = options.path == null ? defaultAssemblyName : options.path.Name;
                 if (basename == null)
-                {
                     throw new FatalCompilerErrorException(Message.NoOutputFileSpecified);
-                }
+
                 int idx = basename.LastIndexOf('.');
                 if (idx > 0)
-                {
                     options.assembly = basename.Substring(0, idx);
-                }
                 else
-                {
                     options.assembly = basename;
-                }
             }
+
             if (options.path != null && options.guessFileKind)
             {
                 if (options.path.Extension.Equals(".dll", StringComparison.OrdinalIgnoreCase))
-                {
                     options.target = PEFileKinds.Dll;
-                }
+
                 options.guessFileKind = false;
             }
+
             if (options.mainClass == null && manifestMainClass != null && (options.guessFileKind || options.target != PEFileKinds.Dll))
             {
                 IssueMessage(compiler, options, Message.MainMethodFromManifest, manifestMainClass);

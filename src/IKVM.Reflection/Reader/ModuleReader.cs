@@ -1183,10 +1183,9 @@ namespace IKVM.Reflection.Reader
                     // (not setting any flag is ok)
                     break;
             }
+
             if (peFile.OptionalHeader.Magic == IMAGE_OPTIONAL_HEADER.IMAGE_NT_OPTIONAL_HDR64_MAGIC)
-            {
                 peKind |= PortableExecutableKinds.PE32Plus;
-            }
 
             machine = (ImageFileMachine)peFile.FileHeader.Machine;
         }
@@ -1232,10 +1231,7 @@ namespace IKVM.Reflection.Reader
 
         internal override void Dispose()
         {
-            if (stream != null)
-            {
-                stream.Dispose();
-            }
+            stream?.Dispose();
         }
 
         internal override void ExportTypes(AssemblyFileHandle fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
@@ -1244,19 +1240,19 @@ namespace IKVM.Reflection.Reader
             manifestModule.ExportTypes(typeDefs, fileToken);
         }
 
-        protected override long GetImageBaseImpl()
+        protected override ulong GetImageBaseImpl()
         {
-            return (long)peFile.OptionalHeader.ImageBase;
+            return peFile.OptionalHeader.ImageBase;
         }
 
-        protected override long GetStackReserveImpl()
+        protected override ulong GetStackReserveImpl()
         {
-            return (long)peFile.OptionalHeader.SizeOfStackReserve;
+            return peFile.OptionalHeader.SizeOfStackReserve;
         }
 
-        protected override int GetFileAlignmentImpl()
+        protected override uint GetFileAlignmentImpl()
         {
-            return (int)peFile.OptionalHeader.FileAlignment;
+            return peFile.OptionalHeader.FileAlignment;
         }
 
         protected override DllCharacteristics GetDllCharacteristicsImpl()

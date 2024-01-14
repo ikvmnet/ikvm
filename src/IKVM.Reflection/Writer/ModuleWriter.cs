@@ -38,6 +38,29 @@ namespace IKVM.Reflection.Writer
     static class ModuleWriter
     {
 
+        const ulong DefaultExeBaseAddress32Bit = 0x00400000;
+        const ulong DefaultExeBaseAddress64Bit = 0x0000000140000000;
+
+        const ulong DefaultDllBaseAddress32Bit = 0x10000000;
+        const ulong DefaultDllBaseAddress64Bit = 0x0000000180000000;
+
+        const ulong DefaultSizeOfHeapReserve32Bit = 0x00100000;
+        const ulong DefaultSizeOfHeapReserve64Bit = 0x00400000;
+
+        const ulong DefaultSizeOfHeapCommit32Bit = 0x1000;
+        const ulong DefaultSizeOfHeapCommit64Bit = 0x2000;
+
+        const ulong DefaultSizeOfStackReserve32Bit = 0x00100000;
+        const ulong DefaultSizeOfStackReserve64Bit = 0x00400000;
+
+        const ulong DefaultSizeOfStackCommit32Bit = 0x1000;
+        const ulong DefaultSizeOfStackCommit64Bit = 0x4000;
+
+        const ushort DefaultFileAlignment32Bit = 0x200;
+        const ushort DefaultFileAlignment64Bit = 0x200; //both 32 and 64 bit binaries used this value in the native stack.
+
+        const ushort DefaultSectionAlignment = 0x2000;
+
         /// <summary>
         /// Writes the module specified by <paramref name="moduleBuilder"/>.
         /// </summary>
@@ -48,10 +71,10 @@ namespace IKVM.Reflection.Writer
         /// <param name="portableExecutableKind"></param>
         /// <param name="imageFileMachine"></param>
         /// <param name="nativeResources"></param>
-        /// <param name="entryPointToken"></param>
-        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSectionBuilder nativeResources, MethodDefinitionHandle entryPointToken)
+        /// <param name="entryPoint"></param>
+        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSectionBuilder nativeResources, MethodInfo entryPoint)
         {
-            WriteModule(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPointToken, null);
+            WriteModule(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, null);
         }
 
         /// <summary>
@@ -64,9 +87,9 @@ namespace IKVM.Reflection.Writer
         /// <param name="portableExecutableKind"></param>
         /// <param name="imageFileMachine"></param>
         /// <param name="nativeResources"></param>
-        /// <param name="entryPointToken"></param>
+        /// <param name="entryPoint"></param>
         /// <param name="stream"></param>
-        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSectionBuilder nativeResources, MethodDefinitionHandle entryPointToken, Stream stream)
+        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSectionBuilder nativeResources, MethodInfo entryPoint, Stream stream)
         {
             if (stream == null)
             {
@@ -86,10 +109,7 @@ namespace IKVM.Reflection.Writer
                 }
 
                 using (var fs = new FileStream(fileName, FileMode.Create))
-                {
-                    var entryPoint = entryPointToken.IsNil == false ? entryPointToken : default;
                     WriteModuleImpl(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, fs);
-                }
 
                 // if we're running on Mono, mark the module as executable by using a Mono private API extension
                 if (mono)
@@ -97,7 +117,6 @@ namespace IKVM.Reflection.Writer
             }
             else
             {
-                var entryPoint = entryPointToken.IsNil == false ? entryPointToken : default;
                 WriteModuleImpl(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, stream);
             }
         }
@@ -115,7 +134,7 @@ namespace IKVM.Reflection.Writer
         /// <param name="entryPoint"></param>
         /// <param name="stream"></param>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSectionBuilder nativeResources, MethodDefinitionHandle entryPoint, Stream stream)
+        static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSectionBuilder nativeResources, MethodInfo entryPoint, Stream stream)
         {
             module.ApplyUnmanagedExports(imageFileMachine);
             module.FixupMethodBodyTokens();
@@ -134,15 +153,30 @@ namespace IKVM.Reflection.Writer
             // write the module content
             WriteModuleImpl(module);
 
+            // are we outputing for a 64 bit architecture?
+            var is64BitArch = imageFileMachine is ImageFileMachine.AMD64 or ImageFileMachine.ARM64 or ImageFileMachine.IA64;
+
             // initialize PE header builder
             var peHeaderBuilder = new PEHeaderBuilder(
                 machine: GetMachine(imageFileMachine),
-                fileAlignment: module.__FileAlignment,
-                imageBase: (ulong)module.__ImageBase,
+                sectionAlignment: GetSectionAlignment(module, is64BitArch),
+                fileAlignment: GetFileAlignment(module, is64BitArch),
+                imageBase: GetImageBase(module, fileKind, is64BitArch),
+                majorLinkerVersion: 0x30,
+                minorLinkerVersion: 0,
+                majorOperatingSystemVersion: 4,
+                minorOperatingSystemVersion: 0,
+                majorImageVersion: 0,
+                minorImageVersion: 0,
+                majorSubsystemVersion: GetMajorSubsystemVersion(imageFileMachine, fileKind),
+                minorSubsystemVersion: GetMinorSubsystemVersion(imageFileMachine, fileKind),
                 subsystem: GetSubsystem(fileKind),
                 dllCharacteristics: (System.Reflection.PortableExecutable.DllCharacteristics)(int)module.__DllCharacteristics,
                 imageCharacteristics: GetImageCharacteristics(imageFileMachine, fileKind),
-                sizeOfStackReserve: module.GetStackReserve(1048576));
+                sizeOfStackReserve: GetSizeOfStackReserve(module, is64BitArch),
+                sizeOfStackCommit: GetSizeOfStackCommit(module, is64BitArch),
+                sizeOfHeapReserve: GetSizeOfHeapReserve(module, is64BitArch),
+                sizeOfHeapCommit: GetSizeOfHeapCommit(module, is64BitArch));
 
             // initialize PE builder
             var strongNameSignatureSize = ComputeStrongNameSignatureLength(publicKey);
@@ -153,7 +187,7 @@ namespace IKVM.Reflection.Writer
                 managedResources: module.ResourceStream,
                 nativeResources: nativeResources,
                 strongNameSignatureSize: strongNameSignatureSize,
-                entryPoint: entryPoint,
+                entryPoint: entryPoint != null ? (MethodDefinitionHandle)MetadataTokens.EntityHandle(entryPoint.GetCurrentToken()) : default,
                 flags: GetCorFlags(portableExecutableKind, keyPair),
                 deterministicIdProvider: GetDeterministicIdProvider(module));
 
@@ -210,6 +244,7 @@ namespace IKVM.Reflection.Writer
         {
             return imageFileMachine switch
             {
+                ImageFileMachine.UNKNOWN => Machine.Unknown,
                 ImageFileMachine.I386 => Machine.I386,
                 ImageFileMachine.ARM => Machine.Arm,
                 ImageFileMachine.AMD64 => Machine.Amd64,
@@ -217,6 +252,73 @@ namespace IKVM.Reflection.Writer
                 ImageFileMachine.ARM64 => Machine.Arm64,
                 _ => throw new ArgumentOutOfRangeException("imageFileMachine"),
             };
+        }
+
+        /// <summary>
+        /// Gets the appropriate section alignment for the image.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        static int GetSectionAlignment(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
+        {
+            return DefaultSectionAlignment;
+        }
+
+        /// <summary>
+        /// Gets the appropriate file alignment for the image.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        static int GetFileAlignment(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
+        {
+            if (module.__FileAlignment == 0)
+                return is64BitArch ? DefaultFileAlignment64Bit : DefaultFileAlignment32Bit;
+            else
+                return (int)module.__FileAlignment;
+        }
+
+        /// <summary>
+        /// Gets the base address of the image.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="fileKind"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        static ulong GetImageBase(IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, bool is64BitArch)
+        {
+            var baseAddress = unchecked(module.__ImageBase + 0x8000) & (is64BitArch ? 0xffffffffffff0000 : 0x00000000ffff0000);
+
+            // cover values smaller than 0x8000, overflow and default value 0):
+            if (baseAddress == 0)
+            {
+                if (fileKind is IKVM.Reflection.Emit.PEFileKinds.ConsoleApplication or IKVM.Reflection.Emit.PEFileKinds.WindowApplication)
+                    return is64BitArch ? DefaultExeBaseAddress64Bit : DefaultExeBaseAddress32Bit;
+                else
+                    return is64BitArch ? DefaultDllBaseAddress64Bit : DefaultDllBaseAddress32Bit;
+            }
+
+            return baseAddress;
+        }
+
+        /// <summary>
+        /// Gets the major subsystem verison.
+        /// </summary>
+        /// <returns></returns>
+        static ushort GetMajorSubsystemVersion(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKinds)
+        {
+            return imageFileMachine == ImageFileMachine.ARM ? (ushort)6 : (ushort)4;
+        }
+
+        /// <summary>
+        /// Gets the minor subsystem version.
+        /// </summary>
+        /// <returns></returns>
+        static ushort GetMinorSubsystemVersion(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKinds)
+        {
+            return imageFileMachine == ImageFileMachine.ARM ? (ushort)2 : (ushort)0;
         }
 
         /// <summary>
@@ -239,7 +341,7 @@ namespace IKVM.Reflection.Writer
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         static Characteristics GetImageCharacteristics(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKind)
         {
-            var characteristics = default(Characteristics);
+            var characteristics = Characteristics.ExecutableImage;
 
             switch (imageFileMachine)
             {
@@ -258,10 +360,58 @@ namespace IKVM.Reflection.Writer
                     throw new ArgumentOutOfRangeException("imageFileMachine");
             }
 
-            if (fileKind == IKVM.Reflection.Emit.PEFileKinds.Dll)
-                characteristics |= Characteristics.Dll;
+            switch (fileKind)
+            {
+                case IKVM.Reflection.Emit.PEFileKinds.Dll:
+                    characteristics |= Characteristics.Dll;
+                    break;
+            }
 
             return characteristics;
+        }
+
+        /// <summary>
+        /// Gets the size of the stack reserve.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        static ulong GetSizeOfStackReserve(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
+        {
+            return is64BitArch ? DefaultSizeOfStackReserve64Bit : DefaultSizeOfStackReserve32Bit;
+        }
+
+        /// <summary>
+        /// Gets the size of the stack commit.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        static ulong GetSizeOfStackCommit(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
+        {
+            return is64BitArch ? DefaultSizeOfStackCommit64Bit : DefaultSizeOfStackCommit32Bit;
+        }
+
+        /// <summary>
+        /// Gets the size of the heap reserve.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        static ulong GetSizeOfHeapReserve(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
+        {
+            return is64BitArch ? DefaultSizeOfHeapReserve64Bit : DefaultSizeOfHeapReserve32Bit;
+        }
+
+        /// <summary>
+        /// Gets the size of the heap commit.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        static ulong GetSizeOfHeapCommit(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
+        {
+            return is64BitArch ? DefaultSizeOfHeapCommit64Bit : DefaultSizeOfHeapCommit32Bit;
         }
 
         /// <summary>

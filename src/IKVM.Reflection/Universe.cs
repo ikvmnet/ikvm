@@ -737,7 +737,7 @@ namespace IKVM.Reflection
         [Obsolete]
         public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
         {
-            AssemblyBuilder ab = new AssemblyBuilder(this, name, dir, null);
+            var ab = new AssemblyBuilder(this, name, dir, null);
             AddLegacyPermissionSet(ab, requiredPermissions, System.Security.Permissions.SecurityAction.RequestMinimum);
             AddLegacyPermissionSet(ab, optionalPermissions, System.Security.Permissions.SecurityAction.RequestOptional);
             AddLegacyPermissionSet(ab, refusedPermissions, System.Security.Permissions.SecurityAction.RequestRefuse);

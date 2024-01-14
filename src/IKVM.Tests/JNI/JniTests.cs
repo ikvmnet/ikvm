@@ -3,7 +3,7 @@ using System.IO;
 
 using FluentAssertions;
 
-using IKVM.Tests.Util;
+using IKVM.Java.Tests.Util;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

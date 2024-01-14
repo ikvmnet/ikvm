@@ -73,23 +73,17 @@ namespace IKVM.Reflection.Reader
             name.CodeBase = CodeBase;
 
             manifestModule.GetPEKind(out var peKind, out var machine);
+
             switch (machine)
             {
                 case ImageFileMachine.I386:
                     // FXBUG we copy the .NET bug that Preferred32Bit implies x86
                     if ((peKind & (PortableExecutableKinds.Required32Bit | PortableExecutableKinds.Preferred32Bit)) != 0)
-                    {
                         name.ProcessorArchitecture = ProcessorArchitecture.X86;
-                    }
                     else if ((rec.Flags & 0x70) == 0x70)
-                    {
-                        // it's a reference assembly
-                        name.ProcessorArchitecture = ProcessorArchitecture.None;
-                    }
+                        name.ProcessorArchitecture = ProcessorArchitecture.None; // it's a reference assembly
                     else
-                    {
                         name.ProcessorArchitecture = ProcessorArchitecture.MSIL;
-                    }
                     break;
                 case ImageFileMachine.IA64:
                     name.ProcessorArchitecture = ProcessorArchitecture.IA64;
@@ -104,6 +98,7 @@ namespace IKVM.Reflection.Reader
                     name.ProcessorArchitecture = ProcessorArchitecture.Arm64;
                     break;
             }
+
             name.RawFlags = (AssemblyNameFlags)rec.Flags;
             return name;
         }
@@ -111,42 +106,32 @@ namespace IKVM.Reflection.Reader
         public override Type[] GetTypes()
         {
             if (externalModules.Length == 0)
-            {
                 return manifestModule.GetTypes();
-            }
 
-            List<Type> list = new List<Type>();
-            foreach (Module module in GetModules(false))
-            {
+            var list = new List<Type>();
+            foreach (var module in GetModules(false))
                 list.AddRange(module.GetTypes());
-            }
+
             return list.ToArray();
         }
 
         internal override Type FindType(TypeName typeName)
         {
-            Type type = manifestModule.FindType(typeName);
+            var type = manifestModule.FindType(typeName);
             for (int i = 0; type == null && i < externalModules.Length; i++)
-            {
                 if ((manifestModule.File.records[i].Flags & ContainsNoMetaData) == 0)
-                {
                     type = GetModule(i).FindType(typeName);
-                }
-            }
 
             return type;
         }
 
         internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
         {
-            Type type = manifestModule.FindTypeIgnoreCase(lowerCaseName);
+            var type = manifestModule.FindTypeIgnoreCase(lowerCaseName);
             for (int i = 0; type == null && i < externalModules.Length; i++)
-            {
                 if ((manifestModule.File.records[i].Flags & ContainsNoMetaData) == 0)
-                {
                     type = GetModule(i).FindTypeIgnoreCase(lowerCaseName);
-                }
-            }
+
             return type;
         }
 

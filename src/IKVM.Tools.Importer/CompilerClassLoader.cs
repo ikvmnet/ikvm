@@ -3357,8 +3357,8 @@ namespace IKVM.Tools.Importer
         internal string classLoader;
         internal PortableExecutableKinds pekind = PortableExecutableKinds.ILOnly;
         internal ImageFileMachine imageFileMachine = ImageFileMachine.I386;
-        internal long baseAddress;
-        internal int fileAlignment;
+        internal ulong baseAddress;
+        internal uint fileAlignment;
         internal bool highentropyva;
         internal List<CompilerClassLoader> sharedclassloader; // should *not* be deep copied in Copy(), because we want the list of all compilers that share a class loader
         internal Dictionary<string, string> suppressWarnings = new Dictionary<string, string>();

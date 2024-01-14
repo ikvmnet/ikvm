@@ -211,9 +211,9 @@ namespace IKVM.Reflection.Emit
         readonly AssemblyBuilder asm;
         Guid mvid;
         uint timestamp;
-        long imageBaseAddress = 0x00400000;
-        long stackReserve = -1;
-        int fileAlignment = 0x200;
+        ulong imageBaseAddress = 0;
+        uint fileAlignment = 0;
+        ulong stackReserve = 0;
         DllCharacteristics dllCharacteristics = DllCharacteristics.DynamicBase | DllCharacteristics.NoSEH | DllCharacteristics.NXCompat | DllCharacteristics.TerminalServerAware;
         internal readonly string moduleName;
         internal readonly string fileName;
@@ -1482,46 +1482,35 @@ namespace IKVM.Reflection.Emit
         }
 
         // non-standard API
-        public new long __ImageBase
+        public new ulong __ImageBase
         {
             get { return imageBaseAddress; }
             set { imageBaseAddress = value; }
         }
 
-        protected override long GetImageBaseImpl()
+        protected override ulong GetImageBaseImpl()
         {
             return imageBaseAddress;
         }
 
-        public new long __StackReserve
+        public new ulong __StackReserve
         {
             get { return stackReserve; }
             set { stackReserve = value; }
         }
 
-        protected override long GetStackReserveImpl()
+        protected override ulong GetStackReserveImpl()
         {
             return stackReserve;
         }
 
-        [Obsolete("Use __StackReserve property.")]
-        public void __SetStackReserve(long stackReserve)
-        {
-            __StackReserve = stackReserve;
-        }
-
-        internal ulong GetStackReserve(ulong defaultValue)
-        {
-            return stackReserve == -1 ? defaultValue : (ulong)stackReserve;
-        }
-
-        public new int __FileAlignment
+        public new uint __FileAlignment
         {
             get { return fileAlignment; }
             set { fileAlignment = value; }
         }
 
-        protected override int GetFileAlignmentImpl()
+        protected override uint GetFileAlignmentImpl()
         {
             return fileAlignment;
         }

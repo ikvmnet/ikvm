@@ -3,7 +3,7 @@ using System.Linq;
 
 using FluentAssertions;
 
-using IKVM.Tests.Util;
+using IKVM.Java.Tests.Util;
 
 using java.lang.reflect;
 
