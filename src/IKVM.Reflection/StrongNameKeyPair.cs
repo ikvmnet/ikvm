@@ -122,17 +122,21 @@ namespace IKVM.Reflection
                 }
                 else
                 {
+#if NETFRAMEWORK
                     var parm = new CspParameters();
                     parm.KeyContainerName = keyPairContainer;
 
                     // MONOBUG Mono doesn't like it when Flags or KeyNumber are set
-                    if (!Universe.MonoRuntime)
+                    if (Universe.MonoRuntime == false)
                     {
                         parm.Flags = CspProviderFlags.UseMachineKeyStore | CspProviderFlags.UseExistingKey;
                         parm.KeyNumber = 2; // Signature
                     }
 
                     return new RSACryptoServiceProvider(parm);
+#else
+                    throw new PlatformNotSupportedException("Strong name key container support is only available when targeting .NET Framework.");
+#endif
                 }
             }
             catch
