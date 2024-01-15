@@ -21,9 +21,12 @@
   jeroen@frijters.net
   
 */
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -36,42 +39,36 @@ namespace IKVM.Reflection.Metadata
 
             internal int Offset;
             internal int Flags;
-            internal int Name;
+            internal StringHandle Name;
             internal int Implementation;
 
         }
 
         internal const int Index = 0x28;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
                 records[i].Offset = mr.ReadInt32();
                 records[i].Flags = mr.ReadInt32();
-                records[i].Name = mr.ReadStringIndex();
+                records[i].Name = MetadataTokens.StringHandle(mr.ReadStringIndex());
                 records[i].Implementation = mr.ReadImplementation();
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
             {
-                mw.Write(records[i].Offset);
-                mw.Write(records[i].Flags);
-                mw.WriteStringIndex(records[i].Name);
-                mw.WriteImplementation(records[i].Implementation);
-            }
-        }
+                var h = module.Metadata.AddManifestResource(
+                    (System.Reflection.ManifestResourceAttributes)records[i].Flags,
+                    records[i].Name,
+                    MetadataTokens.EntityHandle(records[i].Implementation),
+                    (uint)records[i].Offset);
 
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .AddFixed(8)
-                .WriteStringIndex()
-                .WriteImplementation()
-                .Value;
+                Debug.Assert(h == MetadataTokens.ManifestResourceHandle(i + 1));
+            }
         }
 
         internal void Fixup(ModuleBuilder moduleBuilder)

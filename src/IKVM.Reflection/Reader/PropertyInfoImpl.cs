@@ -58,7 +58,7 @@ namespace IKVM.Reflection.Reader
 
         public override int GetHashCode() => declaringType.GetHashCode() * 77 + index;
 
-        internal override PropertySignature PropertySignature => sig ??= PropertySignature.ReadSig(module, module.GetBlob(module.Property.records[index].Type), declaringType);
+        internal override PropertySignature PropertySignature => sig ??= PropertySignature.ReadSig(module, module.GetBlobReader(module.Property.records[index].Type), declaringType);
 
         public override PropertyAttributes Attributes => (PropertyAttributes)module.Property.records[index].Flags;
 

@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
 
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Reader;
@@ -85,7 +86,7 @@ namespace IKVM.Reflection
 
         internal Table[] GetTables()
         {
-            Table[] tables = new Table[64];
+            var tables = new Table[64];
             tables[ModuleTable.Index] = ModuleTable;
             tables[TypeRefTable.Index] = TypeRef;
             tables[TypeDefTable.Index] = TypeDef;
@@ -429,26 +430,20 @@ namespace IKVM.Reflection
             get { return false; }
         }
 
-        public long __ImageBase
+        public ulong __ImageBase
         {
             get { return GetImageBaseImpl(); }
         }
 
-        protected abstract long GetImageBaseImpl();
+        protected abstract ulong GetImageBaseImpl();
 
-        public long __StackReserve
-        {
-            get { return GetStackReserveImpl(); }
-        }
+        public ulong __StackReserve => GetStackReserveImpl();
 
-        protected abstract long GetStackReserveImpl();
+        protected abstract ulong GetStackReserveImpl();
 
-        public int __FileAlignment
-        {
-            get { return GetFileAlignmentImpl(); }
-        }
+        public uint __FileAlignment => GetFileAlignmentImpl();
 
-        protected abstract int GetFileAlignmentImpl();
+        protected abstract uint GetFileAlignmentImpl();
 
         public DllCharacteristics __DllCharacteristics
         {
@@ -518,7 +513,7 @@ namespace IKVM.Reflection
 
         internal abstract Type GetModuleType();
 
-        internal abstract ByteReader GetBlob(int blobIndex);
+        internal abstract ByteReader GetBlobReader(BlobHandle handle);
 
         internal IList<CustomAttributeData> GetDeclarativeSecurity(int metadataToken)
         {
@@ -534,12 +529,12 @@ namespace IKVM.Reflection
 
         }
 
-        internal virtual void ExportTypes(int fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
+        internal virtual void ExportTypes(AssemblyFileHandle handle, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
         {
 
         }
 
-        internal virtual string GetString(int index)
+        internal virtual string GetString(StringHandle handle)
         {
             throw new NotSupportedException();
         }
@@ -579,7 +574,7 @@ namespace IKVM.Reflection
             throw InvalidOperationException();
         }
 
-        internal sealed override ByteReader GetBlob(int blobIndex)
+        internal sealed override ByteReader GetBlobReader(BlobHandle handle)
         {
             throw InvalidOperationException();
         }
@@ -604,17 +599,17 @@ namespace IKVM.Reflection
             throw NotSupportedException();
         }
 
-        protected sealed override long GetImageBaseImpl()
+        protected sealed override ulong GetImageBaseImpl()
         {
             throw NotSupportedException();
         }
 
-        protected sealed override long GetStackReserveImpl()
+        protected sealed override ulong GetStackReserveImpl()
         {
             throw NotSupportedException();
         }
 
-        protected sealed override int GetFileAlignmentImpl()
+        protected sealed override uint GetFileAlignmentImpl()
         {
             throw NotSupportedException();
         }

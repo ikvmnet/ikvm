@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection.Metadata;
 using System.Text;
 
 using IKVM.Reflection.Writer;
@@ -517,7 +518,7 @@ namespace IKVM.Reflection.Emit
             get { return con; }
         }
 
-        internal int WriteBlob(ModuleBuilder moduleBuilder)
+        internal BlobHandle WriteBlob(ModuleBuilder moduleBuilder)
         {
             ByteBuffer bb;
             if (blob != null)
@@ -527,10 +528,11 @@ namespace IKVM.Reflection.Emit
             else
             {
                 bb = new ByteBuffer(100);
-                BlobWriter bw = new BlobWriter(moduleBuilder.Assembly, this, bb);
+                var bw = new BlobWriter(moduleBuilder.Assembly, this, bb);
                 bw.WriteCustomAttributeBlob();
             }
-            return moduleBuilder.Blobs.Add(bb);
+
+            return moduleBuilder.GetOrAddBlob(bb.ToArray());
         }
 
         internal object GetConstructorArgument(int pos)
@@ -599,15 +601,15 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        internal int WriteLegacyDeclSecurityBlob(ModuleBuilder moduleBuilder)
+        internal BlobHandle WriteLegacyDeclSecurityBlob(ModuleBuilder moduleBuilder)
         {
             if (blob != null)
             {
-                return moduleBuilder.Blobs.Add(ByteBuffer.Wrap(blob));
+                return moduleBuilder.GetOrAddBlob(blob);
             }
             else
             {
-                return moduleBuilder.Blobs.Add(ByteBuffer.Wrap(Encoding.Unicode.GetBytes((string)propertyValues[0])));
+                return moduleBuilder.GetOrAddBlob(Encoding.Unicode.GetBytes((string)propertyValues[0]));
             }
         }
 
@@ -629,28 +631,22 @@ namespace IKVM.Reflection.Emit
             if (blob != null)
             {
                 if (constructorArgs != null)
-                {
                     return new CustomAttributeData(asm, con, (int)constructorArgs[0], blob, -1);
-                }
+
                 return new CustomAttributeData(asm, con, new IKVM.Reflection.Reader.ByteReader(blob, 0, blob.Length));
             }
             else
             {
                 var namedArgs = new List<CustomAttributeNamedArgument>();
+
                 if (namedProperties != null)
-                {
                     for (int i = 0; i < namedProperties.Length; i++)
-                    {
                         namedArgs.Add(new CustomAttributeNamedArgument(namedProperties[i], RewrapValue(namedProperties[i].PropertyType, propertyValues[i])));
-                    }
-                }
+
                 if (namedFields != null)
-                {
                     for (int i = 0; i < namedFields.Length; i++)
-                    {
                         namedArgs.Add(new CustomAttributeNamedArgument(namedFields[i], RewrapValue(namedFields[i].FieldType, fieldValues[i])));
-                    }
-                }
+
                 var args = new List<CustomAttributeTypedArgument>(constructorArgs.Length);
                 var parameters = Constructor.GetParameters();
                 for (int i = 0; i < constructorArgs.Length; i++)

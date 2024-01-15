@@ -21,9 +21,12 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -38,53 +41,47 @@ namespace IKVM.Reflection.Metadata
             internal int MethodBody;
             internal int MethodDeclaration;
 
-            readonly int IRecord.SortKey => Class;
-
             readonly int IRecord.FilterKey => Class;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(Class, other.Class);
 
         }
 
         internal const int Index = 0x19;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Class = mr.ReadTypeDef();
-				records[i].MethodBody = mr.ReadMethodDefOrRef();
-				records[i].MethodDeclaration = mr.ReadMethodDefOrRef();
-			}
-		}
+        internal override void Read(Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Class = mr.ReadTypeDef();
+                records[i].MethodBody = mr.ReadMethodDefOrRef();
+                records[i].MethodDeclaration = mr.ReadMethodDefOrRef();
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.WriteTypeDef(records[i].Class);
-				mw.WriteMethodDefOrRef(records[i].MethodBody);
-				mw.WriteMethodDefOrRef(records[i].MethodDeclaration);
-			}
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                var h = module.Metadata.AddMethodImplementation(
+                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].Class),
+                    MetadataTokens.EntityHandle(records[i].MethodBody),
+                    MetadataTokens.EntityHandle(records[i].MethodDeclaration));
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.WriteTypeDef()
-				.WriteMethodDefOrRef()
-				.WriteMethodDefOrRef()
-				.Value;
-		}
+                Debug.Assert(h == MetadataTokens.MethodImplementationHandle(i + 1));
+            }
+        }
 
-		internal void Fixup(ModuleBuilder moduleBuilder)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				moduleBuilder.FixupPseudoToken(ref records[i].MethodBody);
-				moduleBuilder.FixupPseudoToken(ref records[i].MethodDeclaration);
-			}
+        internal void Fixup(ModuleBuilder moduleBuilder)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                moduleBuilder.FixupPseudoToken(ref records[i].MethodBody);
+                moduleBuilder.FixupPseudoToken(ref records[i].MethodDeclaration);
+            }
 
-			Sort();
-		}
-	}
+            Sort();
+        }
+    }
 
 }

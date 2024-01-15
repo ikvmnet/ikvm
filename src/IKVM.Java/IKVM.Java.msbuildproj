@@ -6,6 +6,7 @@
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <Bootstrap>true</Bootstrap>
+        <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
     </PropertyGroup>
 
     <ItemGroup>

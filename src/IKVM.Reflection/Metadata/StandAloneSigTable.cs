@@ -21,35 +21,38 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
+using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
 
-    sealed class StandAloneSigTable : Table<int>
+    sealed class StandAloneSigTable : Table<BlobHandle>
     {
 
         internal const int Index = 0x11;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
-                records[i] = mr.ReadBlobIndex();
+                records[i] = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
-                mw.WriteBlobIndex(records[i]);
+            {
+                var h = module.Metadata.AddStandaloneSignature(
+                    records[i]);
+
+                Debug.Assert(h == MetadataTokens.StandaloneSignatureHandle(i + 1));
+            }
         }
 
-        protected override int GetRowSize(Table.RowSizeCalc rsc)
-        {
-            return rsc.WriteBlobIndex().Value;
-        }
-
-        internal int FindOrAddRecord(int blob)
+        internal int FindOrAddRecord(BlobHandle blob)
         {
             for (int i = 0; i < rowCount; i++)
                 if (records[i] == blob)

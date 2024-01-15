@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 
 using IKVM.Reflection.Writer;
@@ -384,7 +385,7 @@ namespace IKVM.Reflection.Emit
             if (opc.Value < 0)
                 code.Write((byte)(opc.Value >> 8));
 
-            code.Write((byte)opc.Value);
+            code.Write((byte)opc.Value);    
             switch (opc.FlowControl)
             {
                 case FlowControl.Branch:
@@ -600,9 +601,8 @@ namespace IKVM.Reflection.Emit
         void WriteToken(int token)
         {
             if (ModuleBuilder.IsPseudoToken(token))
-            {
                 tokenFixups.Add(code.Position);
-            }
+
             code.Write(token);
         }
 
@@ -739,7 +739,7 @@ namespace IKVM.Reflection.Emit
             }
             var bb = new ByteBuffer(16);
             Signature.WriteStandAloneMethodSig(moduleBuilder, bb, sig);
-            code.Write(0x11000000 | moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.Blobs.Add(bb)));
+            code.Write(MetadataTokens.GetToken(MetadataTokens.StandaloneSignatureHandle(moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.GetOrAddBlob(bb.ToArray())))));
         }
 
         public void EmitWriteLine(string text)

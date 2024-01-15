@@ -68,7 +68,8 @@ namespace IKVM.Reflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="keyPairFile"></param>
-        public StrongNameKeyPair(FileStream keyPairFile) : this(ReadAllBytes(keyPairFile))
+        public StrongNameKeyPair(FileStream keyPairFile) :
+            this(ReadAllBytes(keyPairFile))
         {
 
         }
@@ -91,7 +92,7 @@ namespace IKVM.Reflection
                 if (Universe.MonoRuntime)
                     return MonoGetPublicKey();
 
-                using RSACryptoServiceProvider rsa = CreateRSA();
+                using var rsa = CreateRSA();
                 var rsaParameters = rsa.ExportParameters(false);
                 var cspBlob = ExportPublicKey(rsaParameters);
                 var publicKey = new byte[12 + cspBlob.Length];
@@ -107,13 +108,13 @@ namespace IKVM.Reflection
             }
         }
 
-        internal RSACryptoServiceProvider CreateRSA()
+        internal RSA CreateRSA()
         {
             try
             {
                 if (keyPairArray != null)
                 {
-                    var rsa = new RSACryptoServiceProvider();
+                    var rsa = RSA.Create();
                     // we import from parameters, as using ImportCspBlob
                     // causes the exception "KeySet not found" when signing a hash later.
                     rsa.ImportParameters(RSAParametersFromByteArray(keyPairArray));
@@ -121,17 +122,21 @@ namespace IKVM.Reflection
                 }
                 else
                 {
+#if NETFRAMEWORK
                     var parm = new CspParameters();
                     parm.KeyContainerName = keyPairContainer;
 
                     // MONOBUG Mono doesn't like it when Flags or KeyNumber are set
-                    if (!Universe.MonoRuntime)
+                    if (Universe.MonoRuntime == false)
                     {
                         parm.Flags = CspProviderFlags.UseMachineKeyStore | CspProviderFlags.UseExistingKey;
                         parm.KeyNumber = 2; // Signature
                     }
 
                     return new RSACryptoServiceProvider(parm);
+#else
+                    throw new PlatformNotSupportedException("Strong name key container support is only available when targeting .NET Framework.");
+#endif
                 }
             }
             catch

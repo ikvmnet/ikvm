@@ -87,7 +87,7 @@ namespace IKVM.Reflection.Reader
             get
             {
                 var blob = manifest.File.records[index].HashValue;
-                return blob == 0 ? Array.Empty<byte>() : manifest.GetBlobCopy(blob);
+                return blob.IsNil ? Array.Empty<byte>() : manifest.GetBlobCopy(blob);
             }
         }
 

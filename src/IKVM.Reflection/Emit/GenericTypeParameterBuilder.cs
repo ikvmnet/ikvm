@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Writer;
@@ -80,12 +81,12 @@ namespace IKVM.Reflection.Emit
             this.type = type;
             this.method = method;
             this.position = position;
-            GenericParamTable.Record rec = new GenericParamTable.Record();
+            var rec = new GenericParamTable.Record();
             rec.Number = (short)position;
             rec.Flags = 0;
             rec.Owner = type != null ? type.MetadataToken : method.MetadataToken;
-            rec.Name = this.ModuleBuilder.Strings.Add(name);
-            this.paramPseudoIndex = this.ModuleBuilder.GenericParam.AddRecord(rec);
+            rec.Name = ModuleBuilder.GetOrAddString(name);
+            paramPseudoIndex = ModuleBuilder.GenericParam.AddRecord(rec);
         }
 
         public override string AssemblyQualifiedName
@@ -191,9 +192,9 @@ namespace IKVM.Reflection.Emit
 
         private void AddConstraint(Type type)
         {
-            GenericParamConstraintTable.Record rec = new GenericParamConstraintTable.Record();
-            rec.Owner = paramPseudoIndex;
-            rec.Constraint = this.ModuleBuilder.GetTypeTokenForMemberRef(type);
+            var rec = new GenericParamConstraintTable.Record();
+            rec.Owner = MetadataTokens.GetToken(MetadataTokens.GenericParameterHandle(paramPseudoIndex));
+            rec.Constraint = ModuleBuilder.GetTypeTokenForMemberRef(type);
             this.ModuleBuilder.GenericParamConstraint.AddRecord(rec);
         }
 
@@ -241,9 +242,9 @@ namespace IKVM.Reflection.Emit
         {
             if (typeToken == 0)
             {
-                ByteBuffer spec = new ByteBuffer(5);
-                Signature.WriteTypeSpec(this.ModuleBuilder, spec, this);
-                typeToken = 0x1B000000 | this.ModuleBuilder.TypeSpec.AddRecord(this.ModuleBuilder.Blobs.Add(spec));
+                var spec = new ByteBuffer(5);
+                Signature.WriteTypeSpec(ModuleBuilder, spec, this);
+                typeToken = MetadataTokens.GetToken(MetadataTokens.TypeSpecificationHandle(ModuleBuilder.TypeSpec.AddRecord(ModuleBuilder.GetOrAddBlob(spec.ToArray()))));
             }
             return typeToken;
         }
@@ -262,9 +263,9 @@ namespace IKVM.Reflection.Emit
 
         internal override int GetCurrentToken()
         {
-            if (this.ModuleBuilder.IsSaved)
+            if (ModuleBuilder.IsSaved)
             {
-                return (GenericParamTable.Index << 24) | this.Module.GenericParam.GetIndexFixup()[paramPseudoIndex - 1] + 1;
+                return (GenericParamTable.Index << 24) | Module.GenericParam.GetIndexFixup()[paramPseudoIndex - 1] + 1;
             }
             else
             {

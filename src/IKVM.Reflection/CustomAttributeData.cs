@@ -250,7 +250,7 @@ namespace IKVM.Reflection
         {
             var asm = module.Assembly;
             var action = module.DeclSecurity.records[index].Action;
-            var br = module.GetBlob(module.DeclSecurity.records[index].PermissionSet);
+            var br = module.GetBlobReader(module.DeclSecurity.records[index].PermissionSet);
             if (br.PeekByte() == '.')
             {
                 br.ReadByte();
@@ -541,7 +541,7 @@ namespace IKVM.Reflection
             get
             {
                 if (lazyConstructor == null)
-                    lazyConstructor = (ConstructorInfo)module.ResolveMethod(module.CustomAttribute.records[customAttributeIndex].Type);
+                    lazyConstructor = (ConstructorInfo)module.ResolveMethod(module.CustomAttribute.records[customAttributeIndex].Constructor);
 
                 return lazyConstructor;
             }
@@ -584,7 +584,7 @@ namespace IKVM.Reflection
 
         void LazyParseArguments(bool requireNameArguments)
         {
-            var br = module.GetBlob(module.CustomAttribute.records[customAttributeIndex].Value);
+            var br = module.GetBlobReader(module.CustomAttribute.records[customAttributeIndex].Value);
             if (br.Length == 0)
             {
                 // it's legal to have an empty blob
@@ -775,7 +775,7 @@ namespace IKVM.Reflection
                 }
                 else
                 {
-                    if (attributeType.IsAssignableFrom(module.ResolveMethod(module.CustomAttribute.records[i].Type).DeclaringType))
+                    if (attributeType.IsAssignableFrom(module.ResolveMethod(module.CustomAttribute.records[i].Constructor).DeclaringType))
                     {
                         list ??= new List<CustomAttributeData>();
                         list.Add(new CustomAttributeData(module, i));

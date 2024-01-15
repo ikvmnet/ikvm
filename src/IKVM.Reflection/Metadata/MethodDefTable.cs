@@ -21,8 +21,10 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
+using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -36,46 +38,30 @@ namespace IKVM.Reflection.Metadata
             internal int RVA;
             internal short ImplFlags;
             internal short Flags;
-            internal int Name;
-            internal int Signature;
+            internal StringHandle Name;
+            internal BlobHandle Signature;
             internal int ParamList;
 
         }
 
         internal const int Index = 0x06;
-        int baseRVA;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
                 records[i].RVA = mr.ReadInt32();
                 records[i].ImplFlags = mr.ReadInt16();
                 records[i].Flags = mr.ReadInt16();
-                records[i].Name = mr.ReadStringIndex();
-                records[i].Signature = mr.ReadBlobIndex();
+                records[i].Name = MetadataTokens.StringHandle(mr.ReadStringIndex());
+                records[i].Signature = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
                 records[i].ParamList = mr.ReadParam();
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
-            mw.ModuleBuilder.WriteMethodDefTable(baseRVA, mw);
-        }
-
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .AddFixed(8)
-                .WriteStringIndex()
-                .WriteBlobIndex()
-                .WriteParam()
-                .Value;
-        }
-
-        internal void Fixup(TextSection code)
-        {
-            baseRVA = (int)code.MethodBodiesRVA;
+            module.WriteMethodDefTable();
         }
 
     }

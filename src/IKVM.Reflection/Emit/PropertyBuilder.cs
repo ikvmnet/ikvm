@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Metadata;
 
@@ -197,9 +198,9 @@ namespace IKVM.Reflection.Emit
 
             var rec = new PropertyTable.Record();
             rec.Flags = (short)attributes;
-            rec.Name = typeBuilder.ModuleBuilder.Strings.Add(name);
+            rec.Name = typeBuilder.ModuleBuilder.GetOrAddString(name);
             rec.Type = typeBuilder.ModuleBuilder.GetSignatureBlobIndex(sig);
-            int token = 0x17000000 | typeBuilder.ModuleBuilder.Property.AddRecord(rec);
+            int token = MetadataTokens.GetToken(MetadataTokens.PropertyDefinitionHandle(typeBuilder.ModuleBuilder.Property.AddRecord(rec)));
 
             if (lazyPseudoToken == 0)
                 lazyPseudoToken = token;

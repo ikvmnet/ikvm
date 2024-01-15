@@ -11,6 +11,9 @@ using IKVM.Tests.Util;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using IKVM.Java.Tests.Util;
+
+
 #if NETCOREAPP
 using Microsoft.Extensions.DependencyModel;
 #endif

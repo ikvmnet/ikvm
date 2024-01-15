@@ -23,15 +23,16 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
 
-    sealed class GenericParamTable : SortedTable<GenericParamTable.Record>, IComparer<GenericParamTable.Record>
+    sealed class GenericParamTable : SortedTable<GenericParamTable.Record>
     {
 
         internal struct Record : IRecord
@@ -40,101 +41,92 @@ namespace IKVM.Reflection.Metadata
             internal short Number;
             internal short Flags;
             internal int Owner;
-            internal int Name;
+            internal StringHandle Name;
 
-            // not part of the table, we use it to be able to fixup the GenericParamConstraint table
-            internal int unsortedIndex;
-
-            readonly int IRecord.SortKey => Owner;
+            /// <summary>
+            /// Original index of the record before sort.
+            /// </summary>
+            internal int UnsortedIndex;
 
             readonly int IRecord.FilterKey => Owner;
+
+            public readonly int CompareTo(Record other)
+            {
+                if (Owner == other.Owner)
+                    return Comparer<short>.Default.Compare(Number, other.Number);
+                else
+                    return Comparer<int>.Default.Compare(EncodeOwner(Owner), EncodeOwner(other.Owner));
+            }
 
         }
 
         internal const int Index = 0x2A;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Number = mr.ReadInt16();
-				records[i].Flags = mr.ReadInt16();
-				records[i].Owner = mr.ReadTypeOrMethodDef();
-				records[i].Name = mr.ReadStringIndex();
-			}
-		}
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Number = mr.ReadInt16();
+                records[i].Flags = mr.ReadInt16();
+                records[i].Owner = mr.ReadTypeOrMethodDef();
+                records[i].Name = MetadataTokens.StringHandle(mr.ReadStringIndex());
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.Write(records[i].Number);
-				mw.Write(records[i].Flags);
-				mw.WriteTypeOrMethodDef(records[i].Owner);
-				mw.WriteStringIndex(records[i].Name);
-			}
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                var h = module.Metadata.AddGenericParameter(
+                    MetadataTokens.EntityHandle(records[i].Owner),
+                    (System.Reflection.GenericParameterAttributes)records[i].Flags,
+                    records[i].Name,
+                    records[i].Number);
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.AddFixed(4)
-				.WriteTypeOrMethodDef()
-				.WriteStringIndex()
-				.Value;
-		}
+                Debug.Assert(h == MetadataTokens.GenericParameterHandle(i + 1));
+            }
+        }
 
-		internal void Fixup(ModuleBuilder moduleBuilder)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				int token = records[i].Owner;
-				moduleBuilder.FixupPseudoToken(ref token);
+        internal void Fixup(ModuleBuilder moduleBuilder)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                moduleBuilder.FixupPseudoToken(ref records[i].Owner);
+                records[i].UnsortedIndex = i;
+            }
 
-                // do the TypeOrMethodDef encoding, so that we can sort the table
-                records[i].Owner = (token >> 24) switch
-                {
-                    TypeDefTable.Index => (token & 0xFFFFFF) << 1 | 0,
-                    MethodDefTable.Index => (token & 0xFFFFFF) << 1 | 1,
-                    _ => throw new InvalidOperationException(),
-                };
+            Sort();
+        }
 
-                records[i].unsortedIndex = i;
-			}
+        internal static int EncodeOwner(int token) => (token >> 24) switch
+        {
+            TypeDefTable.Index => (token & 0xFFFFFF) << 1 | 0,
+            MethodDefTable.Index => (token & 0xFFFFFF) << 1 | 1,
+            _ => throw new InvalidOperationException(),
+        };
 
-			Array.Sort(records, 0, rowCount, this);
-		}
+        internal void PatchAttribute(int token, GenericParameterAttributes genericParameterAttributes)
+        {
+            records[(token & 0xFFFFFF) - 1].Flags = (short)genericParameterAttributes;
+        }
 
-		int IComparer<Record>.Compare(Record x, Record y)
-		{
-			if (x.Owner == y.Owner)
-				return x.Number == y.Number ? 0 : (x.Number > y.Number ? 1 : -1);
+        internal int[] GetIndexFixup()
+        {
+            var array = new int[rowCount];
+            for (int i = 0; i < rowCount; i++)
+                array[records[i].UnsortedIndex] = i;
 
-			return x.Owner > y.Owner ? 1 : -1;
-		}
+            return array;
+        }
 
-		internal void PatchAttribute(int token, GenericParameterAttributes genericParameterAttributes)
-		{
-			records[(token & 0xFFFFFF) - 1].Flags = (short)genericParameterAttributes;
-		}
+        internal int FindFirstByOwner(int token)
+        {
+            foreach (int i in Filter(token))
+                return i;
 
-		internal int[] GetIndexFixup()
-		{
-			var array = new int[rowCount];
-			for (int i = 0; i < rowCount; i++)
-				array[records[i].unsortedIndex] = i;
+            return -1;
+        }
 
-			return array;
-		}
-
-		internal int FindFirstByOwner(int token)
-		{
-			foreach (int i in Filter(token))
-				return i;
-
-			return -1;
-		}
-
-	}
+    }
 
 }

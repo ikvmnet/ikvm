@@ -22,13 +22,16 @@
   
 */
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
+
     sealed class ConstantTable : SortedTable<ConstantTable.Record>
     {
 
@@ -37,68 +40,63 @@ namespace IKVM.Reflection.Metadata
 
             internal short Type;
             internal int Parent;
-            internal int Value;
+            internal BlobHandle Offset;
+            internal object Value;
 
-            int IRecord.SortKey => EncodeHasConstant(Parent);
+            readonly int IRecord.FilterKey => Parent;
 
-            int IRecord.FilterKey => Parent;
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(EncodeHasConstant(Parent), EncodeHasConstant(other.Parent));
+
         }
 
         internal const int Index = 0x0B;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
                 records[i].Type = mr.ReadInt16();
                 records[i].Parent = mr.ReadHasConstant();
-                records[i].Value = mr.ReadBlobIndex();
+                records[i].Offset = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
             {
-                mw.Write(records[i].Type);
-                mw.WriteHasConstant(records[i].Parent);
-                mw.WriteBlobIndex(records[i].Value);
+                // check that blob handle ends up the same
+                var b = module.Metadata.GetOrAddConstantBlob(records[i].Value);
+                Debug.Assert(b == records[i].Offset);
+
+                // insert constant, and allow reencoding; should use same blob
+                var h = module.Metadata.AddConstant(MetadataTokens.EntityHandle(records[i].Parent), records[i].Value);
+                Debug.Assert(h == MetadataTokens.ConstantHandle(i + 1));
             }
         }
 
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .AddFixed(2)
-                .WriteHasConstant()
-                .WriteBlobIndex()
-                .Value;
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
+        internal void Fixup(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
-                moduleBuilder.FixupPseudoToken(ref records[i].Parent);
+                module.FixupPseudoToken(ref records[i].Parent);
 
             Sort();
         }
 
-        internal static int EncodeHasConstant(int token)
+        internal static int EncodeHasConstant(int token) => (token >> 24) switch
         {
-            return (token >> 24) switch
-            {
-                FieldTable.Index => (token & 0xFFFFFF) << 2 | 0,
-                ParamTable.Index => (token & 0xFFFFFF) << 2 | 1,
-                PropertyTable.Index => (token & 0xFFFFFF) << 2 | 2,
-                _ => throw new InvalidOperationException(),
-            };
-        }
+            FieldTable.Index => (token & 0xFFFFFF) << 2 | 0,
+            ParamTable.Index => (token & 0xFFFFFF) << 2 | 1,
+            PropertyTable.Index => (token & 0xFFFFFF) << 2 | 2,
+            _ => throw new InvalidOperationException(),
+        };
 
         internal object GetRawConstantValue(Module module, int parent)
         {
             foreach (var i in Filter(parent))
             {
-                var br = module.GetBlob(module.Constant.records[i].Value);
+                var br = module.GetBlobReader(module.Constant.records[i].Offset);
+
                 switch (module.Constant.records[i].Type)
                 {
                     // see ModuleBuilder.AddConstant for the encodings

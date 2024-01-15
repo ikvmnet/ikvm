@@ -109,7 +109,7 @@ namespace IKVM.Reflection.Reader
         public override Type[] __GetDeclaredInterfaces()
         {
             List<Type> list = null;
-            foreach (int i in module.InterfaceImpl.Filter(this.MetadataToken))
+            foreach (int i in module.InterfaceImpl.Filter(MetadataToken))
             {
                 list ??= new List<Type>();
                 list.Add(module.ResolveType(module.InterfaceImpl.records[i].Interface, this));

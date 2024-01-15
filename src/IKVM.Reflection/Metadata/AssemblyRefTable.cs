@@ -21,11 +21,17 @@
   jeroen@frijters.net
   
 */
+using System;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
+using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
+
     sealed class AssemblyRefTable : Table<AssemblyRefTable.Record>
     {
 
@@ -37,10 +43,10 @@ namespace IKVM.Reflection.Metadata
             internal ushort BuildNumber;
             internal ushort RevisionNumber;
             internal int Flags;
-            internal int PublicKeyOrToken;
-            internal int Name;
-            internal int Culture;
-            internal int HashValue;
+            internal BlobHandle PublicKeyOrToken;
+            internal StringHandle Name;
+            internal StringHandle Culture;
+            internal BlobHandle HashValue;
 
         }
 
@@ -65,7 +71,7 @@ namespace IKVM.Reflection.Metadata
             return AddRecord(rec);
         }
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
@@ -74,38 +80,27 @@ namespace IKVM.Reflection.Metadata
                 records[i].BuildNumber = mr.ReadUInt16();
                 records[i].RevisionNumber = mr.ReadUInt16();
                 records[i].Flags = mr.ReadInt32();
-                records[i].PublicKeyOrToken = mr.ReadBlobIndex();
-                records[i].Name = mr.ReadStringIndex();
-                records[i].Culture = mr.ReadStringIndex();
-                records[i].HashValue = mr.ReadBlobIndex();
+                records[i].PublicKeyOrToken = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
+                records[i].Name = MetadataTokens.StringHandle(mr.ReadStringIndex());
+                records[i].Culture = MetadataTokens.StringHandle(mr.ReadStringIndex());
+                records[i].HashValue = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
             {
-                mw.Write(records[i].MajorVersion);
-                mw.Write(records[i].MinorVersion);
-                mw.Write(records[i].BuildNumber);
-                mw.Write(records[i].RevisionNumber);
-                mw.Write(records[i].Flags);
-                mw.WriteBlobIndex(records[i].PublicKeyOrToken);
-                mw.WriteStringIndex(records[i].Name);
-                mw.WriteStringIndex(records[i].Culture);
-                mw.WriteBlobIndex(records[i].HashValue);
-            }
-        }
+                var h = module.Metadata.AddAssemblyReference(
+                    records[i].Name,
+                    new Version(records[i].MajorVersion, records[i].MinorVersion, records[i].BuildNumber, records[i].RevisionNumber),
+                    records[i].Culture,
+                    records[i].PublicKeyOrToken,
+                    (System.Reflection.AssemblyFlags)records[i].Flags,
+                    records[i].HashValue);
 
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .AddFixed(12)
-                .WriteBlobIndex()
-                .WriteStringIndex()
-                .WriteStringIndex()
-                .WriteBlobIndex()
-                .Value;
+                Debug.Assert(h == MetadataTokens.AssemblyReferenceHandle(i + 1));
+            }
         }
 
     }

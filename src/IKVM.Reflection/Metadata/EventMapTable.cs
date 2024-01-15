@@ -21,58 +21,49 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
+using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
+using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
+
     sealed class EventMapTable : SortedTable<EventMapTable.Record>
     {
 
         internal struct Record : IRecord
         {
+
             internal int Parent;
             internal int EventList;
 
-            int IRecord.SortKey
-            {
-                get { return Parent; }
-            }
+            readonly int IRecord.FilterKey => Parent;
 
-            int IRecord.FilterKey
-            {
-                get { return Parent; }
-            }
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(Parent, other.Parent);
+
         }
 
         internal const int Index = 0x12;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Parent = mr.ReadTypeDef();
-				records[i].EventList = mr.ReadEvent();
-			}
-		}
+        internal override void Read(Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Parent = mr.ReadTypeDef();
+                records[i].EventList = mr.ReadEvent();
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.WriteTypeDef(records[i].Parent);
-				mw.WriteEvent(records[i].EventList);
-			}
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+                module.Metadata.AddEventMap(
+                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].Parent),
+                    (EventDefinitionHandle)MetadataTokens.EntityHandle(records[i].EventList));
+        }
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.WriteTypeDef()
-				.WriteEvent()
-				.Value;
-		}
-
-	}
+    }
 
 }

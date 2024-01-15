@@ -22,10 +22,12 @@
   
 */
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -36,96 +38,87 @@ namespace IKVM.Reflection.Metadata
         {
 
             internal int Parent;
-            internal int Type;
-            internal int Value;
-
-            readonly int IRecord.SortKey => EncodeHasCustomAttribute(Parent);
+            internal int Constructor;
+            internal BlobHandle Value;
 
             readonly int IRecord.FilterKey => Parent;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(EncodeHasCustomAttribute(Parent), EncodeHasCustomAttribute(other.Parent));
 
         }
 
         internal const int Index = 0x0C;
 
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Parent = mr.ReadHasCustomAttribute();
-				records[i].Type = mr.ReadCustomAttributeType();
-				records[i].Value = mr.ReadBlobIndex();
-			}
-		}
-
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.WriteHasCustomAttribute(records[i].Parent);
-				mw.WriteCustomAttributeType(records[i].Type);
-				mw.WriteBlobIndex(records[i].Value);
-			}
-		}
-
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.WriteHasCustomAttribute()
-				.WriteCustomAttributeType()
-				.WriteBlobIndex()
-				.Value;
-		}
-
-		internal void Fixup(ModuleBuilder moduleBuilder)
-		{
-			var genericParamFixup = moduleBuilder.GenericParam.GetIndexFixup();
-
-			for (int i = 0; i < rowCount; i++)
-			{
-				moduleBuilder.FixupPseudoToken(ref records[i].Type);
-				moduleBuilder.FixupPseudoToken(ref records[i].Parent);
-				if (records[i].Parent >> 24 == GenericParamTable.Index)
-					records[i].Parent = (GenericParamTable.Index << 24) + genericParamFixup[(records[i].Parent & 0xFFFFFF) - 1] + 1;
-
-				// TODO if we ever add support for custom attributes on DeclSecurity or GenericParamConstraint
-				// we need to fix them up here (because they are sorted tables, like GenericParam)
-			}
-
-			Sort();
-		}
-
-		internal static int EncodeHasCustomAttribute(int token)
-		{
-            return (token >> 24) switch
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
             {
-                MethodDefTable.Index => (token & 0xFFFFFF) << 5 | 0,
-                FieldTable.Index => (token & 0xFFFFFF) << 5 | 1,
-                TypeRefTable.Index => (token & 0xFFFFFF) << 5 | 2,
-                TypeDefTable.Index => (token & 0xFFFFFF) << 5 | 3,
-                ParamTable.Index => (token & 0xFFFFFF) << 5 | 4,
-                InterfaceImplTable.Index => (token & 0xFFFFFF) << 5 | 5,
-                MemberRefTable.Index => (token & 0xFFFFFF) << 5 | 6,
-                ModuleTable.Index => (token & 0xFFFFFF) << 5 | 7,
-                // LAMESPEC spec calls this Permission table
-                DeclSecurityTable.Index => throw new NotImplementedException(), //return (token & 0xFFFFFF) << 5 | 8;
-                PropertyTable.Index => (token & 0xFFFFFF) << 5 | 9,
-                EventTable.Index => (token & 0xFFFFFF) << 5 | 10,
-                StandAloneSigTable.Index => (token & 0xFFFFFF) << 5 | 11,
-                ModuleRefTable.Index => (token & 0xFFFFFF) << 5 | 12,
-                TypeSpecTable.Index => (token & 0xFFFFFF) << 5 | 13,
-                AssemblyTable.Index => (token & 0xFFFFFF) << 5 | 14,
-                AssemblyRefTable.Index => (token & 0xFFFFFF) << 5 | 15,
-                FileTable.Index => (token & 0xFFFFFF) << 5 | 16,
-                ExportedTypeTable.Index => (token & 0xFFFFFF) << 5 | 17,
-                ManifestResourceTable.Index => (token & 0xFFFFFF) << 5 | 18,
-                GenericParamTable.Index => (token & 0xFFFFFF) << 5 | 19,
-                GenericParamConstraintTable.Index => throw new NotImplementedException(), //return (token & 0xFFFFFF) << 5 | 20;
-                MethodSpecTable.Index => (token & 0xFFFFFF) << 5 | 21,
-                _ => throw new InvalidOperationException(),
-            };
+                records[i].Parent = mr.ReadHasCustomAttribute();
+                records[i].Constructor = mr.ReadCustomAttributeType();
+                records[i].Value = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
+            }
         }
 
-	}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                var h = module.Metadata.AddCustomAttribute(
+                    MetadataTokens.EntityHandle(records[i].Parent),
+                    MetadataTokens.EntityHandle(records[i].Constructor),
+                    records[i].Value);
+
+                Debug.Assert(h == MetadataTokens.CustomAttributeHandle(i + 1));
+            }
+        }
+
+        internal void Fixup(ModuleBuilder moduleBuilder)
+        {
+            var genericParamFixup = moduleBuilder.GenericParam.GetIndexFixup();
+
+            for (int i = 0; i < rowCount; i++)
+            {
+                moduleBuilder.FixupPseudoToken(ref records[i].Constructor);
+                moduleBuilder.FixupPseudoToken(ref records[i].Parent);
+                if (MetadataTokens.EntityHandle(records[i].Parent).Kind == HandleKind.GenericParameter)
+                    records[i].Parent = (GenericParamTable.Index << 24) + genericParamFixup[(records[i].Parent & 0xFFFFFF) - 1] + 1;
+
+                // TODO if we ever add support for custom attributes on DeclSecurity or GenericParamConstraint
+                // we need to fix them up here (because they are sorted tables, like GenericParam)
+            }
+
+            Sort();
+        }
+
+        internal static int EncodeHasCustomAttribute(int token) => (token >> 24) switch
+        {
+            MethodDefTable.Index => (token & 0xFFFFFF) << 5 | 0,
+            FieldTable.Index => (token & 0xFFFFFF) << 5 | 1,
+            TypeRefTable.Index => (token & 0xFFFFFF) << 5 | 2,
+            TypeDefTable.Index => (token & 0xFFFFFF) << 5 | 3,
+            ParamTable.Index => (token & 0xFFFFFF) << 5 | 4,
+            InterfaceImplTable.Index => (token & 0xFFFFFF) << 5 | 5,
+            MemberRefTable.Index => (token & 0xFFFFFF) << 5 | 6,
+            ModuleTable.Index => (token & 0xFFFFFF) << 5 | 7,
+            // LAMESPEC spec calls this Permission table
+            DeclSecurityTable.Index => throw new NotImplementedException(), //return (token & 0xFFFFFF) << 5 | 8;
+            PropertyTable.Index => (token & 0xFFFFFF) << 5 | 9,
+            EventTable.Index => (token & 0xFFFFFF) << 5 | 10,
+            StandAloneSigTable.Index => (token & 0xFFFFFF) << 5 | 11,
+            ModuleRefTable.Index => (token & 0xFFFFFF) << 5 | 12,
+            TypeSpecTable.Index => (token & 0xFFFFFF) << 5 | 13,
+            AssemblyTable.Index => (token & 0xFFFFFF) << 5 | 14,
+            AssemblyRefTable.Index => (token & 0xFFFFFF) << 5 | 15,
+            FileTable.Index => (token & 0xFFFFFF) << 5 | 16,
+            ExportedTypeTable.Index => (token & 0xFFFFFF) << 5 | 17,
+            ManifestResourceTable.Index => (token & 0xFFFFFF) << 5 | 18,
+            GenericParamTable.Index => (token & 0xFFFFFF) << 5 | 19,
+            GenericParamConstraintTable.Index => throw new NotImplementedException(), //return (token & 0xFFFFFF) << 5 | 20;
+            MethodSpecTable.Index => (token & 0xFFFFFF) << 5 | 21,
+            _ => throw new InvalidOperationException(),
+        };
+
+    }
 
 }

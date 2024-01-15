@@ -22,6 +22,7 @@
   
 */
 using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Metadata;
 
@@ -31,16 +32,6 @@ namespace IKVM.Reflection.Emit
     public sealed class EventBuilder : EventInfo
     {
 
-        readonly TypeBuilder typeBuilder;
-        readonly string name;
-        EventAttributes attributes;
-        readonly int eventtype;
-        MethodBuilder addOnMethod;
-        MethodBuilder removeOnMethod;
-        MethodBuilder fireMethod;
-        readonly List<Accessor> accessors = new List<Accessor>();
-        int lazyPseudoToken;
-
         struct Accessor
         {
 
@@ -48,6 +39,16 @@ namespace IKVM.Reflection.Emit
             internal MethodBuilder Method;
 
         }
+
+        readonly TypeBuilder typeBuilder;
+        readonly string name;
+        EventAttributes attributes;
+        readonly int eventType;
+        MethodBuilder addOnMethod;
+        MethodBuilder removeOnMethod;
+        MethodBuilder fireMethod;
+        readonly List<Accessor> accessors = new List<Accessor>();
+        int lazyPseudoToken;
 
         /// <summary>
         /// Initializes a new instance.
@@ -61,7 +62,7 @@ namespace IKVM.Reflection.Emit
             this.typeBuilder = typeBuilder;
             this.name = name;
             this.attributes = attributes;
-            this.eventtype = typeBuilder.ModuleBuilder.GetTypeTokenForMemberRef(eventtype);
+            this.eventType = typeBuilder.ModuleBuilder.GetTypeTokenForMemberRef(eventtype);
         }
 
         public void SetAddOnMethod(MethodBuilder mdBuilder)
@@ -184,17 +185,17 @@ namespace IKVM.Reflection.Emit
 
         public override Type EventHandlerType
         {
-            get { return typeBuilder.ModuleBuilder.ResolveType(eventtype); }
+            get { return typeBuilder.ModuleBuilder.ResolveType(eventType); }
         }
 
         internal void Bake()
         {
             var rec = new EventTable.Record();
             rec.EventFlags = (short)attributes;
-            rec.Name = typeBuilder.ModuleBuilder.Strings.Add(name);
-            rec.EventType = eventtype;
-            var token = 0x14000000 | typeBuilder.ModuleBuilder.Event.AddRecord(rec);
+            rec.Name = typeBuilder.ModuleBuilder.GetOrAddString(name);
+            rec.EventType = eventType;
 
+            var token = MetadataTokens.GetToken(MetadataTokens.EventDefinitionHandle(typeBuilder.ModuleBuilder.Event.AddRecord(rec)));
             if (lazyPseudoToken == 0)
                 lazyPseudoToken = token;
             else

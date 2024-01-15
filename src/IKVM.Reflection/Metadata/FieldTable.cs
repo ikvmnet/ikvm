@@ -21,8 +21,10 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
+using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -33,37 +35,28 @@ namespace IKVM.Reflection.Metadata
         {
 
             internal short Flags;
-            internal int Name;
-            internal int Signature;
+            internal StringHandle Name;
+            internal BlobHandle Signature;
 
         }
 
         internal const int Index = 0x04;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Flags = mr.ReadInt16();
-				records[i].Name = mr.ReadStringIndex();
-				records[i].Signature = mr.ReadBlobIndex();
-			}
-		}
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Flags = mr.ReadInt16();
+                records[i].Name = MetadataTokens.StringHandle(mr.ReadStringIndex());
+                records[i].Signature = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			mw.ModuleBuilder.WriteFieldTable(mw);
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            module.WriteFieldTable();
+        }
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.AddFixed(2)
-				.WriteStringIndex()
-				.WriteBlobIndex()
-				.Value;
-		}
-
-	}
+    }
 
 }

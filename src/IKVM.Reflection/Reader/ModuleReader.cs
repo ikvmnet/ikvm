@@ -24,6 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 using IKVM.Reflection.Metadata;
@@ -89,7 +91,7 @@ namespace IKVM.Reflection.Reader
         FieldInfo[] fields;
         MethodBase[] methods;
         MemberInfo[] memberRefs;
-        Dictionary<int, string> strings = new Dictionary<int, string>();
+        Dictionary<StringHandle, string> strings = new Dictionary<StringHandle, string>();
         Dictionary<TypeName, Type> types = new Dictionary<TypeName, Type>();
         Dictionary<TypeName, LazyForwardedType> forwardedTypes = new Dictionary<TypeName, LazyForwardedType>();
 
@@ -108,8 +110,6 @@ namespace IKVM.Reflection.Reader
             this.location = location;
             Read(stream, mapped);
 
-            if (universe != null && universe.WindowsRuntimeProjection && imageRuntimeVersion.StartsWith("WindowsRuntime ", StringComparison.Ordinal))
-                WindowsRuntimeProjection.Patch(this, strings, ref imageRuntimeVersion, ref blobHeap);
             if (assembly == null && AssemblyTable.records.Length != 0)
                 assembly = new AssemblyReader(location, this);
 
@@ -285,19 +285,19 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        internal override string GetString(int index)
+        internal override string GetString(StringHandle handle)
         {
-            if (index == 0)
+            if (handle.IsNil)
                 return null;
 
-            if (!strings.TryGetValue(index, out var str))
+            if (!strings.TryGetValue(handle, out var str))
             {
                 int len = 0;
-                while (stringHeap[index + len] != 0)
+                while (stringHeap[MetadataTokens.GetHeapOffset(handle) + len] != 0)
                     len++;
 
-                str = Encoding.UTF8.GetString(stringHeap, index, len);
-                strings.Add(index, str);
+                str = Encoding.UTF8.GetString(stringHeap, MetadataTokens.GetHeapOffset(handle), len);
+                strings.Add(handle, str);
             }
 
             return str;
@@ -324,26 +324,29 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        internal byte[] GetBlobCopy(int blobIndex)
+        internal byte[] GetBlobCopy(BlobHandle handle)
         {
-            var len = ReadCompressedUInt(blobHeap, ref blobIndex);
+            var idx = MetadataTokens.GetHeapOffset(handle);
+            var len = ReadCompressedUInt(blobHeap, ref idx);
             var buf = new byte[len];
-            Buffer.BlockCopy(blobHeap, blobIndex, buf, 0, len);
+            Buffer.BlockCopy(blobHeap, idx, buf, 0, len);
             return buf;
         }
 
-        internal override ByteReader GetBlob(int blobIndex)
+        internal override ByteReader GetBlobReader(BlobHandle handle)
         {
-            return ByteReader.FromBlob(blobHeap, blobIndex);
+            return ByteReader.FromBlob(blobHeap, handle);
         }
 
         public override string ResolveString(int metadataToken)
         {
-            if (!strings.TryGetValue(metadataToken, out var str))
-            {
-                if ((metadataToken >> 24) != 0x70)
-                    throw TokenOutOfRangeException(metadataToken);
+            if ((metadataToken >> 24) != 0x70)
+                throw TokenOutOfRangeException(metadataToken);
 
+            var h = MetadataTokens.StringHandle(metadataToken);
+
+            if (strings.TryGetValue(h, out var str) == false)
+            {
                 lazyUserStringHeap ??= ReadHeap(GetStream(), userStringHeapOffset, userStringHeapSize);
 
                 var index = metadataToken & 0xFFFFFF;
@@ -356,7 +359,7 @@ namespace IKVM.Reflection.Reader
                 }
 
                 str = sb.ToString();
-                strings.Add(metadataToken, str);
+                strings.Add(h, str);
             }
             return str;
         }
@@ -467,7 +470,7 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        Module ResolveModuleRef(int moduleNameIndex)
+        Module ResolveModuleRef(StringHandle moduleNameIndex)
         {
             var moduleName = GetString(moduleNameIndex);
             return assembly.GetModule(moduleName) ?? throw new FileNotFoundException(moduleName);
@@ -507,7 +510,7 @@ namespace IKVM.Reflection.Reader
 
         }
 
-        TypeName GetTypeName(int typeNamespace, int typeName)
+        TypeName GetTypeName(StringHandle typeNamespace, StringHandle typeName)
         {
             return new TypeName(GetString(typeNamespace), GetString(typeName));
         }
@@ -529,14 +532,14 @@ namespace IKVM.Reflection.Reader
                 rec.MinorVersion,
                 rec.BuildNumber,
                 rec.RevisionNumber,
-                rec.Culture == 0 ? "neutral" : GetString(rec.Culture),
-                rec.PublicKeyOrToken == 0 ? Array.Empty<byte>() : (rec.Flags & PublicKey) == 0 ? GetBlobCopy(rec.PublicKeyOrToken) : AssemblyName.ComputePublicKeyToken(GetBlobCopy(rec.PublicKeyOrToken)),
+                rec.Culture.IsNil ? "neutral" : GetString(rec.Culture),
+                rec.PublicKeyOrToken.IsNil ? Array.Empty<byte>() : (rec.Flags & PublicKey) == 0 ? GetBlobCopy(rec.PublicKeyOrToken) : AssemblyName.ComputePublicKeyToken(GetBlobCopy(rec.PublicKeyOrToken)),
                 rec.Flags);
 
             return universe.Load(name, this, true);
         }
 
-        public override Guid ModuleVersionId => GuidFromSpan(guidHeap.AsSpan(16 * (ModuleTable.records[0].Mvid - 1), 16));
+        public override Guid ModuleVersionId => GuidFromSpan(guidHeap.AsSpan(16 * (MetadataTokens.GetHeapOffset(ModuleTable.records[0].Mvid) - 1), 16));
 
         /// <summary>
         /// Creates a new <see cref="Guid"/> from a span. Optimized for .NET.
@@ -725,8 +728,8 @@ namespace IKVM.Reflection.Reader
             }
             else if ((metadataToken >> 24) == MemberRefTable.Index && index < MemberRef.RowCount)
             {
-                int sig = MemberRef.records[index].Signature;
-                return Signature.ReadOptionalParameterTypes(this, GetBlob(sig), new GenericContext(genericTypeArguments, genericMethodArguments), out customModifiers);
+                var sig = MemberRef.records[index].Signature;
+                return Signature.ReadOptionalParameterTypes(this, GetBlobReader(sig), new GenericContext(genericTypeArguments, genericMethodArguments), out customModifiers);
             }
             else if ((metadataToken >> 24) == MethodDefTable.Index && index < MethodDef.RowCount)
             {
@@ -782,7 +785,7 @@ namespace IKVM.Reflection.Reader
             if (memberRefs[index] == null)
             {
                 int owner = MemberRef.records[index].Class;
-                int sig = MemberRef.records[index].Signature;
+                var sig = MemberRef.records[index].Signature;
                 string name = GetString(MemberRef.records[index].Name);
                 switch (owner >> 24)
                 {
@@ -1002,17 +1005,18 @@ namespace IKVM.Reflection.Reader
 
         public override AssemblyName[] __GetReferencedAssemblies()
         {
-            List<AssemblyName> list = new List<AssemblyName>();
+            var list = new List<AssemblyName>();
             for (int i = 0; i < AssemblyRef.records.Length; i++)
             {
-                AssemblyName name = new AssemblyName();
+                var name = new AssemblyName();
                 name.Name = GetString(AssemblyRef.records[i].Name);
                 name.Version = new Version(
                     AssemblyRef.records[i].MajorVersion,
                     AssemblyRef.records[i].MinorVersion,
                     AssemblyRef.records[i].BuildNumber,
                     AssemblyRef.records[i].RevisionNumber);
-                if (AssemblyRef.records[i].PublicKeyOrToken != 0)
+
+                if (AssemblyRef.records[i].PublicKeyOrToken.IsNil == false)
                 {
                     byte[] keyOrToken = GetBlobCopy(AssemblyRef.records[i].PublicKeyOrToken);
                     const int PublicKey = 0x0001;
@@ -1029,18 +1033,15 @@ namespace IKVM.Reflection.Reader
                 {
                     name.SetPublicKeyToken(Array.Empty<byte>());
                 }
-                if (AssemblyRef.records[i].Culture != 0)
-                {
+
+                if (AssemblyRef.records[i].Culture.IsNil == false)
                     name.CultureName = GetString(AssemblyRef.records[i].Culture);
-                }
                 else
-                {
                     name.CultureName = "";
-                }
-                if (AssemblyRef.records[i].HashValue != 0)
-                {
+
+                if (AssemblyRef.records[i].HashValue.IsNil == false)
                     name.hash = GetBlobCopy(AssemblyRef.records[i].HashValue);
-                }
+
                 name.RawFlags = (AssemblyNameFlags)AssemblyRef.records[i].Flags;
                 list.Add(name);
             }
@@ -1182,10 +1183,9 @@ namespace IKVM.Reflection.Reader
                     // (not setting any flag is ok)
                     break;
             }
+
             if (peFile.OptionalHeader.Magic == IMAGE_OPTIONAL_HEADER.IMAGE_NT_OPTIONAL_HDR64_MAGIC)
-            {
                 peKind |= PortableExecutableKinds.PE32Plus;
-            }
 
             machine = (ImageFileMachine)peFile.FileHeader.Machine;
         }
@@ -1231,31 +1231,28 @@ namespace IKVM.Reflection.Reader
 
         internal override void Dispose()
         {
-            if (stream != null)
-            {
-                stream.Dispose();
-            }
+            stream?.Dispose();
         }
 
-        internal override void ExportTypes(int fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
+        internal override void ExportTypes(AssemblyFileHandle fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
         {
             PopulateTypeDef();
             manifestModule.ExportTypes(typeDefs, fileToken);
         }
 
-        protected override long GetImageBaseImpl()
+        protected override ulong GetImageBaseImpl()
         {
-            return (long)peFile.OptionalHeader.ImageBase;
+            return peFile.OptionalHeader.ImageBase;
         }
 
-        protected override long GetStackReserveImpl()
+        protected override ulong GetStackReserveImpl()
         {
-            return (long)peFile.OptionalHeader.SizeOfStackReserve;
+            return peFile.OptionalHeader.SizeOfStackReserve;
         }
 
-        protected override int GetFileAlignmentImpl()
+        protected override uint GetFileAlignmentImpl()
         {
-            return (int)peFile.OptionalHeader.FileAlignment;
+            return peFile.OptionalHeader.FileAlignment;
         }
 
         protected override DllCharacteristics GetDllCharacteristicsImpl()
@@ -1273,12 +1270,11 @@ namespace IKVM.Reflection.Reader
             get { return (cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_NATIVE_ENTRYPOINT) == 0 ? (int)cliHeader.EntryPointToken : 0; }
         }
 
-#if !NO_AUTHENTICODE
         public override System.Security.Cryptography.X509Certificates.X509Certificate GetSignerCertificate()
         {
             return Authenticode.GetSignerCertificate(GetStream());
         }
-#endif // !NO_AUTHENTICODE
+
     }
 
 }

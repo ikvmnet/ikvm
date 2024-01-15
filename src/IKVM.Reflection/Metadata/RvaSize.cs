@@ -40,12 +40,6 @@ namespace IKVM.Reflection.Metadata
 			Size = br.ReadUInt32();
 		}
 
-		internal void Write(MetadataWriter mw)
-		{
-			mw.Write(VirtualAddress);
-			mw.Write(Size);
-		}
-
 	}
 
 }
