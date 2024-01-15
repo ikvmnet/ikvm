@@ -61,6 +61,11 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
+        /// Gets the number of entries added.
+        /// </summary>
+        public int Count => entries.Count;
+
+        /// <summary>
         /// Gets the directory entry specified by the given ID.
         /// </summary>
         /// <param name="id"></param>

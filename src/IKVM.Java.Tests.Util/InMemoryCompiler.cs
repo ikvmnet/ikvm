@@ -174,7 +174,6 @@ namespace IKVM.Java.Tests.Util
         public InMemoryCompiler(InMemoryCodeUnit[] source)
         {
             this.compiler = ToolProvider.getSystemJavaCompiler() ?? throw new System.Exception();
-
             this.units = source ?? throw new ArgumentNullException(nameof(source));
             this.files = new InMemoryForwardingJavaFileManager(compiler.getStandardFileManager(null, null, null), streams);
         }

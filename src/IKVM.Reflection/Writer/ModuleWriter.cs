@@ -72,7 +72,7 @@ namespace IKVM.Reflection.Writer
         /// <param name="imageFileMachine"></param>
         /// <param name="nativeResources"></param>
         /// <param name="entryPoint"></param>
-        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSectionBuilder nativeResources, MethodInfo entryPoint)
+        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint)
         {
             WriteModule(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, null);
         }
@@ -89,7 +89,7 @@ namespace IKVM.Reflection.Writer
         /// <param name="nativeResources"></param>
         /// <param name="entryPoint"></param>
         /// <param name="stream"></param>
-        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSectionBuilder nativeResources, MethodInfo entryPoint, Stream stream)
+        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint, Stream stream)
         {
             if (stream == null)
             {
@@ -134,7 +134,7 @@ namespace IKVM.Reflection.Writer
         /// <param name="entryPoint"></param>
         /// <param name="stream"></param>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSectionBuilder nativeResources, MethodInfo entryPoint, Stream stream)
+        static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint, Stream stream)
         {
             module.ApplyUnmanagedExports(imageFileMachine);
             module.FixupMethodBodyTokens();
@@ -185,7 +185,7 @@ namespace IKVM.Reflection.Writer
                 new MetadataRootBuilder(module.Metadata),
                 module.ILStream,
                 managedResources: module.ResourceStream,
-                nativeResources: nativeResources,
+                nativeResources: nativeResources.Count > 0 ? nativeResources : null,
                 strongNameSignatureSize: strongNameSignatureSize,
                 entryPoint: entryPoint != null ? (MethodDefinitionHandle)MetadataTokens.EntityHandle(entryPoint.GetCurrentToken()) : default,
                 flags: GetCorFlags(portableExecutableKind, keyPair),
@@ -345,6 +345,8 @@ namespace IKVM.Reflection.Writer
 
             switch (imageFileMachine)
             {
+                case ImageFileMachine.UNKNOWN:
+                    break;
                 case ImageFileMachine.I386:
                     characteristics |= Characteristics.Bit32Machine;
                     break;

@@ -436,7 +436,13 @@ namespace IKVM.Reflection.Tests
             if (Init(framework, out var universe, out var resolver, out var verifier, out var tempPath, out var tempLoad) == false)
                 return;
 
+            // obtain sample ico file
+            var ico = typeof(ModuleWriterTests).Assembly.GetManifestResourceStream("IKVM.Reflection.Tests.sample.ico");
+            var buf = new byte[ico.Length];
+            ico.Read(buf, 0, (int)ico.Length);
+
             var assembly = universe.DefineDynamicAssembly(new AssemblyName("Test"), AssemblyBuilderAccess.Save, tempPath);
+            assembly.__DefineIconResource(buf);
             var module = assembly.DefineDynamicModule("Test", "Test.exe", false);
             var type = module.DefineType("Type");
 
@@ -446,7 +452,7 @@ namespace IKVM.Reflection.Tests
             assembly.SetEntryPoint(mainMethod, PEFileKinds.WindowApplication);
 
             type.CreateType();
-            assembly.Save("Test.exe", PortableExecutableKinds.ILOnly, ImageFileMachine.AMD64);
+            assembly.Save("Test.exe", PortableExecutableKinds.ILOnly | PortableExecutableKinds.PE32Plus, ImageFileMachine.AMD64);
 
             foreach (var v in verifier.Verify(new PEReader(File.OpenRead(Path.Combine(tempPath, "Test.exe")))))
                 v.Code.Should().Be(ILVerify.VerifierError.None);

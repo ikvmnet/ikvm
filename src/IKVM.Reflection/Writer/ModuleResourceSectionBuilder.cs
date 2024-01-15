@@ -43,6 +43,11 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
+        /// Gets the number of entries in the root of the builder.
+        /// </summary>
+        public int Count => root.Count;
+
+        /// <summary>
         /// Adds a VersionInfo structure.
         /// </summary>
         /// <param name="versionInfo"></param>
