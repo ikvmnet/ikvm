@@ -89,10 +89,12 @@ namespace IKVM.Reflection
 		 *    - lazyNamedArguments != null
 		 * 
 		 */
+
         readonly Module module;
         readonly int customAttributeIndex;
         readonly int declSecurityIndex;
         readonly byte[] declSecurityBlob;
+
         ConstructorInfo lazyConstructor;
         IList<CustomAttributeTypedArgument> lazyConstructorArguments;
         IList<CustomAttributeNamedArgument> lazyNamedArguments;
@@ -104,7 +106,7 @@ namespace IKVM.Reflection
         /// <param name="index"></param>
         internal CustomAttributeData(Module module, int index)
         {
-            this.module = module;
+            this.module = module ?? throw new ArgumentNullException(nameof(module));
             this.customAttributeIndex = index;
             this.declSecurityIndex = -1;
         }
@@ -132,12 +134,22 @@ namespace IKVM.Reflection
         }
 
         // 4) Pseudo Custom Attribute, .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
+
+        /// <summary>
+        /// Pseudo Custom Attribute for .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="constructor"></param>
+        /// <param name="constructorArgs"></param>
+        /// <param name="namedArguments"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         internal CustomAttributeData(Module module, ConstructorInfo constructor, List<CustomAttributeTypedArgument> constructorArgs, List<CustomAttributeNamedArgument> namedArguments)
         {
-            this.module = module;
+            this.module = module ?? throw new ArgumentNullException(nameof(module));
             this.customAttributeIndex = -1;
             this.declSecurityIndex = -1;
             this.lazyConstructor = constructor;
+
             lazyConstructorArguments = constructorArgs.AsReadOnly();
             if (namedArguments == null)
                 this.lazyNamedArguments = Array.Empty<CustomAttributeNamedArgument>();
@@ -145,7 +157,13 @@ namespace IKVM.Reflection
                 this.lazyNamedArguments = namedArguments.AsReadOnly();
         }
 
-        // 3) Pre-resolved Custom Attribute
+        /// <summary>
+        /// Pre-resolved custom attribute.
+        /// </summary>
+        /// <param name="asm"></param>
+        /// <param name="constructor"></param>
+        /// <param name="br"></param>
+        /// <exception cref="BadImageFormatException"></exception>
         internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, ByteReader br)
         {
             this.module = asm.ManifestModule;
