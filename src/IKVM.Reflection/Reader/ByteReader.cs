@@ -32,7 +32,7 @@ namespace IKVM.Reflection.Reader
     sealed class ByteReader
     {
 
-        byte[] buffer;
+        readonly byte[] buffer;
         int pos;
         int end;
 

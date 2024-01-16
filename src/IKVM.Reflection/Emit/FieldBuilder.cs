@@ -59,7 +59,7 @@ namespace IKVM.Reflection.Emit
             this.nameIndex = type.ModuleBuilder.GetOrAddString(name);
             this.fieldSig = FieldSignature.Create(fieldType, customModifiers);
             var sig = new ByteBuffer(5);
-            fieldSig.WriteSig(typeBuilder.ModuleBuilder, sig);
+            fieldSig.Write(typeBuilder.ModuleBuilder, sig);
             this.signature = typeBuilder.ModuleBuilder.GetOrAddBlob(sig.ToArray());
             this.attribs = attribs;
             this.typeBuilder.ModuleBuilder.FieldTable.AddVirtualRecord();

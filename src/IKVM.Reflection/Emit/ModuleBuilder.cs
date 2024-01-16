@@ -819,7 +819,7 @@ namespace IKVM.Reflection.Emit
         public MethodToken __GetMethodToken(MethodInfo method, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
         {
             var sig = new ByteBuffer(16);
-            method.MethodSignature.WriteMethodRefSig(this, sig, optionalParameterTypes, customModifiers);
+            method.MethodSignature.WriteMethodRef(this, sig, optionalParameterTypes, customModifiers);
 
             var record = new MemberRefTable.Record();
             record.Class = method.Module == this ? method.MetadataToken : GetTypeTokenForMemberRef(method.DeclaringType ?? method.Module.GetModuleType());
@@ -870,7 +870,7 @@ namespace IKVM.Reflection.Emit
                 rec.Class = GetTypeTokenForMemberRef(declaringType);
                 rec.Name = GetOrAddString(name);
                 var bb = new ByteBuffer(16);
-                sig.WriteSig(this, bb);
+                sig.Write(this, bb);
                 rec.Signature = GetOrAddBlob(bb.ToArray());
                 token = MetadataTokens.GetToken(MetadataTokens.MemberReferenceHandle(MemberRefTable.AddRecord(rec)));
                 importedMemberRefs.Add(key, token);
@@ -1477,7 +1477,7 @@ namespace IKVM.Reflection.Emit
         internal BlobHandle GetSignatureBlobIndex(Signature sig)
         {
             var bb = new ByteBuffer(16);
-            sig.WriteSig(this, bb);
+            sig.Write(this, bb);
             return GetOrAddBlob(bb.ToArray());
         }
 
