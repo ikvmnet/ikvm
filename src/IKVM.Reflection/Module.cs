@@ -447,15 +447,6 @@ namespace IKVM.Reflection
 
         public virtual string __ImageRuntimeVersion => throw new NotSupportedException();
 
-        public IEnumerable<CustomAttributeData> __EnumerateCustomAttributeTable()
-        {
-            var list = new List<CustomAttributeData>(CustomAttributeTable.RowCount);
-            for (int i = 0; i < CustomAttributeTable.RowCount; i++)
-                list.Add(new CustomAttributeData(this, i));
-
-            return list;
-        }
-
         [Obsolete]
         public List<CustomAttributeData> __GetCustomAttributesFor(int token)
         {
