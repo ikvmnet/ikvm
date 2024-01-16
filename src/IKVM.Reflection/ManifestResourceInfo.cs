@@ -46,26 +46,26 @@ namespace IKVM.Reflection
 
         public ResourceAttributes __ResourceAttributes
         {
-            get { return (ResourceAttributes)module.ManifestResource.records[index].Flags; }
+            get { return (ResourceAttributes)module.ManifestResourceTable.records[index].Flags; }
         }
 
         public int __Offset
         {
-            get { return module.ManifestResource.records[index].Offset; }
+            get { return module.ManifestResourceTable.records[index].Offset; }
         }
 
         public ResourceLocation ResourceLocation
         {
             get
             {
-                var implementation = module.ManifestResource.records[index].Implementation;
+                var implementation = module.ManifestResourceTable.records[index].Implementation;
                 if ((implementation >> 24) == AssemblyRefTable.Index)
                 {
                     var asm = ReferencedAssembly;
                     if (asm == null || asm.__IsMissing)
                         return ResourceLocation.ContainedInAnotherAssembly;
 
-                    return asm.GetManifestResourceInfo(module.GetString(module.ManifestResource.records[index].Name)).ResourceLocation | ResourceLocation.ContainedInAnotherAssembly;
+                    return asm.GetManifestResourceInfo(module.GetString(module.ManifestResourceTable.records[index].Name)).ResourceLocation | ResourceLocation.ContainedInAnotherAssembly;
                 }
                 else if ((implementation >> 24) == FileTable.Index)
                 {
@@ -85,7 +85,7 @@ namespace IKVM.Reflection
         {
             get
             {
-                var implementation = module.ManifestResource.records[index].Implementation;
+                var implementation = module.ManifestResourceTable.records[index].Implementation;
                 if ((implementation >> 24) == AssemblyRefTable.Index)
                     return module.ResolveAssemblyRef((implementation & 0xFFFFFF) - 1);
 
@@ -97,13 +97,13 @@ namespace IKVM.Reflection
         {
             get
             {
-                var implementation = module.ManifestResource.records[index].Implementation;
+                var implementation = module.ManifestResourceTable.records[index].Implementation;
                 if ((implementation >> 24) == FileTable.Index)
                 {
                     if ((implementation & 0xFFFFFF) == 0)
                         return null;
                     else
-                        return module.GetString(module.File.records[(implementation & 0xFFFFFF) - 1].Name);
+                        return module.GetString(module.FileTable.records[(implementation & 0xFFFFFF) - 1].Name);
                 }
 
                 return null;

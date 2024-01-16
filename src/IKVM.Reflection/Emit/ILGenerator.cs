@@ -739,7 +739,7 @@ namespace IKVM.Reflection.Emit
             }
             var bb = new ByteBuffer(16);
             Signature.WriteStandAloneMethodSig(moduleBuilder, bb, sig);
-            code.Write(MetadataTokens.GetToken(MetadataTokens.StandaloneSignatureHandle(moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.GetOrAddBlob(bb.ToArray())))));
+            code.Write(MetadataTokens.GetToken(MetadataTokens.StandaloneSignatureHandle(moduleBuilder.StandAloneSigTable.FindOrAddRecord(moduleBuilder.GetOrAddBlob(bb.ToArray())))));
         }
 
         public void EmitWriteLine(string text)

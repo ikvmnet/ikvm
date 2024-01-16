@@ -249,8 +249,8 @@ namespace IKVM.Reflection
         internal static void ReadDeclarativeSecurity(Module module, int index, List<CustomAttributeData> list)
         {
             var asm = module.Assembly;
-            var action = module.DeclSecurity.records[index].Action;
-            var br = module.GetBlobReader(module.DeclSecurity.records[index].PermissionSet);
+            var action = module.DeclSecurityTable.records[index].Action;
+            var br = module.GetBlobReader(module.DeclSecurityTable.records[index].PermissionSet);
             if (br.PeekByte() == '.')
             {
                 br.ReadByte();
@@ -516,7 +516,7 @@ namespace IKVM.Reflection
             else if (customAttributeIndex == -1)
                 return __ToBuilder().GetBlob(module.Assembly);
             else
-                return ((ModuleReader)module).GetBlobCopy(module.CustomAttribute.records[customAttributeIndex].Value);
+                return ((ModuleReader)module).GetBlobCopy(module.CustomAttributeTable.records[customAttributeIndex].Value);
         }
 
         public int __Parent
@@ -524,9 +524,9 @@ namespace IKVM.Reflection
             get
             {
                 return customAttributeIndex >= 0
-                    ? module.CustomAttribute.records[customAttributeIndex].Parent
+                    ? module.CustomAttributeTable.records[customAttributeIndex].Parent
                     : declSecurityIndex >= 0
-                        ? module.DeclSecurity.records[declSecurityIndex].Parent
+                        ? module.DeclSecurityTable.records[declSecurityIndex].Parent
                         : 0;
             }
         }
@@ -541,7 +541,7 @@ namespace IKVM.Reflection
             get
             {
                 if (lazyConstructor == null)
-                    lazyConstructor = (ConstructorInfo)module.ResolveMethod(module.CustomAttribute.records[customAttributeIndex].Constructor);
+                    lazyConstructor = (ConstructorInfo)module.ResolveMethod(module.CustomAttributeTable.records[customAttributeIndex].Constructor);
 
                 return lazyConstructor;
             }
@@ -584,7 +584,7 @@ namespace IKVM.Reflection
 
         void LazyParseArguments(bool requireNameArguments)
         {
-            var br = module.GetBlobReader(module.CustomAttribute.records[customAttributeIndex].Value);
+            var br = module.GetBlobReader(module.CustomAttributeTable.records[customAttributeIndex].Value);
             if (br.Length == 0)
             {
                 // it's legal to have an empty blob
@@ -766,7 +766,7 @@ namespace IKVM.Reflection
 
         internal static List<CustomAttributeData> GetCustomAttributesImpl(List<CustomAttributeData> list, Module module, int token, Type attributeType)
         {
-            foreach (var i in module.CustomAttribute.Filter(token))
+            foreach (var i in module.CustomAttributeTable.Filter(token))
             {
                 if (attributeType == null)
                 {
@@ -775,7 +775,7 @@ namespace IKVM.Reflection
                 }
                 else
                 {
-                    if (attributeType.IsAssignableFrom(module.ResolveMethod(module.CustomAttribute.records[i].Constructor).DeclaringType))
+                    if (attributeType.IsAssignableFrom(module.ResolveMethod(module.CustomAttributeTable.records[i].Constructor).DeclaringType))
                     {
                         list ??= new List<CustomAttributeData>();
                         list.Add(new CustomAttributeData(module, i));
@@ -789,8 +789,8 @@ namespace IKVM.Reflection
         public static IList<CustomAttributeData> __GetCustomAttributes(Type type, Type interfaceType, Type attributeType, bool inherit)
         {
             var module = type.Module;
-            foreach (int i in module.InterfaceImpl.Filter(type.MetadataToken))
-                if (module.ResolveType(module.InterfaceImpl.records[i].Interface, type) == interfaceType)
+            foreach (int i in module.InterfaceImplTable.Filter(type.MetadataToken))
+                if (module.ResolveType(module.InterfaceImplTable.records[i].Interface, type) == interfaceType)
                     return GetCustomAttributesImpl(null, module, (InterfaceImplTable.Index << 24) | (i + 1), attributeType) ?? EmptyList;
 
             return EmptyList;

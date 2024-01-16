@@ -52,7 +52,7 @@ namespace IKVM.Reflection.Reader
 
         public override FieldAttributes Attributes
         {
-            get { return (FieldAttributes)module.Field.records[index].Flags; }
+            get { return (FieldAttributes)module.FieldTable.records[index].Flags; }
         }
 
         public override Type DeclaringType
@@ -62,7 +62,7 @@ namespace IKVM.Reflection.Reader
 
         public override string Name
         {
-            get { return module.GetString(module.Field.records[index].Name); }
+            get { return module.GetString(module.FieldTable.records[index].Name); }
         }
 
         public override string ToString()
@@ -82,7 +82,7 @@ namespace IKVM.Reflection.Reader
 
         public override object GetRawConstantValue()
         {
-            return module.Constant.GetRawConstantValue(module, this.MetadataToken);
+            return module.ConstantTable.GetRawConstantValue(module, this.MetadataToken);
         }
 
         public override void __GetDataFromRVA(byte[] data, int offset, int length)
@@ -102,8 +102,8 @@ namespace IKVM.Reflection.Reader
         {
             get
             {
-                foreach (var i in module.FieldRVA.Filter(index + 1))
-                    return module.FieldRVA.records[i].RVA;
+                foreach (var i in module.FieldRVATable.Filter(index + 1))
+                    return module.FieldRVATable.records[i].RVA;
 
                 throw new InvalidOperationException();
             }
@@ -111,9 +111,9 @@ namespace IKVM.Reflection.Reader
 
         public override bool __TryGetFieldOffset(out int offset)
         {
-            foreach (int i in this.Module.FieldLayout.Filter(index + 1))
+            foreach (int i in this.Module.FieldLayoutTable.Filter(index + 1))
             {
-                offset = Module.FieldLayout.records[i].Offset;
+                offset = Module.FieldLayoutTable.records[i].Offset;
                 return true;
             }
 
@@ -123,7 +123,7 @@ namespace IKVM.Reflection.Reader
 
         internal override FieldSignature FieldSignature
         {
-            get { return lazyFieldSig ??= FieldSignature.ReadSig(module, module.GetBlobReader(module.Field.records[index].Signature), declaringType); }
+            get { return lazyFieldSig ??= FieldSignature.ReadSig(module, module.GetBlobReader(module.FieldTable.records[index].Signature), declaringType); }
         }
 
         internal override int ImportTo(Emit.ModuleBuilder module)

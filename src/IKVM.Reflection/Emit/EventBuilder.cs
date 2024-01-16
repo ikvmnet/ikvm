@@ -195,7 +195,7 @@ namespace IKVM.Reflection.Emit
             rec.Name = typeBuilder.ModuleBuilder.GetOrAddString(name);
             rec.EventType = eventType;
 
-            var token = MetadataTokens.GetToken(MetadataTokens.EventDefinitionHandle(typeBuilder.ModuleBuilder.Event.AddRecord(rec)));
+            var token = MetadataTokens.GetToken(MetadataTokens.EventDefinitionHandle(typeBuilder.ModuleBuilder.EventTable.AddRecord(rec)));
             if (lazyPseudoToken == 0)
                 lazyPseudoToken = token;
             else
@@ -211,7 +211,7 @@ namespace IKVM.Reflection.Emit
             rec.Semantics = semantics;
             rec.Method = methodToken;
             rec.Association = propertyToken;
-            typeBuilder.ModuleBuilder.MethodSemantics.AddRecord(rec);
+            typeBuilder.ModuleBuilder.MethodSemanticsTable.AddRecord(rec);
         }
 
         internal override bool IsPublic

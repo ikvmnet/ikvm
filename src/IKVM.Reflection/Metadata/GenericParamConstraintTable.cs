@@ -70,7 +70,7 @@ namespace IKVM.Reflection.Metadata
 
         internal void Fixup(ModuleBuilder moduleBuilder)
         {
-            var fixups = moduleBuilder.GenericParam.GetIndexFixup();
+            var fixups = moduleBuilder.GenericParamTable.GetIndexFixup();
             for (int i = 0; i < rowCount; i++)
                 records[i].Owner = MetadataTokens.GetToken(MetadataTokens.GenericParameterHandle(fixups[MetadataTokens.GetRowNumber(MetadataTokens.EntityHandle(records[i].Owner)) - 1] + 1));
 

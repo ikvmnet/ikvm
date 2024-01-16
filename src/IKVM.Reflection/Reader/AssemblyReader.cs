@@ -49,7 +49,7 @@ namespace IKVM.Reflection.Reader
         {
             this.location = location;
             this.manifestModule = manifestModule;
-            externalModules = new Module[manifestModule.File.records.Length];
+            externalModules = new Module[manifestModule.FileTable.records.Length];
         }
 
         public override string Location
@@ -119,7 +119,7 @@ namespace IKVM.Reflection.Reader
         {
             var type = manifestModule.FindType(typeName);
             for (int i = 0; type == null && i < externalModules.Length; i++)
-                if ((manifestModule.File.records[i].Flags & ContainsNoMetaData) == 0)
+                if ((manifestModule.FileTable.records[i].Flags & ContainsNoMetaData) == 0)
                     type = GetModule(i).FindType(typeName);
 
             return type;
@@ -129,7 +129,7 @@ namespace IKVM.Reflection.Reader
         {
             var type = manifestModule.FindTypeIgnoreCase(lowerCaseName);
             for (int i = 0; type == null && i < externalModules.Length; i++)
-                if ((manifestModule.File.records[i].Flags & ContainsNoMetaData) == 0)
+                if ((manifestModule.FileTable.records[i].Flags & ContainsNoMetaData) == 0)
                     type = GetModule(i).FindTypeIgnoreCase(lowerCaseName);
 
             return type;
@@ -169,9 +169,9 @@ namespace IKVM.Reflection.Reader
             {
                 List<Module> list = new List<Module>();
                 list.Add(manifestModule);
-                for (int i = 0; i < manifestModule.File.records.Length; i++)
+                for (int i = 0; i < manifestModule.FileTable.records.Length; i++)
                 {
-                    if (getResourceModules || (manifestModule.File.records[i].Flags & ContainsNoMetaData) == 0)
+                    if (getResourceModules || (manifestModule.FileTable.records[i].Flags & ContainsNoMetaData) == 0)
                     {
                         list.Add(GetModule(i));
                     }
@@ -194,8 +194,8 @@ namespace IKVM.Reflection.Reader
 
         int GetModuleIndex(string name)
         {
-            for (int i = 0; i < manifestModule.File.records.Length; i++)
-                if (name.Equals(manifestModule.GetString(manifestModule.File.records[i].Name), StringComparison.OrdinalIgnoreCase))
+            for (int i = 0; i < manifestModule.FileTable.records.Length; i++)
+                if (name.Equals(manifestModule.GetString(manifestModule.FileTable.records[i].Name), StringComparison.OrdinalIgnoreCase))
                     return i;
 
             return -1;
@@ -206,13 +206,13 @@ namespace IKVM.Reflection.Reader
             if (externalModules[index] != null)
                 return externalModules[index];
 
-            return LoadModule(index, null, manifestModule.GetString(manifestModule.File.records[index].Name));
+            return LoadModule(index, null, manifestModule.GetString(manifestModule.FileTable.records[index].Name));
         }
 
         private Module LoadModule(int index, byte[] rawModule, string name)
         {
             string location = name == null ? null : Path.Combine(Path.GetDirectoryName(this.location), name);
-            if ((manifestModule.File.records[index].Flags & ContainsNoMetaData) != 0)
+            if ((manifestModule.FileTable.records[index].Flags & ContainsNoMetaData) != 0)
             {
                 return externalModules[index] = new ResourceModule(manifestModule, index, location);
             }

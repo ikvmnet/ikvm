@@ -49,8 +49,8 @@ namespace IKVM.Reflection.Reader
         {
             this.module = module;
             this.index = index;
-            this.typeName = module.GetString(module.TypeDef.records[index].TypeName);
-            this.typeNamespace = module.GetString(module.TypeDef.records[index].TypeNamespace);
+            this.typeName = module.GetString(module.TypeDefTable.records[index].TypeName);
+            this.typeNamespace = module.GetString(module.TypeDefTable.records[index].TypeNamespace);
             MarkKnownType(typeNamespace, typeName);
         }
 
@@ -58,7 +58,7 @@ namespace IKVM.Reflection.Reader
         {
             get
             {
-                var extends = module.TypeDef.records[index].Extends;
+                var extends = module.TypeDefTable.records[index].Extends;
                 if ((extends & 0xFFFFFF) == 0)
                     return null;
 
@@ -68,22 +68,22 @@ namespace IKVM.Reflection.Reader
 
         public override TypeAttributes Attributes
         {
-            get { return (TypeAttributes)module.TypeDef.records[index].Flags; }
+            get { return (TypeAttributes)module.TypeDefTable.records[index].Flags; }
         }
 
         public override EventInfo[] __GetDeclaredEvents()
         {
-            foreach (var i in module.EventMap.Filter(this.MetadataToken))
+            foreach (var i in module.EventMapTable.Filter(this.MetadataToken))
             {
-                var evt = module.EventMap.records[i].EventList - 1;
-                var end = module.EventMap.records.Length > i + 1 ? module.EventMap.records[i + 1].EventList - 1 : module.Event.records.Length;
+                var evt = module.EventMapTable.records[i].EventList - 1;
+                var end = module.EventMapTable.records.Length > i + 1 ? module.EventMapTable.records[i + 1].EventList - 1 : module.EventTable.records.Length;
                 var events = new EventInfo[end - evt];
-                if (module.EventPtr.RowCount == 0)
+                if (module.EventPtrTable.RowCount == 0)
                     for (int j = 0; evt < end; evt++, j++)
                         events[j] = new EventInfoImpl(module, this, evt);
                 else
                     for (int j = 0; evt < end; evt++, j++)
-                        events[j] = new EventInfoImpl(module, this, module.EventPtr.records[evt] - 1);
+                        events[j] = new EventInfoImpl(module, this, module.EventPtrTable.records[evt] - 1);
 
                 return events;
             }
@@ -93,15 +93,15 @@ namespace IKVM.Reflection.Reader
 
         public override FieldInfo[] __GetDeclaredFields()
         {
-            var field = module.TypeDef.records[index].FieldList - 1;
-            var end = module.TypeDef.records.Length > index + 1 ? module.TypeDef.records[index + 1].FieldList - 1 : module.Field.records.Length;
+            var field = module.TypeDefTable.records[index].FieldList - 1;
+            var end = module.TypeDefTable.records.Length > index + 1 ? module.TypeDefTable.records[index + 1].FieldList - 1 : module.FieldTable.records.Length;
             var fields = new FieldInfo[end - field];
-            if (module.FieldPtr.RowCount == 0)
+            if (module.FieldPtrTable.RowCount == 0)
                 for (int i = 0; field < end; i++, field++)
                     fields[i] = module.GetFieldAt(this, field);
             else
                 for (int i = 0; field < end; i++, field++)
-                    fields[i] = module.GetFieldAt(this, module.FieldPtr.records[field] - 1);
+                    fields[i] = module.GetFieldAt(this, module.FieldPtrTable.records[field] - 1);
 
             return fields;
         }
@@ -109,10 +109,10 @@ namespace IKVM.Reflection.Reader
         public override Type[] __GetDeclaredInterfaces()
         {
             List<Type> list = null;
-            foreach (int i in module.InterfaceImpl.Filter(MetadataToken))
+            foreach (int i in module.InterfaceImplTable.Filter(MetadataToken))
             {
                 list ??= new List<Type>();
-                list.Add(module.ResolveType(module.InterfaceImpl.records[i].Interface, this));
+                list.Add(module.ResolveType(module.InterfaceImplTable.records[i].Interface, this));
             }
 
             return Util.ToArray(list, Type.EmptyTypes);
@@ -120,15 +120,15 @@ namespace IKVM.Reflection.Reader
 
         public override MethodBase[] __GetDeclaredMethods()
         {
-            var method = module.TypeDef.records[index].MethodList - 1;
-            var end = module.TypeDef.records.Length > index + 1 ? module.TypeDef.records[index + 1].MethodList - 1 : module.MethodDef.records.Length;
+            var method = module.TypeDefTable.records[index].MethodList - 1;
+            var end = module.TypeDefTable.records.Length > index + 1 ? module.TypeDefTable.records[index + 1].MethodList - 1 : module.MethodDefTable.records.Length;
             var methods = new MethodBase[end - method];
-            if (module.MethodPtr.RowCount == 0)
+            if (module.MethodPtrTable.RowCount == 0)
                 for (int i = 0; method < end; method++, i++)
                     methods[i] = module.GetMethodAt(this, method);
             else
                 for (int i = 0; method < end; method++, i++)
-                    methods[i] = module.GetMethodAt(this, module.MethodPtr.records[method] - 1);
+                    methods[i] = module.GetMethodAt(this, module.MethodPtrTable.records[method] - 1);
 
             return methods;
         }
@@ -139,9 +139,9 @@ namespace IKVM.Reflection.Reader
 
             var bodies = new List<MethodInfo>();
             var declarations = new List<List<MethodInfo>>();
-            foreach (int i in module.MethodImpl.Filter(this.MetadataToken))
+            foreach (int i in module.MethodImplTable.Filter(this.MetadataToken))
             {
-                var body = (MethodInfo)module.ResolveMethod(module.MethodImpl.records[i].MethodBody, typeArgs, null);
+                var body = (MethodInfo)module.ResolveMethod(module.MethodImplTable.records[i].MethodBody, typeArgs, null);
                 int index = bodies.IndexOf(body);
                 if (index == -1)
                 {
@@ -150,7 +150,7 @@ namespace IKVM.Reflection.Reader
                     declarations.Add(new List<MethodInfo>());
                 }
 
-                var declaration = (MethodInfo)module.ResolveMethod(module.MethodImpl.records[i].MethodDeclaration, typeArgs, null);
+                var declaration = (MethodInfo)module.ResolveMethod(module.MethodImplTable.records[i].MethodDeclaration, typeArgs, null);
                 declarations[index].Add(declaration);
             }
 
@@ -170,26 +170,26 @@ namespace IKVM.Reflection.Reader
             var list = new List<Type>();
 
             // note that the NestedClass table is sorted on NestedClass, so we can't use binary search
-            for (int i = 0; i < module.NestedClass.records.Length; i++)
-                if (module.NestedClass.records[i].EnclosingClass == token)
-                    list.Add(module.ResolveType(module.NestedClass.records[i].NestedClass));
+            for (int i = 0; i < module.NestedClassTable.records.Length; i++)
+                if (module.NestedClassTable.records[i].EnclosingClass == token)
+                    list.Add(module.ResolveType(module.NestedClassTable.records[i].NestedClass));
 
             return list.ToArray();
         }
 
         public override PropertyInfo[] __GetDeclaredProperties()
         {
-            foreach (var i in module.PropertyMap.Filter(this.MetadataToken))
+            foreach (var i in module.PropertyMapTable.Filter(this.MetadataToken))
             {
-                var property = module.PropertyMap.records[i].PropertyList - 1;
-                var end = module.PropertyMap.records.Length > i + 1 ? module.PropertyMap.records[i + 1].PropertyList - 1 : module.Property.records.Length;
+                var property = module.PropertyMapTable.records[i].PropertyList - 1;
+                var end = module.PropertyMapTable.records.Length > i + 1 ? module.PropertyMapTable.records[i + 1].PropertyList - 1 : module.PropertyTable.records.Length;
                 var properties = new PropertyInfo[end - property];
-                if (module.PropertyPtr.RowCount == 0)
+                if (module.PropertyPtrTable.RowCount == 0)
                     for (int j = 0; property < end; property++, j++)
                         properties[j] = new PropertyInfoImpl(module, this, property);
                 else
                     for (int j = 0; property < end; property++, j++)
-                        properties[j] = new PropertyInfoImpl(module, this, module.PropertyPtr.records[property] - 1);
+                        properties[j] = new PropertyInfoImpl(module, this, module.PropertyPtrTable.records[property] - 1);
 
                 return properties;
             }
@@ -228,7 +228,7 @@ namespace IKVM.Reflection.Reader
             if (typeArgs == null)
             {
                 var token = this.MetadataToken;
-                var first = module.GenericParam.FindFirstByOwner(token);
+                var first = module.GenericParamTable.FindFirstByOwner(token);
                 if (first == -1)
                 {
                     typeArgs = Type.EmptyTypes;
@@ -236,8 +236,8 @@ namespace IKVM.Reflection.Reader
                 else
                 {
                     var list = new List<Type>();
-                    var len = module.GenericParam.records.Length;
-                    for (int i = first; i < len && module.GenericParam.records[i].Owner == token; i++)
+                    var len = module.GenericParamTable.records.Length;
+                    for (int i = first; i < len && module.GenericParamTable.records[i].Owner == token; i++)
                         list.Add(new GenericTypeParameter(module, i, Signature.ELEMENT_TYPE_VAR));
 
                     typeArgs = list.ToArray();
@@ -267,7 +267,7 @@ namespace IKVM.Reflection.Reader
             get
             {
                 if ((typeFlags & (TypeFlags.IsGenericTypeDefinition | TypeFlags.NotGenericTypeDefinition)) == 0)
-                    typeFlags |= module.GenericParam.FindFirstByOwner(MetadataToken) == -1 ? TypeFlags.NotGenericTypeDefinition : TypeFlags.IsGenericTypeDefinition;
+                    typeFlags |= module.GenericParamTable.FindFirstByOwner(MetadataToken) == -1 ? TypeFlags.NotGenericTypeDefinition : TypeFlags.IsGenericTypeDefinition;
 
                 return (typeFlags & TypeFlags.IsGenericTypeDefinition) != 0;
             }
@@ -309,8 +309,8 @@ namespace IKVM.Reflection.Reader
                 if (!IsNestedByFlags)
                     return null;
 
-                foreach (int i in module.NestedClass.Filter(MetadataToken))
-                    return module.ResolveType(module.NestedClass.records[i].EnclosingClass, null, null);
+                foreach (int i in module.NestedClassTable.Filter(MetadataToken))
+                    return module.ResolveType(module.NestedClassTable.records[i].EnclosingClass, null, null);
 
                 throw new InvalidOperationException();
             }
@@ -318,10 +318,10 @@ namespace IKVM.Reflection.Reader
 
         public override bool __GetLayout(out int packingSize, out int typeSize)
         {
-            foreach (int i in module.ClassLayout.Filter(MetadataToken))
+            foreach (int i in module.ClassLayoutTable.Filter(MetadataToken))
             {
-                packingSize = module.ClassLayout.records[i].PackingSize;
-                typeSize = module.ClassLayout.records[i].ClassSize;
+                packingSize = module.ClassLayoutTable.records[i].PackingSize;
+                typeSize = module.ClassLayoutTable.records[i].ClassSize;
                 return true;
             }
 

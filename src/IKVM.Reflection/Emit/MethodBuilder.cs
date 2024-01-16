@@ -207,8 +207,8 @@ namespace IKVM.Reflection.Emit
             rec.MappingFlags = flags;
             rec.MemberForwarded = pseudoToken;
             rec.ImportName = ModuleBuilder.GetOrAddString(entryName ?? name);
-            rec.ImportScope = MetadataTokens.GetToken(MetadataTokens.ModuleReferenceHandle(ModuleBuilder.ModuleRef.FindOrAddRecord(dllName == null ? default : ModuleBuilder.GetOrAddString(dllName))));
-            ModuleBuilder.ImplMap.AddRecord(rec);
+            rec.ImportScope = MetadataTokens.GetToken(MetadataTokens.ModuleReferenceHandle(ModuleBuilder.ModuleRefTable.FindOrAddRecord(dllName == null ? default : ModuleBuilder.GetOrAddString(dllName))));
+            ModuleBuilder.ImplMapTable.AddRecord(rec);
         }
 
         void SetMethodImplAttribute(CustomAttributeBuilder customBuilder)
@@ -287,7 +287,7 @@ namespace IKVM.Reflection.Emit
         {
             parameters ??= new List<ParameterBuilder>();
 
-            ModuleBuilder.Param.AddVirtualRecord();
+            ModuleBuilder.ParamTable.AddVirtualRecord();
             var pb = new ParameterBuilder(ModuleBuilder, position, attributes, strParamName);
             if (parameters.Count == 0 || position >= parameters[parameters.Count - 1].Position)
             {
@@ -480,7 +480,7 @@ namespace IKVM.Reflection.Emit
                 {
                     var pb = ParameterBuilder;
                     if (pb != null && (pb.Attributes & (int)ParameterAttributes.HasDefault) != 0)
-                        return method.ModuleBuilder.Constant.GetRawConstantValue(method.ModuleBuilder, pb.PseudoToken);
+                        return method.ModuleBuilder.ConstantTable.GetRawConstantValue(method.ModuleBuilder, pb.PseudoToken);
                     if (pb != null && (pb.Attributes & (int)ParameterAttributes.Optional) != 0)
                         return Missing.Value;
 

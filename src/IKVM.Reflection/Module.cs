@@ -36,43 +36,43 @@ namespace IKVM.Reflection
 
         internal readonly Universe universe;
         internal readonly ModuleTable ModuleTable = new ModuleTable();
-        internal readonly TypeRefTable TypeRef = new TypeRefTable();
-        internal readonly TypeDefTable TypeDef = new TypeDefTable();
-        internal readonly FieldPtrTable FieldPtr = new FieldPtrTable();
-        internal readonly FieldTable Field = new FieldTable();
-        internal readonly MemberRefTable MemberRef = new MemberRefTable();
-        internal readonly ConstantTable Constant = new ConstantTable();
-        internal readonly CustomAttributeTable CustomAttribute = new CustomAttributeTable();
-        internal readonly FieldMarshalTable FieldMarshal = new FieldMarshalTable();
-        internal readonly DeclSecurityTable DeclSecurity = new DeclSecurityTable();
-        internal readonly ClassLayoutTable ClassLayout = new ClassLayoutTable();
-        internal readonly FieldLayoutTable FieldLayout = new FieldLayoutTable();
-        internal readonly ParamPtrTable ParamPtr = new ParamPtrTable();
-        internal readonly ParamTable Param = new ParamTable();
-        internal readonly InterfaceImplTable InterfaceImpl = new InterfaceImplTable();
-        internal readonly StandAloneSigTable StandAloneSig = new StandAloneSigTable();
-        internal readonly EventMapTable EventMap = new EventMapTable();
-        internal readonly EventPtrTable EventPtr = new EventPtrTable();
-        internal readonly EventTable Event = new EventTable();
-        internal readonly PropertyMapTable PropertyMap = new PropertyMapTable();
-        internal readonly PropertyPtrTable PropertyPtr = new PropertyPtrTable();
-        internal readonly PropertyTable Property = new PropertyTable();
-        internal readonly MethodSemanticsTable MethodSemantics = new MethodSemanticsTable();
-        internal readonly MethodImplTable MethodImpl = new MethodImplTable();
-        internal readonly ModuleRefTable ModuleRef = new ModuleRefTable();
-        internal readonly TypeSpecTable TypeSpec = new TypeSpecTable();
-        internal readonly ImplMapTable ImplMap = new ImplMapTable();
-        internal readonly FieldRVATable FieldRVA = new FieldRVATable();
+        internal readonly TypeRefTable TypeRefTable = new TypeRefTable();
+        internal readonly TypeDefTable TypeDefTable = new TypeDefTable();
+        internal readonly FieldPtrTable FieldPtrTable = new FieldPtrTable();
+        internal readonly FieldTable FieldTable = new FieldTable();
+        internal readonly MemberRefTable MemberRefTable = new MemberRefTable();
+        internal readonly ConstantTable ConstantTable = new ConstantTable();
+        internal readonly CustomAttributeTable CustomAttributeTable = new CustomAttributeTable();
+        internal readonly FieldMarshalTable FieldMarshalTable = new FieldMarshalTable();
+        internal readonly DeclSecurityTable DeclSecurityTable = new DeclSecurityTable();
+        internal readonly ClassLayoutTable ClassLayoutTable = new ClassLayoutTable();
+        internal readonly FieldLayoutTable FieldLayoutTable = new FieldLayoutTable();
+        internal readonly ParamPtrTable ParamPtrTable = new ParamPtrTable();
+        internal readonly ParamTable ParamTable = new ParamTable();
+        internal readonly InterfaceImplTable InterfaceImplTable = new InterfaceImplTable();
+        internal readonly StandAloneSigTable StandAloneSigTable = new StandAloneSigTable();
+        internal readonly EventMapTable EventMapTable = new EventMapTable();
+        internal readonly EventPtrTable EventPtrTable = new EventPtrTable();
+        internal readonly EventTable EventTable = new EventTable();
+        internal readonly PropertyMapTable PropertyMapTable = new PropertyMapTable();
+        internal readonly PropertyPtrTable PropertyPtrTable = new PropertyPtrTable();
+        internal readonly PropertyTable PropertyTable = new PropertyTable();
+        internal readonly MethodSemanticsTable MethodSemanticsTable = new MethodSemanticsTable();
+        internal readonly MethodImplTable MethodImplTable = new MethodImplTable();
+        internal readonly ModuleRefTable ModuleRefTable = new ModuleRefTable();
+        internal readonly TypeSpecTable TypeSpecTable = new TypeSpecTable();
+        internal readonly ImplMapTable ImplMapTable = new ImplMapTable();
+        internal readonly FieldRVATable FieldRVATable = new FieldRVATable();
         internal readonly AssemblyTable AssemblyTable = new AssemblyTable();
-        internal readonly AssemblyRefTable AssemblyRef = new AssemblyRefTable();
-        internal readonly MethodPtrTable MethodPtr = new MethodPtrTable();
-        internal readonly MethodDefTable MethodDef = new MethodDefTable();
-        internal readonly NestedClassTable NestedClass = new NestedClassTable();
-        internal readonly FileTable File = new FileTable();
-        internal readonly ExportedTypeTable ExportedType = new ExportedTypeTable();
-        internal readonly ManifestResourceTable ManifestResource = new ManifestResourceTable();
-        internal readonly GenericParamTable GenericParam = new GenericParamTable();
-        internal readonly MethodSpecTable MethodSpec = new MethodSpecTable();
+        internal readonly AssemblyRefTable AssemblyRefTable = new AssemblyRefTable();
+        internal readonly MethodPtrTable MethodPtrTable = new MethodPtrTable();
+        internal readonly MethodDefTable MethodDefTable = new MethodDefTable();
+        internal readonly NestedClassTable NestedClassTable = new NestedClassTable();
+        internal readonly FileTable FileTable = new FileTable();
+        internal readonly ExportedTypeTable ExportedTypeTable = new ExportedTypeTable();
+        internal readonly ManifestResourceTable ManifestResourceTable = new ManifestResourceTable();
+        internal readonly GenericParamTable GenericParamTable = new GenericParamTable();
+        internal readonly MethodSpecTable MethodSpecTable = new MethodSpecTable();
         internal readonly GenericParamConstraintTable GenericParamConstraint = new GenericParamConstraintTable();
 
         /// <summary>
@@ -88,43 +88,43 @@ namespace IKVM.Reflection
         {
             var tables = new Table[64];
             tables[ModuleTable.Index] = ModuleTable;
-            tables[TypeRefTable.Index] = TypeRef;
-            tables[TypeDefTable.Index] = TypeDef;
-            tables[FieldPtrTable.Index] = FieldPtr;
-            tables[FieldTable.Index] = Field;
-            tables[MemberRefTable.Index] = MemberRef;
-            tables[ConstantTable.Index] = Constant;
-            tables[CustomAttributeTable.Index] = CustomAttribute;
-            tables[FieldMarshalTable.Index] = FieldMarshal;
-            tables[DeclSecurityTable.Index] = DeclSecurity;
-            tables[ClassLayoutTable.Index] = ClassLayout;
-            tables[FieldLayoutTable.Index] = FieldLayout;
-            tables[ParamPtrTable.Index] = ParamPtr;
-            tables[ParamTable.Index] = Param;
-            tables[InterfaceImplTable.Index] = InterfaceImpl;
-            tables[StandAloneSigTable.Index] = StandAloneSig;
-            tables[EventMapTable.Index] = EventMap;
-            tables[EventPtrTable.Index] = EventPtr;
-            tables[EventTable.Index] = Event;
-            tables[PropertyMapTable.Index] = PropertyMap;
-            tables[PropertyPtrTable.Index] = PropertyPtr;
-            tables[PropertyTable.Index] = Property;
-            tables[MethodSemanticsTable.Index] = MethodSemantics;
-            tables[MethodImplTable.Index] = MethodImpl;
-            tables[ModuleRefTable.Index] = ModuleRef;
-            tables[TypeSpecTable.Index] = TypeSpec;
-            tables[ImplMapTable.Index] = ImplMap;
-            tables[FieldRVATable.Index] = FieldRVA;
+            tables[TypeRefTable.Index] = TypeRefTable;
+            tables[TypeDefTable.Index] = TypeDefTable;
+            tables[FieldPtrTable.Index] = FieldPtrTable;
+            tables[FieldTable.Index] = FieldTable;
+            tables[MemberRefTable.Index] = MemberRefTable;
+            tables[ConstantTable.Index] = ConstantTable;
+            tables[CustomAttributeTable.Index] = CustomAttributeTable;
+            tables[FieldMarshalTable.Index] = FieldMarshalTable;
+            tables[DeclSecurityTable.Index] = DeclSecurityTable;
+            tables[ClassLayoutTable.Index] = ClassLayoutTable;
+            tables[FieldLayoutTable.Index] = FieldLayoutTable;
+            tables[ParamPtrTable.Index] = ParamPtrTable;
+            tables[ParamTable.Index] = ParamTable;
+            tables[InterfaceImplTable.Index] = InterfaceImplTable;
+            tables[StandAloneSigTable.Index] = StandAloneSigTable;
+            tables[EventMapTable.Index] = EventMapTable;
+            tables[EventPtrTable.Index] = EventPtrTable;
+            tables[EventTable.Index] = EventTable;
+            tables[PropertyMapTable.Index] = PropertyMapTable;
+            tables[PropertyPtrTable.Index] = PropertyPtrTable;
+            tables[PropertyTable.Index] = PropertyTable;
+            tables[MethodSemanticsTable.Index] = MethodSemanticsTable;
+            tables[MethodImplTable.Index] = MethodImplTable;
+            tables[ModuleRefTable.Index] = ModuleRefTable;
+            tables[TypeSpecTable.Index] = TypeSpecTable;
+            tables[ImplMapTable.Index] = ImplMapTable;
+            tables[FieldRVATable.Index] = FieldRVATable;
             tables[AssemblyTable.Index] = AssemblyTable;
-            tables[AssemblyRefTable.Index] = AssemblyRef;
-            tables[MethodPtrTable.Index] = MethodPtr;
-            tables[MethodDefTable.Index] = MethodDef;
-            tables[NestedClassTable.Index] = NestedClass;
-            tables[FileTable.Index] = File;
-            tables[ExportedTypeTable.Index] = ExportedType;
-            tables[ManifestResourceTable.Index] = ManifestResource;
-            tables[GenericParamTable.Index] = GenericParam;
-            tables[MethodSpecTable.Index] = MethodSpec;
+            tables[AssemblyRefTable.Index] = AssemblyRefTable;
+            tables[MethodPtrTable.Index] = MethodPtrTable;
+            tables[MethodDefTable.Index] = MethodDefTable;
+            tables[NestedClassTable.Index] = NestedClassTable;
+            tables[FileTable.Index] = FileTable;
+            tables[ExportedTypeTable.Index] = ExportedTypeTable;
+            tables[ManifestResourceTable.Index] = ManifestResourceTable;
+            tables[GenericParamTable.Index] = GenericParamTable;
+            tables[MethodSpecTable.Index] = MethodSpecTable;
             tables[GenericParamConstraintTable.Index] = GenericParamConstraint;
             return tables;
         }
@@ -141,11 +141,7 @@ namespace IKVM.Reflection
 
         public bool __GetSectionInfo(int rva, out string name, out int characteristics)
         {
-            int virtualAddress;
-            int virtualSize;
-            int pointerToRawData;
-            int sizeOfRawData;
-            return __GetSectionInfo(rva, out name, out characteristics, out virtualAddress, out virtualSize, out pointerToRawData, out sizeOfRawData);
+            return __GetSectionInfo(rva, out name, out characteristics, out _, out _, out _, out _);
         }
 
         public virtual bool __GetSectionInfo(int rva, out string name, out int characteristics, out int virtualAddress, out int virtualSize, out int pointerToRawData, out int sizeOfRawData)
@@ -425,15 +421,9 @@ namespace IKVM.Reflection
 
         public abstract Type[] __GetExportedTypes();
 
-        public virtual bool __IsMissing
-        {
-            get { return false; }
-        }
+        public virtual bool __IsMissing => false;
 
-        public ulong __ImageBase
-        {
-            get { return GetImageBaseImpl(); }
-        }
+        public ulong __ImageBase => GetImageBaseImpl();
 
         protected abstract ulong GetImageBaseImpl();
 
@@ -445,37 +435,22 @@ namespace IKVM.Reflection
 
         protected abstract uint GetFileAlignmentImpl();
 
-        public DllCharacteristics __DllCharacteristics
-        {
-            get { return GetDllCharacteristicsImpl(); }
-        }
+        public DllCharacteristics __DllCharacteristics => GetDllCharacteristicsImpl();
 
         protected abstract DllCharacteristics GetDllCharacteristicsImpl();
 
-        public virtual byte[] __ModuleHash
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public virtual byte[] __ModuleHash => throw new NotSupportedException();
 
-        public virtual int __EntryPointRVA
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public virtual int __EntryPointRVA => throw new NotSupportedException();
 
-        public virtual int __EntryPointToken
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public virtual int __EntryPointToken => throw new NotSupportedException();
 
-        public virtual string __ImageRuntimeVersion
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public virtual string __ImageRuntimeVersion => throw new NotSupportedException();
 
         public IEnumerable<CustomAttributeData> __EnumerateCustomAttributeTable()
         {
-            var list = new List<CustomAttributeData>(CustomAttribute.RowCount);
-            for (int i = 0; i < CustomAttribute.RowCount; i++)
+            var list = new List<CustomAttributeData>(CustomAttributeTable.RowCount);
+            for (int i = 0; i < CustomAttributeTable.RowCount; i++)
                 list.Add(new CustomAttributeData(this, i));
 
             return list;
@@ -489,11 +464,11 @@ namespace IKVM.Reflection
 
         public bool __TryGetImplMap(int token, out ImplMapFlags mappingFlags, out string importName, out string importScope)
         {
-            foreach (int i in ImplMap.Filter(token))
+            foreach (int i in ImplMapTable.Filter(token))
             {
-                mappingFlags = (ImplMapFlags)(ushort)ImplMap.records[i].MappingFlags;
-                importName = GetString(ImplMap.records[i].ImportName);
-                importScope = GetString(ModuleRef.records[(ImplMap.records[i].ImportScope & 0xFFFFFF) - 1]);
+                mappingFlags = (ImplMapFlags)(ushort)ImplMapTable.records[i].MappingFlags;
+                importName = GetString(ImplMapTable.records[i].ImportName);
+                importScope = GetString(ModuleRefTable.records[(ImplMapTable.records[i].ImportScope & 0xFFFFFF) - 1]);
                 return true;
             }
 
@@ -503,22 +478,17 @@ namespace IKVM.Reflection
             return false;
         }
 
-#if !NO_AUTHENTICODE
         public virtual System.Security.Cryptography.X509Certificates.X509Certificate GetSignerCertificate()
         {
             return null;
         }
 
-#endif // !NO_AUTHENTICODE
-
         internal abstract Type GetModuleType();
-
-        internal abstract ByteReader GetBlobReader(BlobHandle handle);
 
         internal IList<CustomAttributeData> GetDeclarativeSecurity(int metadataToken)
         {
             var list = new List<CustomAttributeData>();
-            foreach (var i in DeclSecurity.Filter(metadataToken))
+            foreach (var i in DeclSecurityTable.Filter(metadataToken))
                 CustomAttributeData.ReadDeclarativeSecurity(this, i, list);
 
             return list;
@@ -536,117 +506,12 @@ namespace IKVM.Reflection
 
         internal virtual string GetString(StringHandle handle)
         {
-            throw new NotSupportedException();
+            throw new NotImplementedException();
         }
 
-    }
-
-    abstract class NonPEModule : Module
-    {
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="universe"></param>
-        protected NonPEModule(Universe universe) :
-            base(universe)
+        internal virtual ByteReader GetBlobReader(BlobHandle handle)
         {
-
-        }
-
-        protected virtual Exception InvalidOperationException()
-        {
-            return new InvalidOperationException();
-        }
-
-        protected virtual Exception NotSupportedException()
-        {
-            return new NotSupportedException();
-        }
-
-        protected virtual Exception ArgumentOutOfRangeException()
-        {
-            return new ArgumentOutOfRangeException();
-        }
-
-        internal sealed override Type GetModuleType()
-        {
-            throw InvalidOperationException();
-        }
-
-        internal sealed override ByteReader GetBlobReader(BlobHandle handle)
-        {
-            throw InvalidOperationException();
-        }
-
-        public sealed override AssemblyName[] __GetReferencedAssemblies()
-        {
-            throw NotSupportedException();
-        }
-
-        public sealed override string[] __GetReferencedModules()
-        {
-            throw NotSupportedException();
-        }
-
-        public override Type[] __GetReferencedTypes()
-        {
-            throw NotSupportedException();
-        }
-
-        public override Type[] __GetExportedTypes()
-        {
-            throw NotSupportedException();
-        }
-
-        protected sealed override ulong GetImageBaseImpl()
-        {
-            throw NotSupportedException();
-        }
-
-        protected sealed override ulong GetStackReserveImpl()
-        {
-            throw NotSupportedException();
-        }
-
-        protected sealed override uint GetFileAlignmentImpl()
-        {
-            throw NotSupportedException();
-        }
-
-        protected override DllCharacteristics GetDllCharacteristicsImpl()
-        {
-            throw NotSupportedException();
-        }
-
-        internal sealed override Type ResolveType(int metadataToken, IGenericContext context)
-        {
-            throw ArgumentOutOfRangeException();
-        }
-
-        public sealed override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-        {
-            throw ArgumentOutOfRangeException();
-        }
-
-        public sealed override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-        {
-            throw ArgumentOutOfRangeException();
-        }
-
-        public sealed override MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-        {
-            throw ArgumentOutOfRangeException();
-        }
-
-        public sealed override string ResolveString(int metadataToken)
-        {
-            throw ArgumentOutOfRangeException();
-        }
-
-        public sealed override Type[] __ResolveOptionalParameterTypes(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments, out CustomModifiers[] customModifiers)
-        {
-            throw ArgumentOutOfRangeException();
+            throw new NotImplementedException();
         }
 
     }

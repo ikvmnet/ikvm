@@ -122,7 +122,7 @@ namespace IKVM.Reflection.Emit
         public override object GetRawConstantValue()
         {
             if (lazyPseudoToken != 0)
-                return typeBuilder.ModuleBuilder.Constant.GetRawConstantValue(typeBuilder.ModuleBuilder, lazyPseudoToken);
+                return typeBuilder.ModuleBuilder.ConstantTable.GetRawConstantValue(typeBuilder.ModuleBuilder, lazyPseudoToken);
 
             throw new InvalidOperationException();
         }
@@ -200,7 +200,7 @@ namespace IKVM.Reflection.Emit
             rec.Flags = (short)attributes;
             rec.Name = typeBuilder.ModuleBuilder.GetOrAddString(name);
             rec.Type = typeBuilder.ModuleBuilder.GetSignatureBlobIndex(sig);
-            int token = MetadataTokens.GetToken(MetadataTokens.PropertyDefinitionHandle(typeBuilder.ModuleBuilder.Property.AddRecord(rec)));
+            int token = MetadataTokens.GetToken(MetadataTokens.PropertyDefinitionHandle(typeBuilder.ModuleBuilder.PropertyTable.AddRecord(rec)));
 
             if (lazyPseudoToken == 0)
                 lazyPseudoToken = token;
@@ -217,7 +217,7 @@ namespace IKVM.Reflection.Emit
             rec.Semantics = semantics;
             rec.Method = methodToken;
             rec.Association = propertyToken;
-            typeBuilder.ModuleBuilder.MethodSemantics.AddRecord(rec);
+            typeBuilder.ModuleBuilder.MethodSemanticsTable.AddRecord(rec);
         }
 
         internal override bool IsPublic

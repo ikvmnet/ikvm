@@ -56,7 +56,7 @@ namespace IKVM.Reflection.Reader
                 // guard against circular type forwarding
                 if (type == MarkerType.LazyResolveInProgress)
                 {
-                    var typeName = module.GetTypeName(module.ExportedType.records[index].TypeNamespace, module.ExportedType.records[index].TypeName);
+                    var typeName = module.GetTypeName(module.ExportedTypeTable.records[index].TypeNamespace, module.ExportedTypeTable.records[index].TypeName);
                     return module.universe.GetMissingTypeOrThrow(module, module, null, typeName).SetCyclicTypeForwarder();
                 }
                 else if (type == null)
@@ -217,7 +217,7 @@ namespace IKVM.Reflection.Reader
                 if ((valid & (1UL << i)) != 0)
                     tables[i].Read(mr);
 
-            if (ParamPtr.RowCount != 0)
+            if (ParamPtrTable.RowCount != 0)
                 throw new NotImplementedException("ParamPtr table support has not yet been implemented.");
         }
 
@@ -261,7 +261,7 @@ namespace IKVM.Reflection.Reader
         {
             if (typeDefs == null)
             {
-                typeDefs = new TypeDefImpl[TypeDef.records.Length];
+                typeDefs = new TypeDefImpl[TypeDefTable.records.Length];
                 for (int i = 0; i < typeDefs.Length; i++)
                 {
                     var type = new TypeDefImpl(this, i);
@@ -273,12 +273,12 @@ namespace IKVM.Reflection.Reader
                 }
 
                 // add forwarded types to forwardedTypes dictionary (because Module.GetType(string) should return them)
-                for (int i = 0; i < ExportedType.records.Length; i++)
+                for (int i = 0; i < ExportedTypeTable.records.Length; i++)
                 {
-                    int implementation = ExportedType.records[i].Implementation;
+                    int implementation = ExportedTypeTable.records[i].Implementation;
                     if (implementation >> 24 == AssemblyRefTable.Index)
                     {
-                        var typeName = GetTypeName(ExportedType.records[i].TypeNamespace, ExportedType.records[i].TypeName);
+                        var typeName = GetTypeName(ExportedTypeTable.records[i].TypeNamespace, ExportedTypeTable.records[i].TypeName);
                         forwardedTypes.Add(typeName, new LazyForwardedType(i));
                     }
                 }
@@ -371,31 +371,31 @@ namespace IKVM.Reflection.Reader
             {
                 throw TokenOutOfRangeException(metadataToken);
             }
-            else if ((metadataToken >> 24) == TypeDefTable.Index && index < TypeDef.RowCount)
+            else if ((metadataToken >> 24) == TypeDefTable.Index && index < TypeDefTable.RowCount)
             {
                 PopulateTypeDef();
                 return typeDefs[index];
             }
-            else if ((metadataToken >> 24) == TypeRefTable.Index && index < TypeRef.RowCount)
+            else if ((metadataToken >> 24) == TypeRefTable.Index && index < TypeRefTable.RowCount)
             {
-                typeRefs ??= new Type[TypeRef.records.Length];
+                typeRefs ??= new Type[TypeRefTable.records.Length];
 
                 if (typeRefs[index] == null)
                 {
-                    var scope = TypeRef.records[index].ResolutionScope;
+                    var scope = TypeRefTable.records[index].ResolutionScope;
                     switch (scope >> 24)
                     {
                         case AssemblyRefTable.Index:
                             {
                                 var assembly = ResolveAssemblyRef((scope & 0xFFFFFF) - 1);
-                                var typeName = GetTypeName(TypeRef.records[index].TypeNamespace, TypeRef.records[index].TypeName);
+                                var typeName = GetTypeName(TypeRefTable.records[index].TypeNamespace, TypeRefTable.records[index].TypeName);
                                 typeRefs[index] = assembly.ResolveType(this, typeName);
                                 break;
                             }
                         case TypeRefTable.Index:
                             {
                                 var outer = ResolveType(scope, null);
-                                var typeName = GetTypeName(TypeRef.records[index].TypeNamespace, TypeRef.records[index].TypeName);
+                                var typeName = GetTypeName(TypeRefTable.records[index].TypeNamespace, TypeRefTable.records[index].TypeName);
                                 typeRefs[index] = outer.ResolveNestedType(this, typeName);
                                 break;
                             }
@@ -413,10 +413,10 @@ namespace IKVM.Reflection.Reader
                                 }
                                 else
                                 {
-                                    module = ResolveModuleRef(ModuleRef.records[(scope & 0xFFFFFF) - 1]);
+                                    module = ResolveModuleRef(ModuleRefTable.records[(scope & 0xFFFFFF) - 1]);
                                 }
 
-                                var typeName = GetTypeName(TypeRef.records[index].TypeNamespace, TypeRef.records[index].TypeName);
+                                var typeName = GetTypeName(TypeRefTable.records[index].TypeNamespace, TypeRefTable.records[index].TypeName);
                                 typeRefs[index] = module.FindType(typeName) ?? module.universe.GetMissingTypeOrThrow(this, module, null, typeName);
                                 break;
                             }
@@ -427,9 +427,9 @@ namespace IKVM.Reflection.Reader
 
                 return typeRefs[index];
             }
-            else if ((metadataToken >> 24) == TypeSpecTable.Index && index < TypeSpec.RowCount)
+            else if ((metadataToken >> 24) == TypeSpecTable.Index && index < TypeSpecTable.RowCount)
             {
-                typeSpecs ??= new Type[TypeSpec.records.Length];
+                typeSpecs ??= new Type[TypeSpecTable.records.Length];
 
                 var type = typeSpecs[index];
                 if (type == null)
@@ -439,7 +439,7 @@ namespace IKVM.Reflection.Reader
 
                     try
                     {
-                        type = Signature.ReadTypeSpec(this, ByteReader.FromBlob(blobHeap, TypeSpec.records[index]), tc);
+                        type = Signature.ReadTypeSpec(this, ByteReader.FromBlob(blobHeap, TypeSpecTable.records[index]), tc);
                     }
                     finally
                     {
@@ -517,8 +517,8 @@ namespace IKVM.Reflection.Reader
 
         internal Assembly ResolveAssemblyRef(int index)
         {
-            assemblyRefs ??= new Assembly[AssemblyRef.RowCount];
-            assemblyRefs[index] ??= ResolveAssemblyRefImpl(ref AssemblyRef.records[index]);
+            assemblyRefs ??= new Assembly[AssemblyRefTable.RowCount];
+            assemblyRefs[index] ??= ResolveAssemblyRefImpl(ref AssemblyRefTable.records[index]);
             return assemblyRefs[index];
         }
 
@@ -611,7 +611,7 @@ namespace IKVM.Reflection.Reader
                     return ResolveField(metadataToken, genericTypeArguments, genericMethodArguments);
                 case MemberRefTable.Index:
                     int index = (metadataToken & 0xFFFFFF) - 1;
-                    if (index < 0 || index >= MemberRef.RowCount)
+                    if (index < 0 || index >= MemberRefTable.RowCount)
                         goto default;
 
                     return GetMemberRef(index, genericTypeArguments, genericMethodArguments);
@@ -629,7 +629,7 @@ namespace IKVM.Reflection.Reader
 
         internal FieldInfo GetFieldAt(TypeDefImpl owner, int index)
         {
-            fields ??= new FieldInfo[Field.records.Length];
+            fields ??= new FieldInfo[FieldTable.records.Length];
             fields[index] ??= new FieldDefImpl(this, owner ?? FindFieldOwner(index), index);
             return fields[index];
         }
@@ -641,11 +641,11 @@ namespace IKVM.Reflection.Reader
             {
                 throw TokenOutOfRangeException(metadataToken);
             }
-            else if ((metadataToken >> 24) == FieldTable.Index && index < Field.RowCount)
+            else if ((metadataToken >> 24) == FieldTable.Index && index < FieldTable.RowCount)
             {
                 return GetFieldAt(null, index);
             }
-            else if ((metadataToken >> 24) == MemberRefTable.Index && index < MemberRef.RowCount)
+            else if ((metadataToken >> 24) == MemberRefTable.Index && index < MemberRefTable.RowCount)
             {
                 var field = GetMemberRef(index, genericTypeArguments, genericMethodArguments) as FieldInfo;
                 if (field != null)
@@ -662,10 +662,10 @@ namespace IKVM.Reflection.Reader
         private TypeDefImpl FindFieldOwner(int fieldIndex)
         {
             // TODO use binary search?
-            for (int i = 0; i < TypeDef.records.Length; i++)
+            for (int i = 0; i < TypeDefTable.records.Length; i++)
             {
-                var field = TypeDef.records[i].FieldList - 1;
-                var end = TypeDef.records.Length > i + 1 ? TypeDef.records[i + 1].FieldList - 1 : Field.records.Length;
+                var field = TypeDefTable.records[i].FieldList - 1;
+                var end = TypeDefTable.records.Length > i + 1 ? TypeDefTable.records[i + 1].FieldList - 1 : FieldTable.records.Length;
                 if (field <= fieldIndex && fieldIndex < end)
                 {
                     PopulateTypeDef();
@@ -678,7 +678,7 @@ namespace IKVM.Reflection.Reader
 
         internal MethodBase GetMethodAt(TypeDefImpl owner, int index)
         {
-            methods ??= new MethodBase[MethodDef.records.Length];
+            methods ??= new MethodBase[MethodDefTable.records.Length];
             if (methods[index] == null)
             {
                 var method = new MethodDefImpl(this, owner ?? FindMethodOwner(index), index);
@@ -695,11 +695,11 @@ namespace IKVM.Reflection.Reader
             {
                 throw TokenOutOfRangeException(metadataToken);
             }
-            else if ((metadataToken >> 24) == MethodDefTable.Index && index < MethodDef.RowCount)
+            else if ((metadataToken >> 24) == MethodDefTable.Index && index < MethodDefTable.RowCount)
             {
                 return GetMethodAt(null, index);
             }
-            else if ((metadataToken >> 24) == MemberRefTable.Index && index < MemberRef.RowCount)
+            else if ((metadataToken >> 24) == MemberRefTable.Index && index < MemberRefTable.RowCount)
             {
                 var method = GetMemberRef(index, genericTypeArguments, genericMethodArguments) as MethodBase;
                 if (method != null)
@@ -707,10 +707,10 @@ namespace IKVM.Reflection.Reader
 
                 throw new ArgumentException(String.Format("Token 0x{0:x8} is not a valid MethodBase token in the scope of module {1}.", metadataToken, this.Name), "metadataToken");
             }
-            else if ((metadataToken >> 24) == MethodSpecTable.Index && index < MethodSpec.RowCount)
+            else if ((metadataToken >> 24) == MethodSpecTable.Index && index < MethodSpecTable.RowCount)
             {
-                var method = (MethodInfo)ResolveMethod(MethodSpec.records[index].Method, genericTypeArguments, genericMethodArguments);
-                var instantiation = ByteReader.FromBlob(blobHeap, MethodSpec.records[index].Instantiation);
+                var method = (MethodInfo)ResolveMethod(MethodSpecTable.records[index].Method, genericTypeArguments, genericMethodArguments);
+                var instantiation = ByteReader.FromBlob(blobHeap, MethodSpecTable.records[index].Instantiation);
                 return method.MakeGenericMethod(Signature.ReadMethodSpec(this, instantiation, new GenericContext(genericTypeArguments, genericMethodArguments)));
             }
             else
@@ -726,12 +726,12 @@ namespace IKVM.Reflection.Reader
             {
                 throw TokenOutOfRangeException(metadataToken);
             }
-            else if ((metadataToken >> 24) == MemberRefTable.Index && index < MemberRef.RowCount)
+            else if ((metadataToken >> 24) == MemberRefTable.Index && index < MemberRefTable.RowCount)
             {
-                var sig = MemberRef.records[index].Signature;
+                var sig = MemberRefTable.records[index].Signature;
                 return Signature.ReadOptionalParameterTypes(this, GetBlobReader(sig), new GenericContext(genericTypeArguments, genericMethodArguments), out customModifiers);
             }
-            else if ((metadataToken >> 24) == MethodDefTable.Index && index < MethodDef.RowCount)
+            else if ((metadataToken >> 24) == MethodDefTable.Index && index < MethodDefTable.RowCount)
             {
                 // for convenience, we support passing a MethodDef token as well, because in some places
                 // it makes sense to have a vararg method that is referred to by its methoddef (e.g. ldftn).
@@ -748,11 +748,11 @@ namespace IKVM.Reflection.Reader
         public override CustomModifiers __ResolveTypeSpecCustomModifiers(int typeSpecToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
             int index = (typeSpecToken & 0xFFFFFF) - 1;
-            if (typeSpecToken >> 24 != TypeSpecTable.Index || index < 0 || index >= TypeSpec.RowCount)
+            if (typeSpecToken >> 24 != TypeSpecTable.Index || index < 0 || index >= TypeSpecTable.RowCount)
             {
                 throw TokenOutOfRangeException(typeSpecToken);
             }
-            return CustomModifiers.Read(this, ByteReader.FromBlob(blobHeap, TypeSpec.records[index]), new GenericContext(genericTypeArguments, genericMethodArguments));
+            return CustomModifiers.Read(this, ByteReader.FromBlob(blobHeap, TypeSpecTable.records[index]), new GenericContext(genericTypeArguments, genericMethodArguments));
         }
 
         public override string ScopeName
@@ -763,10 +763,10 @@ namespace IKVM.Reflection.Reader
         private TypeDefImpl FindMethodOwner(int methodIndex)
         {
             // TODO use binary search?
-            for (int i = 0; i < TypeDef.records.Length; i++)
+            for (int i = 0; i < TypeDefTable.records.Length; i++)
             {
-                int method = TypeDef.records[i].MethodList - 1;
-                int end = TypeDef.records.Length > i + 1 ? TypeDef.records[i + 1].MethodList - 1 : MethodDef.records.Length;
+                int method = TypeDefTable.records[i].MethodList - 1;
+                int end = TypeDefTable.records.Length > i + 1 ? TypeDefTable.records[i + 1].MethodList - 1 : MethodDefTable.records.Length;
                 if (method <= methodIndex && methodIndex < end)
                 {
                     PopulateTypeDef();
@@ -780,13 +780,13 @@ namespace IKVM.Reflection.Reader
         {
             if (memberRefs == null)
             {
-                memberRefs = new MemberInfo[MemberRef.records.Length];
+                memberRefs = new MemberInfo[MemberRefTable.records.Length];
             }
             if (memberRefs[index] == null)
             {
-                int owner = MemberRef.records[index].Class;
-                var sig = MemberRef.records[index].Signature;
-                string name = GetString(MemberRef.records[index].Name);
+                int owner = MemberRefTable.records[index].Class;
+                var sig = MemberRefTable.records[index].Signature;
+                string name = GetString(MemberRefTable.records[index].Name);
                 switch (owner >> 24)
                 {
                     case MethodDefTable.Index:
@@ -837,7 +837,7 @@ namespace IKVM.Reflection.Reader
         private Type ResolveModuleType(int token)
         {
             int index = (token & 0xFFFFFF) - 1;
-            string name = GetString(ModuleRef.records[index]);
+            string name = GetString(ModuleRefTable.records[index]);
             Module module = assembly.GetModule(name);
             if (module == null || module.IsResource())
             {
@@ -890,13 +890,13 @@ namespace IKVM.Reflection.Reader
 
         internal ByteReader GetStandAloneSig(int index)
         {
-            return ByteReader.FromBlob(blobHeap, StandAloneSig.records[index]);
+            return ByteReader.FromBlob(blobHeap, StandAloneSigTable.records[index]);
         }
 
         public override byte[] ResolveSignature(int metadataToken)
         {
             int index = (metadataToken & 0xFFFFFF) - 1;
-            if ((metadataToken >> 24) == StandAloneSigTable.Index && index >= 0 && index < StandAloneSig.RowCount)
+            if ((metadataToken >> 24) == StandAloneSigTable.Index && index >= 0 && index < StandAloneSigTable.RowCount)
             {
                 ByteReader br = GetStandAloneSig(index);
                 return br.ReadBytes(br.Length);
@@ -910,7 +910,7 @@ namespace IKVM.Reflection.Reader
         public override __StandAloneMethodSig __ResolveStandAloneMethodSig(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
             int index = (metadataToken & 0xFFFFFF) - 1;
-            if ((metadataToken >> 24) == StandAloneSigTable.Index && index >= 0 && index < StandAloneSig.RowCount)
+            if ((metadataToken >> 24) == StandAloneSigTable.Index && index >= 0 && index < StandAloneSigTable.RowCount)
             {
                 return MethodSignature.ReadStandAloneMethodSig(this, GetStandAloneSig(index), new GenericContext(genericTypeArguments, genericMethodArguments));
             }
@@ -931,19 +931,19 @@ namespace IKVM.Reflection.Reader
 
         internal string[] GetManifestResourceNames()
         {
-            string[] names = new string[ManifestResource.records.Length];
-            for (int i = 0; i < ManifestResource.records.Length; i++)
+            string[] names = new string[ManifestResourceTable.records.Length];
+            for (int i = 0; i < ManifestResourceTable.records.Length; i++)
             {
-                names[i] = GetString(ManifestResource.records[i].Name);
+                names[i] = GetString(ManifestResourceTable.records[i].Name);
             }
             return names;
         }
 
         internal ManifestResourceInfo GetManifestResourceInfo(string resourceName)
         {
-            for (int i = 0; i < ManifestResource.records.Length; i++)
+            for (int i = 0; i < ManifestResourceTable.records.Length; i++)
             {
-                if (resourceName == GetString(ManifestResource.records[i].Name))
+                if (resourceName == GetString(ManifestResourceTable.records[i].Name))
                 {
                     ManifestResourceInfo info = new ManifestResourceInfo(this, i);
                     Assembly asm = info.ReferencedAssembly;
@@ -959,14 +959,14 @@ namespace IKVM.Reflection.Reader
 
         internal Stream GetManifestResourceStream(string resourceName)
         {
-            for (int i = 0; i < ManifestResource.records.Length; i++)
+            for (int i = 0; i < ManifestResourceTable.records.Length; i++)
             {
-                if (resourceName == GetString(ManifestResource.records[i].Name))
+                if (resourceName == GetString(ManifestResourceTable.records[i].Name))
                 {
-                    if (ManifestResource.records[i].Implementation != 0x26000000)
+                    if (ManifestResourceTable.records[i].Implementation != 0x26000000)
                     {
                         ManifestResourceInfo info = new ManifestResourceInfo(this, i);
-                        switch (ManifestResource.records[i].Implementation >> 24)
+                        switch (ManifestResourceTable.records[i].Implementation >> 24)
                         {
                             case FileTable.Index:
                                 string fileName = Path.Combine(Path.GetDirectoryName(location), info.FileName);
@@ -994,7 +994,7 @@ namespace IKVM.Reflection.Reader
                                 throw new BadImageFormatException();
                         }
                     }
-                    SeekRVA((int)cliHeader.Resources.VirtualAddress + ManifestResource.records[i].Offset);
+                    SeekRVA((int)cliHeader.Resources.VirtualAddress + ManifestResourceTable.records[i].Offset);
                     BinaryReader br = new BinaryReader(stream);
                     int length = br.ReadInt32();
                     return new MemoryStream(br.ReadBytes(length));
@@ -1006,21 +1006,21 @@ namespace IKVM.Reflection.Reader
         public override AssemblyName[] __GetReferencedAssemblies()
         {
             var list = new List<AssemblyName>();
-            for (int i = 0; i < AssemblyRef.records.Length; i++)
+            for (int i = 0; i < AssemblyRefTable.records.Length; i++)
             {
                 var name = new AssemblyName();
-                name.Name = GetString(AssemblyRef.records[i].Name);
+                name.Name = GetString(AssemblyRefTable.records[i].Name);
                 name.Version = new Version(
-                    AssemblyRef.records[i].MajorVersion,
-                    AssemblyRef.records[i].MinorVersion,
-                    AssemblyRef.records[i].BuildNumber,
-                    AssemblyRef.records[i].RevisionNumber);
+                    AssemblyRefTable.records[i].MajorVersion,
+                    AssemblyRefTable.records[i].MinorVersion,
+                    AssemblyRefTable.records[i].BuildNumber,
+                    AssemblyRefTable.records[i].RevisionNumber);
 
-                if (AssemblyRef.records[i].PublicKeyOrToken.IsNil == false)
+                if (AssemblyRefTable.records[i].PublicKeyOrToken.IsNil == false)
                 {
-                    byte[] keyOrToken = GetBlobCopy(AssemblyRef.records[i].PublicKeyOrToken);
+                    byte[] keyOrToken = GetBlobCopy(AssemblyRefTable.records[i].PublicKeyOrToken);
                     const int PublicKey = 0x0001;
-                    if ((AssemblyRef.records[i].Flags & PublicKey) != 0)
+                    if ((AssemblyRefTable.records[i].Flags & PublicKey) != 0)
                     {
                         name.SetPublicKey(keyOrToken);
                     }
@@ -1034,15 +1034,15 @@ namespace IKVM.Reflection.Reader
                     name.SetPublicKeyToken(Array.Empty<byte>());
                 }
 
-                if (AssemblyRef.records[i].Culture.IsNil == false)
-                    name.CultureName = GetString(AssemblyRef.records[i].Culture);
+                if (AssemblyRefTable.records[i].Culture.IsNil == false)
+                    name.CultureName = GetString(AssemblyRefTable.records[i].Culture);
                 else
                     name.CultureName = "";
 
-                if (AssemblyRef.records[i].HashValue.IsNil == false)
-                    name.hash = GetBlobCopy(AssemblyRef.records[i].HashValue);
+                if (AssemblyRefTable.records[i].HashValue.IsNil == false)
+                    name.hash = GetBlobCopy(AssemblyRefTable.records[i].HashValue);
 
-                name.RawFlags = (AssemblyNameFlags)AssemblyRef.records[i].Flags;
+                name.RawFlags = (AssemblyNameFlags)AssemblyRefTable.records[i].Flags;
                 list.Add(name);
             }
             return list.ToArray();
@@ -1052,7 +1052,7 @@ namespace IKVM.Reflection.Reader
         {
             if (assemblyRefs == null)
             {
-                assemblyRefs = new Assembly[AssemblyRef.RowCount];
+                assemblyRefs = new Assembly[AssemblyRefTable.RowCount];
             }
             for (int i = 0; i < assemblies.Length; i++)
             {
@@ -1065,17 +1065,17 @@ namespace IKVM.Reflection.Reader
 
         public override string[] __GetReferencedModules()
         {
-            string[] arr = new string[this.ModuleRef.RowCount];
+            string[] arr = new string[this.ModuleRefTable.RowCount];
             for (int i = 0; i < arr.Length; i++)
             {
-                arr[i] = GetString(this.ModuleRef.records[i]);
+                arr[i] = GetString(this.ModuleRefTable.records[i]);
             }
             return arr;
         }
 
         public override Type[] __GetReferencedTypes()
         {
-            Type[] arr = new Type[this.TypeRef.RowCount];
+            Type[] arr = new Type[this.TypeRefTable.RowCount];
             for (int i = 0; i < arr.Length; i++)
             {
                 arr[i] = ResolveType((TypeRefTable.Index << 24) + i + 1);
@@ -1085,7 +1085,7 @@ namespace IKVM.Reflection.Reader
 
         public override Type[] __GetExportedTypes()
         {
-            Type[] arr = new Type[this.ExportedType.RowCount];
+            Type[] arr = new Type[this.ExportedTypeTable.RowCount];
             for (int i = 0; i < arr.Length; i++)
             {
                 arr[i] = ResolveExportedType(i);
@@ -1095,10 +1095,10 @@ namespace IKVM.Reflection.Reader
 
         private Type ResolveExportedType(int index)
         {
-            TypeName typeName = GetTypeName(ExportedType.records[index].TypeNamespace, ExportedType.records[index].TypeName);
-            int implementation = ExportedType.records[index].Implementation;
-            int token = ExportedType.records[index].TypeDefId;
-            int flags = ExportedType.records[index].Flags;
+            TypeName typeName = GetTypeName(ExportedTypeTable.records[index].TypeNamespace, ExportedTypeTable.records[index].TypeName);
+            int implementation = ExportedTypeTable.records[index].Implementation;
+            int token = ExportedTypeTable.records[index].TypeDefId;
+            int flags = ExportedTypeTable.records[index].Flags;
             switch (implementation >> 24)
             {
                 case AssemblyRefTable.Index:
@@ -1106,7 +1106,7 @@ namespace IKVM.Reflection.Reader
                 case ExportedTypeTable.Index:
                     return ResolveExportedType((implementation & 0xFFFFFF) - 1).ResolveNestedType(this, typeName).SetMetadataTokenForMissing(token, flags);
                 case FileTable.Index:
-                    Module module = assembly.GetModule(GetString(File.records[(implementation & 0xFFFFFF) - 1].Name));
+                    Module module = assembly.GetModule(GetString(FileTable.records[(implementation & 0xFFFFFF) - 1].Name));
                     return module.FindType(typeName) ?? module.universe.GetMissingTypeOrThrow(this, module, null, typeName).SetMetadataTokenForMissing(token, flags);
                 default:
                     throw new BadImageFormatException();
@@ -1215,12 +1215,12 @@ namespace IKVM.Reflection.Reader
                     break;
             }
             List<CustomAttributeData> list = new List<CustomAttributeData>();
-            for (int i = 0; i < CustomAttribute.records.Length; i++)
+            for (int i = 0; i < CustomAttributeTable.records.Length; i++)
             {
-                if ((CustomAttribute.records[i].Parent >> 24) == TypeRefTable.Index)
+                if ((CustomAttributeTable.records[i].Parent >> 24) == TypeRefTable.Index)
                 {
-                    int index = (CustomAttribute.records[i].Parent & 0xFFFFFF) - 1;
-                    if (typeName == GetTypeName(TypeRef.records[index].TypeNamespace, TypeRef.records[index].TypeName))
+                    int index = (CustomAttributeTable.records[i].Parent & 0xFFFFFF) - 1;
+                    if (typeName == GetTypeName(TypeRefTable.records[index].TypeNamespace, TypeRefTable.records[index].TypeName))
                     {
                         list.Add(new CustomAttributeData(this, i));
                     }

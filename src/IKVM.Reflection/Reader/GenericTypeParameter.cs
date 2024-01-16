@@ -64,7 +64,7 @@ namespace IKVM.Reflection.Reader
 
         public override string Name
         {
-            get { return module.GetString(module.GenericParam.records[index].Name); }
+            get { return module.GetString(module.GenericParamTable.records[index].Name); }
         }
 
         public override Module Module
@@ -79,14 +79,14 @@ namespace IKVM.Reflection.Reader
 
         public override int GenericParameterPosition
         {
-            get { return module.GenericParam.records[index].Number; }
+            get { return module.GenericParamTable.records[index].Number; }
         }
 
         public override Type DeclaringType
         {
             get
             {
-                var owner = module.GenericParam.records[index].Owner;
+                var owner = module.GenericParamTable.records[index].Owner;
                 return (owner >> 24) == TypeDefTable.Index ? module.ResolveType(owner) : null;
             }
         }
@@ -95,7 +95,7 @@ namespace IKVM.Reflection.Reader
         {
             get
             {
-                var owner = module.GenericParam.records[index].Owner;
+                var owner = module.GenericParamTable.records[index].Owner;
                 return (owner >> 24) == MethodDefTable.Index ? module.ResolveMethod(owner) : null;
             }
         }
@@ -121,7 +121,7 @@ namespace IKVM.Reflection.Reader
                 if ((metadataToken >> 24) == TypeSpecTable.Index)
                 {
                     var index = (metadataToken & 0xFFFFFF) - 1;
-                    mods = CustomModifiers.Read(module, module.GetBlobReader(module.TypeSpec.records[index]), context);
+                    mods = CustomModifiers.Read(module, module.GetBlobReader(module.TypeSpecTable.records[index]), context);
                 }
 
                 list.Add(mods);
@@ -132,12 +132,12 @@ namespace IKVM.Reflection.Reader
 
         public override GenericParameterAttributes GenericParameterAttributes
         {
-            get { return (GenericParameterAttributes)module.GenericParam.records[index].Flags; }
+            get { return (GenericParameterAttributes)module.GenericParamTable.records[index].Flags; }
         }
 
         internal override Type BindTypeParameters(IGenericBinder binder)
         {
-            var owner = module.GenericParam.records[index].Owner;
+            var owner = module.GenericParamTable.records[index].Owner;
             if ((owner >> 24) == MethodDefTable.Index)
             {
                 return binder.BindMethodParameter(this);

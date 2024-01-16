@@ -74,7 +74,7 @@ namespace IKVM.Reflection.Reader
 
         public override string ScopeName
         {
-            get { return manifest.GetString(manifest.File.records[index].Name); }
+            get { return manifest.GetString(manifest.FileTable.records[index].Name); }
         }
 
         public override Guid ModuleVersionId
@@ -86,7 +86,7 @@ namespace IKVM.Reflection.Reader
         {
             get
             {
-                var blob = manifest.File.records[index].HashValue;
+                var blob = manifest.FileTable.records[index].HashValue;
                 return blob.IsNil ? Array.Empty<byte>() : manifest.GetBlobCopy(blob);
             }
         }

@@ -431,7 +431,7 @@ namespace IKVM.Reflection.Emit
                 rec.Flags = (int)resfile.Attributes;
                 rec.Name = manifestModule.GetOrAddString(resfile.Name);
                 rec.Implementation = MetadataTokens.GetToken(fileToken);
-                manifestModule.ManifestResource.AddRecord(rec);
+                manifestModule.ManifestResourceTable.AddRecord(rec);
             }
 
             // write each non-manifest module

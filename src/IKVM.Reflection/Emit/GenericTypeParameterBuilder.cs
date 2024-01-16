@@ -86,7 +86,7 @@ namespace IKVM.Reflection.Emit
             rec.Flags = 0;
             rec.Owner = type != null ? type.MetadataToken : method.MetadataToken;
             rec.Name = ModuleBuilder.GetOrAddString(name);
-            paramPseudoIndex = ModuleBuilder.GenericParam.AddRecord(rec);
+            paramPseudoIndex = ModuleBuilder.GenericParamTable.AddRecord(rec);
         }
 
         public override string AssemblyQualifiedName
@@ -216,7 +216,7 @@ namespace IKVM.Reflection.Emit
         {
             this.attr = genericParameterAttributes;
             // for now we'll back patch the table
-            this.ModuleBuilder.GenericParam.PatchAttribute(paramPseudoIndex, genericParameterAttributes);
+            this.ModuleBuilder.GenericParamTable.PatchAttribute(paramPseudoIndex, genericParameterAttributes);
         }
 
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
@@ -244,7 +244,7 @@ namespace IKVM.Reflection.Emit
             {
                 var spec = new ByteBuffer(5);
                 Signature.WriteTypeSpec(ModuleBuilder, spec, this);
-                typeToken = MetadataTokens.GetToken(MetadataTokens.TypeSpecificationHandle(ModuleBuilder.TypeSpec.AddRecord(ModuleBuilder.GetOrAddBlob(spec.ToArray()))));
+                typeToken = MetadataTokens.GetToken(MetadataTokens.TypeSpecificationHandle(ModuleBuilder.TypeSpecTable.AddRecord(ModuleBuilder.GetOrAddBlob(spec.ToArray()))));
             }
             return typeToken;
         }
@@ -265,7 +265,7 @@ namespace IKVM.Reflection.Emit
         {
             if (ModuleBuilder.IsSaved)
             {
-                return (GenericParamTable.Index << 24) | Module.GenericParam.GetIndexFixup()[paramPseudoIndex - 1] + 1;
+                return (GenericParamTable.Index << 24) | Module.GenericParamTable.GetIndexFixup()[paramPseudoIndex - 1] + 1;
             }
             else
             {

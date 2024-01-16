@@ -210,23 +210,23 @@ namespace IKVM.Reflection.Writer
         static void WriteModuleImpl(IKVM.Reflection.Emit.ModuleBuilder moduleBuilder)
         {
             // now that we're ready to start writing, we need to do some fix ups
-            moduleBuilder.TypeRef.Fixup(moduleBuilder);
-            moduleBuilder.MethodImpl.Fixup(moduleBuilder);
-            moduleBuilder.MethodSemantics.Fixup(moduleBuilder);
-            moduleBuilder.InterfaceImpl.Fixup(moduleBuilder);
+            moduleBuilder.TypeRefTable.Fixup(moduleBuilder);
+            moduleBuilder.MethodImplTable.Fixup(moduleBuilder);
+            moduleBuilder.MethodSemanticsTable.Fixup(moduleBuilder);
+            moduleBuilder.InterfaceImplTable.Fixup(moduleBuilder);
             moduleBuilder.ResolveInterfaceImplPseudoTokens();
-            moduleBuilder.MemberRef.Fixup(moduleBuilder);
-            moduleBuilder.Constant.Fixup(moduleBuilder);
-            moduleBuilder.FieldMarshal.Fixup(moduleBuilder);
-            moduleBuilder.DeclSecurity.Fixup(moduleBuilder);
-            moduleBuilder.GenericParam.Fixup(moduleBuilder);
-            moduleBuilder.CustomAttribute.Fixup(moduleBuilder);
-            moduleBuilder.FieldLayout.Fixup(moduleBuilder);
-            moduleBuilder.FieldRVA.Fixup(moduleBuilder);
-            moduleBuilder.ImplMap.Fixup(moduleBuilder);
-            moduleBuilder.ExportedType.Fixup(moduleBuilder);
-            moduleBuilder.ManifestResource.Fixup(moduleBuilder);
-            moduleBuilder.MethodSpec.Fixup(moduleBuilder);
+            moduleBuilder.MemberRefTable.Fixup(moduleBuilder);
+            moduleBuilder.ConstantTable.Fixup(moduleBuilder);
+            moduleBuilder.FieldMarshalTable.Fixup(moduleBuilder);
+            moduleBuilder.DeclSecurityTable.Fixup(moduleBuilder);
+            moduleBuilder.GenericParamTable.Fixup(moduleBuilder);
+            moduleBuilder.CustomAttributeTable.Fixup(moduleBuilder);
+            moduleBuilder.FieldLayoutTable.Fixup(moduleBuilder);
+            moduleBuilder.FieldRVATable.Fixup(moduleBuilder);
+            moduleBuilder.ImplMapTable.Fixup(moduleBuilder);
+            moduleBuilder.ExportedTypeTable.Fixup(moduleBuilder);
+            moduleBuilder.ManifestResourceTable.Fixup(moduleBuilder);
+            moduleBuilder.MethodSpecTable.Fixup(moduleBuilder);
             moduleBuilder.GenericParamConstraint.Fixup(moduleBuilder);
 
             moduleBuilder.ILStream.WriteBytes(moduleBuilder.methodBodies.ToArray());

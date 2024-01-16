@@ -95,9 +95,9 @@ namespace IKVM.Reflection.Metadata
         {
             foreach (var i in Filter(parent))
             {
-                var br = module.GetBlobReader(module.Constant.records[i].Offset);
+                var br = module.GetBlobReader(module.ConstantTable.records[i].Offset);
 
-                switch (module.Constant.records[i].Type)
+                switch (module.ConstantTable.records[i].Type)
                 {
                     // see ModuleBuilder.AddConstant for the encodings
                     case Signature.ELEMENT_TYPE_BOOLEAN:

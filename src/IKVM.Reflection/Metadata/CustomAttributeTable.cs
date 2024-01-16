@@ -75,7 +75,7 @@ namespace IKVM.Reflection.Metadata
 
         internal void Fixup(ModuleBuilder moduleBuilder)
         {
-            var genericParamFixup = moduleBuilder.GenericParam.GetIndexFixup();
+            var genericParamFixup = moduleBuilder.GenericParamTable.GetIndexFixup();
 
             for (int i = 0; i < rowCount; i++)
             {

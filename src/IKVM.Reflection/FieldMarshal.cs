@@ -56,9 +56,9 @@ namespace IKVM.Reflection
         {
             fm = new FieldMarshal();
 
-            foreach (var i in module.FieldMarshal.Filter(token))
+            foreach (var i in module.FieldMarshalTable.Filter(token))
             {
-                var blob = module.GetBlobReader(module.FieldMarshal.records[i].NativeType);
+                var blob = module.GetBlobReader(module.FieldMarshalTable.records[i].NativeType);
 
                 fm.UnmanagedType = (UnmanagedType)blob.ReadCompressedUInt();
                 switch (fm.UnmanagedType)
@@ -127,7 +127,7 @@ namespace IKVM.Reflection
             var rec = new FieldMarshalTable.Record();
             rec.Parent = token;
             rec.NativeType = WriteMarshallingDescriptor(module, attribute);
-            module.FieldMarshal.AddRecord(rec);
+            module.FieldMarshalTable.AddRecord(rec);
         }
 
         static BlobHandle WriteMarshallingDescriptor(ModuleBuilder module, CustomAttributeBuilder attribute)

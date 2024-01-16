@@ -58,11 +58,11 @@ namespace IKVM.Reflection.Reader
 
         public override int GetHashCode() => declaringType.GetHashCode() * 77 + index;
 
-        internal override PropertySignature PropertySignature => sig ??= PropertySignature.ReadSig(module, module.GetBlobReader(module.Property.records[index].Type), declaringType);
+        internal override PropertySignature PropertySignature => sig ??= PropertySignature.ReadSig(module, module.GetBlobReader(module.PropertyTable.records[index].Type), declaringType);
 
-        public override PropertyAttributes Attributes => (PropertyAttributes)module.Property.records[index].Flags;
+        public override PropertyAttributes Attributes => (PropertyAttributes)module.PropertyTable.records[index].Flags;
 
-        public override object GetRawConstantValue() => module.Constant.GetRawConstantValue(module, this.MetadataToken);
+        public override object GetRawConstantValue() => module.ConstantTable.GetRawConstantValue(module, this.MetadataToken);
 
         public override bool CanRead => GetGetMethod(true) != null;
 
@@ -70,17 +70,17 @@ namespace IKVM.Reflection.Reader
 
         public override MethodInfo GetGetMethod(bool nonPublic)
         {
-            return module.MethodSemantics.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Getter);
+            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Getter);
         }
 
         public override MethodInfo GetSetMethod(bool nonPublic)
         {
-            return module.MethodSemantics.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Setter);
+            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Setter);
         }
 
         public override MethodInfo[] GetAccessors(bool nonPublic)
         {
-            return module.MethodSemantics.GetMethods(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Getter | MethodSemanticsTable.Setter | MethodSemanticsTable.Other);
+            return module.MethodSemanticsTable.GetMethods(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Getter | MethodSemanticsTable.Setter | MethodSemanticsTable.Other);
         }
 
         public override Type DeclaringType => declaringType;
@@ -89,7 +89,7 @@ namespace IKVM.Reflection.Reader
 
         public override int MetadataToken => (PropertyTable.Index << 24) + index + 1;
 
-        public override string Name => module.GetString(module.Property.records[index].Name);
+        public override string Name => module.GetString(module.PropertyTable.records[index].Name);
 
         internal override bool IsPublic
         {
@@ -126,7 +126,7 @@ namespace IKVM.Reflection.Reader
 
         void ComputeFlags()
         {
-            module.MethodSemantics.ComputeFlags(module, MetadataToken, out isPublic, out isNonPrivate, out isStatic);
+            module.MethodSemanticsTable.ComputeFlags(module, MetadataToken, out isPublic, out isNonPrivate, out isStatic);
             flagsCached = true;
         }
 

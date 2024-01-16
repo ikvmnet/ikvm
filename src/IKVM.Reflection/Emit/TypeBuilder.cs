@@ -68,7 +68,7 @@ namespace IKVM.Reflection.Emit
         internal TypeBuilder(ITypeOwner owner, string ns, string name)
         {
             this.owner = owner;
-            this.token = ModuleBuilder.TypeDef.AllocToken();
+            this.token = ModuleBuilder.TypeDefTable.AllocToken();
             this.ns = ns;
             this.name = name;
             this.typeNameSpace = ns == null ? default : ModuleBuilder.GetOrAddString(ns);
@@ -107,7 +107,7 @@ namespace IKVM.Reflection.Emit
 
         private MethodBuilder CreateMethodBuilder(string name, MethodAttributes attributes, CallingConventions callingConvention)
         {
-            ModuleBuilder.MethodDef.AddVirtualRecord();
+            ModuleBuilder.MethodDefTable.AddVirtualRecord();
             var mb = new MethodBuilder(this, name, attributes, callingConvention);
             methods.Add(mb);
             return mb;
@@ -163,7 +163,7 @@ namespace IKVM.Reflection.Emit
             rec.Class = token;
             rec.MethodBody = this.ModuleBuilder.GetMethodToken(methodInfoBody).Token;
             rec.MethodDeclaration = this.ModuleBuilder.GetMethodTokenWinRT(methodInfoDeclaration);
-            ModuleBuilder.MethodImpl.AddRecord(rec);
+            ModuleBuilder.MethodImplTable.AddRecord(rec);
         }
 
         public FieldBuilder DefineField(string name, Type fieldType, FieldAttributes attribs)
@@ -286,7 +286,7 @@ namespace IKVM.Reflection.Emit
             var rec = new NestedClassTable.Record();
             rec.NestedClass = typeBuilder.MetadataToken;
             rec.EnclosingClass = MetadataToken;
-            ModuleBuilder.NestedClass.AddRecord(rec);
+            ModuleBuilder.NestedClassTable.AddRecord(rec);
             return typeBuilder;
         }
 
@@ -461,7 +461,7 @@ namespace IKVM.Reflection.Emit
                 rec.PackingSize = packingSize;
                 rec.ClassSize = size;
                 rec.Parent = token;
-                ModuleBuilder.ClassLayout.AddRecord(rec);
+                ModuleBuilder.ClassLayoutTable.AddRecord(rec);
             }
 
             var hasConstructor = false;
@@ -491,7 +491,7 @@ namespace IKVM.Reflection.Emit
                     var rec = new InterfaceImplTable.Record();
                     rec.Class = token;
                     rec.Interface = ModuleBuilder.GetTypeToken(interfaceType).Token;
-                    ModuleBuilder.InterfaceImpl.AddRecord(rec);
+                    ModuleBuilder.InterfaceImplTable.AddRecord(rec);
                 }
             }
 
@@ -509,8 +509,8 @@ namespace IKVM.Reflection.Emit
             {
                 var rec = new PropertyMapTable.Record();
                 rec.Parent = token;
-                rec.PropertyList = MetadataTokens.GetToken(MetadataTokens.PropertyDefinitionHandle(ModuleBuilder.Property.RowCount + 1));
-                ModuleBuilder.PropertyMap.AddRecord(rec);
+                rec.PropertyList = MetadataTokens.GetToken(MetadataTokens.PropertyDefinitionHandle(ModuleBuilder.PropertyTable.RowCount + 1));
+                ModuleBuilder.PropertyMapTable.AddRecord(rec);
                 foreach (var pb in properties)
                     pb.Bake();
             }
@@ -519,8 +519,8 @@ namespace IKVM.Reflection.Emit
             {
                 var rec = new EventMapTable.Record();
                 rec.Parent = token;
-                rec.EventList = MetadataTokens.GetToken(MetadataTokens.EventDefinitionHandle(ModuleBuilder.Event.RowCount + 1));
-                ModuleBuilder.EventMap.AddRecord(rec);
+                rec.EventList = MetadataTokens.GetToken(MetadataTokens.EventDefinitionHandle(ModuleBuilder.EventTable.RowCount + 1));
+                ModuleBuilder.EventMapTable.AddRecord(rec);
                 foreach (var eb in events)
                     eb.Bake();
             }
@@ -761,7 +761,7 @@ namespace IKVM.Reflection.Emit
             if (HasNestedTypes)
             {
                 var types = new List<Type>();
-                var classes = ModuleBuilder.NestedClass.GetNestedClasses(token);
+                var classes = ModuleBuilder.NestedClassTable.GetNestedClasses(token);
                 foreach (var nestedClass in classes)
                     types.Add(ModuleBuilder.ResolveType(nestedClass));
 

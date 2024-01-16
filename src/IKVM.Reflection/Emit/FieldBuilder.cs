@@ -62,7 +62,7 @@ namespace IKVM.Reflection.Emit
             fieldSig.WriteSig(typeBuilder.ModuleBuilder, sig);
             this.signature = typeBuilder.ModuleBuilder.GetOrAddBlob(sig.ToArray());
             this.attribs = attribs;
-            this.typeBuilder.ModuleBuilder.Field.AddVirtualRecord();
+            this.typeBuilder.ModuleBuilder.FieldTable.AddVirtualRecord();
         }
 
         public void SetConstant(object defaultValue)
@@ -80,7 +80,7 @@ namespace IKVM.Reflection.Emit
                 throw new NotSupportedException();
             }
 
-            return typeBuilder.Module.Constant.GetRawConstantValue(typeBuilder.Module, GetCurrentToken());
+            return typeBuilder.Module.ConstantTable.GetRawConstantValue(typeBuilder.Module, GetCurrentToken());
         }
 
         public void __SetDataAndRVA(byte[] data)
@@ -100,7 +100,7 @@ namespace IKVM.Reflection.Emit
             bb.Align(8);
             rec.RVA = bb.Position + readonlyMarker;
             rec.Field = pseudoToken;
-            typeBuilder.ModuleBuilder.FieldRVA.AddRecord(rec);
+            typeBuilder.ModuleBuilder.FieldRVATable.AddRecord(rec);
             bb.Write(data);
         }
 
@@ -120,9 +120,9 @@ namespace IKVM.Reflection.Emit
             if (typeBuilder.ModuleBuilder.IsSaved)
                 pseudoTokenOrIndex = typeBuilder.ModuleBuilder.ResolvePseudoToken(pseudoToken) & 0xFFFFFF;
 
-            foreach (int i in this.Module.FieldLayout.Filter(pseudoTokenOrIndex))
+            foreach (int i in this.Module.FieldLayoutTable.Filter(pseudoTokenOrIndex))
             {
-                offset = this.Module.FieldLayout.records[i].Offset;
+                offset = this.Module.FieldLayoutTable.records[i].Offset;
                 return true;
             }
 
@@ -163,7 +163,7 @@ namespace IKVM.Reflection.Emit
             FieldLayoutTable.Record rec = new FieldLayoutTable.Record();
             rec.Offset = iOffset;
             rec.Field = pseudoToken;
-            typeBuilder.ModuleBuilder.FieldLayout.AddRecord(rec);
+            typeBuilder.ModuleBuilder.FieldLayoutTable.AddRecord(rec);
         }
 
         public override FieldAttributes Attributes

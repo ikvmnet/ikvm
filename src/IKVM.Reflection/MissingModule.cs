@@ -68,7 +68,7 @@ namespace IKVM.Reflection
                 if (index == -1)
                     throw new MissingModuleException(this);
 
-                return assembly.ManifestModule.GetString(assembly.ManifestModule.File.records[index].Name);
+                return assembly.ManifestModule.GetString(assembly.ManifestModule.FileTable.records[index].Name);
             }
         }
 
@@ -158,10 +158,10 @@ namespace IKVM.Reflection
             {
                 if (index == -1)
                     throw new MissingModuleException(this);
-                if (assembly.ManifestModule.File.records[index].HashValue.IsNil)
+                if (assembly.ManifestModule.FileTable.records[index].HashValue.IsNil)
                     return null;
 
-                var br = assembly.ManifestModule.GetBlobReader(assembly.ManifestModule.File.records[index].HashValue);
+                var br = assembly.ManifestModule.GetBlobReader(assembly.ManifestModule.FileTable.records[index].HashValue);
                 return br.ReadBytes(br.Length);
             }
         }
