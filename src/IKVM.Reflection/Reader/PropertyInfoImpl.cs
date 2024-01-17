@@ -32,6 +32,7 @@ namespace IKVM.Reflection.Reader
         readonly ModuleReader module;
         readonly Type declaringType;
         readonly int index;
+
         PropertySignature sig;
         bool isPublic;
         bool isNonPrivate;
