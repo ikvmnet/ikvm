@@ -55,12 +55,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import sun.nio.ch.DotNetAsynchronousFileChannelImpl;
 import sun.nio.ch.FileChannelImpl;
 import sun.nio.ch.ThreadPool;
 
 final class DotNetFileSystemProvider extends AbstractFileSystemProvider {
+
+    static {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+                System.loadLibrary("nio");
+                return null;
+        }});
+    }
 
     private final DotNetFileSystem fs = new DotNetFileSystem(this);
     private final HashMap<String, FileStore> stores = new HashMap<String, FileStore>();
@@ -438,11 +448,7 @@ final class DotNetFileSystemProvider extends AbstractFileSystemProvider {
             if (opt == StandardCopyOption.REPLACE_EXISTING) {
                 overwrite = true;
             } else if (opt == StandardCopyOption.ATOMIC_MOVE) {
-                if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
-                    atomicMove = true;
-                } else {
-                    throw new AtomicMoveNotSupportedException(nsource.path, ntarget.path, "Unsupported copy option");
-                }
+                atomicMove = true;
             } else {
                 // null check
                 opt.getClass();
@@ -457,31 +463,7 @@ final class DotNetFileSystemProvider extends AbstractFileSystemProvider {
         }
 
         if (atomicMove) {
-            int MOVEFILE_REPLACE_EXISTING = 1;
-            if (MoveFileEx(nsource.path, ntarget.path, MOVEFILE_REPLACE_EXISTING) == 0) {
-                final int ERROR_FILE_NOT_FOUND = 2;
-                final int ERROR_PATH_NOT_FOUND = 3;
-                final int ERROR_ACCESS_DENIED = 5;
-                final int ERROR_NOT_SAME_DEVICE = 17;
-                final int ERROR_FILE_EXISTS = 80;
-                final int ERROR_ALREADY_EXISTS = 183;
-                int lastError = Marshal.GetLastWin32Error();
-                switch (lastError) {
-                    case ERROR_FILE_NOT_FOUND:
-                    case ERROR_PATH_NOT_FOUND:
-                        throw new NoSuchFileException(nsource.path, ntarget.path, null);
-                    case ERROR_ACCESS_DENIED:
-                        throw new AccessDeniedException(nsource.path, ntarget.path, null);
-                    case ERROR_NOT_SAME_DEVICE:
-                        throw new AtomicMoveNotSupportedException(nsource.path, ntarget.path, "Unsupported copy option");
-                    case ERROR_FILE_EXISTS:
-                    case ERROR_ALREADY_EXISTS:
-                        throw new FileAlreadyExistsException(nsource.path, ntarget.path, null);
-                    default:
-                        throw new FileSystemException(nsource.path, ntarget.path, "Error " + lastError);
-                }
-            }
-
+            rename0(nsource.path, ntarget.path);
             return;
         }
 
@@ -530,8 +512,7 @@ final class DotNetFileSystemProvider extends AbstractFileSystemProvider {
         }
     }
 
-    @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
-    private static native int MoveFileEx(String lpExistingFileName, String lpNewFileName, int dwFlags);
+    private static native void rename0(String source, String target) throws IOException;
 
     public boolean isSameFile(Path path, Path path2) throws IOException {
         if (path.equals(path2)) {

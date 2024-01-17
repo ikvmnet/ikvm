@@ -1,14 +1,18 @@
 ﻿using System;
+using System.Buffers;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.AccessControl;
+using System.Text;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Accessors.Sun.Nio.Fs;
+using IKVM.Runtime.JNI;
 using IKVM.Runtime.Vfs;
 
 using Microsoft.Win32.SafeHandles;
@@ -42,6 +46,10 @@ namespace IKVM.Java.Externs.sun.nio.fs
         static DotNetPathAccessor DotNetPathAccessor => JVM.Internal.BaseAccessors.Get(ref dotNetPathAccessor);
 
         static DotNetDirectoryStreamAccessor DotNetDirectoryStreamAccessor => JVM.Internal.BaseAccessors.Get(ref dotNetDirectoryStreamAccessor);
+
+        static global::ikvm.@internal.CallerID __callerID;
+        delegate void __jniDelegate__rename0(IntPtr jniEnv, IntPtr clazz, long fromAddress, long toAddress);
+        static __jniDelegate__rename0 __jniPtr__rename0;
 
 #if NETCOREAPP
 
@@ -205,6 +213,114 @@ namespace IKVM.Java.Externs.sun.nio.fs
             catch (UnauthorizedAccessException)
             {
                 throw new global::java.nio.file.AccessDeniedException(path);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Invokes the MoveFileEx native function on Windows.
+        /// </summary>
+        /// <param name="lpExistingFileName"></param>
+        /// <param name="lpNewFileName"></param>
+        /// <param name="dwFlags"></param>
+        /// <returns></returns>
+        [DllImport("Kernel32", SetLastError = true)]
+        static extern int MoveFileEx(string lpExistingFileName, string lpNewFileName, int dwFlags);
+
+        /// <summary>
+        /// Implements the native functionality for rename0.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="target"></param>
+        /// <exception cref="global::java.nio.file.NoSuchFileException"></exception>
+        /// <exception cref="global::java.nio.file.AccessDeniedException"></exception>
+        /// <exception cref="global::java.nio.file.AtomicMoveNotSupportedException"></exception>
+        /// <exception cref="global::java.nio.file.FileAlreadyExistsException"></exception>
+        /// <exception cref="global::java.nio.file.FileSystemException"></exception>
+        public static unsafe void rename0(string source, string target)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                const int MOVEFILE_REPLACE_EXISTING = 1;
+                if (MoveFileEx(source, target, MOVEFILE_REPLACE_EXISTING) == 0)
+                {
+                    const int ERROR_FILE_NOT_FOUND = 2;
+                    const int ERROR_PATH_NOT_FOUND = 3;
+                    const int ERROR_ACCESS_DENIED = 5;
+                    const int ERROR_NOT_SAME_DEVICE = 17;
+                    const int ERROR_FILE_EXISTS = 80;
+                    const int ERROR_ALREADY_EXISTS = 183;
+
+                    int lastError = Marshal.GetLastWin32Error();
+                    switch (lastError)
+                    {
+                        case ERROR_FILE_NOT_FOUND:
+                        case ERROR_PATH_NOT_FOUND:
+                            throw new global::java.nio.file.NoSuchFileException(source, target, null);
+                        case ERROR_ACCESS_DENIED:
+                            throw new global::java.nio.file.AccessDeniedException(source, target, null);
+                        case ERROR_NOT_SAME_DEVICE:
+                            throw new global::java.nio.file.AtomicMoveNotSupportedException(source, target, "Unsupported copy option");
+                        case ERROR_FILE_EXISTS:
+                        case ERROR_ALREADY_EXISTS:
+                            throw new global::java.nio.file.FileAlreadyExistsException(source, target, null);
+                        default:
+                            throw new global::java.nio.file.FileSystemException(source, target, "Error " + lastError);
+                    }
+                }
+
+                return;
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::sun.nio.fs.DotNetFileSystemProvider).TypeHandle);
+                __jniPtr__rename0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__rename0>(JNIFrame.GetFuncPtr(__callerID, "sun/nio/fs/UnixNativeDispatcher", nameof(rename0), "(JJ)V"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    byte[] sourceBuf = null;
+                    byte[] targetBuf = null;
+
+                    try
+                    {
+                        var sourceLen = Encoding.UTF8.GetByteCount(source) + 1;
+                        sourceBuf = ArrayPool<byte>.Shared.Rent(sourceLen);
+                        sourceBuf[sourceLen - 1] = 0;
+                        Encoding.UTF8.GetBytes(source, 0, source.Length, sourceBuf, 0);
+
+                        var targetLen = Encoding.UTF8.GetByteCount(target) + 1;
+                        targetBuf = ArrayPool<byte>.Shared.Rent(targetLen);
+                        targetBuf[targetLen - 1] = 0;
+                        Encoding.UTF8.GetBytes(target, 0, target.Length, targetBuf, 0);
+
+                        fixed (byte* sourcePtr = sourceBuf)
+                        fixed (byte* targetPtr = targetBuf)
+                        {
+                            __jniPtr__rename0(jniEnv, jniFrm.MakeLocalRef(ClassLiteral<global::sun.nio.fs.DotNetFileSystemProvider>.Value), (long)(IntPtr)sourcePtr, (long)(IntPtr)targetPtr);
+                        }
+                    }
+                    finally
+                    {
+                        if (sourceBuf != null)
+                            ArrayPool<byte>.Shared.Return(sourceBuf);
+                        if (targetBuf != null)
+                            ArrayPool<byte>.Shared.Return(targetBuf);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
             }
 #endif
         }
