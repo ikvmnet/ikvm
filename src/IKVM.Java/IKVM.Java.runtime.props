@@ -30,7 +30,7 @@
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" IncludeNonPublicTypes="true" />
         <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'ref' " />
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj" Private="False" PrivateAssets="All" HideFromJava="true" Condition=" '$(IkvmJavaRuntimeIdentifier)' != 'ref' " />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" Private="False" PrivateAssets="All" HideFromJava="true" Condition=" '$(IkvmJavaRuntimeIdentifier)' != 'ref' " />
     </ItemGroup>
 
     <ItemGroup>
