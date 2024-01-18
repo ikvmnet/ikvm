@@ -1,0 +1,86 @@
+<!--
+
+    IKVM.Java.runtime.props
+    
+    Imported by the .runtime projects.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <AssemblyName>IKVM.Java</AssemblyName>
+        <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+        <Bootstrap>true</Bootstrap>
+        <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Runtime" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" IncludeNonPublicTypes="true" />
+        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'ref' " />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj" Private="False" PrivateAssets="All" HideFromJava="true" Condition=" '$(IkvmJavaRuntimeIdentifier)' != 'ref' " />
+    </ItemGroup>
+
+    <ItemGroup>
+        <TransformValues Include="Name" Value="$(ProductName)" />
+        <TransformValues Include="Version" Value="$(Version)" />
+        <TransformValues Include="FileVersion" Value="$(FileVersion)" />
+        <TransformValues Include="VendorUrl" Value="$(PackageProjectUrl)" />
+        <TransformValues Include="VendorUrlBug" Value="$(PackageProjectUrl)/issues/" />
+        <TransformValues Include="OpenJdkVersion" Value="$(OpenJdkVersion)" />
+        <TransformValues Include="OpenJdkFullVersion" Value="$(OpenJdkFullVersion)" />
+        <TransformValues Include="OpenJdkVendor" Value="$(OpenJdkVendor)" />
+        <TransformValues Include="OpenJdkImplementationVendor" Value="$(OpenJdkImplementationVendor)" />
+        <TransformValues Include="OpenJdkImplementationVersion" Value="$(OpenJdkImplementationVersion)" />
+        <TransformValues Include="OpenJdkSpecificationVersion" Value="$(OpenJdkSpecificationVersion)" />
+        <TransformValues Include="OpenJdkSpecificationVendor" Value="$(OpenJdkSpecificationVendor)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <JavaResource Include="$(MSBuildThisFileDirectory)local\**\*" Exclude="$(MSBuildThisFileDirectory)local\**\*.java;$(MSBuildThisFileDirectory)**\*.tt" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="$(MSBuildThisFileDirectory)icedtea_jce\**\*" Link="icedtea_jce\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="$(MSBuildThisFileDirectory)icedtea_rt\**\*" Link="icedtea_rt\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="$(MSBuildThisFileDirectory)local\**\*" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="$(MSBuildThisFileDirectory)icedtea_jce\**\*.java" Link="icedtea_jce\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="$(MSBuildThisFileDirectory)icedtea_rt\**\*.java" Link="icedtea_rt\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="$(MSBuildThisFileDirectory)local\**\*.java" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="@(OpenJdkSource->WithMetadataValue('RuntimeIdentifier', ''))" LinkBase="openjdk\%(PackagePath)" />
+        <None Include="@(OpenJdkSource->WithMetadataValue('RuntimeIdentifier', '$(IkvmJavaRuntimeIdentifier)'))" LinkBase="openjdk\%(PackagePath)" />
+        <Compile Include="@(OpenJdkSource->WithMetadataValue('RuntimeIdentifier', ''))" LinkBase="openjdk\%(PackagePath)" />
+        <Compile Include="@(OpenJdkSource->WithMetadataValue('RuntimeIdentifier', '$(IkvmJavaRuntimeIdentifier)'))" LinkBase="openjdk\%(PackagePath)" />
+        <Convert Include="@(OpenJdkClass->WithMetadataValue('RuntimeIdentifier', ''))" LinkBase="openjdk\%(PackagePath)" />
+        <Convert Include="@(OpenJdkClass->WithMetadataValue('RuntimeIdentifier', '$(IkvmJavaRuntimeIdentifier)'))" LinkBase="openjdk\%(PackagePath)" />
+        <None Include="@(OpenJdkClass->WithMetadataValue('RuntimeIdentifier', ''))" LinkBase="openjdk\%(PackagePath)" />
+        <None Include="@(OpenJdkClass->WithMetadataValue('RuntimeIdentifier', '$(IkvmJavaRuntimeIdentifier)'))" LinkBase="openjdk\%(PackagePath)" />
+        <JavaResource Include="@(OpenJdkResource->WithMetadataValue('RuntimeIdentifier', ''))" LinkBase="openjdk\%(PackagePath)" />
+        <JavaResource Include="@(OpenJdkResource->WithMetadataValue('RuntimeIdentifier', '$(IkvmJavaRuntimeIdentifier)'))" LinkBase="openjdk\%(PackagePath)" />
+        <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Transform Include="$(MSBuildThisFileDirectory)\local\META-INF\MANIFEST.MF.tt" TargetPath="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" />
+        <JavaResource Include="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" Visible="False" ResourcePath="META-INF/MANIFEST.MF" Link="local\META-INF\MANIFEST.MF" />
+        <Transform Include="$(MSBuildThisFileDirectory)\local\nashorn\version.properties.tt" TargetPath="$(IntermediateOutputPath)transform\local\nashorn\version.properties" />
+        <JavaResource Include="$(IntermediateOutputPath)transform\local\nashorn\version.properties" Visible="False" ResourcePath="nashorn/version.properties" Link="local\nashorn\version.properties" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <MapFile Include="$(MSBuildThisFileDirectory)map.xml" />
+    </ItemGroup>
+    
+</Project>
