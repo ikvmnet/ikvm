@@ -1,5 +1,6 @@
 ﻿<Project>
     <PropertyGroup>
+        <PackageId>IKVM.Java.runtime.linux</PackageId>
         <IkvmJavaRuntimeIdentifier>linux</IkvmJavaRuntimeIdentifier>
     </PropertyGroup>
     

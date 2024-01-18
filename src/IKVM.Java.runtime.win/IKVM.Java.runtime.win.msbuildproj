@@ -1,5 +1,6 @@
 ﻿<Project>
     <PropertyGroup>
+        <PackageId>IKVM.Java.runtime.win</PackageId>
         <IkvmJavaRuntimeIdentifier>win</IkvmJavaRuntimeIdentifier>
     </PropertyGroup>
     
