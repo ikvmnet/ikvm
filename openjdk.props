@@ -1621,6 +1621,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\util\spi\CalendarProvider.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\util\spi\XmlPropertiesProvider.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\util\xml\PlatformXmlPropertiesProvider.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\demo\nio\zipfs\src\com\sun\nio\zipfs\**\*.java" PackagePath="com\sun\nio\zipfs" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\java\io\UnixFileSystem.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\java\util\prefs\FileSystemPreferences.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\java\util\prefs\FileSystemPreferencesFactory.java" />
