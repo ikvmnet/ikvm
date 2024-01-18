@@ -1477,8 +1477,6 @@
 
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\cs\**\*.java" PackagePath="sun\nio\cs" />
 
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\UnixException.java" PackagePath="sun\nio\fs" />
-
         <!--<OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\fs\**\*.java" PackagePath="sun\nio\fs" />-->
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\fs\DefaultFileSystemProvider.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\fs\DefaultFileTypeDetector.java" />

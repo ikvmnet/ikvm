@@ -276,50 +276,62 @@ namespace IKVM.Java.Externs.sun.nio.fs
             }
             else
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::sun.nio.fs.DotNetFileSystemProvider).TypeHandle);
-                __jniPtr__rename0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__rename0>(JNIFrame.GetFuncPtr(__callerID, "sun/nio/fs/UnixNativeDispatcher", nameof(rename0), "(JJ)V"));
-                var jniFrm = new JNIFrame();
-                var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    byte[] sourceBuf = null;
-                    byte[] targetBuf = null;
-
+                    __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::sun.nio.fs.DotNetFileSystemProvider).TypeHandle);
+                    __jniPtr__rename0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__rename0>(JNIFrame.GetFuncPtr(__callerID, "sun/nio/fs/UnixNativeDispatcher", nameof(rename0), "(JJ)V"));
+                    var jniFrm = new JNIFrame();
+                    var jniEnv = jniFrm.Enter(__callerID);
                     try
                     {
-                        var sourceLen = Encoding.UTF8.GetByteCount(source) + 1;
-                        sourceBuf = ArrayPool<byte>.Shared.Rent(sourceLen);
-                        sourceBuf[sourceLen - 1] = 0;
-                        Encoding.UTF8.GetBytes(source, 0, source.Length, sourceBuf, 0);
+                        byte[] sourceBuf = null;
+                        byte[] targetBuf = null;
 
-                        var targetLen = Encoding.UTF8.GetByteCount(target) + 1;
-                        targetBuf = ArrayPool<byte>.Shared.Rent(targetLen);
-                        targetBuf[targetLen - 1] = 0;
-                        Encoding.UTF8.GetBytes(target, 0, target.Length, targetBuf, 0);
-
-                        fixed (byte* sourcePtr = sourceBuf)
-                        fixed (byte* targetPtr = targetBuf)
+                        try
                         {
-                            __jniPtr__rename0(jniEnv, jniFrm.MakeLocalRef(ClassLiteral<global::sun.nio.fs.DotNetFileSystemProvider>.Value), (long)(IntPtr)sourcePtr, (long)(IntPtr)targetPtr);
+                            var sourceLen = Encoding.UTF8.GetByteCount(source) + 1;
+                            sourceBuf = ArrayPool<byte>.Shared.Rent(sourceLen);
+                            sourceBuf[sourceLen - 1] = 0;
+                            Encoding.UTF8.GetBytes(source, 0, source.Length, sourceBuf, 0);
+
+                            var targetLen = Encoding.UTF8.GetByteCount(target) + 1;
+                            targetBuf = ArrayPool<byte>.Shared.Rent(targetLen);
+                            targetBuf[targetLen - 1] = 0;
+                            Encoding.UTF8.GetBytes(target, 0, target.Length, targetBuf, 0);
+
+                            fixed (byte* sourcePtr = sourceBuf)
+                            fixed (byte* targetPtr = targetBuf)
+                            {
+                                __jniPtr__rename0(jniEnv, jniFrm.MakeLocalRef(ClassLiteral<global::sun.nio.fs.DotNetFileSystemProvider>.Value), (long)(IntPtr)sourcePtr, (long)(IntPtr)targetPtr);
+                            }
                         }
+                        finally
+                        {
+                            if (sourceBuf != null)
+                                ArrayPool<byte>.Shared.Return(sourceBuf);
+                            if (targetBuf != null)
+                                ArrayPool<byte>.Shared.Return(targetBuf);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Console.WriteLine("*** exception in native code ***");
+                        System.Console.WriteLine(ex);
+                        throw;
                     }
                     finally
                     {
-                        if (sourceBuf != null)
-                            ArrayPool<byte>.Shared.Return(sourceBuf);
-                        if (targetBuf != null)
-                            ArrayPool<byte>.Shared.Return(targetBuf);
+                        jniFrm.Leave();
                     }
                 }
-                catch (Exception ex)
+                catch (global::sun.nio.fs.UnixException e)
                 {
-                    System.Console.WriteLine("*** exception in native code ***");
-                    System.Console.WriteLine(ex);
-                    throw;
-                }
-                finally
-                {
-                    jniFrm.Leave();
+                    const int EXDEV = 18;
+
+                    if (e.errno() == EXDEV)
+                        throw new global::java.nio.file.AtomicMoveNotSupportedException(source, target, e.errorString());
+
+                    e.rethrowAsIOException(source, target);
                 }
             }
 #endif
