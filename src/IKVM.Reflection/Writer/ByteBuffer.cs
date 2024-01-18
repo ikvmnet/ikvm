@@ -22,6 +22,8 @@
   
 */
 using System;
+using System.Collections.Generic;
+using System.Reflection.Metadata;
 using System.Text;
 
 using IKVM.Reflection.Metadata;
@@ -305,6 +307,53 @@ namespace IKVM.Reflection.Writer
             pos += bb.Length;
         }
 
+        /// <summary>
+        /// Writes the specified blob builder blobs to the <see cref="ByteBuffer"/>.
+        /// </summary>
+        /// <param name="blobs"></param>
+        internal void Write(BlobBuilder blobBuilder)
+        {
+            Write(blobBuilder.GetBlobs());
+        }
+
+        /// <summary>
+        /// Writes the specified blobs to the <see cref="ByteBuffer"/>.
+        /// </summary>
+        /// <param name="blobs"></param>
+        internal void Write(IEnumerable<Blob> blobs)
+        {
+            foreach (var blob in blobs)
+                Write(blob.GetBytes());
+        }
+
+        /// <summary>
+        /// Writes the specified array segment to the <see cref="ByteBuffer"/>.
+        /// </summary>
+        /// <param name="bytes"></param>
+        internal void Write(ArraySegment<byte> bytes)
+        {
+            Write(bytes.AsSpan());
+        }
+
+        /// <summary>
+        /// Writes the specified span to the <see cref="ByteBuffer"/>.
+        /// </summary>
+        /// <param name="span"></param>
+        internal void Write(ReadOnlySpan<byte> span)
+        {
+            // grow the internal buffer
+            if (pos + span.Length > buffer.Length)
+                Grow(span.Length);
+
+            // copy the span to the newly allocated space
+            span.CopyTo(buffer.AsSpan().Slice(pos, span.Length));
+            pos += span.Length;
+        }
+
+        /// <summary>
+        /// Writes the assembled bytes to the given stream.
+        /// </summary>
+        /// <param name="stream"></param>
         internal void WriteTo(System.IO.Stream stream)
         {
             stream.Write(buffer, 0, this.Length);

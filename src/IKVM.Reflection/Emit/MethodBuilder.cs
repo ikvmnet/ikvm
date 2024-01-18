@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.SymbolStore;
+using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
@@ -610,36 +611,54 @@ namespace IKVM.Reflection.Emit
             SetMethodBody(il, 16, null, null, null);
         }
 
+        /// <summary>
+        /// Creates the body of the method by using a specified byte array of Microsoft intermediate language (MSIL) instructions.
+        /// </summary>
+        /// <param name="il"></param>
+        /// <param name="maxStack"></param>
+        /// <param name="localSignature"></param>
+        /// <param name="exceptionHandlers"></param>
+        /// <param name="tokenFixups"></param>
         public void SetMethodBody(byte[] il, int maxStack, byte[] localSignature, IEnumerable<ExceptionHandler> exceptionHandlers, IEnumerable<int> tokenFixups)
         {
-            var bb = ModuleBuilder.methodBodies;
+            var bdy = new BlobBuilder();
+            var enc = new MethodBodyStreamEncoder(bdy);
 
-            if (localSignature == null && exceptionHandlers == null && maxStack <= 8 && il.Length < 64)
-            {
-                rva = bb.Position;
-                ILGenerator.WriteTinyHeader(bb, il.Length);
-            }
-            else
-            {
-                // fat headers require 4-byte alignment
-                bb.Align(4);
-                rva = bb.Position;
-                ILGenerator.WriteFatHeader(bb, initLocals, exceptionHandlers != null, (ushort)maxStack, il.Length, localSignature == null ? 0 : ModuleBuilder.GetSignatureToken(localSignature, localSignature.Length).Token);
-            }
+            // calculate whether any large exception regions exist
+            var exceptionHandlersList = exceptionHandlers?.ToArray() ?? Array.Empty<ExceptionHandler>();
+            var hasSmallExceptions = true;
+            foreach (var exceptionHandler in exceptionHandlersList)
+                if (exceptionHandler.TryOffset > 65535 || exceptionHandler.TryLength > 255 || exceptionHandler.HandlerOffset > 65535 || exceptionHandler.HandlerLength > 255)
+                    hasSmallExceptions = false;
 
+            // allocate new method body
+            var body = enc.AddMethodBody(
+                il.Length,
+                maxStack,
+                exceptionHandlersList.Length,
+                hasSmallExceptions,
+                (StandaloneSignatureHandle)MetadataTokens.EntityHandle(localSignature == null ? 0 : ModuleBuilder.GetSignatureToken(localSignature, localSignature.Length).Token),
+                MethodBodyAttributes.InitLocals,
+                false);
+
+            // copy IL directly into body
+            var bodyBytes = body.Instructions.GetBytes();
+            il.CopyTo(bodyBytes.Array, bodyBytes.Offset);
+
+            // apply exception handlers
+            foreach (var handler in exceptionHandlersList)
+                body.ExceptionRegions.Add((ExceptionRegionKind)handler.Kind, handler.TryOffset, handler.TryLength, handler.HandlerOffset, handler.HandlerLength, MetadataTokens.EntityHandle(handler.ExceptionTypeToken), handler.FilterOffset);
+
+            // ensure our output is aligned
+            ModuleBuilder.methodBodies.Align(4);
+            rva = ModuleBuilder.methodBodies.Position;
+
+            // add fixups for offsets of created method body
             if (tokenFixups != null)
-                ILGenerator.AddTokenFixups(bb.Position, ModuleBuilder.tokenFixupOffsets, tokenFixups);
+                ILGenerator.AddTokenFixups(rva, ModuleBuilder.tokenFixupOffsets, tokenFixups);
 
-            bb.Write(il);
-
-            if (exceptionHandlers != null)
-            {
-                var exceptions = new List<ILGenerator.ExceptionBlock>();
-                foreach (var block in exceptionHandlers)
-                    exceptions.Add(new ILGenerator.ExceptionBlock(block));
-
-                ILGenerator.WriteExceptionHandlers(bb, exceptions);
-            }
+            // dump blob builder contents into module method body
+            ModuleBuilder.methodBodies.Write(bdy);
         }
 
         internal void Bake()

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 
@@ -458,6 +460,38 @@ namespace IKVM.Reflection.Tests
                 v.Code.Should().Be(ILVerify.VerifierError.None);
 
             var a = tempLoad.LoadFromAssemblyPath(Path.Combine(tempPath, "Test.exe"));
+            a.GetName().Name.Should().Be("Test");
+            a.GetModule("Test").Should().NotBeNull();
+            var t = a.GetType("Type");
+            t.Should().HaveMethod("Main", new[] { tempLoad.CoreAssembly.GetType("System.String").MakeArrayType() }).Which.Should().Return(tempLoad.CoreAssembly.GetType("System.Void"));
+        }
+
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void CanWriteSetMethodBody(FrameworkSpec framework)
+        {
+            if (Init(framework, out var universe, out var resolver, out var verifier, out var tempPath, out var tempLoad) == false)
+                return;
+
+            var assembly = universe.DefineDynamicAssembly(new AssemblyName("Test"), AssemblyBuilderAccess.Save, tempPath);
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+            var type = module.DefineType("Type");
+            var mainMethod = type.DefineMethod("Main", MethodAttributes.Public | MethodAttributes.Static, universe.Import(typeof(void)), new[] { universe.Import(typeof(string[])) });
+
+            var mainCode = new BlobBuilder();
+            var mainIL = new InstructionEncoder(mainCode);
+            mainIL.OpCode(ILOpCode.Ret);
+            var mainSig = new BlobBuilder();
+            new BlobEncoder(mainSig).LocalVariableSignature(0);
+            mainMethod.SetMethodBody(mainCode.ToArray(), 8, mainSig.ToArray(), null, null);
+
+            type.CreateType();
+            assembly.Save("Test.dll");
+
+            foreach (var v in verifier.Verify(new PEReader(File.OpenRead(Path.Combine(tempPath, "Test.dll")))))
+                v.Code.Should().Be(ILVerify.VerifierError.None);
+
+            var a = tempLoad.LoadFromAssemblyPath(Path.Combine(tempPath, "Test.dll"));
             a.GetName().Name.Should().Be("Test");
             a.GetModule("Test").Should().NotBeNull();
             var t = a.GetType("Type");
