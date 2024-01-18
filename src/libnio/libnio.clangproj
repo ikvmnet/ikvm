@@ -53,6 +53,7 @@
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\SocketDispatcher.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
+        <IncludeDirectories Include="windows" />
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\Iocp.c" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\RegistryFileTypeDetector.c" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\WindowsAsynchronousFileChannelImpl.c" />-->
@@ -62,6 +63,7 @@
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\WindowsSelectorImpl.c" />-->
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <IncludeDirectories Include="solaris" />
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\EPoll.c" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\EPollArrayWrapper.c" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\EPollPort.c" />-->
@@ -75,10 +77,11 @@
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\LinuxNativeDispatcher.c" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\LinuxWatchService.c" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\UnixCopyFile.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\UnixNativeDispatcher.c" />-->
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\UnixNativeDispatcher.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\macosx\native\sun\nio\ch" />
+        <IncludeDirectories Include="solaris" />
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\InheritedChannel.c" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\NativeThread.c" />-->
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\PollArrayWrapper.c" />
@@ -87,7 +90,7 @@
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\BsdNativeDispatcher.c" />-->
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\MacOSXNativeDispatcher.c" />
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\UnixCopyFile.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\UnixNativeDispatcher.c" />-->
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\UnixNativeDispatcher.c" />
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\KQueue.c" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\KQueuePort.c" />-->
         <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\sun\nio\ch\KQueueArrayWrapper.c" />

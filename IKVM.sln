@@ -50,6 +50,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tests", "src\I
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tasks.Tests", "src\IKVM.MSBuild.Tasks.Tests\IKVM.MSBuild.Tasks.Tests.csproj", "{E7C0E8FA-F34C-48C6-AD55-FD9798F5BC71}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java", "src\IKVM.Java\IKVM.Java.msbuildproj", "{ABD81C7E-F986-4018-986E-ACAF82C64D3A}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.NET.Sdk", "src\IKVM.NET.Sdk\IKVM.NET.Sdk.msbuildproj", "{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild", "src\IKVM.MSBuild\IKVM.MSBuild.msbuildproj", "{AE5BFBC6-7DD4-4ACA-BEA7-86F842F38B64}"
@@ -323,6 +325,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.linux", "src\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.msbuildproj", "{11AF8931-998A-47E8-8F03-853AE86A2CE1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.osx", "src\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.msbuildproj", "{114A8766-58F7-49DF-9BD9-7FEA6ABCF4F5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Tests.Util", "src\IKVM.Java.Tests.Util\IKVM.Java.Tests.Util.csproj", "{00AFE142-5F4F-48DD-90C1-20CC0512C43C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -810,6 +813,10 @@ Global
 		{114A8766-58F7-49DF-9BD9-7FEA6ABCF4F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{114A8766-58F7-49DF-9BD9-7FEA6ABCF4F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{114A8766-58F7-49DF-9BD9-7FEA6ABCF4F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

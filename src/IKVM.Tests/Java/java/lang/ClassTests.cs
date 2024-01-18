@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using IKVM.Java.Tests.Util;
 using IKVM.Tests.Util;
 
 using java.nio.file;

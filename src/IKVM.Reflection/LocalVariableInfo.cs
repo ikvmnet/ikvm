@@ -25,49 +25,66 @@ using System;
 
 namespace IKVM.Reflection
 {
-	public class LocalVariableInfo
-	{
-		private readonly int index;
-		private readonly Type type;
-		private readonly bool pinned;
-		private readonly CustomModifiers customModifiers;
 
-		internal LocalVariableInfo(int index, Type type, bool pinned)
-		{
-			this.index = index;
-			this.type = type;
-			this.pinned = pinned;
-		}
+    public class LocalVariableInfo
+    {
 
-		internal LocalVariableInfo(int index, Type type, bool pinned, CustomModifiers customModifiers)
-			: this(index, type, pinned)
-		{
-			this.customModifiers = customModifiers;
-		}
+        readonly int index;
+        readonly Type type;
+        readonly bool pinned;
+        readonly CustomModifiers customModifiers;
 
-		public bool IsPinned
-		{
-			get { return pinned; }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="type"></param>
+        /// <param name="pinned"></param>
+        internal LocalVariableInfo(int index, Type type, bool pinned)
+        {
+            this.index = index;
+            this.type = type;
+            this.pinned = pinned;
+        }
 
-		public int LocalIndex
-		{
-			get { return index; }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="type"></param>
+        /// <param name="pinned"></param>
+        /// <param name="customModifiers"></param>
+        internal LocalVariableInfo(int index, Type type, bool pinned, CustomModifiers customModifiers) :
+            this(index, type, pinned)
+        {
+            this.customModifiers = customModifiers;
+        }
 
-		public Type LocalType
-		{
-			get { return type; }
-		}
+        public bool IsPinned
+        {
+            get { return pinned; }
+        }
 
-		public CustomModifiers __GetCustomModifiers()
-		{
-			return customModifiers;
-		}
+        public int LocalIndex
+        {
+            get { return index; }
+        }
 
-		public override string ToString()
-		{
-			return String.Format(pinned ? "{0} ({1}) (pinned)" : "{0} ({1})", type, index);
-		}
-	}
+        public Type LocalType
+        {
+            get { return type; }
+        }
+
+        public CustomModifiers __GetCustomModifiers()
+        {
+            return customModifiers;
+        }
+
+        public override string ToString()
+        {
+            return String.Format(pinned ? "{0} ({1}) (pinned)" : "{0} ({1})", type, index);
+        }
+
+    }
+
 }

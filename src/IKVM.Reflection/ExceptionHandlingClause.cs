@@ -21,74 +21,79 @@
   jeroen@frijters.net
   
 */
-using System;
 using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
-	[Flags]
-	public enum ExceptionHandlingClauseOptions
-	{
-		Clause  = 0x0000,
-		Filter  = 0x0001,
-		Finally = 0x0002,
-		Fault   = 0x0004,
-	}
 
-	public sealed class ExceptionHandlingClause
-	{
-		private readonly int flags;
-		private readonly int tryOffset;
-		private readonly int tryLength;
-		private readonly int handlerOffset;
-		private readonly int handlerLength;
-		private readonly Type catchType;
-		private readonly int filterOffset;
+    public sealed class ExceptionHandlingClause
+    {
 
-		internal ExceptionHandlingClause(ModuleReader module, int flags, int tryOffset, int tryLength, int handlerOffset, int handlerLength, int classTokenOrfilterOffset, IGenericContext context)
-		{
-			this.flags = flags;
-			this.tryOffset = tryOffset;
-			this.tryLength = tryLength;
-			this.handlerOffset = handlerOffset;
-			this.handlerLength = handlerLength;
-			this.catchType = flags == (int)ExceptionHandlingClauseOptions.Clause && classTokenOrfilterOffset != 0 ? module.ResolveType(classTokenOrfilterOffset, context) : null;
-			this.filterOffset = flags == (int)ExceptionHandlingClauseOptions.Filter ? classTokenOrfilterOffset : 0;
-		}
+        readonly int flags;
+        readonly int tryOffset;
+        readonly int tryLength;
+        readonly int handlerOffset;
+        readonly int handlerLength;
+        readonly Type catchType;
+        readonly int filterOffset;
 
-		public Type CatchType
-		{
-			get { return catchType; }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="flags"></param>
+        /// <param name="tryOffset"></param>
+        /// <param name="tryLength"></param>
+        /// <param name="handlerOffset"></param>
+        /// <param name="handlerLength"></param>
+        /// <param name="classTokenOrfilterOffset"></param>
+        /// <param name="context"></param>
+        internal ExceptionHandlingClause(ModuleReader module, int flags, int tryOffset, int tryLength, int handlerOffset, int handlerLength, int classTokenOrfilterOffset, IGenericContext context)
+        {
+            this.flags = flags;
+            this.tryOffset = tryOffset;
+            this.tryLength = tryLength;
+            this.handlerOffset = handlerOffset;
+            this.handlerLength = handlerLength;
+            this.catchType = flags == (int)ExceptionHandlingClauseOptions.Clause && classTokenOrfilterOffset != 0 ? module.ResolveType(classTokenOrfilterOffset, context) : null;
+            this.filterOffset = flags == (int)ExceptionHandlingClauseOptions.Filter ? classTokenOrfilterOffset : 0;
+        }
 
-		public int FilterOffset
-		{
-			get { return filterOffset; }
-		}
+        public Type CatchType
+        {
+            get { return catchType; }
+        }
 
-		public ExceptionHandlingClauseOptions Flags
-		{
-			get { return (ExceptionHandlingClauseOptions)flags; }
-		}
+        public int FilterOffset
+        {
+            get { return filterOffset; }
+        }
 
-		public int HandlerLength
-		{
-			get { return handlerLength; }
-		}
+        public ExceptionHandlingClauseOptions Flags
+        {
+            get { return (ExceptionHandlingClauseOptions)flags; }
+        }
 
-		public int HandlerOffset
-		{
-			get { return handlerOffset; }
-		}
+        public int HandlerLength
+        {
+            get { return handlerLength; }
+        }
 
-		public int TryLength
-		{
-			get { return tryLength; }
-		}
+        public int HandlerOffset
+        {
+            get { return handlerOffset; }
+        }
 
-		public int TryOffset
-		{
-			get { return tryOffset; }
-		}
-	}
+        public int TryLength
+        {
+            get { return tryLength; }
+        }
+
+        public int TryOffset
+        {
+            get { return tryOffset; }
+        }
+
+    }
+
 }

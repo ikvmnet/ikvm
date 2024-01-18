@@ -24,112 +24,116 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace IKVM.Reflection
 {
-// disable warnings that complain about us having == and != operators without also overriding Equals/GetHashCode,
-// this is intentional because most subtypes use reference equality
+
+    // disable warnings that complain about us having == and != operators without also overriding Equals/GetHashCode,
+    // this is intentional because most subtypes use reference equality
 #pragma warning disable 660, 661
-	public abstract class MemberInfo : ICustomAttributeProvider
-	{
-		// prevent external subclasses
-		internal MemberInfo()
-		{
-		}
+    public abstract class MemberInfo : ICustomAttributeProvider
+    {
 
-		public abstract string Name { get; }
-		public abstract Type DeclaringType { get; }
-		public abstract MemberTypes MemberType { get; }
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        internal MemberInfo()
+        {
 
-		public virtual Type ReflectedType
-		{
-			get { return DeclaringType; }
-		}
+        }
 
-		internal abstract MemberInfo SetReflectedType(Type type);
+        public abstract string Name { get; }
+        public abstract Type DeclaringType { get; }
+        public abstract MemberTypes MemberType { get; }
 
-		public virtual int MetadataToken
-		{
-			get { throw new NotSupportedException(); }
-		}
+        public virtual Type ReflectedType
+        {
+            get { return DeclaringType; }
+        }
 
-		public abstract Module Module
-		{
-			get;
-		}
+        internal abstract MemberInfo SetReflectedType(Type type);
 
-		public virtual bool __IsMissing
-		{
-			get { return false; }
-		}
+        public virtual int MetadataToken
+        {
+            get { throw new NotSupportedException(); }
+        }
 
-		public bool IsDefined(Type attributeType, bool inherit)
-		{
-			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
-		}
+        public abstract Module Module
+        {
+            get;
+        }
 
-		public IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit)
-		{
-			return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
-		}
+        public virtual bool __IsMissing
+        {
+            get { return false; }
+        }
 
-		public IList<CustomAttributeData> GetCustomAttributesData()
-		{
-			return CustomAttributeData.GetCustomAttributes(this);
-		}
+        public bool IsDefined(Type attributeType, bool inherit)
+        {
+            return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
+        }
 
-		public IEnumerable<CustomAttributeData> CustomAttributes
-		{
-			get { return GetCustomAttributesData(); }
-		}
+        public IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit)
+        {
+            return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
+        }
 
-		public static bool operator ==(MemberInfo m1, MemberInfo m2)
-		{
-			return ReferenceEquals(m1, m2) || (!ReferenceEquals(m1, null) && m1.Equals(m2));
-		}
+        public IList<CustomAttributeData> GetCustomAttributesData()
+        {
+            return CustomAttributeData.GetCustomAttributes(this);
+        }
 
-		public static bool operator !=(MemberInfo m1, MemberInfo m2)
-		{
-			return !(m1 == m2);
-		}
+        public IEnumerable<CustomAttributeData> CustomAttributes
+        {
+            get { return GetCustomAttributesData(); }
+        }
 
-		internal abstract int GetCurrentToken();
+        public static bool operator ==(MemberInfo m1, MemberInfo m2)
+        {
+            return ReferenceEquals(m1, m2) || (!ReferenceEquals(m1, null) && m1.Equals(m2));
+        }
 
-		internal abstract List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType);
+        public static bool operator !=(MemberInfo m1, MemberInfo m2)
+        {
+            return !(m1 == m2);
+        }
 
-		internal abstract bool IsBaked { get; }
+        internal abstract int GetCurrentToken();
 
-		internal virtual bool BindingFlagsMatch(BindingFlags flags)
-		{
-			throw new InvalidOperationException();
-		}
+        internal abstract List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType);
 
-		internal virtual bool BindingFlagsMatchInherited(BindingFlags flags)
-		{
-			throw new InvalidOperationException();
-		}
+        internal abstract bool IsBaked { get; }
 
-		protected static bool BindingFlagsMatch(bool state, BindingFlags flags, BindingFlags trueFlag, BindingFlags falseFlag)
-		{
-			return (state && (flags & trueFlag) == trueFlag)
-				|| (!state && (flags & falseFlag) == falseFlag);
-		}
+        internal virtual bool BindingFlagsMatch(BindingFlags flags)
+        {
+            throw new InvalidOperationException();
+        }
 
-		protected static T SetReflectedType<T>(T member, Type type)
-			where T : MemberInfo
-		{
-			return member == null ? null : (T)member.SetReflectedType(type);
-		}
+        internal virtual bool BindingFlagsMatchInherited(BindingFlags flags)
+        {
+            throw new InvalidOperationException();
+        }
 
-		protected static T[] SetReflectedType<T>(T[] members, Type type)
-			where T : MemberInfo
-		{
-			for (int i = 0; i < members.Length; i++)
-			{
-				members[i] = SetReflectedType(members[i], type);
-			}
-			return members;
-		}
-	}
+        protected static bool BindingFlagsMatch(bool state, BindingFlags flags, BindingFlags trueFlag, BindingFlags falseFlag)
+        {
+            return (state && (flags & trueFlag) == trueFlag) || (!state && (flags & falseFlag) == falseFlag);
+        }
+
+        protected static T SetReflectedType<T>(T member, Type type)
+            where T : MemberInfo
+        {
+            return member == null ? null : (T)member.SetReflectedType(type);
+        }
+
+        protected static T[] SetReflectedType<T>(T[] members, Type type)
+            where T : MemberInfo
+        {
+            for (int i = 0; i < members.Length; i++)
+                members[i] = SetReflectedType(members[i], type);
+
+            return members;
+        }
+
+    }
+
 }

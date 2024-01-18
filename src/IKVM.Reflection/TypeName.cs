@@ -25,97 +25,82 @@ using System;
 
 namespace IKVM.Reflection
 {
+
     // this respresents a type name as in metadata:
     // - ns will be null for empty the namespace (never the empty string)
     // - the strings are not escaped
-    struct TypeName : IEquatable<TypeName>
-	{
-		private readonly string ns;
-		private readonly string name;
+    readonly struct TypeName : IEquatable<TypeName>
+    {
 
-		internal TypeName(string ns, string name)
-		{
-			if (name == null)
-			{
-				throw new ArgumentNullException("name");
-			}
-			this.ns = ns;
-			this.name = name;
-		}
+        public static bool operator ==(TypeName o1, TypeName o2)
+        {
+            return o1.ns == o2.ns && o1.name == o2.name;
+        }
 
-		internal string Name
-		{
-			get { return name; }
-		}
+        public static bool operator !=(TypeName o1, TypeName o2)
+        {
+            return o1.ns != o2.ns || o1.name != o2.name;
+        }
 
-		internal string Namespace
-		{
-			get { return ns; }
-		}
+        readonly string ns;
+        readonly string name;
 
-		public static bool operator ==(TypeName o1, TypeName o2)
-		{
-			return o1.ns == o2.ns && o1.name == o2.name;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="ns"></param>
+        /// <param name="name"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        internal TypeName(string ns, string name)
+        {
+            this.ns = ns;
+            this.name = name ?? throw new ArgumentNullException("name");
+        }
 
-		public static bool operator !=(TypeName o1, TypeName o2)
-		{
-			return o1.ns != o2.ns || o1.name != o2.name;
-		}
+        internal string Name => name;
 
-		public override int GetHashCode()
-		{
-			return ns == null ? name.GetHashCode() : ns.GetHashCode() * 37 + name.GetHashCode();
-		}
+        internal string Namespace => ns;
 
-		public override bool Equals(object obj)
-		{
-			TypeName? other = obj as TypeName?;
-			return other != null && other.Value == this;
-		}
+        public override int GetHashCode() => ns == null ? name.GetHashCode() : ns.GetHashCode() * 37 + name.GetHashCode();
 
-		public override string ToString()
-		{
-			return ns == null ? name : ns + "." + name;
-		}
+        public override bool Equals(object obj)
+        {
+            var other = obj as TypeName?;
+            return other != null && other.Value == this;
+        }
 
-		bool IEquatable<TypeName>.Equals(TypeName other)
-		{
-			return this == other;
-		}
+        public override string ToString()
+        {
+            return ns == null ? name : ns + "." + name;
+        }
 
-		internal bool Matches(string fullName)
-		{
-			if (ns == null)
-			{
-				return name == fullName;
-			}
-			if (ns.Length + 1 + name.Length == fullName.Length)
-			{
-				return fullName.StartsWith(ns, StringComparison.Ordinal)
-					&& fullName[ns.Length] == '.'
-					&& fullName.EndsWith(name, StringComparison.Ordinal);
-			}
-			return false;
-		}
+        bool IEquatable<TypeName>.Equals(TypeName other)
+        {
+            return this == other;
+        }
 
-		internal TypeName ToLowerInvariant()
-		{
-			return new TypeName(ns == null ? null : ns.ToLowerInvariant(), name.ToLowerInvariant());
-		}
+        internal bool Matches(string fullName)
+        {
+            if (ns == null)
+                return name == fullName;
 
-		internal static TypeName Split(string name)
-		{
-			int dot = name.LastIndexOf('.');
-			if (dot == -1)
-			{
-				return new TypeName(null, name);
-			}
-			else
-			{
-				return new TypeName(name.Substring(0, dot), name.Substring(dot + 1));
-			}
-		}
-	}
+            if (ns.Length + 1 + name.Length == fullName.Length)
+                return fullName.StartsWith(ns, StringComparison.Ordinal) && fullName[ns.Length] == '.' && fullName.EndsWith(name, StringComparison.Ordinal);
+
+            return false;
+        }
+
+        internal TypeName ToLowerInvariant() => new TypeName(ns?.ToLowerInvariant(), name.ToLowerInvariant());
+
+        internal static TypeName Split(string name)
+        {
+            int dot = name.LastIndexOf('.');
+            if (dot == -1)
+                return new TypeName(null, name);
+            else
+                return new TypeName(name.Substring(0, dot), name.Substring(dot + 1));
+        }
+
+    }
 
 }

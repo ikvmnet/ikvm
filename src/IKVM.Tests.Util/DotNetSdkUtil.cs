@@ -41,6 +41,24 @@ namespace IKVM.Tests.Util
         /// <param name="targetFrameworkVersion"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
+        public static string GetCoreLibName(string tfm, string targetFrameworkIdentifier, string targetFrameworkVersion)
+        {
+            if (targetFrameworkIdentifier == ".NETFramework")
+                return "mscorlib";
+            if (targetFrameworkIdentifier == ".NETCore")
+                return "System.Runtime";
+
+            throw new InvalidOperationException();
+        }
+
+        /// <summary>
+        /// Gets the paths to the reference assemblies of the specified TFM for the target framework.
+        /// </summary>
+        /// <param name="tfm"></param>
+        /// <param name="targetFrameworkIdentifier"></param>
+        /// <param name="targetFrameworkVersion"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public static IList<string> GetPathToReferenceAssemblies(string tfm, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
             if (targetFrameworkIdentifier == ".NETFramework")
@@ -86,7 +104,7 @@ namespace IKVM.Tests.Util
                 throw new InvalidOperationException();
 
             // find all ref assemblies
-            return new[] { refsDir };
+            return new[] { Path.GetFullPath(refsDir) };
         }
 
     }

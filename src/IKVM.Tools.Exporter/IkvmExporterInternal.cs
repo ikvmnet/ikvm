@@ -302,15 +302,30 @@ namespace IKVM.Tools.Exporter
             if (File.Exists(path) == false)
                 return null;
 
-            using var st = File.OpenRead(path);
-            using var pe = new PEReader(st);
-            var mr = pe.GetMetadataReader();
+            try
+            {
+                using var st = File.OpenRead(path);
+                using var pe = new PEReader(st);
+                var mr = pe.GetMetadataReader();
 
-            foreach (var handle in mr.TypeDefinitions)
-                if (IsSystemObject(mr, handle))
-                    return mr.GetString(mr.GetAssemblyDefinition().Name);
+                foreach (var handle in mr.TypeDefinitions)
+                    if (IsSystemObject(mr, handle))
+                        return mr.GetString(mr.GetAssemblyDefinition().Name);
 
-            return null;
+                return null;
+            }
+            catch (System.BadImageFormatException)
+            {
+                return null;
+            }
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
+            catch (IOException)
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -331,9 +346,7 @@ namespace IKVM.Tools.Exporter
         static void Resolver_Warning(AssemblyResolver.WarningId warning, string message, string[] parameters)
         {
             if (warning != AssemblyResolver.WarningId.HigherVersion)
-            {
                 Console.Error.WriteLine("Warning: " + message, parameters);
-            }
         }
 
         static void LoadSharedClassLoaderAssemblies(StaticCompiler compiler, Assembly assembly, List<Assembly> assemblies)

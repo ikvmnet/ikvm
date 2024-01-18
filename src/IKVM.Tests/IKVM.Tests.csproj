@@ -35,6 +35,7 @@
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj" />
         <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
+        <ProjectReference Include="..\IKVM.Java.Tests.Util\IKVM.Java.Tests.Util.csproj" />
         <ProjectReference Include="..\IKVM.Tests.Util\IKVM.Tests.Util.csproj" />
         <ProjectReference Include="..\IKVM.Tools.Runner\IKVM.Tools.Runner.csproj" />
         <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" />

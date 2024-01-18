@@ -22,101 +22,113 @@
   
 */
 using System;
-using System.Collections.Generic;
 
 namespace IKVM.Reflection.Emit
 {
-	public struct ExceptionHandler : IEquatable<ExceptionHandler>
-	{
 
-		private readonly int tryOffset;
-		private readonly int tryLength;
-		private readonly int filterOffset;
-		private readonly int handlerOffset;
-		private readonly int handlerLength;
-		private readonly ExceptionHandlingClauseOptions kind;
-		private readonly int exceptionTypeToken;
+    public readonly struct ExceptionHandler : IEquatable<ExceptionHandler>
+    {
 
-		public ExceptionHandler(int tryOffset, int tryLength, int filterOffset, int handlerOffset, int handlerLength, ExceptionHandlingClauseOptions kind, int exceptionTypeToken)
-		{
-			if (tryOffset < 0 || tryLength < 0 || filterOffset < 0 || handlerOffset < 0 || handlerLength < 0)
-			{
-				throw new ArgumentOutOfRangeException();
-			}
-			this.tryOffset = tryOffset;
-			this.tryLength = tryLength;
-			this.filterOffset = filterOffset;
-			this.handlerOffset = handlerOffset;
-			this.handlerLength = handlerLength;
-			this.kind = kind;
-			this.exceptionTypeToken = exceptionTypeToken;
-		}
+        readonly int tryOffset;
+        readonly int tryLength;
+        readonly int filterOffset;
+        readonly int handlerOffset;
+        readonly int handlerLength;
+        readonly ExceptionHandlingClauseOptions kind;
+        readonly int exceptionTypeToken;
 
-		public int TryOffset
-		{
-			get { return tryOffset; }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="tryOffset"></param>
+        /// <param name="tryLength"></param>
+        /// <param name="filterOffset"></param>
+        /// <param name="handlerOffset"></param>
+        /// <param name="handlerLength"></param>
+        /// <param name="kind"></param>
+        /// <param name="exceptionTypeToken"></param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        public ExceptionHandler(int tryOffset, int tryLength, int filterOffset, int handlerOffset, int handlerLength, ExceptionHandlingClauseOptions kind, int exceptionTypeToken)
+        {
+            if (tryOffset < 0 || tryLength < 0 || filterOffset < 0 || handlerOffset < 0 || handlerLength < 0)
+                throw new ArgumentOutOfRangeException();
 
-		public int TryLength
-		{
-			get { return tryLength; }
-		}
+            this.tryOffset = tryOffset;
+            this.tryLength = tryLength;
+            this.filterOffset = filterOffset;
+            this.handlerOffset = handlerOffset;
+            this.handlerLength = handlerLength;
+            this.kind = kind;
+            this.exceptionTypeToken = exceptionTypeToken;
+        }
 
-		public int FilterOffset
-		{
-			get { return filterOffset; }
-		}
+        public int TryOffset
+        {
+            get { return tryOffset; }
+        }
 
-		public int HandlerOffset
-		{
-			get { return handlerOffset; }
-		}
+        public int TryLength
+        {
+            get { return tryLength; }
+        }
 
-		public int HandlerLength
-		{
-			get { return handlerLength; }
-		}
+        public int FilterOffset
+        {
+            get { return filterOffset; }
+        }
 
-		public ExceptionHandlingClauseOptions Kind
-		{
-			get { return kind; }
-		}
+        public int HandlerOffset
+        {
+            get { return handlerOffset; }
+        }
 
-		public int ExceptionTypeToken
-		{
-			get { return exceptionTypeToken; }
-		}
+        public int HandlerLength
+        {
+            get { return handlerLength; }
+        }
 
-		public bool Equals(ExceptionHandler other)
-		{
-			return tryOffset == other.tryOffset
-				&& tryLength == other.tryLength
-				&& filterOffset == other.filterOffset
-				&& handlerOffset == other.handlerOffset
-				&& handlerLength == other.handlerLength
-				&& kind == other.kind
-				&& exceptionTypeToken == other.exceptionTypeToken;
-		}
+        public ExceptionHandlingClauseOptions Kind
+        {
+            get { return kind; }
+        }
 
-		public override bool Equals(object obj)
-		{
-			ExceptionHandler? other = obj as ExceptionHandler?;
-			return other != null && Equals(other.Value);
-		}
+        public int ExceptionTypeToken
+        {
+            get { return exceptionTypeToken; }
+        }
 
-		public override int GetHashCode()
-		{
-			return tryOffset ^ tryLength * 33 ^ filterOffset * 333 ^ handlerOffset * 3333 ^ handlerLength * 33333;
-		}
+        public bool Equals(ExceptionHandler other)
+        {
+            return tryOffset == other.tryOffset
+                && tryLength == other.tryLength
+                && filterOffset == other.filterOffset
+                && handlerOffset == other.handlerOffset
+                && handlerLength == other.handlerLength
+                && kind == other.kind
+                && exceptionTypeToken == other.exceptionTypeToken;
+        }
 
-		public static bool operator ==(ExceptionHandler left, ExceptionHandler right)
-		{
-			return left.Equals(right);
-		}
+        public override bool Equals(object obj)
+        {
+            ExceptionHandler? other = obj as ExceptionHandler?;
+            return other != null && Equals(other.Value);
+        }
 
-		public static bool operator !=(ExceptionHandler left, ExceptionHandler right)
-		{
-			return !left.Equals(right);
-		}
-	}
+        public override int GetHashCode()
+        {
+            return tryOffset ^ tryLength * 33 ^ filterOffset * 333 ^ handlerOffset * 3333 ^ handlerLength * 33333;
+        }
+
+        public static bool operator ==(ExceptionHandler left, ExceptionHandler right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ExceptionHandler left, ExceptionHandler right)
+        {
+            return !left.Equals(right);
+        }
+
+    }
+
 }

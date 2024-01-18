@@ -25,106 +25,38 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 
 using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
-    public struct Label
-    {
-        // 1-based here, to make sure that an uninitialized Label isn't valid
-        private readonly int index1;
-
-        internal Label(int index)
-        {
-            this.index1 = index + 1;
-        }
-
-        internal int Index
-        {
-            get { return index1 - 1; }
-        }
-
-        public bool Equals(Label other)
-        {
-            return other.index1 == index1;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return this == obj as Label?;
-        }
-
-        public override int GetHashCode()
-        {
-            return index1;
-        }
-
-        public static bool operator ==(Label arg1, Label arg2)
-        {
-            return arg1.index1 == arg2.index1;
-        }
-
-        public static bool operator !=(Label arg1, Label arg2)
-        {
-            return !(arg1 == arg2);
-        }
-    }
-
-    public sealed class LocalBuilder : LocalVariableInfo
-    {
-        internal string name;
-        internal int startOffset;
-        internal int endOffset;
-
-        internal LocalBuilder(Type localType, int index, bool pinned)
-            : base(index, localType, pinned)
-        {
-        }
-
-        internal LocalBuilder(Type localType, int index, bool pinned, CustomModifiers customModifiers)
-            : base(index, localType, pinned, customModifiers)
-        {
-        }
-
-        public void SetLocalSymInfo(string name)
-        {
-            this.name = name;
-        }
-
-        public void SetLocalSymInfo(string name, int startOffset, int endOffset)
-        {
-            this.name = name;
-            this.startOffset = startOffset;
-            this.endOffset = endOffset;
-        }
-    }
 
     public sealed class ILGenerator
     {
 
-        private readonly ModuleBuilder moduleBuilder;
-        private readonly ByteBuffer code;
-        private readonly SignatureHelper locals;
-        private int localsCount;
-        private readonly List<int> tokenFixups = new List<int>();
-        private readonly List<int> labels = new List<int>();
-        private readonly List<int> labelStackHeight = new List<int>();
-        private readonly List<LabelFixup> labelFixups = new List<LabelFixup>();
-        private readonly List<SequencePoint> sequencePoints = new List<SequencePoint>();
-        private readonly List<ExceptionBlock> exceptions = new List<ExceptionBlock>();
-        private readonly Stack<ExceptionBlock> exceptionStack = new Stack<ExceptionBlock>();
-        private ushort maxStack;
-        private bool fatHeader;
-        private int stackHeight;
-        private Scope scope;
-        private byte exceptionBlockAssistanceMode = EBAM_COMPAT;
-        private const byte EBAM_COMPAT = 0;
-        private const byte EBAM_DISABLE = 1;
-        private const byte EBAM_CLEVER = 2;
+        readonly ModuleBuilder moduleBuilder;
+        readonly ByteBuffer code;
+        readonly SignatureHelper locals;
+        int localsCount;
+        readonly List<int> tokenFixups = new List<int>();
+        readonly List<int> labels = new List<int>();
+        readonly List<int> labelStackHeight = new List<int>();
+        readonly List<LabelFixup> labelFixups = new List<LabelFixup>();
+        readonly List<SequencePoint> sequencePoints = new List<SequencePoint>();
+        readonly List<ExceptionBlock> exceptions = new List<ExceptionBlock>();
+        readonly Stack<ExceptionBlock> exceptionStack = new Stack<ExceptionBlock>();
+        ushort maxStack;
+        bool fatHeader;
+        int stackHeight;
+        Scope scope;
+        byte exceptionBlockAssistanceMode = EBAM_COMPAT;
+        const byte EBAM_COMPAT = 0;
+        const byte EBAM_DISABLE = 1;
+        const byte EBAM_CLEVER = 2;
 
-        private struct LabelFixup
+        struct LabelFixup
         {
             internal int label;
             internal int offset;
@@ -183,18 +115,21 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        private struct SequencePoint
+        struct SequencePoint
         {
+
             internal ISymbolDocumentWriter document;
             internal int offset;
             internal int startLine;
             internal int startColumn;
             internal int endLine;
             internal int endColumn;
+
         }
 
-        private sealed class Scope
+        sealed class Scope
         {
+
             internal readonly Scope parent;
             internal readonly List<Scope> children = new List<Scope>();
             internal readonly List<LocalBuilder> locals = new List<LocalBuilder>();
@@ -202,12 +137,22 @@ namespace IKVM.Reflection.Emit
             internal int startOffset;
             internal int endOffset;
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="parent"></param>
             internal Scope(Scope parent)
             {
                 this.parent = parent;
             }
+
         }
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="moduleBuilder"></param>
+        /// <param name="initialCapacity"></param>
         internal ILGenerator(ModuleBuilder moduleBuilder, int initialCapacity)
         {
             this.code = new ByteBuffer(initialCapacity);
@@ -261,37 +206,35 @@ namespace IKVM.Reflection.Emit
             if (exceptionType == null)
             {
                 // this must be a catch block after a filter
-                ExceptionBlock block = exceptionStack.Peek();
+                var block = exceptionStack.Peek();
                 if (block.kind != ExceptionHandlingClauseOptions.Filter || block.handlerOffset != 0)
-                {
                     throw new ArgumentNullException("exceptionType");
-                }
+
                 if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
-                {
                     Emit(OpCodes.Endfilter);
-                }
+
                 stackHeight = 0;
                 UpdateStack(1);
                 block.handlerOffset = code.Position;
             }
             else
             {
-                ExceptionBlock block = BeginCatchOrFilterBlock();
+                var block = BeginCatchOrFilterBlock();
                 block.kind = ExceptionHandlingClauseOptions.Clause;
                 block.filterOffsetOrExceptionTypeToken = moduleBuilder.GetTypeTokenForMemberRef(exceptionType);
                 block.handlerOffset = code.Position;
             }
         }
 
-        private ExceptionBlock BeginCatchOrFilterBlock()
+        ExceptionBlock BeginCatchOrFilterBlock()
         {
-            ExceptionBlock block = exceptionStack.Peek();
+            var block = exceptionStack.Peek();
             if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
-            {
                 Emit(OpCodes.Leave, block.labelEnd);
-            }
+
             stackHeight = 0;
             UpdateStack(1);
+
             if (block.tryLength == 0)
             {
                 block.tryLength = code.Position - block.tryOffset;
@@ -300,7 +243,7 @@ namespace IKVM.Reflection.Emit
             {
                 block.handlerLength = code.Position - block.handlerOffset;
                 exceptionStack.Pop();
-                ExceptionBlock newBlock = new ExceptionBlock(exceptions.Count);
+                var newBlock = new ExceptionBlock(exceptions.Count);
                 newBlock.labelEnd = block.labelEnd;
                 newBlock.tryOffset = block.tryOffset;
                 newBlock.tryLength = block.tryLength;
@@ -308,12 +251,13 @@ namespace IKVM.Reflection.Emit
                 exceptions.Add(block);
                 exceptionStack.Push(block);
             }
+
             return block;
         }
 
         public Label BeginExceptionBlock()
         {
-            ExceptionBlock block = new ExceptionBlock(exceptions.Count);
+            var block = new ExceptionBlock(exceptions.Count);
             block.labelEnd = DefineLabel();
             block.tryOffset = code.Position;
             exceptionStack.Push(block);
@@ -324,7 +268,7 @@ namespace IKVM.Reflection.Emit
 
         public void BeginExceptFilterBlock()
         {
-            ExceptionBlock block = BeginCatchOrFilterBlock();
+            var block = BeginCatchOrFilterBlock();
             block.kind = ExceptionHandlingClauseOptions.Filter;
             block.filterOffsetOrExceptionTypeToken = code.Position;
         }
@@ -339,13 +283,12 @@ namespace IKVM.Reflection.Emit
             BeginFinallyFaultBlock(ExceptionHandlingClauseOptions.Finally);
         }
 
-        private void BeginFinallyFaultBlock(ExceptionHandlingClauseOptions kind)
+        void BeginFinallyFaultBlock(ExceptionHandlingClauseOptions kind)
         {
-            ExceptionBlock block = exceptionStack.Peek();
+            var block = exceptionStack.Peek();
             if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
-            {
                 Emit(OpCodes.Leave, block.labelEnd);
-            }
+
             if (block.handlerOffset == 0)
             {
                 block.tryLength = code.Position - block.tryOffset;
@@ -365,7 +308,7 @@ namespace IKVM.Reflection.Emit
                     Emit(OpCodes.Leave, labelEnd);
                 }
                 exceptionStack.Pop();
-                ExceptionBlock newBlock = new ExceptionBlock(exceptions.Count);
+                var newBlock = new ExceptionBlock(exceptions.Count);
                 newBlock.labelEnd = labelEnd;
                 newBlock.tryOffset = block.tryOffset;
                 newBlock.tryLength = code.Position - block.tryOffset;
@@ -380,17 +323,13 @@ namespace IKVM.Reflection.Emit
 
         public void EndExceptionBlock()
         {
-            ExceptionBlock block = exceptionStack.Pop();
+            var block = exceptionStack.Pop();
             if (exceptionBlockAssistanceMode == EBAM_COMPAT || (exceptionBlockAssistanceMode == EBAM_CLEVER && stackHeight != -1))
             {
                 if (block.kind != ExceptionHandlingClauseOptions.Finally && block.kind != ExceptionHandlingClauseOptions.Fault)
-                {
                     Emit(OpCodes.Leave, block.labelEnd);
-                }
                 else
-                {
                     Emit(OpCodes.Endfinally);
-                }
             }
             MarkLabel(block.labelEnd);
             block.handlerLength = code.Position - block.handlerOffset;
@@ -398,7 +337,7 @@ namespace IKVM.Reflection.Emit
 
         public void BeginScope()
         {
-            Scope newScope = new Scope(scope);
+            var newScope = new Scope(scope);
             scope?.children.Add(newScope);
             scope = newScope;
             scope.startOffset = code.Position;
@@ -406,10 +345,7 @@ namespace IKVM.Reflection.Emit
 
         public void UsingNamespace(string usingNamespace)
         {
-            if (scope != null)
-            {
-                scope.namespaces.Add(usingNamespace);
-            }
+            scope?.namespaces.Add(usingNamespace);
         }
 
         public LocalBuilder DeclareLocal(Type localType)
@@ -419,29 +355,23 @@ namespace IKVM.Reflection.Emit
 
         public LocalBuilder DeclareLocal(Type localType, bool pinned)
         {
-            LocalBuilder local = new LocalBuilder(localType, localsCount++, pinned);
+            var local = new LocalBuilder(localType, localsCount++, pinned);
             locals.AddArgument(localType, pinned);
-            if (scope != null)
-            {
-                scope.locals.Add(local);
-            }
+            scope?.locals.Add(local);
             return local;
         }
 
         public LocalBuilder __DeclareLocal(Type localType, bool pinned, CustomModifiers customModifiers)
         {
-            LocalBuilder local = new LocalBuilder(localType, localsCount++, pinned, customModifiers);
+            var local = new LocalBuilder(localType, localsCount++, pinned, customModifiers);
             locals.__AddArgument(localType, pinned, customModifiers);
-            if (scope != null)
-            {
-                scope.locals.Add(local);
-            }
+            scope?.locals.Add(local);
             return local;
         }
 
         public Label DefineLabel()
         {
-            Label label = new Label(labels.Count);
+            var label = new Label(labels.Count);
             labels.Add(-1);
             labelStackHeight.Add(-1);
             return label;
@@ -455,7 +385,7 @@ namespace IKVM.Reflection.Emit
             if (opc.Value < 0)
                 code.Write((byte)(opc.Value >> 8));
 
-            code.Write((byte)opc.Value);
+            code.Write((byte)opc.Value);    
             switch (opc.FlowControl)
             {
                 case FlowControl.Branch:
@@ -470,13 +400,11 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        private void UpdateStack(int stackdiff)
+        void UpdateStack(int stackdiff)
         {
             if (stackHeight == -1)
-            {
-                // we're about to emit code that is either unreachable or reachable only via a backward branch
-                stackHeight = 0;
-            }
+                stackHeight = 0; // we're about to emit code that is either unreachable or reachable only via a backward branch
+
             Debug.Assert(stackHeight >= 0 && stackHeight <= ushort.MaxValue);
             stackHeight += stackdiff;
             Debug.Assert(stackHeight >= 0 && stackHeight <= ushort.MaxValue);
@@ -555,39 +483,34 @@ namespace IKVM.Reflection.Emit
             {
                 Debug.Assert(labelStackHeight[label.Index] == -1 || labelStackHeight[label.Index] == flowStackHeight || (flowStackHeight == -1 && labelStackHeight[label.Index] == 0));
                 labelStackHeight[label.Index] = flowStackHeight;
-                LabelFixup fix = new LabelFixup();
+                var fix = new LabelFixup();
                 fix.label = label.Index;
                 fix.offset = code.Position;
                 labelFixups.Add(fix);
                 if (opc.OperandType == OperandType.ShortInlineBrTarget)
-                {
                     code.Write((byte)1);
-                }
                 else
-                {
                     code.Write(4);
-                }
             }
         }
 
-        private void WriteByteBranchOffset(int offset)
+        void WriteByteBranchOffset(int offset)
         {
             if (offset < -128 || offset > 127)
-            {
                 throw new NotSupportedException("Branch offset of " + offset + " does not fit in one-byte branch target at position " + code.Position);
-            }
+
             code.Write((byte)offset);
         }
 
         public void Emit(OpCode opc, Label[] labels)
         {
             Emit(opc);
-            LabelFixup fix = new LabelFixup();
+            var fix = new LabelFixup();
             fix.label = -1;
             fix.offset = code.Position;
             labelFixups.Add(fix);
             code.Write(labels.Length);
-            foreach (Label label in labels)
+            foreach (var label in labels)
             {
                 code.Write(label.Index);
                 if (this.labels[label.Index] != -1)
@@ -675,16 +598,15 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        private void WriteToken(int token)
+        void WriteToken(int token)
         {
             if (ModuleBuilder.IsPseudoToken(token))
-            {
                 tokenFixups.Add(code.Position);
-            }
+
             code.Write(token);
         }
 
-        private void UpdateStack(OpCode opc, bool hasthis, Type returnType, int parameterCount)
+        void UpdateStack(OpCode opc, bool hasthis, Type returnType, int parameterCount)
         {
             if (opc == OpCodes.Jmp)
             {
@@ -743,13 +665,9 @@ namespace IKVM.Reflection.Emit
         {
             Emit(opc);
             if (opc == OpCodes.Ldtoken)
-            {
                 code.Write(moduleBuilder.GetTypeToken(type).Token);
-            }
             else
-            {
                 code.Write(moduleBuilder.GetTypeTokenForMemberRef(type));
-            }
         }
 
         public void Emit(OpCode opcode, SignatureHelper signature)
@@ -790,14 +708,14 @@ namespace IKVM.Reflection.Emit
 
         public void EmitCalli(OpCode opc, CallingConvention callingConvention, Type returnType, Type[] parameterTypes)
         {
-            SignatureHelper sig = SignatureHelper.GetMethodSigHelper(moduleBuilder, callingConvention, returnType);
+            var sig = SignatureHelper.GetMethodSigHelper(moduleBuilder, callingConvention, returnType);
             sig.AddArguments(parameterTypes, null, null);
             Emit(opc, sig);
         }
 
         public void EmitCalli(OpCode opc, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes)
         {
-            SignatureHelper sig = SignatureHelper.GetMethodSigHelper(moduleBuilder, callingConvention, returnType);
+            var sig = SignatureHelper.GetMethodSigHelper(moduleBuilder, callingConvention, returnType);
             sig.AddArguments(parameterTypes, null, null);
             if (optionalParameterTypes != null && optionalParameterTypes.Length != 0)
             {
@@ -819,21 +737,21 @@ namespace IKVM.Reflection.Emit
                 CallingConventions callingConvention = sig.CallingConvention;
                 UpdateStack(opc, (callingConvention & CallingConventions.HasThis | CallingConventions.ExplicitThis) == CallingConventions.HasThis, sig.ReturnType, sig.ParameterCount);
             }
-            ByteBuffer bb = new ByteBuffer(16);
+            var bb = new ByteBuffer(16);
             Signature.WriteStandAloneMethodSig(moduleBuilder, bb, sig);
-            code.Write(0x11000000 | moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.Blobs.Add(bb)));
+            code.Write(MetadataTokens.GetToken(MetadataTokens.StandaloneSignatureHandle(moduleBuilder.StandAloneSigTable.FindOrAddRecord(moduleBuilder.GetOrAddBlob(bb.ToArray())))));
         }
 
         public void EmitWriteLine(string text)
         {
-            Universe u = moduleBuilder.universe;
+            var u = moduleBuilder.universe;
             Emit(OpCodes.Ldstr, text);
             Emit(OpCodes.Call, u.System_Console.GetMethod("WriteLine", new Type[] { u.System_String }));
         }
 
         public void EmitWriteLine(FieldInfo field)
         {
-            Universe u = moduleBuilder.universe;
+            var u = moduleBuilder.universe;
             Emit(OpCodes.Call, u.System_Console.GetMethod("get_Out"));
             if (field.IsStatic)
             {
@@ -849,7 +767,7 @@ namespace IKVM.Reflection.Emit
 
         public void EmitWriteLine(LocalBuilder local)
         {
-            Universe u = moduleBuilder.universe;
+            var u = moduleBuilder.universe;
             Emit(OpCodes.Call, u.System_Console.GetMethod("get_Out"));
             Emit(OpCodes.Ldloc, local);
             Emit(OpCodes.Callvirt, u.System_IO_TextWriter.GetMethod("WriteLine", new Type[] { local.LocalType }));
@@ -889,7 +807,7 @@ namespace IKVM.Reflection.Emit
 
         public void MarkSequencePoint(ISymbolDocumentWriter document, int startLine, int startColumn, int endLine, int endColumn)
         {
-            SequencePoint sp = new SequencePoint();
+            var sp = new SequencePoint();
             sp.document = document;
             sp.offset = code.Position;
             sp.startLine = startLine;
@@ -917,7 +835,7 @@ namespace IKVM.Reflection.Emit
 
             ResolveBranches();
 
-            ByteBuffer bb = moduleBuilder.methodBodies;
+            var bb = moduleBuilder.methodBodies;
 
             int localVarSigTok = 0;
 
@@ -942,7 +860,7 @@ namespace IKVM.Reflection.Emit
             {
                 if (sequencePoints.Count != 0)
                 {
-                    ISymbolDocumentWriter document = sequencePoints[0].document;
+                    var document = sequencePoints[0].document;
                     int[] offsets = new int[sequencePoints.Count];
                     int[] lines = new int[sequencePoints.Count];
                     int[] columns = new int[sequencePoints.Count];
@@ -972,9 +890,9 @@ namespace IKVM.Reflection.Emit
             return rva;
         }
 
-        private void ResolveBranches()
+        void ResolveBranches()
         {
-            foreach (LabelFixup fixup in labelFixups)
+            foreach (var fixup in labelFixups)
             {
                 // is it a switch?
                 if (fixup.label == -1)
@@ -1012,7 +930,7 @@ namespace IKVM.Reflection.Emit
             bb.Write((byte)(CorILMethod_TinyFormat | (length << 2)));
         }
 
-        private int WriteTinyHeaderAndCode(ByteBuffer bb)
+        int WriteTinyHeaderAndCode(ByteBuffer bb)
         {
             int rva = bb.Position;
             WriteTinyHeader(bb, code.Length);
@@ -1044,7 +962,7 @@ namespace IKVM.Reflection.Emit
             bb.Write(localVarSigTok);
         }
 
-        private int WriteFatHeaderAndCode(ByteBuffer bb, int localVarSigTok, bool initLocals)
+        int WriteFatHeaderAndCode(ByteBuffer bb, int localVarSigTok, bool initLocals)
         {
             // fat headers require 4-byte alignment
             bb.Align(4);
@@ -1130,7 +1048,7 @@ namespace IKVM.Reflection.Emit
 #if NETFRAMEWORK
             moduleBuilder.symbolWriter.OpenScope(scope.startOffset);
 
-            foreach (LocalBuilder local in scope.locals)
+            foreach (var local in scope.locals)
             {
                 if (local.name != null)
                 {
@@ -1147,14 +1065,10 @@ namespace IKVM.Reflection.Emit
             }
 
             foreach (string ns in scope.namespaces)
-            {
                 moduleBuilder.symbolWriter.UsingNamespace(ns);
-            }
 
-            foreach (Scope child in scope.children)
-            {
+            foreach (var child in scope.children)
                 WriteScope(child, localVarSigTok);
-            }
 
             moduleBuilder.symbolWriter.CloseScope(scope.endOffset);
 #else

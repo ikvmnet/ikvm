@@ -21,61 +21,66 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace IKVM.Reflection
 {
-	public struct CustomAttributeNamedArgument
-	{
-		private readonly MemberInfo member;
-		private readonly CustomAttributeTypedArgument value;
 
-		internal CustomAttributeNamedArgument(MemberInfo member, CustomAttributeTypedArgument value)
-		{
-			this.member = member;
-			this.value = value;
-		}
+    public readonly struct CustomAttributeNamedArgument
+    {
 
-		public override bool Equals(object obj)
-		{
-			return this == obj as CustomAttributeNamedArgument?;
-		}
+        readonly MemberInfo member;
+        readonly CustomAttributeTypedArgument value;
 
-		public override int GetHashCode()
-		{
-			return member.GetHashCode() ^ 53 * value.GetHashCode();
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="member"></param>
+        /// <param name="value"></param>
+        internal CustomAttributeNamedArgument(MemberInfo member, CustomAttributeTypedArgument value)
+        {
+            this.member = member;
+            this.value = value;
+        }
 
-		public MemberInfo MemberInfo
-		{
-			get { return member; }
-		}
+        public override bool Equals(object obj)
+        {
+            return this == obj as CustomAttributeNamedArgument?;
+        }
 
-		public CustomAttributeTypedArgument TypedValue
-		{
-			get { return value; }
-		}
+        public override int GetHashCode()
+        {
+            return member.GetHashCode() ^ 53 * value.GetHashCode();
+        }
 
-		public bool IsField
-		{
-			get { return member.MemberType == MemberTypes.Field; }
-		}
+        public MemberInfo MemberInfo
+        {
+            get { return member; }
+        }
 
-		public string MemberName
-		{
-			get { return member.Name; }
-		}
+        public CustomAttributeTypedArgument TypedValue
+        {
+            get { return value; }
+        }
 
-		public static bool operator ==(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2)
-		{
-			return arg1.member.Equals(arg2.member) && arg1.value == arg2.value;
-		}
+        public bool IsField
+        {
+            get { return member.MemberType == MemberTypes.Field; }
+        }
 
-		public static bool operator !=(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2)
-		{
-			return !(arg1 == arg2);
-		}
-	}
+        public string MemberName
+        {
+            get { return member.Name; }
+        }
+
+        public static bool operator ==(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2)
+        {
+            return arg1.member.Equals(arg2.member) && arg1.value == arg2.value;
+        }
+
+        public static bool operator !=(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2)
+        {
+            return !(arg1 == arg2);
+        }
+
+    }
+
 }

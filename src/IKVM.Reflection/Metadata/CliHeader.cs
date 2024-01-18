@@ -25,26 +25,10 @@ using System.IO;
 
 namespace IKVM.Reflection.Metadata
 {
-	struct RvaSize
+
+    sealed class CliHeader
 	{
-		internal uint VirtualAddress;
-		internal uint Size;
 
-		internal void Read(BinaryReader br)
-		{
-			VirtualAddress = br.ReadUInt32();
-			Size = br.ReadUInt32();
-		}
-
-		internal void Write(IKVM.Reflection.Writer.MetadataWriter mw)
-		{
-			mw.Write(VirtualAddress);
-			mw.Write(Size);
-		}
-	}
-
-	sealed class CliHeader
-	{
 		internal const uint COMIMAGE_FLAGS_ILONLY = 0x00000001;
 		internal const uint COMIMAGE_FLAGS_32BITREQUIRED = 0x00000002;
 		internal const uint COMIMAGE_FLAGS_STRONGNAMESIGNED = 0x00000008;
@@ -80,20 +64,6 @@ namespace IKVM.Reflection.Metadata
 			ManagedNativeHeader.Read(br);
 		}
 
-		internal void Write(IKVM.Reflection.Writer.MetadataWriter mw)
-		{
-			mw.Write(Cb);
-			mw.Write(MajorRuntimeVersion);
-			mw.Write(MinorRuntimeVersion);
-			MetaData.Write(mw);
-			mw.Write(Flags);
-			mw.Write(EntryPointToken);
-			Resources.Write(mw);
-			StrongNameSignature.Write(mw);
-			CodeManagerTable.Write(mw);
-			VTableFixups.Write(mw);
-			ExportAddressTableJumps.Write(mw);
-			ManagedNativeHeader.Write(mw);
-		}
 	}
+
 }

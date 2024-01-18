@@ -23,282 +23,169 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace IKVM.Reflection
 {
-	public abstract class FieldInfo : MemberInfo
-	{
-		// prevent external subclasses
-		internal FieldInfo()
-		{
-		}
 
-		public sealed override MemberTypes MemberType
-		{
-			get { return MemberTypes.Field; }
-		}
+    public abstract class FieldInfo : MemberInfo
+    {
 
-		public abstract FieldAttributes Attributes { get; }
-		public abstract void __GetDataFromRVA(byte[] data, int offset, int length);
-		public abstract int __FieldRVA { get; }
-		public abstract Object GetRawConstantValue();
-		internal abstract FieldSignature FieldSignature { get; }
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        internal FieldInfo()
+        {
 
-		public Type FieldType
-		{
-			get { return this.FieldSignature.FieldType; }
-		}
+        }
 
-		public CustomModifiers __GetCustomModifiers()
-		{
-			return this.FieldSignature.GetCustomModifiers();
-		}
+        public sealed override MemberTypes MemberType
+        {
+            get { return MemberTypes.Field; }
+        }
 
-		public Type[] GetOptionalCustomModifiers()
-		{
-			return __GetCustomModifiers().GetOptional();
-		}
+        public abstract FieldAttributes Attributes { get; }
 
-		public Type[] GetRequiredCustomModifiers()
-		{
-			return __GetCustomModifiers().GetRequired();
-		}
+        public abstract void __GetDataFromRVA(byte[] data, int offset, int length);
 
-		public bool IsStatic
-		{
-			get { return (Attributes & FieldAttributes.Static) != 0; }
-		}
+        public abstract int __FieldRVA { get; }
 
-		public bool IsLiteral
-		{
-			get { return (Attributes & FieldAttributes.Literal) != 0; }
-		}
+        public abstract object GetRawConstantValue();
 
-		public bool IsInitOnly
-		{
-			get { return (Attributes & FieldAttributes.InitOnly) != 0; }
-		}
+        internal abstract FieldSignature FieldSignature { get; }
 
-		public bool IsNotSerialized
-		{
-			get { return (Attributes & FieldAttributes.NotSerialized) != 0; }
-		}
+        public Type FieldType
+        {
+            get { return this.FieldSignature.FieldType; }
+        }
 
-		public bool IsSpecialName
-		{
-			get { return (Attributes & FieldAttributes.SpecialName) != 0; }
-		}
+        public CustomModifiers __GetCustomModifiers()
+        {
+            return this.FieldSignature.GetCustomModifiers();
+        }
 
-		public bool IsPublic
-		{
-			get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Public; }
-		}
+        public Type[] GetOptionalCustomModifiers()
+        {
+            return __GetCustomModifiers().GetOptional();
+        }
 
-		public bool IsPrivate
-		{
-			get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Private; }
-		}
+        public Type[] GetRequiredCustomModifiers()
+        {
+            return __GetCustomModifiers().GetRequired();
+        }
 
-		public bool IsFamily
-		{
-			get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Family; }
-		}
+        public bool IsStatic
+        {
+            get { return (Attributes & FieldAttributes.Static) != 0; }
+        }
 
-		public bool IsFamilyOrAssembly
-		{
-			get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.FamORAssem; }
-		}
+        public bool IsLiteral
+        {
+            get { return (Attributes & FieldAttributes.Literal) != 0; }
+        }
 
-		public bool IsAssembly
-		{
-			get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Assembly; }
-		}
+        public bool IsInitOnly
+        {
+            get { return (Attributes & FieldAttributes.InitOnly) != 0; }
+        }
 
-		public bool IsFamilyAndAssembly
-		{
-			get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.FamANDAssem; }
-		}
+        public bool IsNotSerialized
+        {
+            get { return (Attributes & FieldAttributes.NotSerialized) != 0; }
+        }
 
-		public bool IsPinvokeImpl
-		{
-			get { return (Attributes & FieldAttributes.PinvokeImpl) != 0; }
-		}
+        public bool IsSpecialName
+        {
+            get { return (Attributes & FieldAttributes.SpecialName) != 0; }
+        }
 
-		public virtual FieldInfo __GetFieldOnTypeDefinition()
-		{
-			return this;
-		}
+        public bool IsPublic
+        {
+            get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Public; }
+        }
 
-		public abstract bool __TryGetFieldOffset(out int offset);
+        public bool IsPrivate
+        {
+            get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Private; }
+        }
 
-		public bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-		{
-			return FieldMarshal.ReadFieldMarshal(this.Module, GetCurrentToken(), out fieldMarshal);
-		}
+        public bool IsFamily
+        {
+            get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Family; }
+        }
 
-		internal abstract int ImportTo(Emit.ModuleBuilder module);
+        public bool IsFamilyOrAssembly
+        {
+            get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.FamORAssem; }
+        }
 
-		internal virtual FieldInfo BindTypeParameters(Type type)
-		{
-			return new GenericFieldInstance(this.DeclaringType.BindTypeParameters(type), this);
-		}
+        public bool IsAssembly
+        {
+            get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Assembly; }
+        }
 
-		internal sealed override bool BindingFlagsMatch(BindingFlags flags)
-		{
-			return BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
-				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static, BindingFlags.Instance);
-		}
+        public bool IsFamilyAndAssembly
+        {
+            get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.FamANDAssem; }
+        }
 
-		internal sealed override bool BindingFlagsMatchInherited(BindingFlags flags)
-		{
-			return (Attributes & FieldAttributes.FieldAccessMask) > FieldAttributes.Private
-				&& BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
-				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
-		}
+        public bool IsPinvokeImpl
+        {
+            get { return (Attributes & FieldAttributes.PinvokeImpl) != 0; }
+        }
 
-		internal sealed override MemberInfo SetReflectedType(Type type)
-		{
-			return new FieldInfoWithReflectedType(type, this);
-		}
+        public virtual FieldInfo __GetFieldOnTypeDefinition()
+        {
+            return this;
+        }
 
-		internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType)
-		{
-			Module module = this.Module;
-			List<CustomAttributeData> list = new List<CustomAttributeData>();
-			if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_MarshalAsAttribute))
-			{
-				FieldMarshal spec;
-				if (__TryGetFieldMarshal(out spec))
-				{
-					list.Add(CustomAttributeData.CreateMarshalAsPseudoCustomAttribute(module, spec));
-				}
-			}
-			if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_FieldOffsetAttribute))
-			{
-				int offset;
-				if (__TryGetFieldOffset(out offset))
-				{
-					list.Add(CustomAttributeData.CreateFieldOffsetPseudoCustomAttribute(module, offset));
-				}
-			}
-			return list;
-		}
-	}
+        public abstract bool __TryGetFieldOffset(out int offset);
 
-	sealed class FieldInfoWithReflectedType : FieldInfo
-	{
-		private readonly Type reflectedType;
-		private readonly FieldInfo field;
+        public bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
+        {
+            return FieldMarshal.ReadFieldMarshal(this.Module, GetCurrentToken(), out fieldMarshal);
+        }
 
-		internal FieldInfoWithReflectedType(Type reflectedType, FieldInfo field)
-		{
-			Debug.Assert(reflectedType != field.DeclaringType);
-			this.reflectedType = reflectedType;
-			this.field = field;
-		}
+        internal abstract int ImportTo(Emit.ModuleBuilder module);
 
-		public override FieldAttributes Attributes
-		{
-			get { return field.Attributes; }
-		}
+        internal virtual FieldInfo BindTypeParameters(Type type)
+        {
+            return new GenericFieldInstance(this.DeclaringType.BindTypeParameters(type), this);
+        }
 
-		public override void __GetDataFromRVA(byte[] data, int offset, int length)
-		{
-			field.__GetDataFromRVA(data, offset, length);
-		}
+        internal sealed override bool BindingFlagsMatch(BindingFlags flags)
+        {
+            return BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
+                && BindingFlagsMatch(IsStatic, flags, BindingFlags.Static, BindingFlags.Instance);
+        }
 
-		public override int __FieldRVA
-		{
-			get { return field.__FieldRVA; }
-		}
+        internal sealed override bool BindingFlagsMatchInherited(BindingFlags flags)
+        {
+            return (Attributes & FieldAttributes.FieldAccessMask) > FieldAttributes.Private
+                && BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
+                && BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
+        }
 
-		public override bool __TryGetFieldOffset(out int offset)
-		{
-			return field.__TryGetFieldOffset(out offset);
-		}
+        internal sealed override MemberInfo SetReflectedType(Type type)
+        {
+            return new FieldInfoWithReflectedType(type, this);
+        }
 
-		public override Object GetRawConstantValue()
-		{
-			return field.GetRawConstantValue();
-		}
+        internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType)
+        {
+            var module = Module;
+            var list = new List<CustomAttributeData>();
 
-		internal override FieldSignature FieldSignature
-		{
-			get { return field.FieldSignature; }
-		}
+            if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_MarshalAsAttribute))
+                if (__TryGetFieldMarshal(out var spec))
+                    list.Add(CustomAttributeData.CreateMarshalAsPseudoCustomAttribute(module, spec));
 
-		public override FieldInfo __GetFieldOnTypeDefinition()
-		{
-			return field.__GetFieldOnTypeDefinition();
-		}
+            if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_FieldOffsetAttribute))
+                if (__TryGetFieldOffset(out var offset))
+                    list.Add(CustomAttributeData.CreateFieldOffsetPseudoCustomAttribute(module, offset));
 
-		internal override int ImportTo(Emit.ModuleBuilder module)
-		{
-			return field.ImportTo(module);
-		}
+            return list;
+        }
 
-		internal override FieldInfo BindTypeParameters(Type type)
-		{
-			return field.BindTypeParameters(type);
-		}
+    }
 
-		public override bool __IsMissing
-		{
-			get { return field.__IsMissing; }
-		}
-
-		public override Type DeclaringType
-		{
-			get { return field.DeclaringType; }
-		}
-
-		public override Type ReflectedType
-		{
-			get { return reflectedType; }
-		}
-
-		public override bool Equals(object obj)
-		{
-			FieldInfoWithReflectedType other = obj as FieldInfoWithReflectedType;
-			return other != null
-				&& other.reflectedType == reflectedType
-				&& other.field == field;
-		}
-
-		public override int GetHashCode()
-		{
-			return reflectedType.GetHashCode() ^ field.GetHashCode();
-		}
-
-		public override int MetadataToken
-		{
-			get { return field.MetadataToken; }
-		}
-
-		public override Module Module
-		{
-			get { return field.Module; }
-		}
-
-		public override string Name
-		{
-			get { return field.Name; }
-		}
-
-		public override string ToString()
-		{
-			return field.ToString();
-		}
-
-		internal override int GetCurrentToken()
-		{
-			return field.GetCurrentToken();
-		}
-
-		internal override bool IsBaked
-		{
-			get { return field.IsBaked; }
-		}
-	}
 }
