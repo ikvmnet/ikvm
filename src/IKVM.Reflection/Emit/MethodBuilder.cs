@@ -23,7 +23,8 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.SymbolStore;
+using System.Diagnostics;
+using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
@@ -37,7 +38,7 @@ namespace IKVM.Reflection.Emit
     public sealed class MethodBuilder : MethodInfo
     {
 
-        readonly TypeBuilder typeBuilder;
+        readonly TypeBuilder type;
         readonly string name;
         readonly int pseudoToken;
         StringHandle nameIndex;
@@ -48,6 +49,7 @@ namespace IKVM.Reflection.Emit
         MethodAttributes attributes;
         MethodImplAttributes implFlags;
         ILGenerator ilgen;
+        ILGenerator ilgenBaked;
         int rva = -1;
         CallingConventions callingConvention;
         List<ParameterBuilder> parameters;
@@ -65,7 +67,7 @@ namespace IKVM.Reflection.Emit
         /// <param name="callingConvention"></param>
         internal MethodBuilder(TypeBuilder typeBuilder, string name, MethodAttributes attributes, CallingConventions callingConvention)
         {
-            this.typeBuilder = typeBuilder;
+            this.type = typeBuilder;
             this.name = name;
             this.pseudoToken = typeBuilder.ModuleBuilder.AllocPseudoToken();
             this.attributes = attributes;
@@ -84,25 +86,7 @@ namespace IKVM.Reflection.Emit
             if (rva != -1)
                 throw new InvalidOperationException();
 
-            return ilgen ??= new ILGenerator(typeBuilder.ModuleBuilder, streamSize);
-        }
-
-        public void __ReleaseILGenerator()
-        {
-            if (ilgen != null)
-            {
-#if NETFRAMEWORK
-                ModuleBuilder.symbolWriter?.OpenMethod(new SymbolToken(-pseudoToken | 0x06000000), this);
-#endif
-
-                rva = ilgen.WriteBody(initLocals);
-
-#if NETFRAMEWORK
-                ModuleBuilder.symbolWriter?.CloseMethod();
-#endif
-
-                ilgen = null;
-            }
+            return ilgen ??= new ILGenerator(type.ModuleBuilder, streamSize);
         }
 
         public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
@@ -359,7 +343,7 @@ namespace IKVM.Reflection.Emit
 
         public override MethodInfo MakeGenericMethod(params Type[] typeArguments)
         {
-            return new GenericMethodInstance(typeBuilder, this, typeArguments);
+            return new GenericMethodInstance(type, this, typeArguments);
         }
 
         public override MethodInfo GetGenericMethodDefinition()
@@ -536,7 +520,7 @@ namespace IKVM.Reflection.Emit
 
         public override Type DeclaringType
         {
-            get { return typeBuilder.IsModulePseudoType ? null : typeBuilder; }
+            get { return type.IsModulePseudoType ? null : type; }
         }
 
         public override string Name
@@ -566,12 +550,12 @@ namespace IKVM.Reflection.Emit
 
         public override Module Module
         {
-            get { return typeBuilder.Module; }
+            get { return type.Module; }
         }
 
         public Module GetModule()
         {
-            return typeBuilder.Module;
+            return type.Module;
         }
 
         public MethodToken GetToken()
@@ -612,34 +596,44 @@ namespace IKVM.Reflection.Emit
 
         public void SetMethodBody(byte[] il, int maxStack, byte[] localSignature, IEnumerable<ExceptionHandler> exceptionHandlers, IEnumerable<int> tokenFixups)
         {
-            var bb = ModuleBuilder.methodBodies;
+            var bdy = new BlobBuilder();
+            var enc = new MethodBodyStreamEncoder(bdy);
 
-            if (localSignature == null && exceptionHandlers == null && maxStack <= 8 && il.Length < 64)
-            {
-                rva = bb.Position;
-                ILGenerator.WriteTinyHeader(bb, il.Length);
-            }
-            else
-            {
-                // fat headers require 4-byte alignment
-                bb.Align(4);
-                rva = bb.Position;
-                ILGenerator.WriteFatHeader(bb, initLocals, exceptionHandlers != null, (ushort)maxStack, il.Length, localSignature == null ? 0 : ModuleBuilder.GetSignatureToken(localSignature, localSignature.Length).Token);
-            }
+            // calculate whether any large exception regions exist
+            var exceptionHandlersList = exceptionHandlers?.ToArray() ?? Array.Empty<ExceptionHandler>();
+            var hasSmallExceptions = true;
+            foreach (var exceptionHandler in exceptionHandlersList)
+                if (exceptionHandler.TryOffset > 65535 || exceptionHandler.TryLength > 255 || exceptionHandler.HandlerOffset > 65535 || exceptionHandler.HandlerLength > 255)
+                    hasSmallExceptions = false;
 
+            // allocate new method body
+            var body = enc.AddMethodBody(
+                il.Length,
+                maxStack,
+                exceptionHandlersList.Length,
+                hasSmallExceptions,
+                (StandaloneSignatureHandle)MetadataTokens.EntityHandle(localSignature == null ? 0 : ModuleBuilder.GetSignatureToken(localSignature, localSignature.Length).Token),
+                MethodBodyAttributes.InitLocals,
+                false);
+
+            // copy IL directly into body
+            var bodyBytes = body.Instructions.GetBytes();
+            il.CopyTo(bodyBytes.Array, bodyBytes.Offset);
+
+            // apply exception handlers
+            foreach (var handler in exceptionHandlersList)
+                body.ExceptionRegions.Add((ExceptionRegionKind)handler.Kind, handler.TryOffset, handler.TryLength, handler.HandlerOffset, handler.HandlerLength, MetadataTokens.EntityHandle(handler.ExceptionTypeToken), handler.FilterOffset);
+
+            // ensure our output is aligned
+            ModuleBuilder.methodBodies.Align(4);
+            rva = ModuleBuilder.methodBodies.Position;
+
+            // add fixups for offsets of created method body
             if (tokenFixups != null)
-                ILGenerator.AddTokenFixups(bb.Position, ModuleBuilder.tokenFixupOffsets, tokenFixups);
+                ILGenerator.AddTokenFixups(rva, ModuleBuilder.tokenFixupOffsets, tokenFixups);
 
-            bb.Write(il);
-
-            if (exceptionHandlers != null)
-            {
-                var exceptions = new List<ILGenerator.ExceptionBlock>();
-                foreach (var block in exceptionHandlers)
-                    exceptions.Add(new ILGenerator.ExceptionBlock(block));
-
-                ILGenerator.WriteExceptionHandlers(bb, exceptions);
-            }
+            // dump blob builder contents into module method body
+            ModuleBuilder.methodBodies.Write(bdy);
         }
 
         internal void Bake()
@@ -647,7 +641,13 @@ namespace IKVM.Reflection.Emit
             nameIndex = ModuleBuilder.GetOrAddString(name);
             signature = ModuleBuilder.GetSignatureBlobIndex(MethodSignature);
 
-            __ReleaseILGenerator();
+            // write method body to module
+            if (ilgen != null)
+            {
+                rva = ilgen.WriteBody(initLocals);
+                ilgenBaked = ilgen;
+                ilgen = null;
+            }
 
             if (declarativeSecurity != null)
                 ModuleBuilder.AddDeclarativeSecurity(pseudoToken, declarativeSecurity);
@@ -655,18 +655,40 @@ namespace IKVM.Reflection.Emit
 
         internal ModuleBuilder ModuleBuilder
         {
-            get { return typeBuilder.ModuleBuilder; }
+            get { return type.ModuleBuilder; }
         }
 
-        internal void WriteMethodDefRecord(MetadataBuilder metadata, ref int paramList)
+        internal void WriteMetadata(MetadataBuilder metadata, ref int paramList)
         {
-            metadata.AddMethodDefinition(
+            if (ilgen != null)
+                throw new InvalidOperationException();
+
+            // handle we expect to be allocated
+            var t = (MethodDefinitionHandle)MetadataTokens.EntityHandle(ModuleBuilder.ResolvePseudoToken(pseudoToken));
+
+            // write metadata, allocating real handle
+            var h = metadata.AddMethodDefinition(
                 (System.Reflection.MethodAttributes)attributes,
                 (System.Reflection.MethodImplAttributes)implFlags,
                 nameIndex,
                 signature,
                 rva,
                 MetadataTokens.ParameterHandle(paramList));
+            Debug.Assert(h == t);
+
+            // ilgen code was already written, but now we can fill in the debug tables
+            var sequencePointsHandle = default(BlobHandle);
+            if (ilgenBaked != null)
+            {
+                ilgenBaked.WriteDebugInformation(h, out sequencePointsHandle);
+                ilgenBaked = null;
+            }
+
+            // add required method debug information record
+            var rec = new MethodDebugInformationTable.Record();
+            rec.SequencePoints = sequencePointsHandle;
+            var debugHandle = MetadataTokens.MethodDebugInformationHandle(type.ModuleBuilder.MethodDebugInformationTable.AddRecord(rec));
+            Debug.Assert(MetadataTokens.GetRowNumber(debugHandle) == MetadataTokens.GetRowNumber(h));
 
             if (parameters != null)
                 paramList += parameters.Count;
@@ -676,12 +698,12 @@ namespace IKVM.Reflection.Emit
         {
             if (parameters != null)
                 foreach (var pb in parameters)
-                    pb.WriteParamRecord(metadata);
+                    pb.WriteMetadata(metadata);
         }
 
         internal void FixupToken(int token, ref int parameterToken)
         {
-            typeBuilder.ModuleBuilder.RegisterTokenFixup(pseudoToken, token);
+            type.ModuleBuilder.RegisterTokenFixup(pseudoToken, token);
             if (parameters != null)
                 foreach (var pb in parameters)
                     pb.FixupToken(parameterToken++);
@@ -691,30 +713,30 @@ namespace IKVM.Reflection.Emit
         {
             get
             {
-                methodSignature ??= MethodSignature.MakeFromBuilder(returnType ?? typeBuilder.Universe.System_Void, parameterTypes ?? Type.EmptyTypes, customModifiers, callingConvention, gtpb == null ? 0 : gtpb.Length);
+                methodSignature ??= MethodSignature.MakeFromBuilder(returnType ?? type.Universe.System_Void, parameterTypes ?? Type.EmptyTypes, customModifiers, callingConvention, gtpb == null ? 0 : gtpb.Length);
                 return methodSignature;
             }
         }
 
         internal override int ImportTo(ModuleBuilder other)
         {
-            return other.ImportMethodOrField(typeBuilder, name, this.MethodSignature);
+            return other.ImportMethodOrField(type, name, this.MethodSignature);
         }
 
         internal void CheckBaked()
         {
-            typeBuilder.CheckBaked();
+            type.CheckBaked();
         }
 
         internal override int GetCurrentToken()
         {
-            if (typeBuilder.ModuleBuilder.IsSaved)
-                return typeBuilder.ModuleBuilder.ResolvePseudoToken(pseudoToken);
+            if (type.ModuleBuilder.IsSaved)
+                return type.ModuleBuilder.ResolvePseudoToken(pseudoToken);
             else
                 return pseudoToken;
         }
 
-        internal override bool IsBaked => typeBuilder.IsBaked;
+        internal override bool IsBaked => type.IsBaked;
 
     }
 

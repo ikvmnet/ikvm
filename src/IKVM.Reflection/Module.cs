@@ -74,6 +74,12 @@ namespace IKVM.Reflection
         internal readonly GenericParamTable GenericParamTable = new GenericParamTable();
         internal readonly MethodSpecTable MethodSpecTable = new MethodSpecTable();
         internal readonly GenericParamConstraintTable GenericParamConstraint = new GenericParamConstraintTable();
+        internal readonly DocumentTable DocumentTable = new DocumentTable();
+        internal readonly MethodDebugInformationTable MethodDebugInformationTable = new MethodDebugInformationTable();
+        internal readonly LocalScopeTable LocalScopeTable = new LocalScopeTable();
+        internal readonly LocalVariableTable LocalVariableTable = new LocalVariableTable();
+        internal readonly LocalConstantTable LocalConstantTable = new LocalConstantTable();
+        internal readonly ImportScopeTable ImportScopeTable = new ImportScopeTable();
 
         /// <summary>
         /// Initializes a new instance.
@@ -126,6 +132,12 @@ namespace IKVM.Reflection
             tables[GenericParamTable.Index] = GenericParamTable;
             tables[MethodSpecTable.Index] = MethodSpecTable;
             tables[GenericParamConstraintTable.Index] = GenericParamConstraint;
+            tables[DocumentTable.Index] = DocumentTable;
+            tables[MethodDebugInformationTable.Index] = MethodDebugInformationTable;
+            tables[LocalScopeTable.Index] = LocalScopeTable;
+            tables[LocalVariableTable.Index] = LocalVariableTable;
+            tables[LocalConstantTable.Index] = LocalConstantTable;
+            tables[ImportScopeTable.Index] = ImportScopeTable;
             return tables;
         }
 

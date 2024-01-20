@@ -131,7 +131,7 @@ namespace IKVM.Reflection.Emit
             moduleBuilder.AddConstant(PseudoToken, defaultValue);
         }
 
-        internal void WriteParamRecord(MetadataBuilder metadata)
+        internal void WriteMetadata(MetadataBuilder metadata)
         {
             metadata.AddParameter(
                 (System.Reflection.ParameterAttributes)flags,

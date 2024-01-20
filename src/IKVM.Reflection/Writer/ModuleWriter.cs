@@ -142,14 +142,6 @@ namespace IKVM.Reflection.Writer
             // for compatibility with Reflection.Emit, if there aren't any user strings, we add one
             module.Metadata.GetOrAddUserString("");
 
-#if NETFRAMEWORK
-            if (module.symbolWriter != null)
-            {
-                module.WriteSymbolTokenMap();
-                module.symbolWriter.Close();
-            }
-#endif
-
             // write the module content
             WriteModuleImpl(module);
 

@@ -151,7 +151,7 @@ namespace IKVM.Tools.Importer
 
             // define a dynamic assembly and module
             assemblyBuilder = Context.StaticCompiler.Universe.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
-            var moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, this.EmitDebugInfo);
+            var moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, EmitDebugInfo);
 
             // if configured to emit stack trace info set source file
             if (EmitStackTraceInfo)

@@ -103,11 +103,6 @@ namespace IKVM.Reflection.Emit
             return methodBuilder.GetILGenerator(streamSize);
         }
 
-        public void __ReleaseILGenerator()
-        {
-            methodBuilder.__ReleaseILGenerator();
-        }
-
         public Type ReturnType
         {
             get { return methodBuilder.ReturnType; }

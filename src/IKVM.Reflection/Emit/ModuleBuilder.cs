@@ -217,9 +217,6 @@ namespace IKVM.Reflection.Emit
         DllCharacteristics dllCharacteristics = DllCharacteristics.DynamicBase | DllCharacteristics.NoSEH | DllCharacteristics.NXCompat | DllCharacteristics.TerminalServerAware;
         internal readonly string moduleName;
         internal readonly string fileName;
-#if NETFRAMEWORK
-        internal readonly ISymbolWriterImpl symbolWriter;
-#endif
         readonly TypeBuilder moduleType;
         readonly List<TypeBuilder> types = new List<TypeBuilder>();
         readonly Dictionary<Type, int> typeTokens = new Dictionary<Type, int>();
@@ -234,6 +231,7 @@ namespace IKVM.Reflection.Emit
         List<AssemblyName> referencedAssemblyNames;
         int nextPseudoToken = -1;
         readonly List<int> resolvedTokens = new List<int>();
+        List<PortablePdbSymbolDocumentWriter> documents;
 
         internal readonly Dictionary<StringHandle, string> strings = new();
         internal readonly Dictionary<BlobHandle, BlobBuilder> blobs = new();
@@ -262,17 +260,6 @@ namespace IKVM.Reflection.Emit
             this.metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             this.moduleName = moduleName;
             this.fileName = fileName;
-
-#if NETFRAMEWORK
-
-            if (emitSymbolInfo)
-            {
-                symbolWriter = SymbolSupport.CreateSymbolWriterFor(this);
-                if (universe.Deterministic && !symbolWriter.IsDeterministic)
-                    throw new NotSupportedException();
-            }
-
-#endif
 
             if (!universe.Deterministic)
             {
@@ -347,6 +334,16 @@ namespace IKVM.Reflection.Emit
         }
 
         /// <summary>
+        /// Gets a new blob handle from the metadata.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        internal BlobHandle GetOrAddBlobUTF8(string value)
+        {
+            return metadata.GetOrAddBlobUTF8(value);
+        }
+
+        /// <summary>
         /// Gets the blob value of the specified handle.
         /// </summary>
         /// <param name="handle"></param>
@@ -371,6 +368,18 @@ namespace IKVM.Reflection.Emit
             // tables in the right order
             foreach (var type in types)
                 type.PopulatePropertyAndEventTables();
+        }
+
+        internal void PopulateDocumentTables()
+        {
+            if (documents != null)
+                foreach (var document in documents)
+                    PopulateDocumentTable(document);
+        }
+
+        internal void PopulateDocumentTable(PortablePdbSymbolDocumentWriter writer)
+        {
+            writer.WriteMetadata(this);
         }
 
         internal void WriteTypeDefTable()
@@ -728,11 +737,10 @@ namespace IKVM.Reflection.Emit
 
         public ISymbolDocumentWriter DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
         {
-#if NETFRAMEWORK
-            return symbolWriter.DefineDocument(url, language, languageVendor, documentType);
-#else
-            throw new NotSupportedException();
-#endif
+            var document = new PortablePdbSymbolDocumentWriter(url, language, languageVendor, documentType);
+            documents ??= new();
+            documents.Add(document);
+            return document;
         }
 
         public int __GetAssemblyToken(Assembly assembly)
@@ -1007,23 +1015,6 @@ namespace IKVM.Reflection.Emit
             return MetadataTokens.GetToken(MetadataTokens.AssemblyReferenceHandle(alwaysAdd ? AssemblyRefTable.AddRecord(rec) : AssemblyRefTable.FindOrAddRecord(rec)));
         }
 
-        internal void WriteSymbolTokenMap()
-        {
-#if NETFRAMEWORK
-            for (int i = 0; i < resolvedTokens.Count; i++)
-            {
-                int newToken = resolvedTokens[i];
-                // The symbol API doesn't support remapping arbitrary integers, the types have to be the same,
-                // so we copy the type from the newToken, because our pseudo tokens don't have a type.
-                // (see MethodToken.SymbolToken)
-                int oldToken = (i + 1) | (newToken & ~0xFFFFFF);
-                SymbolSupport.RemapToken(symbolWriter, oldToken, newToken);
-            }
-#else
-            throw new NotSupportedException();
-#endif
-        }
-
         internal void RegisterTokenFixup(int pseudoToken, int realToken)
         {
             int index = -(pseudoToken + 1);
@@ -1040,8 +1031,7 @@ namespace IKVM.Reflection.Emit
 
         internal int ResolvePseudoToken(int pseudoToken)
         {
-            int index = -(pseudoToken + 1);
-            return resolvedTokens[index];
+            return IsPseudoToken(pseudoToken) ? resolvedTokens[-(pseudoToken + 1)] : pseudoToken;
         }
 
         internal void ApplyUnmanagedExports(ImageFileMachine imageFileMachine)
@@ -1391,15 +1381,6 @@ namespace IKVM.Reflection.Emit
             get { return moduleName; }
         }
 
-        public ISymbolWriter GetSymWriter()
-        {
-#if NETFRAMEWORK
-            return symbolWriter;
-#else
-            return null;
-#endif
-        }
-
         /// <summary>
         /// Defines an unmanaged embedded resource given an opaque binary large object (BLOB) of bytes.
         /// </summary>
@@ -1412,7 +1393,7 @@ namespace IKVM.Reflection.Emit
         /// <summary>
         /// Defines an unmanaged resource given the name of Win32 resource file.
         /// </summary>
-        /// <param name="resource"></param>
+        /// <param name="resourceFileName"></param>
         public void DefineUnmanagedResource(string resourceFileName)
         {
             nativeResources = new ModuleResourceSectionBuilder();
@@ -1422,24 +1403,6 @@ namespace IKVM.Reflection.Emit
         public bool IsTransient()
         {
             return false;
-        }
-
-        public void SetUserEntryPoint(MethodInfo entryPoint)
-        {
-            int token = entryPoint.MetadataToken;
-            if (token < 0)
-            {
-                token = -token | 0x06000000;
-            }
-
-#if NETFRAMEWORK
-
-            if (symbolWriter != null)
-            {
-                symbolWriter.SetUserEntryPoint(new SymbolToken(token));
-            }
-
-#endif
         }
 
         public StringToken GetStringConstant(string str)
@@ -1556,6 +1519,7 @@ namespace IKVM.Reflection.Emit
         {
             SetIsSaved();
             PopulatePropertyAndEventTables();
+            PopulateDocumentTables();
 
             var attributes = asm.GetCustomAttributesData(null);
             if (attributes.Count > 0)

@@ -688,7 +688,7 @@ namespace IKVM.Reflection.Emit
         internal void WriteMethodDefRecords(MetadataBuilder metadata, ref int paramList)
         {
             foreach (var mb in methods)
-                mb.WriteMethodDefRecord(metadata, ref paramList);
+                mb.WriteMetadata(metadata, ref paramList);
         }
 
         internal void ResolveMethodAndFieldTokens(ref int methodToken, ref int fieldToken, ref int parameterToken)
