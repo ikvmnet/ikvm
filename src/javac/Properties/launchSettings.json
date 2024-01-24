@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "javac": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "IKVM_HOME": "asd"
+      }
+    }
+  }
+}

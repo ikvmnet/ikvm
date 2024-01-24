@@ -721,7 +721,7 @@ namespace IKVM.Reflection.Emit
                                 break;
 
                             case __ExceptionInfo.Finally:
-                                m_exceptions[counter++] = new ExceptionHandler(start, end, excp[i].GetFinallyEndAddress(), catchAddrs[j], catchEndAddrs[j], type[j], tkExceptionClass);
+                                m_exceptions[counter++] = new ExceptionHandler(start, excp[i].GetFinallyEndAddress(), filterAddrs[j], catchAddrs[j], catchEndAddrs[j], type[j], tkExceptionClass);
                                 break;
                         }
                     }

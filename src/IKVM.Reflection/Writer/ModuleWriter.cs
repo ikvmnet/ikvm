@@ -209,7 +209,7 @@ namespace IKVM.Reflection.Writer
 
                 // a checksum hash was produced, so we add it to the debug information
                 if (pdbContentHash != null)
-                    debugBuilder.AddPdbChecksumEntry(HashAlgorithmName.SHA1.Name, pdbContentHash);
+                    debugBuilder.AddPdbChecksumEntry(module.Universe.PdbChecksumAlgorithm.Name, pdbContentHash);
 
                 // file name specified means we are generating an external PDB
                 if (pdbStream != null)

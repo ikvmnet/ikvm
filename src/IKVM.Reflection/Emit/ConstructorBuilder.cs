@@ -124,6 +124,14 @@ namespace IKVM.Reflection.Emit
             set { methodBuilder.InitLocals = value; }
         }
 
+        /// <summary>
+        /// Creates the body of the constructor by using a specified byte array of Microsoft intermediate language (MSIL) instructions.
+        /// </summary>
+        /// <param name="il"></param>
+        /// <param name="maxStack"></param>
+        /// <param name="localSignature"></param>
+        /// <param name="exceptionHandlers"></param>
+        /// <param name="tokenFixups"></param>
         public void SetMethodBody(byte[] il, int maxStack, byte[] localSignature, IEnumerable<ExceptionHandler> exceptionHandlers, IEnumerable<int> tokenFixups)
         {
             methodBuilder.SetMethodBody(il, maxStack, localSignature, exceptionHandlers, tokenFixups);
