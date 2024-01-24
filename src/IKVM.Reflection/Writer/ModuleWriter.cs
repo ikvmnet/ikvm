@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection.Emit;
@@ -138,8 +139,11 @@ namespace IKVM.Reflection.Writer
         /// <param name="pdbStream"></param>
         static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint, string peFileName, Stream peStream, string pdbFileName, Stream pdbStream)
         {
-            // for compatibility with Reflection.Emit, if there aren't any user strings, we add one
+            // add some empty entries at the top just to ensure they are present
+            module.Metadata.GetOrAddString("");
             module.Metadata.GetOrAddUserString("");
+            module.Metadata.GetOrAddBlob(Array.Empty<byte>());
+            module.Metadata.GetOrAddGuid(Guid.Empty);
 
             // write the module content
             WriteModuleImpl(module);
@@ -247,7 +251,12 @@ namespace IKVM.Reflection.Writer
 
             // serialize the image
             var pe = new BlobBuilder();
-            peBuilder.Serialize(pe);
+            var peContentId = peBuilder.Serialize(pe);
+
+            // fixup MVID after generation
+            var mvidId = new BlobWriter(module.GetModuleVersionIdFixup().Content);
+            mvidId.WriteGuid(peContentId.Guid);
+            Debug.Assert(mvidId.RemainingBytes == 0);
 
             // strong name specified, sign the blobs
             if (keyPair != null)
@@ -519,9 +528,7 @@ namespace IKVM.Reflection.Writer
         /// <returns></returns>
         static Func<IEnumerable<Blob>, BlobContentId> GetDeterministicIdProvider(IKVM.Reflection.Emit.ModuleBuilder module)
         {
-            if (module.GetModuleVersionIdOrEmpty() is Guid mvid && mvid != Guid.Empty)
-                return e => new BlobContentId(mvid, 1);
-            else if (module.Universe.Deterministic)
+            if (module.Universe.Deterministic)
                 return e => BlobContentId.FromHash(CryptographicHashProvider.ComputeHash(HashAlgorithmName.SHA256, e));
             else
                 return null;
@@ -558,7 +565,6 @@ namespace IKVM.Reflection.Writer
         /// <param name="blobs"></param>
         /// <param name="strongNameSignatureSize"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         static byte[] GetSignature(StrongNameKeyPair keyPair, IEnumerable<Blob> blobs, int strongNameSignatureSize)
         {
             // sign the hash with the keypair

@@ -211,6 +211,7 @@ namespace IKVM.Reflection.Emit
         readonly BlobBuilder resourceStream;
         readonly AssemblyBuilder asm;
         Guid mvid;
+        ReservedBlob<GuidHandle> mvidFixup;
         uint timestamp;
         ulong imageBaseAddress = 0;
         uint fileAlignment = 0;
@@ -266,7 +267,8 @@ namespace IKVM.Reflection.Emit
             }
 
             // add module
-            ModuleTable.Add(0, GetOrAddString(moduleName), metadata.GetOrAddGuid(mvid), default, default);
+            mvidFixup = metadata.ReserveGuid();
+            ModuleTable.Add(0, GetOrAddString(moduleName), mvidFixup.Handle, default, default);
 
             // <Module> must be the first record in the TypeDef table
             moduleType = new TypeBuilder(this, null, "<Module>");
@@ -1318,15 +1320,19 @@ namespace IKVM.Reflection.Emit
             return mvid;
         }
 
+        internal ReservedBlob<GuidHandle> GetModuleVersionIdFixup()
+        {
+            return mvidFixup;
+        }
+
         public override Guid ModuleVersionId
         {
             get
             {
+                // if a deterministic GUID is used, it can't be queried before the assembly has been written
                 if (mvid == Guid.Empty && Universe.Deterministic)
-                {
-                    // if a deterministic GUID is used, it can't be queried before the assembly has been written
                     throw new InvalidOperationException();
-                }
+
                 return mvid;
             }
         }

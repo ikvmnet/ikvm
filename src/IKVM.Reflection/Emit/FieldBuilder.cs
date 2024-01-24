@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Reflection.Metadata;
 
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Writer;
@@ -39,6 +40,8 @@ namespace IKVM.Reflection.Emit
         readonly FieldSignature signature;
         int offset = -1;
 
+        BlobHandle signatureBlobHandle;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -54,6 +57,12 @@ namespace IKVM.Reflection.Emit
             this.attributes = attributes;
             this.pseudoToken = type.ModuleBuilder.AllocPseudoToken();
             this.signature = FieldSignature.Create(fieldType, customModifiers);
+            this.type.ModuleBuilder.FieldTable.AddVirtualRecord();
+
+            // create signature blob
+            var buf = new ByteBuffer(5);
+            signature.Write(type.ModuleBuilder, buf);
+            signatureBlobHandle = type.ModuleBuilder.GetOrAddBlob(buf.ToArray());
         }
 
         public void SetConstant(object defaultValue)
@@ -144,6 +153,14 @@ namespace IKVM.Reflection.Emit
 
         internal void WriteFieldRecords()
         {
+            type.ModuleBuilder.Metadata.AddFieldDefinition(
+                (System.Reflection.FieldAttributes)attributes,
+                type.ModuleBuilder.GetOrAddString(name),
+                signatureBlobHandle);
+        }
+
+        internal void FixupToken(int token)
+        {
             if (offset > -1)
             {
                 var rec = new FieldLayoutTable.Record();
@@ -152,17 +169,6 @@ namespace IKVM.Reflection.Emit
                 type.ModuleBuilder.FieldLayoutTable.AddRecord(rec);
             }
 
-            var buf = new ByteBuffer(5);
-            signature.Write(type.ModuleBuilder, buf);
-
-            type.ModuleBuilder.Metadata.AddFieldDefinition(
-                (System.Reflection.FieldAttributes)attributes,
-                type.ModuleBuilder.GetOrAddString(name),
-                type.ModuleBuilder.GetOrAddBlob(buf.ToArray()));
-        }
-
-        internal void FixupToken(int token)
-        {
             type.ModuleBuilder.RegisterTokenFixup(pseudoToken, token);
         }
 
