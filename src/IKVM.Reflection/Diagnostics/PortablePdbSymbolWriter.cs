@@ -353,25 +353,13 @@ namespace IKVM.Reflection.Diagnostics
             this.module = module ?? throw new ArgumentNullException(nameof(module));
         }
 
-        /// <summary>
-        /// Initializes the symbol writer.
-        /// </summary>
-        /// <param name="emitter"></param>
-        /// <param name="filename"></param>
-        /// <param name="fFullBuild"></param>
+        /// <inheritdoc />
         public virtual void Initialize(IntPtr emitter, string filename, bool fFullBuild)
         {
             throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Defines a source document.
-        /// </summary>
-        /// <param name="url"></param>
-        /// <param name="language"></param>
-        /// <param name="languageVendor"></param>
-        /// <param name="documentType"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public virtual ISymbolDocumentWriter DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
         {
             documents ??= new();
@@ -381,20 +369,13 @@ namespace IKVM.Reflection.Diagnostics
             return doc;
         }
 
-        /// <summary>
-        /// Opens a new namespace.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <inheritdoc />
         public virtual void OpenNamespace(string name)
         {
             throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Opens a method to place symbol information into.
-        /// </summary>
-        /// <param name="method"></param>
+        /// <inheritdoc />
         public virtual void OpenMethod(SymbolToken method)
         {
             Debug.Assert(ModuleBuilder.IsPseudoToken(method.GetToken()) == false);
@@ -412,15 +393,7 @@ namespace IKVM.Reflection.Diagnostics
             currentMethod = new Method(method.GetToken(), localSignatureHandle);
         }
 
-        /// <summary>
-        /// Defines a group of sequence points within the current method.
-        /// </summary>
-        /// <param name="document"></param>
-        /// <param name="offsets"></param>
-        /// <param name="lines"></param>
-        /// <param name="columns"></param>
-        /// <param name="endLines"></param>
-        /// <param name="endColumns"></param>
+        /// <inheritdoc />
         public virtual void DefineSequencePoints(ISymbolDocumentWriter document, int[] offsets, int[] lines, int[] columns, int[] endLines, int[] endColumns)
         {
             if (currentMethod == null)
@@ -434,11 +407,7 @@ namespace IKVM.Reflection.Diagnostics
             currentMethod.sequencePoints.Add(sequencePoint);
         }
 
-        /// <summary>
-        /// Opens a new lexical scope in the current method.
-        /// </summary>
-        /// <param name="startOffset"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public virtual int OpenScope(int startOffset)
         {
             if (currentMethod == null)
@@ -464,11 +433,7 @@ namespace IKVM.Reflection.Diagnostics
             return 0;
         }
 
-        /// <summary>
-        /// Specifies that the given, fully qualified namespace name is used within the open lexical scope.
-        /// </summary>
-        /// <param name="fullName"></param>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <inheritdoc />
         public virtual void UsingNamespace(string fullName)
         {
             if (currentMethod == null)
@@ -482,19 +447,7 @@ namespace IKVM.Reflection.Diagnostics
             scope.namespaces.Add(fullName);
         }
 
-        /// <summary>
-        /// Defines a single variable in the current lexical scope.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="attributes"></param>
-        /// <param name="signature"></param>
-        /// <param name="addrKind"></param>
-        /// <param name="addr1"></param>
-        /// <param name="addr2"></param>
-        /// <param name="addr3"></param>
-        /// <param name="startOffset"></param>
-        /// <param name="endOffset"></param>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <inheritdoc />
         public virtual void DefineLocalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
         {
             if (currentMethod == null)
@@ -508,11 +461,7 @@ namespace IKVM.Reflection.Diagnostics
             scope.locals[name] = new LocalVar(attributes, signature, addrKind, addr1, addr2, addr3, startOffset, endOffset);
         }
 
-        /// <summary>
-        /// Closes the current lexical scope.
-        /// </summary>
-        /// <param name="endOffset"></param>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <inheritdoc />
         public virtual void CloseScope(int endOffset)
         {
             if (currentMethod == null)
@@ -525,10 +474,7 @@ namespace IKVM.Reflection.Diagnostics
             scope.endOffset = endOffset;
         }
 
-        /// <summary>
-        /// Closes the current method.
-        /// </summary>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <inheritdoc />
         public virtual void CloseMethod()
         {
             if (currentMethod == null)
@@ -539,18 +485,13 @@ namespace IKVM.Reflection.Diagnostics
             currentMethod = null;
         }
 
-        /// <summary>
-        /// Closes the most recent namespace.
-        /// </summary>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <inheritdoc />
         public virtual void CloseNamespace()
         {
             throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Closes <see cref="ISymbolWriter"/>.
-        /// </summary>
+        /// <inheritdoc />
         public virtual void Close()
         {
 
@@ -572,6 +513,7 @@ namespace IKVM.Reflection.Diagnostics
         /// <summary>
         /// Writes the given method.
         /// </summary>
+        /// <param name="metadata"></param>
         /// <param name="method"></param>
         /// <param name="documentCache"></param>
         void WriteMethod(MetadataBuilder metadata, Method method, Dictionary<Document, DocumentHandle> documentCache)
@@ -586,6 +528,7 @@ namespace IKVM.Reflection.Diagnostics
         /// <summary>
         /// Writes the sequence points for the method.
         /// </summary>
+        /// <param name="metadata"></param>
         /// <param name="method"></param>
         /// <param name="documentCache"></param>
         /// <param name="sequencePointHandle"></param>
@@ -622,6 +565,7 @@ namespace IKVM.Reflection.Diagnostics
         /// <summary>
         /// Gets or writes the handle to a document in the metadata.
         /// </summary>
+        /// <param name="metadata"></param>
         /// <param name="document"></param>
         /// <param name="documentCache"></param>
         DocumentHandle GetOrWriteDocument(MetadataBuilder metadata, Document document, Dictionary<Document, DocumentHandle> documentCache)
@@ -638,6 +582,7 @@ namespace IKVM.Reflection.Diagnostics
         /// <summary>
         /// Writes the document to the metadata.
         /// </summary>
+        /// <param name="metadata"></param>
         /// <param name="document"></param>
         /// <returns></returns>
         DocumentHandle WriteDocument(MetadataBuilder metadata, Document document)
@@ -652,6 +597,7 @@ namespace IKVM.Reflection.Diagnostics
         /// <summary>
         /// Writes the scopes of the method.
         /// </summary>
+        /// <param name="metadata"></param>
         /// <param name="method"></param>
         void WriteScopes(MetadataBuilder metadata, Method method)
         {
@@ -662,6 +608,7 @@ namespace IKVM.Reflection.Diagnostics
         /// <summary>
         /// Writes the given scope.
         /// </summary>
+        /// <param name="metadata"></param>
         /// <param name="method"></param>
         /// <param name="scope"></param>
         void WriteScope(MetadataBuilder metadata, Method method, Scope scope)
@@ -672,9 +619,10 @@ namespace IKVM.Reflection.Diagnostics
         /// <summary>
         /// Writes the given scope.
         /// </summary>
+        /// <param name="metadata"></param>
         /// <param name="method"></param>
-        /// <param name="parentImportScope"></param>
         /// <param name="scope"></param>
+        /// <param name="parentImportScope"></param>
         void WriteScope(MetadataBuilder metadata, Method method, Scope scope, ImportScopeHandle parentImportScope)
         {
             // insert import scope for this scope
@@ -717,41 +665,49 @@ namespace IKVM.Reflection.Diagnostics
 
         #region Not Implemented
 
+        /// <inheritdoc />
         public void DefineField(SymbolToken parent, string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public void DefineGlobalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public void DefineParameter(string name, System.Reflection.ParameterAttributes attributes, int sequence, SymAddressKind addrKind, int addr1, int addr2, int addr3)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public void SetMethodSourceRange(ISymbolDocumentWriter startDoc, int startLine, int startColumn, ISymbolDocumentWriter endDoc, int endLine, int endColumn)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public void SetScopeRange(int scopeID, int startOffset, int endOffset)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public void SetSymAttribute(SymbolToken parent, string name, byte[] data)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public void SetUnderlyingWriter(IntPtr underlyingWriter)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public void SetUserEntryPoint(SymbolToken entryMethod)
         {
             this.userEntryPoint = entryMethod.GetToken();
