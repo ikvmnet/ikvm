@@ -23,11 +23,14 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Reader;
 using IKVM.Reflection.Writer;
+
+using static IKVM.Reflection.Module;
 
 using CallingConvention = System.Runtime.InteropServices.CallingConvention;
 
@@ -270,7 +273,7 @@ namespace IKVM.Reflection
                 if (br.PeekByte() == ELEMENT_TYPE_TYPEDBYREF)
                 {
                     br.ReadByte();
-                    list.Add(new LocalVariableInfo(i, module.universe.System_TypedReference, false, new CustomModifiers()));
+                    list.Add(new LocalVariableInfo(i, module.universe.System_TypedReference, false));
                 }
                 else
                 {
@@ -284,7 +287,7 @@ namespace IKVM.Reflection
 
                     var mods2 = CustomModifiers.Read(module, br, context);
                     var type = ReadTypeOrByRef(module, br, context);
-                    list.Add(new LocalVariableInfo(i, type, pinned, CustomModifiers.Combine(mods1, mods2)));
+                    list.Add(new LocalVariableInfo(i, type, pinned, mods2));
                 }
             }
         }

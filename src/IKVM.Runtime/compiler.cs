@@ -174,7 +174,7 @@ namespace IKVM.Runtime
             this.classFile = classFile;
             this.m = m;
             this.ilGenerator = ilGenerator;
-            this.debug = classLoader.EmitDebugInfo;
+            this.debug = classLoader.EmitSymbols;
             this.strictfp = m.IsStrictfp;
             if (mw.IsConstructor)
             {
@@ -215,7 +215,7 @@ namespace IKVM.Runtime
 
             if (m.LineNumberTableAttribute != null)
             {
-                if (classLoader.EmitDebugInfo)
+                if (classLoader.EmitSymbols)
                 {
                     emitLineNumbers = true;
                 }
@@ -565,7 +565,7 @@ namespace IKVM.Runtime
         internal static void Compile(RuntimeByteCodeJavaType.FinishContext finish, RuntimeJavaType host, RuntimeByteCodeJavaType clazz, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ref bool nonleaf)
         {
             var classLoader = clazz.GetClassLoader();
-            if (classLoader.EmitDebugInfo)
+            if (classLoader.EmitSymbols)
             {
                 if (classFile.SourcePath != null)
                 {

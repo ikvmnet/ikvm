@@ -1,61 +1,45 @@
-﻿using System.Reflection.Metadata.Ecma335;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
+#nullable enable
+
+using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace IKVM.Reflection.Emit
 {
-
     /// <summary>
-    /// Represents a label in the instruction stream. Label is used in conjunction with the <see cref="ILGenerator"/> class.
+    /// Represents a label in the instruction stream. Used in conjunction with the <see cref="ILGenerator"/> class.
     /// </summary>
-    public readonly struct Label
+    /// <remarks>
+    /// The Label class is an opaque representation of a label used by the
+    /// <see cref="ILGenerator"/> class.  The token is used to mark where labels occur in the IL
+    /// stream. Labels are created by using <see cref="ILGenerator.DefineLabel"/> and their position is set
+    /// by using <see cref="ILGenerator.MarkLabel"/>.
+    /// </remarks>
+    public readonly struct Label : IEquatable<Label>
     {
+        internal readonly int m_label;
 
-        public static bool operator ==(Label arg1, Label arg2) => arg1.Handle.Id == arg2.Handle.Id;
-
-        public static bool operator !=(Label arg1, Label arg2) => arg1.Handle.Id != arg2.Handle.Id;
-
-        readonly LabelHandle handle;
+        internal Label(int label) => m_label = label;
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Gets the label unique id assigned by the ILGenerator.
         /// </summary>
-        /// <param name="index"></param>
-        internal Label(LabelHandle handle)
-        {
-            this.handle = handle;
-        }
+        public int Id => m_label;
 
-        /// <summary>
-        /// Gets the underlying metadata handle of the label.
-        /// </summary>
-        internal LabelHandle Handle => handle;
+        public override int GetHashCode() => m_label;
 
-        /// <summary>
-        /// Gets the 0-based index of the label.
-        /// </summary>
-        internal int Index => handle.Id - 1;
+        public override bool Equals(object? obj) =>
+            obj is Label other && Equals(other);
 
-        /// <summary>
-        /// Returns <c>true</c> if this label is the same as the other label.
-        /// </summary>
-        /// <param name="other"></param>
-        /// <returns></returns>
-        public bool Equals(Label other)
-        {
-            return handle.Id == other.handle.Id;
-        }
+        public bool Equals(Label obj) =>
+            obj.m_label == m_label;
 
-        /// <inheritdoc />
-        public override bool Equals(object obj)
-        {
-            return obj is Label l && Equals(l);
-        }
+        public static bool operator ==(Label a, Label b) => a.Equals(b);
 
-        /// <inheritdoc />
-        public override int GetHashCode()
-        {
-            return handle.GetHashCode();
-        }
-
+        public static bool operator !=(Label a, Label b) => !(a == b);
     }
-
 }
+
+#nullable restore

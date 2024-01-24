@@ -76,6 +76,11 @@ namespace IKVM.Reflection.Emit
             throw new NotSupportedException();
         }
 
+        internal override Type[] GetParameterTypes()
+        {
+            return parameterTypes;
+        }
+
         internal override int ImportTo(ModuleBuilder module)
         {
             return module.ImportMethodOrField(arrayClass, methodName, MethodSignature);

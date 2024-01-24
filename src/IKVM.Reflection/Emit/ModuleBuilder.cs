@@ -207,6 +207,7 @@ namespace IKVM.Reflection.Emit
 
         readonly MetadataBuilder metadata;
         readonly BlobBuilder ilStream;
+        readonly MethodBodyStreamEncoder methodBodyEncoder;
         readonly BlobBuilder resourceStream;
         readonly AssemblyBuilder asm;
         Guid mvid;
@@ -221,9 +222,8 @@ namespace IKVM.Reflection.Emit
         readonly List<TypeBuilder> types = new List<TypeBuilder>();
         readonly Dictionary<Type, int> typeTokens = new Dictionary<Type, int>();
         readonly Dictionary<Type, int> memberRefTypeTokens = new Dictionary<Type, int>();
-        internal readonly ByteBuffer methodBodies = new ByteBuffer(128 * 1024);
         internal readonly List<int> tokenFixupOffsets = new List<int>();
-        internal readonly ByteBuffer initializedData = new ByteBuffer(512);
+        internal readonly BlobBuilder initializedDataStream = new BlobBuilder(512);
         internal ModuleResourceSectionBuilder nativeResources;
         readonly Dictionary<MemberRefKey, int> importedMemberRefs = new Dictionary<MemberRefKey, int>();
         readonly Dictionary<MethodSpecKey, int> importedMethodSpecs = new Dictionary<MethodSpecKey, int>();
@@ -231,12 +231,10 @@ namespace IKVM.Reflection.Emit
         List<AssemblyName> referencedAssemblyNames;
         int nextPseudoToken = -1;
         readonly List<int> resolvedTokens = new List<int>();
-        List<PortablePdbSymbolDocumentWriter> documents;
+        ISymbolWriter symbolWriter;
 
         internal readonly Dictionary<StringHandle, string> strings = new();
         internal readonly Dictionary<BlobHandle, BlobBuilder> blobs = new();
-        internal readonly List<VTableFixups> vtableFixups = new List<VTableFixups>();
-        internal readonly List<UnmanagedExport> unmanagedExports = new List<UnmanagedExport>();
         List<InterfaceImplCustomAttribute> interfaceImplCustomAttributes;
         readonly List<ResourceWriterRecord> resourceWriters = new List<ResourceWriterRecord>();
         bool saved;
@@ -247,13 +245,13 @@ namespace IKVM.Reflection.Emit
         /// <param name="asm"></param>
         /// <param name="moduleName"></param>
         /// <param name="fileName"></param>
-        /// <param name="emitSymbolInfo"></param>
         /// <exception cref="NotSupportedException"></exception>
-        internal ModuleBuilder(AssemblyBuilder asm, string moduleName, string fileName, bool emitSymbolInfo) :
-            base(asm.universe)
+        internal ModuleBuilder(AssemblyBuilder asm, string moduleName, string fileName) :
+            base(asm.Universe)
         {
             this.metadata = new MetadataBuilder();
             this.ilStream = new BlobBuilder();
+            this.methodBodyEncoder = new MethodBodyStreamEncoder(ilStream);
             this.resourceStream = new BlobBuilder();
 
             this.asm = asm ?? throw new ArgumentNullException(nameof(asm));
@@ -281,9 +279,19 @@ namespace IKVM.Reflection.Emit
         internal MetadataBuilder Metadata => metadata;
 
         /// <summary>
-        /// Gets a reference to the <see cref="BlobBuilder"/> for the IL stream. As of now, this data is written into the <see cref="methodBodies"/> and later copied to the IL stream.
+        /// Gets a reference to the <see cref="BlobBuilder"/> for the IL stream.
         /// </summary>
         internal BlobBuilder ILStream => ilStream;
+
+        /// <summary>
+        /// Gets a reference to the <see cref="MethodBodyStreamEncoder"/> for the IL stream.
+        /// </summary>
+        internal MethodBodyStreamEncoder MethodBodyEncoder => methodBodyEncoder;
+
+        /// <summary>
+        /// Gets a reference to the <see cref="BlobBuilder"/> for the initialized data stream.
+        /// </summary>
+        internal BlobBuilder InitializedDataStream => initializedDataStream;
 
         /// <summary>
         /// Gets a reference to the <see cref="BlobBuilder"/> for the resource stream.
@@ -361,6 +369,15 @@ namespace IKVM.Reflection.Emit
             return new ByteReader(b, 0, b.Length);
         }
 
+        /// <summary>
+        /// Sets the active symbol writer.
+        /// </summary>
+        /// <param name="writer"></param>
+        internal void SetSymWriter(ISymbolWriter writer)
+        {
+            this.symbolWriter = writer;
+        }
+
         internal void PopulatePropertyAndEventTables()
         {
             // LAMESPEC the PropertyMap and EventMap tables are not required to be sorted by the CLI spec,
@@ -370,43 +387,31 @@ namespace IKVM.Reflection.Emit
                 type.PopulatePropertyAndEventTables();
         }
 
-        internal void PopulateDocumentTables()
-        {
-            if (documents != null)
-                foreach (var document in documents)
-                    PopulateDocumentTable(document);
-        }
-
-        internal void PopulateDocumentTable(PortablePdbSymbolDocumentWriter writer)
-        {
-            writer.WriteMetadata(this);
-        }
-
         internal void WriteTypeDefTable()
         {
             int fieldList = 1;
             int methodList = 1;
             foreach (var type in types)
-                type.WriteTypeDefRecord(metadata, ref fieldList, ref methodList);
+                type.WriteTypeDefRecord(ref fieldList, ref methodList);
         }
 
         internal void WriteMethodDefTable()
         {
             int paramList = 1;
             foreach (var type in types)
-                type.WriteMethodDefRecords(metadata, ref paramList);
+                type.WriteMethodDefRecords(ref paramList);
         }
 
         internal void WriteParamTable()
         {
             foreach (var type in types)
-                type.WriteParamRecords(metadata);
+                type.WriteParamRecords();
         }
 
         internal void WriteFieldTable()
         {
             foreach (var type in types)
-                type.WriteFieldRecords(metadata);
+                type.WriteFieldRecords();
         }
 
         internal int AllocPseudoToken()
@@ -737,10 +742,57 @@ namespace IKVM.Reflection.Emit
 
         public ISymbolDocumentWriter DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
         {
-            var document = new PortablePdbSymbolDocumentWriter(url, language, languageVendor, documentType);
-            documents ??= new();
-            documents.Add(document);
-            return document;
+            if (symbolWriter != null)
+                return symbolWriter.DefineDocument(url, language, languageVendor, documentType);
+            else
+                throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Sets the user entry point.
+        /// </summary>
+        /// <param name="entryPoint"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public void SetUserEntryPoint(MethodInfo entryPoint)
+        {
+            // Set the user entry point. Compiler may generate startup stub before calling user main.
+            // The startup stub will be the entry point. While the user "main" will be the user entry
+            // point so that debugger will not step into the compiler entry point.
+
+            if (entryPoint == null)
+                throw new ArgumentNullException("entryPoint");
+
+            // Cannot set entry point when it is not a debug module
+            if (symbolWriter == null)
+                throw new InvalidOperationException("Not a debug ModuleBuilder.");
+
+            if (entryPoint.DeclaringType != null)
+            {
+                if (!entryPoint.Module.Equals(this))
+                {
+                    // you cannot pass in a MethodInfo that is not contained by this ModuleBuilder
+                    throw new InvalidOperationException("The argument passed in was not from the same ModuleBuilder.");
+                }
+            }
+            else
+            {
+                // unfortunately this check is missing for global function passed in as RuntimeMethodInfo. 
+                // The problem is that Reflection does not 
+                // allow us to get the containing module giving a global function
+                MethodBuilder mb = entryPoint as MethodBuilder;
+                if (mb != null && mb.ModuleBuilder != this)
+                {
+                    // you cannot pass in a MethodInfo that is not contained by this ModuleBuilder
+                    throw new InvalidOperationException("The argument passed in was not from the same ModuleBuilder.");
+                }
+            }
+
+            // get the metadata token value and create the SymbolStore's token value class
+            SymbolToken tkMethod = new SymbolToken(GetMethodToken(entryPoint).Token);
+
+            // set the UserEntryPoint
+            symbolWriter.SetUserEntryPoint(tkMethod);
         }
 
         public int __GetAssemblyToken(Assembly assembly)
@@ -769,7 +821,7 @@ namespace IKVM.Reflection.Emit
             }
             else if (type.IsGenericTypeDefinition)
             {
-                if (!memberRefTypeTokens.TryGetValue(type, out var token))
+                if (memberRefTypeTokens.TryGetValue(type, out var token) == false)
                 {
                     var spec = new ByteBuffer(5);
                     Signature.WriteTypeSpec(this, spec, type);
@@ -919,8 +971,7 @@ namespace IKVM.Reflection.Emit
 
         internal int ImportType(Type type)
         {
-            int token;
-            if (!typeTokens.TryGetValue(type, out token))
+            if (typeTokens.TryGetValue(type, out var token) == false)
             {
                 if (type.HasElementType || type.IsConstructedGenericType || type.__IsFunctionPointer)
                 {
@@ -939,8 +990,9 @@ namespace IKVM.Reflection.Emit
                         rec.ResolutionScope = ImportAssemblyRef(type.Assembly);
 
                     SetTypeNameAndTypeNamespace(type.TypeName, out rec.TypeName, out rec.TypeNamespace);
-                    token = 0x01000000 | TypeRefTable.AddRecord(rec);
+                    token = MetadataTokens.GetToken(MetadataTokens.TypeReferenceHandle(TypeRefTable.AddRecord(rec)));
                 }
+
                 typeTokens.Add(type, token);
             }
 
@@ -949,7 +1001,7 @@ namespace IKVM.Reflection.Emit
 
         int ImportAssemblyRef(Assembly asm)
         {
-            if (!referencedAssemblies.TryGetValue(asm, out var token))
+            if (referencedAssemblies.TryGetValue(asm, out var token) == false)
             {
                 // We can't write the AssemblyRef record here yet, because the identity of the assembly can still change
                 // (if it's an AssemblyBuilder).
@@ -1034,48 +1086,6 @@ namespace IKVM.Reflection.Emit
             return IsPseudoToken(pseudoToken) ? resolvedTokens[-(pseudoToken + 1)] : pseudoToken;
         }
 
-        internal void ApplyUnmanagedExports(ImageFileMachine imageFileMachine)
-        {
-            if (unmanagedExports.Count != 0)
-            {
-                int type;
-                int size;
-                switch (imageFileMachine)
-                {
-                    case ImageFileMachine.I386:
-                    case ImageFileMachine.ARM:
-                        type = 0x05;
-                        size = 4;
-                        break;
-                    case ImageFileMachine.AMD64:
-                        type = 0x06;
-                        size = 8;
-                        break;
-                    default:
-                        throw new NotSupportedException();
-                }
-
-                var methods = new List<MethodBuilder>();
-                for (int i = 0; i < unmanagedExports.Count; i++)
-                    if (unmanagedExports[i].mb != null)
-                        methods.Add(unmanagedExports[i].mb);
-
-                if (methods.Count != 0)
-                {
-                    var rva = __AddVTableFixups(methods.ToArray(), type);
-                    for (int i = 0; i < unmanagedExports.Count; i++)
-                    {
-                        if (unmanagedExports[i].mb != null)
-                        {
-                            var exp = unmanagedExports[i];
-                            exp.rva = new RelativeVirtualAddress(rva.initializedDataOffset + (uint)(methods.IndexOf(unmanagedExports[i].mb) * size));
-                            unmanagedExports[i] = exp;
-                        }
-                    }
-                }
-            }
-        }
-
         internal void FixupMethodBodyTokens()
         {
             int methodToken = 0x06000001;
@@ -1084,22 +1094,6 @@ namespace IKVM.Reflection.Emit
 
             foreach (var type in types)
                 type.ResolveMethodAndFieldTokens(ref methodToken, ref fieldToken, ref parameterToken);
-
-            foreach (var offset in tokenFixupOffsets)
-            {
-                methodBodies.Position = offset;
-                int pseudoToken = methodBodies.GetInt32AtCurrentPosition();
-                methodBodies.Write(ResolvePseudoToken(pseudoToken));
-            }
-
-            foreach (var fixup in vtableFixups)
-            {
-                for (int i = 0; i < fixup.count; i++)
-                {
-                    initializedData.Position = (int)fixup.initializedDataOffset + i * fixup.SlotWidth;
-                    initializedData.Write(ResolvePseudoToken(initializedData.GetInt32AtCurrentPosition()));
-                }
-            }
         }
 
         /// <summary>
@@ -1315,15 +1309,9 @@ namespace IKVM.Reflection.Emit
             throw new NotImplementedException();
         }
 
-        public override string FullyQualifiedName
-        {
-            get { return Path.GetFullPath(Path.Combine(asm.dir, fileName)); }
-        }
+        public override string FullyQualifiedName => Path.GetFullPath(Path.Combine(asm.dir, fileName));
 
-        public override string Name
-        {
-            get { return fileName; }
-        }
+        public override string Name => fileName;
 
         internal Guid GetModuleVersionIdOrEmpty()
         {
@@ -1382,6 +1370,15 @@ namespace IKVM.Reflection.Emit
         }
 
         /// <summary>
+        /// Returns the symbol writer associated with this dynamic module.
+        /// </summary>
+        /// <returns></returns>
+        public ISymbolWriter GetSymWriter()
+        {
+            return symbolWriter;
+        }
+
+        /// <summary>
         /// Defines an unmanaged embedded resource given an opaque binary large object (BLOB) of bytes.
         /// </summary>
         /// <param name="resource"></param>
@@ -1420,6 +1417,16 @@ namespace IKVM.Reflection.Emit
             var bb = new BlobBuilder();
             bb.WriteBytes(sigBytes, 0, sigLength);
             return new SignatureToken(StandAloneSigTable.FindOrAddRecord(GetOrAddBlob(bb)) | (StandAloneSigTable.Index << 24));
+        }
+
+        public unsafe SignatureToken GetSignatureToken(Span<byte> sigBytes)
+        {
+            fixed (byte* b = sigBytes)
+            {
+                var bb = new BlobBuilder();
+                bb.WriteBytes(b, sigBytes.Length);
+                return new SignatureToken(StandAloneSigTable.FindOrAddRecord(GetOrAddBlob(bb)) | (StandAloneSigTable.Index << 24));
+            }
         }
 
         public MethodInfo GetArrayMethod(Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
@@ -1502,24 +1509,56 @@ namespace IKVM.Reflection.Emit
             return 0x01000000 | this.TypeRefTable.AddRecord(rec);
         }
 
+        /// <summary>
+        /// Saves the module.
+        /// </summary>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
         public void __Save(PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
-            SaveImpl(null, portableExecutableKind, imageFileMachine);
+            __Save(null, null, portableExecutableKind, imageFileMachine);
         }
 
-        public void __Save(Stream stream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+        /// <summary>
+        /// Saves the module to the specified stream.
+        /// </summary>
+        /// <param name="peStream"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
+        public void __Save(Stream peStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
-            if (!stream.CanRead || !stream.CanWrite || !stream.CanSeek || stream.Position != 0)
-                throw new ArgumentException("Stream must support read/write/seek and current position must be zero.", "stream");
-
-            SaveImpl(stream, portableExecutableKind, imageFileMachine);
+            __Save(peStream, null, portableExecutableKind, imageFileMachine);
         }
 
-        void SaveImpl(Stream streamOrNull, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+        /// <summary>
+        /// Saves the module and it's debug information to the specified streams.
+        /// </summary>
+        /// <param name="peStream"></param>
+        /// <param name="pdbStream"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
+        public void __Save(Stream peStream, Stream pdbStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
+            SaveImpl(peStream, pdbStream, portableExecutableKind, imageFileMachine);
+        }
+
+        /// <summary>
+        /// Implements the Save functionality.
+        /// </summary>
+        /// <param name="peStream"></param>
+        /// <param name="pdbStream"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
+        /// <exception cref="ArgumentException"></exception>
+        void SaveImpl(Stream peStream, Stream pdbStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+        {
+            if (peStream != null && peStream.CanWrite == false)
+                throw new ArgumentException("PE stream must support write.", nameof(peStream));
+            if (pdbStream != null && pdbStream.CanWrite == false)
+                throw new ArgumentException("PDB stream must support write.", nameof(pdbStream));
+
             SetIsSaved();
             PopulatePropertyAndEventTables();
-            PopulateDocumentTables();
 
             var attributes = asm.GetCustomAttributesData(null);
             if (attributes.Count > 0)
@@ -1528,7 +1567,7 @@ namespace IKVM.Reflection.Emit
                 var placeholderTokens = new int[4];
                 var placeholderTypeNames = new string[] { "AssemblyAttributesGoHere", "AssemblyAttributesGoHereM", "AssemblyAttributesGoHereS", "AssemblyAttributesGoHereSM" };
 
-                foreach (CustomAttributeData cad in attributes)
+                foreach (var cad in attributes)
                 {
                     int index;
                     if (cad.Constructor.DeclaringType.BaseType == universe.System_Security_Permissions_CodeAccessSecurityAttribute)
@@ -1558,7 +1597,7 @@ namespace IKVM.Reflection.Emit
             }
 
             FillAssemblyRefTable();
-            ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, nativeResources, default, streamOrNull);
+            ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, nativeResources, default, null, peStream, null, pdbStream);
         }
 
         public void __AddAssemblyReference(AssemblyName assemblyName)
@@ -1644,39 +1683,6 @@ namespace IKVM.Reflection.Emit
         public void __SetCustomAttributeFor(int token, CustomAttributeBuilder customBuilder)
         {
             SetCustomAttribute(token, customBuilder);
-        }
-
-        public RelativeVirtualAddress __AddVTableFixups(MethodBuilder[] methods, int type)
-        {
-            initializedData.Align(8);
-            var fixups = new VTableFixups();
-            fixups.initializedDataOffset = (uint)initializedData.Position;
-            fixups.count = (ushort)methods.Length;
-            fixups.type = (ushort)type;
-            foreach (var mb in methods)
-            {
-                initializedData.Write(mb.MetadataToken);
-                if (fixups.SlotWidth == 8)
-                    initializedData.Write(0);
-            }
-
-            vtableFixups.Add(fixups);
-            return new RelativeVirtualAddress(fixups.initializedDataOffset);
-        }
-
-        public void __AddUnmanagedExportStub(string name, int ordinal, RelativeVirtualAddress rva)
-        {
-            AddUnmanagedExport(name, ordinal, null, rva);
-        }
-
-        internal void AddUnmanagedExport(string name, int ordinal, MethodBuilder methodBuilder, RelativeVirtualAddress rva)
-        {
-            var export = new UnmanagedExport();
-            export.name = name;
-            export.ordinal = ordinal;
-            export.mb = methodBuilder;
-            export.rva = rva;
-            unmanagedExports.Add(export);
         }
 
         internal void SetInterfaceImplementationCustomAttribute(TypeBuilder typeBuilder, Type interfaceType, CustomAttributeBuilder cab)

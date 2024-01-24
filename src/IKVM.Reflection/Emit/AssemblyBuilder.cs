@@ -161,7 +161,7 @@ namespace IKVM.Reflection.Emit
         void Rename(AssemblyName oldName)
         {
             this.fullName = null;
-            universe.RenameAssembly(this, oldName);
+            Universe.RenameAssembly(this, oldName);
         }
 
         public void __SetAssemblyVersion(Version version)
@@ -247,27 +247,38 @@ namespace IKVM.Reflection.Emit
             get { throw new NotSupportedException(); }
         }
 
+        /// <summary>
+        /// Defines a persistable dynamic module with the given name that will be saved to the specified file. No symbol information is emitted.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
         public ModuleBuilder DefineDynamicModule(string name, string fileName)
         {
             return DefineDynamicModule(name, fileName, false);
         }
 
+        /// <summary>
+        /// Defines a persistable dynamic module, specifying the module name, the name of the file to which the module will be saved, and whether symbol information should be emitted using the default symbol writer.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="fileName"></param>
+        /// <param name="emitSymbolInfo"></param>
+        /// <returns></returns>
         public ModuleBuilder DefineDynamicModule(string name, string fileName, bool emitSymbolInfo)
         {
-            ModuleBuilder module = new ModuleBuilder(this, name, fileName, emitSymbolInfo);
+            var module = new ModuleBuilder(this, name, fileName);
+            module.SetSymWriter(emitSymbolInfo ? Universe.CreateSymbolWriter(module) : null);
             modules.Add(module);
             return module;
         }
 
         public ModuleBuilder GetDynamicModule(string name)
         {
-            foreach (ModuleBuilder module in modules)
-            {
+            foreach (var module in modules)
                 if (module.Name == name)
-                {
                     return module;
-                }
-            }
+
             return null;
         }
 
@@ -307,34 +318,72 @@ namespace IKVM.Reflection.Emit
             this.fileKind = fileKind;
         }
 
-        public void __Save(Stream stream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+        /// <summary>
+        /// Saves the single module assembly to the specified stream.
+        /// </summary>
+        /// <param name="peStream"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="NotSupportedException"></exception>
+        public void __Save(Stream peStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
-            if (!stream.CanRead || !stream.CanWrite || !stream.CanSeek || stream.Position != 0)
-                throw new ArgumentException("Stream must support read/write/seek and current position must be zero.", "stream");
             if (modules.Count != 1)
                 throw new NotSupportedException("Saving to a stream is only supported for single module assemblies.");
 
-            SaveImpl(modules[0].fileName, stream, portableExecutableKind, imageFileMachine);
+            __Save(peStream, null, portableExecutableKind, imageFileMachine);
         }
 
+        /// <summary>
+        /// Saves the single module assembly and it's symbols to the specified streams.
+        /// </summary>
+        /// <param name="peStream"></param>
+        /// <param name="pdbStream"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="NotSupportedException"></exception>
+        public void __Save(Stream peStream, Stream pdbStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+        {
+            if (peStream.CanWrite == false)
+                throw new ArgumentException("Stream must support write.", nameof(peStream));
+            if (pdbStream != null && pdbStream.CanWrite == false)
+                throw new ArgumentException("Stream must support write.", nameof(pdbStream));
+            if (modules.Count != 1)
+                throw new NotSupportedException("Saving to a stream is only supported for single module assemblies.");
+
+            SaveImpl(modules[0].fileName, peStream, pdbStream, portableExecutableKind, imageFileMachine);
+        }
+
+        /// <summary>
+        /// Saves this dynamic assembly to disk.
+        /// </summary>
+        /// <param name="assemblyFileName"></param>
         public void Save(string assemblyFileName)
         {
             Save(assemblyFileName, PortableExecutableKinds.ILOnly, ImageFileMachine.I386);
         }
 
+        /// <summary>
+        /// Saves this dynamic assembly to disk, specifying the nature of code in the assembly's executables and the target platform.
+        /// </summary>
+        /// <param name="assemblyFileName"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
         public void Save(string assemblyFileName, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
-            SaveImpl(assemblyFileName, null, portableExecutableKind, imageFileMachine);
+            SaveImpl(assemblyFileName, null, null, portableExecutableKind, imageFileMachine);
         }
 
         /// <summary>
         /// Implements the logic to save all of the modules within the assembly.
         /// </summary>
         /// <param name="assemblyFileName"></param>
-        /// <param name="streamOrNull"></param>
+        /// <param name="peStream"></param>
+        /// <param name="pdbStream"></param>
         /// <param name="portableExecutableKind"></param>
         /// <param name="imageFileMachine"></param>
-        void SaveImpl(string assemblyFileName, Stream streamOrNull, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+        void SaveImpl(string assemblyFileName, Stream peStream, Stream pdbStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
             ModuleBuilder manifestModule = null;
 
@@ -387,7 +436,7 @@ namespace IKVM.Reflection.Emit
                 foreach (var cab in customAttributes)
                 {
                     // .NET doesn't support copying blob custom attributes into the version info
-                    if (cab.HasBlob == false || universe.DecodeVersionInfoAttributeBlobs)
+                    if (cab.HasBlob == false || Universe.DecodeVersionInfoAttributeBlobs)
                         versionInfo.SetAttribute(this, cab);
                 }
 
@@ -435,24 +484,24 @@ namespace IKVM.Reflection.Emit
             }
 
             // write each non-manifest module
-            foreach (var moduleBuilder in modules)
+            foreach (var module in modules)
             {
-                moduleBuilder.FillAssemblyRefTable();
+                module.FillAssemblyRefTable();
 
-                if (moduleBuilder != manifestModule)
+                if (module != manifestModule)
                 {
                     var fileToken = default(AssemblyFileHandle);
-                    if (entryPoint != null && entryPoint.Module == moduleBuilder)
+                    if (entryPoint != null && entryPoint.Module == module)
                     {
                         throw new NotSupportedException("Multi-module assemblies cannot have an entry point in a module other than the manifest module.");
                     }
                     else
                     {
-                        ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, moduleBuilder.nativeResources, default);
-                        fileToken = AddFile(manifestModule, moduleBuilder.fileName, 0 /*ContainsMetaData*/);
+                        ModuleWriter.WriteModule(null, null, module, fileKind, portableExecutableKind, imageFileMachine, module.nativeResources, default);
+                        fileToken = AddFile(manifestModule, module.fileName, 0 /*ContainsMetaData*/);
                     }
 
-                    moduleBuilder.ExportTypes(fileToken, manifestModule);
+                    module.ExportTypes(fileToken, manifestModule);
                 }
             }
 
@@ -464,7 +513,7 @@ namespace IKVM.Reflection.Emit
             }
 
             // finally, write the manifest module
-            ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, streamOrNull);
+            ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, null, peStream, null, pdbStream);
         }
 
         AssemblyFileHandle AddFile(ModuleBuilder manifestModule, string fileName, int flags)

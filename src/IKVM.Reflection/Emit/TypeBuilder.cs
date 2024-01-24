@@ -630,17 +630,19 @@ namespace IKVM.Reflection.Emit
 
         public FieldBuilder DefineInitializedData(string name, byte[] data, FieldAttributes attributes)
         {
-            var fieldType = ModuleBuilder.GetType("$ArrayType$" + data.Length);
-            if (fieldType == null)
-            {
-                var typeBuilder = ModuleBuilder.DefineType("$ArrayType$" + data.Length, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.ExplicitLayout, Module.universe.System_ValueType, PackingSize.Size1, data.Length);
-                typeBuilder.CreateType();
-                fieldType = typeBuilder;
-            }
+            throw new NotImplementedException();
 
-            var fieldBuilder = DefineField(name, fieldType, attributes | FieldAttributes.Static);
-            fieldBuilder.__SetDataAndRVA(data);
-            return fieldBuilder;
+            //var fieldType = ModuleBuilder.GetType("$ArrayType$" + data.Length);
+            //if (fieldType == null)
+            //{
+            //    var typeBuilder = ModuleBuilder.DefineType("$ArrayType$" + data.Length, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.ExplicitLayout, Module.universe.System_ValueType, PackingSize.Size1, data.Length);
+            //    typeBuilder.CreateType();
+            //    fieldType = typeBuilder;
+            //}
+
+            //var fieldBuilder = DefineField(name, fieldType, attributes | FieldAttributes.Static);
+            //fieldBuilder.__SetDataAndRVA(data);
+            //return fieldBuilder;
         }
 
         public static MethodInfo GetMethod(Type type, MethodInfo method)
@@ -668,9 +670,9 @@ namespace IKVM.Reflection.Emit
             get { return new TypeToken(token); }
         }
 
-        internal void WriteTypeDefRecord(MetadataBuilder metadata, ref int fieldList, ref int methodList)
+        internal void WriteTypeDefRecord(ref int fieldList, ref int methodList)
         {
-            var h = metadata.AddTypeDefinition(
+            var h = ModuleBuilder.Metadata.AddTypeDefinition(
                 (System.Reflection.TypeAttributes)attribs,
                 typeNameSpace,
                 typeName,
@@ -685,10 +687,10 @@ namespace IKVM.Reflection.Emit
             methodList += methods.Count;
         }
 
-        internal void WriteMethodDefRecords(MetadataBuilder metadata, ref int paramList)
+        internal void WriteMethodDefRecords(ref int paramList)
         {
             foreach (var mb in methods)
-                mb.WriteMetadata(metadata, ref paramList);
+                mb.WriteMetadata(ref paramList);
         }
 
         internal void ResolveMethodAndFieldTokens(ref int methodToken, ref int fieldToken, ref int parameterToken)
@@ -699,16 +701,16 @@ namespace IKVM.Reflection.Emit
                 field.FixupToken(fieldToken++);
         }
 
-        internal void WriteParamRecords(MetadataBuilder metadata)
+        internal void WriteParamRecords()
         {
             foreach (var mb in methods)
-                mb.WriteParamRecords(metadata);
+                mb.WriteParamRecords();
         }
 
-        internal void WriteFieldRecords(MetadataBuilder metadata)
+        internal void WriteFieldRecords()
         {
             foreach (var fb in fields)
-                fb.WriteFieldRecords(metadata);
+                fb.WriteFieldRecords();
         }
 
         internal ModuleBuilder ModuleBuilder

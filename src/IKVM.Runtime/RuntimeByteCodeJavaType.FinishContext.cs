@@ -681,15 +681,12 @@ namespace IKVM.Runtime
                     }
 
                     AddMethodParameterInfo(m, methods[i], mb, out var parameterNames);
+
 #if IMPORTER
                     if (methods[i].HasCallerID)
                     {
                         context.AttributeHelper.SetEditorBrowsableNever(mb);
                         EmitCallerIDStub(methods[i], parameterNames);
-                    }
-                    if (m.DllExportName != null && wrapper.classLoader.TryEnableUnmanagedExports())
-                    {
-                        mb.__AddUnmanagedExport(m.DllExportName, m.DllExportOrdinal);
                     }
 #endif
                 }
@@ -978,7 +975,7 @@ namespace IKVM.Runtime
                 parameterNames = null;
                 ParameterBuilder[] parameterBuilders = null;
 
-                if (wrapper.GetClassLoader().EmitDebugInfo
+                if (wrapper.GetClassLoader().EmitSymbols
 #if IMPORTER
                     || (classFile.IsPublic && (m.IsPublic || m.IsProtected))
                     || (m.MethodParameters != null && !wrapper.GetClassLoader().NoParameterReflection)

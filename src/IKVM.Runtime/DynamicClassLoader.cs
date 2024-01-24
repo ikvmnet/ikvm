@@ -530,7 +530,7 @@ namespace IKVM.Runtime
 
             AssemblyBuilder assemblyBuilder = DefineDynamicAssembly(name, access, attribs);
             context.AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
-            bool debug = JVM.EmitSymbols;
+            var debug = JVM.EmitSymbols;
             CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });
             assemblyBuilder.SetCustomAttribute(debugAttr);
 #if NETFRAMEWORK

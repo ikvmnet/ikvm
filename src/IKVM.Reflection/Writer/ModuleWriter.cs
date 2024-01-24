@@ -23,13 +23,17 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Reflection.Emit;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
+using System.Text;
 
+using IKVM.Reflection.Diagnostics;
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Writer
@@ -62,67 +66,7 @@ namespace IKVM.Reflection.Writer
         const ushort DefaultSectionAlignment = 0x2000;
 
         /// <summary>
-        /// Writes the module specified by <paramref name="moduleBuilder"/>.
-        /// </summary>
-        /// <param name="keyPair"></param>
-        /// <param name="publicKey"></param>
-        /// <param name="moduleBuilder"></param>
-        /// <param name="fileKind"></param>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
-        /// <param name="nativeResources"></param>
-        /// <param name="entryPoint"></param>
-        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint)
-        {
-            WriteModule(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, null);
-        }
-
-        /// <summary>
-        /// Writes the module specified by <paramref name="moduleBuilder"/> to the specified <see cref="Stream"/>.
-        /// </summary>
-        /// <param name="keyPair"></param>
-        /// <param name="publicKey"></param>
-        /// <param name="moduleBuilder"></param>
-        /// <param name="fileKind"></param>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
-        /// <param name="nativeResources"></param>
-        /// <param name="entryPoint"></param>
-        /// <param name="stream"></param>
-        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint, Stream stream)
-        {
-            if (stream == null)
-            {
-                var fileName = moduleBuilder.FullyQualifiedName;
-                var mono = System.Type.GetType("Mono.Runtime") != null;
-                if (mono)
-                {
-                    try
-                    {
-                        // Mono mmaps the file, so unlink the previous version since it may be in use
-                        File.Delete(fileName);
-                    }
-                    catch
-                    {
-
-                    }
-                }
-
-                using (var fs = new FileStream(fileName, FileMode.Create))
-                    WriteModuleImpl(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, fs);
-
-                // if we're running on Mono, mark the module as executable by using a Mono private API extension
-                if (mono)
-                    File.SetAttributes(fileName, (FileAttributes)(unchecked((int)0x80000000)));
-            }
-            else
-            {
-                WriteModuleImpl(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, stream);
-            }
-        }
-
-        /// <summary>
-        /// Implementation of module writing to output stream.
+        /// Writes the module specified by <paramref name="module"/>.
         /// </summary>
         /// <param name="keyPair"></param>
         /// <param name="publicKey"></param>
@@ -132,13 +76,68 @@ namespace IKVM.Reflection.Writer
         /// <param name="imageFileMachine"></param>
         /// <param name="nativeResources"></param>
         /// <param name="entryPoint"></param>
-        /// <param name="stream"></param>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-        static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint, Stream stream)
+        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint)
         {
-            module.ApplyUnmanagedExports(imageFileMachine);
-            module.FixupMethodBodyTokens();
+            WriteModule(keyPair, publicKey, module, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, null, null, null, null);
+        }
 
+        /// <summary>
+        /// Writes the module specified by <paramref name="module"/> to the specified <see cref="Stream"/>.
+        /// </summary>
+        /// <param name="keyPair"></param>
+        /// <param name="publicKey"></param>
+        /// <param name="module"></param>
+        /// <param name="fileKind"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
+        /// <param name="nativeResources"></param>
+        /// <param name="entryPoint"></param>
+        /// <param name="peStream"></param>
+        /// <param name="pdbStream"></param>
+        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint, string peFileName, Stream peStream, string pdbFileName, Stream pdbStream)
+        {
+            FileStream disposablePeStream = null;
+            FileStream disposePdbStream = null;
+
+            // default values for PE file output
+            peFileName ??= module.FullyQualifiedName;
+            peStream ??= disposablePeStream = new FileStream(peFileName, FileMode.Create);
+
+            // default values for PDB file output, if emitting symbols
+            if (module.GetSymWriter() is IMetadataSymbolWriter)
+            {
+                pdbFileName ??= Path.ChangeExtension(peFileName, ".pdb");
+                pdbStream ??= disposePdbStream = new FileStream(pdbFileName, FileMode.Create);
+            }
+
+            try
+            {
+                WriteModuleImpl(keyPair, publicKey, module, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, peFileName, peStream, pdbFileName, pdbStream);
+            }
+            finally
+            {
+                disposablePeStream?.Dispose();
+                disposePdbStream?.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Implementation of module writing.
+        /// </summary>
+        /// <param name="keyPair"></param>
+        /// <param name="publicKey"></param>
+        /// <param name="module"></param>
+        /// <param name="fileKind"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
+        /// <param name="nativeResources"></param>
+        /// <param name="entryPoint"></param>
+        /// <param name="peFileName"></param>
+        /// <param name="peStream"></param>
+        /// <param name="pdbFileName"></param>
+        /// <param name="pdbStream"></param>
+        static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint, string peFileName, Stream peStream, string pdbFileName, Stream pdbStream)
+        {
             // for compatibility with Reflection.Emit, if there aren't any user strings, we add one
             module.Metadata.GetOrAddUserString("");
 
@@ -170,6 +169,64 @@ namespace IKVM.Reflection.Writer
                 sizeOfHeapReserve: GetSizeOfHeapReserve(module, is64BitArch),
                 sizeOfHeapCommit: GetSizeOfHeapCommit(module, is64BitArch));
 
+            // root builder provides access to information about the assembled type metadata
+            var rootBuilder = new MetadataRootBuilder(module.Metadata);
+            var debugBuilder = default(DebugDirectoryBuilder);
+
+            // ask the symbol writer if it supplies a debug directory
+            if (module.GetSymWriter() is IMetadataSymbolWriter msym)
+            {
+                // generate a new metadata image for the PDB
+                var pdbMetadata = new MetadataBuilder();
+                msym.WriteTo(pdbMetadata, out var pdbUserEntryPoint);
+
+                // create new PDB builder around produced metadata
+                var pdbContentHash = ImmutableArray<byte>.Empty;
+                var pdb = new PortablePdbBuilder(
+                    pdbMetadata,
+                    rootBuilder.Sizes.RowCounts,
+                    pdbUserEntryPoint != 0 ? (MethodDefinitionHandle)MetadataTokens.EntityHandle(module.ResolvePseudoToken(pdbUserEntryPoint)) : default,
+                    module.universe.Deterministic ? new Func<IEnumerable<Blob>, BlobContentId>(content => BlobContentId.FromHash(pdbContentHash = CryptographicHashProvider.ComputeHash(HashAlgorithmName.SHA1, content))) : null);
+
+                // serialize the PDB
+                var pdbContent = new BlobBuilder();
+                var pdbContentId = pdb.Serialize(pdbContent);
+
+                // we are going to add a builder for a debug diretory
+                debugBuilder = new DebugDirectoryBuilder();
+
+                // mark symbols as reproducible
+                if (module.universe.Deterministic)
+                    debugBuilder.AddReproducibleEntry();
+
+                // a checksum hash was produced, so we add it to the debug information
+                if (pdbContentHash != null)
+                    debugBuilder.AddPdbChecksumEntry(HashAlgorithmName.SHA1.Name, pdbContentHash);
+
+                // file name specified means we are generating an external PDB
+                if (pdbStream != null)
+                {
+                    // default PDB file name
+                    if (peFileName != null)
+                        pdbFileName ??= Path.ChangeExtension(peFileName, ".pdb");
+
+                    // we don't actually want a full path in the PDB
+                    if (pdbFileName != null)
+                        pdbFileName = Path.GetFileName(pdbFileName);
+
+                    // add code view entry describing the external PDB
+                    debugBuilder.AddCodeViewEntry(PadPdbPath(pdbFileName), pdbContentId, pdb.FormatVersion);
+
+                    // output PDB to external stream
+                    pdbContent.WriteContentTo(pdbStream);
+                }
+                else
+                {
+                    // embed PDB into PE
+                    debugBuilder.AddEmbeddedPortablePdbEntry(pdbContent, pdb.FormatVersion);
+                }
+            }
+
             // initialize PE builder
             var strongNameSignatureSize = ComputeStrongNameSignatureLength(publicKey);
             var peBuilder = new ManagedPEBuilder(
@@ -178,6 +235,7 @@ namespace IKVM.Reflection.Writer
                 module.ILStream,
                 managedResources: module.ResourceStream,
                 nativeResources: nativeResources.Count > 0 ? nativeResources : null,
+                debugDirectoryBuilder: debugBuilder,
                 strongNameSignatureSize: strongNameSignatureSize,
                 entryPoint: entryPoint != null ? (MethodDefinitionHandle)MetadataTokens.EntityHandle(entryPoint.GetCurrentToken()) : default,
                 flags: GetCorFlags(portableExecutableKind, keyPair),
@@ -192,38 +250,58 @@ namespace IKVM.Reflection.Writer
                 peBuilder.Sign(pe, blobs => GetSignature(keyPair, blobs, strongNameSignatureSize));
 
             // write the final content to the output stream
-            pe.WriteContentTo(stream);
+            pe.WriteContentTo(peStream);
+        }
+
+        /// <summary>
+        /// We pad the path to this minimal size to allow some tools to patch the path without the need to rewrite the entire image.
+        /// </summary>
+        /// <remarks>
+        /// This is a workaround. It is copied from Roslyn.
+        /// </remarks>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        static string PadPdbPath(string path)
+        {
+            const int MinLength = 260;
+            return path + new string('\0', Math.Max(0, MinLength - Encoding.UTF8.GetByteCount(path) - 1));
         }
 
         /// <summary>
         /// Writes the managed metadata to the <see cref="MetadataBuilder"/>.
         /// </summary>
-        /// <param name="moduleBuilder"></param>
-        static void WriteModuleImpl(IKVM.Reflection.Emit.ModuleBuilder moduleBuilder)
+        /// <param name="module"></param>
+        static void WriteModuleImpl(IKVM.Reflection.Emit.ModuleBuilder module)
         {
-            // now that we're ready to start writing, we need to do some fix ups
-            moduleBuilder.TypeRefTable.Fixup(moduleBuilder);
-            moduleBuilder.MethodImplTable.Fixup(moduleBuilder);
-            moduleBuilder.MethodSemanticsTable.Fixup(moduleBuilder);
-            moduleBuilder.InterfaceImplTable.Fixup(moduleBuilder);
-            moduleBuilder.ResolveInterfaceImplPseudoTokens();
-            moduleBuilder.MemberRefTable.Fixup(moduleBuilder);
-            moduleBuilder.ConstantTable.Fixup(moduleBuilder);
-            moduleBuilder.FieldMarshalTable.Fixup(moduleBuilder);
-            moduleBuilder.DeclSecurityTable.Fixup(moduleBuilder);
-            moduleBuilder.GenericParamTable.Fixup(moduleBuilder);
-            moduleBuilder.CustomAttributeTable.Fixup(moduleBuilder);
-            moduleBuilder.FieldLayoutTable.Fixup(moduleBuilder);
-            moduleBuilder.FieldRVATable.Fixup(moduleBuilder);
-            moduleBuilder.ImplMapTable.Fixup(moduleBuilder);
-            moduleBuilder.ExportedTypeTable.Fixup(moduleBuilder);
-            moduleBuilder.ManifestResourceTable.Fixup(moduleBuilder);
-            moduleBuilder.MethodSpecTable.Fixup(moduleBuilder);
-            moduleBuilder.GenericParamConstraint.Fixup(moduleBuilder);
+            // registers replacements for pseudo tokens
+            module.FixupMethodBodyTokens();
 
-            moduleBuilder.ILStream.WriteBytes(moduleBuilder.methodBodies.ToArray());
-            moduleBuilder.WriteResources();
-            moduleBuilder.WriteMetadata();
+            // fixup content in tables
+            module.TypeRefTable.Fixup(module);
+            module.MethodImplTable.Fixup(module);
+            module.MethodSemanticsTable.Fixup(module);
+            module.InterfaceImplTable.Fixup(module);
+            module.ResolveInterfaceImplPseudoTokens();
+            module.MemberRefTable.Fixup(module);
+            module.ConstantTable.Fixup(module);
+            module.FieldMarshalTable.Fixup(module);
+            module.DeclSecurityTable.Fixup(module);
+            module.GenericParamTable.Fixup(module);
+            module.CustomAttributeTable.Fixup(module);
+            module.FieldLayoutTable.Fixup(module);
+            module.FieldRVATable.Fixup(module);
+            module.ImplMapTable.Fixup(module);
+            module.ExportedTypeTable.Fixup(module);
+            module.ManifestResourceTable.Fixup(module);
+            module.MethodSpecTable.Fixup(module);
+            module.GenericParamConstraint.Fixup(module);
+
+            // close the symbol writer which may cause entries in the module table
+            module.GetSymWriter()?.Close();
+
+            // write to module metadata
+            module.WriteResources();
+            module.WriteMetadata();
         }
 
         /// <summary>
@@ -433,17 +511,29 @@ namespace IKVM.Reflection.Writer
         /// <summary>
         /// Gets the appropriate ID provider for the generation of the module version ID.
         /// </summary>
-        /// <param name="moduleBuilder"></param>
+        /// <param name="module"></param>
         /// <returns></returns>
-        static Func<IEnumerable<Blob>, BlobContentId> GetDeterministicIdProvider(Emit.ModuleBuilder moduleBuilder)
+        static Func<IEnumerable<Blob>, BlobContentId> GetDeterministicIdProvider(IKVM.Reflection.Emit.ModuleBuilder module)
         {
-            if (moduleBuilder.GetModuleVersionIdOrEmpty() is Guid mvid && mvid != Guid.Empty)
+            if (module.GetModuleVersionIdOrEmpty() is Guid mvid && mvid != Guid.Empty)
                 return e => new BlobContentId(mvid, 1);
-            else if (moduleBuilder.universe.Deterministic)
-                return e => BlobContentId.FromHash(GetSHA1Hash(e));
+            else if (module.universe.Deterministic)
+                return e => BlobContentId.FromHash(CryptographicHashProvider.ComputeHash(HashAlgorithmName.SHA1, e));
             else
-                return BlobContentId.GetTimeBasedProvider();
+                return null;
+        }
 
+        /// <summary>
+        /// Gets the appropriate ID provider for the generation of unique identifiers for a PDB.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <returns></returns>
+        static Func<IEnumerable<Blob>, BlobContentId> GetPdbIdProvider(IKVM.Reflection.Emit.ModuleBuilder module)
+        {
+            if (module.universe.Deterministic)
+                return e => BlobContentId.FromHash(CryptographicHashProvider.ComputeHash(HashAlgorithmName.SHA1, e));
+            else
+                return null;
         }
 
         /// <summary>
@@ -471,26 +561,6 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
-        /// Gets a hash of the specified blobs.
-        /// </summary>
-        /// <param name="blobs"></param>
-        /// <returns></returns>
-        static byte[] GetSHA1Hash(IEnumerable<Blob> blobs)
-        {
-            using var sha1 = SHA1.Create();
-
-            foreach (var blob in blobs)
-            {
-                var data = blob.GetBytes();
-                sha1.TransformBlock(data.Array, data.Offset, data.Count, null, 0);
-            }
-
-            sha1.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-
-            return sha1.Hash;
-        }
-
-        /// <summary>
         /// Calculates the strong name signature for the specified blobs.
         /// </summary>
         /// <param name="keyPair"></param>
@@ -502,7 +572,7 @@ namespace IKVM.Reflection.Writer
         {
             // sign the hash with the keypair
             using var rsa = keyPair.CreateRSA();
-            var signature = rsa.SignHash(GetSHA1Hash(blobs), HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
+            var signature = rsa.SignHash(CryptographicHashProvider.ComputeHash(HashAlgorithmName.SHA1, blobs).ToArray(), HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
             Array.Reverse(signature);
 
             // check that our signature length matches

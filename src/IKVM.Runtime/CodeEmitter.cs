@@ -436,11 +436,6 @@ namespace IKVM.Runtime
         public CodeEmitter(RuntimeContext context, ILGenerator ilgen, Type declaringType)
         {
             this.context = context;
-
-#if IMPORTER
-            ilgen.__DisableExceptionBlockAssistance();
-#endif
-
             this.ilgen_real = ilgen;
             this.declaringType = declaringType;
         }
@@ -797,92 +792,6 @@ namespace IKVM.Runtime
             else
             {
                 return false;
-            }
-        }
-
-        void OptimizeBranchSizes()
-        {
-            var offset = 0;
-            for (var i = 0; i < code.Count; i++)
-            {
-                if (code[i].pseudo == CodeType.Label)
-                    code[i].Label.Temp = offset;
-
-                offset += code[i].Size;
-            }
-
-            offset = 0;
-            for (var i = 0; i < code.Count; i++)
-            {
-                var prevOffset = offset;
-                offset += code[i].Size;
-                if (code[i].HasLabel && code[i].opcode.OperandType == OperandType.InlineBrTarget)
-                {
-                    var label = code[i].Label;
-                    var diff = label.Temp - (prevOffset + code[i].opcode.Size + 1);
-                    if (-128 <= diff && diff <= 127)
-                    {
-                        var opcode = code[i].opcode;
-                        if (opcode == OpCodes.Brtrue)
-                        {
-                            opcode = OpCodes.Brtrue_S;
-                        }
-                        else if (opcode == OpCodes.Brfalse)
-                        {
-                            opcode = OpCodes.Brfalse_S;
-                        }
-                        else if (opcode == OpCodes.Br)
-                        {
-                            opcode = OpCodes.Br_S;
-                        }
-                        else if (opcode == OpCodes.Beq)
-                        {
-                            opcode = OpCodes.Beq_S;
-                        }
-                        else if (opcode == OpCodes.Bne_Un)
-                        {
-                            opcode = OpCodes.Bne_Un_S;
-                        }
-                        else if (opcode == OpCodes.Ble)
-                        {
-                            opcode = OpCodes.Ble_S;
-                        }
-                        else if (opcode == OpCodes.Ble_Un)
-                        {
-                            opcode = OpCodes.Ble_Un_S;
-                        }
-                        else if (opcode == OpCodes.Blt)
-                        {
-                            opcode = OpCodes.Blt_S;
-                        }
-                        else if (opcode == OpCodes.Blt_Un)
-                        {
-                            opcode = OpCodes.Blt_Un_S;
-                        }
-                        else if (opcode == OpCodes.Bge)
-                        {
-                            opcode = OpCodes.Bge_S;
-                        }
-                        else if (opcode == OpCodes.Bge_Un)
-                        {
-                            opcode = OpCodes.Bge_Un_S;
-                        }
-                        else if (opcode == OpCodes.Bgt)
-                        {
-                            opcode = OpCodes.Bgt_S;
-                        }
-                        else if (opcode == OpCodes.Bgt_Un)
-                        {
-                            opcode = OpCodes.Bgt_Un_S;
-                        }
-                        else if (opcode == OpCodes.Leave)
-                        {
-                            opcode = OpCodes.Leave_S;
-                        }
-
-                        code[i] = new OpCodeWrapper(opcode, label);
-                    }
-                }
             }
         }
 
@@ -2270,7 +2179,6 @@ namespace IKVM.Runtime
 
 #if IMPORTER
             OptimizeEncodings();
-            OptimizeBranchSizes();
 #endif
 
             int ilOffset = 0;
@@ -2675,12 +2583,11 @@ namespace IKVM.Runtime
 
         internal void SetLineNumber(ushort line)
         {
-#if NETFRAMEWORK
+#if NETFRAMEWORK || IMPORTER
             if (symbols != null)
-            {
                 EmitPseudoOpCode(CodeType.SequencePoint, (int)line);
-            }
 #endif
+
             EmitPseudoOpCode(CodeType.LineNumber, (int)line);
         }
 

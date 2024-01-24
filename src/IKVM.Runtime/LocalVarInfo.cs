@@ -50,11 +50,11 @@ namespace IKVM.Runtime
             {
                 if (localStoreReaders[i] != null)
                 {
-                    VisitLocalLoads(classLoader.Context, ma, method, locals, localByStoreSite, localStoreReaders[i], i, classLoader.EmitDebugInfo);
+                    VisitLocalLoads(classLoader.Context, ma, method, locals, localByStoreSite, localStoreReaders[i], i, classLoader.EmitSymbols);
                 }
             }
             Dictionary<LocalVar, LocalVar> forwarders = new Dictionary<LocalVar, LocalVar>();
-            if (classLoader.EmitDebugInfo)
+            if (classLoader.EmitSymbols)
             {
                 InstructionFlags[] flags = MethodAnalyzer.ComputePartialReachability(ma, method.Instructions, exceptions, 0, false);
                 // if we're emitting debug info, we need to keep dead stores as well...

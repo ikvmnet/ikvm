@@ -21,7 +21,6 @@
   jeroen@frijters.net
   
 */
-using System;
 using System.Collections.Generic;
 
 namespace IKVM.Reflection
@@ -44,10 +43,6 @@ namespace IKVM.Reflection
         }
 
         public abstract FieldAttributes Attributes { get; }
-
-        public abstract void __GetDataFromRVA(byte[] data, int offset, int length);
-
-        public abstract int __FieldRVA { get; }
 
         public abstract object GetRawConstantValue();
 

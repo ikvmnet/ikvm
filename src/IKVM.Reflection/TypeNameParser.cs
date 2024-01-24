@@ -488,7 +488,7 @@ namespace IKVM.Reflection
                 var typeArgs = new Type[genericParameters.Length];
                 for (int i = 0; i < typeArgs.Length; i++)
                 {
-                    typeArgs[i] = genericParameters[i].GetType(type.Assembly.universe, context, throwOnError, originalName, resolve, ignoreCase);
+                    typeArgs[i] = genericParameters[i].GetType(type.Assembly.Universe, context, throwOnError, originalName, resolve, ignoreCase);
                     if (typeArgs[i] == null)
                         return null;
                 }

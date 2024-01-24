@@ -211,7 +211,7 @@ namespace IKVM.Reflection.Reader
 
         private Module LoadModule(int index, byte[] rawModule, string name)
         {
-            string location = name == null ? null : Path.Combine(Path.GetDirectoryName(this.location), name);
+            var location = name == null ? null : Path.Combine(Path.GetDirectoryName(this.location), name);
             if ((manifestModule.FileTable.records[index].Flags & ContainsNoMetaData) != 0)
             {
                 return externalModules[index] = new ResourceModule(manifestModule, index, location);
@@ -228,20 +228,18 @@ namespace IKVM.Reflection.Reader
                     {
                         if (resolvers != null)
                         {
-                            ResolveEventArgs arg = new ResolveEventArgs(name, this);
-                            foreach (ModuleResolveEventHandler resolver in resolvers)
+                            var arg = new ResolveEventArgs(name, this);
+                            foreach (var resolver in resolvers)
                             {
-                                Module module = resolver(this, arg);
+                                var module = resolver(this, arg);
                                 if (module != null)
-                                {
                                     return module;
-                                }
                             }
                         }
-                        if (universe.MissingMemberResolution)
-                        {
+
+                        if (Universe.MissingMemberResolution)
                             return externalModules[index] = new MissingModule(this, index);
-                        }
+
                         throw;
                     }
                 }
@@ -253,13 +251,11 @@ namespace IKVM.Reflection.Reader
         {
             int index = GetModuleIndex(moduleName);
             if (index == -1)
-            {
                 throw new ArgumentException();
-            }
+
             if (externalModules[index] != null)
-            {
                 return externalModules[index];
-            }
+
             return LoadModule(index, rawModule, null);
         }
 

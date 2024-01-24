@@ -101,9 +101,9 @@ namespace IKVM.Tools.Runner.Importer
         public bool CompressResources { get; set; }
 
         /// <summary>
-        /// Whether debug symbols should be produced along with the assembly.
+        /// How debug symbols should be produced along with the assembly.
         /// </summary>
-        public bool Debug { get; set; }
+        public IkvmImporterDebugMode Debug { get; set; }
 
         public bool NoAutoSerialization { get; set; }
 

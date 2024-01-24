@@ -48,6 +48,7 @@ namespace IKVM.Tools.Importer
         static string runtimeAssembly;
         static bool nostdlib;
         static bool nonDeterministicOutput;
+        static DebugMode debugMode;
         static readonly List<string> libpaths = new List<string>();
         internal static readonly AssemblyResolver resolver = new AssemblyResolver();
 
@@ -176,7 +177,7 @@ namespace IKVM.Tools.Importer
 
             compiler.rootTarget = rootTarget;
             importer.ParseCommandLine(context, compiler, argList.GetEnumerator(), targets, rootTarget);
-            compiler.Init(nonDeterministicOutput, libpaths);
+            compiler.Init(nonDeterministicOutput, rootTarget.debugMode, libpaths);
             resolver.Warning += (warning, message, parameters) => loader_Warning(compiler, warning, message, parameters);
             resolver.Init(compiler.Universe, nostdlib, rootTarget.unresolvedReferences, libpaths);
             ResolveReferences(compiler, targets);
@@ -335,9 +336,15 @@ namespace IKVM.Tools.Importer
             Console.Error.WriteLine("-compressresources             Compress resources");
             Console.Error.WriteLine();
             Console.Error.WriteLine("                      - CODE GENERATION -");
-            Console.Error.WriteLine("-debug                         Generate debug info for the output file");
-            Console.Error.WriteLine("                               (Note that this also causes the compiler to");
-            Console.Error.WriteLine("                               generated somewhat less efficient CIL code.)");
+            Console.Error.WriteLine();
+            Console.Error.WriteLine("-debug[+|-]                    Emit debugging information");
+            Console.Error.WriteLine("-debug:{full|portable|embedded}");
+            Console.Error.WriteLine("                               Specify debugging type('portable' is default,");
+            Console.Error.WriteLine("                               'portable' is a cross - platform format,");
+            Console.Error.WriteLine("                               'embedded' is a cross - platform format embedded into");
+            Console.Error.WriteLine("                               the target.dll or.exe");
+            Console.Error.WriteLine("-deterministic                 Produce a deterministic assembly");
+            Console.Error.WriteLine("                               (including module version GUID and timestamp)");
             Console.Error.WriteLine("-noautoserialization           Disable automatic .NET serialization support");
             Console.Error.WriteLine("-noglobbing                    Don't glob the arguments passed to main");
             Console.Error.WriteLine("-nojni                         Do not generate JNI stub for native methods");
@@ -679,10 +686,32 @@ namespace IKVM.Tools.Importer
                     {
                         options.delaysign = true;
                     }
-                    else if (s == "-debug")
+                    else if (s.StartsWith("-debug"))
+                    {
+                        var mode = s.Substring(6);
+                        if (mode == "" || mode == "+" || mode == ":full")
+                        {
+                            options.codegenoptions |= CodeGenOptions.EmitSymbols;
+                            options.debugMode = DebugMode.Full;
+                        }
+                        else if (mode == ":portable")
+                        {
+                            options.codegenoptions |= CodeGenOptions.EmitSymbols;
+                            options.debugMode = DebugMode.Portable;
+                        }
+                        else if (mode == ":embedded")
+                        {
+                            options.codegenoptions |= CodeGenOptions.EmitSymbols;
+                            options.debugMode = DebugMode.Embedded;
+                        }
+                    }
+                    else if (s == "-deterministic-")
                     {
                         nonDeterministicOutput = true;
-                        options.codegenoptions |= CodeGenOptions.Debug;
+                    }
+                    else if (s == "-optimize-")
+                    {
+                        options.codegenoptions |= CodeGenOptions.DisableOptimizations;
                     }
                     else if (s.StartsWith("-srcpath:"))
                     {
@@ -1553,13 +1582,6 @@ namespace IKVM.Tools.Importer
                 case Message.InterfaceMethodCantBeInternal:
                     msg = "Ignoring @ikvm.lang.Internal annotation on interface method" + Environment.NewLine +
                         "    (\"{0}.{1}{2}\")";
-                    break;
-                case Message.DllExportMustBeStaticMethod:
-                    msg = "Ignoring @ikvm.lang.DllExport annotation on non-static method" + Environment.NewLine +
-                        "    (\"{0}.{1}{2}\")";
-                    break;
-                case Message.DllExportRequiresSupportedPlatform:
-                    msg = "Ignoring @ikvm.lang.DllExport annotation due to unsupported target platform";
                     break;
                 case Message.NonPrimaryAssemblyReference:
                     msg = "Referenced assembly \"{0}\" is not the primary assembly of a shared class loader group, please reference primary assembly \"{1}\" instead";

@@ -175,22 +175,9 @@ namespace IKVM.Runtime
             return tw;
         }
 
-        internal bool EmitDebugInfo
-        {
-            get
-            {
-                return (codegenoptions & CodeGenOptions.Debug) != 0;
-            }
-        }
+        internal bool EmitSymbols => (codegenoptions & CodeGenOptions.EmitSymbols) != 0;
 
-        internal bool EmitStackTraceInfo
-        {
-            get
-            {
-                // NOTE we're negating the flag here!
-                return (codegenoptions & CodeGenOptions.NoStackTraceInfo) == 0;
-            }
-        }
+        internal bool EmitStackTraceInfo => (codegenoptions & CodeGenOptions.NoStackTraceInfo) == 0;
 
         internal bool StrictFinalFieldSemantics => (codegenoptions & CodeGenOptions.StrictFinalFieldSemantics) != 0;
 
@@ -205,6 +192,8 @@ namespace IKVM.Runtime
         internal bool EmitNoRefEmitHelpers => (codegenoptions & CodeGenOptions.NoRefEmitHelpers) != 0;
 
         internal bool RemoveUnusedFields => (codegenoptions & CodeGenOptions.RemoveUnusedFields) != 0;
+
+        internal bool EnableOptimizations => (codegenoptions & CodeGenOptions.DisableOptimizations) == 0;
 
         internal bool WorkaroundAbstractMethodWidening
         {
@@ -1023,7 +1012,7 @@ namespace IKVM.Runtime
                 return cfp;
 #else
                 var cfp = ClassFileParseOptions.LineNumberTable;
-                if (EmitDebugInfo)
+                if (EmitSymbols)
                     cfp |= ClassFileParseOptions.LocalVariableTable;
                 if (RelaxedClassNameValidation)
                     cfp |= ClassFileParseOptions.RelaxedClassNameValidation;

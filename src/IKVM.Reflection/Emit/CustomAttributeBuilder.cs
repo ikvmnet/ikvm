@@ -232,7 +232,7 @@ namespace IKVM.Reflection.Emit
 
             void WriteFixedArg(Type type, object value)
             {
-                var u = assembly.universe;
+                var u = assembly.Universe;
                 if (type == u.System_String)
                 {
                     WriteString((string)value);

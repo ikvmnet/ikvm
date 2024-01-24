@@ -9,6 +9,7 @@ namespace IKVM.Reflection.Emit
     {
 
         readonly BlobBuilder writer;
+        int count;
 
         /// <summary>
         /// Initializes a new instance.
@@ -19,6 +20,11 @@ namespace IKVM.Reflection.Emit
         {
             this.writer = writer ?? throw new ArgumentNullException(nameof(writer));
         }
+
+        /// <summary>
+        /// Gets the number of imports written.
+        /// </summary>
+        public int Count => count;
 
         public void AliasAssemblyReference(BlobHandle alias, AssemblyReferenceHandle assembly)
         {
