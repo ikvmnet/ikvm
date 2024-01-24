@@ -552,7 +552,7 @@ namespace IKVM.Reflection.Emit
             Emit(OpCodes.Calli);
 
             // If there is a non-void return type, push one.
-            if (returnType != modBuilder.universe.System_Void)
+            if (returnType != modBuilder.Universe.System_Void)
                 stackchange++;
             // Pop off arguments if any.
             if (parameterTypes != null)
@@ -597,7 +597,7 @@ namespace IKVM.Reflection.Emit
             }
 
             // If there is a non-void return type, push one.
-            if (returnType != modBuilder.universe.System_Void)
+            if (returnType != modBuilder.Universe.System_Void)
                 stackchange++;
 
             // Pop off arguments if any.
@@ -629,7 +629,7 @@ namespace IKVM.Reflection.Emit
             InternalEmit(opcode);
 
             // Push the return value if there is one.
-            if (methodInfo.ReturnType != m_methodBuilder.ModuleBuilder.universe.System_Void)
+            if (methodInfo.ReturnType != m_methodBuilder.ModuleBuilder.Universe.System_Void)
                 stackchange++;
             // Pop the parameters.
             Type[] parameters = methodInfo.GetParameterTypes();

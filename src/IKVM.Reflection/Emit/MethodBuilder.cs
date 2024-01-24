@@ -66,9 +66,9 @@ namespace IKVM.Reflection.Emit
 
         byte[] m_ubBody;                                // The IL for the method
         int m_maxStack;                                 // Maximum stack size calculated 
-        byte[] m_localSignature;                          // Local signature if set explicitly via DefineBody. Null otherwise.
+        byte[] m_localSignature;                        // Local signature if set explicitly via DefineBody. Null otherwise.
         ExceptionHandler[] m_exceptions;                // Exception handlers or null if there are none.
-        int[] m_mdMethodFixups;                              // The location of all of the token fixups. Null means no fixups.
+        int[] m_mdMethodFixups;                         // The location of all of the token fixups. Null means no fixups.
         internal LocalSymInfo m_localSymInfo;           // keep track debugging local information
 
         /// <summary>
@@ -320,7 +320,7 @@ namespace IKVM.Reflection.Emit
         public void SetReturnType(Type returnType)
         {
             CheckSig();
-            this.returnType = returnType ?? this.Module.universe.System_Void;
+            this.returnType = returnType ?? this.Module.Universe.System_Void;
         }
 
         public void SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
@@ -336,7 +336,7 @@ namespace IKVM.Reflection.Emit
         private void SetSignature(Type returnType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
         {
             CheckSig();
-            this.returnType = returnType ?? this.Module.universe.System_Void;
+            this.returnType = returnType ?? this.Module.Universe.System_Void;
             this.parameterTypes = Util.Copy(parameterTypes);
             this.customModifiers = customModifiers;
         }
@@ -763,8 +763,17 @@ namespace IKVM.Reflection.Emit
         {
             Debug.Assert(IsBaked);
 
+            // encode local signature into metadata
+            var localSignatureHandle = default(StandaloneSignatureHandle);
+            if (m_localSignature != null)
+            {
+                var buf = new BlobBuilder();
+                buf.WriteBytes(m_localSignature);
+                localSignatureHandle = MetadataTokens.StandaloneSignatureHandle(ModuleBuilder.StandAloneSigTable.FindOrAddRecord(ModuleBuilder.GetOrAddBlob(buf)));
+            }
+
             // write the body to the metadata
-            WriteBody();
+            WriteBody(localSignatureHandle);
 
             // handle we expect to be allocated
             var t = (MethodDefinitionHandle)MetadataTokens.EntityHandle(ModuleBuilder.ResolvePseudoToken(pseudoToken));
@@ -780,7 +789,7 @@ namespace IKVM.Reflection.Emit
             Debug.Assert(h == t);
 
             // ilgen code was already written, but now we can fill in the debug tables
-            WriteSymbols(h);
+            WriteSymbols(h, localSignatureHandle);
 
             if (parameters != null)
                 paramList += parameters.Count;
@@ -795,21 +804,12 @@ namespace IKVM.Reflection.Emit
         /// <summary>
         /// Writes the final method body to the metadata.
         /// </summary>
-        /// <param name="metadata"></param>
-        void WriteBody()
+        /// <param name="localSignatureHandle"></param>
+        void WriteBody(StandaloneSignatureHandle localSignatureHandle)
         {
             // might not have a body
             if (m_ubBody == null)
                 return;
-
-            // encode local signature into metadata
-            var localSignatureHandle = default(StandaloneSignatureHandle);
-            if (m_localSignature != null)
-            {
-                var buf = new BlobBuilder();
-                buf.WriteBytes(m_localSignature);
-                localSignatureHandle = MetadataTokens.StandaloneSignatureHandle(ModuleBuilder.StandAloneSigTable.AddRecord(ModuleBuilder.GetOrAddBlob(buf)));
-            }
 
             // calculate whether any large exception regions exist
             var hasSmallExceptions = HasSmallExceptionRegions(m_exceptions);
@@ -863,7 +863,8 @@ namespace IKVM.Reflection.Emit
         /// Writes the final debugging information to the metadata tables.
         /// </summary>
         /// <param name="methodHandle"></param>
-        void WriteSymbols(MethodDefinitionHandle methodHandle)
+        /// <param name="localSignatureHandle"></param>
+        void WriteSymbols(MethodDefinitionHandle methodHandle, StandaloneSignatureHandle localSignatureHandle)
         {
             if (ModuleBuilder.GetSymWriter() != null)
             {
@@ -874,8 +875,8 @@ namespace IKVM.Reflection.Emit
                 ISymbolWriter symWriter = ModuleBuilder.GetSymWriter();
 
                 // call OpenMethod to make this method the current method
-                if (symWriter is IMetadataSymbolWriter msymWriter)
-                    msymWriter.OpenMethod(tk, m_localSignature);
+                if (symWriter is IMetadataSymbolWriter metadataSymWriter)
+                    metadataSymWriter.OpenMethod(tk, localSignatureHandle);
                 else
                     symWriter.OpenMethod(tk);
 
@@ -886,6 +887,7 @@ namespace IKVM.Reflection.Emit
                     // the top-level method scope
                     symWriter.OpenScope(0);
 
+                    // emit debug information for method
                     m_localSymInfo?.EmitLocalSymInfo(symWriter);
                     m_ilGenerator.m_ScopeTree.EmitScopeTree(symWriter);
                     m_ilGenerator.m_LineNumberInfo.EmitLineNumberInfo(symWriter);
@@ -893,6 +895,7 @@ namespace IKVM.Reflection.Emit
                     symWriter.CloseScope(m_ilGenerator.ILOffset);
                 }
 
+                // exit the method
                 symWriter.CloseMethod();
             }
         }

@@ -62,28 +62,23 @@ namespace IKVM.Runtime
 		}
 
 		internal void Emit(ILGenerator ilgen, OpCode opcode)
-		{
-			if (local == null)
-			{
-				// it's a temporary local that is only allocated on-demand
-				local = ilgen.DeclareLocal(type);
-			}
+        {
+            // it's a temporary local that is only allocated on-demand
+            local ??= ilgen.DeclareLocal(type);
 			ilgen.Emit(opcode, local);
 		}
 
 		internal void Declare(ILGenerator ilgen)
 		{
 			local = ilgen.DeclareLocal(type);
-			if (name != null)
-			{
-#if NETFRAMEWORK
-				// SetLocalSymInfo does not exist in .net core
+
+#if NETFRAMEWORK || IMPORTER
+            if (name != null)
 				local.SetLocalSymInfo(name);
 #endif
-			}
 
-		}
+        }
 
-	}
+    }
 
 }

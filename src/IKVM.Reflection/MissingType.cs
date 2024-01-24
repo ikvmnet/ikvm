@@ -125,7 +125,7 @@ namespace IKVM.Reflection
                     case TypeFlags.NotValueType:
                         return false;
                     default:
-                        if (module.universe.ResolveMissingTypeIsValueType(this))
+                        if (module.Universe.ResolveMissingTypeIsValueType(this))
                             typeFlags |= TypeFlags.ValueType;
                         else
                             typeFlags |= TypeFlags.NotValueType;

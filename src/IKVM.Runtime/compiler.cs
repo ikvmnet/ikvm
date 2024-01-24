@@ -1688,12 +1688,11 @@ namespace IKVM.Runtime
                             }
                             else
                             {
-                                LocalVar v = LoadLocal(i);
+                                var v = LoadLocal(i);
                                 if (!type.IsUnloadable && (v.type.IsUnloadable || !v.type.IsAssignableTo(type)))
-                                {
                                     type.EmitCheckcast(ilGenerator);
-                                }
                             }
+
                             break;
                         }
                     case NormalizedByteCode.__astore:
@@ -3922,20 +3921,16 @@ namespace IKVM.Runtime
 
         private LocalVar LoadLocal(int instructionIndex)
         {
-            LocalVar v = localVars.GetLocalVar(instructionIndex);
+            var v = localVars.GetLocalVar(instructionIndex);
             if (v.isArg)
             {
-                ClassFile.Method.Instruction instr = m.Instructions[instructionIndex];
+                var instr = m.Instructions[instructionIndex];
                 int i = m.ArgMap[instr.NormalizedArg1];
                 ilGenerator.EmitLdarg(i);
                 if (v.type == finish.Context.PrimitiveJavaTypeFactory.DOUBLE)
-                {
                     ilGenerator.Emit(OpCodes.Conv_R8);
-                }
                 if (v.type == finish.Context.PrimitiveJavaTypeFactory.FLOAT)
-                {
                     ilGenerator.Emit(OpCodes.Conv_R4);
-                }
             }
             else if (v.type == finish.Context.VerifierJavaTypeFactory.Null)
             {
@@ -3947,12 +3942,12 @@ namespace IKVM.Runtime
                 {
                     v.builder = ilGenerator.DeclareLocal(GetLocalBuilderType(v.type));
                     if (debug && v.name != null)
-                    {
                         v.builder.SetLocalSymInfo(v.name);
-                    }
                 }
+
                 ilGenerator.Emit(OpCodes.Ldloc, v.builder);
             }
+
             return v;
         }
 
@@ -3980,9 +3975,7 @@ namespace IKVM.Runtime
                 {
                     v.builder = ilGenerator.DeclareLocal(GetLocalBuilderType(v.type));
                     if (debug && v.name != null)
-                    {
                         v.builder.SetLocalSymInfo(v.name);
-                    }
                 }
                 ilGenerator.Emit(OpCodes.Stloc, v.builder);
             }

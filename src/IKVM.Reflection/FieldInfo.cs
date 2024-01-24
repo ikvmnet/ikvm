@@ -170,11 +170,11 @@ namespace IKVM.Reflection
             var module = Module;
             var list = new List<CustomAttributeData>();
 
-            if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_MarshalAsAttribute))
+            if (attributeType == null || attributeType.IsAssignableFrom(Module.Universe.System_Runtime_InteropServices_MarshalAsAttribute))
                 if (__TryGetFieldMarshal(out var spec))
                     list.Add(CustomAttributeData.CreateMarshalAsPseudoCustomAttribute(module, spec));
 
-            if (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_FieldOffsetAttribute))
+            if (attributeType == null || attributeType.IsAssignableFrom(Module.Universe.System_Runtime_InteropServices_FieldOffsetAttribute))
                 if (__TryGetFieldOffset(out var offset))
                     list.Add(CustomAttributeData.CreateFieldOffsetPseudoCustomAttribute(module, offset));
 

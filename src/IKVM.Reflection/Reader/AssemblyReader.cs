@@ -45,7 +45,7 @@ namespace IKVM.Reflection.Reader
         /// <param name="location"></param>
         /// <param name="manifestModule"></param>
         internal AssemblyReader(string location, ModuleReader manifestModule) :
-            base(manifestModule.universe)
+            base(manifestModule.Universe)
         {
             this.location = location;
             this.manifestModule = manifestModule;
@@ -243,7 +243,7 @@ namespace IKVM.Reflection.Reader
                         throw;
                     }
                 }
-                return externalModules[index] = new ModuleReader(this, manifestModule.universe, new MemoryStream(rawModule), location, false);
+                return externalModules[index] = new ModuleReader(this, manifestModule.Universe, new MemoryStream(rawModule), location, false);
             }
         }
 

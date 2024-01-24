@@ -237,7 +237,7 @@ namespace IKVM.Reflection.Diagnostics
         {
 
             readonly int token;
-            readonly byte[] localVarSignature;
+            readonly StandaloneSignatureHandle localSignatureHandle;
             internal List<SequencePoint> sequencePoints;
             internal List<Scope> scopes;
             internal Stack<Scope> scopeStack;
@@ -246,11 +246,11 @@ namespace IKVM.Reflection.Diagnostics
             /// Initializes a new instance.
             /// </summary>
             /// <param name="token"></param>
-            /// <param name="localVarSignature"></param>
-            internal Method(int token, byte[] localVarSignature)
+            /// <param name="localSignatureHandle"></param>
+            internal Method(int token, StandaloneSignatureHandle localSignatureHandle)
             {
                 this.token = token;
-                this.localVarSignature = localVarSignature;
+                this.localSignatureHandle = localSignatureHandle;
             }
 
             /// <summary>
@@ -261,7 +261,7 @@ namespace IKVM.Reflection.Diagnostics
             /// <summary>
             /// Gets the local variable signature.
             /// </summary>
-            public byte[] LocalVarSignature => localVarSignature;
+            public StandaloneSignatureHandle LocalSignatureHandle => localSignatureHandle;
 
             /// <summary>
             /// Gets the sequence points.
@@ -405,11 +405,11 @@ namespace IKVM.Reflection.Diagnostics
         /// Opens a method to place symbol information into.
         /// </summary>
         /// <param name="method"></param>
-        /// <param name="localVarSignature"></param>
-        public virtual void OpenMethod(SymbolToken method, byte[] localVarSignature)
+        /// <param name="localSignatureHandle"></param>
+        public virtual void OpenMethod(SymbolToken method, StandaloneSignatureHandle localSignatureHandle)
         {
             Debug.Assert(ModuleBuilder.IsPseudoToken(method.GetToken()) == false);
-            currentMethod = new Method(method.GetToken(), localVarSignature);
+            currentMethod = new Method(method.GetToken(), localSignatureHandle);
         }
 
         /// <summary>
@@ -601,11 +601,11 @@ namespace IKVM.Reflection.Diagnostics
             var enc = new SequencePointEncoder(buf);
 
             // obtain local signature from method builder directly
-            if (method.LocalVarSignature == null)
+            if (method.LocalSignatureHandle.IsNil)
                 throw new InvalidOperationException("MethodBuilder missing local signature.");
 
             // sequence points begin with local signature
-            enc.LocalSignature(metadata.AddStandaloneSignature(metadata.GetOrAddBlob(method.LocalVarSignature)));
+            enc.LocalSignature(method.LocalSignatureHandle);
 
             // add the sequence points recorded on the method
             foreach (var sequencePoint in method.SequencePoints)
@@ -626,6 +626,9 @@ namespace IKVM.Reflection.Diagnostics
         /// <param name="documentCache"></param>
         DocumentHandle GetOrWriteDocument(MetadataBuilder metadata, Document document, Dictionary<Document, DocumentHandle> documentCache)
         {
+            if (document == null)
+                return default;
+
             if (documentCache.TryGetValue(document, out var handle) == false)
                 documentCache.Add(document, handle = WriteDocument(metadata, document));
 
@@ -640,10 +643,10 @@ namespace IKVM.Reflection.Diagnostics
         DocumentHandle WriteDocument(MetadataBuilder metadata, Document document)
         {
             return metadata.AddDocument(
-                metadata.GetOrAddBlobUTF8(document.Url ?? ""),
-                metadata.GetOrAddGuid(document.AlgorithmId),
-                metadata.GetOrAddBlob(document.Checksum),
-                metadata.GetOrAddGuid(document.Language));
+                metadata.GetOrAddDocumentName(document.Url ?? ""),
+                document.AlgorithmId != Guid.Empty ? metadata.GetOrAddGuid(document.AlgorithmId) : default,
+                document.Checksum != null ? metadata.GetOrAddBlob(document.Checksum) : default,
+                document.Language != Guid.Empty ? metadata.GetOrAddGuid(document.Language) : default);
         }
 
         /// <summary>

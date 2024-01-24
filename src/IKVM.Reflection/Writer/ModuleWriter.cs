@@ -178,6 +178,10 @@ namespace IKVM.Reflection.Writer
             {
                 // generate a new metadata image for the PDB
                 var pdbMetadata = new MetadataBuilder();
+                pdbMetadata.GetOrAddString("");
+                pdbMetadata.GetOrAddUserString("");
+                pdbMetadata.GetOrAddBlob(Array.Empty<byte>());
+                pdbMetadata.GetOrAddGuid(Guid.Empty);
                 msym.WriteTo(pdbMetadata, out var pdbUserEntryPoint);
 
                 // create new PDB builder around produced metadata
@@ -186,7 +190,7 @@ namespace IKVM.Reflection.Writer
                     pdbMetadata,
                     rootBuilder.Sizes.RowCounts,
                     pdbUserEntryPoint != 0 ? (MethodDefinitionHandle)MetadataTokens.EntityHandle(module.ResolvePseudoToken(pdbUserEntryPoint)) : default,
-                    module.universe.Deterministic ? new Func<IEnumerable<Blob>, BlobContentId>(content => BlobContentId.FromHash(pdbContentHash = CryptographicHashProvider.ComputeHash(HashAlgorithmName.SHA1, content))) : null);
+                    module.Universe.Deterministic ? new Func<IEnumerable<Blob>, BlobContentId>(content => BlobContentId.FromHash(pdbContentHash = CryptographicHashProvider.ComputeHash(module.Universe.PdbChecksumAlgorithm, content))) : null);
 
                 // serialize the PDB
                 var pdbContent = new BlobBuilder();
@@ -196,7 +200,7 @@ namespace IKVM.Reflection.Writer
                 debugBuilder = new DebugDirectoryBuilder();
 
                 // mark symbols as reproducible
-                if (module.universe.Deterministic)
+                if (module.Universe.Deterministic)
                     debugBuilder.AddReproducibleEntry();
 
                 // a checksum hash was produced, so we add it to the debug information
@@ -517,21 +521,8 @@ namespace IKVM.Reflection.Writer
         {
             if (module.GetModuleVersionIdOrEmpty() is Guid mvid && mvid != Guid.Empty)
                 return e => new BlobContentId(mvid, 1);
-            else if (module.universe.Deterministic)
-                return e => BlobContentId.FromHash(CryptographicHashProvider.ComputeHash(HashAlgorithmName.SHA1, e));
-            else
-                return null;
-        }
-
-        /// <summary>
-        /// Gets the appropriate ID provider for the generation of unique identifiers for a PDB.
-        /// </summary>
-        /// <param name="module"></param>
-        /// <returns></returns>
-        static Func<IEnumerable<Blob>, BlobContentId> GetPdbIdProvider(IKVM.Reflection.Emit.ModuleBuilder module)
-        {
-            if (module.universe.Deterministic)
-                return e => BlobContentId.FromHash(CryptographicHashProvider.ComputeHash(HashAlgorithmName.SHA1, e));
+            else if (module.Universe.Deterministic)
+                return e => BlobContentId.FromHash(CryptographicHashProvider.ComputeHash(HashAlgorithmName.SHA256, e));
             else
                 return null;
         }

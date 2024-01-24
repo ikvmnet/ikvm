@@ -259,7 +259,7 @@ namespace IKVM.Reflection.Emit
             this.moduleName = moduleName;
             this.fileName = fileName;
 
-            if (!universe.Deterministic)
+            if (Universe.Deterministic == false)
             {
                 __PEHeaderTimeDateStamp = DateTime.UtcNow;
                 mvid = Guid.NewGuid();
@@ -486,7 +486,7 @@ namespace IKVM.Reflection.Emit
 
         public EnumBuilder DefineEnum(string name, TypeAttributes visibility, Type underlyingType)
         {
-            var tb = DefineType(name, (visibility & TypeAttributes.VisibilityMask) | TypeAttributes.Sealed, universe.System_Enum);
+            var tb = DefineType(name, (visibility & TypeAttributes.VisibilityMask) | TypeAttributes.Sealed, Universe.System_Enum);
             var fb = tb.DefineField("value__", underlyingType, FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
             return new EnumBuilder(tb, fb);
         }
@@ -1322,7 +1322,7 @@ namespace IKVM.Reflection.Emit
         {
             get
             {
-                if (mvid == Guid.Empty && universe.Deterministic)
+                if (mvid == Guid.Empty && Universe.Deterministic)
                 {
                     // if a deterministic GUID is used, it can't be queried before the assembly has been written
                     throw new InvalidOperationException();
@@ -1333,7 +1333,7 @@ namespace IKVM.Reflection.Emit
 
         public void __SetModuleVersionId(Guid guid)
         {
-            if (guid == Guid.Empty && universe.Deterministic)
+            if (guid == Guid.Empty && Universe.Deterministic)
             {
                 // if you want to use Guid.Empty, don't set UniverseOptions.DeterministicOutput
                 throw new ArgumentOutOfRangeException();
@@ -1563,14 +1563,14 @@ namespace IKVM.Reflection.Emit
             var attributes = asm.GetCustomAttributesData(null);
             if (attributes.Count > 0)
             {
-                var mscorlib = ImportAssemblyRef(universe.CoreLib);
+                var mscorlib = ImportAssemblyRef(Universe.CoreLib);
                 var placeholderTokens = new int[4];
                 var placeholderTypeNames = new string[] { "AssemblyAttributesGoHere", "AssemblyAttributesGoHereM", "AssemblyAttributesGoHereS", "AssemblyAttributesGoHereSM" };
 
                 foreach (var cad in attributes)
                 {
                     int index;
-                    if (cad.Constructor.DeclaringType.BaseType == universe.System_Security_Permissions_CodeAccessSecurityAttribute)
+                    if (cad.Constructor.DeclaringType.BaseType == Universe.System_Security_Permissions_CodeAccessSecurityAttribute)
                     {
                         if (cad.Constructor.DeclaringType.IsAllowMultipleCustomAttribute)
                             index = 3;

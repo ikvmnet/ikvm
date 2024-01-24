@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.SymbolStore;
+using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
-using System.Reflection.PortableExecutable;
 
 namespace IKVM.Reflection.Diagnostics
 {
@@ -15,8 +15,8 @@ namespace IKVM.Reflection.Diagnostics
         /// Extended OpenMethod that accepts a local variable signature.
         /// </summary>
         /// <param name="method"></param>
-        /// <param name="localVarSignature"></param>
-        void OpenMethod(SymbolToken method, byte[] localVarSignature);
+        /// <param name="localSignatureHandle"></param>
+        void OpenMethod(SymbolToken method, StandaloneSignatureHandle localSignatureHandle);
 
         /// <summary>
         /// Writes the debug information to the given metadata.

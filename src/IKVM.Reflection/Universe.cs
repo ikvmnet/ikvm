@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Diagnostics.SymbolStore;
 using System.IO;
 using System.Security;
+using System.Security.Cryptography;
 using System.Text;
 
 using IKVM.Reflection.Emit;
@@ -73,6 +74,7 @@ namespace IKVM.Reflection
         readonly bool useNativeFusion;
         readonly bool returnPseudoCustomAttributes;
         readonly bool automaticallyProvideDefaultConstructor;
+        HashAlgorithmName pdbChecksumAlgorithm = HashAlgorithmName.SHA256;
         readonly UniverseOptions options;
         Func<ModuleBuilder, ISymbolWriter> symbolWriterFactory;
         Type typeof_System_Object;
@@ -164,10 +166,18 @@ namespace IKVM.Reflection
         }
 
         /// <summary>
+        /// Sets the algorithm to use when calculating PDB checksums.
+        /// </summary>
+        /// <param name="pdbChecksumAlgorithm"></param>
+        public void SetPdbChecksumAlgorithm(HashAlgorithmName pdbChecksumAlgorithm)
+        {
+            this.pdbChecksumAlgorithm = pdbChecksumAlgorithm;
+        }
+
+        /// <summary>
         /// Creates a new <see cref="ISymbolWriter"/> for the specified assembly builder and new module name.
         /// </summary>
         /// <param name="module"></param>
-        /// <param name="moduleName"></param>
         /// <returns></returns>
         internal ISymbolWriter CreateSymbolWriter(ModuleBuilder module)
         {
@@ -1011,6 +1021,11 @@ namespace IKVM.Reflection
         /// Returns <c>true</c> if the module builders should produce deterministic images.
         /// </summary>
         internal bool Deterministic => (options & UniverseOptions.DeterministicOutput) != 0;
+
+        /// <summary>
+        /// Gets the hash algorithm to use for PDB checksums.
+        /// </summary>
+        internal HashAlgorithmName PdbChecksumAlgorithm => pdbChecksumAlgorithm;
 
     }
 

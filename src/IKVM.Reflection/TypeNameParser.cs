@@ -474,7 +474,7 @@ namespace IKVM.Reflection
                     if (type == null)
                     {
                         if (resolve)
-                            type = outer.Module.universe.GetMissingTypeOrThrow(context, outer.Module, outer, name);
+                            type = outer.Module.Universe.GetMissingTypeOrThrow(context, outer.Module, outer, name);
                         else if (throwOnError)
                             throw new TypeLoadException(originalName);
                         else

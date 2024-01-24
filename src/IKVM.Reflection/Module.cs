@@ -34,7 +34,7 @@ namespace IKVM.Reflection
     public abstract class Module : ICustomAttributeProvider
     {
 
-        internal readonly Universe universe;
+        readonly Universe universe;
         internal readonly ModuleTable ModuleTable = new ModuleTable();
         internal readonly TypeRefTable TypeRefTable = new TypeRefTable();
         internal readonly TypeDefTable TypeDefTable = new TypeDefTable();
@@ -89,6 +89,11 @@ namespace IKVM.Reflection
         {
             this.universe = universe;
         }
+
+        /// <summary>
+        /// Gets the universe of types this module belongs to.
+        /// </summary>
+        public Universe Universe => universe;
 
         internal Table[] GetTables()
         {

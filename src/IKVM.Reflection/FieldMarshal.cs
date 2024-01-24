@@ -110,7 +110,7 @@ namespace IKVM.Reflection
 
                             var parser = TypeNameParser.Parse(fm.MarshalType, false);
                             if (!parser.Error)
-                                fm.MarshalTypeRef = parser.GetType(module.universe, module, false, fm.MarshalType, false, false);
+                                fm.MarshalTypeRef = parser.GetType(module.Universe, module, false, fm.MarshalType, false, false);
                             break;
                         }
                 }
@@ -229,7 +229,7 @@ namespace IKVM.Reflection
             if (str == "")
                 return null;
 
-            return module.Assembly.GetType(str) ?? module.universe.GetType(str, true);
+            return module.Assembly.GetType(str) ?? module.Universe.GetType(str, true);
         }
 
         static void WriteType(Module module, ByteBuffer bb, Type type)

@@ -532,7 +532,7 @@ namespace IKVM.Reflection.Emit
             {
                 if (lazyBaseType == null && !IsInterface)
                 {
-                    var obj = Module.universe.System_Object;
+                    var obj = Module.Universe.System_Object;
                     if (this != obj)
                         lazyBaseType = obj;
                 }
@@ -635,7 +635,7 @@ namespace IKVM.Reflection.Emit
             //var fieldType = ModuleBuilder.GetType("$ArrayType$" + data.Length);
             //if (fieldType == null)
             //{
-            //    var typeBuilder = ModuleBuilder.DefineType("$ArrayType$" + data.Length, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.ExplicitLayout, Module.universe.System_ValueType, PackingSize.Size1, data.Length);
+            //    var typeBuilder = ModuleBuilder.DefineType("$ArrayType$" + data.Length, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.ExplicitLayout, Module.Universe.System_ValueType, PackingSize.Size1, data.Length);
             //    typeBuilder.CreateType();
             //    fieldType = typeBuilder;
             //}

@@ -133,14 +133,14 @@ namespace IKVM.Reflection
         private static Type ReadFunctionPointer(ModuleReader module, ByteReader br, IGenericContext context)
         {
             __StandAloneMethodSig sig = MethodSignature.ReadStandAloneMethodSig(module, br, context);
-            if (module.universe.EnableFunctionPointers)
+            if (module.Universe.EnableFunctionPointers)
             {
-                return FunctionPointerType.Make(module.universe, sig);
+                return FunctionPointerType.Make(module.Universe, sig);
             }
             else
             {
                 // by default, like .NET we return System.IntPtr here
-                return module.universe.System_IntPtr;
+                return module.Universe.System_IntPtr;
             }
         }
 
@@ -190,7 +190,7 @@ namespace IKVM.Reflection
             if (br.PeekByte() == ELEMENT_TYPE_VOID)
             {
                 br.ReadByte();
-                return module.universe.System_Void;
+                return module.Universe.System_Void;
             }
             else
             {
@@ -209,37 +209,37 @@ namespace IKVM.Reflection
                 case ELEMENT_TYPE_VALUETYPE:
                     return ReadTypeDefOrRefEncoded(module, br, context).MarkValueType();
                 case ELEMENT_TYPE_BOOLEAN:
-                    return module.universe.System_Boolean;
+                    return module.Universe.System_Boolean;
                 case ELEMENT_TYPE_CHAR:
-                    return module.universe.System_Char;
+                    return module.Universe.System_Char;
                 case ELEMENT_TYPE_I1:
-                    return module.universe.System_SByte;
+                    return module.Universe.System_SByte;
                 case ELEMENT_TYPE_U1:
-                    return module.universe.System_Byte;
+                    return module.Universe.System_Byte;
                 case ELEMENT_TYPE_I2:
-                    return module.universe.System_Int16;
+                    return module.Universe.System_Int16;
                 case ELEMENT_TYPE_U2:
-                    return module.universe.System_UInt16;
+                    return module.Universe.System_UInt16;
                 case ELEMENT_TYPE_I4:
-                    return module.universe.System_Int32;
+                    return module.Universe.System_Int32;
                 case ELEMENT_TYPE_U4:
-                    return module.universe.System_UInt32;
+                    return module.Universe.System_UInt32;
                 case ELEMENT_TYPE_I8:
-                    return module.universe.System_Int64;
+                    return module.Universe.System_Int64;
                 case ELEMENT_TYPE_U8:
-                    return module.universe.System_UInt64;
+                    return module.Universe.System_UInt64;
                 case ELEMENT_TYPE_R4:
-                    return module.universe.System_Single;
+                    return module.Universe.System_Single;
                 case ELEMENT_TYPE_R8:
-                    return module.universe.System_Double;
+                    return module.Universe.System_Double;
                 case ELEMENT_TYPE_I:
-                    return module.universe.System_IntPtr;
+                    return module.Universe.System_IntPtr;
                 case ELEMENT_TYPE_U:
-                    return module.universe.System_UIntPtr;
+                    return module.Universe.System_UIntPtr;
                 case ELEMENT_TYPE_STRING:
-                    return module.universe.System_String;
+                    return module.Universe.System_String;
                 case ELEMENT_TYPE_OBJECT:
-                    return module.universe.System_Object;
+                    return module.Universe.System_Object;
                 case ELEMENT_TYPE_VAR:
                     return context.GetGenericTypeArgument(br.ReadCompressedUInt());
                 case ELEMENT_TYPE_MVAR:
@@ -273,7 +273,7 @@ namespace IKVM.Reflection
                 if (br.PeekByte() == ELEMENT_TYPE_TYPEDBYREF)
                 {
                     br.ReadByte();
-                    list.Add(new LocalVariableInfo(i, module.universe.System_TypedReference, false));
+                    list.Add(new LocalVariableInfo(i, module.Universe.System_TypedReference, false));
                 }
                 else
                 {
@@ -315,10 +315,10 @@ namespace IKVM.Reflection
             {
                 case ELEMENT_TYPE_VOID:
                     br.ReadByte();
-                    return module.universe.System_Void;
+                    return module.Universe.System_Void;
                 case ELEMENT_TYPE_TYPEDBYREF:
                     br.ReadByte();
-                    return module.universe.System_TypedReference;
+                    return module.Universe.System_TypedReference;
                 default:
                     return ReadTypeOrByRef(module, br, context);
             }
@@ -330,7 +330,7 @@ namespace IKVM.Reflection
             {
                 case ELEMENT_TYPE_TYPEDBYREF:
                     br.ReadByte();
-                    return module.universe.System_TypedReference;
+                    return module.Universe.System_TypedReference;
                 default:
                     return ReadTypeOrByRef(module, br, context);
             }

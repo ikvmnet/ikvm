@@ -152,7 +152,7 @@ namespace IKVM.Reflection.Emit
                     Signature.WriteTypeSpec(module, bb, mod.Type);
                 }
 
-                Signature.WriteTypeSpec(module, bb, argument ?? module.universe.System_Void);
+                Signature.WriteTypeSpec(module, bb, argument ?? module.Universe.System_Void);
                 argumentCount++;
             }
         }
