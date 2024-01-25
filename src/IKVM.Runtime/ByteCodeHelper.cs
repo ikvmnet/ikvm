@@ -367,7 +367,7 @@ namespace IKVM.Runtime
 #else
             try
             {
-                global::java.lang.invoke.MethodHandle mh = DynamicLoadMethodHandleImpl(kind, clazz, name, sig, callerID);
+                var mh = DynamicLoadMethodHandleImpl(kind, clazz, name, sig, callerID);
                 return GetDelegateForInvokeExact<T>(global::java.lang.invoke.MethodHandles.explicitCastArguments(mh, JVM.Context.MethodHandleUtil.GetDelegateMethodType(typeof(T))));
             }
             catch (global::java.lang.IncompatibleClassChangeError x)
