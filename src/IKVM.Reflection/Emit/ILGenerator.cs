@@ -1289,6 +1289,8 @@ namespace IKVM.Reflection.Emit
 
         public int ILOffset => m_length;
 
+        public void Emit(OpCode opcode, sbyte arg) => Emit(opcode, (byte)arg);
+
         #endregion
 
         #endregion

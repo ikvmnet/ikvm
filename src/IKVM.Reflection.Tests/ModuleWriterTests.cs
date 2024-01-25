@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 
 using FluentAssertions;
 
@@ -92,7 +96,22 @@ namespace IKVM.Reflection.Tests
         /// <param name="resolver"></param>
         /// <param name="verifier"></param>
         /// <param name="tempPath"></param>
+        /// <param name="tempLoad"></param>
         bool Init(FrameworkSpec framework, out Universe universe, out TestAssemblyResolver resolver, out ILVerify.Verifier verifier, out string tempPath, out MetadataLoadContext tempLoad)
+        {
+            return Init(framework, null, out universe, out resolver, out verifier, out tempPath, out tempLoad);
+        }
+
+        /// <summary>
+        /// Initializes the variables requires to execute tests.
+        /// </summary
+        /// <param name="framework"></param>
+        /// <param name="searchPaths"></param>
+        /// <param name="universe"></param>
+        /// <param name="resolver"></param>
+        /// <param name="verifier"></param>
+        /// <param name="tempPath"></param>
+        bool Init(FrameworkSpec framework, IEnumerable<string> searchPaths, out Universe universe, out TestAssemblyResolver resolver, out ILVerify.Verifier verifier, out string tempPath, out MetadataLoadContext tempLoad)
         {
             universe = null;
             resolver = null;
@@ -114,7 +133,7 @@ namespace IKVM.Reflection.Tests
 
             // initialize primary classes
             universe = new Universe(DotNetSdkUtil.GetCoreLibName(framework.Tfm, framework.TargetFrameworkIdentifier, framework.TargetFrameworkVersion));
-            resolver = new TestAssemblyResolver(universe, framework.Tfm, framework.TargetFrameworkIdentifier, framework.TargetFrameworkVersion);
+            resolver = new TestAssemblyResolver(universe, framework.Tfm, framework.TargetFrameworkIdentifier, framework.TargetFrameworkVersion, searchPaths);
             verifier = new ILVerify.Verifier(new VerifyResolver(resolver), new ILVerify.VerifierOptions() { IncludeMetadataTokensInErrorMessages = true, SanityChecks = true });
             verifier.SetSystemModuleName(new System.Reflection.AssemblyName(universe.CoreLibName));
             tempLoad = new MetadataLoadContext(new MetadataAssemblyResolver(resolver));
@@ -495,6 +514,62 @@ namespace IKVM.Reflection.Tests
             foreach (var v in verifier.Verify(new PEReader(File.OpenRead(Path.Combine(tempPath, "Test.dll")))))
                 if (v.Code != ILVerify.VerifierError.None)
                     throw new Exception(string.Format(v.Message, v.Args ?? Array.Empty<object>()));
+        }
+
+        [Fact]
+        public void VerifyBaseLib()
+        {
+            if (Init(new FrameworkSpec("net6.0", ".NETCore", "6.0"), new[] { @"C:\dev\ikvm2\src\IKVM.Runtime\bin\Debug\net6.0" }, out var universe, out var resolver, out var verifier, out var tempPath, out var tempLoad) == false)
+                return;
+
+            var pe = new PEReader(File.OpenRead(resolver.Resolve("IKVM.Java")));
+            var md = pe.GetMetadataReader();
+            foreach (var v in verifier.Verify(pe))
+                output.WriteLine(ToString(md, v.Type, v.Method) + " -> " + string.Format(v.Message, v.Args ?? Array.Empty<object>()));
+        }
+
+        static string ToString(MetadataReader metadata, TypeDefinitionHandle typeHandle)
+        {
+            var b = new StringBuilder();
+
+            if (typeHandle.IsNil)
+            {
+                b.Append("<global>");
+            }
+            else
+            {
+                var type = metadata.GetTypeDefinition(typeHandle);
+                if (type.GetDeclaringType().IsNil)
+                {
+                    var typeNamespace = type.Namespace.IsNil == false ? metadata.GetString(type.Namespace) : null;
+                    var typeName = type.Name.IsNil == false ? metadata.GetString(type.Name) : null;
+                    if (typeNamespace != null)
+                        b.Append(typeNamespace).Append(".");
+
+                    b.Append(typeName ?? "<UNKNOWN>");
+                }
+                else
+                {
+                    b.Append(ToString(metadata, type.GetDeclaringType())).Append("+");
+                }
+            }
+
+            return b.ToString();
+        }
+
+        static string ToString(MetadataReader metadata, TypeDefinitionHandle typeHandle, MethodDefinitionHandle methodHandle)
+        {
+            var b = new StringBuilder();
+            var method = metadata.GetMethodDefinition(methodHandle);
+            typeHandle = method.GetDeclaringType();
+
+            b.Append(ToString(metadata, typeHandle));
+            b.Append(":");
+
+            var methodName = method.Name.IsNil == false ? metadata.GetString(method.Name) : null;
+            b.Append(methodName ?? "<UNKNOWN>");
+
+            return b.ToString();
         }
 
     }

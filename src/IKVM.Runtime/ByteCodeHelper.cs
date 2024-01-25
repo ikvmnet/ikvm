@@ -1103,44 +1103,48 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static T GetDelegateForInvokeExact<T>(global::java.lang.invoke.MethodHandle h)
+        public static T GetDelegateForInvokeExact<T>(object methodHandle)
             where T : class, Delegate
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var del = h._invokeExactDelegate as T;
-            del ??= JVM.Context.MethodHandleUtil.GetDelegateForInvokeExact<T>(h);
+            var methodHandle_ = (global::java.lang.invoke.MethodHandle)methodHandle;
+            var del = methodHandle_._invokeExactDelegate as T;
+            del ??= JVM.Context.MethodHandleUtil.GetDelegateForInvokeExact<T>(methodHandle_);
             return del;
 #endif
         }
 
-        public static T GetDelegateForInvoke<T>(global::java.lang.invoke.MethodHandle h, global::java.lang.invoke.MethodType realType, ref InvokeCache<T> cache)
+        public static T GetDelegateForInvoke<T>(object methodHandle, object realType, ref InvokeCache<T> cache)
             where T : class, Delegate
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            var methodHandle_ = (global::java.lang.invoke.MethodHandle)methodHandle;
+            var realType_ = (global::java.lang.invoke.MethodType)realType;
+
             T del;
-            if (cache.Type == h.type() && (del = (h.isVarargsCollector() ? cache.varArg : cache.fixedArg)) != null)
+            if (cache.Type == methodHandle_.type() && (del = (methodHandle_.isVarargsCollector() ? cache.varArg : cache.fixedArg)) != null)
                 return del;
 
-            del = h.form.vmentry.vmtarget as T;
+            del = methodHandle_.form.vmentry.vmtarget as T;
             if (del == null)
             {
-                var adapter = global::java.lang.invoke.MethodHandles.exactInvoker(h.type());
-                if (h.isVarargsCollector())
-                    adapter = adapter.asVarargsCollector(h.type().parameterType(h.type().parameterCount() - 1));
+                var adapter = global::java.lang.invoke.MethodHandles.exactInvoker(methodHandle_.type());
+                if (methodHandle_.isVarargsCollector())
+                    adapter = adapter.asVarargsCollector(methodHandle_.type().parameterType(methodHandle_.type().parameterCount() - 1));
 
                 // if realType is set, the delegate contains erased unloadable types
-                if (realType != null)
-                    adapter = adapter.asType(realType.insertParameterTypes(0, (global::java.lang.Class)ClassLiteral<global::java.lang.invoke.MethodHandle>.Value)).asFixedArity();
+                if (realType_ != null)
+                    adapter = adapter.asType(realType_.insertParameterTypes(0, (global::java.lang.Class)ClassLiteral<global::java.lang.invoke.MethodHandle>.Value)).asFixedArity();
 
                 adapter = adapter.asType(JVM.Context.MethodHandleUtil.GetDelegateMethodType(typeof(T)));
                 del = GetDelegateForInvokeExact<T>(adapter);
-                if (cache.TrySetType(h.type()))
+                if (cache.TrySetType(methodHandle_.type()))
                 {
-                    if (h.isVarargsCollector())
+                    if (methodHandle_.isVarargsCollector())
                         cache.varArg = del;
                     else
                         cache.fixedArg = del;

@@ -104,18 +104,13 @@ namespace IKVM.Runtime
         readonly RuntimeContext context;
 
         ILGenerator ilgen_real;
-#if !IMPORTER
         bool inFinally;
         Stack<bool> exceptionStack = new Stack<bool>();
-#endif
         IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
         CodeEmitterLocal[] tempLocals = new CodeEmitterLocal[32];
         ISymbolDocumentWriter symbols;
         List<OpCodeWrapper> code = new List<OpCodeWrapper>(10);
         readonly Type declaringType;
-#if LABELCHECK
-		Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
-#endif
 
         enum CodeType : short
         {
@@ -227,145 +222,6 @@ namespace IKVM.Runtime
 
             internal MethodBase MethodBase => (MethodBase)data;
 
-            internal int Size
-            {
-                get
-                {
-                    switch (pseudo)
-                    {
-                        case CodeType.Unreachable:
-                        case CodeType.BeginScope:
-                        case CodeType.EndScope:
-                        case CodeType.DeclareLocal:
-                        case CodeType.ReleaseTempLocal:
-                        case CodeType.LineNumber:
-                        case CodeType.Label:
-                        case CodeType.BeginExceptionBlock:
-                            return 0;
-                        case CodeType.SequencePoint:
-                            return 1;
-                        case CodeType.BeginCatchBlock:
-                        case CodeType.BeginFaultBlock:
-                        case CodeType.BeginFinallyBlock:
-                        case CodeType.EndExceptionBlock:
-#if IMPORTER
-                            return 0;
-#else
-                            if ((flags & CodeTypeFlags.EndFaultOrFinally) != 0)
-                                return 1 + 2;
-                            return 5 + 2;
-#endif
-                        case CodeType.MemoryBarrier:
-                        case CodeType.MonitorEnter:
-                        case CodeType.MonitorExit:
-                            return 5;
-                        case CodeType.TailCallPrevention:
-                            return 2;
-                        case CodeType.ClearStack:
-                            return 2;
-                        case CodeType.OpCode:
-                            if (data == null)
-                            {
-                                return opcode.Size;
-                            }
-                            else if (data is int)
-                            {
-                                return opcode.Size + 4; ;
-                            }
-                            else if (data is long)
-                            {
-                                return opcode.Size + 8;
-                            }
-                            else if (data is MethodInfo)
-                            {
-                                return opcode.Size + 4;
-                            }
-                            else if (data is ConstructorInfo)
-                            {
-                                return opcode.Size + 4;
-                            }
-                            else if (data is FieldInfo)
-                            {
-                                return opcode.Size + 4;
-                            }
-                            else if (data is sbyte)
-                            {
-                                return opcode.Size + 1;
-                            }
-                            else if (data is byte)
-                            {
-                                return opcode.Size + 1;
-                            }
-                            else if (data is short)
-                            {
-                                return opcode.Size + 2;
-                            }
-                            else if (data is float)
-                            {
-                                return opcode.Size + 4;
-                            }
-                            else if (data is double)
-                            {
-                                return opcode.Size + 8;
-                            }
-                            else if (data is string)
-                            {
-                                return opcode.Size + 4;
-                            }
-                            else if (data is Type)
-                            {
-                                return opcode.Size + 4;
-                            }
-                            else if (data is CodeEmitterLocal cel)
-                            {
-                                int index = cel.__LocalIndex;
-                                if (index < 4 && opcode.Value != OpCodes.Ldloca.Value && opcode.Value != OpCodes.Ldloca_S.Value)
-                                {
-                                    return 1;
-                                }
-                                else if (index < 256)
-                                {
-                                    return 2;
-                                }
-                                else
-                                {
-                                    return 4;
-                                }
-                            }
-                            else if (data is CodeEmitterLabel)
-                            {
-                                switch (opcode.OperandType)
-                                {
-                                    case OperandType.InlineBrTarget:
-                                        return opcode.Size + 4;
-                                    case OperandType.ShortInlineBrTarget:
-                                        return opcode.Size + 1;
-                                    default:
-                                        throw new InvalidOperationException();
-                                }
-                            }
-                            else if (data is CodeEmitterLabel[] cela)
-                            {
-                                return 5 + cela.Length * 4;
-                            }
-                            else if (data is ManagedCalliWrapper)
-                            {
-                                return 6;
-                            }
-                            else if (data is CalliWrapper)
-                            {
-                                return 5;
-                            }
-                            else
-                            {
-                                throw new InvalidOperationException();
-                            }
-                        default:
-                            throw new InvalidOperationException();
-                    }
-                }
-            }
-
             internal void RealEmit(int ilOffset, CodeEmitter codeEmitter, ref int lineNumber)
             {
                 if (pseudo == CodeType.OpCode)
@@ -389,7 +245,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            public override string ToString() => pseudo.ToString() + " " + data;
+            public override string ToString() => (pseudo == CodeType.OpCode ? opcode.ToString() : Enum.GetName(typeof(CodeType), pseudo)) + " " + data;
 
         }
 
@@ -473,7 +329,7 @@ namespace IKVM.Runtime
                 case CodeType.ReleaseTempLocal:
                     break;
                 case CodeType.SequencePoint:
-                    // MarkSequencePoint does not exist in Core, but does exist in IKVM.Reflection
+                    // MarkSequencePoint does not exist in Core, but does exist in Framework and IKVM.Reflection
 #if NETFRAMEWORK || IMPORTER
                     if (symbols != null)
                         ilgen_real.MarkSequencePoint(symbols, (int)data, 0, (int)data + 1, 0);
@@ -498,11 +354,7 @@ namespace IKVM.Runtime
                     break;
                 case CodeType.EndExceptionBlock:
                     ilgen_real.EndExceptionBlock();
-#if !IMPORTER
-                    // HACK to keep the verifier happy we need this bogus jump
-                    // (because of the bogus Leave that Ref.Emit ends the try block with)
-                    ilgen_real.Emit(OpCodes.Br_S, (sbyte)-2);
-#endif
+                    ilgen_real.Emit(OpCodes.Br_S, (sbyte)-2); // bogus target of implicit leave
                     break;
                 case CodeType.MemoryBarrier:
                     ilgen_real.Emit(OpCodes.Call, context.CodeEmitterFactory.MemoryBarrierMethod);
@@ -2192,7 +2044,7 @@ namespace IKVM.Runtime
 
         internal void DumpMethod()
         {
-            Dictionary<CodeEmitterLabel, int> labelIndexes = new Dictionary<CodeEmitterLabel, int>();
+            var labelIndexes = new Dictionary<CodeEmitterLabel, int>();
             for (int i = 0; i < code.Count; i++)
             {
                 if (code[i].pseudo == CodeType.Label)
@@ -2299,12 +2151,14 @@ namespace IKVM.Runtime
                     return lb;
                 }
             }
+
             return new CodeEmitterLocal(type);
         }
 
         internal void ReleaseTempLocal(CodeEmitterLocal lb)
         {
             EmitPseudoOpCode(CodeType.ReleaseTempLocal, lb);
+
             for (int i = 0; i < tempLocals.Length; i++)
             {
                 if (tempLocals[i] == null)
@@ -2322,26 +2176,20 @@ namespace IKVM.Runtime
 
         internal void BeginExceptionBlock()
         {
-#if !IMPORTER
             exceptionStack.Push(inFinally);
             inFinally = false;
-#endif
             EmitPseudoOpCode(CodeType.BeginExceptionBlock, null);
         }
 
         internal void BeginFaultBlock()
         {
-#if !IMPORTER
             inFinally = true;
-#endif
             EmitPseudoOpCode(CodeType.BeginFaultBlock, null);
         }
 
         internal void BeginFinallyBlock()
         {
-#if !IMPORTER
             inFinally = true;
-#endif
             EmitPseudoOpCode(CodeType.BeginFinallyBlock, null);
         }
 
@@ -2352,18 +2200,14 @@ namespace IKVM.Runtime
 
         internal CodeEmitterLocal DeclareLocal(Type localType)
         {
-            CodeEmitterLocal local = new CodeEmitterLocal(localType);
+            var local = new CodeEmitterLocal(localType);
             EmitPseudoOpCode(CodeType.DeclareLocal, local);
             return local;
         }
 
         internal CodeEmitterLabel DefineLabel()
         {
-            CodeEmitterLabel label = new CodeEmitterLabel(ilgen_real.DefineLabel());
-#if LABELCHECK
-			labels.Add(label, new System.Diagnostics.StackFrame(1, true));
-#endif
-            return label;
+            return new CodeEmitterLabel(ilgen_real.DefineLabel());
         }
 
         internal void Emit(OpCode opcode)
@@ -2394,6 +2238,7 @@ namespace IKVM.Runtime
         internal void EmitLdarg(int arg)
         {
             Debug.Assert(0 <= arg && arg < 65536);
+
             switch (arg)
             {
                 case 0:
@@ -2409,14 +2254,11 @@ namespace IKVM.Runtime
                     EmitOpCode(OpCodes.Ldarg_3, null);
                     break;
                 default:
-                    if (arg < 256)
-                    {
+                    if ((uint)arg <= byte.MaxValue)
                         EmitOpCode(OpCodes.Ldarg_S, (byte)arg);
-                    }
                     else
-                    {
                         EmitOpCode(OpCodes.Ldarg, (short)arg);
-                    }
+
                     break;
             }
         }
@@ -2424,27 +2266,21 @@ namespace IKVM.Runtime
         internal void EmitLdarga(int arg)
         {
             Debug.Assert(0 <= arg && arg < 65536);
+
             if (arg < 256)
-            {
                 EmitOpCode(OpCodes.Ldarga_S, (byte)arg);
-            }
             else
-            {
                 EmitOpCode(OpCodes.Ldarga, (short)arg);
-            }
         }
 
         internal void EmitStarg(int arg)
         {
             Debug.Assert(0 <= arg && arg < 65536);
+
             if (arg < 256)
-            {
                 EmitOpCode(OpCodes.Starg_S, (byte)arg);
-            }
             else
-            {
                 EmitOpCode(OpCodes.Starg, (short)arg);
-            }
         }
 
         internal void EmitLdc_I8(long arg)
@@ -2554,12 +2390,8 @@ namespace IKVM.Runtime
 
         internal void EndExceptionBlock()
         {
-#if IMPORTER
-            EmitPseudoOpCode(CodeType.EndExceptionBlock, null);
-#else
             EmitPseudoOpCode(CodeType.EndExceptionBlock, inFinally ? CodeTypeFlags.EndFaultOrFinally : CodeTypeFlags.None);
             inFinally = exceptionStack.Pop();
-#endif
         }
 
         internal void EndScope()
@@ -2569,9 +2401,6 @@ namespace IKVM.Runtime
 
         internal void MarkLabel(CodeEmitterLabel loc)
         {
-#if LABELCHECK
-			labels.Remove(loc);
-#endif
             EmitPseudoOpCode(CodeType.Label, loc);
         }
 
@@ -2597,19 +2426,19 @@ namespace IKVM.Runtime
         }
 
 #if IMPORTER
+
         internal void EmitLineNumberTable(MethodBuilder mb)
         {
             if (linenums != null)
-            {
                 context.AttributeHelper.SetLineNumberTable(mb, linenums);
-            }
         }
-#endif // IMPORTER
+
+#endif
 
         internal void EmitThrow(string dottedClassName)
         {
-            RuntimeJavaType exception = context.ClassLoaderFactory.GetBootstrapClassLoader().LoadClassByName(dottedClassName);
-            RuntimeJavaMethod mw = exception.GetMethodWrapper("<init>", "()V", false);
+            var exception = context.ClassLoaderFactory.GetBootstrapClassLoader().LoadClassByName(dottedClassName);
+            var mw = exception.GetMethodWrapper("<init>", "()V", false);
             mw.Link();
             mw.EmitNewobj(this);
             Emit(OpCodes.Throw);
@@ -2617,9 +2446,9 @@ namespace IKVM.Runtime
 
         internal void EmitThrow(string dottedClassName, string message)
         {
-            RuntimeJavaType exception = context.ClassLoaderFactory.GetBootstrapClassLoader().LoadClassByName(dottedClassName);
+            var exception = context.ClassLoaderFactory.GetBootstrapClassLoader().LoadClassByName(dottedClassName);
             Emit(OpCodes.Ldstr, message);
-            RuntimeJavaMethod mw = exception.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
+            var mw = exception.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
             mw.Link();
             mw.EmitNewobj(this);
             Emit(OpCodes.Throw);
@@ -2636,12 +2465,12 @@ namespace IKVM.Runtime
         {
             if (context.CodeEmitterFactory.VerboseCastFailureMethod != null)
             {
-                CodeEmitterLocal lb = DeclareLocal(context.Types.Object);
+                var lb = DeclareLocal(context.Types.Object);
                 Emit(OpCodes.Stloc, lb);
                 Emit(OpCodes.Ldloc, lb);
                 Emit(OpCodes.Isinst, type);
                 Emit(OpCodes.Dup);
-                CodeEmitterLabel ok = DefineLabel();
+                var ok = DefineLabel();
                 EmitBrtrue(ok);
                 Emit(OpCodes.Ldloc, lb);
                 EmitBrfalse(ok);    // handle null
@@ -2660,12 +2489,12 @@ namespace IKVM.Runtime
         // throws an IncompatibleClassChangeError on failure.
         internal void EmitAssertType(Type type)
         {
-            CodeEmitterLabel isnull = DefineLabel();
+            var isnull = DefineLabel();
             Emit(OpCodes.Dup);
             EmitBrfalse(isnull);
             Emit(OpCodes.Isinst, type);
             Emit(OpCodes.Dup);
-            CodeEmitterLabel ok = DefineLabel();
+            var ok = DefineLabel();
             EmitBrtrue(ok);
             EmitThrow("java.lang.IncompatibleClassChangeError");
             MarkLabel(isnull);
@@ -2677,16 +2506,17 @@ namespace IKVM.Runtime
         internal void EmitUnboxSpecial(Type type)
         {
             // NOTE if the reference is null, we treat it as a default instance of the value type.
+            var label1 = DefineLabel();
+            var label2 = DefineLabel();
+
             Emit(OpCodes.Dup);
-            CodeEmitterLabel label1 = DefineLabel();
             EmitBrtrue(label1);
             Emit(OpCodes.Pop);
-            CodeEmitterLocal local = AllocTempLocal(type);
+            var local = AllocTempLocal(type);
             Emit(OpCodes.Ldloca, local);
             Emit(OpCodes.Initobj, type);
             Emit(OpCodes.Ldloc, local);
             ReleaseTempLocal(local);
-            CodeEmitterLabel label2 = DefineLabel();
             EmitBr(label2);
             MarkLabel(label1);
             Emit(OpCodes.Unbox, type);
@@ -2704,15 +2534,16 @@ namespace IKVM.Runtime
             // we need to special case dividing by -1, because the CLR div instruction
             // throws an OverflowException when dividing Int32.MinValue by -1, and
             // Java just silently overflows
+            var label1 = DefineLabel();
+            var label2 = DefineLabel();
+
             Emit(OpCodes.Dup);
             Emit(OpCodes.Ldc_I4_M1);
-            CodeEmitterLabel label = DefineLabel();
-            EmitBne_Un(label);
+            EmitBne_Un(label1);
             Emit(OpCodes.Pop);
             Emit(OpCodes.Neg);
-            CodeEmitterLabel label2 = DefineLabel();
             EmitBr(label2);
-            MarkLabel(label);
+            MarkLabel(label1);
             Emit(OpCodes.Div);
             MarkLabel(label2);
         }
@@ -2722,16 +2553,17 @@ namespace IKVM.Runtime
             // we need to special case dividing by -1, because the CLR div instruction
             // throws an OverflowException when dividing Int32.MinValue by -1, and
             // Java just silently overflows
+            var label1 = DefineLabel();
+            var label2 = DefineLabel();
+
             Emit(OpCodes.Dup);
             Emit(OpCodes.Ldc_I4_M1);
             Emit(OpCodes.Conv_I8);
-            CodeEmitterLabel label = DefineLabel();
-            EmitBne_Un(label);
+            EmitBne_Un(label1);
             Emit(OpCodes.Pop);
             Emit(OpCodes.Neg);
-            CodeEmitterLabel label2 = DefineLabel();
             EmitBr(label2);
-            MarkLabel(label);
+            MarkLabel(label1);
             Emit(OpCodes.Div);
             MarkLabel(label2);
         }
@@ -2753,8 +2585,7 @@ namespace IKVM.Runtime
 
         internal void Emit_if_le_lt_ge_gt(Comparison comp, CodeEmitterLabel label)
         {
-            // don't change this Ldc_I4_0 to Ldc_I4(0) because the optimizer recognizes
-            // only this specific pattern
+            // don't change this Ldc_I4_0 to Ldc_I4(0) because the optimizer recognizes only this specific pattern
             Emit(OpCodes.Ldc_I4_0);
             switch (comp)
             {
@@ -2775,8 +2606,8 @@ namespace IKVM.Runtime
 
         private void EmitCmp(Type type, OpCode cmp1, OpCode cmp2)
         {
-            CodeEmitterLocal value1 = AllocTempLocal(type);
-            CodeEmitterLocal value2 = AllocTempLocal(type);
+            var value1 = AllocTempLocal(type);
+            var value2 = AllocTempLocal(type);
             Emit(OpCodes.Stloc, value2);
             Emit(OpCodes.Stloc, value1);
             Emit(OpCodes.Ldloc, value1);

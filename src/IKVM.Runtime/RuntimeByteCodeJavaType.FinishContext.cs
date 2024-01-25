@@ -1724,6 +1724,7 @@ namespace IKVM.Runtime
                     ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
                     var oklabel = ilGenerator.DefineLabel();
                     ilGenerator.EmitBrtrue(oklabel);
+
                     if (thruProxy)
                         ilGenerator.EmitLdarg(args.Length + (mw.IsStatic ? 0 : 1));
                     else
@@ -1740,8 +1741,10 @@ namespace IKVM.Runtime
                     else
                         context.EmitCallerID(ilGenerator, m.IsLambdaFormCompiled);
                     ilGenerator.Emit(OpCodes.Call, EnterLocalRefStructMethod);
+
                     var jnienv = ilGenerator.DeclareLocal(context.context.Types.IntPtr);
                     ilGenerator.Emit(OpCodes.Stloc, jnienv);
+
                     ilGenerator.BeginExceptionBlock();
                     var retTypeWrapper = mw.ReturnType;
                     if (retTypeWrapper.IsUnloadable || !retTypeWrapper.IsPrimitive)
@@ -1749,6 +1752,7 @@ namespace IKVM.Runtime
                         // this one is for use after we return from "calli"
                         ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
                     }
+
                     ilGenerator.Emit(OpCodes.Ldloc, jnienv);
 
                     var modargs = new Type[args.Length + 2];
