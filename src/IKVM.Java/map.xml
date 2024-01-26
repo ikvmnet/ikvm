@@ -1411,6 +1411,8 @@
             </method>
             <method name="getStackTraceElement" sig="(I)Ljava.lang.StackTraceElement;" modifiers="">
                 <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
                     <call class="cli.IKVM.Runtime.ExceptionHelper" name="GetStackTraceElement" sig="(Ljava.lang.Throwable;I)Ljava.lang.Object;" />
                     <castclass class="java.lang.StackTraceElement" />
                     <ret />
