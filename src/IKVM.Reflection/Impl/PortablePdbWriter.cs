@@ -123,7 +123,7 @@ namespace IKVM.Reflection.Impl
                 else
                 {
                     writer.WriteCompressedSignedInteger(method.lines[i] - method.lines[i - 1]);
-                    writer.WriteCompressedSignedInteger(method.columns[i] - method.lines[i - 1]);
+                    writer.WriteCompressedSignedInteger(method.columns[i] - method.columns[i - 1]);
                 }
             }
 
