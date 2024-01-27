@@ -1,6 +1,7 @@
 #if NETCOREAPP
 
 using IKVM.Reflection.Emit;
+using IKVM.Reflection.Writer;
 using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -8,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace IKVM.Reflection.Impl
@@ -35,8 +37,16 @@ namespace IKVM.Reflection.Impl
                 int remappedToken = method.token;
                 remap.TryGetValue(remappedToken, out remappedToken);
 
-                // Just a placeholder to generate a row ID
-                metadataBuilder.AddMethodDefinition(default, default, default, default, 0, default);
+                var methodInfo = methodMap[method.token];
+
+                var methodDef = metadataBuilder.AddMethodDefinition(
+                    attributes: (System.Reflection.MethodAttributes)methodInfo.Attributes, // definitions are identical
+                    implAttributes: System.Reflection.MethodImplAttributes.Managed,
+                    name: metadataBuilder.GetOrAddString(methodInfo.Name),
+                    signature: GetMethodSignature(metadataBuilder, methodInfo),
+                    bodyOffset: method.scopes[0].startOffset,
+                    parameterList: GetParameterList(metadataBuilder, methodInfo)
+                );
 
                 if (method.document != null)
                 {
@@ -45,8 +55,7 @@ namespace IKVM.Reflection.Impl
                 }
                 foreach (Scope scope in method.scopes)
                 {
-                    //metadataBuilder.AddLocalScope()
-                    //WriteScope(scope);
+                    WriteScope(metadataBuilder, methodDef, scope);
                 }
             }
 
@@ -68,6 +77,60 @@ namespace IKVM.Reflection.Impl
             methods.Clear();
             remap.Clear();
             reversemap.Clear();
+        }
+
+        private BlobHandle GetMethodSignature(MetadataBuilder builder, MethodBase methodInfo)
+        {
+            var buffer = new ByteBuffer(16);
+            methodInfo.MethodSignature.WriteSig(moduleBuilder, buffer);
+            return builder.GetOrAddBlob(buffer.ToArray());
+        }
+
+        private static ParameterHandle GetParameterList(MetadataBuilder builder, MethodBase methodInfo)
+        {
+            ParameterHandle firstHandle = default;
+            int index = 1;
+            foreach (var parameter in methodInfo.GetParameters())
+            {
+                var handle = builder.AddParameter(System.Reflection.ParameterAttributes.None, builder.GetOrAddString(parameter.Name ?? ""), index);
+                if (firstHandle.IsNil)
+                {
+                    firstHandle = handle;
+                }
+                index++;
+            }
+            return firstHandle;
+        }
+
+        private void WriteScope(MetadataBuilder builder, MethodDefinitionHandle methodDef, Scope scope)
+        {
+            builder.AddLocalScope(
+                method: methodDef,
+                importScope: default,
+                variableList: MakeLocalVariables(builder, scope),
+                constantList: default,
+                startOffset: scope.startOffset,
+                length: scope.endOffset - scope.startOffset
+            );
+
+            foreach (var child in scope.scopes)
+            {
+                WriteScope(builder, methodDef, child);
+            }
+        }
+
+        private LocalVariableHandle MakeLocalVariables(MetadataBuilder builder, Scope scope)
+        {
+            LocalVariableHandle firstHandle = default;
+            foreach (var (i, name, local) in scope.locals.OrderBy(kv => kv.Value.startOffset).Select((kv, i) => (i, kv.Key, kv.Value)))
+            {
+                var handle = builder.AddLocalVariable(LocalVariableAttributes.None, i, builder.GetOrAddString(name));
+                if (firstHandle.IsNil)
+                {
+                    firstHandle = handle;
+                }
+            }
+            return firstHandle;
         }
 
         private BlobHandle MakeSequencePoints(MetadataBuilder builder, Method method)
