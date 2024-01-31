@@ -22,6 +22,7 @@ namespace IKVM.MSBuild.Tasks.Tests
         /// Builds a new task instance with various information.
         /// </summary>
         /// <param name="toolFramework"></param>
+        /// <param name="toolVersion"></param>
         /// <returns></returns>
         IkvmReferenceItemPrepare BuildTestTask(string toolFramework, string toolVersion)
         {
@@ -264,6 +265,17 @@ namespace IKVM.MSBuild.Tasks.Tests
         }
 
         [TestMethod]
+        public void Should_assign_identity_to_jar_for_net80()
+        {
+            var t = BuildTestTask("net8.0", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
+            t.Items = new[] { i1 };
+            t.Execute().Should().BeTrue();
+            i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().NotBeUpperCased();
+            i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().HaveLength(32);
+        }
+
+        [TestMethod]
         public void Should_assign_identity_to_jar_for_net472()
         {
             var t = BuildTestTask("net472", "0.0.0");
@@ -283,6 +295,24 @@ namespace IKVM.MSBuild.Tasks.Tests
             t1.Execute().Should().BeTrue();
 
             var t2 = BuildTestTask("net6.0", "0.0.0");
+            var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
+            t2.Items = new[] { i2 };
+            t2.Execute().Should().BeTrue();
+
+            var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            identity1.Should().Be(identity2);
+        }
+
+        [TestMethod]
+        public void Should_assign_consistent_identity_to_jar_for_net80()
+        {
+            var t1 = BuildTestTask("net8.0", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
+            t1.Items = new[] { i1 };
+            t1.Execute().Should().BeTrue();
+
+            var t2 = BuildTestTask("net8.0", "0.0.0");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
@@ -313,19 +343,29 @@ namespace IKVM.MSBuild.Tasks.Tests
         [TestMethod]
         public void Should_vary_by_tool_framework()
         {
-            var t1 = BuildTestTask("net6.0", "0.0.0");
-            var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t1.Items = new[] { i1 };
-            t1.Execute().Should().BeTrue();
 
             var t2 = BuildTestTask("net472", "0.0.0");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
 
+            var t1 = BuildTestTask("net6.0", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
+            t1.Items = new[] { i1 };
+            t1.Execute().Should().BeTrue();
+
+            var t3 = BuildTestTask("net8.0", "0.0.0");
+            var i3 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
+            t3.Items = new[] { i3 };
+            t3.Execute().Should().BeTrue();
+
             var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
             var identity2 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            var identity3 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
             identity1.Should().NotBe(identity2);
+            identity1.Should().NotBe(identity3);
+            identity2.Should().NotBe(identity1);
+            identity2.Should().NotBe(identity3);
         }
 
         [TestMethod]

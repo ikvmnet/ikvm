@@ -2,7 +2,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
         <RunSettingsFilePath>$(MSBuildProjectDirectory)\IKVM.OpenJDK.Tests.runsettings</RunSettingsFilePath>
     </PropertyGroup>

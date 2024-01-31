@@ -4,7 +4,9 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">net6.0</IkvmMSBuildTaskFolder>
+        <MSBuildRuntimeVersion Condition=" '$(MSBuildRuntimeVersion)' == '' ">$([System.Runtime.InteropServices.RuntimeInformation]:: FrameworkDescription.ToString())</MSBuildRuntimeVersion>
+        <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' And $(MSBuildRuntimeVersion.StartsWith('.NET 6')) ">net6.0</IkvmMSBuildTaskFolder>
+        <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' And $(MSBuildRuntimeVersion.StartsWith('.NET 8')) ">net8.0</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskFactory Condition=" '$(MSBuildRuntimeType)' == 'Core' "></IkvmMSBuildTaskFactory>
         <IkvmMSBuildTaskFactory Condition=" '$(MSBuildRuntimeType)' != 'Core' ">TaskHostFactory</IkvmMSBuildTaskFactory>
