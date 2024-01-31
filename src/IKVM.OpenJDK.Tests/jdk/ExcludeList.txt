@@ -3192,6 +3192,7 @@ java/nio/channels/DatagramChannel/EmptyBuffer.java                              
 java/nio/channels/DatagramChannel/Promiscuous.java                                                                      linux-all,macosx-all
 java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     linux-all,macosx-all
 java/nio/channels/FileChannel/Release.java                                                                              linux-all,macosx-all
+java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java                                                               macosx-aarch64
 java/nio/channels/FileChannel/TryLock.java                                                                              linux-all,macosx-all
 java/nio/channels/Selector/Alias.java                                                                                   linux-all
 java/nio/channels/Selector/BasicAccept.java                                                                             linux-all
@@ -3425,4 +3426,3 @@ sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java
 java/net/InetAddress/CheckJNI.java                                                                                      macosx-all
 java/net/Inet6Address/B6206527.java                                                                                     macosx-all
 java/net/Inet6Address/B6558853.java                                                                                     macosx-all
-
