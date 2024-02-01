@@ -21,8 +21,11 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
+using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -30,46 +33,43 @@ namespace IKVM.Reflection.Metadata
     sealed class FileTable : Table<FileTable.Record>
     {
 
+
         internal struct Record
         {
 
+            internal StringHandle Name;
+            internal BlobHandle HashValue;
             internal int Flags;
-            internal int Name;
-            internal int HashValue;
 
         }
 
         internal const int Index = 0x26;
+        const int ContainsNoMetaData = 0x0001;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Flags = mr.ReadInt32();
-				records[i].Name = mr.ReadStringIndex();
-				records[i].HashValue = mr.ReadBlobIndex();
-			}
-		}
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.Write(records[i].Flags);
-				mw.WriteStringIndex(records[i].Name);
-				mw.WriteBlobIndex(records[i].HashValue);
-			}
-		}
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Flags = mr.ReadInt32();
+                records[i].Name = MetadataTokens.StringHandle(mr.ReadStringIndex());
+                records[i].HashValue = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
+            }
+        }
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.AddFixed(4)
-				.WriteStringIndex()
-				.WriteBlobIndex()
-				.Value;
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                var h = module.Metadata.AddAssemblyFile(
+                    records[i].Name,
+                    records[i].HashValue,
+                    (records[i].Flags & ContainsNoMetaData) != 0);
 
-	}
+                Debug.Assert(h == MetadataTokens.AssemblyFileHandle(i + 1));
+            }
+        }
+
+    }
 
 }

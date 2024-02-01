@@ -22,6 +22,9 @@
   
 */
 using System;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Writer;
@@ -36,8 +39,8 @@ namespace IKVM.Reflection.Emit
         readonly string name;
         readonly int pseudoToken;
         FieldAttributes attribs;
-        readonly int nameIndex;
-        readonly int signature;
+        readonly StringHandle nameIndex;
+        readonly BlobHandle signature;
         readonly FieldSignature fieldSig;
 
         /// <summary>
@@ -53,13 +56,13 @@ namespace IKVM.Reflection.Emit
             this.typeBuilder = type;
             this.name = name;
             this.pseudoToken = type.ModuleBuilder.AllocPseudoToken();
-            this.nameIndex = type.ModuleBuilder.Strings.Add(name);
+            this.nameIndex = type.ModuleBuilder.GetOrAddString(name);
             this.fieldSig = FieldSignature.Create(fieldType, customModifiers);
-            ByteBuffer sig = new ByteBuffer(5);
-            fieldSig.WriteSig(this.typeBuilder.ModuleBuilder, sig);
-            this.signature = this.typeBuilder.ModuleBuilder.Blobs.Add(sig);
+            var sig = new ByteBuffer(5);
+            fieldSig.Write(typeBuilder.ModuleBuilder, sig);
+            this.signature = typeBuilder.ModuleBuilder.GetOrAddBlob(sig.ToArray());
             this.attribs = attribs;
-            this.typeBuilder.ModuleBuilder.Field.AddVirtualRecord();
+            this.typeBuilder.ModuleBuilder.FieldTable.AddVirtualRecord();
         }
 
         public void SetConstant(object defaultValue)
@@ -77,7 +80,7 @@ namespace IKVM.Reflection.Emit
                 throw new NotSupportedException();
             }
 
-            return typeBuilder.Module.Constant.GetRawConstantValue(typeBuilder.Module, GetCurrentToken());
+            return typeBuilder.Module.ConstantTable.GetRawConstantValue(typeBuilder.Module, GetCurrentToken());
         }
 
         public void __SetDataAndRVA(byte[] data)
@@ -97,7 +100,7 @@ namespace IKVM.Reflection.Emit
             bb.Align(8);
             rec.RVA = bb.Position + readonlyMarker;
             rec.Field = pseudoToken;
-            typeBuilder.ModuleBuilder.FieldRVA.AddRecord(rec);
+            typeBuilder.ModuleBuilder.FieldRVATable.AddRecord(rec);
             bb.Write(data);
         }
 
@@ -117,9 +120,9 @@ namespace IKVM.Reflection.Emit
             if (typeBuilder.ModuleBuilder.IsSaved)
                 pseudoTokenOrIndex = typeBuilder.ModuleBuilder.ResolvePseudoToken(pseudoToken) & 0xFFFFFF;
 
-            foreach (int i in this.Module.FieldLayout.Filter(pseudoTokenOrIndex))
+            foreach (int i in this.Module.FieldLayoutTable.Filter(pseudoTokenOrIndex))
             {
-                offset = this.Module.FieldLayout.records[i].Offset;
+                offset = this.Module.FieldLayoutTable.records[i].Offset;
                 return true;
             }
 
@@ -160,7 +163,7 @@ namespace IKVM.Reflection.Emit
             FieldLayoutTable.Record rec = new FieldLayoutTable.Record();
             rec.Offset = iOffset;
             rec.Field = pseudoToken;
-            typeBuilder.ModuleBuilder.FieldLayout.AddRecord(rec);
+            typeBuilder.ModuleBuilder.FieldLayoutTable.AddRecord(rec);
         }
 
         public override FieldAttributes Attributes
@@ -193,16 +196,17 @@ namespace IKVM.Reflection.Emit
             return new FieldToken(pseudoToken);
         }
 
-        internal void WriteFieldRecords(MetadataWriter mw)
+        internal void WriteFieldRecords(MetadataBuilder metadata)
         {
-            mw.Write((short)attribs);
-            mw.WriteStringIndex(nameIndex);
-            mw.WriteBlobIndex(signature);
+            metadata.AddFieldDefinition(
+                (System.Reflection.FieldAttributes)attribs,
+                nameIndex,
+                signature);
         }
 
         internal void FixupToken(int token)
         {
-            typeBuilder.ModuleBuilder.RegisterTokenFixup(this.pseudoToken, token);
+            typeBuilder.ModuleBuilder.RegisterTokenFixup(pseudoToken, token);
         }
 
         internal override FieldSignature FieldSignature

@@ -21,8 +21,11 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
+using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -34,42 +37,36 @@ namespace IKVM.Reflection.Metadata
         {
 
             internal short Flags;
-            internal int Name;
-            internal int Type;
+            internal StringHandle Name;
+            internal BlobHandle Type;
 
         }
 
         internal const int Index = 0x17;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Flags = mr.ReadInt16();
-				records[i].Name = mr.ReadStringIndex();
-				records[i].Type = mr.ReadBlobIndex();
-			}
-		}
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Flags = mr.ReadInt16();
+                records[i].Name = MetadataTokens.StringHandle(mr.ReadStringIndex());
+                records[i].Type = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.Write(records[i].Flags);
-				mw.WriteStringIndex(records[i].Name);
-				mw.WriteBlobIndex(records[i].Type);
-			}
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                var h = module.Metadata.AddProperty(
+                    (System.Reflection.PropertyAttributes)records[i].Flags,
+                    records[i].Name,
+                    records[i].Type);
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.AddFixed(2)
-				.WriteStringIndex()
-				.WriteBlobIndex()
-				.Value;
-		}
+                Debug.Assert(h == MetadataTokens.PropertyDefinitionHandle(i + 1));
+            }
+        }
 
-	}
+    }
 
 }

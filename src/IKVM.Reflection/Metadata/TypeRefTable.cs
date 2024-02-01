@@ -21,9 +21,11 @@
   jeroen@frijters.net
   
 */
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -35,40 +37,34 @@ namespace IKVM.Reflection.Metadata
         {
 
             internal int ResolutionScope;
-            internal int TypeName;
-            internal int TypeNamespace;
+            internal StringHandle TypeName;
+            internal StringHandle TypeNamespace;
 
         }
 
         internal const int Index = 0x01;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
                 records[i].ResolutionScope = mr.ReadResolutionScope();
-                records[i].TypeName = mr.ReadStringIndex();
-                records[i].TypeNamespace = mr.ReadStringIndex();
+                records[i].TypeName = MetadataTokens.StringHandle(mr.ReadStringIndex());
+                records[i].TypeNamespace = MetadataTokens.StringHandle(mr.ReadStringIndex());
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
             {
-                mw.WriteResolutionScope(records[i].ResolutionScope);
-                mw.WriteStringIndex(records[i].TypeName);
-                mw.WriteStringIndex(records[i].TypeNamespace);
-            }
-        }
+                var h = module.Metadata.AddTypeReference(
+                    MetadataTokens.EntityHandle(records[i].ResolutionScope),
+                    records[i].TypeNamespace,
+                    records[i].TypeName);
 
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .WriteResolutionScope()
-                .WriteStringIndex()
-                .WriteStringIndex()
-                .Value;
+                Debug.Assert(h == MetadataTokens.TypeReferenceHandle(i + 1));
+            }
         }
 
         internal void Fixup(ModuleBuilder moduleBuilder)

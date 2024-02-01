@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IKVM.Tests.Util
+namespace IKVM.Java.Tests.Util
 {
     /// <summary>
     /// Represents a unit of code to compile.

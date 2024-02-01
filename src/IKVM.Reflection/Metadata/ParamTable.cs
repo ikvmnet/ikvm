@@ -21,8 +21,10 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
+using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -35,33 +37,25 @@ namespace IKVM.Reflection.Metadata
 
             internal short Flags;
             internal short Sequence;
-            internal int Name;
+            internal StringHandle Name;
 
         }
 
         internal const int Index = 0x08;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
                 records[i].Flags = mr.ReadInt16();
                 records[i].Sequence = mr.ReadInt16();
-                records[i].Name = mr.ReadStringIndex();
+                records[i].Name = MetadataTokens.StringHandle(mr.ReadStringIndex());
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
-            mw.ModuleBuilder.WriteParamTable(mw);
-        }
-
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .AddFixed(4)
-                .WriteStringIndex()
-                .Value;
+            module.WriteParamTable();
         }
 
     }

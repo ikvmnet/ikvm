@@ -22,9 +22,10 @@
   
 */
 using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
+using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -37,15 +38,15 @@ namespace IKVM.Reflection.Metadata
             internal int NestedClass;
             internal int EnclosingClass;
 
-            readonly int IRecord.SortKey => NestedClass;
-
             readonly int IRecord.FilterKey => NestedClass;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(NestedClass, other.NestedClass);
 
         }
 
         internal const int Index = 0x29;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
@@ -54,21 +55,12 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
-            {
-                mw.WriteTypeDef(records[i].NestedClass);
-                mw.WriteTypeDef(records[i].EnclosingClass);
-            }
-        }
-
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .WriteTypeDef()
-                .WriteTypeDef()
-                .Value;
+                module.Metadata.AddNestedType(
+                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].NestedClass),
+                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].EnclosingClass));
         }
 
         internal List<int> GetNestedClasses(int enclosingClass)

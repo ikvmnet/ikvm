@@ -32,8 +32,93 @@ using IKVM.Reflection.Writer;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents a method signature from IL metadadata.
+    /// </summary>
     sealed class MethodSignature : Signature
     {
+
+        sealed class UnboundGenericMethodContext : IGenericContext
+        {
+
+            readonly IGenericContext original;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="original"></param>
+            internal UnboundGenericMethodContext(IGenericContext original)
+            {
+                this.original = original;
+            }
+
+            public Type GetGenericTypeArgument(int index)
+            {
+                return original.GetGenericTypeArgument(index);
+            }
+
+            public Type GetGenericMethodArgument(int index)
+            {
+                return UnboundGenericMethodParameter.Make(index);
+            }
+
+        }
+
+        sealed class Binder : IGenericBinder
+        {
+
+            readonly Type declaringType;
+            readonly Type[] methodArgs;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="declaringType"></param>
+            /// <param name="methodArgs"></param>
+            internal Binder(Type declaringType, Type[] methodArgs)
+            {
+                this.declaringType = declaringType;
+                this.methodArgs = methodArgs;
+            }
+
+            public Type BindTypeParameter(Type type)
+            {
+                return declaringType.GetGenericTypeArgument(type.GenericParameterPosition);
+            }
+
+            public Type BindMethodParameter(Type type)
+            {
+                if (methodArgs == null)
+                    return type;
+
+                return methodArgs[type.GenericParameterPosition];
+            }
+        }
+
+        sealed class Unbinder : IGenericBinder
+        {
+
+            internal static readonly Unbinder Instance = new Unbinder();
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            Unbinder()
+            {
+
+            }
+
+            public Type BindTypeParameter(Type type)
+            {
+                return type;
+            }
+
+            public Type BindMethodParameter(Type type)
+            {
+                return UnboundGenericMethodParameter.Make(type.GenericParameterPosition);
+            }
+
+        }
 
         readonly Type returnType;
         readonly Type[] parameterTypes;
@@ -77,37 +162,8 @@ namespace IKVM.Reflection
                 ^ modifiers.GetHashCode() * 55;
         }
 
-        sealed class UnboundGenericMethodContext : IGenericContext
-        {
-
-            readonly IGenericContext original;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="original"></param>
-            internal UnboundGenericMethodContext(IGenericContext original)
-            {
-                this.original = original;
-            }
-
-            public Type GetGenericTypeArgument(int index)
-            {
-                return original.GetGenericTypeArgument(index);
-            }
-
-            public Type GetGenericMethodArgument(int index)
-            {
-                return UnboundGenericMethodParameter.Make(index);
-            }
-
-        }
-
         internal static MethodSignature ReadSig(ModuleReader module, ByteReader br, IGenericContext context)
         {
-            int genericParamCount;
-            Type returnType;
-            Type[] parameterTypes;
             var flags = br.ReadByte();
             var callingConvention = (flags & 7) switch
             {
@@ -122,7 +178,7 @@ namespace IKVM.Reflection
             if ((flags & EXPLICITTHIS) != 0)
                 callingConvention |= CallingConventions.ExplicitThis;
 
-            genericParamCount = 0;
+            var genericParamCount = 0;
             if ((flags & GENERIC) != 0)
             {
                 genericParamCount = br.ReadCompressedUInt();
@@ -132,9 +188,9 @@ namespace IKVM.Reflection
             var paramCount = br.ReadCompressedUInt();
             CustomModifiers[] modifiers = null;
             PackedCustomModifiers.Pack(ref modifiers, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
-            returnType = ReadRetType(module, br, context);
+            var returnType = ReadRetType(module, br, context);
 
-            parameterTypes = new Type[paramCount];
+            var parameterTypes = new Type[paramCount];
             for (int i = 0; i < parameterTypes.Length; i++)
             {
                 if ((callingConvention & CallingConventions.VarArgs) != 0 && br.PeekByte() == SENTINEL)
@@ -189,20 +245,15 @@ namespace IKVM.Reflection
                 default:
                     throw new BadImageFormatException();
             }
-            if ((flags & HASTHIS) != 0)
-            {
-                callingConvention |= CallingConventions.HasThis;
-            }
-            if ((flags & EXPLICITTHIS) != 0)
-            {
-                callingConvention |= CallingConventions.ExplicitThis;
-            }
-            if ((flags & GENERIC) != 0)
-            {
-                throw new BadImageFormatException();
-            }
 
-            int paramCount = br.ReadCompressedUInt();
+            if ((flags & HASTHIS) != 0)
+                callingConvention |= CallingConventions.HasThis;
+            if ((flags & EXPLICITTHIS) != 0)
+                callingConvention |= CallingConventions.ExplicitThis;
+            if ((flags & GENERIC) != 0)
+                throw new BadImageFormatException();
+
+            var paramCount = br.ReadCompressedUInt();
             CustomModifiers[] customModifiers = null;
             PackedCustomModifiers.Pack(ref customModifiers, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
 
@@ -266,66 +317,10 @@ namespace IKVM.Reflection
             get { return genericParamCount; }
         }
 
-        sealed class Binder : IGenericBinder
-        {
-
-            readonly Type declaringType;
-            readonly Type[] methodArgs;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="declaringType"></param>
-            /// <param name="methodArgs"></param>
-            internal Binder(Type declaringType, Type[] methodArgs)
-            {
-                this.declaringType = declaringType;
-                this.methodArgs = methodArgs;
-            }
-
-            public Type BindTypeParameter(Type type)
-            {
-                return declaringType.GetGenericTypeArgument(type.GenericParameterPosition);
-            }
-
-            public Type BindMethodParameter(Type type)
-            {
-                if (methodArgs == null)
-                    return type;
-
-                return methodArgs[type.GenericParameterPosition];
-            }
-        }
-
         internal MethodSignature Bind(Type type, Type[] methodArgs)
         {
             var binder = new Binder(type, methodArgs);
             return new MethodSignature(returnType.BindTypeParameters(binder), BindTypeParameters(binder, parameterTypes), modifiers.Bind(binder), callingConvention, genericParamCount);
-        }
-
-        sealed class Unbinder : IGenericBinder
-        {
-
-            internal static readonly Unbinder Instance = new Unbinder();
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            Unbinder()
-            {
-
-            }
-
-            public Type BindTypeParameter(Type type)
-            {
-                return type;
-            }
-
-            public Type BindMethodParameter(Type type)
-            {
-                return UnboundGenericMethodParameter.Make(type.GenericParameterPosition);
-            }
-
         }
 
         internal static MethodSignature MakeFromBuilder(Type returnType, Type[] parameterTypes, PackedCustomModifiers modifiers, CallingConventions callingConvention, int genericParamCount)
@@ -350,14 +345,15 @@ namespace IKVM.Reflection
             return Util.ArrayEquals(types, parameterTypes);
         }
 
-        internal override void WriteSig(ModuleBuilder module, ByteBuffer bb)
+        internal override void Write(ModuleBuilder module, ByteBuffer bb)
         {
-            WriteSigImpl(module, bb, parameterTypes.Length);
+            WriteImpl(module, bb, parameterTypes.Length);
         }
 
-        internal void WriteMethodRefSig(ModuleBuilder module, ByteBuffer bb, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
+        internal void WriteMethodRef(ModuleBuilder module, ByteBuffer bb, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
         {
-            WriteSigImpl(module, bb, parameterTypes.Length + optionalParameterTypes.Length);
+            WriteImpl(module, bb, parameterTypes.Length + optionalParameterTypes.Length);
+
             if (optionalParameterTypes.Length > 0)
             {
                 bb.Write(SENTINEL);
@@ -369,7 +365,7 @@ namespace IKVM.Reflection
             }
         }
 
-        void WriteSigImpl(ModuleBuilder module, ByteBuffer bb, int parameterCount)
+        void WriteImpl(ModuleBuilder module, ByteBuffer bb, int parameterCount)
         {
             byte first;
 
@@ -408,116 +404,6 @@ namespace IKVM.Reflection
             {
                 WriteCustomModifiers(module, bb, modifiers.GetParameterCustomModifiers(i));
                 WriteType(module, bb, parameterTypes[i]);
-            }
-        }
-
-    }
-
-    readonly struct PackedCustomModifiers
-    {
-
-        // element 0 is the return type, the rest are the parameters
-        readonly CustomModifiers[] customModifiers;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="customModifiers"></param>
-        private PackedCustomModifiers(CustomModifiers[] customModifiers)
-        {
-            this.customModifiers = customModifiers;
-        }
-
-        public override int GetHashCode()
-        {
-            return Util.GetHashCode(customModifiers);
-        }
-
-        public override bool Equals(object obj)
-        {
-            var other = obj as PackedCustomModifiers?;
-            return other != null && Equals(other.Value);
-        }
-
-        internal bool Equals(PackedCustomModifiers other)
-        {
-            return Util.ArrayEquals(customModifiers, other.customModifiers);
-        }
-
-        internal CustomModifiers GetReturnTypeCustomModifiers()
-        {
-            if (customModifiers == null)
-                return new CustomModifiers();
-
-            return customModifiers[0];
-        }
-
-        internal CustomModifiers GetParameterCustomModifiers(int index)
-        {
-            if (customModifiers == null)
-                return new CustomModifiers();
-
-            return customModifiers[index + 1];
-        }
-
-        internal PackedCustomModifiers Bind(IGenericBinder binder)
-        {
-            if (customModifiers == null)
-                return new PackedCustomModifiers();
-
-            var expanded = new CustomModifiers[customModifiers.Length];
-            for (int i = 0; i < customModifiers.Length; i++)
-                expanded[i] = customModifiers[i].Bind(binder);
-
-            return new PackedCustomModifiers(expanded);
-        }
-
-        internal bool ContainsMissingType
-        {
-            get
-            {
-                if (customModifiers != null)
-                    for (int i = 0; i < customModifiers.Length; i++)
-                        if (customModifiers[i].ContainsMissingType)
-                            return true;
-
-                return false;
-            }
-        }
-
-        // this method make a copy of the incoming arrays (where necessary) and returns a normalized modifiers array
-        internal static PackedCustomModifiers CreateFromExternal(Type[] returnOptional, Type[] returnRequired, Type[][] parameterOptional, Type[][] parameterRequired, int parameterCount)
-        {
-            CustomModifiers[] modifiers = null;
-            Pack(ref modifiers, 0, CustomModifiers.FromReqOpt(returnRequired, returnOptional), parameterCount + 1);
-            for (int i = 0; i < parameterCount; i++)
-                Pack(ref modifiers, i + 1, CustomModifiers.FromReqOpt(Util.NullSafeElementAt(parameterRequired, i), Util.NullSafeElementAt(parameterOptional, i)), parameterCount + 1);
-
-            return new PackedCustomModifiers(modifiers);
-        }
-
-        internal static PackedCustomModifiers CreateFromExternal(CustomModifiers returnTypeCustomModifiers, CustomModifiers[] parameterTypeCustomModifiers, int parameterCount)
-        {
-            CustomModifiers[] customModifiers = null;
-            Pack(ref customModifiers, 0, returnTypeCustomModifiers, parameterCount + 1);
-            if (parameterTypeCustomModifiers != null)
-                for (int i = 0; i < parameterCount; i++)
-                    Pack(ref customModifiers, i + 1, parameterTypeCustomModifiers[i], parameterCount + 1);
-
-            return new PackedCustomModifiers(customModifiers);
-        }
-
-        internal static PackedCustomModifiers Wrap(CustomModifiers[] modifiers)
-        {
-            return new PackedCustomModifiers(modifiers);
-        }
-
-        internal static void Pack(ref CustomModifiers[] array, int index, CustomModifiers mods, int count)
-        {
-            if (!mods.IsEmpty)
-            {
-                array ??= new CustomModifiers[count];
-                array[index] = mods;
             }
         }
 

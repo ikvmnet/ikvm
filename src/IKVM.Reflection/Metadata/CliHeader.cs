@@ -64,22 +64,6 @@ namespace IKVM.Reflection.Metadata
 			ManagedNativeHeader.Read(br);
 		}
 
-		internal void Write(IKVM.Reflection.Writer.MetadataWriter mw)
-		{
-			mw.Write(Cb);
-			mw.Write(MajorRuntimeVersion);
-			mw.Write(MinorRuntimeVersion);
-			MetaData.Write(mw);
-			mw.Write(Flags);
-			mw.Write(EntryPointToken);
-			Resources.Write(mw);
-			StrongNameSignature.Write(mw);
-			CodeManagerTable.Write(mw);
-			VTableFixups.Write(mw);
-			ExportAddressTableJumps.Write(mw);
-			ManagedNativeHeader.Write(mw);
-		}
-
 	}
 
 }

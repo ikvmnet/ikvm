@@ -21,8 +21,11 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
+using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -33,61 +36,53 @@ namespace IKVM.Reflection.Metadata
         {
 
             internal short Generation;
-            internal int Name; // -> StringHeap
-            internal int Mvid; // -> GuidHeap
-            internal int EncId; // -> GuidHeap
-            internal int EncBaseId; // -> GuidHeap
+            internal StringHandle Name; // -> StringHeap
+            internal GuidHandle Mvid; // -> GuidHeap
+            internal GuidHandle EncId; // -> GuidHeap
+            internal GuidHandle EncBaseId; // -> GuidHeap
 
         }
 
         internal const int Index = 0x00;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Generation = mr.ReadInt16();
-				records[i].Name = mr.ReadStringIndex();
-				records[i].Mvid = mr.ReadGuidIndex();
-				records[i].EncId = mr.ReadGuidIndex();
-				records[i].EncBaseId = mr.ReadGuidIndex();
-			}
-		}
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Generation = mr.ReadInt16();
+                records[i].Name = MetadataTokens.StringHandle(mr.ReadStringIndex());
+                records[i].Mvid = MetadataTokens.GuidHandle(mr.ReadGuidIndex());
+                records[i].EncId = MetadataTokens.GuidHandle(mr.ReadGuidIndex());
+                records[i].EncBaseId = MetadataTokens.GuidHandle(mr.ReadGuidIndex());
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.Write(records[i].Generation);
-				mw.WriteStringIndex(records[i].Name);
-				mw.WriteGuidIndex(records[i].Mvid);
-				mw.WriteGuidIndex(records[i].EncId);
-				mw.WriteGuidIndex(records[i].EncBaseId);
-			}
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                var h = module.Metadata.AddModule(
+                    records[i].Generation,
+                    records[i].Name,
+                    records[i].Mvid,
+                    records[i].EncId,
+                    records[i].EncBaseId);
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.AddFixed(2)
-				.WriteStringIndex()
-				.WriteGuidIndex()
-				.WriteGuidIndex()
-				.WriteGuidIndex()
-				.Value;
-		}
+                Debug.Assert(MetadataTokens.GetRowNumber(h) == i + 1);
+            }
+        }
 
-		internal void Add(short generation, int name, int mvid, int encid, int encbaseid)
-		{
-			var record = new Record();
-			record.Generation = generation;
-			record.Name = name;
-			record.Mvid = mvid;
-			record.EncId = encid;
-			record.EncBaseId = encbaseid;
-			AddRecord(record);
-		}
+        internal void Add(short generation, StringHandle name, GuidHandle mvid, GuidHandle encid, GuidHandle encbaseid)
+        {
+            var record = new Record();
+            record.Generation = generation;
+            record.Name = name;
+            record.Mvid = mvid;
+            record.EncId = encid;
+            record.EncBaseId = encbaseid;
+            AddRecord(record);
+        }
 
-	}
+    }
 
 }

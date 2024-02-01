@@ -21,12 +21,13 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Generic;
+
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
+
     sealed class FieldRVATable : SortedTable<FieldRVATable.Record>
     {
 
@@ -36,15 +37,15 @@ namespace IKVM.Reflection.Metadata
             internal int RVA; // we set the high bit to signify that the RVA is in the CIL stream (instead of .sdata)
             internal int Field;
 
-            int IRecord.SortKey => Field;
+            readonly int IRecord.FilterKey => Field;
 
-            int IRecord.FilterKey => Field;
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(Field, other.Field);
 
         }
 
         internal const int Index = 0x1D;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
@@ -53,28 +54,19 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+                module.Metadata.AddFieldRelativeVirtualAddress(
+                    System.Reflection.Metadata.Ecma335.MetadataTokens.FieldDefinitionHandle(records[i].Field),
+                    records[i].RVA);
+        }
+
+        internal void Fixup(ModuleBuilder moduleBuilder)
         {
             for (int i = 0; i < rowCount; i++)
             {
-                mw.Write(records[i].RVA);
-                mw.WriteField(records[i].Field);
-            }
-        }
-
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .AddFixed(4)
-                .WriteField()
-                .Value;
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder, int sdataRVA, int cilRVA)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                records[i].RVA = records[i].RVA < 0 ? (records[i].RVA & 0x7fffffff) + cilRVA : sdataRVA;
+                //records[i].RVA = records[i].RVA < 0 ? (records[i].RVA & 0x7fffffff) + cilRVA : sdataRVA;
                 moduleBuilder.FixupPseudoToken(ref records[i].Field);
             }
 

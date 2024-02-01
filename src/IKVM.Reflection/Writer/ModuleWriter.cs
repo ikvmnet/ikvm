@@ -22,11 +22,15 @@
   
 */
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection.Emit;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Writer
 {
@@ -34,12 +38,58 @@ namespace IKVM.Reflection.Writer
     static class ModuleWriter
     {
 
-        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, ModuleBuilder moduleBuilder, PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSection resources, int entryPointToken)
+        const ulong DefaultExeBaseAddress32Bit = 0x00400000;
+        const ulong DefaultExeBaseAddress64Bit = 0x0000000140000000;
+
+        const ulong DefaultDllBaseAddress32Bit = 0x10000000;
+        const ulong DefaultDllBaseAddress64Bit = 0x0000000180000000;
+
+        const ulong DefaultSizeOfHeapReserve32Bit = 0x00100000;
+        const ulong DefaultSizeOfHeapReserve64Bit = 0x00400000;
+
+        const ulong DefaultSizeOfHeapCommit32Bit = 0x1000;
+        const ulong DefaultSizeOfHeapCommit64Bit = 0x2000;
+
+        const ulong DefaultSizeOfStackReserve32Bit = 0x00100000;
+        const ulong DefaultSizeOfStackReserve64Bit = 0x00400000;
+
+        const ulong DefaultSizeOfStackCommit32Bit = 0x1000;
+        const ulong DefaultSizeOfStackCommit64Bit = 0x4000;
+
+        const ushort DefaultFileAlignment32Bit = 0x200;
+        const ushort DefaultFileAlignment64Bit = 0x200; //both 32 and 64 bit binaries used this value in the native stack.
+
+        const ushort DefaultSectionAlignment = 0x2000;
+
+        /// <summary>
+        /// Writes the module specified by <paramref name="moduleBuilder"/>.
+        /// </summary>
+        /// <param name="keyPair"></param>
+        /// <param name="publicKey"></param>
+        /// <param name="moduleBuilder"></param>
+        /// <param name="fileKind"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
+        /// <param name="nativeResources"></param>
+        /// <param name="entryPoint"></param>
+        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint)
         {
-            WriteModule(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, resources, entryPointToken, null);
+            WriteModule(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, null);
         }
 
-        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, ModuleBuilder moduleBuilder, PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSection resources, int entryPointToken, Stream stream)
+        /// <summary>
+        /// Writes the module specified by <paramref name="moduleBuilder"/> to the specified <see cref="Stream"/>.
+        /// </summary>
+        /// <param name="keyPair"></param>
+        /// <param name="publicKey"></param>
+        /// <param name="moduleBuilder"></param>
+        /// <param name="fileKind"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
+        /// <param name="nativeResources"></param>
+        /// <param name="entryPoint"></param>
+        /// <param name="stream"></param>
+        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder moduleBuilder, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint, Stream stream)
         {
             if (stream == null)
             {
@@ -59,7 +109,7 @@ namespace IKVM.Reflection.Writer
                 }
 
                 using (var fs = new FileStream(fileName, FileMode.Create))
-                    WriteModuleImpl(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, resources, entryPointToken, fs);
+                    WriteModuleImpl(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, fs);
 
                 // if we're running on Mono, mark the module as executable by using a Mono private API extension
                 if (mono)
@@ -67,286 +117,348 @@ namespace IKVM.Reflection.Writer
             }
             else
             {
-                WriteModuleImpl(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, resources, entryPointToken, stream);
+                WriteModuleImpl(keyPair, publicKey, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, stream);
             }
         }
 
-        static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, ModuleBuilder moduleBuilder, PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ResourceSection resources, int entryPointToken, Stream stream)
+        /// <summary>
+        /// Implementation of module writing to output stream.
+        /// </summary>
+        /// <param name="keyPair"></param>
+        /// <param name="publicKey"></param>
+        /// <param name="module"></param>
+        /// <param name="fileKind"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
+        /// <param name="nativeResources"></param>
+        /// <param name="entryPoint"></param>
+        /// <param name="stream"></param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint, Stream stream)
         {
-            moduleBuilder.ApplyUnmanagedExports(imageFileMachine);
-            moduleBuilder.FixupMethodBodyTokens();
+            module.ApplyUnmanagedExports(imageFileMachine);
+            module.FixupMethodBodyTokens();
 
-            int moduleVersionIdIndex = moduleBuilder.Guids.Add(moduleBuilder.GetModuleVersionIdOrEmpty());
-            moduleBuilder.ModuleTable.Add(0, moduleBuilder.Strings.Add(moduleBuilder.moduleName), moduleVersionIdIndex, 0, 0);
+            // for compatibility with Reflection.Emit, if there aren't any user strings, we add one
+            module.Metadata.GetOrAddUserString("");
 
-            if (moduleBuilder.UserStrings.IsEmpty)
+#if NETFRAMEWORK
+            if (module.symbolWriter != null)
             {
-                // for compat with Ref.Emit, if there aren't any user strings, we add one
-                moduleBuilder.UserStrings.Add(" ");
+                module.WriteSymbolTokenMap();
+                module.symbolWriter.Close();
+            }
+#endif
+
+            // write the module content
+            WriteModuleImpl(module);
+
+            // are we outputing for a 64 bit architecture?
+            var is64BitArch = imageFileMachine is ImageFileMachine.AMD64 or ImageFileMachine.ARM64 or ImageFileMachine.IA64;
+
+            // initialize PE header builder
+            var peHeaderBuilder = new PEHeaderBuilder(
+                machine: GetMachine(imageFileMachine),
+                sectionAlignment: GetSectionAlignment(module, is64BitArch),
+                fileAlignment: GetFileAlignment(module, is64BitArch),
+                imageBase: GetImageBase(module, fileKind, is64BitArch),
+                majorLinkerVersion: 0x30,
+                minorLinkerVersion: 0,
+                majorOperatingSystemVersion: 4,
+                minorOperatingSystemVersion: 0,
+                majorImageVersion: 0,
+                minorImageVersion: 0,
+                majorSubsystemVersion: GetMajorSubsystemVersion(imageFileMachine, fileKind),
+                minorSubsystemVersion: GetMinorSubsystemVersion(imageFileMachine, fileKind),
+                subsystem: GetSubsystem(fileKind),
+                dllCharacteristics: (System.Reflection.PortableExecutable.DllCharacteristics)(int)module.__DllCharacteristics,
+                imageCharacteristics: GetImageCharacteristics(imageFileMachine, fileKind),
+                sizeOfStackReserve: GetSizeOfStackReserve(module, is64BitArch),
+                sizeOfStackCommit: GetSizeOfStackCommit(module, is64BitArch),
+                sizeOfHeapReserve: GetSizeOfHeapReserve(module, is64BitArch),
+                sizeOfHeapCommit: GetSizeOfHeapCommit(module, is64BitArch));
+
+            // initialize PE builder
+            var strongNameSignatureSize = ComputeStrongNameSignatureLength(publicKey);
+            var peBuilder = new ManagedPEBuilder(
+                peHeaderBuilder,
+                new MetadataRootBuilder(module.Metadata),
+                module.ILStream,
+                managedResources: module.ResourceStream,
+                nativeResources: nativeResources.Count > 0 ? nativeResources : null,
+                strongNameSignatureSize: strongNameSignatureSize,
+                entryPoint: entryPoint != null ? (MethodDefinitionHandle)MetadataTokens.EntityHandle(entryPoint.GetCurrentToken()) : default,
+                flags: GetCorFlags(portableExecutableKind, keyPair),
+                deterministicIdProvider: GetDeterministicIdProvider(module));
+
+            // serialize the image
+            var pe = new BlobBuilder();
+            peBuilder.Serialize(pe);
+
+            // strong name specified, sign the blobs
+            if (keyPair != null)
+                peBuilder.Sign(pe, blobs => GetSignature(keyPair, blobs, strongNameSignatureSize));
+
+            // write the final content to the output stream
+            pe.WriteContentTo(stream);
+        }
+
+        /// <summary>
+        /// Writes the managed metadata to the <see cref="MetadataBuilder"/>.
+        /// </summary>
+        /// <param name="moduleBuilder"></param>
+        static void WriteModuleImpl(IKVM.Reflection.Emit.ModuleBuilder moduleBuilder)
+        {
+            // now that we're ready to start writing, we need to do some fix ups
+            moduleBuilder.TypeRefTable.Fixup(moduleBuilder);
+            moduleBuilder.MethodImplTable.Fixup(moduleBuilder);
+            moduleBuilder.MethodSemanticsTable.Fixup(moduleBuilder);
+            moduleBuilder.InterfaceImplTable.Fixup(moduleBuilder);
+            moduleBuilder.ResolveInterfaceImplPseudoTokens();
+            moduleBuilder.MemberRefTable.Fixup(moduleBuilder);
+            moduleBuilder.ConstantTable.Fixup(moduleBuilder);
+            moduleBuilder.FieldMarshalTable.Fixup(moduleBuilder);
+            moduleBuilder.DeclSecurityTable.Fixup(moduleBuilder);
+            moduleBuilder.GenericParamTable.Fixup(moduleBuilder);
+            moduleBuilder.CustomAttributeTable.Fixup(moduleBuilder);
+            moduleBuilder.FieldLayoutTable.Fixup(moduleBuilder);
+            moduleBuilder.FieldRVATable.Fixup(moduleBuilder);
+            moduleBuilder.ImplMapTable.Fixup(moduleBuilder);
+            moduleBuilder.ExportedTypeTable.Fixup(moduleBuilder);
+            moduleBuilder.ManifestResourceTable.Fixup(moduleBuilder);
+            moduleBuilder.MethodSpecTable.Fixup(moduleBuilder);
+            moduleBuilder.GenericParamConstraint.Fixup(moduleBuilder);
+
+            moduleBuilder.ILStream.WriteBytes(moduleBuilder.methodBodies.ToArray());
+            moduleBuilder.WriteResources();
+            moduleBuilder.WriteMetadata();
+        }
+
+        /// <summary>
+        /// Translates the <see cref="ImageFileMachine"/> parameter into a <see cref="Machine"/> value.
+        /// </summary>
+        /// <param name="imageFileMachine"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        static Machine GetMachine(ImageFileMachine imageFileMachine)
+        {
+            return imageFileMachine switch
+            {
+                ImageFileMachine.UNKNOWN => Machine.Unknown,
+                ImageFileMachine.I386 => Machine.I386,
+                ImageFileMachine.ARM => Machine.Arm,
+                ImageFileMachine.AMD64 => Machine.Amd64,
+                ImageFileMachine.IA64 => Machine.IA64,
+                ImageFileMachine.ARM64 => Machine.Arm64,
+                _ => throw new ArgumentOutOfRangeException("imageFileMachine"),
+            };
+        }
+
+        /// <summary>
+        /// Gets the appropriate section alignment for the image.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        static int GetSectionAlignment(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
+        {
+            return DefaultSectionAlignment;
+        }
+
+        /// <summary>
+        /// Gets the appropriate file alignment for the image.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        static int GetFileAlignment(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
+        {
+            if (module.__FileAlignment == 0)
+                return is64BitArch ? DefaultFileAlignment64Bit : DefaultFileAlignment32Bit;
+            else
+                return (int)module.__FileAlignment;
+        }
+
+        /// <summary>
+        /// Gets the base address of the image.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="fileKind"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        static ulong GetImageBase(IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, bool is64BitArch)
+        {
+            var baseAddress = unchecked(module.__ImageBase + 0x8000) & (is64BitArch ? 0xffffffffffff0000 : 0x00000000ffff0000);
+
+            // cover values smaller than 0x8000, overflow and default value 0):
+            if (baseAddress == 0)
+            {
+                if (fileKind is IKVM.Reflection.Emit.PEFileKinds.ConsoleApplication or IKVM.Reflection.Emit.PEFileKinds.WindowApplication)
+                    return is64BitArch ? DefaultExeBaseAddress64Bit : DefaultExeBaseAddress32Bit;
+                else
+                    return is64BitArch ? DefaultDllBaseAddress64Bit : DefaultDllBaseAddress32Bit;
             }
 
-            if (resources != null)
-                resources.Finish();
+            return baseAddress;
+        }
 
-            var writer = new PEWriter(stream);
-            writer.Headers.OptionalHeader.FileAlignment = (uint)moduleBuilder.__FileAlignment;
+        /// <summary>
+        /// Gets the major subsystem verison.
+        /// </summary>
+        /// <returns></returns>
+        static ushort GetMajorSubsystemVersion(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKinds)
+        {
+            return imageFileMachine == ImageFileMachine.ARM ? (ushort)6 : (ushort)4;
+        }
+
+        /// <summary>
+        /// Gets the minor subsystem version.
+        /// </summary>
+        /// <returns></returns>
+        static ushort GetMinorSubsystemVersion(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKinds)
+        {
+            return imageFileMachine == ImageFileMachine.ARM ? (ushort)2 : (ushort)0;
+        }
+
+        /// <summary>
+        /// Obtains the appropriate <see cref="Subsystem"/> value for a given <see cref="PEFileKinds"/>.
+        /// </summary>
+        /// <param name="fileKind"></param>
+        /// <returns></returns>
+        static Subsystem GetSubsystem(IKVM.Reflection.Emit.PEFileKinds fileKind) => fileKind switch
+        {
+            IKVM.Reflection.Emit.PEFileKinds.WindowApplication => Subsystem.WindowsGui,
+            _ => Subsystem.WindowsCui,
+        };
+
+        /// <summary>
+        /// Obtains the appropriate <see cref="Characteristics"/> value for the given <see cref="ImageFileMachine"/> and <see cref="PEFileKinds"/>.
+        /// </summary>
+        /// <param name="imageFileMachine"></param>
+        /// <param name="fileKind"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        static Characteristics GetImageCharacteristics(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKind)
+        {
+            var characteristics = Characteristics.ExecutableImage;
+
             switch (imageFileMachine)
             {
+                case ImageFileMachine.UNKNOWN:
+                    break;
                 case ImageFileMachine.I386:
-                    writer.Headers.FileHeader.Machine = IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_I386;
-                    writer.Headers.FileHeader.Characteristics |= IMAGE_FILE_HEADER.IMAGE_FILE_32BIT_MACHINE;
-                    writer.Headers.OptionalHeader.SizeOfStackReserve = moduleBuilder.GetStackReserve(0x100000);
+                    characteristics |= Characteristics.Bit32Machine;
                     break;
                 case ImageFileMachine.ARM:
-                    writer.Headers.FileHeader.Machine = IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM;
-                    writer.Headers.FileHeader.Characteristics |= IMAGE_FILE_HEADER.IMAGE_FILE_32BIT_MACHINE | IMAGE_FILE_HEADER.IMAGE_FILE_LARGE_ADDRESS_AWARE;
-                    writer.Headers.OptionalHeader.SizeOfStackReserve = moduleBuilder.GetStackReserve(0x100000);
-                    writer.Headers.OptionalHeader.SectionAlignment = 0x1000;
+                    characteristics |= Characteristics.Bit32Machine | Characteristics.LargeAddressAware;
                     break;
                 case ImageFileMachine.AMD64:
-                    writer.Headers.FileHeader.Machine = IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_AMD64;
-                    writer.Headers.FileHeader.Characteristics |= IMAGE_FILE_HEADER.IMAGE_FILE_LARGE_ADDRESS_AWARE;
-                    writer.Headers.FileHeader.SizeOfOptionalHeader = 0xF0;
-                    writer.Headers.OptionalHeader.Magic = IMAGE_OPTIONAL_HEADER.IMAGE_NT_OPTIONAL_HDR64_MAGIC;
-                    writer.Headers.OptionalHeader.SizeOfStackReserve = moduleBuilder.GetStackReserve(0x400000);
-                    writer.Headers.OptionalHeader.SizeOfStackCommit = 0x4000;
-                    writer.Headers.OptionalHeader.SizeOfHeapCommit = 0x2000;
-                    break;
                 case ImageFileMachine.IA64:
-                    writer.Headers.FileHeader.Machine = IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_IA64;
-                    writer.Headers.FileHeader.Characteristics |= IMAGE_FILE_HEADER.IMAGE_FILE_LARGE_ADDRESS_AWARE;
-                    writer.Headers.FileHeader.SizeOfOptionalHeader = 0xF0;
-                    writer.Headers.OptionalHeader.Magic = IMAGE_OPTIONAL_HEADER.IMAGE_NT_OPTIONAL_HDR64_MAGIC;
-                    writer.Headers.OptionalHeader.SizeOfStackReserve = moduleBuilder.GetStackReserve(0x400000);
-                    writer.Headers.OptionalHeader.SizeOfStackCommit = 0x4000;
-                    writer.Headers.OptionalHeader.SizeOfHeapCommit = 0x2000;
-                    break;
                 case ImageFileMachine.ARM64:
-                    writer.Headers.FileHeader.Machine = IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM64;
-                    writer.Headers.FileHeader.Characteristics |= IMAGE_FILE_HEADER.IMAGE_FILE_LARGE_ADDRESS_AWARE;
-                    writer.Headers.FileHeader.SizeOfOptionalHeader = 0xF0;
-                    writer.Headers.OptionalHeader.Magic = IMAGE_OPTIONAL_HEADER.IMAGE_NT_OPTIONAL_HDR64_MAGIC;
-                    writer.Headers.OptionalHeader.SizeOfStackReserve = moduleBuilder.GetStackReserve(0x400000);
-                    writer.Headers.OptionalHeader.SizeOfStackCommit = 0x4000;
-                    writer.Headers.OptionalHeader.SizeOfHeapCommit = 0x2000;
+                    characteristics |= Characteristics.LargeAddressAware;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException("imageFileMachine");
             }
 
-            if (fileKind == PEFileKinds.Dll)
-                writer.Headers.FileHeader.Characteristics |= IMAGE_FILE_HEADER.IMAGE_FILE_DLL;
-
-            writer.Headers.OptionalHeader.Subsystem = fileKind switch
+            switch (fileKind)
             {
-                PEFileKinds.WindowApplication => IMAGE_OPTIONAL_HEADER.IMAGE_SUBSYSTEM_WINDOWS_GUI,
-                _ => IMAGE_OPTIONAL_HEADER.IMAGE_SUBSYSTEM_WINDOWS_CUI,
-            };
-
-            writer.Headers.OptionalHeader.DllCharacteristics = (ushort)moduleBuilder.__DllCharacteristics;
-
-            var cliHeader = new CliHeader();
-            cliHeader.Cb = 0x48;
-            cliHeader.MajorRuntimeVersion = 2;
-            cliHeader.MinorRuntimeVersion = moduleBuilder.MDStreamVersion < 0x20000 ? (ushort)0 : (ushort)5;
-
-            if ((portableExecutableKind & PortableExecutableKinds.ILOnly) != 0)
-                cliHeader.Flags |= CliHeader.COMIMAGE_FLAGS_ILONLY;
-
-            if ((portableExecutableKind & PortableExecutableKinds.Required32Bit) != 0)
-                cliHeader.Flags |= CliHeader.COMIMAGE_FLAGS_32BITREQUIRED;
-
-            if ((portableExecutableKind & PortableExecutableKinds.Preferred32Bit) != 0)
-                cliHeader.Flags |= CliHeader.COMIMAGE_FLAGS_32BITREQUIRED | CliHeader.COMIMAGE_FLAGS_32BITPREFERRED;
-
-            if (keyPair != null)
-                cliHeader.Flags |= CliHeader.COMIMAGE_FLAGS_STRONGNAMESIGNED;
-
-            if (ModuleBuilder.IsPseudoToken(entryPointToken))
-                entryPointToken = moduleBuilder.ResolvePseudoToken(entryPointToken);
-
-            cliHeader.EntryPointToken = (uint)entryPointToken;
-
-            moduleBuilder.Strings.Freeze();
-            moduleBuilder.UserStrings.Freeze();
-            moduleBuilder.Guids.Freeze();
-            moduleBuilder.Blobs.Freeze();
-            var mw = new MetadataWriter(moduleBuilder, stream);
-            moduleBuilder.Tables.Freeze(mw);
-
-            var code = new TextSection(writer, cliHeader, moduleBuilder, ComputeStrongNameSignatureLength(publicKey));
-
-            // Export Directory
-            if (code.ExportDirectoryLength != 0)
-            {
-                writer.Headers.OptionalHeader.DataDirectory[0].VirtualAddress = code.ExportDirectoryRVA;
-                writer.Headers.OptionalHeader.DataDirectory[0].Size = code.ExportDirectoryLength;
+                case IKVM.Reflection.Emit.PEFileKinds.Dll:
+                    characteristics |= Characteristics.Dll;
+                    break;
             }
 
-            // Import Directory
-            if (code.ImportDirectoryLength != 0)
-            {
-                writer.Headers.OptionalHeader.DataDirectory[1].VirtualAddress = code.ImportDirectoryRVA;
-                writer.Headers.OptionalHeader.DataDirectory[1].Size = code.ImportDirectoryLength;
-            }
-
-            // Import Address Table Directory
-            if (code.ImportAddressTableLength != 0)
-            {
-                writer.Headers.OptionalHeader.DataDirectory[12].VirtualAddress = code.ImportAddressTableRVA;
-                writer.Headers.OptionalHeader.DataDirectory[12].Size = code.ImportAddressTableLength;
-            }
-
-            // COM Descriptor Directory
-            writer.Headers.OptionalHeader.DataDirectory[14].VirtualAddress = code.ComDescriptorRVA;
-            writer.Headers.OptionalHeader.DataDirectory[14].Size = code.ComDescriptorLength;
-
-            // Debug Directory
-            if (code.DebugDirectoryLength != 0)
-            {
-                writer.Headers.OptionalHeader.DataDirectory[6].VirtualAddress = code.DebugDirectoryRVA;
-                writer.Headers.OptionalHeader.DataDirectory[6].Size = code.DebugDirectoryLength;
-            }
-
-            // Set the PE File timestamp
-            writer.Headers.FileHeader.TimeDateStamp = moduleBuilder.GetTimeDateStamp();
-
-            // we need to start by computing the number of sections, because code.PointerToRawData depends on that
-            writer.Headers.FileHeader.NumberOfSections = 2;
-
-            if (moduleBuilder.initializedData.Length != 0)
-            {
-                // .sdata
-                writer.Headers.FileHeader.NumberOfSections++;
-            }
-
-            if (resources != null)
-            {
-                // .rsrc
-                writer.Headers.FileHeader.NumberOfSections++;
-            }
-
-            var text = new SectionHeader();
-            text.Name = ".text";
-            text.VirtualAddress = code.BaseRVA;
-            text.VirtualSize = (uint)code.Length;
-            text.PointerToRawData = code.PointerToRawData;
-            text.SizeOfRawData = writer.ToFileAlignment((uint)code.Length);
-            text.Characteristics = SectionHeader.IMAGE_SCN_CNT_CODE | SectionHeader.IMAGE_SCN_MEM_EXECUTE | SectionHeader.IMAGE_SCN_MEM_READ;
-
-            var sdata = new SectionHeader();
-            sdata.Name = ".sdata";
-            sdata.VirtualAddress = text.VirtualAddress + writer.ToSectionAlignment(text.VirtualSize);
-            sdata.VirtualSize = (uint)moduleBuilder.initializedData.Length;
-            sdata.PointerToRawData = text.PointerToRawData + text.SizeOfRawData;
-            sdata.SizeOfRawData = writer.ToFileAlignment((uint)moduleBuilder.initializedData.Length);
-            sdata.Characteristics = SectionHeader.IMAGE_SCN_CNT_INITIALIZED_DATA | SectionHeader.IMAGE_SCN_MEM_READ | SectionHeader.IMAGE_SCN_MEM_WRITE;
-
-            var rsrc = new SectionHeader();
-            rsrc.Name = ".rsrc";
-            rsrc.VirtualAddress = sdata.VirtualAddress + writer.ToSectionAlignment(sdata.VirtualSize);
-            rsrc.PointerToRawData = sdata.PointerToRawData + sdata.SizeOfRawData;
-            rsrc.VirtualSize = resources == null ? 0 : (uint)resources.Length;
-            rsrc.SizeOfRawData = writer.ToFileAlignment(rsrc.VirtualSize);
-            rsrc.Characteristics = SectionHeader.IMAGE_SCN_MEM_READ | SectionHeader.IMAGE_SCN_CNT_INITIALIZED_DATA;
-
-            if (rsrc.SizeOfRawData != 0)
-            {
-                // Resource Directory
-                writer.Headers.OptionalHeader.DataDirectory[2].VirtualAddress = rsrc.VirtualAddress;
-                writer.Headers.OptionalHeader.DataDirectory[2].Size = rsrc.VirtualSize;
-            }
-
-            var reloc = new SectionHeader();
-            reloc.Name = ".reloc";
-            reloc.VirtualAddress = rsrc.VirtualAddress + writer.ToSectionAlignment(rsrc.VirtualSize);
-            reloc.VirtualSize = code.PackRelocations();
-            reloc.PointerToRawData = rsrc.PointerToRawData + rsrc.SizeOfRawData;
-            reloc.SizeOfRawData = writer.ToFileAlignment(reloc.VirtualSize);
-            reloc.Characteristics = SectionHeader.IMAGE_SCN_MEM_READ | SectionHeader.IMAGE_SCN_CNT_INITIALIZED_DATA | SectionHeader.IMAGE_SCN_MEM_DISCARDABLE;
-
-            if (reloc.SizeOfRawData != 0)
-            {
-                // Base Relocation Directory
-                writer.Headers.OptionalHeader.DataDirectory[5].VirtualAddress = reloc.VirtualAddress;
-                writer.Headers.OptionalHeader.DataDirectory[5].Size = reloc.VirtualSize;
-            }
-
-            writer.Headers.OptionalHeader.SizeOfCode = text.SizeOfRawData;
-            writer.Headers.OptionalHeader.SizeOfInitializedData = sdata.SizeOfRawData + rsrc.SizeOfRawData + reloc.SizeOfRawData;
-            writer.Headers.OptionalHeader.SizeOfUninitializedData = 0;
-            writer.Headers.OptionalHeader.SizeOfImage = reloc.VirtualAddress + writer.ToSectionAlignment(reloc.VirtualSize);
-            writer.Headers.OptionalHeader.SizeOfHeaders = text.PointerToRawData;
-            writer.Headers.OptionalHeader.BaseOfCode = code.BaseRVA;
-            writer.Headers.OptionalHeader.BaseOfData = sdata.VirtualAddress;
-            writer.Headers.OptionalHeader.ImageBase = (ulong)moduleBuilder.__ImageBase;
-
-            if (imageFileMachine == ImageFileMachine.IA64)
-            {
-                // apparently for IA64 AddressOfEntryPoint points to the address of the entry point
-                // (i.e. there is an additional layer of indirection), so we add the offset to the pointer
-                writer.Headers.OptionalHeader.AddressOfEntryPoint = code.StartupStubRVA + 0x20;
-            }
-            else
-            {
-                writer.Headers.OptionalHeader.AddressOfEntryPoint = code.StartupStubRVA + writer.Thumb;
-            }
-
-            writer.WritePEHeaders();
-            writer.WriteSectionHeader(text);
-            if (sdata.SizeOfRawData != 0)
-                writer.WriteSectionHeader(sdata);
-            if (rsrc.SizeOfRawData != 0)
-                writer.WriteSectionHeader(rsrc);
-            if (reloc.SizeOfRawData != 0)
-                writer.WriteSectionHeader(reloc);
-
-            stream.Seek(text.PointerToRawData, SeekOrigin.Begin);
-            code.Write(mw, sdata.VirtualAddress, out var guidHeapOffset);
-
-            if (sdata.SizeOfRawData != 0)
-            {
-                stream.Seek(sdata.PointerToRawData, SeekOrigin.Begin);
-                mw.Write(moduleBuilder.initializedData);
-            }
-
-            if (rsrc.SizeOfRawData != 0)
-            {
-                stream.Seek(rsrc.PointerToRawData, SeekOrigin.Begin);
-                resources.Write(mw, rsrc.VirtualAddress);
-            }
-
-            if (reloc.SizeOfRawData != 0)
-            {
-                stream.Seek(reloc.PointerToRawData, SeekOrigin.Begin);
-                code.WriteRelocations(mw);
-            }
-
-            // file alignment
-            stream.SetLength(reloc.PointerToRawData + reloc.SizeOfRawData);
-
-            // if we don't have a guid, generate one based on the contents of the assembly
-            if (moduleBuilder.universe.Deterministic && moduleBuilder.GetModuleVersionIdOrEmpty() == Guid.Empty)
-            {
-                var guid = GenerateModuleVersionId(stream);
-                stream.Position = guidHeapOffset + (moduleVersionIdIndex - 1) * 16;
-                stream.Write(guid.ToByteArray(), 0, 16);
-                moduleBuilder.__SetModuleVersionId(guid);
-            }
-
-            // do the strong naming
-            if (keyPair != null)
-                StrongName(stream, keyPair, writer.HeaderSize, text.PointerToRawData, code.StrongNameSignatureRVA - text.VirtualAddress + text.PointerToRawData, code.StrongNameSignatureLength);
-
-#if NETFRAMEWORK
-            if (moduleBuilder.symbolWriter != null)
-            {
-                moduleBuilder.WriteSymbolTokenMap();
-                moduleBuilder.symbolWriter.Close();
-            }
-#endif
+            return characteristics;
         }
 
+        /// <summary>
+        /// Gets the size of the stack reserve.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        static ulong GetSizeOfStackReserve(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
+        {
+            return is64BitArch ? DefaultSizeOfStackReserve64Bit : DefaultSizeOfStackReserve32Bit;
+        }
+
+        /// <summary>
+        /// Gets the size of the stack commit.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        static ulong GetSizeOfStackCommit(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
+        {
+            return is64BitArch ? DefaultSizeOfStackCommit64Bit : DefaultSizeOfStackCommit32Bit;
+        }
+
+        /// <summary>
+        /// Gets the size of the heap reserve.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        static ulong GetSizeOfHeapReserve(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
+        {
+            return is64BitArch ? DefaultSizeOfHeapReserve64Bit : DefaultSizeOfHeapReserve32Bit;
+        }
+
+        /// <summary>
+        /// Gets the size of the heap commit.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="is64BitArch"></param>
+        /// <returns></returns>
+        static ulong GetSizeOfHeapCommit(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
+        {
+            return is64BitArch ? DefaultSizeOfHeapCommit64Bit : DefaultSizeOfHeapCommit32Bit;
+        }
+
+        /// <summary>
+        /// Obtains the appropriate <see cref="CorFlags"/> value for the given <see cref="PortableExecutableKinds"/> and <see cref="StrongNameKeyPair"/>.
+        /// </summary>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="keyPair"></param>
+        /// <returns></returns>
+        static CorFlags GetCorFlags(PortableExecutableKinds portableExecutableKind, StrongNameKeyPair keyPair)
+        {
+            var flags = default(CorFlags);
+
+            if ((portableExecutableKind & PortableExecutableKinds.ILOnly) != 0)
+                flags |= CorFlags.ILOnly;
+            if ((portableExecutableKind & PortableExecutableKinds.Required32Bit) != 0)
+                flags |= CorFlags.Requires32Bit;
+            if ((portableExecutableKind & PortableExecutableKinds.Preferred32Bit) != 0)
+                flags |= CorFlags.Requires32Bit | CorFlags.Prefers32Bit;
+            if (keyPair != null)
+                flags |= CorFlags.StrongNameSigned;
+
+            return flags;
+        }
+
+        /// <summary>
+        /// Gets the appropriate ID provider for the generation of the module version ID.
+        /// </summary>
+        /// <param name="moduleBuilder"></param>
+        /// <returns></returns>
+        static Func<IEnumerable<Blob>, BlobContentId> GetDeterministicIdProvider(Emit.ModuleBuilder moduleBuilder)
+        {
+            if (moduleBuilder.GetModuleVersionIdOrEmpty() is Guid mvid && mvid != Guid.Empty)
+                return e => new BlobContentId(mvid, 1);
+            else if (moduleBuilder.universe.Deterministic)
+                return e => BlobContentId.FromHash(GetSHA1Hash(e));
+            else
+                return BlobContentId.GetTimeBasedProvider();
+
+        }
+
+        /// <summary>
+        /// Computes the length of the strong name signature.
+        /// </summary>
+        /// <param name="publicKey"></param>
+        /// <returns></returns>
         static int ComputeStrongNameSignatureLength(byte[] publicKey)
         {
             if (publicKey == null)
@@ -366,147 +478,46 @@ namespace IKVM.Reflection.Writer
             }
         }
 
-        static void StrongName(Stream stream, StrongNameKeyPair keyPair, uint headerLength, uint textSectionFileOffset, uint strongNameSignatureFileOffset, uint strongNameSignatureLength)
-        {
-            byte[] hash;
-            using (var sha1 = SHA1.Create())
-            {
-                stream.Seek(0, SeekOrigin.Begin);
-                var skipStream = new SkipStream(stream, strongNameSignatureFileOffset, strongNameSignatureLength);
-                skipStream = new SkipStream(skipStream, headerLength, textSectionFileOffset - headerLength);
-                hash = sha1.ComputeHash(skipStream);
-            }
-
-            using (var rsa = keyPair.CreateRSA())
-            {
-                var signature = rsa.SignHash(hash, "1.3.14.3.2.26");
-                Array.Reverse(signature);
-                if (signature.Length != strongNameSignatureLength)
-                    throw new InvalidOperationException("Signature length mismatch");
-
-                stream.Seek(strongNameSignatureFileOffset, SeekOrigin.Begin);
-                stream.Write(signature, 0, signature.Length);
-            }
-
-            // compute the PE checksum
-            stream.Seek(0, SeekOrigin.Begin);
-            var count = (int)stream.Length / 4;
-            var br = new BinaryReader(stream);
-
-            long sum = 0;
-            for (int i = 0; i < count; i++)
-            {
-                sum += br.ReadUInt32();
-                int carry = (int)(sum >> 32);
-                sum &= 0xFFFFFFFFU;
-                sum += carry;
-            }
-
-            while ((sum >> 16) != 0)
-                sum = (sum & 0xFFFF) + (sum >> 16);
-
-            sum += stream.Length;
-
-            // write the PE checksum, note that it is always at offset 0xD8 in the file
-            var bb = new ByteBuffer(4);
-            bb.Write((int)sum);
-            stream.Seek(0xD8, SeekOrigin.Begin);
-            bb.WriteTo(stream);
-        }
-
-#if NET7_0_OR_GREATER
-
         /// <summary>
-        /// Hashes the entire output stream to generate the MVID. Sets the GUID type to "version 4" (random).
+        /// Gets a hash of the specified blobs.
         /// </summary>
-        /// <param name="stream"></param>
+        /// <param name="blobs"></param>
         /// <returns></returns>
-        static unsafe Guid GenerateModuleVersionId(Stream stream)
+        static byte[] GetSHA1Hash(IEnumerable<Blob> blobs)
         {
-            var hash = (Span<byte>)stackalloc byte[20];
+            using var sha1 = SHA1.Create();
 
-            var indx = stream.Position;
-            try
+            foreach (var blob in blobs)
             {
-                stream.Seek(0, SeekOrigin.Begin);
-                SHA1.HashData(stream, hash);
-            }
-            finally
-            {
-                stream.Seek(indx, SeekOrigin.Begin);
+                var data = blob.GetBytes();
+                sha1.TransformBlock(data.Array, data.Offset, data.Count, null, 0);
             }
 
-            var mvid = hash.Slice(0, 16);
-            mvid[7] &= 0x0F;
-            mvid[7] |= 0x40;
-            mvid[8] &= 0x3F;
-            mvid[8] |= 0x80;
-            return GuidFromSpan(mvid);
-        }
+            sha1.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
 
-#else
-
-        /// <summary>
-        /// Computes a hash for the seekable stream.
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <returns></returns>
-        static byte[] ComputeSHA1Array(Stream stream)
-        {
-            var indx = stream.Position;
-            try
-            {
-                using var hash = SHA1.Create();
-                stream.Seek(0, SeekOrigin.Begin);
-                return hash.ComputeHash(stream);
-            }
-            finally
-            {
-                stream.Seek(indx, SeekOrigin.Begin);
-            }
+            return sha1.Hash;
         }
 
         /// <summary>
-        /// Hashes the entire output stream to generate the MVID. Sets the GUID type to "version 4" (random).
+        /// Calculates the strong name signature for the specified blobs.
         /// </summary>
-        /// <param name="stream"></param>
+        /// <param name="keyPair"></param>
+        /// <param name="blobs"></param>
+        /// <param name="strongNameSignatureSize"></param>
         /// <returns></returns>
-        static Guid GenerateModuleVersionId(Stream stream)
+        /// <exception cref="NotImplementedException"></exception>
+        static byte[] GetSignature(StrongNameKeyPair keyPair, IEnumerable<Blob> blobs, int strongNameSignatureSize)
         {
-            var hash = ComputeSHA1Array(stream);
-            var mvid = hash.AsSpan().Slice(0, 16);
-            mvid[7] &= 0x0F;
-            mvid[7] |= 0x40;
-            mvid[8] &= 0x3F;
-            mvid[8] |= 0x80;
-            return GuidFromSpan(mvid);
-        }
+            // sign the hash with the keypair
+            using var rsa = keyPair.CreateRSA();
+            var signature = rsa.SignHash(GetSHA1Hash(blobs), HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
+            Array.Reverse(signature);
 
-#endif
+            // check that our signature length matches
+            if (signature.Length != strongNameSignatureSize)
+                throw new InvalidOperationException("Signature length mismatch.");
 
-        /// <summary>
-        /// Creates a new <see cref="Guid"/> from a span. Optimized for .NET.
-        /// </summary>
-        /// <param name="b"></param>
-        /// <returns></returns>
-        static Guid GuidFromSpan(ReadOnlySpan<byte> b)
-        {
-#if NETFRAMEWORK
-            var _a = (b[3] << 24) | (b[2] << 16) | (b[1] << 8) | b[0];
-            var _b = (short)((b[5] << 8) | b[4]);
-            var _c = (short)((b[7] << 8) | b[6]);
-            var _d = b[8];
-            var _e = b[9];
-            var _f = b[10];
-            var _g = b[11];
-            var _h = b[12];
-            var _i = b[13];
-            var _j = b[14];
-            var _k = b[15];
-            return new Guid(_a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k);
-#else
-            return new Guid(b);
-#endif
+            return signature;
         }
 
     }

@@ -21,7 +21,8 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Writer;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 namespace IKVM.Reflection.Emit
 {
@@ -32,7 +33,7 @@ namespace IKVM.Reflection.Emit
         readonly ModuleBuilder moduleBuilder;
         short flags;
         readonly short sequence;
-        readonly int nameIndex;
+        readonly StringHandle nameIndex;
         readonly string name;
         int lazyPseudoToken;
 
@@ -48,7 +49,7 @@ namespace IKVM.Reflection.Emit
             this.moduleBuilder = moduleBuilder;
             this.flags = (short)attribs;
             this.sequence = (short)sequence;
-            this.nameIndex = name == null ? 0 : moduleBuilder.Strings.Add(name);
+            this.nameIndex = name == null ? default : moduleBuilder.GetOrAddString(name);
             this.name = name;
         }
 
@@ -130,11 +131,12 @@ namespace IKVM.Reflection.Emit
             moduleBuilder.AddConstant(PseudoToken, defaultValue);
         }
 
-        internal void WriteParamRecord(MetadataWriter mw)
+        internal void WriteParamRecord(MetadataBuilder metadata)
         {
-            mw.Write(flags);
-            mw.Write(sequence);
-            mw.WriteStringIndex(nameIndex);
+            metadata.AddParameter(
+                (System.Reflection.ParameterAttributes)flags,
+                nameIndex,
+                sequence);
         }
 
         internal void FixupToken(int parameterToken)

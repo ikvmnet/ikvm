@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Metadata;
 
@@ -121,7 +122,7 @@ namespace IKVM.Reflection.Emit
         public override object GetRawConstantValue()
         {
             if (lazyPseudoToken != 0)
-                return typeBuilder.ModuleBuilder.Constant.GetRawConstantValue(typeBuilder.ModuleBuilder, lazyPseudoToken);
+                return typeBuilder.ModuleBuilder.ConstantTable.GetRawConstantValue(typeBuilder.ModuleBuilder, lazyPseudoToken);
 
             throw new InvalidOperationException();
         }
@@ -197,9 +198,9 @@ namespace IKVM.Reflection.Emit
 
             var rec = new PropertyTable.Record();
             rec.Flags = (short)attributes;
-            rec.Name = typeBuilder.ModuleBuilder.Strings.Add(name);
+            rec.Name = typeBuilder.ModuleBuilder.GetOrAddString(name);
             rec.Type = typeBuilder.ModuleBuilder.GetSignatureBlobIndex(sig);
-            int token = 0x17000000 | typeBuilder.ModuleBuilder.Property.AddRecord(rec);
+            int token = MetadataTokens.GetToken(MetadataTokens.PropertyDefinitionHandle(typeBuilder.ModuleBuilder.PropertyTable.AddRecord(rec)));
 
             if (lazyPseudoToken == 0)
                 lazyPseudoToken = token;
@@ -216,7 +217,7 @@ namespace IKVM.Reflection.Emit
             rec.Semantics = semantics;
             rec.Method = methodToken;
             rec.Association = propertyToken;
-            typeBuilder.ModuleBuilder.MethodSemantics.AddRecord(rec);
+            typeBuilder.ModuleBuilder.MethodSemanticsTable.AddRecord(rec);
         }
 
         internal override bool IsPublic

@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 
 using IKVM.Reflection.Writer;
@@ -35,26 +36,6 @@ namespace IKVM.Reflection.Emit
     public sealed class ILGenerator
     {
 
-        readonly ModuleBuilder moduleBuilder;
-        readonly ByteBuffer code;
-        readonly SignatureHelper locals;
-        int localsCount;
-        readonly List<int> tokenFixups = new List<int>();
-        readonly List<int> labels = new List<int>();
-        readonly List<int> labelStackHeight = new List<int>();
-        readonly List<LabelFixup> labelFixups = new List<LabelFixup>();
-        readonly List<SequencePoint> sequencePoints = new List<SequencePoint>();
-        readonly List<ExceptionBlock> exceptions = new List<ExceptionBlock>();
-        readonly Stack<ExceptionBlock> exceptionStack = new Stack<ExceptionBlock>();
-        ushort maxStack;
-        bool fatHeader;
-        int stackHeight;
-        Scope scope;
-        byte exceptionBlockAssistanceMode = EBAM_COMPAT;
-        const byte EBAM_COMPAT = 0;
-        const byte EBAM_DISABLE = 1;
-        const byte EBAM_CLEVER = 2;
-
         struct LabelFixup
         {
             internal int label;
@@ -63,6 +44,7 @@ namespace IKVM.Reflection.Emit
 
         internal sealed class ExceptionBlock : IComparer<ExceptionBlock>
         {
+
             internal readonly int ordinal;
             internal Label labelEnd;
             internal int tryOffset;
@@ -72,11 +54,19 @@ namespace IKVM.Reflection.Emit
             internal int filterOffsetOrExceptionTypeToken;
             internal ExceptionHandlingClauseOptions kind;
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="ordinal"></param>
             internal ExceptionBlock(int ordinal)
             {
                 this.ordinal = ordinal;
             }
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="h"></param>
             internal ExceptionBlock(ExceptionHandler h)
             {
                 this.ordinal = -1;
@@ -92,25 +82,15 @@ namespace IKVM.Reflection.Emit
             {
                 // Mono's sort insists on doing unnecessary comparisons
                 if (x == y)
-                {
                     return 0;
-                }
                 else if (x.tryOffset == y.tryOffset && x.tryLength == y.tryLength)
-                {
                     return x.ordinal < y.ordinal ? -1 : 1;
-                }
                 else if (x.tryOffset >= y.tryOffset && x.handlerOffset + x.handlerLength <= y.handlerOffset + y.handlerLength)
-                {
                     return -1;
-                }
                 else if (y.tryOffset >= x.tryOffset && y.handlerOffset + y.handlerLength <= x.handlerOffset + x.handlerLength)
-                {
                     return 1;
-                }
                 else
-                {
                     return x.ordinal < y.ordinal ? -1 : 1;
-                }
             }
         }
 
@@ -146,6 +126,26 @@ namespace IKVM.Reflection.Emit
             }
 
         }
+
+        readonly ModuleBuilder moduleBuilder;
+        readonly ByteBuffer code;
+        readonly SignatureHelper locals;
+        int localsCount;
+        readonly List<int> tokenFixups = new List<int>();
+        readonly List<int> labels = new List<int>();
+        readonly List<int> labelStackHeight = new List<int>();
+        readonly List<LabelFixup> labelFixups = new List<LabelFixup>();
+        readonly List<SequencePoint> sequencePoints = new List<SequencePoint>();
+        readonly List<ExceptionBlock> exceptions = new List<ExceptionBlock>();
+        readonly Stack<ExceptionBlock> exceptionStack = new Stack<ExceptionBlock>();
+        ushort maxStack;
+        bool fatHeader;
+        int stackHeight;
+        Scope scope;
+        byte exceptionBlockAssistanceMode = EBAM_COMPAT;
+        const byte EBAM_COMPAT = 0;
+        const byte EBAM_DISABLE = 1;
+        const byte EBAM_CLEVER = 2;
 
         /// <summary>
         /// Initializes a new instance.
@@ -307,6 +307,7 @@ namespace IKVM.Reflection.Emit
                     Emit(OpCodes.Leave, labelEnd);
                 }
                 exceptionStack.Pop();
+
                 var newBlock = new ExceptionBlock(exceptions.Count);
                 newBlock.labelEnd = labelEnd;
                 newBlock.tryOffset = block.tryOffset;
@@ -315,6 +316,7 @@ namespace IKVM.Reflection.Emit
                 exceptions.Add(block);
                 exceptionStack.Push(block);
             }
+
             block.handlerOffset = code.Position;
             block.kind = kind;
             stackHeight = 0;
@@ -330,6 +332,7 @@ namespace IKVM.Reflection.Emit
                 else
                     Emit(OpCodes.Endfinally);
             }
+
             MarkLabel(block.labelEnd);
             block.handlerLength = code.Position - block.handlerOffset;
         }
@@ -454,13 +457,10 @@ namespace IKVM.Reflection.Emit
             int flowStackHeight = this.stackHeight;
             Emit(opc);
             if (opc == OpCodes.Leave || opc == OpCodes.Leave_S)
-            {
                 flowStackHeight = 0;
-            }
             else if (opc.FlowControl != FlowControl.Branch)
-            {
                 flowStackHeight = this.stackHeight;
-            }
+
             // if the label has already been marked, we can emit the branch offset directly
             if (labels[label.Index] != -1)
             {
@@ -504,6 +504,7 @@ namespace IKVM.Reflection.Emit
         public void Emit(OpCode opc, Label[] labels)
         {
             Emit(opc);
+
             var fix = new LabelFixup();
             fix.label = -1;
             fix.offset = code.Position;
@@ -514,11 +515,9 @@ namespace IKVM.Reflection.Emit
                 code.Write(label.Index);
                 if (this.labels[label.Index] != -1)
                 {
+                    // the "backward branch constraint" prohibits this, so we don't need to support it
                     if (labelStackHeight[label.Index] != stackHeight)
-                    {
-                        // the "backward branch constraint" prohibits this, so we don't need to support it
                         throw new NotSupportedException();
-                    }
                 }
                 else
                 {
@@ -600,9 +599,8 @@ namespace IKVM.Reflection.Emit
         void WriteToken(int token)
         {
             if (ModuleBuilder.IsPseudoToken(token))
-            {
                 tokenFixups.Add(code.Position);
-            }
+
             code.Write(token);
         }
 
@@ -739,7 +737,7 @@ namespace IKVM.Reflection.Emit
             }
             var bb = new ByteBuffer(16);
             Signature.WriteStandAloneMethodSig(moduleBuilder, bb, sig);
-            code.Write(0x11000000 | moduleBuilder.StandAloneSig.FindOrAddRecord(moduleBuilder.Blobs.Add(bb)));
+            code.Write(MetadataTokens.GetToken(MetadataTokens.StandaloneSignatureHandle(moduleBuilder.StandAloneSigTable.FindOrAddRecord(moduleBuilder.GetOrAddBlob(bb.ToArray())))));
         }
 
         public void EmitWriteLine(string text)
@@ -847,9 +845,7 @@ namespace IKVM.Reflection.Emit
             else
             {
                 if (localsCount != 0)
-                {
                     localVarSigTok = moduleBuilder.GetSignatureToken(locals).Token;
-                }
 
                 rva = WriteFatHeaderAndCode(bb, localVarSigTok, initLocals);
             }
@@ -869,9 +865,8 @@ namespace IKVM.Reflection.Emit
                     for (int i = 0; i < sequencePoints.Count; i++)
                     {
                         if (sequencePoints[i].document != document)
-                        {
                             throw new NotImplementedException();
-                        }
+
                         offsets[i] = sequencePoints[i].offset;
                         lines[i] = sequencePoints[i].startLine;
                         columns[i] = sequencePoints[i].startColumn;
@@ -913,13 +908,9 @@ namespace IKVM.Reflection.Emit
                     byte size = code.GetByteAtCurrentPosition();
                     int branchOffset = labels[fixup.label] - (code.Position + size);
                     if (size == 1)
-                    {
                         WriteByteBranchOffset(branchOffset);
-                    }
                     else
-                    {
                         code.Write(branchOffset);
-                    }
                 }
             }
         }
@@ -945,16 +936,12 @@ namespace IKVM.Reflection.Emit
             const byte CorILMethod_MoreSects = 0x08;
             const byte CorILMethod_InitLocals = 0x10;
 
-            short flagsAndSize = (short)(CorILMethod_FatFormat | (3 << 12));
+            var flagsAndSize = (short)(CorILMethod_FatFormat | (3 << 12));
             if (initLocals)
-            {
                 flagsAndSize |= CorILMethod_InitLocals;
-            }
 
             if (exceptions)
-            {
                 flagsAndSize |= CorILMethod_MoreSects;
-            }
 
             bb.Write(flagsAndSize);
             bb.Write(maxStack);
@@ -975,6 +962,7 @@ namespace IKVM.Reflection.Emit
                 exceptions.Sort(exceptions[0]);
                 WriteExceptionHandlers(bb, exceptions);
             }
+
             return rva;
         }
 
@@ -989,7 +977,7 @@ namespace IKVM.Reflection.Emit
             }
             else
             {
-                foreach (ExceptionBlock block in exceptions)
+                foreach (var block in exceptions)
                 {
                     if (block.tryOffset > 65535 || block.tryLength > 255 || block.handlerOffset > 65535 || block.handlerLength > 255)
                     {
@@ -1038,9 +1026,7 @@ namespace IKVM.Reflection.Emit
         internal static void AddTokenFixups(int codeOffset, List<int> tokenFixupOffsets, IEnumerable<int> tokenFixups)
         {
             foreach (int fixup in tokenFixups)
-            {
                 tokenFixupOffsets.Add(fixup + codeOffset);
-            }
         }
 
         void WriteScope(Scope scope, int localVarSigTok)

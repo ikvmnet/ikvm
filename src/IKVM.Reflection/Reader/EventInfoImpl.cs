@@ -63,42 +63,42 @@ namespace IKVM.Reflection.Reader
 
         public override EventAttributes Attributes
         {
-            get { return (EventAttributes)module.Event.records[index].EventFlags; }
+            get { return (EventAttributes)module.EventTable.records[index].EventFlags; }
         }
 
         public override MethodInfo GetAddMethod(bool nonPublic)
         {
-            return module.MethodSemantics.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.AddOn);
+            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.AddOn);
         }
 
         public override MethodInfo GetRaiseMethod(bool nonPublic)
         {
-            return module.MethodSemantics.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Fire);
+            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Fire);
         }
 
         public override MethodInfo GetRemoveMethod(bool nonPublic)
         {
-            return module.MethodSemantics.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.RemoveOn);
+            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.RemoveOn);
         }
 
         public override MethodInfo[] GetOtherMethods(bool nonPublic)
         {
-            return module.MethodSemantics.GetMethods(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Other);
+            return module.MethodSemanticsTable.GetMethods(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Other);
         }
 
         public override MethodInfo[] __GetMethods()
         {
-            return module.MethodSemantics.GetMethods(module, this.MetadataToken, true, -1);
+            return module.MethodSemanticsTable.GetMethods(module, this.MetadataToken, true, -1);
         }
 
         public override Type EventHandlerType
         {
-            get { return module.ResolveType(module.Event.records[index].EventType, declaringType); }
+            get { return module.ResolveType(module.EventTable.records[index].EventType, declaringType); }
         }
 
         public override string Name
         {
-            get { return module.GetString(module.Event.records[index].Name); }
+            get { return module.GetString(module.EventTable.records[index].Name); }
         }
 
         public override Type DeclaringType
@@ -151,7 +151,7 @@ namespace IKVM.Reflection.Reader
 
         void ComputeFlags()
         {
-            module.MethodSemantics.ComputeFlags(module, this.MetadataToken, out isPublic, out isNonPrivate, out isStatic);
+            module.MethodSemanticsTable.ComputeFlags(module, this.MetadataToken, out isPublic, out isNonPrivate, out isStatic);
             flagsCached = true;
         }
 

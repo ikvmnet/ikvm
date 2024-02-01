@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
 
 namespace IKVM.Reflection
 {
@@ -67,7 +68,7 @@ namespace IKVM.Reflection
                 if (index == -1)
                     throw new MissingModuleException(this);
 
-                return assembly.ManifestModule.GetString(assembly.ManifestModule.File.records[index].Name);
+                return assembly.ManifestModule.GetString(assembly.ManifestModule.FileTable.records[index].Name);
             }
         }
 
@@ -121,7 +122,7 @@ namespace IKVM.Reflection
             get { throw new MissingModuleException(this); }
         }
 
-        internal override void ExportTypes(int fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
+        internal override void ExportTypes(AssemblyFileHandle handle, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
         {
             throw new MissingModuleException(this);
         }
@@ -157,10 +158,10 @@ namespace IKVM.Reflection
             {
                 if (index == -1)
                     throw new MissingModuleException(this);
-                if (assembly.ManifestModule.File.records[index].HashValue == 0)
+                if (assembly.ManifestModule.FileTable.records[index].HashValue.IsNil)
                     return null;
 
-                var br = assembly.ManifestModule.GetBlob(assembly.ManifestModule.File.records[index].HashValue);
+                var br = assembly.ManifestModule.GetBlobReader(assembly.ManifestModule.FileTable.records[index].HashValue);
                 return br.ReadBytes(br.Length);
             }
         }
