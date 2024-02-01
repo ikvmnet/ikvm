@@ -316,8 +316,9 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\management\ThreadMXBean.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\management\UnixOperatingSystemMXBean.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\management\VMOption.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\MidiDeviceReceiverEnvelope.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\MidiDeviceTransmitterEnvelope.java" />
+        
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\**\*.java" PackagePath="com\sun\media\sound" />
+        
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\naming\internal\FactoryEnumeration.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\naming\internal\NamedWeakReference.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\naming\internal\ResourceManager.java" />
@@ -1674,6 +1675,16 @@
         <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\demo\nio\zipfs\src\META-INF\services\java.nio.file.spi.FileSystemProvider" ResourcePath="META-INF/services/java.nio.file.spi.FileSystemProvider" />
         <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.PrintServiceLookup" ResourcePath="META-INF/services/javax.print.PrintServiceLookup" />
         <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.StreamPrintServiceFactory" ResourcePath="META-INF/services/javax.print.StreamPrintServiceFactory" />
+        
+        <!-- JAVAX_SOUND_SRC_FILES -->
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiDeviceProvider" ResourcePath="META-INF/services/javax.sound.midi.spi.MidiDeviceProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileReader" ResourcePath="META-INF/services/javax.sound.midi.spi.MidiFileReader" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileWriter" ResourcePath="META-INF/services/javax.sound.midi.spi.MidiFileWriter" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.SoundbankReader" ResourcePath="META-INF/services/javax.sound.midi.spi.SoundbankReader" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileReader" ResourcePath="META-INF/services/javax.sound.sampled.spi.AudioFileReader" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileWriter" ResourcePath="META-INF/services/javax.sound.sampled.spi.AudioFileWriter" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.FormatConversionProvider" ResourcePath="META-INF/services/javax.sound.sampled.spi.FormatConversionProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.MixerProvider" ResourcePath="META-INF/services/javax.sound.sampled.spi.MixerProvider" />
 
         <!-- These classes are loaded as resources at runtime to dynamically generate instances. -->
         <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\reflect\misc\Trampoline.class" ResourcePath="sun\reflect\misc\Trampoline.class" />
