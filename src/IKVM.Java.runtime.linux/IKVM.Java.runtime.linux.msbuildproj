@@ -1,8 +1,9 @@
 ﻿<Project>
     <PropertyGroup>
-        <IkvmJavaRuntimeIdentifier>ref</IkvmJavaRuntimeIdentifier>
+        <PackageId>IKVM.Java.runtime.linux</PackageId>
+        <IkvmJavaRuntimeIdentifier>linux</IkvmJavaRuntimeIdentifier>
     </PropertyGroup>
-
+    
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.targets" />
 </Project>
