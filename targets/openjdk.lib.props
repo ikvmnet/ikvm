@@ -28,6 +28,10 @@
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_STATIC_CPPLIB;_DISABLE_DEPRECATE_STATIC_CPPLIB;WIN32_LEAN_AND_MEAN;IAL</PreprocessorDefinitions>
     </PropertyGroup>
 
+    <ItemGroup Condition="$(TargetTriple.Contains('-windows-')) ">
+        <ProjectReference Include="..\IKVM.Java.runtime.win\IKVM.Java.runtime.win.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
+    </ItemGroup>
+
     <!-- common/autoconf/flags.m4 -->
     <PropertyGroup Condition="$(TargetTriple.Contains('-linux-'))">
         <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
@@ -35,12 +39,20 @@
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE</PreprocessorDefinitions>
     </PropertyGroup>
 
+    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <ProjectReference Include="..\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
+    </ItemGroup>
+
     <!-- common/autoconf/flags.m4 -->
     <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
         <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_ALLBSD_SOURCE;_DARWIN_UNLIMITED_SELECT</PreprocessorDefinitions>
         <EnableOSXCodeSign Condition=" '$(EnableOSXCodeSign)' == '' ">true</EnableOSXCodeSign>
     </PropertyGroup>
+
+    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
+        <ProjectReference Include="..\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
+    </ItemGroup>
 
     <!-- standard OpenJDK includes -->
     <PropertyGroup Condition=" '$(TargetTriple)' != '' ">
