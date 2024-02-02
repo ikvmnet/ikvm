@@ -12,12 +12,26 @@
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
         <ProjectReference Include="..\libiava\libiava.clangproj" />
     </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x86'))">
+        <PreprocessorDefinitions Include="X_ARCH=X_I586" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x64'))">
+        <PreprocessorDefinitions Include="X_ARCH=X_AMD64" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm'))">
+        <PreprocessorDefinitions Include="X_ARCH=X_ARM" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm64'))">
+        <PreprocessorDefinitions Include="X_ARCH=X_AARCH64" />
+    </ItemGroup>
     <ItemGroup>
         <!-- CFLAGS -->
+        <PreprocessorDefinitions Include="X_PLATFORM=X_LINUX" />
         <PreprocessorDefinitions Include="USE_DAUDIO=TRUE" />
         <PreprocessorDefinitions Include="USE_PORTS=TRUE" />
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT=TRUE" />
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN=TRUE" />
+        <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS=%5c&quot;%5c&quot;" />
 
         <!-- LIBJSOUND_SRC_DIRS -->
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound" />
