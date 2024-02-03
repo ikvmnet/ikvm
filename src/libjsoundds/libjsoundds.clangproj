@@ -18,7 +18,7 @@
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN=TRUE" />
         <PreprocessorDefinitions Include="USE_PORTS=TRUE" />
         <PreprocessorDefinitions Include="USE_DAUDIO=TRUE" />
-        <Dependencies Include="msvcrt;ucrt;vcruntime;Kernel32;dsound.lib;winmm.lib;user32;ole32" />
+        <Dependencies Include="dsound;winmm;user32;ole32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x86'))">
         <PreprocessorDefinitions Include="X_ARCH=X_I586" />

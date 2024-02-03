@@ -5,6 +5,7 @@
         <ProjectGuid>403E0642-B6ED-464E-8694-2E467CDA2C02</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
+        <TargetIdentifiers>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
         <TargetName>jsound</TargetName>
     </PropertyGroup>
     <ItemGroup>
@@ -69,6 +70,8 @@
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT=TRUE" />
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN=TRUE" />
         <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS=%5c&quot;%5c&quot;" />
+        
+        <Dependencies Include="c" />
         
         <AdditionalLinkOptions Include="-framework CoreAudio" />
         <AdditionalLinkOptions Include="-framework CoreFoundation" />
