@@ -39,14 +39,12 @@
     </ItemGroup>
     <ItemGroup>
         <!-- INCLUDE_FILES -->
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\Utilities.c" />
-
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\Utilities.c" LanguageStandard="c99" />
         <!-- LIBJSOUND_DAUDIOFILES -->
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\DirectAudioDeviceProvider.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\DirectAudioDevice.c" />
-
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\DirectAudioDeviceProvider.c" LanguageStandard="c99" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\DirectAudioDevice.c" LanguageStandard="c99" />
         <!-- INCLUDE_FILES -->
-        <Compile Include="$(OpenJdkDir)jdk\src\windows\native\com\sun\media\sound\PLATFORM_API_WinOS_DirectSound.cpp" LanguageStandard="c++14" />
+        <Compile Include="$(OpenJdkDir)jdk\src\windows\native\com\sun\media\sound\PLATFORM_API_WinOS_DirectSound.cpp" LanguageStandard="c++11" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
