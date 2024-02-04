@@ -580,6 +580,10 @@ jobs:
     - name: Setup WSL
       if: runner.os == 'Windows'
       uses: Vampire/setup-wsl@v2
+    - name: Setup Linux
+      if: runner.os == 'Linux'
+      shell: bash
+      run: apt-get update && apt-get install -y libasound2
     - name: Get Test Name
       uses: actions/github-script@v6
       id: test-name
