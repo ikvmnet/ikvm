@@ -327,6 +327,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Reflection.Tests", "sr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Tests.Util", "src\IKVM.Java.Tests.Util\IKVM.Java.Tests.Util.csproj", "{00AFE142-5F4F-48DD-90C1-20CC0512C43C}"
 EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libosxapp", "src\libosxapp\libosxapp.clangproj", "{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -821,6 +823,10 @@ Global
 		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
