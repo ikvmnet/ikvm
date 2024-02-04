@@ -33,6 +33,8 @@
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN=TRUE" />
         <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS=%5c&quot;%5c&quot;" />
 
+        <Dependencies Include="asound" />
+
         <!-- LIBJSOUND_SRC_DIRS -->
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\com\sun\media\sound" />
