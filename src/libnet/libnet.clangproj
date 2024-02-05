@@ -16,6 +16,7 @@
         <ProjectReference Include="..\libiava\libiava.clangproj" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
+        <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
         <Dependencies Include="ws2_32;secur32;iphlpapi;delayimp;advapi32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
