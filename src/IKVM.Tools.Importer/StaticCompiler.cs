@@ -367,13 +367,6 @@ namespace IKVM.Tools.Importer
                     msg = "Ignoring @ikvm.lang.Internal annotation on interface method" + Environment.NewLine +
                         "    (\"{0}.{1}{2}\")";
                     break;
-                case Message.DllExportMustBeStaticMethod:
-                    msg = "Ignoring @ikvm.lang.DllExport annotation on non-static method" + Environment.NewLine +
-                        "    (\"{0}.{1}{2}\")";
-                    break;
-                case Message.DllExportRequiresSupportedPlatform:
-                    msg = "Ignoring @ikvm.lang.DllExport annotation due to unsupported target platform";
-                    break;
                 case Message.NonPrimaryAssemblyReference:
                     msg = "Referenced assembly \"{0}\" is not the primary assembly of a shared class loader group, please reference primary assembly \"{1}\" instead";
                     break;
