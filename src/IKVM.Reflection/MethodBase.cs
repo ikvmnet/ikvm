@@ -44,6 +44,11 @@ namespace IKVM.Reflection
 		public abstract CallingConventions CallingConvention { get; }
 		public abstract int __MethodRVA { get; }
 
+		/// <summary>
+		/// MethodDef table row number in the written PE image
+		/// </summary>
+		internal int RowNumber { get; set; } = -1;
+
 		public bool IsConstructor
 		{
 			get

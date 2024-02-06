@@ -37,6 +37,8 @@ namespace IKVM.Reflection.Writer
         readonly Stream stream;
         readonly byte[] buffer = new byte[8];
 
+		private int methodDefRow = 0;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -430,6 +432,10 @@ namespace IKVM.Reflection.Writer
                 Write((short)encodedToken);
         }
 
-    }
+		internal int GetNewMethodDefRowId()
+		{
+			return ++methodDefRow;
+		}
 
+    }
 }

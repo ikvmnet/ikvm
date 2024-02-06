@@ -14,8 +14,6 @@ using System.Text;
 
 namespace IKVM.Reflection.Impl
 {
-
-
     sealed class PortablePdbWriter : AbstractPdbWriter, ISymbolWriterImpl
     {
 
@@ -32,30 +30,46 @@ namespace IKVM.Reflection.Impl
         {
             var metadataBuilder = new MetadataBuilder();
 
-            foreach (Method method in methods)
+            var sortedMethods = new (Method method, MethodBase methodBase)[moduleBuilder.MethodDef.RowCount + 1]; // 1-based
+
+            foreach (var tuple in methods.Select(m =>
             {
-                int remappedToken = method.token;
+                int remappedToken = m.token;
                 remap.TryGetValue(remappedToken, out remappedToken);
 
-                var methodInfo = methodMap[method.token];
+                var methodBase = methodMap[m.token];
 
-                var methodDef = metadataBuilder.AddMethodDefinition(
-                    attributes: (System.Reflection.MethodAttributes)methodInfo.Attributes, // definitions are identical
-                    implAttributes: System.Reflection.MethodImplAttributes.Managed,
-                    name: metadataBuilder.GetOrAddString(methodInfo.Name),
-                    signature: GetMethodSignature(metadataBuilder, methodInfo),
-                    bodyOffset: method.scopes[0].startOffset,
-                    parameterList: GetParameterList(metadataBuilder, methodInfo)
-                );
+                return (m, methodBase);
+            }))
+            {
+                sortedMethods[tuple.methodBase.RowNumber] = tuple;
+            }
 
-                if (method.document != null)
+            // By spec doc:
+            //    MethodDebugInformation table is either empty (missing) or has exactly as many rows as MethodDef table
+            // So we need to write MethodDebugInformation in exactly the same order as MethodDef table
+            for (int i = 1; i <= moduleBuilder.MethodDef.RowCount; i++)
+            {
+                var methodDef = MetadataTokens.MethodDefinitionHandle(i);
+                var method = sortedMethods[i].method;
+                var methodBase = sortedMethods[i].methodBase;
+
+                if (method?.document != null)
                 {
                     DocumentHandle doc = GetUnmanagedDocument(metadataBuilder, method.document);
                     metadataBuilder.AddMethodDebugInformation(doc, MakeSequencePoints(metadataBuilder, method));
                 }
-                foreach (Scope scope in method.scopes)
+                else
                 {
-                    WriteScope(metadataBuilder, methodDef, scope);
+                    metadataBuilder.AddMethodDebugInformation(default, default);
+                }
+
+                if (method != null)
+                {
+                    foreach (Scope scope in method.scopes)
+                    {
+                        WriteScope(metadataBuilder, methodDef, scope);
+                    }
                 }
             }
 

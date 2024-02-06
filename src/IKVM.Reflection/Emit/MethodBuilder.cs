@@ -654,6 +654,7 @@ namespace IKVM.Reflection.Emit
 
         internal void WriteMethodDefRecord(int baseRVA, MetadataWriter mw, ref int paramList)
         {
+            RowNumber = mw.GetNewMethodDefRowId();
             if (rva != -1)
                 mw.Write(rva + baseRVA);
             else
