@@ -14,8 +14,8 @@ namespace IKVM.Reflection.Emit
 
         readonly BlobBuilder writer;
 
-        bool localSignatureEncoded = false;
-        DocumentHandle prevDocument = default;
+        bool headerEncoded = false;
+        bool sequencePointEncoded = false;
         int prevOffset = -1;
         int prevNonHiddenStartLine = -1;
         int prevNonHiddenStartColumn = -1;
@@ -32,14 +32,25 @@ namespace IKVM.Reflection.Emit
         /// <summary>
         /// Encodes the local signature.
         /// </summary>
-        /// <param name="handle"></param>
-        public void LocalSignature(StandaloneSignatureHandle handle)
+        /// <param name="localSignature"></param>
+        public void Header(StandaloneSignatureHandle localSignature, DocumentHandle initialDocument, ref DocumentHandle previousDocument)
         {
-            if (localSignatureEncoded)
+            if (headerEncoded)
                 throw new InvalidOperationException("Local Signature already encoded.");
+            if (sequencePointEncoded)
+                throw new InvalidOperationException("Sequence point already encoded.");
 
-            writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(handle));
-            localSignatureEncoded = true;
+            headerEncoded = true;
+
+            // write local signature
+            writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(localSignature));
+
+            // write optional initial document and set as previous
+            if (initialDocument.IsNil == false && initialDocument != previousDocument)
+            {
+                writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(initialDocument));
+                previousDocument = initialDocument;
+            }
         }
 
         /// <summary>
@@ -51,20 +62,21 @@ namespace IKVM.Reflection.Emit
         /// <param name="startColumn"></param>
         /// <param name="endLine"></param>
         /// <param name="endColumn"></param>
+        /// <param name="previousDocument"></param>
         /// <exception cref="InvalidOperationException"></exception>
-        public void SequencePoint(DocumentHandle document, int offset, int startLine, int startColumn, int endLine, int endColumn)
+        public void SequencePoint(DocumentHandle document, int offset, int startLine, int startColumn, int endLine, int endColumn, ref DocumentHandle previousDocument)
         {
-            if (localSignatureEncoded == false)
-                throw new InvalidOperationException("Local Signature not already encoded.");
+            if (headerEncoded == false)
+                throw new InvalidOperationException("Header not already encoded.");
 
-            if (document != prevDocument)
+            sequencePointEncoded = true;
+
+            // document passed, and different from previous, write new document-record
+            if (document.IsNil == false && document != previousDocument)
             {
-                // optional document in header or document record
-                if (prevDocument.IsNil == false)
-                    writer.WriteCompressedInteger(0);
-
+                writer.WriteCompressedInteger(0);
                 writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(document));
-                prevDocument = document;
+                previousDocument = document;
             }
 
             // delta IL offset

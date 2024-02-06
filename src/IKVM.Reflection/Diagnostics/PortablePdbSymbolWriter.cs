@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
 using System.Reflection.Metadata;
@@ -518,11 +519,18 @@ namespace IKVM.Reflection.Diagnostics
         /// <param name="documentCache"></param>
         void WriteMethod(MetadataBuilder metadata, Method method, Dictionary<Document, DocumentHandle> documentCache)
         {
-            WriteSequencePoints(metadata, method, documentCache, out var sequencePointsHandle);
+            // find first document and set as initial, as it will be directly on method debug information
+            var initialDocument = method.SequencePoints.Select(i => i.Document).FirstOrDefault(i => i != null);
+            var initialDocumentHandle = initialDocument != null ? GetOrWriteDocument(metadata, initialDocument, documentCache) : default;
+            var currentDocumentHandle = initialDocumentHandle;
+
+            // write sequence points and scopes
+            WriteSequencePoints(metadata, method, documentCache, out var sequencePointsHandle, ref currentDocumentHandle);
             WriteScopes(metadata, method);
 
-            var h = metadata.AddMethodDebugInformation(default, sequencePointsHandle);
-            Debug.Assert(MetadataTokens.GetRowNumber(h) == MetadataTokens.GetRowNumber(MetadataTokens.EntityHandle(method.Token)));
+            // final debug information, containing initial document
+            var methodDebugHandle = metadata.AddMethodDebugInformation(initialDocumentHandle, sequencePointsHandle);
+            Debug.Assert(MetadataTokens.GetRowNumber(methodDebugHandle) == MetadataTokens.GetRowNumber(MetadataTokens.EntityHandle(method.Token)));
         }
 
         /// <summary>
@@ -532,8 +540,9 @@ namespace IKVM.Reflection.Diagnostics
         /// <param name="method"></param>
         /// <param name="documentCache"></param>
         /// <param name="sequencePointHandle"></param>
+        /// <param name="previousDocument"></param>
         /// <exception cref="InvalidOperationException"></exception>
-        void WriteSequencePoints(MetadataBuilder metadata, Method method, Dictionary<Document, DocumentHandle> documentCache, out BlobHandle sequencePointHandle)
+        void WriteSequencePoints(MetadataBuilder metadata, Method method, Dictionary<Document, DocumentHandle> documentCache, out BlobHandle sequencePointHandle, ref DocumentHandle previousDocument)
         {
             // no sequence points?
             sequencePointHandle = default;
@@ -547,15 +556,15 @@ namespace IKVM.Reflection.Diagnostics
             if (method.LocalSignatureHandle.IsNil)
                 throw new InvalidOperationException("MethodBuilder missing local signature.");
 
-            // sequence points begin with local signature
-            enc.LocalSignature(method.LocalSignatureHandle);
+            // sequence points begin with local signature and initial document
+            enc.Header(method.LocalSignatureHandle, default, ref previousDocument);
 
             // add the sequence points recorded on the method
             foreach (var sequencePoint in method.SequencePoints)
             {
                 var doc = GetOrWriteDocument(metadata, sequencePoint.Document, documentCache);
                 for (int j = 0; j < sequencePoint.Offsets.Length; j++)
-                    enc.SequencePoint(doc, sequencePoint.Offsets[j], sequencePoint.Lines[j], sequencePoint.Columns[j], sequencePoint.EndLines[j], sequencePoint.EndColumns[j]);
+                    enc.SequencePoint(doc, sequencePoint.Offsets[j], sequencePoint.Lines[j], sequencePoint.Columns[j], sequencePoint.EndLines[j], sequencePoint.EndColumns[j], ref previousDocument);
             }
 
             // add sequence points blob
@@ -601,7 +610,7 @@ namespace IKVM.Reflection.Diagnostics
         /// <param name="method"></param>
         void WriteScopes(MetadataBuilder metadata, Method method)
         {
-            foreach (var scope in method.Scopes)
+            foreach (var scope in method.Scopes.OrderBy(i => i.StartOffset).ThenByDescending(i => i.EndOffset - i.StartOffset))
                 WriteScope(metadata, method, scope);
         }
 
@@ -642,7 +651,7 @@ namespace IKVM.Reflection.Diagnostics
 
             // insert variables for this scope, keeping first entry
             var variableList = default(LocalVariableHandle);
-            foreach (var kvp in scope.Locals)
+            foreach (var kvp in scope.Locals.OrderBy(i => i.Value.Address1))
             {
                 var h = metadata.AddLocalVariable(LocalVariableAttributes.None, kvp.Value.Address1, metadata.GetOrAddString(kvp.Key));
                 if (variableList.IsNil)
@@ -656,10 +665,10 @@ namespace IKVM.Reflection.Diagnostics
                 variableList,
                 default,
                 scope.StartOffset,
-                scope.EndOffset - scope.startOffset);
+                scope.EndOffset - scope.StartOffset);
 
             // repeat for children scopes
-            foreach (var nestedScope in scope.Scopes)
+            foreach (var nestedScope in scope.Scopes.OrderBy(i => i.StartOffset).ThenByDescending(i => i.EndOffset - i.StartOffset))
                 WriteScope(metadata, method, nestedScope, importScope);
         }
 
