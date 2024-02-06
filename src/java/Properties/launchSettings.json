@@ -2,10 +2,10 @@
   "profiles": {
     "java": {
       "commandName": "Project",
-        "environmentVariables": {
-            "DOTNET_JitDisasm": "doPrivledged",
-            "IKVM_HOME_ROOT": "C:\\dev\\ikvm2\\src\\IKVM.Tests\\bin\\Debug\\net6.0\\ikvm\\"
-        }
+      "commandLineArgs": "-version",
+      "environmentVariables": {
+        "IKVM_HOME_ROOT": "C:\\dev\\ikvm2\\src\\IKVM.Tests\\bin\\Debug\\net6.0\\ikvm\\"
+      }
     }
   }
 }
