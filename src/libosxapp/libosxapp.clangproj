@@ -2,29 +2,30 @@
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
     <PropertyGroup Label="Globals">
-        <ProjectGuid>55f3f094-ce8e-4734-b14e-7dd5dfe7e4f3</ProjectGuid>
+        <ProjectGuid>0E068B20-9C99-45C5-8D94-A1FF9EDD6739</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetName>osx</TargetName>
         <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
+        <TargetName>osxapp</TargetName>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
-        <ProjectReference Include="..\libosxapp\libosxapp.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <AdditionalLinkOptions Include="-framework Cocoa" />
+        <AdditionalLinkOptions Include="-framework Accelerate" />
         <AdditionalLinkOptions Include="-framework ApplicationServices" />
+        <AdditionalLinkOptions Include="-framework AudioToolbox" />
+        <AdditionalLinkOptions Include="-framework Carbon" />
+        <AdditionalLinkOptions Include="-framework Cocoa" />
+        <AdditionalLinkOptions Include="-framework Security" />
+        <AdditionalLinkOptions Include="-framework ExceptionHandling" />
         <!--<AdditionalLinkOptions Include="-framework JavaNativeFoundation" />-->
         <!--<AdditionalLinkOptions Include="-framework JavaRuntimeSupport" />-->
-        <AdditionalLinkOptions Include="-framework Security" />
-        <AdditionalLinkOptions Include="-framework SystemConfiguration" />
+        <AdditionalLinkOptions Include="-framework OpenGL" />
+        <AdditionalLinkOptions Include="-framework IOSurface" />
+        <AdditionalLinkOptions Include="-framework QuartzCore" />
+        <Compile Include="**\*.cpp" />
         <Compile Include="**\*.c" />
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\concurrent\*.m" />-->
-        <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\java\util\MacOSXPreferencesFile.m" />
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\eio\*.m" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\apple\security\*.m" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\apple\launcher\*.m" />-->
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
