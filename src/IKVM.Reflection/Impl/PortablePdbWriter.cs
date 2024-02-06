@@ -46,7 +46,9 @@ namespace IKVM.Reflection.Impl
             }
 
             // By spec doc:
-            //    MethodDebugInformation table is either empty (missing) or has exactly as many rows as MethodDef table
+            //   > MethodDebugInformation table is either empty (missing) or has exactly as many rows as MethodDef table
+            // https://github.com/dotnet/runtime/blob/main/docs/design/specs/PortablePdb-Metadata.md#methoddebuginformation-table-0x31
+            //
             // So we need to write MethodDebugInformation in exactly the same order as MethodDef table
             for (int i = 1; i <= moduleBuilder.MethodDef.RowCount; i++)
             {
@@ -127,7 +129,10 @@ namespace IKVM.Reflection.Impl
                 length: scope.endOffset - scope.startOffset
             );
 
-            foreach (var child in scope.scopes)
+            // By spec doc:
+            //   > The table is required to be sorted first by Method in ascending order, then by StartOffset in ascending order, then by Length in descending order.
+            // https://github.com/dotnet/runtime/blob/main/docs/design/specs/PortablePdb-Metadata.md#localscope-table-0x32
+            foreach (var child in scope.scopes.OrderBy(s => s.startOffset).ThenByDescending(s => s.endOffset - s.startOffset))
             {
                 WriteScope(builder, methodDef, child);
             }
@@ -136,9 +141,10 @@ namespace IKVM.Reflection.Impl
         private LocalVariableHandle MakeLocalVariables(MetadataBuilder builder, Scope scope)
         {
             LocalVariableHandle firstHandle = default;
-            foreach (var (i, name, local) in scope.locals.OrderBy(kv => kv.Value.startOffset).Select((kv, i) => (i, kv.Key, kv.Value)))
+            foreach (var (name, local) in scope.locals.OrderBy(kv => kv.Value.addr1).Select(kv => (kv.Key, kv.Value)))
             {
-                var handle = builder.AddLocalVariable(LocalVariableAttributes.None, i, builder.GetOrAddString(name));
+                Debug.Assert(local.addrKind == System.Diagnostics.SymbolStore.SymAddressKind.ILOffset);
+                var handle = builder.AddLocalVariable(LocalVariableAttributes.None, local.addr1, builder.GetOrAddString(name));
                 if (firstHandle.IsNil)
                 {
                     firstHandle = handle;
