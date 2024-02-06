@@ -25,17 +25,28 @@ using System;
 
 namespace IKVM.Reflection
 {
+
     public sealed class ResolveEventArgs : EventArgs
     {
 
-        private readonly string name;
-        private readonly Assembly requestingAssembly;
+        readonly string name;
+        readonly Assembly requestingAssembly;
 
-        public ResolveEventArgs(string name)
-            : this(name, null)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="name"></param>
+        public ResolveEventArgs(string name) :
+            this(name, null)
         {
+
         }
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="requestingAssembly"></param>
         public ResolveEventArgs(string name, Assembly requestingAssembly)
         {
             this.name = name;
@@ -51,5 +62,7 @@ namespace IKVM.Reflection
         {
             get { return requestingAssembly; }
         }
+
     }
+
 }

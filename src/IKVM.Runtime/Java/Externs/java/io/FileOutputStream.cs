@@ -19,9 +19,9 @@ namespace IKVM.Java.Externs.java.io
         static FileDescriptorAccessor fileDescriptorAccessor;
         static FileOutputStreamAccessor fileOutputStreamAccessor;
 
-        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.Internal.BaseAccessors.Get(ref fileDescriptorAccessor);
 
-        static FileOutputStreamAccessor FileOutputStreamAccessor => JVM.BaseAccessors.Get(ref fileOutputStreamAccessor);
+        static FileOutputStreamAccessor FileOutputStreamAccessor => JVM.Internal.BaseAccessors.Get(ref fileOutputStreamAccessor);
 
         static global::ikvm.@internal.CallerID __callerID;
         delegate void __jniDelegate__open0(IntPtr jniEnv, IntPtr this_, IntPtr path, sbyte append);

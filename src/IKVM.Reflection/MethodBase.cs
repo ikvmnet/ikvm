@@ -21,15 +21,18 @@
   jeroen@frijters.net
   
 */
-using System;
-
 namespace IKVM.Reflection
 {
-	public abstract class MethodBase : MemberInfo
+
+    public abstract class MethodBase : MemberInfo
 	{
-		// prevent external subclasses
+
+		/// <summary>
+		/// Initializes a new instance.
+		/// </summary>
 		internal MethodBase()
 		{
+
 		}
 
 		internal abstract MethodSignature MethodSignature { get; }
@@ -45,11 +48,12 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-				if ((this.Attributes & MethodAttributes.RTSpecialName) != 0)
+				if ((Attributes & MethodAttributes.RTSpecialName) != 0)
 				{
-					string name = this.Name;
+					var name = Name;
 					return name == ConstructorInfo.ConstructorName || name == ConstructorInfo.TypeConstructorName;
 				}
+
 				return false;
 			}
 		}
@@ -164,5 +168,7 @@ namespace IKVM.Reflection
 				&& BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
 				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
 		}
+
 	}
+
 }

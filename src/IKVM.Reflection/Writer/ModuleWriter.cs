@@ -137,15 +137,12 @@ namespace IKVM.Reflection.Writer
             if (fileKind == PEFileKinds.Dll)
                 writer.Headers.FileHeader.Characteristics |= IMAGE_FILE_HEADER.IMAGE_FILE_DLL;
 
-            switch (fileKind)
+            writer.Headers.OptionalHeader.Subsystem = fileKind switch
             {
-                case PEFileKinds.WindowApplication:
-                    writer.Headers.OptionalHeader.Subsystem = IMAGE_OPTIONAL_HEADER.IMAGE_SUBSYSTEM_WINDOWS_GUI;
-                    break;
-                default:
-                    writer.Headers.OptionalHeader.Subsystem = IMAGE_OPTIONAL_HEADER.IMAGE_SUBSYSTEM_WINDOWS_CUI;
-                    break;
-            }
+                PEFileKinds.WindowApplication => IMAGE_OPTIONAL_HEADER.IMAGE_SUBSYSTEM_WINDOWS_GUI,
+                _ => IMAGE_OPTIONAL_HEADER.IMAGE_SUBSYSTEM_WINDOWS_CUI,
+            };
+
             writer.Headers.OptionalHeader.DllCharacteristics = (ushort)moduleBuilder.__DllCharacteristics;
 
             var cliHeader = new CliHeader();
@@ -176,6 +173,7 @@ namespace IKVM.Reflection.Writer
             moduleBuilder.Blobs.Freeze();
             var mw = new MetadataWriter(moduleBuilder, stream);
             moduleBuilder.Tables.Freeze(mw);
+
             var code = new TextSection(writer, cliHeader, moduleBuilder, ComputeStrongNameSignatureLength(publicKey));
 
             // Export Directory
@@ -330,7 +328,7 @@ namespace IKVM.Reflection.Writer
             // if we don't have a guid, generate one based on the contents of the assembly
             if (moduleBuilder.universe.Deterministic && moduleBuilder.GetModuleVersionIdOrEmpty() == Guid.Empty)
             {
-                Guid guid = GenerateModuleVersionId(stream);
+                var guid = GenerateModuleVersionId(stream);
                 stream.Position = guidHeapOffset + (moduleVersionIdIndex - 1) * 16;
                 stream.Write(guid.ToByteArray(), 0, 16);
                 moduleBuilder.__SetModuleVersionId(guid);
@@ -338,9 +336,7 @@ namespace IKVM.Reflection.Writer
 
             // do the strong naming
             if (keyPair != null)
-            {
                 StrongName(stream, keyPair, writer.HeaderSize, text.PointerToRawData, code.StrongNameSignatureRVA - text.VirtualAddress + text.PointerToRawData, code.StrongNameSignatureLength);
-            }
 
 #if NETFRAMEWORK
             if (moduleBuilder.symbolWriter != null)
@@ -348,11 +344,10 @@ namespace IKVM.Reflection.Writer
                 moduleBuilder.WriteSymbolTokenMap();
                 moduleBuilder.symbolWriter.Close();
             }
-
 #endif
         }
 
-        private static int ComputeStrongNameSignatureLength(byte[] publicKey)
+        static int ComputeStrongNameSignatureLength(byte[] publicKey)
         {
             if (publicKey == null)
             {
@@ -371,32 +366,33 @@ namespace IKVM.Reflection.Writer
             }
         }
 
-        private static void StrongName(Stream stream, StrongNameKeyPair keyPair, uint headerLength, uint textSectionFileOffset, uint strongNameSignatureFileOffset, uint strongNameSignatureLength)
+        static void StrongName(Stream stream, StrongNameKeyPair keyPair, uint headerLength, uint textSectionFileOffset, uint strongNameSignatureFileOffset, uint strongNameSignatureLength)
         {
             byte[] hash;
-            using (SHA1 sha1 = SHA1.Create())
+            using (var sha1 = SHA1.Create())
             {
                 stream.Seek(0, SeekOrigin.Begin);
-                Stream skipStream = new SkipStream(stream, strongNameSignatureFileOffset, strongNameSignatureLength);
+                var skipStream = new SkipStream(stream, strongNameSignatureFileOffset, strongNameSignatureLength);
                 skipStream = new SkipStream(skipStream, headerLength, textSectionFileOffset - headerLength);
                 hash = sha1.ComputeHash(skipStream);
             }
-            using (RSACryptoServiceProvider rsa = keyPair.CreateRSA())
+
+            using (var rsa = keyPair.CreateRSA())
             {
-                byte[] signature = rsa.SignHash(hash, "1.3.14.3.2.26");
+                var signature = rsa.SignHash(hash, "1.3.14.3.2.26");
                 Array.Reverse(signature);
                 if (signature.Length != strongNameSignatureLength)
-                {
                     throw new InvalidOperationException("Signature length mismatch");
-                }
+
                 stream.Seek(strongNameSignatureFileOffset, SeekOrigin.Begin);
                 stream.Write(signature, 0, signature.Length);
             }
 
             // compute the PE checksum
             stream.Seek(0, SeekOrigin.Begin);
-            int count = (int)stream.Length / 4;
-            BinaryReader br = new BinaryReader(stream);
+            var count = (int)stream.Length / 4;
+            var br = new BinaryReader(stream);
+
             long sum = 0;
             for (int i = 0; i < count; i++)
             {
@@ -405,130 +401,114 @@ namespace IKVM.Reflection.Writer
                 sum &= 0xFFFFFFFFU;
                 sum += carry;
             }
+
             while ((sum >> 16) != 0)
-            {
                 sum = (sum & 0xFFFF) + (sum >> 16);
-            }
+
             sum += stream.Length;
 
             // write the PE checksum, note that it is always at offset 0xD8 in the file
-            ByteBuffer bb = new ByteBuffer(4);
+            var bb = new ByteBuffer(4);
             bb.Write((int)sum);
             stream.Seek(0xD8, SeekOrigin.Begin);
             bb.WriteTo(stream);
         }
 
-        private static Guid GenerateModuleVersionId(Stream stream)
+#if NET7_0_OR_GREATER
+
+        /// <summary>
+        /// Hashes the entire output stream to generate the MVID. Sets the GUID type to "version 4" (random).
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns></returns>
+        static unsafe Guid GenerateModuleVersionId(Stream stream)
         {
-            byte[] hash;
-            using (SHA1 sha1 = SHA1.Create())
+            var hash = (Span<byte>)stackalloc byte[20];
+
+            var indx = stream.Position;
+            try
             {
                 stream.Seek(0, SeekOrigin.Begin);
-                hash = sha1.ComputeHash(stream);
+                SHA1.HashData(stream, hash);
             }
-            byte[] bytes = new byte[16];
-            Buffer.BlockCopy(hash, 0, bytes, 0, bytes.Length);
-            // set GUID type to "version 4" (random)
-            bytes[7] &= 0x0F;
-            bytes[7] |= 0x40;
-            bytes[8] &= 0x3F;
-            bytes[8] |= 0x80;
-            return new Guid(bytes);
+            finally
+            {
+                stream.Seek(indx, SeekOrigin.Begin);
+            }
+
+            var mvid = hash.Slice(0, 16);
+            mvid[7] &= 0x0F;
+            mvid[7] |= 0x40;
+            mvid[8] &= 0x3F;
+            mvid[8] |= 0x80;
+            return GuidFromSpan(mvid);
         }
+
+#else
+
+        /// <summary>
+        /// Computes a hash for the seekable stream.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns></returns>
+        static byte[] ComputeSHA1Array(Stream stream)
+        {
+            var indx = stream.Position;
+            try
+            {
+                using var hash = SHA1.Create();
+                stream.Seek(0, SeekOrigin.Begin);
+                return hash.ComputeHash(stream);
+            }
+            finally
+            {
+                stream.Seek(indx, SeekOrigin.Begin);
+            }
+        }
+
+        /// <summary>
+        /// Hashes the entire output stream to generate the MVID. Sets the GUID type to "version 4" (random).
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns></returns>
+        static Guid GenerateModuleVersionId(Stream stream)
+        {
+            var hash = ComputeSHA1Array(stream);
+            var mvid = hash.AsSpan().Slice(0, 16);
+            mvid[7] &= 0x0F;
+            mvid[7] |= 0x40;
+            mvid[8] &= 0x3F;
+            mvid[8] |= 0x80;
+            return GuidFromSpan(mvid);
+        }
+
+#endif
+
+        /// <summary>
+        /// Creates a new <see cref="Guid"/> from a span. Optimized for .NET.
+        /// </summary>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        static Guid GuidFromSpan(ReadOnlySpan<byte> b)
+        {
+#if NETFRAMEWORK
+            var _a = (b[3] << 24) | (b[2] << 16) | (b[1] << 8) | b[0];
+            var _b = (short)((b[5] << 8) | b[4]);
+            var _c = (short)((b[7] << 8) | b[6]);
+            var _d = b[8];
+            var _e = b[9];
+            var _f = b[10];
+            var _g = b[11];
+            var _h = b[12];
+            var _i = b[13];
+            var _j = b[14];
+            var _k = b[15];
+            return new Guid(_a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k);
+#else
+            return new Guid(b);
+#endif
+        }
+
     }
 
-    sealed class SkipStream : Stream
-    {
-        private readonly Stream stream;
-        private long skipOffset;
-        private long skipLength;
-
-        internal SkipStream(Stream stream, long skipOffset, long skipLength)
-        {
-            if (skipOffset < 0 || skipLength < 0)
-            {
-                throw new ArgumentOutOfRangeException();
-            }
-            this.stream = stream;
-            this.skipOffset = skipOffset;
-            this.skipLength = skipLength;
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                stream.Dispose();
-            }
-        }
-
-        public override bool CanRead
-        {
-            get { return stream.CanRead; }
-        }
-
-        public override bool CanSeek
-        {
-            get { return false; }
-        }
-
-        public override bool CanWrite
-        {
-            get { return false; }
-        }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            if (skipLength != 0 && skipOffset < count)
-            {
-                if (skipOffset != 0)
-                {
-                    count = (int)skipOffset;
-                }
-                else
-                {
-                    // note that we loop forever if the skipped part lies beyond EOF
-                    while (skipLength != 0)
-                    {
-                        // use the output buffer as scratch space
-                        skipLength -= stream.Read(buffer, offset, (int)Math.Min(count, skipLength));
-                    }
-                }
-            }
-            int totalBytesRead = stream.Read(buffer, offset, count);
-            skipOffset -= totalBytesRead;
-            return totalBytesRead;
-        }
-
-        public override long Length
-        {
-            get { throw new NotSupportedException(); }
-        }
-
-        public override long Position
-        {
-            get { throw new NotSupportedException(); }
-            set { throw new NotSupportedException(); }
-        }
-
-        public override void Flush()
-        {
-            throw new NotSupportedException();
-        }
-
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            throw new NotSupportedException();
-        }
-
-        public override void SetLength(long value)
-        {
-            throw new NotSupportedException();
-        }
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException();
-        }
-    }
 }

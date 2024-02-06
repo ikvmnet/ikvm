@@ -37,7 +37,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
         static ClassLoaderAccessor classLoaderAccessor;
 
-        static ClassLoaderAccessor ClassLoaderAccessor => JVM.BaseAccessors.Get(ref classLoaderAccessor);
+        static ClassLoaderAccessor ClassLoaderAccessor => JVM.Internal.BaseAccessors.Get(ref classLoaderAccessor);
 
 #endif
 
@@ -141,7 +141,8 @@ namespace IKVM.Java.Externs.ikvm.runtime
         {
             try
             {
-                return new global::java.net.URL(assembly.CodeBase);
+                if (assembly.Location != null)
+                    return new global::java.io.File(assembly.Location).toURI().toURL();
             }
             catch (NotSupportedException)
             {

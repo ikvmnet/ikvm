@@ -23,13 +23,13 @@ namespace IKVM.Java.Externs.sun.nio.fs
         static FileTimeAccessor fileTimeAccessor;
         static DotNetDosFileAttributesAccessor dotNetDosFileAttributesAccessor;
 
-        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+        static SystemAccessor SystemAccessor => JVM.Internal.BaseAccessors.Get(ref systemAccessor);
 
-        static FileTimeAccessor FileTimeAccessor => JVM.BaseAccessors.Get(ref fileTimeAccessor);
+        static FileTimeAccessor FileTimeAccessor => JVM.Internal.BaseAccessors.Get(ref fileTimeAccessor);
 
-        static SecurityManagerAccessor SecurityManagerAccessor => JVM.BaseAccessors.Get(ref securityManagerAccessor);
+        static SecurityManagerAccessor SecurityManagerAccessor => JVM.Internal.BaseAccessors.Get(ref securityManagerAccessor);
 
-        static DotNetDosFileAttributesAccessor DotNetDosFileAttributesAccessor => JVM.BaseAccessors.Get(ref dotNetDosFileAttributesAccessor);
+        static DotNetDosFileAttributesAccessor DotNetDosFileAttributesAccessor => JVM.Internal.BaseAccessors.Get(ref dotNetDosFileAttributesAccessor);
 
 #endif
 

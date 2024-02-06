@@ -47,47 +47,47 @@ namespace IKVM.Java.Externs.java.lang
         static IteratorAccessor iteratorAccessor;
         static ProcessImplAccessor processImplAccessor;
 
-        static CallerIDAccessor CallerIDAccessor => JVM.BaseAccessors.Get(ref callerIDAccessor);
+        static CallerIDAccessor CallerIDAccessor => JVM.Internal.BaseAccessors.Get(ref callerIDAccessor);
 
-        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+        static SystemAccessor SystemAccessor => JVM.Internal.BaseAccessors.Get(ref systemAccessor);
 
-        static SecurityManagerAccessor SecurityManagerAccessor => JVM.BaseAccessors.Get(ref securityManagerAccessor);
+        static SecurityManagerAccessor SecurityManagerAccessor => JVM.Internal.BaseAccessors.Get(ref securityManagerAccessor);
 
-        static ThreadAccessor ThreadAccessor => JVM.BaseAccessors.Get(ref threadAccessor);
+        static ThreadAccessor ThreadAccessor => JVM.Internal.BaseAccessors.Get(ref threadAccessor);
 
-        static ProcessBuilderRedirectAccessor ProcessBuilderRedirectAccessor => JVM.BaseAccessors.Get(ref processBuilderRedirectAccessor);
+        static ProcessBuilderRedirectAccessor ProcessBuilderRedirectAccessor => JVM.Internal.BaseAccessors.Get(ref processBuilderRedirectAccessor);
 
-        static ProcessBuilderNullInputStreamAccessor ProcessBuilderNullInputStreamAccessor => JVM.BaseAccessors.Get(ref processBuilderNullInputStreamAccessor);
+        static ProcessBuilderNullInputStreamAccessor ProcessBuilderNullInputStreamAccessor => JVM.Internal.BaseAccessors.Get(ref processBuilderNullInputStreamAccessor);
 
-        static ProcessBuilderNullOutputStreamAccessor ProcessBuilderNullOutputStreamAccessor => JVM.BaseAccessors.Get(ref processBuilderNullOutputStreamAccessor);
+        static ProcessBuilderNullOutputStreamAccessor ProcessBuilderNullOutputStreamAccessor => JVM.Internal.BaseAccessors.Get(ref processBuilderNullOutputStreamAccessor);
 
-        static FileAccessor FileAccessor => JVM.BaseAccessors.Get(ref fileAccessor);
+        static FileAccessor FileAccessor => JVM.Internal.BaseAccessors.Get(ref fileAccessor);
 
-        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.Internal.BaseAccessors.Get(ref fileDescriptorAccessor);
 
-        static InputStreamAccessor InputStreamAccessor => JVM.BaseAccessors.Get(ref inputStreamAccessor);
+        static InputStreamAccessor InputStreamAccessor => JVM.Internal.BaseAccessors.Get(ref inputStreamAccessor);
 
-        static OutputStreamAccessor OutputStreamAccessor => JVM.BaseAccessors.Get(ref outputStreamAccessor);
+        static OutputStreamAccessor OutputStreamAccessor => JVM.Internal.BaseAccessors.Get(ref outputStreamAccessor);
 
-        static FileInputStreamAccessor FileInputStreamAccessor => JVM.BaseAccessors.Get(ref fileInputStreamAccessor);
+        static FileInputStreamAccessor FileInputStreamAccessor => JVM.Internal.BaseAccessors.Get(ref fileInputStreamAccessor);
 
-        static FileOutputStreamAccessor FileOutputStreamAccessor => JVM.BaseAccessors.Get(ref fileOutputStreamAccessor);
+        static FileOutputStreamAccessor FileOutputStreamAccessor => JVM.Internal.BaseAccessors.Get(ref fileOutputStreamAccessor);
 
-        static BufferedInputStreamAccessor BufferedInputStreamAccessor => JVM.BaseAccessors.Get(ref bufferedInputStreamAccessor);
+        static BufferedInputStreamAccessor BufferedInputStreamAccessor => JVM.Internal.BaseAccessors.Get(ref bufferedInputStreamAccessor);
 
-        static BufferedOutputStreamAccessor BufferedOutputStreamAccessor => JVM.BaseAccessors.Get(ref bufferedOutputStreamAccessor);
+        static BufferedOutputStreamAccessor BufferedOutputStreamAccessor => JVM.Internal.BaseAccessors.Get(ref bufferedOutputStreamAccessor);
 
-        static AccessControllerAccessor AccessControllerAccessor => JVM.BaseAccessors.Get(ref accessControllerAccessor);
+        static AccessControllerAccessor AccessControllerAccessor => JVM.Internal.BaseAccessors.Get(ref accessControllerAccessor);
 
-        static MapAccessor MapAccessor => JVM.BaseAccessors.Get(ref mapAccessor);
+        static MapAccessor MapAccessor => JVM.Internal.BaseAccessors.Get(ref mapAccessor);
 
-        static MapEntryAccessor MapEntryAccessor => JVM.BaseAccessors.Get(ref mapEntryAccessor);
+        static MapEntryAccessor MapEntryAccessor => JVM.Internal.BaseAccessors.Get(ref mapEntryAccessor);
 
-        static SetAccessor SetAccessor => JVM.BaseAccessors.Get(ref setAccessor);
+        static SetAccessor SetAccessor => JVM.Internal.BaseAccessors.Get(ref setAccessor);
 
-        static IteratorAccessor IteratorAccessor => JVM.BaseAccessors.Get(ref iteratorAccessor);
+        static IteratorAccessor IteratorAccessor => JVM.Internal.BaseAccessors.Get(ref iteratorAccessor);
 
-        static ProcessImplAccessor ProcessImplAccessor => JVM.BaseAccessors.Get(ref processImplAccessor);
+        static ProcessImplAccessor ProcessImplAccessor => JVM.Internal.BaseAccessors.Get(ref processImplAccessor);
 
 #endif
 

@@ -33,10 +33,6 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
-    public delegate Assembly ResolveEventHandler(object sender, ResolveEventArgs args);
-
-    public delegate void ResolvedMissingMemberHandler(Module requestingModule, MemberInfo member);
-
     /// <summary>
     /// Provides a view of the types available to the reflection infrastructure.
     /// </summary>
@@ -713,11 +709,11 @@ namespace IKVM.Reflection
             return array;
         }
 
-        public bool CompareAssemblyIdentity(string coreLibName,string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
+        public bool CompareAssemblyIdentity(string coreLibName, string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
         {
             return useNativeFusion
                 ? Fusion.CompareAssemblyIdentityNative(coreLibName, assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result)
-                : Fusion.CompareAssemblyIdentityPure(coreLibName,assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
+                : Fusion.CompareAssemblyIdentityPure(coreLibName, assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
         }
 
         public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access)
@@ -885,15 +881,13 @@ namespace IKVM.Reflection
         {
             if (resolveMissingMembers)
             {
-                MethodBase method = new MissingMethod(declaringType, name, signature);
+                var method = (MethodBase)new MissingMethod(declaringType, name, signature);
                 if (name == ".ctor")
-                {
                     method = new ConstructorInfoImpl((MethodInfo)method);
-                }
+
                 if (ResolvedMissingMember != null)
-                {
                     ResolvedMissingMember(requester, method);
-                }
+
                 return method;
             }
 
@@ -904,11 +898,10 @@ namespace IKVM.Reflection
         {
             if (resolveMissingMembers)
             {
-                FieldInfo field = new MissingField(declaringType, name, signature);
+                var field = (FieldInfo)new MissingField(declaringType, name, signature);
                 if (ResolvedMissingMember != null)
-                {
                     ResolvedMissingMember(requester, field);
-                }
+
                 return field;
             }
 
@@ -921,11 +914,10 @@ namespace IKVM.Reflection
             // since properties are never resolved, except by custom attributes
             if (resolveMissingMembers || declaringType.__IsMissing)
             {
-                PropertyInfo property = new MissingProperty(declaringType, name, propertySignature);
+                var property = (PropertyInfo)new MissingProperty(declaringType, name, propertySignature);
                 if (ResolvedMissingMember != null && !declaringType.__IsMissing)
-                {
                     ResolvedMissingMember(requester, property);
-                }
+
                 return property;
             }
 
@@ -934,12 +926,12 @@ namespace IKVM.Reflection
 
         internal Type CanonicalizeType(Type type)
         {
-            Type canon;
-            if (!canonicalizedTypes.TryGetValue(type, out canon))
+            if (!canonicalizedTypes.TryGetValue(type, out var canon))
             {
                 canon = type;
                 canonicalizedTypes.Add(canon, canon);
             }
+
             return canon;
         }
 
@@ -964,20 +956,11 @@ namespace IKVM.Reflection
 
         public event Predicate<Type> MissingTypeIsValueType
         {
-            add
-            {
-                if (missingTypeIsValueType != null)
-                {
-                    throw new InvalidOperationException("Only a single MissingTypeIsValueType handler can be registered.");
-                }
-                missingTypeIsValueType = value;
-            }
+            add => missingTypeIsValueType = missingTypeIsValueType == null ? value : throw new InvalidOperationException("Only a single MissingTypeIsValueType handler can be registered.");
             remove
             {
                 if (value.Equals(missingTypeIsValueType))
-                {
                     missingTypeIsValueType = null;
-                }
             }
         }
 
@@ -994,34 +977,18 @@ namespace IKVM.Reflection
             throw new MissingMemberException(missingType);
         }
 
-        internal bool ReturnPseudoCustomAttributes
-        {
-            get { return returnPseudoCustomAttributes; }
-        }
+        internal bool ReturnPseudoCustomAttributes => returnPseudoCustomAttributes;
 
-        internal bool AutomaticallyProvideDefaultConstructor
-        {
-            get { return automaticallyProvideDefaultConstructor; }
-        }
+        internal bool AutomaticallyProvideDefaultConstructor => automaticallyProvideDefaultConstructor;
 
-        internal bool MetadataOnly
-        {
-            get { return (options & UniverseOptions.MetadataOnly) != 0; }
-        }
+        internal bool MetadataOnly => (options & UniverseOptions.MetadataOnly) != 0;
 
-        internal bool WindowsRuntimeProjection
-        {
-            get { return (options & UniverseOptions.DisableWindowsRuntimeProjection) == 0; }
-        }
+        internal bool WindowsRuntimeProjection => (options & UniverseOptions.DisableWindowsRuntimeProjection) == 0;
 
-        internal bool DecodeVersionInfoAttributeBlobs
-        {
-            get { return (options & UniverseOptions.DecodeVersionInfoAttributeBlobs) != 0; }
-        }
+        internal bool DecodeVersionInfoAttributeBlobs => (options & UniverseOptions.DecodeVersionInfoAttributeBlobs) != 0;
 
-        internal bool Deterministic
-        {
-            get { return (options & UniverseOptions.DeterministicOutput) != 0; }
-        }
+        internal bool Deterministic => (options & UniverseOptions.DeterministicOutput) != 0;
+
     }
+
 }

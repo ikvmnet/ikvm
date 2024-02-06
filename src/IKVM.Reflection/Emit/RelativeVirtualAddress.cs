@@ -24,18 +24,26 @@
 
 namespace IKVM.Reflection.Emit
 {
-    public struct RelativeVirtualAddress
-	{
-		internal readonly uint initializedDataOffset;
 
-		internal RelativeVirtualAddress(uint initializedDataOffset)
-		{
-			this.initializedDataOffset = initializedDataOffset;
-		}
+    public readonly struct RelativeVirtualAddress
+    {
 
-		public static RelativeVirtualAddress operator +(RelativeVirtualAddress rva, int offset)
-		{
-			return new RelativeVirtualAddress(rva.initializedDataOffset + (uint)offset);
-		}
-	}
+        public static RelativeVirtualAddress operator +(RelativeVirtualAddress rva, int offset)
+        {
+            return new RelativeVirtualAddress(rva.initializedDataOffset + (uint)offset);
+        }
+
+        internal readonly uint initializedDataOffset;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="initializedDataOffset"></param>
+        internal RelativeVirtualAddress(uint initializedDataOffset)
+        {
+            this.initializedDataOffset = initializedDataOffset;
+        }
+
+    }
+
 }

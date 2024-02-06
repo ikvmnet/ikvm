@@ -25,8 +25,10 @@
 
 namespace IKVM.Reflection
 {
+
     struct ParsedAssemblyName
     {
+
         internal string Name;
         internal string Version;
         internal string Culture;
@@ -35,5 +37,7 @@ namespace IKVM.Reflection
         internal ProcessorArchitecture ProcessorArchitecture;
         internal bool HasPublicKey;
         internal bool WindowsRuntime;
+
     }
+
 }

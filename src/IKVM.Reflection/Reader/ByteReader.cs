@@ -22,17 +22,24 @@
   
 */
 using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace IKVM.Reflection.Reader
 {
-	sealed class ByteReader
-	{
-		private byte[] buffer;
-		private int pos;
-		private int end;
 
+    sealed class ByteReader
+	{
+
+		byte[] buffer;
+		int pos;
+		int end;
+
+		/// <summary>
+		/// Initializes a new instance.
+		/// </summary>
+		/// <param name="buffer"></param>
+		/// <param name="offset"></param>
+		/// <param name="length"></param>
 		internal ByteReader(byte[] buffer, int offset, int length)
 		{
 			this.buffer = buffer;
@@ -42,8 +49,8 @@ namespace IKVM.Reflection.Reader
 
 		internal static ByteReader FromBlob(byte[] blobHeap, int blob)
 		{
-			ByteReader br = new ByteReader(blobHeap, blob, 4);
-			int length = br.ReadCompressedUInt();
+			var br = new ByteReader(blobHeap, blob, 4);
+			var length = br.ReadCompressedUInt();
 			br.end = br.pos + length;
 			return br;
 		}
@@ -57,6 +64,7 @@ namespace IKVM.Reflection.Reader
 		{
 			if (pos == end)
 				throw new BadImageFormatException();
+
 			return buffer[pos];
 		}
 
@@ -64,6 +72,7 @@ namespace IKVM.Reflection.Reader
 		{
 			if (pos == end)
 				throw new BadImageFormatException();
+
 			return buffer[pos++];
 		}
 
@@ -73,7 +82,8 @@ namespace IKVM.Reflection.Reader
 				throw new BadImageFormatException();
 			if (end - pos < count)
 				throw new BadImageFormatException();
-			byte[] buf = new byte[count];
+
+			var buf = new byte[count];
 			Buffer.BlockCopy(buffer, pos, buf, 0, count);
 			pos += count;
 			return buf;
@@ -81,46 +91,42 @@ namespace IKVM.Reflection.Reader
 
 		internal int ReadCompressedUInt()
 		{
-			byte b1 = ReadByte();
+			var b1 = ReadByte();
 			if (b1 <= 0x7F)
 			{
 				return b1;
 			}
 			else if ((b1 & 0xC0) == 0x80)
 			{
-				byte b2 = ReadByte();
+				var b2 = ReadByte();
 				return ((b1 & 0x3F) << 8) | b2;
 			}
 			else
 			{
-				byte b2 = ReadByte();
-				byte b3 = ReadByte();
-				byte b4 = ReadByte();
+				var b2 = ReadByte();
+				var b3 = ReadByte();
+				var b4 = ReadByte();
 				return ((b1 & 0x3F) << 24) + (b2 << 16) + (b3 << 8) + b4;
 			}
 		}
 
 		internal int ReadCompressedInt()
 		{
-			byte b1 = PeekByte();
-			int value = ReadCompressedUInt();
+			var b1 = PeekByte();
+			var value = ReadCompressedUInt();
 			if ((value & 1) == 0)
 			{
 				return value >> 1;
 			}
 			else
 			{
-				switch (b1 & 0xC0)
-				{
-					case 0:
-					case 0x40:
-						return (value >> 1) - 0x40;
-					case 0x80:
-						return (value >> 1) - 0x2000;
-					default:
-						return (value >> 1) - 0x10000000;
-				}
-			}
+                return (b1 & 0xC0) switch
+                {
+                    0 or 0x40 => (value >> 1) - 0x40,
+                    0x80 => (value >> 1) - 0x2000,
+                    _ => (value >> 1) - 0x10000000,
+                };
+            }
 		}
 
 		internal string ReadString()
@@ -130,8 +136,9 @@ namespace IKVM.Reflection.Reader
 				pos++;
 				return null;
 			}
-			int length = ReadCompressedUInt();
-			string str = Encoding.UTF8.GetString(buffer, pos, length);
+
+			var length = ReadCompressedUInt();
+			var str = Encoding.UTF8.GetString(buffer, pos, length);
 			pos += length;
 			return str;
 		}
@@ -150,8 +157,9 @@ namespace IKVM.Reflection.Reader
 		{
 			if (end - pos < 2)
 				throw new BadImageFormatException();
-			byte b1 = buffer[pos++];
-			byte b2 = buffer[pos++];
+
+			var b1 = buffer[pos++];
+			var b2 = buffer[pos++];
 			return (short)(b1 | (b2 << 8));
 		}
 
@@ -164,10 +172,11 @@ namespace IKVM.Reflection.Reader
 		{
 			if (end - pos < 4)
 				throw new BadImageFormatException();
-			byte b1 = buffer[pos++];
-			byte b2 = buffer[pos++];
-			byte b3 = buffer[pos++];
-			byte b4 = buffer[pos++];
+
+			var b1 = buffer[pos++];
+			var b2 = buffer[pos++];
+			var b3 = buffer[pos++];
+			var b4 = buffer[pos++];
 			return (int)(b1 | (b2 << 8) | (b3 << 16) | (b4 << 24));
 		}
 
@@ -202,7 +211,8 @@ namespace IKVM.Reflection.Reader
 		{
 			if (end - pos < length)
 				throw new BadImageFormatException();
-			ByteReader br = new ByteReader(buffer, pos, length);
+
+			var br = new ByteReader(buffer, pos, length);
 			pos += length;
 			return br;
 		}
@@ -213,5 +223,7 @@ namespace IKVM.Reflection.Reader
 			alignment--;
 			pos = (pos + alignment) & ~alignment;
 		}
+
 	}
+
 }

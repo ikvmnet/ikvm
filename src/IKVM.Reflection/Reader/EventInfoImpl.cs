@@ -21,146 +21,150 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
 using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
-	sealed class EventInfoImpl : EventInfo
-	{
-		private readonly ModuleReader module;
-		private readonly Type declaringType;
-		private readonly int index;
-		private bool isPublic;
-		private bool isNonPrivate;
-		private bool isStatic;
-		private bool flagsCached;
 
-		internal EventInfoImpl(ModuleReader module, Type declaringType, int index)
-		{
-			this.module = module;
-			this.declaringType = declaringType;
-			this.index = index;
-		}
+    sealed class EventInfoImpl : EventInfo
+    {
 
-		public override bool Equals(object obj)
-		{
-			EventInfoImpl other = obj as EventInfoImpl;
-			return other != null && other.declaringType == declaringType && other.index == index;
-		}
+        readonly ModuleReader module;
+        readonly Type declaringType;
+        readonly int index;
+        bool isPublic;
+        bool isNonPrivate;
+        bool isStatic;
+        bool flagsCached;
 
-		public override int GetHashCode()
-		{
-			return declaringType.GetHashCode() * 123 + index;
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="declaringType"></param>
+        /// <param name="index"></param>
+        internal EventInfoImpl(ModuleReader module, Type declaringType, int index)
+        {
+            this.module = module;
+            this.declaringType = declaringType;
+            this.index = index;
+        }
 
-		public override EventAttributes Attributes
-		{
-			get { return (EventAttributes)module.Event.records[index].EventFlags; }
-		}
+        public override bool Equals(object obj)
+        {
+            var other = obj as EventInfoImpl;
+            return other != null && other.declaringType == declaringType && other.index == index;
+        }
 
-		public override MethodInfo GetAddMethod(bool nonPublic)
-		{
-			return module.MethodSemantics.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.AddOn);
-		}
+        public override int GetHashCode()
+        {
+            return declaringType.GetHashCode() * 123 + index;
+        }
 
-		public override MethodInfo GetRaiseMethod(bool nonPublic)
-		{
-			return module.MethodSemantics.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Fire);
-		}
+        public override EventAttributes Attributes
+        {
+            get { return (EventAttributes)module.Event.records[index].EventFlags; }
+        }
 
-		public override MethodInfo GetRemoveMethod(bool nonPublic)
-		{
-			return module.MethodSemantics.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.RemoveOn);
-		}
+        public override MethodInfo GetAddMethod(bool nonPublic)
+        {
+            return module.MethodSemantics.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.AddOn);
+        }
 
-		public override MethodInfo[] GetOtherMethods(bool nonPublic)
-		{
-			return module.MethodSemantics.GetMethods(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Other);
-		}
+        public override MethodInfo GetRaiseMethod(bool nonPublic)
+        {
+            return module.MethodSemantics.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Fire);
+        }
 
-		public override MethodInfo[] __GetMethods()
-		{
-			return module.MethodSemantics.GetMethods(module, this.MetadataToken, true, -1);
-		}
+        public override MethodInfo GetRemoveMethod(bool nonPublic)
+        {
+            return module.MethodSemantics.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.RemoveOn);
+        }
 
-		public override Type EventHandlerType
-		{
-			get { return module.ResolveType(module.Event.records[index].EventType, declaringType); }
-		}
+        public override MethodInfo[] GetOtherMethods(bool nonPublic)
+        {
+            return module.MethodSemantics.GetMethods(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Other);
+        }
 
-		public override string Name
-		{
-			get { return module.GetString(module.Event.records[index].Name); }
-		}
+        public override MethodInfo[] __GetMethods()
+        {
+            return module.MethodSemantics.GetMethods(module, this.MetadataToken, true, -1);
+        }
 
-		public override Type DeclaringType
-		{
-			get { return declaringType; }
-		}
+        public override Type EventHandlerType
+        {
+            get { return module.ResolveType(module.Event.records[index].EventType, declaringType); }
+        }
 
-		public override Module Module
-		{
-			get { return module; }
-		}
+        public override string Name
+        {
+            get { return module.GetString(module.Event.records[index].Name); }
+        }
 
-		public override int MetadataToken
-		{
-			get { return (EventTable.Index << 24) + index + 1; }
-		}
+        public override Type DeclaringType
+        {
+            get { return declaringType; }
+        }
 
-		internal override bool IsPublic
-		{
-			get
-			{
-				if (!flagsCached)
-				{
-					ComputeFlags();
-				}
-				return isPublic;
-			}
-		}
+        public override Module Module
+        {
+            get { return module; }
+        }
 
-		internal override bool IsNonPrivate
-		{
-			get
-			{
-				if (!flagsCached)
-				{
-					ComputeFlags();
-				}
-				return isNonPrivate;
-			}
-		}
+        public override int MetadataToken
+        {
+            get { return (EventTable.Index << 24) + index + 1; }
+        }
 
-		internal override bool IsStatic
-		{
-			get
-			{
-				if (!flagsCached)
-				{
-					ComputeFlags();
-				}
-				return isStatic;
-			}
-		}
+        internal override bool IsPublic
+        {
+            get
+            {
+                if (!flagsCached)
+                    ComputeFlags();
 
-		private void ComputeFlags()
-		{
-			module.MethodSemantics.ComputeFlags(module, this.MetadataToken, out isPublic, out isNonPrivate, out isStatic);
-			flagsCached = true;
-		}
+                return isPublic;
+            }
+        }
 
-		internal override bool IsBaked
-		{
-			get { return true; }
-		}
+        internal override bool IsNonPrivate
+        {
+            get
+            {
+                if (!flagsCached)
+                    ComputeFlags();
 
-		internal override int GetCurrentToken()
-		{
-			return this.MetadataToken;
-		}
-	}
+                return isNonPrivate;
+            }
+        }
+
+        internal override bool IsStatic
+        {
+            get
+            {
+                if (!flagsCached)
+                    ComputeFlags();
+
+                return isStatic;
+            }
+        }
+
+        void ComputeFlags()
+        {
+            module.MethodSemantics.ComputeFlags(module, this.MetadataToken, out isPublic, out isNonPrivate, out isStatic);
+            flagsCached = true;
+        }
+
+        internal override bool IsBaked
+        {
+            get { return true; }
+        }
+
+        internal override int GetCurrentToken()
+        {
+            return this.MetadataToken;
+        }
+
+    }
+
 }

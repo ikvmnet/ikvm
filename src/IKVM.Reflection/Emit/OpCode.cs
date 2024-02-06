@@ -21,13 +21,12 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Diagnostics;
-
 namespace IKVM.Reflection.Emit
 {
-	public struct OpCode
+
+    public struct OpCode
 	{
+
 		private const int ValueCount = 1024;
 		private const int OperandTypeCount = 19;
 		private const int FlowControlCount = 9;
@@ -35,6 +34,7 @@ namespace IKVM.Reflection.Emit
 		private const int OpCodeTypeCount = 6;
 		private const int StackBehaviourPopCount = 20;
 		private const int StackBehaviourPushCount = 9;
+
 		private static readonly StackBehaviour[] pop = {
 			StackBehaviour.Pop0,
 			StackBehaviour.Pop1,
@@ -57,6 +57,7 @@ namespace IKVM.Reflection.Emit
 			StackBehaviour.Varpop,
 			StackBehaviour.Popref_popi_pop1
 		};
+
 		private static readonly StackBehaviour[] push = {
 			StackBehaviour.Push0,
 			StackBehaviour.Push1,
@@ -68,6 +69,7 @@ namespace IKVM.Reflection.Emit
 			StackBehaviour.Pushref,
 			StackBehaviour.Varpush
 		};
+
 		private readonly int value;
 
 		internal OpCode(int value)
@@ -111,10 +113,12 @@ namespace IKVM.Reflection.Emit
 		}
 
 #if !GENERATOR
+
 		public string Name
 		{
 			get { return OpCodes.GetName(this.Value); }
 		}
+
 #endif
 
 		public OperandType OperandType
@@ -148,6 +152,7 @@ namespace IKVM.Reflection.Emit
 		}
 
 #if GENERATOR
+
 		static void Main(string[] args)
 		{
 			Debug.Assert(pop.Length == StackBehaviourPopCount);
@@ -283,6 +288,9 @@ namespace IKVM.Reflection.Emit
 			}
 			throw new InvalidOperationException();
 		}
+
 #endif // GENERATOR
+
 	}
+
 }

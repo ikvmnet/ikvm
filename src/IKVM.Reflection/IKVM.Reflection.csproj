@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net7.0</TargetFrameworks>
         <Description>IKVM implementation of System.Reflection[.Emit]</Description>
-        <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <LangVersion>11</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
