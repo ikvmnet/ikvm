@@ -47,7 +47,7 @@ namespace IKVM.Reflection
 		/// <summary>
 		/// MethodDef table row number in the written PE image
 		/// </summary>
-		internal int RowNumber { get; set; } = -1;
+		internal int RowNumber { get; set; } = 0;
 
 		public bool IsConstructor
 		{
