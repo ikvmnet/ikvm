@@ -3169,23 +3169,6 @@ namespace IKVM.Tools.Importer
             Context.StaticCompiler.IssueMessage(options, msgId, values);
         }
 
-        internal bool TryEnableUnmanagedExports()
-        {
-            // we only support -platform:x86 and -platform:x64
-            // (currently IKVM.Reflection doesn't support unmanaged exports for ARM)
-            if ((options.imageFileMachine == ImageFileMachine.I386 && (options.pekind & PortableExecutableKinds.Required32Bit) != 0) || options.imageFileMachine == ImageFileMachine.AMD64)
-            {
-                // when you add unmanaged exports, the ILOnly flag MUST NOT be set or the DLL will fail to load
-                options.pekind &= ~PortableExecutableKinds.ILOnly;
-                return true;
-            }
-            else
-            {
-                Context.StaticCompiler.IssueMessage(Message.DllExportRequiresSupportedPlatform);
-                return false;
-            }
-        }
-
         internal override bool WarningLevelHigh
         {
             get { return options.warningLevelHigh; }
