@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
+using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 
@@ -106,7 +106,7 @@ namespace IKVM.Reflection.Diagnostics
         /// <summary>
         /// Track local variable information.
         /// </summary>
-        protected sealed class LocalVar
+        protected readonly struct LocalVar
         {
 
             readonly System.Reflection.FieldAttributes attributes;
@@ -279,15 +279,15 @@ namespace IKVM.Reflection.Diagnostics
         /// <summary>
         /// Describes a sequence point on a method.
         /// </summary>
-        protected class SequencePoint
+        protected readonly struct SequencePoint
         {
 
-            Document document;
-            int[] offsets;
-            int[] lines;
-            int[] columns;
-            int[] endLines;
-            int[] endColumns;
+            readonly Document document;
+            readonly int[] offsets;
+            readonly int[] lines;
+            readonly int[] columns;
+            readonly int[] endLines;
+            readonly int[] endColumns;
 
             /// <summary>
             /// Initializes a new instance.
@@ -520,7 +520,7 @@ namespace IKVM.Reflection.Diagnostics
         void WriteMethod(MetadataBuilder metadata, Method method, Dictionary<Document, DocumentHandle> documentCache)
         {
             // find first document and set as initial, as it will be directly on method debug information
-            var initialDocument = method.SequencePoints.Select(i => i.Document).FirstOrDefault(i => i != null);
+            var initialDocument = GetSingleDocument(method.SequencePoints);
             var initialDocumentHandle = initialDocument != null ? GetOrWriteDocument(metadata, initialDocument, documentCache) : default;
             var currentDocumentHandle = initialDocumentHandle;
 
@@ -531,6 +531,17 @@ namespace IKVM.Reflection.Diagnostics
             // final debug information, containing initial document
             var methodDebugHandle = metadata.AddMethodDebugInformation(initialDocumentHandle, sequencePointsHandle);
             Debug.Assert(MetadataTokens.GetRowNumber(methodDebugHandle) == MetadataTokens.GetRowNumber(MetadataTokens.EntityHandle(method.Token)));
+        }
+
+        /// <summary>
+        /// Returns the single unique <see cref="Document"/> in a set of sequence points, or <c>null</c> if there is no single unique document.
+        /// </summary>
+        /// <param name="sequencePoints"></param>
+        /// <returns></returns>
+        Document GetSingleDocument(IEnumerable<SequencePoint> sequencePoints)
+        {
+            var s = sequencePoints.Select(i => i.Document).Distinct().Take(2).ToList();
+            return s.Count == 1 ? s[0] : null;
         }
 
         /// <summary>
@@ -556,8 +567,10 @@ namespace IKVM.Reflection.Diagnostics
             if (method.LocalSignatureHandle.IsNil)
                 throw new InvalidOperationException("MethodBuilder missing local signature.");
 
-            // sequence points begin with local signature and initial document
-            enc.Header(method.LocalSignatureHandle, default, ref previousDocument);
+            // add the header, optionally with the first encountered document
+            var firstDocument = method.SequencePoints.Select(i => i.Document).FirstOrDefault();
+            var firstDocumentHandle = firstDocument != null ? GetOrWriteDocument(metadata, firstDocument, documentCache) : default;
+            enc.Header(method.LocalSignatureHandle, firstDocumentHandle, ref previousDocument);
 
             // add the sequence points recorded on the method
             foreach (var sequencePoint in method.SequencePoints)

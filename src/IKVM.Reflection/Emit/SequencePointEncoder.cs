@@ -33,6 +33,8 @@ namespace IKVM.Reflection.Emit
         /// Encodes the local signature.
         /// </summary>
         /// <param name="localSignature"></param>
+        /// <param name="initialDocument"></param>
+        /// <param name="previousDocument".
         public void Header(StandaloneSignatureHandle localSignature, DocumentHandle initialDocument, ref DocumentHandle previousDocument)
         {
             if (headerEncoded)
