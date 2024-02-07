@@ -27,8 +27,10 @@ namespace IKVM.Runtime
 
     sealed partial class ClassFile
     {
+
         internal sealed partial class Method
         {
+
             sealed class LowFreqData
             {
                 internal object annotationDefault;
@@ -37,7 +39,9 @@ namespace IKVM.Runtime
 				internal string InterlockedCompareAndSetField;
 #endif
             }
+
         }
+
     }
 
 }
