@@ -34,8 +34,6 @@ namespace IKVM.Runtime
                 internal object annotationDefault;
                 internal object[][] parameterAnnotations;
 #if IMPORTER
-				internal string DllExportName;
-				internal int DllExportOrdinal;
 				internal string InterlockedCompareAndSetField;
 #endif
             }
