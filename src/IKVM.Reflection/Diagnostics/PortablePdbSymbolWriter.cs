@@ -568,9 +568,7 @@ namespace IKVM.Reflection.Diagnostics
                 throw new InvalidOperationException("MethodBuilder missing local signature.");
 
             // add the header, optionally with the first encountered document
-            var firstDocument = method.SequencePoints.Select(i => i.Document).FirstOrDefault();
-            var firstDocumentHandle = firstDocument != null ? GetOrWriteDocument(metadata, firstDocument, documentCache) : default;
-            enc.Header(method.LocalSignatureHandle, firstDocumentHandle, ref previousDocument);
+            enc.LocalSignature(default);
 
             // add the sequence points recorded on the method
             foreach (var sequencePoint in method.SequencePoints)
