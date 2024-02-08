@@ -526,7 +526,7 @@ namespace IKVM.Reflection.Diagnostics
 
             // write sequence points and scopes
             //WriteSequencePoints(metadata, method, documentCache, out var sequencePointsHandle, ref currentDocumentHandle);
-            //WriteScopes(metadata, method);
+            WriteScopes(metadata, method);
 
             // final debug information, containing initial document
             var methodDebugHandle = metadata.AddMethodDebugInformation(initialDocumentHandle, default);
