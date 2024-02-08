@@ -525,11 +525,11 @@ namespace IKVM.Reflection.Diagnostics
             var currentDocumentHandle = initialDocumentHandle;
 
             // write sequence points and scopes
-            WriteSequencePoints(metadata, method, documentCache, out var sequencePointsHandle, ref currentDocumentHandle);
-            WriteScopes(metadata, method);
+            //WriteSequencePoints(metadata, method, documentCache, out var sequencePointsHandle, ref currentDocumentHandle);
+            //WriteScopes(metadata, method);
 
             // final debug information, containing initial document
-            var methodDebugHandle = metadata.AddMethodDebugInformation(initialDocumentHandle, sequencePointsHandle);
+            var methodDebugHandle = metadata.AddMethodDebugInformation(initialDocumentHandle, default);
             Debug.Assert(MetadataTokens.GetRowNumber(methodDebugHandle) == MetadataTokens.GetRowNumber(MetadataTokens.EntityHandle(method.Token)));
         }
 
