@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -514,18 +511,6 @@ namespace IKVM.Reflection.Tests
             foreach (var v in verifier.Verify(new PEReader(File.OpenRead(Path.Combine(tempPath, "Test.dll")))))
                 if (v.Code != ILVerify.VerifierError.None)
                     throw new Exception(string.Format(v.Message, v.Args ?? Array.Empty<object>()));
-        }
-
-        [Fact]
-        public void VerifyBaseLib()
-        {
-            if (Init(new FrameworkSpec("net6.0", ".NETCore", "6.0"), new[] { @"C:\dev\ikvm2\src\IKVM.Runtime\bin\Debug\net6.0" }, out var universe, out var resolver, out var verifier, out var tempPath, out var tempLoad) == false)
-                return;
-
-            var pe = new PEReader(File.OpenRead(resolver.Resolve("IKVM.Java")));
-            var md = pe.GetMetadataReader();
-            foreach (var v in verifier.Verify(pe))
-                output.WriteLine(ToString(md, v.Type, v.Method) + " -> " + string.Format(v.Message, v.Args ?? Array.Empty<object>()));
         }
 
         static string ToString(MetadataReader metadata, TypeDefinitionHandle typeHandle)
