@@ -57,7 +57,7 @@
         <PropertyGroup>
             <_JavaCompilerDebug Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' ">all</_JavaCompilerDebug>
         </PropertyGroup>
-        
+
         <IkvmJavaCompiler
             Debug="$(_JavaCompilerDebug)"
             NoWarn="true"
@@ -104,7 +104,6 @@
         </ItemGroup>
 
         <PropertyGroup>
-            <_IkvmCompilerDebug Condition=" '$(DebugType)' != 'none' ">true</_IkvmCompilerDebug>
             <_IkvmCompilerExclude Condition="Exists('$(_ExcludeFilePath)')">$(_ExcludeFilePath)</_IkvmCompilerExclude>
             <_Target>$(OutputType.ToLowerInvariant())</_Target>
             <_Target Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">library</_Target>
@@ -128,7 +127,7 @@
             Target="$(_Target)"
             Platform="$(PlatformTarget.ToLowerInvariant())"
             Main="$(StartupObject)"
-            Debug="$(_IkvmCompilerDebug)"
+            Debug="$(DebugType)"
             KeyFile="$(KeyOriginatorFile)"
             CompressResources="$(CompressResources)"
             ClassLoader="$(ClassLoader)"

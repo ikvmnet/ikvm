@@ -297,12 +297,13 @@ namespace IKVM.MSBuild.Tasks
 
             options.CompressResources = CompressResources;
 
-            options.Debug = Debug switch
+            options.Debug = Debug?.ToLower() switch
             {
-                "full" => IkvmImporterDebugMode.Full,
+                "none" or "" or null => IkvmImporterDebugMode.None,
                 "portable" => IkvmImporterDebugMode.Portable,
+                "full" or "pdbonly" => IkvmImporterDebugMode.Full,
                 "embedded" => IkvmImporterDebugMode.Embedded,
-                _ => throw new NotImplementedException(),
+                _ => throw new NotImplementedException($"Unknown Debug option '{Debug}'.")
             };
 
             options.NoAutoSerialization = NoAutoSerialization;
