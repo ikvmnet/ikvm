@@ -63,6 +63,8 @@ namespace IKVM.Reflection.Emit
         {
             if (localSignatureEncoded == false)
                 throw new InvalidOperationException("Local signature not already encoded.");
+            if (offset <= prevOffset)
+                throw new ArgumentException("Subsequent sequence points must appear at an offset greater than the previous sequence point.");
 
             // document passed, and different from previous, write new document-record
             if (document.IsNil == false && document != previousDocument)
@@ -76,22 +78,34 @@ namespace IKVM.Reflection.Emit
             }
 
             // IL offset or delta IL offset
-            writer.WriteCompressedInteger(prevOffset > -1 ? offset - prevOffset : offset);
-            prevOffset = offset;
+            if (prevOffset == -1)
+                writer.WriteCompressedInteger(offset);
+            else
+                writer.WriteCompressedInteger(offset - prevOffset);
 
+            // hidden or non-hidden sequence point
             if (startLine == System.Reflection.Metadata.SequencePoint.HiddenLine)
             {
-                writer.WriteInt16(0);
+                writer.WriteCompressedInteger(0);
+                writer.WriteCompressedInteger(0);
             }
             else
             {
-                // Delta Lines & Columns:
-                SerializeDeltaLinesAndColumns(startLine, startColumn, endLine, endColumn);
+                var deltaLines = endLine - startLine;
+                var deltaColumns = endColumn - startColumn;
+                Debug.Assert(startLine == System.Reflection.Metadata.SequencePoint.HiddenLine || deltaLines > 0 || deltaColumns > 0);
 
-                // delta Start Lines & Columns:
-                if (prevNonHiddenStartLine < 0)
+                // write change in lines; then change in columns (signed if change in lines)
+                writer.WriteCompressedInteger(deltaLines);
+                if (deltaLines == 0)
+                    writer.WriteCompressedInteger(deltaColumns);
+                else
+                    writer.WriteCompressedSignedInteger(deltaColumns);
+
+                // delta start lines & columns
+                if (prevNonHiddenStartLine == -1)
                 {
-                    Debug.Assert(prevNonHiddenStartColumn < 0);
+                    Debug.Assert(prevNonHiddenStartColumn == -1);
                     writer.WriteCompressedInteger(startLine);
                     writer.WriteCompressedInteger(startColumn);
                 }
@@ -105,21 +119,8 @@ namespace IKVM.Reflection.Emit
                 prevNonHiddenStartColumn = startColumn;
             }
 
+            prevOffset = offset;
             sequencePointEncoded = true;
-        }
-
-        void SerializeDeltaLinesAndColumns(int startLine, int startColumn, int endLine, int endColumn)
-        {
-            var deltaLines = endLine - startLine;
-            var deltaColumns = endColumn - startColumn;
-            Debug.Assert(deltaLines != 0 || deltaColumns != 0 || startLine == System.Reflection.Metadata.SequencePoint.HiddenLine);
-
-            writer.WriteCompressedInteger(deltaLines);
-
-            if (deltaLines == 0)
-                writer.WriteCompressedInteger(deltaColumns);
-            else
-                writer.WriteCompressedSignedInteger(deltaColumns);
         }
 
     }
