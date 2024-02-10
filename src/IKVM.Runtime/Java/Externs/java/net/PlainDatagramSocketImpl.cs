@@ -27,7 +27,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS == false
 
         static FileDescriptorAccessor fileDescriptorAccessor;
-        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.Internal.BaseAccessors.Get(ref fileDescriptorAccessor);
 
         /// <summary>
         /// Compiles a fast getter for a <see cref="FieldInfo"/>.

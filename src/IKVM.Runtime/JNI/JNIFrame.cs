@@ -69,53 +69,42 @@ namespace IKVM.Runtime.JNI
         /// <param name="sig"></param>
         /// <returns></returns>
         /// <exception cref="java.lang.UnsatisfiedLinkError"></exception>
-        public static IntPtr GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
+        public static nint GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
             var loader = RuntimeClassLoader.FromCallerID(callerID);
-            int sp = 0;
+            var argl = sizeof(nint) + sizeof(nint);
             for (int i = 1; sig[i] != ')'; i++)
             {
                 switch (sig[i])
                 {
                     case '[':
-                        sp += sizeof(jarray);
+                        argl += sizeof(nint);
                         while (sig[++i] == '[') ;
                         if (sig[i] == 'L')
                             while (sig[++i] != ';') ;
                         break;
                     case 'L':
-                        sp += sizeof(jobject);
+                        argl += sizeof(nint);
                         while (sig[++i] != ';') ;
                         break;
                     case 'J':
-                        sp += sizeof(jlong);
-                        break;
                     case 'D':
-                        sp += sizeof(jdouble);
+                        argl += 8;
                         break;
                     case 'F':
-                        sp += sizeof(jfloat);
-                        break;
                     case 'I':
-                        sp += sizeof(jint);
-                        break;
                     case 'C':
-                        sp += sizeof(jchar);
-                        break;
                     case 'Z':
-                        sp += sizeof(jboolean);
-                        break;
                     case 'S':
-                        sp += sizeof(jshort);
-                        break;
                     case 'B':
-                        sp += sizeof(jbyte);
+                        argl += 4;
                         break;
                     default:
-                        throw new InternalException("Invalid JNI method signature.");
+                        Debug.Assert(false);
+                        break;
                 }
             }
 
@@ -124,19 +113,19 @@ namespace IKVM.Runtime.JNI
             var mangledSig = JniMangle(sig.Substring(1, sig.IndexOf(')') - 1));
             var methodName = $"Java_{mangledClass}_{mangledName}";
             var longMethodName = $"Java_{mangledClass}_{mangledName}__{mangledSig}";
-            Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, class loader = {3}, short = {4}, long = {5}, args = {6}", clazz, name, sig, loader, methodName, longMethodName, sp + sizeof(nint) + sizeof(nint));
+            Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, classLoader = {3}, methodName = {4}, longMethodName = {5}, argl = {6}", clazz, name, sig, loader, methodName, longMethodName, argl);
 
             lock (JNINativeLoader.SyncRoot)
             {
                 foreach (var p in loader.GetNativeLibraries())
                 {
-                    if (LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName(methodName, sp + sizeof(nint) + sizeof(nint))) is nint h1 and not 0)
+                    if (LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName(methodName, argl)) is nint h1 and not 0)
                     {
                         Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (short)", clazz, name, sig, p);
                         return h1;
                     }
 
-                    if (LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName(longMethodName, sp + sizeof(nint) + sizeof(nint))) is nint h2 and not 0)
+                    if (LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName(longMethodName, argl)) is nint h2 and not 0)
                     {
                         Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (long)", clazz, name, sig, p);
                         return h2;

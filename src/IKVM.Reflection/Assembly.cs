@@ -27,8 +27,6 @@ using System.Collections.Generic;
 namespace IKVM.Reflection
 {
 
-    public delegate Module ModuleResolveEventHandler(object sender, ResolveEventArgs e);
-
     public abstract class Assembly : ICustomAttributeProvider
     {
 
@@ -36,6 +34,10 @@ namespace IKVM.Reflection
         protected string fullName;  // AssemblyBuilder needs access to this field to clear it when the name changes
         protected List<ModuleResolveEventHandler> resolvers;
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="universe"></param>
         internal Assembly(Universe universe)
         {
             this.universe = universe;
@@ -50,10 +52,7 @@ namespace IKVM.Reflection
         {
             add
             {
-                if (resolvers == null)
-                {
-                    resolvers = new List<ModuleResolveEventHandler>();
-                }
+                resolvers ??= new List<ModuleResolveEventHandler>();
                 resolvers.Add(value);
             }
             remove
@@ -89,7 +88,7 @@ namespace IKVM.Reflection
 
         public string FullName
         {
-            get { return fullName ?? (fullName = GetName().FullName); }
+            get { return fullName ??= GetName().FullName; }
         }
 
         public Module[] GetModules()
@@ -119,14 +118,11 @@ namespace IKVM.Reflection
 
         public Type[] GetExportedTypes()
         {
-            List<Type> list = new List<Type>();
-            foreach (Type type in GetTypes())
-            {
+            var list = new List<Type>();
+            foreach (var type in GetTypes())
                 if (type.IsVisible)
-                {
                     list.Add(type);
-                }
-            }
+
             return list.ToArray();
         }
 
@@ -139,12 +135,11 @@ namespace IKVM.Reflection
         {
             get
             {
-                Type[] types = GetTypes();
-                TypeInfo[] typeInfos = new TypeInfo[types.Length];
+                var types = GetTypes();
+                var typeInfos = new TypeInfo[types.Length];
                 for (int i = 0; i < types.Length; i++)
-                {
                     typeInfos[i] = types[i].GetTypeInfo();
-                }
+
                 return typeInfos;
             }
         }
@@ -172,6 +167,7 @@ namespace IKVM.Reflection
                 else
                     return null;
             }
+
             var typeName = TypeName.Split(TypeNameParser.Unescape(parser.FirstNamePart));
             var type = ignoreCase ? FindTypeIgnoreCase(typeName.ToLowerInvariant()) : FindType(typeName);
             if (type == null && __IsMissing)
@@ -224,11 +220,10 @@ namespace IKVM.Reflection
         {
             get
             {
-                string path = this.Location.Replace(System.IO.Path.DirectorySeparatorChar, '/');
-                if (!path.StartsWith("/"))
-                {
+                var path = this.Location.Replace(System.IO.Path.DirectorySeparatorChar, '/');
+                if (path.StartsWith("/") == false)
                     path = "/" + path;
-                }
+
                 return "file://" + path;
             }
         }

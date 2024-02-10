@@ -21,121 +21,130 @@
   jeroen@frijters.net
   
 */
-using System;
-using IKVM.Reflection.Writer;
-using IKVM.Reflection.Metadata;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 namespace IKVM.Reflection.Emit
 {
-	public sealed class ParameterBuilder
-	{
-		private readonly ModuleBuilder moduleBuilder;
-		private short flags;
-		private readonly short sequence;
-		private readonly int nameIndex;
-		private readonly string name;
-		private int lazyPseudoToken;
 
-		internal ParameterBuilder(ModuleBuilder moduleBuilder, int sequence, ParameterAttributes attribs, string name)
-		{
-			this.moduleBuilder = moduleBuilder;
-			this.flags = (short)attribs;
-			this.sequence = (short)sequence;
-			this.nameIndex = name == null ? 0 : moduleBuilder.Strings.Add(name);
-			this.name = name;
-		}
+    public sealed class ParameterBuilder
+    {
 
-		internal int PseudoToken
-		{
-			get
-			{
-				if (lazyPseudoToken == 0)
-				{
-					// we lazily create the token, because if we don't need it we don't want the token fixup cost
-					lazyPseudoToken = moduleBuilder.AllocPseudoToken();
-				}
-				return lazyPseudoToken;
-			}
-		}
+        readonly ModuleBuilder moduleBuilder;
+        short flags;
+        readonly short sequence;
+        readonly StringHandle nameIndex;
+        readonly string name;
+        int lazyPseudoToken;
 
-		public string Name
-		{
-			get { return name; }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="moduleBuilder"></param>
+        /// <param name="sequence"></param>
+        /// <param name="attribs"></param>
+        /// <param name="name"></param>
+        internal ParameterBuilder(ModuleBuilder moduleBuilder, int sequence, ParameterAttributes attribs, string name)
+        {
+            this.moduleBuilder = moduleBuilder;
+            this.flags = (short)attribs;
+            this.sequence = (short)sequence;
+            this.nameIndex = name == null ? default : moduleBuilder.GetOrAddString(name);
+            this.name = name;
+        }
 
-		public int Position
-		{
-			// note that this differs from ParameterInfo.Position, which is zero based
-			get { return sequence; }
-		}
+        internal int PseudoToken
+        {
+            get
+            {
+                if (lazyPseudoToken == 0)
+                    lazyPseudoToken = moduleBuilder.AllocPseudoToken();
 
-		public int Attributes
-		{
-			get { return flags; }
-		}
+                return lazyPseudoToken;
+            }
+        }
 
-		public bool IsIn
-		{
-			get { return (flags & (short)ParameterAttributes.In) != 0; }
-		}
+        public string Name
+        {
+            get { return name; }
+        }
 
-		public bool IsOut
-		{
-			get { return (flags & (short)ParameterAttributes.Out) != 0; }
-		}
+        /// <summary>
+        /// One-based index of the parameter.
+        /// </summary>
+        public int Position
+        {
+            get { return sequence; }
+        }
 
-		public bool IsOptional
-		{
-			get { return (flags & (short)ParameterAttributes.Optional) != 0; }
-		}
+        public int Attributes
+        {
+            get { return flags; }
+        }
 
-		public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-		{
-			SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
-		}
+        public bool IsIn
+        {
+            get { return (flags & (short)ParameterAttributes.In) != 0; }
+        }
 
-		public void SetCustomAttribute(CustomAttributeBuilder customAttributeBuilder)
-		{
-			switch (customAttributeBuilder.KnownCA)
-			{
-				case KnownCA.InAttribute:
-					flags |= (short)ParameterAttributes.In;
-					break;
-				case KnownCA.OutAttribute:
-					flags |= (short)ParameterAttributes.Out;
-					break;
-				case KnownCA.OptionalAttribute:
-					flags |= (short)ParameterAttributes.Optional;
-					break;
-				case KnownCA.MarshalAsAttribute:
-					FieldMarshal.SetMarshalAsAttribute(moduleBuilder, PseudoToken, customAttributeBuilder);
-					flags |= (short)ParameterAttributes.HasFieldMarshal;
-					break;
-				default:
-					moduleBuilder.SetCustomAttribute(PseudoToken, customAttributeBuilder);
-					break;
-			}
-		}
+        public bool IsOut
+        {
+            get { return (flags & (short)ParameterAttributes.Out) != 0; }
+        }
 
-		public void SetConstant(object defaultValue)
-		{
-			flags |= (short)ParameterAttributes.HasDefault;
-			moduleBuilder.AddConstant(PseudoToken, defaultValue);
-		}
+        public bool IsOptional
+        {
+            get { return (flags & (short)ParameterAttributes.Optional) != 0; }
+        }
 
-		internal void WriteParamRecord(MetadataWriter mw)
-		{
-			mw.Write(flags);
-			mw.Write(sequence);
-			mw.WriteStringIndex(nameIndex);
-		}
+        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
+        {
+            SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
+        }
 
-		internal void FixupToken(int parameterToken)
-		{
-			if (lazyPseudoToken != 0)
-			{
-				moduleBuilder.RegisterTokenFixup(lazyPseudoToken, parameterToken);
-			}
-		}
-	}
+        public void SetCustomAttribute(CustomAttributeBuilder customAttributeBuilder)
+        {
+            switch (customAttributeBuilder.KnownCA)
+            {
+                case KnownCA.InAttribute:
+                    flags |= (short)ParameterAttributes.In;
+                    break;
+                case KnownCA.OutAttribute:
+                    flags |= (short)ParameterAttributes.Out;
+                    break;
+                case KnownCA.OptionalAttribute:
+                    flags |= (short)ParameterAttributes.Optional;
+                    break;
+                case KnownCA.MarshalAsAttribute:
+                    FieldMarshal.SetMarshalAsAttribute(moduleBuilder, PseudoToken, customAttributeBuilder);
+                    flags |= (short)ParameterAttributes.HasFieldMarshal;
+                    break;
+                default:
+                    moduleBuilder.SetCustomAttribute(PseudoToken, customAttributeBuilder);
+                    break;
+            }
+        }
+
+        public void SetConstant(object defaultValue)
+        {
+            flags |= (short)ParameterAttributes.HasDefault;
+            moduleBuilder.AddConstant(PseudoToken, defaultValue);
+        }
+
+        internal void WriteParamRecord(MetadataBuilder metadata)
+        {
+            metadata.AddParameter(
+                (System.Reflection.ParameterAttributes)flags,
+                nameIndex,
+                sequence);
+        }
+
+        internal void FixupToken(int parameterToken)
+        {
+            if (lazyPseudoToken != 0)
+                moduleBuilder.RegisterTokenFixup(lazyPseudoToken, parameterToken);
+        }
+
+    }
+
 }

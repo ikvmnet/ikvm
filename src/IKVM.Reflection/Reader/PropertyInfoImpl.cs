@@ -21,159 +21,126 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Collections.Generic;
-using System.Text;
 using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
-	sealed class PropertyInfoImpl : PropertyInfo
-	{
-		private readonly ModuleReader module;
-		private readonly Type declaringType;
-		private readonly int index;
-		private PropertySignature sig;
-		private bool isPublic;
-		private bool isNonPrivate;
-		private bool isStatic;
-		private bool flagsCached;
 
-		internal PropertyInfoImpl(ModuleReader module, Type declaringType, int index)
-		{
-			this.module = module;
-			this.declaringType = declaringType;
-			this.index = index;
-		}
+    sealed class PropertyInfoImpl : PropertyInfo
+    {
 
-		public override bool Equals(object obj)
-		{
-			PropertyInfoImpl other = obj as PropertyInfoImpl;
-			return other != null && other.DeclaringType == declaringType && other.index == index;
-		}
+        readonly ModuleReader module;
+        readonly Type declaringType;
+        readonly int index;
 
-		public override int GetHashCode()
-		{
-			return declaringType.GetHashCode() * 77 + index;
-		}
+        PropertySignature sig;
+        bool isPublic;
+        bool isNonPrivate;
+        bool isStatic;
+        bool flagsCached;
 
-		internal override PropertySignature PropertySignature
-		{
-			get
-			{
-				if (sig == null)
-				{
-					sig = PropertySignature.ReadSig(module, module.GetBlob(module.Property.records[index].Type), declaringType);
-				}
-				return sig;
-			}
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="declaringType"></param>
+        /// <param name="index"></param>
+        internal PropertyInfoImpl(ModuleReader module, Type declaringType, int index)
+        {
+            this.module = module;
+            this.declaringType = declaringType;
+            this.index = index;
+        }
 
-		public override PropertyAttributes Attributes
-		{
-			get { return (PropertyAttributes)module.Property.records[index].Flags; }
-		}
+        public override bool Equals(object obj)
+        {
+            return obj is PropertyInfoImpl other && other.DeclaringType == declaringType && other.index == index;
+        }
 
-		public override object GetRawConstantValue()
-		{
-			return module.Constant.GetRawConstantValue(module, this.MetadataToken);
-		}
+        public override int GetHashCode() => declaringType.GetHashCode() * 77 + index;
 
-		public override bool CanRead
-		{
-			get { return GetGetMethod(true) != null; }
-		}
+        internal override PropertySignature PropertySignature => sig ??= PropertySignature.ReadSig(module, module.GetBlobReader(module.PropertyTable.records[index].Type), declaringType);
 
-		public override bool CanWrite
-		{
-			get { return GetSetMethod(true) != null; }
-		}
+        public override PropertyAttributes Attributes => (PropertyAttributes)module.PropertyTable.records[index].Flags;
 
-		public override MethodInfo GetGetMethod(bool nonPublic)
-		{
-			return module.MethodSemantics.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Getter);
-		}
+        public override object GetRawConstantValue() => module.ConstantTable.GetRawConstantValue(module, this.MetadataToken);
 
-		public override MethodInfo GetSetMethod(bool nonPublic)
-		{
-			return module.MethodSemantics.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Setter);
-		}
+        public override bool CanRead => GetGetMethod(true) != null;
 
-		public override MethodInfo[] GetAccessors(bool nonPublic)
-		{
-			return module.MethodSemantics.GetMethods(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Getter | MethodSemanticsTable.Setter | MethodSemanticsTable.Other);
-		}
+        public override bool CanWrite => GetSetMethod(true) != null;
 
-		public override Type DeclaringType
-		{
-			get { return declaringType; }
-		}
+        public override MethodInfo GetGetMethod(bool nonPublic)
+        {
+            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Getter);
+        }
 
-		public override Module Module
-		{
-			get { return module; }
-		}
+        public override MethodInfo GetSetMethod(bool nonPublic)
+        {
+            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Setter);
+        }
 
-		public override int MetadataToken
-		{
-			get { return (PropertyTable.Index << 24) + index + 1; }
-		}
+        public override MethodInfo[] GetAccessors(bool nonPublic)
+        {
+            return module.MethodSemanticsTable.GetMethods(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Getter | MethodSemanticsTable.Setter | MethodSemanticsTable.Other);
+        }
 
-		public override string Name
-		{
-			get { return module.GetString(module.Property.records[index].Name); }
-		}
+        public override Type DeclaringType => declaringType;
 
-		internal override bool IsPublic
-		{
-			get
-			{
-				if (!flagsCached)
-				{
-					ComputeFlags();
-				}
-				return isPublic;
-			}
-		}
+        public override Module Module => module;
 
-		internal override bool IsNonPrivate
-		{
-			get
-			{
-				if (!flagsCached)
-				{
-					ComputeFlags();
-				}
-				return isNonPrivate;
-			}
-		}
+        public override int MetadataToken => (PropertyTable.Index << 24) + index + 1;
 
-		internal override bool IsStatic
-		{
-			get
-			{
-				if (!flagsCached)
-				{
-					ComputeFlags();
-				}
-				return isStatic;
-			}
-		}
+        public override string Name => module.GetString(module.PropertyTable.records[index].Name);
 
-		private void ComputeFlags()
-		{
-			module.MethodSemantics.ComputeFlags(module, this.MetadataToken, out isPublic, out isNonPrivate, out isStatic);
-			flagsCached = true;
-		}
+        internal override bool IsPublic
+        {
+            get
+            {
+                if (!flagsCached)
+                    ComputeFlags();
 
-		internal override bool IsBaked
-		{
-			get { return true; }
-		}
+                return isPublic;
+            }
+        }
 
-		internal override int GetCurrentToken()
-		{
-			return this.MetadataToken;
-		}
-	}
+        internal override bool IsNonPrivate
+        {
+            get
+            {
+                if (!flagsCached)
+                    ComputeFlags();
+
+                return isNonPrivate;
+            }
+        }
+
+        internal override bool IsStatic
+        {
+            get
+            {
+                if (!flagsCached)
+                    ComputeFlags();
+
+                return isStatic;
+            }
+        }
+
+        void ComputeFlags()
+        {
+            module.MethodSemanticsTable.ComputeFlags(module, MetadataToken, out isPublic, out isNonPrivate, out isStatic);
+            flagsCached = true;
+        }
+
+        internal override bool IsBaked
+        {
+            get { return true; }
+        }
+
+        internal override int GetCurrentToken()
+        {
+            return this.MetadataToken;
+        }
+
+    }
+
 }

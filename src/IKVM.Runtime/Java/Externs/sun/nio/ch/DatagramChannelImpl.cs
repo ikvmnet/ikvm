@@ -25,9 +25,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
         static FileDescriptorAccessor fileDescriptorAccessor;
         static DatagramChannelImplAccessor datagramChannelImplAccessor;
 
-        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.Internal.BaseAccessors.Get(ref fileDescriptorAccessor);
 
-        static DatagramChannelImplAccessor DatagramChannelImplAccessor => JVM.BaseAccessors.Get(ref datagramChannelImplAccessor);
+        static DatagramChannelImplAccessor DatagramChannelImplAccessor => JVM.Internal.BaseAccessors.Get(ref datagramChannelImplAccessor);
 
         /// <summary>
         /// Compiles a fast setter for a <see cref="FieldInfo"/>.

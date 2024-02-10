@@ -507,7 +507,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             pool.setTimeoutFactor(opts.TimeoutFactor);
             pool.setSecurityPolicy(policyFile);
 
-            // before we install our own security manager (which will restrict access to the system properties) take a copy of the system propearties
+            // before we install our own security manager (which will restrict access to the system properties) take a copy of the system properties
             JTRegTypes.TestEnvironment.AddDefaultPropTable("(system properties)", java.lang.System.getProperties());
 
             // collect events from the harness

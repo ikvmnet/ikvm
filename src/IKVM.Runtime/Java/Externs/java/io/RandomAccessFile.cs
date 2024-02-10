@@ -23,11 +23,11 @@ namespace IKVM.Java.Externs.java.io
 #if FIRST_PASS == false
 
         static FileDescriptorAccessor fileDescriptorAccessor;
-        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.Internal.BaseAccessors.Get(ref fileDescriptorAccessor);
 
 
         static RandomAccessFileAccessor randomAccessFileAccessor;
-        static RandomAccessFileAccessor RandomAccessFileAccessor => JVM.BaseAccessors.Get(ref randomAccessFileAccessor);
+        static RandomAccessFileAccessor RandomAccessFileAccessor => JVM.Internal.BaseAccessors.Get(ref randomAccessFileAccessor);
 
         static global::ikvm.@internal.CallerID __callerID;
         delegate void __jniDelegate__open0(IntPtr jniEnv, IntPtr self, IntPtr name, int mode);

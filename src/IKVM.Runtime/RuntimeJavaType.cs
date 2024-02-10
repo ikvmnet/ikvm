@@ -900,14 +900,13 @@ namespace IKVM.Runtime
             }
         }
 
-        private static bool MatchingPackageNames(string name1, string name2)
+        static bool MatchingPackageNames(string name1, string name2)
         {
             int index1 = name1.LastIndexOf('.');
             int index2 = name2.LastIndexOf('.');
             if (index1 == -1 && index2 == -1)
-            {
                 return true;
-            }
+
             // for array types we need to skip the brackets
             int skip1 = 0;
             int skip2 = 0;
@@ -933,7 +932,8 @@ namespace IKVM.Runtime
             {
                 return false;
             }
-            return String.CompareOrdinal(name1, skip1, name2, skip2, index1 - skip1) == 0;
+
+            return string.CompareOrdinal(name1, skip1, name2, skip2, index1 - skip1) == 0;
         }
 
         internal abstract Type TypeAsTBD
@@ -946,50 +946,35 @@ namespace IKVM.Runtime
             get
             {
                 if (IsUnloadable)
-                {
                     return ((RuntimeUnloadableJavaType)this).MissingType ?? context.Types.Object;
-                }
+
                 if (IsGhostArray)
-                {
                     return RuntimeArrayJavaType.MakeArrayType(context.Types.Object, ArrayRank);
-                }
+
                 return TypeAsTBD;
             }
         }
 
-        internal Type TypeAsPublicSignatureType
-        {
-            get
-            {
-                return (IsPublic ? this : GetPublicBaseTypeWrapper()).TypeAsSignatureType;
-            }
-        }
+        internal Type TypeAsPublicSignatureType => (IsPublic ? this : GetPublicBaseTypeWrapper()).TypeAsSignatureType;
 
-        internal virtual Type TypeAsBaseType
-        {
-            get
-            {
-                return TypeAsTBD;
-            }
-        }
+        internal virtual Type TypeAsBaseType => TypeAsTBD;
 
         internal Type TypeAsLocalOrStackType
         {
             get
             {
                 if (IsUnloadable || IsGhost)
-                {
                     return context.Types.Object;
-                }
+
                 if (IsNonPrimitiveValueType)
                 {
                     // return either System.ValueType or System.Enum
                     return TypeAsTBD.BaseType;
                 }
+
                 if (IsGhostArray)
-                {
                     return RuntimeArrayJavaType.MakeArrayType(context.Types.Object, ArrayRank);
-                }
+
                 return TypeAsTBD;
             }
         }
@@ -1000,13 +985,11 @@ namespace IKVM.Runtime
             get
             {
                 if (IsUnloadable || IsGhost)
-                {
                     return context.Types.Object;
-                }
+
                 if (IsGhostArray)
-                {
                     return RuntimeArrayJavaType.MakeArrayType(context.Types.Object, ArrayRank);
-                }
+
                 return TypeAsTBD;
             }
         }
@@ -1016,9 +999,8 @@ namespace IKVM.Runtime
             get
             {
                 if (IsUnloadable)
-                {
                     return context.Types.Exception;
-                }
+
                 return TypeAsTBD;
             }
         }
@@ -1032,8 +1014,8 @@ namespace IKVM.Runtime
         {
             get
             {
-                Debug.Assert(!this.IsUnloadable);
-                Debug.Assert(this == context.VerifierJavaTypeFactory.Null || this.IsArray);
+                Debug.Assert(IsUnloadable == false);
+                Debug.Assert(this == context.VerifierJavaTypeFactory.Null || IsArray);
 
                 if (this == context.VerifierJavaTypeFactory.Null)
                 {

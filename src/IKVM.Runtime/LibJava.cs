@@ -20,15 +20,13 @@ namespace IKVM.Runtime
         /// </summary>
         public static readonly LibJava Instance = new();
 
-        readonly LibJvm libjvm = LibJvm.Instance;
-
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         LibJava()
         {
             // load libjava through libjvm as it is a JNI library
-            if ((Handle = libjvm.JVM_LoadLibrary(Path.Combine(JVM.Properties.HomePath, "bin", NativeLibrary.MapLibraryName("iava")))) == 0)
+            if ((Handle = LibJvm.Instance.JVM_LoadLibrary(Path.Combine(JVM.Properties.HomePath, "bin", NativeLibrary.MapLibraryName("iava")))) == 0)
                 throw new InternalException("Could not load libjava.");
         }
 
@@ -46,7 +44,7 @@ namespace IKVM.Runtime
             {
                 var h = Handle;
                 Handle = 0;
-                libjvm.JVM_UnloadLibrary(h);
+                LibJvm.Instance.JVM_UnloadLibrary(h);
             }
         }
 

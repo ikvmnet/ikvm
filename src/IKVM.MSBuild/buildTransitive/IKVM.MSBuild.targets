@@ -36,7 +36,7 @@
     <!-- Locates the IKVM.Runtime assembly from among the current references of the project. -->
     <Target Name="ResolveIkvmRuntimeAssembly" DependsOnTargets="$(ResolveIkvmRuntimeAssemblyDependsOn)">
         <ItemGroup>
-            <_IkvmRuntimeAssembly Include="@(Reference);@(_ResolvedProjectReferencePaths)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
+            <_IkvmRuntimeAssembly Include="@(Reference);@(_ResolvedProjectReferencePaths)" Condition=" '%(Identity)' == 'IKVM.Runtime' Or '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
         </ItemGroup>
         <PropertyGroup>
             <IkvmRuntimeAssembly>@(_IkvmRuntimeAssembly)</IkvmRuntimeAssembly>

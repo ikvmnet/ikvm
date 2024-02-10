@@ -141,6 +141,7 @@ The following values can be used as either an attribute or a nested element of `
 | `References` | Optional semi-colon separated list of other `IkvmReference` identity values to specify as a reference to the current one. For example, if `foo.jar` depends on `bar.jar`, include both as `IkvmReference` items, but specify the identity of `bar.jar` on the `References` metadata of `foo.jar`. |
 | `Debug` | Optional boolean indicating whether to generate debug symbols. By default this is determined based on the `<DebugType>` and `<DebugSymbols>`  properties of the project. Only full debug symbols are currently supported. |
 | `Aliases` | A semi-colon separated list of aliases that can be used to reference the assembly in `References`. |
+| `ClassLoader` | A fully qualified classs name of the custom ClassLoader implementation to use as a delegation parent. Examples include `ikvm.runtime.AppDomainAssemblyClassLoader` and `ikvm.runtime.ClassPathAssemblyClassLoader`. |
 | All other metadata supported on the [`Reference`](https://docs.microsoft.com/en-us/visualstudio/msbuild/common-msbuild-project-items#reference) MSBuild item group definition. | |
 
 

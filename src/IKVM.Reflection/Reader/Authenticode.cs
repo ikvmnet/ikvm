@@ -21,7 +21,6 @@
   jeroen@frijters.net
   
 */
-#if !NO_AUTHENTICODE
 using System;
 using System.IO;
 using System.Security.Cryptography;
@@ -30,137 +29,126 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace IKVM.Reflection.Reader
 {
-	// This code is based on trial-and-error and some inspiration from the Mono.Security library.
-	// It almost certainly has bugs and/or design flaws.
-	static class Authenticode
-	{
-		private const ushort IMAGE_NT_OPTIONAL_HDR32_MAGIC = 0x10b;
-		private const ushort IMAGE_NT_OPTIONAL_HDR64_MAGIC = 0x20b;
-		private const int WIN_CERT_REVISION_2_0 = 0x0200;
-		private const int WIN_CERT_TYPE_PKCS_SIGNED_DATA = 0x0002;
 
-		internal static X509Certificate GetSignerCertificate(Stream stream)
-		{
-			stream.Seek(60, SeekOrigin.Begin);
-			BinaryReader br = new BinaryReader(stream);
-			int peSignatureOffset = br.ReadInt32();
-			int checksumOffset = peSignatureOffset + 24 + 64;
-			// seek to the IMAGE_OPTIONAL_HEADER
-			stream.Seek(peSignatureOffset + 24, SeekOrigin.Begin);
-			int certificateTableDataDirectoryOffset;
-			switch (br.ReadUInt16())
-			{
-				case IMAGE_NT_OPTIONAL_HDR32_MAGIC:
-					certificateTableDataDirectoryOffset = peSignatureOffset + 24 + (64 + 4 * 8) + 8 * 4;
-					break;
-				case IMAGE_NT_OPTIONAL_HDR64_MAGIC:
-					certificateTableDataDirectoryOffset = peSignatureOffset + 24 + (64 + 4 * 8 + 16) + 8 * 4;
-					break;
-				default:
-					throw new BadImageFormatException();
-			}
-			stream.Seek(certificateTableDataDirectoryOffset, SeekOrigin.Begin);
-			int certificateTableOffset = br.ReadInt32();
-			int certificateTableLength = br.ReadInt32();
+    // This code is based on trial-and-error and some inspiration from the Mono.Security library.
+    // It almost certainly has bugs and/or design flaws.
+    static class Authenticode
+    {
 
-			stream.Seek(certificateTableOffset, SeekOrigin.Begin);
-			int dwLength = br.ReadInt32();
-			short wRevision = br.ReadInt16();
-			short wCertificateType = br.ReadInt16();
-			if (wRevision != WIN_CERT_REVISION_2_0)
-			{
-				return null;
-			}
-			if (wCertificateType != WIN_CERT_TYPE_PKCS_SIGNED_DATA)
-			{
-				return null;
-			}
-			byte[] buf = br.ReadBytes(certificateTableLength - 8);
+        const ushort IMAGE_NT_OPTIONAL_HDR32_MAGIC = 0x10b;
+        const ushort IMAGE_NT_OPTIONAL_HDR64_MAGIC = 0x20b;
+        const int WIN_CERT_REVISION_2_0 = 0x0200;
+        const int WIN_CERT_TYPE_PKCS_SIGNED_DATA = 0x0002;
 
-			SignedCms cms = new SignedCms();
-			try
-			{
-				cms.Decode(buf);
-				cms.CheckSignature(false);
-			}
-			catch (CryptographicException)
-			{
-				return null;
-			}
-			SignerInfo signerInfo = cms.SignerInfos[0];
+        internal static X509Certificate GetSignerCertificate(Stream stream)
+        {
+            stream.Seek(60, SeekOrigin.Begin);
+            var br = new BinaryReader(stream);
+            var peSignatureOffset = br.ReadInt32();
+            var checksumOffset = peSignatureOffset + 24 + 64;
 
-			int[] offsets = new int[] { checksumOffset, certificateTableDataDirectoryOffset, certificateTableOffset };
-			int[] lengths = new int[] { 4, 8, certificateTableLength };
-			byte[] actualHash = ComputeHashWithSkip(stream, signerInfo.DigestAlgorithm.FriendlyName, offsets, lengths);
-			byte[] requiredHash = DecodeASN1(cms.ContentInfo.Content, 0, 1, 1);
+            // seek to the IMAGE_OPTIONAL_HEADER
+            stream.Seek(peSignatureOffset + 24, SeekOrigin.Begin);
+            var certificateTableDataDirectoryOffset = br.ReadUInt16() switch
+            {
+                IMAGE_NT_OPTIONAL_HDR32_MAGIC => peSignatureOffset + 24 + (64 + 4 * 8) + 8 * 4,
+                IMAGE_NT_OPTIONAL_HDR64_MAGIC => peSignatureOffset + 24 + (64 + 4 * 8 + 16) + 8 * 4,
+                _ => throw new BadImageFormatException(),
+            };
 
-			if (requiredHash == null || actualHash.Length != requiredHash.Length)
-			{
-				return null;
-			}
+            stream.Seek(certificateTableDataDirectoryOffset, SeekOrigin.Begin);
+            var certificateTableOffset = br.ReadInt32();
+            var certificateTableLength = br.ReadInt32();
 
-			for (int i = 0; i < actualHash.Length; i++)
-			{
-				if (actualHash[i] != requiredHash[i])
-				{
-					return null;
-				}
-			}
+            stream.Seek(certificateTableOffset, SeekOrigin.Begin);
+            var dwLength = br.ReadInt32();
+            var wRevision = br.ReadInt16();
+            var wCertificateType = br.ReadInt16();
+            if (wRevision != WIN_CERT_REVISION_2_0)
+                return null;
+            if (wCertificateType != WIN_CERT_TYPE_PKCS_SIGNED_DATA)
+                return null;
 
-			return signerInfo.Certificate;
-		}
+            var buf = br.ReadBytes(certificateTableLength - 8);
+            var cms = new SignedCms();
+            try
+            {
+                cms.Decode(buf);
+                cms.CheckSignature(false);
+            }
+            catch (CryptographicException)
+            {
+                return null;
+            }
 
-		private static byte[] ComputeHashWithSkip(Stream stream, string hashAlgorithm, int[] skipOffsets, int[] skipLengths)
-		{
-			stream.Position = 0;
-			for (int i = skipOffsets.Length - 1; i >= 0; i--)
-			{
-				stream = new IKVM.Reflection.Writer.SkipStream(stream, skipOffsets[i], skipLengths[i]);
-			}
-			using (HashAlgorithm hash = HashAlgorithm.Create(hashAlgorithm))
-			{
-				return hash.ComputeHash(stream);
-			}
-		}
+            var signerInfo = cms.SignerInfos[0];
 
-		private static byte[] DecodeASN1(byte[] buf, params int[] indexes)
-		{
-			return DecodeASN1(buf, 0, buf.Length, 0, indexes);
-		}
+            var offsets = new int[] { checksumOffset, certificateTableDataDirectoryOffset, certificateTableOffset };
+            var lengths = new int[] { 4, 8, certificateTableLength };
+            var actualHash = ComputeHashWithSkip(stream, signerInfo.DigestAlgorithm.FriendlyName, offsets, lengths);
+            var requiredHash = DecodeASN1(cms.ContentInfo.Content, 0, 1, 1);
 
-		private static byte[] DecodeASN1(byte[] buf, int pos, int end, int depth, int[] indexes)
-		{
-			for (int index = 0; pos < end; index++)
-			{
-				int tag = buf[pos++];
-				int length = buf[pos++];
-				if (length > 128)
-				{
-					int lenlen = length & 0x7F;
-					length = 0;
-					for (int i = 0; i < lenlen; i++)
-					{
-						length = length * 256 + buf[pos++];
-					}
-				}
-				if (indexes[depth] == index)
-				{
-					if (depth == indexes.Length - 1)
-					{
-						byte[] data = new byte[length];
-						Buffer.BlockCopy(buf, pos, data, 0, length);
-						return data;
-					}
-					if ((tag & 0x20) == 0)
-					{
-						return null;
-					}
-					return DecodeASN1(buf, pos, pos + length, depth + 1, indexes);
-				}
-				pos += length;
-			}
-			return null;
-		}
-	}
+            if (requiredHash == null || actualHash.Length != requiredHash.Length)
+                return null;
+
+            for (int i = 0; i < actualHash.Length; i++)
+                if (actualHash[i] != requiredHash[i])
+                    return null;
+
+            return signerInfo.Certificate;
+        }
+
+        static byte[] ComputeHashWithSkip(Stream stream, string hashAlgorithm, int[] skipOffsets, int[] skipLengths)
+        {
+            stream.Position = 0;
+            for (int i = skipOffsets.Length - 1; i >= 0; i--)
+            {
+                stream = new IKVM.Reflection.Writer.SkipStream(stream, skipOffsets[i], skipLengths[i]);
+            }
+            using (HashAlgorithm hash = HashAlgorithm.Create(hashAlgorithm))
+            {
+                return hash.ComputeHash(stream);
+            }
+        }
+
+        static byte[] DecodeASN1(byte[] buf, params int[] indexes)
+        {
+            return DecodeASN1(buf, 0, buf.Length, 0, indexes);
+        }
+
+        static byte[] DecodeASN1(byte[] buf, int pos, int end, int depth, int[] indexes)
+        {
+            for (var index = 0; pos < end; index++)
+            {
+                var tag = buf[pos++];
+                var length = (int)buf[pos++];
+                if (length > 128)
+                {
+                    var lenlen = length & 0x7F;
+                    length = 0;
+                    for (var i = 0; i < lenlen; i++)
+                        length = length * 256 + buf[pos++];
+                }
+                if (indexes[depth] == index)
+                {
+                    if (depth == indexes.Length - 1)
+                    {
+                        var data = new byte[length];
+                        Buffer.BlockCopy(buf, pos, data, 0, length);
+                        return data;
+                    }
+
+                    if ((tag & 0x20) == 0)
+                        return null;
+
+                    return DecodeASN1(buf, pos, pos + length, depth + 1, indexes);
+                }
+                pos += length;
+            }
+
+            return null;
+        }
+
+    }
+
 }
-#endif // !NO_AUTHENTICODE

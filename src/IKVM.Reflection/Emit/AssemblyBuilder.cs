@@ -24,6 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Resources;
 using System.Security.Cryptography;
 
@@ -36,55 +38,71 @@ namespace IKVM.Reflection.Emit
     public sealed class AssemblyBuilder : Assembly
     {
 
-        private readonly string name;
-        private ushort majorVersion;
-        private ushort minorVersion;
-        private ushort buildVersion;
-        private ushort revisionVersion;
-        private string culture;
-        private AssemblyNameFlags flags;
-        private AssemblyHashAlgorithm hashAlgorithm;
-        private StrongNameKeyPair keyPair;
-        private byte[] publicKey;
+        readonly string name;
+        ushort majorVersion;
+        ushort minorVersion;
+        ushort buildVersion;
+        ushort revisionVersion;
+        string culture;
+        AssemblyNameFlags flags;
+        AssemblyHashAlgorithm hashAlgorithm;
+        StrongNameKeyPair keyPair;
+        byte[] publicKey;
         internal readonly string dir;
-        private PEFileKinds fileKind = PEFileKinds.Dll;
-        private MethodInfo entryPoint;
-        private VersionInfo versionInfo;
-        private byte[] win32icon;
-        private byte[] win32manifest;
-        private byte[] win32resources;
-        private string imageRuntimeVersion;
+        PEFileKinds fileKind = PEFileKinds.Dll;
+        MethodInfo entryPoint;
+        VersionInfo versionInfo;
+        byte[] win32icon;
+        byte[] win32manifest;
+        byte[] win32resources;
+        string imageRuntimeVersion;
         internal int mdStreamVersion = 0x20000;
-        private Module pseudoManifestModule;
-        private readonly List<ResourceFile> resourceFiles = new List<ResourceFile>();
-        private readonly List<ModuleBuilder> modules = new List<ModuleBuilder>();
-        private readonly List<Module> addedModules = new List<Module>();
-        private readonly List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
-        private readonly List<CustomAttributeBuilder> declarativeSecurity = new List<CustomAttributeBuilder>();
-        private readonly List<TypeForwarder> typeForwarders = new List<TypeForwarder>();
+        Module pseudoManifestModule;
+        readonly List<ResourceFile> resourceFiles = new List<ResourceFile>();
+        readonly List<ModuleBuilder> modules = new List<ModuleBuilder>();
+        readonly List<Module> addedModules = new List<Module>();
+        readonly List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
+        readonly List<CustomAttributeBuilder> declarativeSecurity = new List<CustomAttributeBuilder>();
+        readonly List<TypeForwarder> typeForwarders = new List<TypeForwarder>();
 
-        struct TypeForwarder
+        readonly struct TypeForwarder
         {
+
             internal readonly Type Type;
             internal readonly bool IncludeNested;
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="type"></param>
+            /// <param name="includeNested"></param>
             internal TypeForwarder(Type type, bool includeNested)
             {
                 this.Type = type;
                 this.IncludeNested = includeNested;
             }
+
         }
 
-        private struct ResourceFile
+        struct ResourceFile
         {
+
             internal string Name;
             internal string FileName;
             internal ResourceAttributes Attributes;
             internal ResourceWriter Writer;
+
         }
 
-        internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, IEnumerable<CustomAttributeBuilder> customAttributes)
-            : base(universe)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="universe"></param>
+        /// <param name="name"></param>
+        /// <param name="dir"></param>
+        /// <param name="customAttributes"></param>
+        internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, IEnumerable<CustomAttributeBuilder> customAttributes) :
+            base(universe)
         {
             this.name = name.Name;
             SetVersionHelper(name.Version);
@@ -92,12 +110,12 @@ namespace IKVM.Reflection.Emit
             {
                 this.culture = name.CultureName;
             }
+
             this.flags = name.RawFlags;
             this.hashAlgorithm = name.HashAlgorithm;
             if (this.hashAlgorithm == AssemblyHashAlgorithm.None)
-            {
                 this.hashAlgorithm = AssemblyHashAlgorithm.SHA1;
-            }
+
             this.keyPair = name.KeyPair;
             if (this.keyPair != null)
             {
@@ -105,29 +123,24 @@ namespace IKVM.Reflection.Emit
             }
             else
             {
-                byte[] publicKey = name.GetPublicKey();
+                var publicKey = name.GetPublicKey();
                 if (publicKey != null && publicKey.Length != 0)
-                {
                     this.publicKey = (byte[])publicKey.Clone();
-                }
             }
+
             this.dir = dir ?? ".";
             if (customAttributes != null)
-            {
                 this.customAttributes.AddRange(customAttributes);
-            }
+
             if (universe.HasCoreLib && !universe.CoreLib.__IsMissing && universe.CoreLib.ImageRuntimeVersion != null)
-            {
                 this.imageRuntimeVersion = universe.CoreLib.ImageRuntimeVersion;
-            }
             else
-            {
                 this.imageRuntimeVersion = TypeUtil.GetAssembly(typeof(object)).ImageRuntimeVersion;
-            }
+
             universe.RegisterDynamicAssembly(this);
         }
 
-        private void SetVersionHelper(Version version)
+        void SetVersionHelper(Version version)
         {
             if (version == null)
             {
@@ -145,7 +158,7 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        private void Rename(AssemblyName oldName)
+        void Rename(AssemblyName oldName)
         {
             this.fullName = null;
             universe.RenameAssembly(this, oldName);
@@ -224,7 +237,7 @@ namespace IKVM.Reflection.Emit
             n.CultureName = culture ?? "";
             n.HashAlgorithm = hashAlgorithm;
             n.RawFlags = flags;
-            n.SetPublicKey(publicKey != null ? (byte[])publicKey.Clone() : Empty<byte>.Array);
+            n.SetPublicKey(publicKey != null ? (byte[])publicKey.Clone() : Array.Empty<byte>());
             n.KeyPair = keyPair;
             return n;
         }
@@ -297,13 +310,10 @@ namespace IKVM.Reflection.Emit
         public void __Save(Stream stream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
             if (!stream.CanRead || !stream.CanWrite || !stream.CanSeek || stream.Position != 0)
-            {
                 throw new ArgumentException("Stream must support read/write/seek and current position must be zero.", "stream");
-            }
             if (modules.Count != 1)
-            {
                 throw new NotSupportedException("Saving to a stream is only supported for single module assemblies.");
-            }
+
             SaveImpl(modules[0].fileName, stream, portableExecutableKind, imageFileMachine);
         }
 
@@ -317,24 +327,35 @@ namespace IKVM.Reflection.Emit
             SaveImpl(assemblyFileName, null, portableExecutableKind, imageFileMachine);
         }
 
-        private void SaveImpl(string assemblyFileName, Stream streamOrNull, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+        /// <summary>
+        /// Implements the logic to save all of the modules within the assembly.
+        /// </summary>
+        /// <param name="assemblyFileName"></param>
+        /// <param name="streamOrNull"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
+        void SaveImpl(string assemblyFileName, Stream streamOrNull, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
             ModuleBuilder manifestModule = null;
 
-            foreach (ModuleBuilder moduleBuilder in modules)
+            // finalize and populate all modules
+            foreach (var moduleBuilder in modules)
             {
                 moduleBuilder.SetIsSaved();
                 moduleBuilder.PopulatePropertyAndEventTables();
 
+                // is this the default manifest module?
                 if (manifestModule == null && string.Compare(moduleBuilder.fileName, assemblyFileName, StringComparison.OrdinalIgnoreCase) == 0)
                     manifestModule = moduleBuilder;
             }
 
+            // generate new manifest module
             manifestModule ??= DefineDynamicModule("RefEmit_OnDiskManifestModule", assemblyFileName, false);
 
+            // assembly record goes on manifest module
             var assemblyRecord = new AssemblyTable.Record();
             assemblyRecord.HashAlgId = (int)hashAlgorithm;
-            assemblyRecord.Name = manifestModule.Strings.Add(name);
+            assemblyRecord.Name = manifestModule.GetOrAddString(name);
             assemblyRecord.MajorVersion = majorVersion;
             assemblyRecord.MinorVersion = minorVersion;
             assemblyRecord.BuildNumber = buildVersion;
@@ -342,7 +363,7 @@ namespace IKVM.Reflection.Emit
 
             if (publicKey != null)
             {
-                assemblyRecord.PublicKey = manifestModule.Blobs.Add(ByteBuffer.Wrap(publicKey));
+                assemblyRecord.PublicKey = manifestModule.GetOrAddBlob(publicKey);
                 assemblyRecord.Flags = (int)(flags | AssemblyNameFlags.PublicKey);
             }
             else
@@ -351,13 +372,14 @@ namespace IKVM.Reflection.Emit
             }
 
             if (culture != null)
-            {
-                assemblyRecord.Culture = manifestModule.Strings.Add(culture);
-            }
+                assemblyRecord.Culture = manifestModule.GetOrAddString(culture);
+
             manifestModule.AssemblyTable.AddRecord(assemblyRecord);
 
-            var unmanagedResources = versionInfo != null || win32icon != null || win32manifest != null || win32resources != null ? new ResourceSection() : null;
+            // final copy of manifest module native resources
+            var nativeResources = manifestModule.nativeResources != null ? new ModuleResourceSectionBuilder(manifestModule.nativeResources) : new ModuleResourceSectionBuilder();
 
+            // version info specified on assembly: insert into manifest module
             if (versionInfo != null)
             {
                 versionInfo.SetName(GetName());
@@ -365,34 +387,36 @@ namespace IKVM.Reflection.Emit
                 foreach (var cab in customAttributes)
                 {
                     // .NET doesn't support copying blob custom attributes into the version info
-                    if (!cab.HasBlob || universe.DecodeVersionInfoAttributeBlobs)
+                    if (cab.HasBlob == false || universe.DecodeVersionInfoAttributeBlobs)
                         versionInfo.SetAttribute(this, cab);
                 }
+
                 var versionInfoData = new ByteBuffer(512);
                 versionInfo.Write(versionInfoData);
-                unmanagedResources.AddVersionInfo(versionInfoData);
+                nativeResources.AddVersionInfo(versionInfoData);
             }
 
+            // win32 icon specified on assembly: insert into manifest module
             if (win32icon != null)
-                unmanagedResources.AddIcon(win32icon);
+                nativeResources.AddIcon(win32icon);
 
+            // win32 manifest specified on assembly: insert into manifest module
             if (win32manifest != null)
-                unmanagedResources.AddManifest(win32manifest, fileKind == PEFileKinds.Dll ? (ushort)2 : (ushort)1);
+                nativeResources.AddManifest(win32manifest, fileKind == PEFileKinds.Dll ? (ushort)2 : (ushort)1);
 
             if (win32resources != null)
-                unmanagedResources.ExtractResources(win32resources);
+                nativeResources.ImportWin32ResourceFile(win32resources);
 
+            // we intentionally don't filter out the version info (pseudo) custom attributes (to be compatible with .NET)
             foreach (var cab in customAttributes)
-            {
-                // we intentionally don't filter out the version info (pseudo) custom attributes (to be compatible with .NET)
                 manifestModule.SetCustomAttribute(0x20000001, cab);
-            }
 
             manifestModule.AddDeclarativeSecurity(0x20000001, declarativeSecurity);
 
             foreach (var fwd in typeForwarders)
                 manifestModule.AddTypeForwarder(fwd.Type, fwd.IncludeNested);
 
+            // add resource files for assembly to manifest module
             foreach (var resfile in resourceFiles)
             {
                 if (resfile.Writer != null)
@@ -401,69 +425,59 @@ namespace IKVM.Reflection.Emit
                     resfile.Writer.Close();
                 }
 
-                int fileToken = AddFile(manifestModule, resfile.FileName, 1 /*ContainsNoMetaData*/);
+                var fileToken = AddFile(manifestModule, resfile.FileName, 1 /*ContainsNoMetaData*/);
                 var rec = new ManifestResourceTable.Record();
                 rec.Offset = 0;
                 rec.Flags = (int)resfile.Attributes;
-                rec.Name = manifestModule.Strings.Add(resfile.Name);
-                rec.Implementation = fileToken;
-                manifestModule.ManifestResource.AddRecord(rec);
+                rec.Name = manifestModule.GetOrAddString(resfile.Name);
+                rec.Implementation = MetadataTokens.GetToken(fileToken);
+                manifestModule.ManifestResourceTable.AddRecord(rec);
             }
 
-            int entryPointToken = 0;
-
+            // write each non-manifest module
             foreach (var moduleBuilder in modules)
             {
                 moduleBuilder.FillAssemblyRefTable();
-                moduleBuilder.EmitResources();
 
                 if (moduleBuilder != manifestModule)
                 {
-                    int fileToken;
+                    var fileToken = default(AssemblyFileHandle);
                     if (entryPoint != null && entryPoint.Module == moduleBuilder)
                     {
-                        ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, moduleBuilder.unmanagedResources, entryPoint.MetadataToken);
-                        entryPointToken = fileToken = AddFile(manifestModule, moduleBuilder.fileName, 0 /*ContainsMetaData*/);
+                        throw new NotSupportedException("Multi-module assemblies cannot have an entry point in a module other than the manifest module.");
                     }
                     else
                     {
-                        ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, moduleBuilder.unmanagedResources, 0);
+                        ModuleWriter.WriteModule(null, null, moduleBuilder, fileKind, portableExecutableKind, imageFileMachine, moduleBuilder.nativeResources, default);
                         fileToken = AddFile(manifestModule, moduleBuilder.fileName, 0 /*ContainsMetaData*/);
                     }
 
                     moduleBuilder.ExportTypes(fileToken, manifestModule);
                 }
-
-                moduleBuilder.CloseResources();
             }
 
+            // import existing modules
             foreach (var module in addedModules)
             {
-                int fileToken = AddFile(manifestModule, module.FullyQualifiedName, 0 /*ContainsMetaData*/);
+                var fileToken = AddFile(manifestModule, module.FullyQualifiedName, 0 /*ContainsMetaData*/);
                 module.ExportTypes(fileToken, manifestModule);
             }
 
-            if (entryPointToken == 0 && entryPoint != null)
-                entryPointToken = entryPoint.MetadataToken;
-
             // finally, write the manifest module
-            ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, unmanagedResources ?? manifestModule.unmanagedResources, entryPointToken, streamOrNull);
+            ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, streamOrNull);
         }
 
-        private int AddFile(ModuleBuilder manifestModule, string fileName, int flags)
+        AssemblyFileHandle AddFile(ModuleBuilder manifestModule, string fileName, int flags)
         {
-            string fullPath = fileName;
+            var fullPath = fileName;
             if (dir != null)
-            {
                 fullPath = Path.Combine(dir, fileName);
-            }
-            byte[] hash;
-            using (SHA1 sha1 = SHA1.Create())
-            using (FileStream fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read))
-            {
-                hash = sha1.ComputeHash(fs);
-            }
-            return manifestModule.__AddModule(flags, Path.GetFileName(fileName), hash);
+
+            using var sha1 = SHA1.Create();
+            using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
+            var hash = sha1.ComputeHash(fs);
+
+            return MetadataTokens.AssemblyFileHandle(manifestModule.__AddModule(flags, Path.GetFileName(fileName), hash));
         }
 
         public void AddResourceFile(string name, string fileName)
@@ -473,7 +487,7 @@ namespace IKVM.Reflection.Emit
 
         public void AddResourceFile(string name, string fileName, ResourceAttributes attribs)
         {
-            ResourceFile resfile = new ResourceFile();
+            var resfile = new ResourceFile();
             resfile.Name = name;
             resfile.FileName = fileName;
             resfile.Attributes = attribs;
@@ -489,13 +503,12 @@ namespace IKVM.Reflection.Emit
         {
             // FXBUG we ignore the description, because there is no such thing
 
-            string fullPath = fileName;
+            var fullPath = fileName;
             if (dir != null)
-            {
                 fullPath = Path.Combine(dir, fileName);
-            }
-            ResourceWriter rw = new ResourceWriter(fullPath);
-            ResourceFile resfile;
+
+            var rw = new ResourceWriter(fullPath);
+            var resfile = new ResourceFile();
             resfile.Name = name;
             resfile.FileName = fileName;
             resfile.Attributes = attribute;
@@ -515,9 +528,8 @@ namespace IKVM.Reflection.Emit
         public void DefineVersionInfoResource(string product, string productVersion, string company, string copyright, string trademark)
         {
             if (versionInfo != null || win32resources != null)
-            {
                 throw new ArgumentException("Native resource has already been defined.");
-            }
+
             versionInfo = new VersionInfo();
             versionInfo.product = product;
             versionInfo.informationalVersion = productVersion;
@@ -529,27 +541,24 @@ namespace IKVM.Reflection.Emit
         public void __DefineIconResource(byte[] iconFile)
         {
             if (win32icon != null || win32resources != null)
-            {
                 throw new ArgumentException("Native resource has already been defined.");
-            }
+
             win32icon = (byte[])iconFile.Clone();
         }
 
         public void __DefineManifestResource(byte[] manifest)
         {
             if (win32manifest != null || win32resources != null)
-            {
                 throw new ArgumentException("Native resource has already been defined.");
-            }
+
             win32manifest = (byte[])manifest.Clone();
         }
 
         public void __DefineUnmanagedResource(byte[] resource)
         {
             if (versionInfo != null || win32icon != null || win32manifest != null || win32resources != null)
-            {
                 throw new ArgumentException("Native resource has already been defined.");
-            }
+
             // The standard .NET DefineUnmanagedResource(byte[]) is useless, because it embeds "resource" (as-is) as the .rsrc section,
             // but it doesn't set the PE file Resource Directory entry to point to it. That's why we have a renamed version, which behaves
             // like DefineUnmanagedResource(string).
@@ -565,57 +574,52 @@ namespace IKVM.Reflection.Emit
 
         public override Type[] GetTypes()
         {
-            List<Type> list = new List<Type>();
-            foreach (ModuleBuilder module in modules)
-            {
+            var list = new List<Type>();
+
+            foreach (var module in modules)
                 module.GetTypesImpl(list);
-            }
-            foreach (Module module in addedModules)
-            {
+
+            foreach (var module in addedModules)
                 module.GetTypesImpl(list);
-            }
+
             return list.ToArray();
         }
 
         internal override Type FindType(TypeName typeName)
         {
-            foreach (ModuleBuilder mb in modules)
+            foreach (var mb in modules)
             {
-                Type type = mb.FindType(typeName);
+                var type = mb.FindType(typeName);
                 if (type != null)
-                {
                     return type;
-                }
             }
+
             foreach (Module module in addedModules)
             {
-                Type type = module.FindType(typeName);
+                var type = module.FindType(typeName);
                 if (type != null)
-                {
                     return type;
-                }
             }
+
             return null;
         }
 
         internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
         {
-            foreach (ModuleBuilder mb in modules)
+            foreach (var mb in modules)
             {
-                Type type = mb.FindTypeIgnoreCase(lowerCaseName);
+                var type = mb.FindTypeIgnoreCase(lowerCaseName);
                 if (type != null)
-                {
                     return type;
-                }
             }
+
             foreach (Module module in addedModules)
             {
-                Type type = module.FindTypeIgnoreCase(lowerCaseName);
+                var type = module.FindTypeIgnoreCase(lowerCaseName);
                 if (type != null)
-                {
                     return type;
-                }
             }
+
             return null;
         }
 
@@ -630,27 +634,11 @@ namespace IKVM.Reflection.Emit
             this.mdStreamVersion = mdStreamVersion;
         }
 
-        public override Module ManifestModule
-        {
-            get
-            {
-                if (pseudoManifestModule == null)
-                {
-                    pseudoManifestModule = new ManifestModule(this);
-                }
-                return pseudoManifestModule;
-            }
-        }
+        public override Module ManifestModule => pseudoManifestModule ??= new ManifestModule(this);
 
-        public override MethodInfo EntryPoint
-        {
-            get { return entryPoint; }
-        }
+        public override MethodInfo EntryPoint => entryPoint;
 
-        public override AssemblyName[] GetReferencedAssemblies()
-        {
-            return Empty<AssemblyName>.Array;
-        }
+        public override AssemblyName[] GetReferencedAssemblies() => Array.Empty<AssemblyName>();
 
         public override Module[] GetLoadedModules(bool getResourceModules)
         {
@@ -659,40 +647,29 @@ namespace IKVM.Reflection.Emit
 
         public override Module[] GetModules(bool getResourceModules)
         {
-            List<Module> list = new List<Module>();
-            foreach (ModuleBuilder module in modules)
-            {
+            var list = new List<Module>();
+
+            foreach (var module in modules)
                 if (getResourceModules || !module.IsResource())
-                {
                     list.Add(module);
-                }
-            }
-            foreach (Module module in addedModules)
-            {
+
+            foreach (var module in addedModules)
                 if (getResourceModules || !module.IsResource())
-                {
                     list.Add(module);
-                }
-            }
+
             return list.ToArray();
         }
 
         public override Module GetModule(string name)
         {
-            foreach (ModuleBuilder module in modules)
-            {
+            foreach (var module in modules)
                 if (module.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                {
                     return module;
-                }
-            }
-            foreach (Module module in addedModules)
-            {
+
+            foreach (var module in addedModules)
                 if (module.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                {
                     return module;
-                }
-            }
+
             return null;
         }
 
@@ -735,14 +712,11 @@ namespace IKVM.Reflection.Emit
 
         internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
         {
-            List<CustomAttributeData> list = new List<CustomAttributeData>();
-            foreach (CustomAttributeBuilder cab in customAttributes)
-            {
+            var list = new List<CustomAttributeData>();
+            foreach (var cab in customAttributes)
                 if (attributeType == null || attributeType.IsAssignableFrom(cab.Constructor.DeclaringType))
-                {
                     list.Add(cab.ToData(this));
-                }
-            }
+
             return list;
         }
 
@@ -750,66 +724,7 @@ namespace IKVM.Reflection.Emit
         {
             get { return (flags & (AssemblyNameFlags)0x200) != 0; }
         }
+
     }
 
-    sealed class ManifestModule : NonPEModule
-    {
-        private readonly AssemblyBuilder assembly;
-        private readonly Guid guid = Guid.NewGuid();
-
-        internal ManifestModule(AssemblyBuilder assembly)
-            : base(assembly.universe)
-        {
-            this.assembly = assembly;
-        }
-
-        public override int MDStreamVersion
-        {
-            get { return assembly.mdStreamVersion; }
-        }
-
-        public override Assembly Assembly
-        {
-            get { return assembly; }
-        }
-
-        internal override Type FindType(TypeName typeName)
-        {
-            return null;
-        }
-
-        internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
-        {
-            return null;
-        }
-
-        internal override void GetTypesImpl(List<Type> list)
-        {
-        }
-
-        public override string FullyQualifiedName
-        {
-            get { return Path.Combine(assembly.dir, "RefEmit_InMemoryManifestModule"); }
-        }
-
-        public override string Name
-        {
-            get { return "<In Memory Module>"; }
-        }
-
-        public override Guid ModuleVersionId
-        {
-            get { return guid; }
-        }
-
-        public override string ScopeName
-        {
-            get { return "RefEmit_InMemoryManifestModule"; }
-        }
-
-        protected override Exception NotSupportedException()
-        {
-            return new InvalidOperationException();
-        }
-    }
 }

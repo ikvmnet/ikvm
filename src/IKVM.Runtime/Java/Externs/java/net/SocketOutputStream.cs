@@ -18,7 +18,7 @@ namespace IKVM.Java.Externs.java.net
 
         static FileDescriptorAccessor fileDescriptorAccessor;
 
-        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.Internal.BaseAccessors.Get(ref fileDescriptorAccessor);
 
         static global::ikvm.@internal.CallerID __callerID;
         delegate void __jniDelegate__socketWrite0(IntPtr jniEnv, IntPtr self, IntPtr fdObj, IntPtr data, int off, int len);

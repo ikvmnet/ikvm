@@ -143,8 +143,10 @@ namespace IKVM.MSBuild.Tests
         [DataTestMethod]
         [DataRow(EnvironmentPreference.Core, "net472", "win-x86", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Core, "net472", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net472", "win-arm64", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Core, "net48", "win-x86", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Core, "net48", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net48", "win-arm64", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Core, "net6.0", "win-x86", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Core, "net6.0", "win-x64", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Core, "net6.0", "win-arm64", "{0}.exe", "{0}.dll")]
@@ -169,8 +171,10 @@ namespace IKVM.MSBuild.Tests
         [DataRow(EnvironmentPreference.Core, "net7.0", "osx-arm64", "{0}", "lib{0}.dylib")]
         [DataRow(EnvironmentPreference.Framework, "net472", "win-x86", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Framework, "net472", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net472", "win-arm64", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Framework, "net48", "win-x86", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Framework, "net48", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net48", "win-arm64", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Framework, "net6.0", "win-x86", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Framework, "net6.0", "win-x64", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Framework, "net6.0", "win-arm64", "{0}.exe", "{0}.dll")]
@@ -268,6 +272,27 @@ namespace IKVM.MSBuild.Tests
                 // ikvm image native libraries
                 foreach (var libName in new[] { "awt", "fdlibm", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
                     File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", string.Format(lib, libName))).Should().BeTrue();
+            }
+
+            if (rid == "win-x86")
+            {
+                var outDir = Path.Combine(binDir, "publish");
+                Directory.GetDirectories(Path.Combine(outDir, "ikvm")).Should().HaveCount(2);
+                Directory.Exists(Path.Combine(outDir, "ikvm")).Should().BeTrue();
+                Directory.Exists(Path.Combine(outDir, "ikvm", "win-x64")).Should().BeTrue();
+                Directory.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", "IKVM.Runtime.dll")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", "IKVM.Java.dll")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", string.Format(lib, "iava"))).Should().BeTrue();
+
+                // ikvm image native libraries
+                foreach (var libName in new[] { "awt", "fdlibm", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
+                    File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", string.Format(lib, libName))).Should().BeTrue();
+            }
+            else
+            {
+                var outDir = Path.Combine(binDir, "publish");
+                Directory.GetDirectories(Path.Combine(outDir, "ikvm")).Should().HaveCount(1);
             }
         }
 
