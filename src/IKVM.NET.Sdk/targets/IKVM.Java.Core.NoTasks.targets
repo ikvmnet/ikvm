@@ -121,7 +121,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
     </Target>
 
     <!-- Override IKVM.NET.Sdk: directly invoke javac executable  -->
-    <Target Name="_CompileJavaResponseFile" DependsOnTargets="$(MSBuildThisFileFullPath);ResolveJavaCompiler;ExportReferences;GetReferenceClasspath;BeforeCompile">
+    <Target Name="_CompileJavaResponseFile" DependsOnTargets="ResolveJavaCompiler;ExportReferences;GetReferenceClasspath;BeforeCompile">
         <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
         <Exec Command="chmod +x $(JavaCompilerPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
