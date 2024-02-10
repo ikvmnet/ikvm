@@ -140,7 +140,7 @@
         <BuildOpenJDKToolsSource Include="$(OpenJdkDir)jdk\make\src\classes\**\*.java" />
     </ItemGroup>
 
-    <Target Name="BuildToolsResponseFile" DependsOnTargets="ResolveToolsJar" Inputs="@(BuildOpenJDKToolsSource)" Outputs="$(BuildToolsResponseFile)">
+    <Target Name="BuildToolsResponseFile" DependsOnTargets="ResolveToolsJar" Inputs="$(MSBuildThisFileFullPath);@(BuildOpenJDKToolsSource)" Outputs="$(BuildToolsResponseFile)">
         <Error Text="Could not locate tools.jar." Condition=" '$(ToolsJarPath)' == '' " />
         <Error Text="tools.jar could not be located at '$(ToolsJarPath)'." Condition="!Exists('$(ToolsJarPath)')" />
 
@@ -172,7 +172,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="BuildTools" DependsOnTargets="ResolveJavaCompiler;BuildToolsResponseFile" Inputs="$(BuildToolsResponseFile);@(BuildOpenJDKToolsSource)" Outputs="$(BuildToolsStampFile)">
+    <Target Name="BuildTools" DependsOnTargets="ResolveJavaCompiler;BuildToolsResponseFile" Inputs="$(MSBuildThisFileFullPath);$(BuildToolsResponseFile);@(BuildOpenJDKToolsSource)" Outputs="$(BuildToolsStampFile)">
         <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
         <Exec Command="chmod +x $(JavaCompilerPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -238,7 +238,7 @@
         <CharacterDataStaticItem Include="CharacterDataPrivateUse" />
     </ItemGroup>
 
-    <Target Name="GenerateCharacterData" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(CharacterDataDir)%(CharacterDataItem.Identity).java.template;$(UnicodeDataDir)UnicodeData.txt;$(UnicodeDataDir)SpecialCasing.txt;$(UnicodeDataDir)PropList.txt;@(BuildToolsClassFiles)" Outputs="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java">
+    <Target Name="GenerateCharacterData" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(CharacterDataDir)%(CharacterDataItem.Identity).java.template;$(UnicodeDataDir)UnicodeData.txt;$(UnicodeDataDir)SpecialCasing.txt;$(UnicodeDataDir)PropList.txt;@(BuildToolsClassFiles)" Outputs="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -283,7 +283,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GenerateCharacterDataStatic" Inputs="$(CharacterDataDir)%(CharacterDataStaticItem.Identity).java.template" Outputs="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java">
+    <Target Name="GenerateCharacterDataStatic" Inputs="$(MSBuildThisFileFullPath);$(CharacterDataDir)%(CharacterDataStaticItem.Identity).java.template" Outputs="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java">
         <MakeDir Directories="$(GenSrc)java\lang" />
         <Message Importance="high" Text="Generating %(CharacterDataStaticItem.Identity).java" />
         <Copy SourceFiles="$(CharacterDataDir)%(CharacterDataStaticItem.Identity).java.template" DestinationFiles="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java" />
@@ -306,7 +306,7 @@
         <GenerateCharsetEncoderTemplateFile Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\charset\Charset-X-Coder.java.template" OutputFile="$(GenSrc)java\nio\charset\CharsetEncoder.java" />
     </ItemGroup>
 
-    <Target Name="GenerateCharsetDecoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetDecoderTemplateFile);@(BuildToolsClassFiles)" Outputs="%(GenerateCharsetDecoderTemplateFile.OutputFile)">
+    <Target Name="GenerateCharsetDecoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(GenerateCharsetDecoderTemplateFile);@(BuildToolsClassFiles)" Outputs="%(GenerateCharsetDecoderTemplateFile.OutputFile)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -349,7 +349,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GenerateCharsetEncoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetEncoderTemplateFile);@(BuildToolsClassFiles)" Outputs="%(GenerateCharsetEncoderTemplateFile.OutputFile)">
+    <Target Name="GenerateCharsetEncoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(GenerateCharsetEncoderTemplateFile);@(BuildToolsClassFiles)" Outputs="%(GenerateCharsetEncoderTemplateFile.OutputFile)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -419,7 +419,7 @@
         <GenerateCharsetMappingItem Include="dbcs" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs\ext" />
     </ItemGroup>
 
-    <Target Name="GenerateCharsetMappings" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(GenerateCharsetMappingTemplate);@(BuildToolsClassFiles)" Outputs="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp">
+    <Target Name="GenerateCharsetMappings" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(GenerateCharsetMappingTemplate);@(BuildToolsClassFiles)" Outputs="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -668,7 +668,7 @@ public class WriteStandardCharsets : Task
         </Task>
     </UsingTask>
 
-    <Target Name="GenerateStandardCharsets" Inputs="$(OpenJdkDir)jdk\src\share\classes\sun\nio\cs\standard-charsets" Outputs="$(GenSrc)sun\nio\cs\StandardCharsets.java">
+    <Target Name="GenerateStandardCharsets" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkDir)jdk\src\share\classes\sun\nio\cs\standard-charsets" Outputs="$(GenSrc)sun\nio\cs\StandardCharsets.java">
 
         <ReadStandardCharsets SourceFile="$(OpenJdkDir)jdk\src\share\classes\sun\nio\cs\standard-charsets" ClassesFile="$(IntermediateOutputPath)GenerateStandardCharsets.classes" AliasesFile="$(IntermediateOutputPath)GenerateStandardCharsets.aliases">
             <Output TaskParameter="Copyright" PropertyName="_Copyright" />
@@ -704,7 +704,7 @@ public class WriteStandardCharsets : Task
         </GenerateSourceDependsOn>
     </PropertyGroup>
 
-    <Target Name="GenerateHtml32DTD" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildScripts);@(BuildToolsClassFiles)" Outputs="$(GenSrc)javax\swing\text\html\parser\html32.bdtd">
+    <Target Name="GenerateHtml32DTD" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(BuildScripts);@(BuildToolsClassFiles)" Outputs="$(GenSrc)javax\swing\text\html\parser\html32.bdtd">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -742,7 +742,7 @@ public class WriteStandardCharsets : Task
         <GenerateExceptions Include="channels" />
     </ItemGroup>
 
-    <Target Name="GenerateExceptions" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildScripts);@(BuildToolsClassFiles)" Outputs="$(IntermediateOutputPath)GenerateExceptions.$([System.String]::Copy('%(GenerateExceptions.Identity)').Replace('.', '_')).stamp">
+    <Target Name="GenerateExceptions" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(BuildScripts);@(BuildToolsClassFiles)" Outputs="$(IntermediateOutputPath)GenerateExceptions.$([System.String]::Copy('%(GenerateExceptions.Identity)').Replace('.', '_')).stamp">
         <!-- Disabled for now, otherwise we'd have to call out to POSIX shell which is expensive  -->
     </Target>
 
@@ -1106,7 +1106,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </SetupGenBuffer>
     </Target>
 
-    <Target Name="GenerateBuffers" DependsOnTargets="BuildTools;ResolveJava;GenerateBuffersSetup" Inputs="@(BuildScripts);@(BuildToolsClassFiles);$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template" Outputs="$(GenSrc)java\nio\%(_GenBufferCommand.Identity).java">
+    <Target Name="GenerateBuffers" DependsOnTargets="BuildTools;ResolveJava;GenerateBuffersSetup" Inputs="$(MSBuildThisFileFullPath);@(BuildScripts);@(BuildToolsClassFiles);$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template" Outputs="$(GenSrc)java\nio\%(_GenBufferCommand.Identity).java">
         <Message Text="$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template --&gt; $(GenSrc)java\nio\%(_GenBufferCommand.Identity).java" />
 
         <PropertyGroup>
@@ -1158,7 +1158,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <CalendarSourceItem Include="$(CalendarSourceDir)\common\supplemental\*.xml" />
     </ItemGroup>
 
-    <Target Name="GenerateCalendarData" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildToolsClassFiles);@(CalendarSourceItem)" Outputs="$(GenSrc)sun\util\cldr\CLDRLocaleDataMetaInfo.java">
+    <Target Name="GenerateCalendarData" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(BuildToolsClassFiles);@(CalendarSourceItem)" Outputs="$(GenSrc)sun\util\cldr\CLDRLocaleDataMetaInfo.java">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -1184,10 +1184,14 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     <Target Name="GenerateSource" DependsOnTargets="$(GenerateSourceDependsOn)">
         <ItemGroup>
             <Compile Include="$(GenSrc)**\*.java" />
-            <_GenSrcJavaResource Include="$(GenSrc)**\*" Exclude="$(GenSrc)jdk\gensrc\**\*.java;$(GenSrc)jdk\gensrc\**\*.class" />
+            <_GenSrcJavaResource Include="$(GenSrc)**\*" Exclude="$(GenSrc)**\*.java;$(GenSrc)**\*.class" />
             <JavaResource Include="@(_GenSrcJavaResource)" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
             <FileWrites Include="$(GenSrc)**\*" />
         </ItemGroup>
+    </Target>
+    
+    <Target Name="CleanGenerateSource">
+        <RemoveDir Directories="$(GenSrc)" />
     </Target>
 
     <PropertyGroup>
@@ -1201,6 +1205,10 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
             <FileWrites Include="$(GenLib)**\*" />
         </ItemGroup>
     </Target>
+    
+    <Target Name="CleanGenerateData">
+        <RemoveDir Directories="$(GenLib)" />
+    </Target>
 
     <PropertyGroup>
         <CompileJavaDependsOn>
@@ -1208,6 +1216,14 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
             GenerateData;
             $(CompileJavaDependsOn);
         </CompileJavaDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
+            CleanGenerateSource;
+            CleanGenerateData;
+        </CoreCleanDependsOn>
     </PropertyGroup>
 
     <UsingTask TaskName="WriteTextToFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
