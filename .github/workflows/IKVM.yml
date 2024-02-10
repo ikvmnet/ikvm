@@ -26,7 +26,7 @@ jobs:
       with:
         submodules: recursive
     - name: Cache OpenJDK Build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: openjdk/build/linux-x86_64-normal-server-release
         key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-10
@@ -84,7 +84,7 @@ jobs:
         name: openjdk-build-linux-x86_64-normal-server-release
         path: /tmp/openjdk-build-linux-x86_64-normal-server-release.zip
     - name: Cache OpenJDK Test Harness Build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: jtreg/build
         key: jtreg-build--${{ runner.os }}--${{ hashFiles('jtreg/**', 'openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image', '!jtreg/build') }}-6
@@ -147,7 +147,7 @@ jobs:
         dotnet-version: 7.0.x
     - name: Cache LLVM and Clang
       id: cache-llvm
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: C:/Program Files/LLVM
         key: llvm-16.0
@@ -172,7 +172,7 @@ jobs:
         useConfigFile: true
         configFilePath: ${{ env.WORKPATH }}\ikvm\GitVersion.yml
     - name: Cache NuGet
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ env.NUGET_PACKAGES }}
         key: nuget--${{ runner.os }}--${{ hashFiles('IKVM.sln', 'src/**/*.csproj', 'src/**/*.msbuildproj') }}--1
