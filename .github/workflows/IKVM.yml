@@ -750,6 +750,7 @@ jobs:
         tag: ${{ github.ref_name }}
         allowUpdates: true
         omitBodyDuringUpdate: true
+        draft: false
         artifacts: dist/nuget/*.nupkg,dist/bin/*.zip,dist/bin/*.tar.gz,dist/image/*.zip,dist/image/*.tar.gz,dist/tools/*.zip,dist/tools/*.tar.gz,dist/doc.zip
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
