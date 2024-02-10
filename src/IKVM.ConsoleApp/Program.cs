@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace IKVM.ConsoleApp
 {
@@ -7,13 +8,13 @@ namespace IKVM.ConsoleApp
 
         public static void Main(string[] args)
         {
+            Debugger.Launch();
             Foo();
         }
 
         public static void Foo()
         {
             new Bar();
-            Environment.Exit(0);
         }
 
         class Bar
