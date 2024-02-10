@@ -1109,31 +1109,33 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     <Target Name="GenerateBuffers" DependsOnTargets="BuildTools;ResolveJava;GenerateBuffersSetup" Inputs="@(BuildScripts);@(BuildToolsClassFiles);$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template" Outputs="$(GenSrc)java\nio\%(_GenBufferCommand.Identity).java">
         <Message Text="$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template --&gt; $(GenSrc)java\nio\%(_GenBufferCommand.Identity).java" />
 
-        <ItemGroup>
-            <_Src Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template" />
-            <_Bin Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template)-bin.java.template" />
-            <_Tmp Include="$(GenSrc)java\nio\%(_GenBufferCommand.Identity).java.tmp" />
-            <_Dst Include="$(GenSrc)java\nio\%(_GenBufferCommand.Identity).java" />
-        </ItemGroup>
+        <PropertyGroup>
+            <_Src>$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template</_Src>
+            <_Bin>$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template)-bin.java.template</_Bin>
+            <_Tmp>$(GenSrc)java\nio\%(_GenBufferCommand.Identity).java.tmp</_Tmp>
+            <_Dst>$(GenSrc)java\nio\%(_GenBufferCommand.Identity).java</_Dst>
+        </PropertyGroup>
 
         <MakeDir Directories="$(GenSrc)java\nio\" />
-        <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD) &lt; @(_Src) &gt; @(_Tmp)" />
-        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD) &lt; @(_Src) &gt; @(_Tmp)" />
+        <Delete Files="$(_Tmp)" />
+        <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD) &lt; $(_Src) &gt; $(_Tmp)" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD) &lt; $(_Src) &gt; $(_Tmp)" />
 
-        <SetupGenBuffer_StripBin Path="@(_Tmp)" Condition=" '%(_GenBufferCommand.Bin)' == '1' " />
-        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_char) &lt; @(_Bin) &gt;&gt; @(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_char)' != '' " />
-        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_short) &lt; @(_Bin) &gt;&gt; @(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_short)' != '' " />
-        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_int) &lt; @(_Bin) &gt;&gt; @(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_int)' != '' " />
-        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_long) &lt; @(_Bin) &gt;&gt; @(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_long)' != '' " />
-        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_float) &lt; @(_Bin) &gt;&gt; @(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_float)' != '' " />
-        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_double) &lt; @(_Bin) &gt;&gt; @(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_double)' != '' " />
-        <WriteLinesToFile File="@(_Tmp)" Lines="}" Condition=" '%(_GenBufferCommand.Bin)' == '1' " />
+        <SetupGenBuffer_StripBin Path="$(_Tmp)" Condition=" '%(_GenBufferCommand.Bin)' == '1' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_char) &lt; $(_Bin) &gt;&gt; $(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_char)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_short) &lt; $(_Bin) &gt;&gt; $(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_short)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_int) &lt; $(_Bin) &gt;&gt; $(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_int)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_long) &lt; $(_Bin) &gt;&gt; $(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_long)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_float) &lt; $(_Bin) &gt;&gt; $(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_float)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_double) &lt; $(_Bin) &gt;&gt; $(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_double)' != '' " />
+        <WriteLinesToFile File="$(_Tmp)" Lines="}" Condition=" '%(_GenBufferCommand.Bin)' == '1' " />
 
-        <Move SourceFiles="@(_Tmp)" DestinationFiles="@(_Dst)" OverwriteReadOnlyFiles="true" />
+        <Delete Files="$(_Dst)" />
+        <Move SourceFiles="$(_Tmp)" DestinationFiles="$(_Dst)" OverwriteReadOnlyFiles="true" />
 
         <ItemGroup>
-            <FileWrites Include="@(_Tmp)" />
-            <FileWrites Include="@(_Dst)" />
+            <FileWrites Include="$(_Tmp)" />
+            <FileWrites Include="$(_Dst)" />
         </ItemGroup>
     </Target>
 
@@ -1154,10 +1156,6 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <CalendarSourceItem Include="$(CalendarSourceDir)\common\dtd\*.dtd" />
         <CalendarSourceItem Include="$(CalendarSourceDir)\common\main\*.xml" />
         <CalendarSourceItem Include="$(CalendarSourceDir)\common\supplemental\*.xml" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="local\java\nio\channels\" />
     </ItemGroup>
 
     <Target Name="GenerateCalendarData" DependsOnTargets="BuildTools;ResolveJava" Inputs="@(BuildToolsClassFiles);@(CalendarSourceItem)" Outputs="$(GenSrc)sun\util\cldr\CLDRLocaleDataMetaInfo.java">
