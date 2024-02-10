@@ -525,11 +525,11 @@ namespace IKVM.Reflection.Diagnostics
             var currentDocumentHandle = initialDocumentHandle;
 
             // write sequence points and scopes
-            //WriteSequencePoints(metadata, method, documentCache, out var sequencePointsHandle, ref currentDocumentHandle);
+            WriteSequencePoints(metadata, method, documentCache, out var sequencePointsHandle, ref currentDocumentHandle);
             WriteScopes(metadata, method);
 
             // final debug information, containing initial document
-            var methodDebugHandle = metadata.AddMethodDebugInformation(initialDocumentHandle, default);
+            var methodDebugHandle = metadata.AddMethodDebugInformation(initialDocumentHandle, sequencePointsHandle);
             Debug.Assert(MetadataTokens.GetRowNumber(methodDebugHandle) == MetadataTokens.GetRowNumber(MetadataTokens.EntityHandle(method.Token)));
         }
 
@@ -567,19 +567,30 @@ namespace IKVM.Reflection.Diagnostics
             if (method.LocalSignatureHandle.IsNil)
                 throw new InvalidOperationException("MethodBuilder missing local signature.");
 
-            // add the header, optionally with the first encountered document
+            // define the local signature, default seems to work fine
             enc.LocalSignature(default);
 
             // add the sequence points recorded on the method
-            foreach (var sequencePoint in method.SequencePoints)
+            foreach (var (document, offset, startLine, endLine, startColumn, endColumn) in ExpandSequencePoints(method.SequencePoints).OrderBy(i => i.Offset))
             {
-                var doc = GetOrWriteDocument(metadata, sequencePoint.Document, documentCache);
-                for (int j = 0; j < sequencePoint.Offsets.Length; j++)
-                    enc.SequencePoint(doc, sequencePoint.Offsets[j], sequencePoint.Lines[j], sequencePoint.Columns[j], sequencePoint.EndLines[j], sequencePoint.EndColumns[j], ref previousDocument);
+                var doc = GetOrWriteDocument(metadata, document, documentCache);
+                enc.SequencePoint(doc, offset, startLine, startColumn, endLine, endColumn, ref previousDocument);
             }
 
             // add sequence points blob
             sequencePointHandle = metadata.GetOrAddBlob(buf);
+        }
+
+        /// <summary>
+        /// Expands the set of sequence points with multiple offsets into single sequence point records for each offset.
+        /// </summary>
+        /// <param name="sequencePoints"></param>
+        /// <returns></returns>
+        IEnumerable<(Document Document, int Offset, int StartLine, int EndLine, int StartColumn, int EndColumn)> ExpandSequencePoints(IReadOnlyList<SequencePoint> sequencePoints)
+        {
+            for (int i = 0; i < sequencePoints.Count; i++)
+                for (int j = 0; j < sequencePoints[i].Offsets.Length; j++)
+                    yield return (sequencePoints[i].Document, sequencePoints[i].Offsets[j], sequencePoints[i].Lines[j], sequencePoints[i].EndLines[j], sequencePoints[i].Columns[j], sequencePoints[i].EndColumns[j]);
         }
 
         /// <summary>
