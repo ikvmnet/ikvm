@@ -579,13 +579,13 @@ jobs:
         dotnet-version: 7.0.x
     - name: Setup WSL
       if: runner.os == 'Windows'
-      uses: Vampire/setup-wsl@v2
+      uses: Vampire/setup-wsl@v3
     - name: Setup Linux
       if: runner.os == 'Linux'
       shell: bash
       run: sudo apt-get update && sudo apt-get install -y libasound2
     - name: Get Test Name
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       id: test-name
       env:
         MATRIX_RUN: '${{ matrix.run }}'
