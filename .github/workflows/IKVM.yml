@@ -196,7 +196,7 @@ jobs:
       shell: pwsh
       run: New-Item -Type Directory -Force ${{ env.WORKPATH }}/ikvm/jtreg; Expand-Archive ${{ env.WORKPATH }}/temp/jtreg-build.zip -DestinationPath ${{ env.WORKPATH }}/ikvm/jtreg
     - name: Download Native SDKs
-      uses: robinraju/release-downloader@v1
+      uses: robinraju/release-downloader@v1.9
       with:
         repository: ikvmnet/ikvm-native-sdk
         tag: ${{ env.NATIVE_SDK_VERSION }}
