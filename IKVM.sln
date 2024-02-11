@@ -53,12 +53,12 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tasks.Tests", "src\IKVM.MSBuild.Tasks.Tests\IKVM.MSBuild.Tasks.Tests.csproj", "{E7C0E8FA-F34C-48C6-AD55-FD9798F5BC71}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java", "src\IKVM.Java\IKVM.Java.msbuildproj", "{ABD81C7E-F986-4018-986E-ACAF82C64D3A}"
-	ProjectSection(ProjectDependencies) = postProject
-		{0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7} = {0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7}
-		{17979A73-C0CE-41CD-B54F-4E72B998E6D0} = {17979A73-C0CE-41CD-B54F-4E72B998E6D0}
-		{2F29E48C-63C3-4E47-BCBA-A7454B9119CF} = {2F29E48C-63C3-4E47-BCBA-A7454B9119CF}
-		{50954AE0-E513-4CE7-AC8E-F3896CA0BEB7} = {50954AE0-E513-4CE7-AC8E-F3896CA0BEB7}
-	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.linux", "src\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.msbuildproj", "{BC8E0429-5E53-4F23-8CE8-86A1B44D669E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.win", "src\IKVM.Java.runtime.win\IKVM.Java.runtime.win.msbuildproj", "{537B5ACE-81A2-4DCA-AB4D-9862E63F448D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.osx", "src\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.msbuildproj", "{C6BC9419-F394-4B59-A707-F9A82A3FE625}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.NET.Sdk", "src\IKVM.NET.Sdk\IKVM.NET.Sdk.msbuildproj", "{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}"
 EndProject
@@ -327,6 +327,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.runtime.win-arm6
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Reflection.Tests", "src\IKVM.Reflection.Tests\IKVM.Reflection.Tests.csproj", "{17755A44-22EC-4D28-B219-3C5CAE6317C8}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Tests.Util", "src\IKVM.Java.Tests.Util\IKVM.Java.Tests.Util.csproj", "{00AFE142-5F4F-48DD-90C1-20CC0512C43C}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjsound", "src\libjsound\libjsound.clangproj", "{19A2D00A-7BAB-4C04-8D05-8753A70E366A}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjsoundalsa", "src\libjsoundalsa\libjsoundalsa.clangproj", "{012FF3AD-F664-4273-8A9D-056CD3C7D161}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjsoundds", "src\libjsoundds\libjsoundds.clangproj", "{6B4C1863-85CB-4C8C-8F7A-F5F0A7DCC3B0}"
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libosxapp", "src\libosxapp\libosxapp.clangproj", "{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -389,6 +398,18 @@ Global
 		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC8E0429-5E53-4F23-8CE8-86A1B44D669E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC8E0429-5E53-4F23-8CE8-86A1B44D669E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC8E0429-5E53-4F23-8CE8-86A1B44D669E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC8E0429-5E53-4F23-8CE8-86A1B44D669E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{537B5ACE-81A2-4DCA-AB4D-9862E63F448D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{537B5ACE-81A2-4DCA-AB4D-9862E63F448D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{537B5ACE-81A2-4DCA-AB4D-9862E63F448D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{537B5ACE-81A2-4DCA-AB4D-9862E63F448D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6BC9419-F394-4B59-A707-F9A82A3FE625}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6BC9419-F394-4B59-A707-F9A82A3FE625}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6BC9419-F394-4B59-A707-F9A82A3FE625}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6BC9419-F394-4B59-A707-F9A82A3FE625}.Release|Any CPU.Build.0 = Release|Any CPU
 		{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -809,6 +830,26 @@ Global
 		{17755A44-22EC-4D28-B219-3C5CAE6317C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{17755A44-22EC-4D28-B219-3C5CAE6317C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{17755A44-22EC-4D28-B219-3C5CAE6317C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19A2D00A-7BAB-4C04-8D05-8753A70E366A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19A2D00A-7BAB-4C04-8D05-8753A70E366A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19A2D00A-7BAB-4C04-8D05-8753A70E366A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19A2D00A-7BAB-4C04-8D05-8753A70E366A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{012FF3AD-F664-4273-8A9D-056CD3C7D161}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{012FF3AD-F664-4273-8A9D-056CD3C7D161}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{012FF3AD-F664-4273-8A9D-056CD3C7D161}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{012FF3AD-F664-4273-8A9D-056CD3C7D161}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B4C1863-85CB-4C8C-8F7A-F5F0A7DCC3B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B4C1863-85CB-4C8C-8F7A-F5F0A7DCC3B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B4C1863-85CB-4C8C-8F7A-F5F0A7DCC3B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B4C1863-85CB-4C8C-8F7A-F5F0A7DCC3B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

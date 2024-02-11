@@ -1,0 +1,105 @@
+<!--
+
+    IKVM.Java.runtime.targets
+    
+    Imported by the .runtime projects.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.targets" />
+
+    <!-- IKVM.Java uses the javac executable from JAVA_HOME: bootstrap -->
+    <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
+        <PropertyGroup>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac.exe'))</JavaCompilerPath>
+            <JavaCompilerArgs>-J-Xmx1536M</JavaCompilerArgs>
+            <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
+    </Target>
+
+    <Target Name="ResolveRmiStubInputItems" DependsOnTargets="CompileJava">
+        <ItemGroup>
+            <RmiStubInputItem Include="@(Classpath)" />
+            <RmiStubInputItem Include="$(ClassOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="ResolveRmiCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(RmiCompilerPath)' == '' ">
+        <PropertyGroup>
+            <RmiCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\rmic') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\rmic'))</RmiCompilerPath>
+            <RmiCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\rmic.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\rmic.exe'))</RmiCompilerPath>
+            <RmiCompilerArgs>-J-client -J-Xms128m</RmiCompilerArgs>
+            <RmiCompilerExec Condition=" '$(RmiCompilerPath)' != '' ">"$(RmiCompilerPath)" $(RmiCompilerArgs)</RmiCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using rmic executable found in JAVA_HOME at '$(RmiCompilerPath)'." Importance="high" Condition=" '$(RmiCompilerPath)' != '' " />
+    </Target>
+
+    <PropertyGroup>
+        <RmiStubsOutputPath>$(IntermediateOutputPath)rmistubs\</RmiStubsOutputPath>
+        <_BuildRmiStubsCoreStampFile>$(RmiStubsOutputPath)stamp</_BuildRmiStubsCoreStampFile>
+    </PropertyGroup>
+
+    <Target Name="_BuildRmiStubs" DependsOnTargets="ResolveRmiCompiler;ResolveRmiStubInputItems" Inputs="@(RmiStubInputItem)" Outputs="$(_BuildRmiStubsCoreStampFile)">
+        <ItemGroup>
+            <_RmiCompilerClasspath Include="@(Classpath);$(ClassOutputPath)" />
+            <_RmiCompilerArgs Include="@(RmiCompilerArgs)" />
+            <_RmiCompilerArgs Include="-nowarn" />
+            <_RmiCompilerArgs Include="-bootclasspath" />
+            <_RmiCompilerArgs Include="@(_RmiCompilerClasspath, '$([System.IO.Path]::PathSeparator)')" />
+            <_RmiCompilerArgs Include="-d" />
+            <_RmiCompilerArgs Include="$(RmiStubsOutputPath)" />
+        </ItemGroup>
+        <PropertyGroup>
+            <_RmiCompilerArgs>@(_RmiCompilerArgs, ' ')</_RmiCompilerArgs>
+        </PropertyGroup>
+        <Delete Files="$(RmiStubsOutputPath)**\*" />
+        <MakeDir Directories="$(RmiStubsOutputPath)" />
+        <Exec Command="$(RmiCompilerExec) $(_RmiCompilerArgs) %(OpenJdkRmiStub.Flags) $([System.String]::Copy('%(OpenJdkRmiStub.Identity)').Replace('$', '\$'))" Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' " />
+        <Exec Command="$(RmiCompilerExec) $(_RmiCompilerArgs) %(OpenJdkRmiStub.Flags) $([System.String]::Copy('%(OpenJdkRmiStub.Identity)'))" Condition=" '$([MSBuild]::IsOSUnixLike())' == 'false' " />
+        <Touch Files="$(_BuildRmiStubsCoreStampFile)" AlwaysCreate="true" ForceTouch="true" />
+    </Target>
+
+    <PropertyGroup>
+        <BuildRmiStubsDependsOn>
+            $(BuildRmiStubsDependsOn)
+            CompileJava;
+            ResolveRmiStubInputItems;
+            _BuildRmiStubs;
+        </BuildRmiStubsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="BuildRmiStubs" DependsOnTargets="$(BuildRmiStubsDependsOn)">
+        <ItemGroup>
+            <Convert Include="$(RmiStubsOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="CleanRmiStubs">
+        <Delete Files="$(_BuildRmiStubsCoreStampFile)" />
+        <RemoveDir Directories="$(RmiStubsOutputPath)" />
+    </Target>
+
+    <PropertyGroup>
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
+            CleanRmiStubs;
+        </CoreCleanDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <CoreCompileDependsOn>
+            BuildRmiStubs;
+            $(CoreCompileDependsOn);
+        </CoreCompileDependsOn>
+    </PropertyGroup>
+    
+</Project>

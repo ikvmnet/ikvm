@@ -24,482 +24,389 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+
+using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
 using IKVM.Reflection.Writer;
-using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection
 {
-	sealed class MethodSignature : Signature
-	{
-		private readonly Type returnType;
-		private readonly Type[] parameterTypes;
-		private readonly PackedCustomModifiers modifiers;
-		private readonly CallingConventions callingConvention;
-		private readonly int genericParamCount;
 
-		internal MethodSignature(Type returnType, Type[] parameterTypes, PackedCustomModifiers modifiers, CallingConventions callingConvention, int genericParamCount)
-		{
-			this.returnType = returnType;
-			this.parameterTypes = parameterTypes;
-			this.modifiers = modifiers;
-			this.callingConvention = callingConvention;
-			this.genericParamCount = genericParamCount;
-		}
+    /// <summary>
+    /// Represents a method signature from IL metadadata.
+    /// </summary>
+    sealed class MethodSignature : Signature
+    {
 
-		public override bool Equals(object obj)
-		{
-			MethodSignature other = obj as MethodSignature;
-			return other != null
-				&& other.callingConvention == callingConvention
-				&& other.genericParamCount == genericParamCount
-				&& other.returnType.Equals(returnType)
-				&& Util.ArrayEquals(other.parameterTypes, parameterTypes)
-				&& other.modifiers.Equals(modifiers);
-		}
+        sealed class UnboundGenericMethodContext : IGenericContext
+        {
 
-		public override int GetHashCode()
-		{
-			return genericParamCount ^ 77 * (int)callingConvention
-				^ 3 * returnType.GetHashCode()
-				^ Util.GetHashCode(parameterTypes) * 5
-				^ modifiers.GetHashCode() * 55;
-		}
+            readonly IGenericContext original;
 
-		private sealed class UnboundGenericMethodContext : IGenericContext
-		{
-			private readonly IGenericContext original;
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="original"></param>
+            internal UnboundGenericMethodContext(IGenericContext original)
+            {
+                this.original = original;
+            }
 
-			internal UnboundGenericMethodContext(IGenericContext original)
-			{
-				this.original = original;
-			}
+            public Type GetGenericTypeArgument(int index)
+            {
+                return original.GetGenericTypeArgument(index);
+            }
 
-			public Type GetGenericTypeArgument(int index)
-			{
-				return original.GetGenericTypeArgument(index);
-			}
+            public Type GetGenericMethodArgument(int index)
+            {
+                return UnboundGenericMethodParameter.Make(index);
+            }
 
-			public Type GetGenericMethodArgument(int index)
-			{
-				return UnboundGenericMethodParameter.Make(index);
-			}
-		}
+        }
 
-		internal static MethodSignature ReadSig(ModuleReader module, ByteReader br, IGenericContext context)
-		{
-			CallingConventions callingConvention;
-			int genericParamCount;
-			Type returnType;
-			Type[] parameterTypes;
-			byte flags = br.ReadByte();
-			switch (flags & 7)
-			{
-				case DEFAULT:
-					callingConvention = CallingConventions.Standard;
-					break;
-				case VARARG:
-					callingConvention = CallingConventions.VarArgs;
-					break;
-				default:
-					throw new BadImageFormatException();
-			}
-			if ((flags & HASTHIS) != 0)
-			{
-				callingConvention |= CallingConventions.HasThis;
-			}
-			if ((flags & EXPLICITTHIS) != 0)
-			{
-				callingConvention |= CallingConventions.ExplicitThis;
-			}
-			genericParamCount = 0;
-			if ((flags & GENERIC) != 0)
-			{
-				genericParamCount = br.ReadCompressedUInt();
-				context = new UnboundGenericMethodContext(context);
-			}
-			int paramCount = br.ReadCompressedUInt();
-			CustomModifiers[] modifiers = null;
-			PackedCustomModifiers.Pack(ref modifiers, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
-			returnType = ReadRetType(module, br, context);
-			parameterTypes = new Type[paramCount];
-			for (int i = 0; i < parameterTypes.Length; i++)
-			{
-				if ((callingConvention & CallingConventions.VarArgs) != 0 && br.PeekByte() == SENTINEL)
-				{
-					Array.Resize(ref parameterTypes, i);
-					if (modifiers != null)
-					{
-						Array.Resize(ref modifiers, i + 1);
-					}
-					break;
-				}
-				PackedCustomModifiers.Pack(ref modifiers, i + 1, CustomModifiers.Read(module, br, context), paramCount + 1);
-				parameterTypes[i] = ReadParam(module, br, context);
-			}
-			return new MethodSignature(returnType, parameterTypes, PackedCustomModifiers.Wrap(modifiers), callingConvention, genericParamCount);
-		}
+        sealed class Binder : IGenericBinder
+        {
 
-		internal static __StandAloneMethodSig ReadStandAloneMethodSig(ModuleReader module, ByteReader br, IGenericContext context)
-		{
-			CallingConventions callingConvention = 0;
-			System.Runtime.InteropServices.CallingConvention unmanagedCallingConvention = 0;
-			bool unmanaged;
-			byte flags = br.ReadByte();
-			switch (flags & 7)
-			{
-				case DEFAULT:
-					callingConvention = CallingConventions.Standard;
-					unmanaged = false;
-					break;
-				case 0x01:	// C
-					unmanagedCallingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl;
-					unmanaged = true;
-					break;
-				case 0x02:	// STDCALL
-					unmanagedCallingConvention = System.Runtime.InteropServices.CallingConvention.StdCall;
-					unmanaged = true;
-					break;
-				case 0x03:	// THISCALL
-					unmanagedCallingConvention = System.Runtime.InteropServices.CallingConvention.ThisCall;
-					unmanaged = true;
-					break;
-				case 0x04:	// FASTCALL
-					unmanagedCallingConvention = System.Runtime.InteropServices.CallingConvention.FastCall;
-					unmanaged = true;
-					break;
-				case VARARG:
-					callingConvention = CallingConventions.VarArgs;
-					unmanaged = false;
-					break;
-				default:
-					throw new BadImageFormatException();
-			}
-			if ((flags & HASTHIS) != 0)
-			{
-				callingConvention |= CallingConventions.HasThis;
-			}
-			if ((flags & EXPLICITTHIS) != 0)
-			{
-				callingConvention |= CallingConventions.ExplicitThis;
-			}
-			if ((flags & GENERIC) != 0)
-			{
-				throw new BadImageFormatException();
-			}
-			int paramCount = br.ReadCompressedUInt();
-			CustomModifiers[] customModifiers = null;
-			PackedCustomModifiers.Pack(ref customModifiers, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
-			Type returnType = ReadRetType(module, br, context);
-			List<Type> parameterTypes = new List<Type>();
-			List<Type> optionalParameterTypes = new List<Type>();
-			List<Type> curr = parameterTypes;
-			for (int i = 0; i < paramCount; i++)
-			{
-				if (br.PeekByte() == SENTINEL)
-				{
-					br.ReadByte();
-					curr = optionalParameterTypes;
-				}
-				PackedCustomModifiers.Pack(ref customModifiers, i + 1, CustomModifiers.Read(module, br, context), paramCount + 1);
-				curr.Add(ReadParam(module, br, context));
-			}
-			return new __StandAloneMethodSig(unmanaged, unmanagedCallingConvention, callingConvention, returnType, parameterTypes.ToArray(), optionalParameterTypes.ToArray(), PackedCustomModifiers.Wrap(customModifiers));
-		}
+            readonly Type declaringType;
+            readonly Type[] methodArgs;
 
-		internal int GetParameterCount()
-		{
-			return parameterTypes.Length;
-		}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="declaringType"></param>
+            /// <param name="methodArgs"></param>
+            internal Binder(Type declaringType, Type[] methodArgs)
+            {
+                this.declaringType = declaringType;
+                this.methodArgs = methodArgs;
+            }
 
-		internal Type GetParameterType(int index)
-		{
-			return parameterTypes[index];
-		}
+            public Type BindTypeParameter(Type type)
+            {
+                return declaringType.GetGenericTypeArgument(type.GenericParameterPosition);
+            }
 
-		internal Type GetReturnType(IGenericBinder binder)
-		{
-			return returnType.BindTypeParameters(binder);
-		}
+            public Type BindMethodParameter(Type type)
+            {
+                if (methodArgs == null)
+                    return type;
 
-		internal CustomModifiers GetReturnTypeCustomModifiers(IGenericBinder binder)
-		{
-			return modifiers.GetReturnTypeCustomModifiers().Bind(binder);
-		}
+                return methodArgs[type.GenericParameterPosition];
+            }
+        }
 
-		internal Type GetParameterType(IGenericBinder binder, int index)
-		{
-			return parameterTypes[index].BindTypeParameters(binder);
-		}
+        sealed class Unbinder : IGenericBinder
+        {
 
-		internal CustomModifiers GetParameterCustomModifiers(IGenericBinder binder, int index)
-		{
-			return modifiers.GetParameterCustomModifiers(index).Bind(binder);
-		}
+            internal static readonly Unbinder Instance = new Unbinder();
 
-		internal CallingConventions CallingConvention
-		{
-			get { return callingConvention; }
-		}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            Unbinder()
+            {
 
-		internal int GenericParameterCount
-		{
-			get { return genericParamCount; }
-		}
+            }
 
-		private sealed class Binder : IGenericBinder
-		{
-			private readonly Type declaringType;
-			private readonly Type[] methodArgs;
+            public Type BindTypeParameter(Type type)
+            {
+                return type;
+            }
 
-			internal Binder(Type declaringType, Type[] methodArgs)
-			{
-				this.declaringType = declaringType;
-				this.methodArgs = methodArgs;
-			}
+            public Type BindMethodParameter(Type type)
+            {
+                return UnboundGenericMethodParameter.Make(type.GenericParameterPosition);
+            }
 
-			public Type BindTypeParameter(Type type)
-			{
-				return declaringType.GetGenericTypeArgument(type.GenericParameterPosition);
-			}
+        }
 
-			public Type BindMethodParameter(Type type)
-			{
-				if (methodArgs == null)
-				{
-					return type;
-				}
-				return methodArgs[type.GenericParameterPosition];
-			}
-		}
+        readonly Type returnType;
+        readonly Type[] parameterTypes;
+        readonly PackedCustomModifiers modifiers;
+        readonly CallingConventions callingConvention;
+        readonly int genericParamCount;
 
-		internal MethodSignature Bind(Type type, Type[] methodArgs)
-		{
-			Binder binder = new Binder(type, methodArgs);
-			return new MethodSignature(returnType.BindTypeParameters(binder),
-				BindTypeParameters(binder, parameterTypes),
-				modifiers.Bind(binder),
-				callingConvention, genericParamCount);
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="returnType"></param>
+        /// <param name="parameterTypes"></param>
+        /// <param name="modifiers"></param>
+        /// <param name="callingConvention"></param>
+        /// <param name="genericParamCount"></param>
+        internal MethodSignature(Type returnType, Type[] parameterTypes, PackedCustomModifiers modifiers, CallingConventions callingConvention, int genericParamCount)
+        {
+            this.returnType = returnType;
+            this.parameterTypes = parameterTypes;
+            this.modifiers = modifiers;
+            this.callingConvention = callingConvention;
+            this.genericParamCount = genericParamCount;
+        }
 
-		private sealed class Unbinder : IGenericBinder
-		{
-			internal static readonly Unbinder Instance = new Unbinder();
+        public override bool Equals(object obj)
+        {
+            var other = obj as MethodSignature;
+            return other != null
+                && other.callingConvention == callingConvention
+                && other.genericParamCount == genericParamCount
+                && other.returnType.Equals(returnType)
+                && Util.ArrayEquals(other.parameterTypes, parameterTypes)
+                && other.modifiers.Equals(modifiers);
+        }
 
-			private Unbinder()
-			{
-			}
+        public override int GetHashCode()
+        {
+            return genericParamCount ^ 77 * (int)callingConvention
+                ^ 3 * returnType.GetHashCode()
+                ^ Util.GetHashCode(parameterTypes) * 5
+                ^ modifiers.GetHashCode() * 55;
+        }
 
-			public Type BindTypeParameter(Type type)
-			{
-				return type;
-			}
+        internal static MethodSignature ReadSig(ModuleReader module, ByteReader br, IGenericContext context)
+        {
+            var flags = br.ReadByte();
+            var callingConvention = (flags & 7) switch
+            {
+                DEFAULT => CallingConventions.Standard,
+                VARARG => CallingConventions.VarArgs,
+                _ => throw new BadImageFormatException(),
+            };
 
-			public Type BindMethodParameter(Type type)
-			{
-				return UnboundGenericMethodParameter.Make(type.GenericParameterPosition);
-			}
-		}
+            if ((flags & HASTHIS) != 0)
+                callingConvention |= CallingConventions.HasThis;
 
-		internal static MethodSignature MakeFromBuilder(Type returnType, Type[] parameterTypes, PackedCustomModifiers modifiers, CallingConventions callingConvention, int genericParamCount)
-		{
-			if (genericParamCount > 0)
-			{
-				returnType = returnType.BindTypeParameters(Unbinder.Instance);
-				parameterTypes = BindTypeParameters(Unbinder.Instance, parameterTypes);
-				modifiers = modifiers.Bind(Unbinder.Instance);
-			}
-			return new MethodSignature(returnType, parameterTypes, modifiers, callingConvention, genericParamCount);
-		}
+            if ((flags & EXPLICITTHIS) != 0)
+                callingConvention |= CallingConventions.ExplicitThis;
 
-		internal bool MatchParameterTypes(MethodSignature other)
-		{
-			return Util.ArrayEquals(other.parameterTypes, parameterTypes);
-		}
+            var genericParamCount = 0;
+            if ((flags & GENERIC) != 0)
+            {
+                genericParamCount = br.ReadCompressedUInt();
+                context = new UnboundGenericMethodContext(context);
+            }
 
-		internal bool MatchParameterTypes(Type[] types)
-		{
-			return Util.ArrayEquals(types, parameterTypes);
-		}
+            var paramCount = br.ReadCompressedUInt();
+            CustomModifiers[] modifiers = null;
+            PackedCustomModifiers.Pack(ref modifiers, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
+            var returnType = ReadRetType(module, br, context);
 
-		internal override void WriteSig(ModuleBuilder module, ByteBuffer bb)
-		{
-			WriteSigImpl(module, bb, parameterTypes.Length);
-		}
+            var parameterTypes = new Type[paramCount];
+            for (int i = 0; i < parameterTypes.Length; i++)
+            {
+                if ((callingConvention & CallingConventions.VarArgs) != 0 && br.PeekByte() == SENTINEL)
+                {
+                    Array.Resize(ref parameterTypes, i);
+                    if (modifiers != null)
+                        Array.Resize(ref modifiers, i + 1);
 
-		internal void WriteMethodRefSig(ModuleBuilder module, ByteBuffer bb, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
-		{
-			WriteSigImpl(module, bb, parameterTypes.Length + optionalParameterTypes.Length);
-			if (optionalParameterTypes.Length > 0)
-			{
-				bb.Write(SENTINEL);
-				for (int i = 0; i < optionalParameterTypes.Length; i++)
-				{
-					WriteCustomModifiers(module, bb, Util.NullSafeElementAt(customModifiers, i));
-					WriteType(module, bb, optionalParameterTypes[i]);
-				}
-			}
-		}
+                    break;
+                }
 
-		private void WriteSigImpl(ModuleBuilder module, ByteBuffer bb, int parameterCount)
-		{
-			byte first;
-			if ((callingConvention & CallingConventions.Any) == CallingConventions.VarArgs)
-			{
-				Debug.Assert(genericParamCount == 0);
-				first = VARARG;
-			}
-			else if (genericParamCount > 0)
-			{
-				first = GENERIC;
-			}
-			else
-			{
-				first = DEFAULT;
-			}
-			if ((callingConvention & CallingConventions.HasThis) != 0)
-			{
-				first |= HASTHIS;
-			}
-			if ((callingConvention & CallingConventions.ExplicitThis) != 0)
-			{
-				first |= EXPLICITTHIS;
-			}
-			bb.Write(first);
-			if (genericParamCount > 0)
-			{
-				bb.WriteCompressedUInt(genericParamCount);
-			}
-			bb.WriteCompressedUInt(parameterCount);
-			// RetType
-			WriteCustomModifiers(module, bb, modifiers.GetReturnTypeCustomModifiers());
-			WriteType(module, bb, returnType);
-			// Param
-			for (int i = 0; i < parameterTypes.Length; i++)
-			{
-				WriteCustomModifiers(module, bb, modifiers.GetParameterCustomModifiers(i));
-				WriteType(module, bb, parameterTypes[i]);
-			}
-		}
-	}
+                PackedCustomModifiers.Pack(ref modifiers, i + 1, CustomModifiers.Read(module, br, context), paramCount + 1);
+                parameterTypes[i] = ReadParam(module, br, context);
+            }
 
-	struct PackedCustomModifiers
-	{
-		// element 0 is the return type, the rest are the parameters
-		private readonly CustomModifiers[] customModifiers;
+            return new MethodSignature(returnType, parameterTypes, PackedCustomModifiers.Wrap(modifiers), callingConvention, genericParamCount);
+        }
 
-		private PackedCustomModifiers(CustomModifiers[] customModifiers)
-		{
-			this.customModifiers = customModifiers;
-		}
+        internal static __StandAloneMethodSig ReadStandAloneMethodSig(ModuleReader module, ByteReader br, IGenericContext context)
+        {
+            CallingConventions callingConvention = 0;
+            System.Runtime.InteropServices.CallingConvention unmanagedCallingConvention = 0;
+            bool unmanaged;
 
-		public override int GetHashCode()
-		{
-			return Util.GetHashCode(customModifiers);
-		}
+            var flags = br.ReadByte();
+            switch (flags & 7)
+            {
+                case DEFAULT:
+                    callingConvention = CallingConventions.Standard;
+                    unmanaged = false;
+                    break;
+                case 0x01:  // C
+                    unmanagedCallingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl;
+                    unmanaged = true;
+                    break;
+                case 0x02:  // STDCALL
+                    unmanagedCallingConvention = System.Runtime.InteropServices.CallingConvention.StdCall;
+                    unmanaged = true;
+                    break;
+                case 0x03:  // THISCALL
+                    unmanagedCallingConvention = System.Runtime.InteropServices.CallingConvention.ThisCall;
+                    unmanaged = true;
+                    break;
+                case 0x04:  // FASTCALL
+                    unmanagedCallingConvention = System.Runtime.InteropServices.CallingConvention.FastCall;
+                    unmanaged = true;
+                    break;
+                case VARARG:
+                    callingConvention = CallingConventions.VarArgs;
+                    unmanaged = false;
+                    break;
+                default:
+                    throw new BadImageFormatException();
+            }
 
-		public override bool Equals(object obj)
-		{
-			PackedCustomModifiers? other = obj as PackedCustomModifiers?;
-			return other != null && Equals(other.Value);
-		}
+            if ((flags & HASTHIS) != 0)
+                callingConvention |= CallingConventions.HasThis;
+            if ((flags & EXPLICITTHIS) != 0)
+                callingConvention |= CallingConventions.ExplicitThis;
+            if ((flags & GENERIC) != 0)
+                throw new BadImageFormatException();
 
-		internal bool Equals(PackedCustomModifiers other)
-		{
-			return Util.ArrayEquals(customModifiers, other.customModifiers);
-		}
+            var paramCount = br.ReadCompressedUInt();
+            CustomModifiers[] customModifiers = null;
+            PackedCustomModifiers.Pack(ref customModifiers, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
 
-		internal CustomModifiers GetReturnTypeCustomModifiers()
-		{
-			if (customModifiers == null)
-			{
-				return new CustomModifiers();
-			}
-			return customModifiers[0];
-		}
+            var returnType = ReadRetType(module, br, context);
 
-		internal CustomModifiers GetParameterCustomModifiers(int index)
-		{
-			if (customModifiers == null)
-			{
-				return new CustomModifiers();
-			}
-			return customModifiers[index + 1];
-		}
+            var parameterTypes = new List<Type>();
+            var optionalParameterTypes = new List<Type>();
+            var curr = parameterTypes;
+            for (int i = 0; i < paramCount; i++)
+            {
+                if (br.PeekByte() == SENTINEL)
+                {
+                    br.ReadByte();
+                    curr = optionalParameterTypes;
+                }
 
-		internal PackedCustomModifiers Bind(IGenericBinder binder)
-		{
-			if (customModifiers == null)
-			{
-				return new PackedCustomModifiers();
-			}
-			CustomModifiers[] expanded = new CustomModifiers[customModifiers.Length];
-			for (int i = 0; i < customModifiers.Length; i++)
-			{
-				expanded[i] = customModifiers[i].Bind(binder);
-			}
-			return new PackedCustomModifiers(expanded);
-		}
+                PackedCustomModifiers.Pack(ref customModifiers, i + 1, CustomModifiers.Read(module, br, context), paramCount + 1);
+                curr.Add(ReadParam(module, br, context));
+            }
 
-		internal bool ContainsMissingType
-		{
-			get
-			{
-				if (customModifiers != null)
-				{
-					for (int i = 0; i < customModifiers.Length; i++)
-					{
-						if (customModifiers[i].ContainsMissingType)
-						{
-							return true;
-						}
-					}
-				}
-				return false;
-			}
-		}
+            return new __StandAloneMethodSig(unmanaged, unmanagedCallingConvention, callingConvention, returnType, parameterTypes.ToArray(), optionalParameterTypes.ToArray(), PackedCustomModifiers.Wrap(customModifiers));
+        }
 
-		// this method make a copy of the incoming arrays (where necessary) and returns a normalized modifiers array
-		internal static PackedCustomModifiers CreateFromExternal(Type[] returnOptional, Type[] returnRequired, Type[][] parameterOptional, Type[][] parameterRequired, int parameterCount)
-		{
-			CustomModifiers[] modifiers = null;
-			Pack(ref modifiers, 0, CustomModifiers.FromReqOpt(returnRequired, returnOptional), parameterCount + 1);
-			for (int i = 0; i < parameterCount; i++)
-			{
-				Pack(ref modifiers, i + 1, CustomModifiers.FromReqOpt(Util.NullSafeElementAt(parameterRequired, i), Util.NullSafeElementAt(parameterOptional, i)), parameterCount + 1);
-			}
-			return new PackedCustomModifiers(modifiers);
-		}
+        internal int GetParameterCount()
+        {
+            return parameterTypes.Length;
+        }
 
-		internal static PackedCustomModifiers CreateFromExternal(CustomModifiers returnTypeCustomModifiers, CustomModifiers[] parameterTypeCustomModifiers, int parameterCount)
-		{
-			CustomModifiers[] customModifiers = null;
-			Pack(ref customModifiers, 0, returnTypeCustomModifiers, parameterCount + 1);
-			if (parameterTypeCustomModifiers != null)
-			{
-				for (int i = 0; i < parameterCount; i++)
-				{
-					Pack(ref customModifiers, i + 1, parameterTypeCustomModifiers[i], parameterCount + 1);
-				}
-			}
-			return new PackedCustomModifiers(customModifiers);
-		}
+        internal Type GetParameterType(int index)
+        {
+            return parameterTypes[index];
+        }
 
-		internal static PackedCustomModifiers Wrap(CustomModifiers[] modifiers)
-		{
-			return new PackedCustomModifiers(modifiers);
-		}
+        internal Type GetReturnType(IGenericBinder binder)
+        {
+            return returnType.BindTypeParameters(binder);
+        }
 
-		internal static void Pack(ref CustomModifiers[] array, int index, CustomModifiers mods, int count)
-		{
-			if (!mods.IsEmpty)
-			{
-				if (array == null)
-				{
-					array = new CustomModifiers[count];
-				}
-				array[index] = mods;
-			}
-		}
-	}
+        internal CustomModifiers GetReturnTypeCustomModifiers(IGenericBinder binder)
+        {
+            return modifiers.GetReturnTypeCustomModifiers().Bind(binder);
+        }
+
+        internal Type GetParameterType(IGenericBinder binder, int index)
+        {
+            return parameterTypes[index].BindTypeParameters(binder);
+        }
+
+        internal CustomModifiers GetParameterCustomModifiers(IGenericBinder binder, int index)
+        {
+            return modifiers.GetParameterCustomModifiers(index).Bind(binder);
+        }
+
+        internal CallingConventions CallingConvention
+        {
+            get { return callingConvention; }
+        }
+
+        internal int GenericParameterCount
+        {
+            get { return genericParamCount; }
+        }
+
+        internal MethodSignature Bind(Type type, Type[] methodArgs)
+        {
+            var binder = new Binder(type, methodArgs);
+            return new MethodSignature(returnType.BindTypeParameters(binder), BindTypeParameters(binder, parameterTypes), modifiers.Bind(binder), callingConvention, genericParamCount);
+        }
+
+        internal static MethodSignature MakeFromBuilder(Type returnType, Type[] parameterTypes, PackedCustomModifiers modifiers, CallingConventions callingConvention, int genericParamCount)
+        {
+            if (genericParamCount > 0)
+            {
+                returnType = returnType.BindTypeParameters(Unbinder.Instance);
+                parameterTypes = BindTypeParameters(Unbinder.Instance, parameterTypes);
+                modifiers = modifiers.Bind(Unbinder.Instance);
+            }
+
+            return new MethodSignature(returnType, parameterTypes, modifiers, callingConvention, genericParamCount);
+        }
+
+        internal bool MatchParameterTypes(MethodSignature other)
+        {
+            return Util.ArrayEquals(other.parameterTypes, parameterTypes);
+        }
+
+        internal bool MatchParameterTypes(Type[] types)
+        {
+            return Util.ArrayEquals(types, parameterTypes);
+        }
+
+        internal override void Write(ModuleBuilder module, ByteBuffer bb)
+        {
+            WriteImpl(module, bb, parameterTypes.Length);
+        }
+
+        internal void WriteMethodRef(ModuleBuilder module, ByteBuffer bb, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
+        {
+            WriteImpl(module, bb, parameterTypes.Length + optionalParameterTypes.Length);
+
+            if (optionalParameterTypes.Length > 0)
+            {
+                bb.Write(SENTINEL);
+                for (int i = 0; i < optionalParameterTypes.Length; i++)
+                {
+                    WriteCustomModifiers(module, bb, Util.NullSafeElementAt(customModifiers, i));
+                    WriteType(module, bb, optionalParameterTypes[i]);
+                }
+            }
+        }
+
+        void WriteImpl(ModuleBuilder module, ByteBuffer bb, int parameterCount)
+        {
+            byte first;
+
+            if ((callingConvention & CallingConventions.Any) == CallingConventions.VarArgs)
+            {
+                Debug.Assert(genericParamCount == 0);
+                first = VARARG;
+            }
+            else if (genericParamCount > 0)
+            {
+                first = GENERIC;
+            }
+            else
+            {
+                first = DEFAULT;
+            }
+
+            if ((callingConvention & CallingConventions.HasThis) != 0)
+                first |= HASTHIS;
+
+            if ((callingConvention & CallingConventions.ExplicitThis) != 0)
+                first |= EXPLICITTHIS;
+
+            bb.Write(first);
+
+            if (genericParamCount > 0)
+                bb.WriteCompressedUInt(genericParamCount);
+
+            bb.WriteCompressedUInt(parameterCount);
+            // RetType
+            WriteCustomModifiers(module, bb, modifiers.GetReturnTypeCustomModifiers());
+            WriteType(module, bb, returnType);
+
+            // Param
+            for (int i = 0; i < parameterTypes.Length; i++)
+            {
+                WriteCustomModifiers(module, bb, modifiers.GetParameterCustomModifiers(i));
+                WriteType(module, bb, parameterTypes[i]);
+            }
+        }
+
+    }
+
 }

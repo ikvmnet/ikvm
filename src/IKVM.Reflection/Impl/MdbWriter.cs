@@ -29,6 +29,7 @@ using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Impl
 {
+
 	sealed class Method : IMethodDef
 	{
 		internal int token;

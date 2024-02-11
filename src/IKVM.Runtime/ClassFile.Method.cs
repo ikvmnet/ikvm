@@ -203,31 +203,6 @@ namespace IKVM.Runtime
                                         flags |= FLAG_MASK_INTERNAL;
                                     }
                                 }
-                                else if (annot[1].Equals("Likvm/lang/DllExport;"))
-                                {
-                                    string name = null;
-                                    int? ordinal = null;
-                                    for (int j = 2; j < annot.Length; j += 2)
-                                    {
-                                        if (annot[j].Equals("name") && annot[j + 1] is string)
-                                            name = (string)annot[j + 1];
-                                        else if (annot[j].Equals("ordinal") && annot[j + 1] is int)
-                                            ordinal = (int)annot[j + 1];
-                                    }
-                                    if (name != null && ordinal != null)
-                                    {
-                                        if (!IsStatic)
-                                        {
-                                            classFile.context.StaticCompiler.IssueMessage(Message.DllExportMustBeStaticMethod, classFile.Name, this.Name, this.Signature);
-                                        }
-                                        else
-                                        {
-                                            low ??= new LowFreqData();
-                                            low.DllExportName = name;
-                                            low.DllExportOrdinal = ordinal.Value;
-                                        }
-                                    }
-                                }
                                 else if (annot[1].Equals("Likvm/internal/InterlockedCompareAndSet;"))
                                 {
                                     string field = null;
@@ -346,10 +321,6 @@ namespace IKVM.Runtime
             internal object AnnotationDefault => low == null ? null : low.annotationDefault;
 
 #if IMPORTER
-
-            internal string DllExportName => low == null ? null : low.DllExportName;
-
-            internal int DllExportOrdinal => low == null ? -1 : low.DllExportOrdinal;
 
             internal string InterlockedCompareAndSetField => low == null ? null : low.InterlockedCompareAndSetField;
 

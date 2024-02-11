@@ -24,11 +24,15 @@
 
 namespace IKVM.Reflection.Emit
 {
+
     struct UnmanagedExport
 	{
+
 		internal string name;
 		internal int ordinal;
 		internal RelativeVirtualAddress rva;
 		internal MethodBuilder mb;
+
 	}
+
 }

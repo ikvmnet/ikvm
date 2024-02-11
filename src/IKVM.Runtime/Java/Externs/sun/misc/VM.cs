@@ -38,7 +38,7 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            JVM.EnsureInitialized();
+            JVM.Init();
 #endif
         }
 

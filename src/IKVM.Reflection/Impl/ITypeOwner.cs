@@ -25,8 +25,10 @@ using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Impl
 {
-	interface ITypeOwner
+
+    interface ITypeOwner
 	{
 		ModuleBuilder ModuleBuilder { get; }
 	}
+
 }

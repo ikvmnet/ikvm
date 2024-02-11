@@ -24,35 +24,45 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.SymbolStore;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using IKVM.Reflection.Metadata;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
+
     public sealed class MethodBuilder : MethodInfo
     {
-        private readonly TypeBuilder typeBuilder;
-        private readonly string name;
-        private readonly int pseudoToken;
-        private int nameIndex;
-        private int signature;
-        private Type returnType;
-        private Type[] parameterTypes;
-        private PackedCustomModifiers customModifiers;
-        private MethodAttributes attributes;
-        private MethodImplAttributes implFlags;
-        private ILGenerator ilgen;
-        private int rva = -1;
-        private CallingConventions callingConvention;
-        private List<ParameterBuilder> parameters;
-        private GenericTypeParameterBuilder[] gtpb;
-        private List<CustomAttributeBuilder> declarativeSecurity;
-        private MethodSignature methodSignature;
-        private bool initLocals = true;
 
+        readonly TypeBuilder typeBuilder;
+        readonly string name;
+        readonly int pseudoToken;
+        StringHandle nameIndex;
+        BlobHandle signature;
+        Type returnType;
+        Type[] parameterTypes;
+        PackedCustomModifiers customModifiers;
+        MethodAttributes attributes;
+        MethodImplAttributes implFlags;
+        ILGenerator ilgen;
+        int rva = -1;
+        CallingConventions callingConvention;
+        List<ParameterBuilder> parameters;
+        GenericTypeParameterBuilder[] gtpb;
+        List<CustomAttributeBuilder> declarativeSecurity;
+        MethodSignature methodSignature;
+        bool initLocals = true;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="typeBuilder"></param>
+        /// <param name="name"></param>
+        /// <param name="attributes"></param>
+        /// <param name="callingConvention"></param>
         internal MethodBuilder(TypeBuilder typeBuilder, string name, MethodAttributes attributes, CallingConventions callingConvention)
         {
             this.typeBuilder = typeBuilder;
@@ -60,9 +70,7 @@ namespace IKVM.Reflection.Emit
             this.pseudoToken = typeBuilder.ModuleBuilder.AllocPseudoToken();
             this.attributes = attributes;
             if ((attributes & MethodAttributes.Static) == 0)
-            {
                 callingConvention |= CallingConventions.HasThis;
-            }
             this.callingConvention = callingConvention;
         }
 
@@ -74,14 +82,9 @@ namespace IKVM.Reflection.Emit
         public ILGenerator GetILGenerator(int streamSize)
         {
             if (rva != -1)
-            {
                 throw new InvalidOperationException();
-            }
-            if (ilgen == null)
-            {
-                ilgen = new ILGenerator(typeBuilder.ModuleBuilder, streamSize);
-            }
-            return ilgen;
+
+            return ilgen ??= new ILGenerator(typeBuilder.ModuleBuilder, streamSize);
         }
 
         public void __ReleaseILGenerator()
@@ -89,15 +92,13 @@ namespace IKVM.Reflection.Emit
             if (ilgen != null)
             {
 #if NETFRAMEWORK
-                if (ModuleBuilder.symbolWriter != null)
-                    ModuleBuilder.symbolWriter.OpenMethod(new SymbolToken(-pseudoToken | 0x06000000), this);
+                ModuleBuilder.symbolWriter?.OpenMethod(new SymbolToken(-pseudoToken | 0x06000000), this);
 #endif
 
                 rva = ilgen.WriteBody(initLocals);
 
 #if NETFRAMEWORK
-                if (ModuleBuilder.symbolWriter != null)
-                    ModuleBuilder.symbolWriter.CloseMethod();
+                ModuleBuilder.symbolWriter?.CloseMethod();
 #endif
 
                 ilgen = null;
@@ -111,8 +112,8 @@ namespace IKVM.Reflection.Emit
 
         private void SetDllImportPseudoCustomAttribute(CustomAttributeBuilder customBuilder)
         {
-            CallingConvention? callingConvention = customBuilder.GetFieldValue<CallingConvention>("CallingConvention");
-            CharSet? charSet = customBuilder.GetFieldValue<CharSet>("CharSet");
+            var callingConvention = customBuilder.GetFieldValue<CallingConvention>("CallingConvention");
+            var charSet = customBuilder.GetFieldValue<CharSet>("CharSet");
             SetDllImportPseudoCustomAttribute((string)customBuilder.GetConstructorArgument(0),
                 (string)customBuilder.GetFieldValue("EntryPoint"),
                 callingConvention,
@@ -124,8 +125,7 @@ namespace IKVM.Reflection.Emit
                 (bool?)customBuilder.GetFieldValue("ExactSpelling"));
         }
 
-        internal void SetDllImportPseudoCustomAttribute(string dllName, string entryName, CallingConvention? nativeCallConv, CharSet? nativeCharSet,
-            bool? bestFitMapping, bool? throwOnUnmappableChar, bool? setLastError, bool? preserveSig, bool? exactSpelling)
+        internal void SetDllImportPseudoCustomAttribute(string dllName, string entryName, CallingConvention? nativeCallConv, CharSet? nativeCharSet, bool? bestFitMapping, bool? throwOnUnmappableChar, bool? setLastError, bool? preserveSig, bool? exactSpelling)
         {
             const short NoMangle = 0x0001;
             const short CharSetMask = 0x0006;
@@ -146,14 +146,13 @@ namespace IKVM.Reflection.Emit
             const short CharMapErrorOn = 0x1000;
             const short CharMapErrorOff = 0x2000;
             short flags = CharSetNotSpec | CallConvWinapi;
+
             if (bestFitMapping.HasValue)
-            {
                 flags |= bestFitMapping.Value ? BestFitOn : BestFitOff;
-            }
+
             if (throwOnUnmappableChar.HasValue)
-            {
                 flags |= throwOnUnmappableChar.Value ? CharMapErrorOn : CharMapErrorOff;
-            }
+
             if (nativeCallConv.HasValue)
             {
                 flags &= ~CallConvMask;
@@ -176,6 +175,7 @@ namespace IKVM.Reflection.Emit
                         break;
                 }
             }
+
             if (nativeCharSet.HasValue)
             {
                 flags &= ~CharSetMask;
@@ -193,27 +193,25 @@ namespace IKVM.Reflection.Emit
                         break;
                 }
             }
+
             if (exactSpelling.HasValue && exactSpelling.Value)
-            {
                 flags |= NoMangle;
-            }
+
             if (!preserveSig.HasValue || preserveSig.Value)
-            {
                 implFlags |= MethodImplAttributes.PreserveSig;
-            }
+
             if (setLastError.HasValue && setLastError.Value)
-            {
                 flags |= SupportsLastError;
-            }
-            ImplMapTable.Record rec = new ImplMapTable.Record();
+
+            var rec = new ImplMapTable.Record();
             rec.MappingFlags = flags;
             rec.MemberForwarded = pseudoToken;
-            rec.ImportName = this.ModuleBuilder.Strings.Add(entryName ?? name);
-            rec.ImportScope = this.ModuleBuilder.ModuleRef.FindOrAddRecord(dllName == null ? 0 : this.ModuleBuilder.Strings.Add(dllName));
-            this.ModuleBuilder.ImplMap.AddRecord(rec);
+            rec.ImportName = ModuleBuilder.GetOrAddString(entryName ?? name);
+            rec.ImportScope = MetadataTokens.GetToken(MetadataTokens.ModuleReferenceHandle(ModuleBuilder.ModuleRefTable.FindOrAddRecord(dllName == null ? default : ModuleBuilder.GetOrAddString(dllName))));
+            ModuleBuilder.ImplMapTable.AddRecord(rec);
         }
 
-        private void SetMethodImplAttribute(CustomAttributeBuilder customBuilder)
+        void SetMethodImplAttribute(CustomAttributeBuilder customBuilder)
         {
             MethodImplOptions opt;
             switch (customBuilder.Constructor.ParameterCount)
@@ -223,30 +221,22 @@ namespace IKVM.Reflection.Emit
                     break;
                 case 1:
                     {
-                        object val = customBuilder.GetConstructorArgument(0);
-                        if (val is short)
-                        {
-                            opt = (MethodImplOptions)(short)val;
-                        }
+                        var val = customBuilder.GetConstructorArgument(0);
+                        if (val is short s)
+                            opt = (MethodImplOptions)s;
                         else if (val is int)
-                        {
                             opt = (MethodImplOptions)(int)val;
-                        }
                         else
-                        {
                             opt = (MethodImplOptions)val;
-                        }
                         break;
                     }
                 default:
                     throw new NotSupportedException();
             }
             implFlags = (MethodImplAttributes)opt;
-            MethodCodeType? type = customBuilder.GetFieldValue<MethodCodeType>("MethodCodeType");
+            var type = customBuilder.GetFieldValue<MethodCodeType>("MethodCodeType");
             if (type.HasValue)
-            {
                 implFlags |= (MethodImplAttributes)type;
-            }
         }
 
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
@@ -270,7 +260,7 @@ namespace IKVM.Reflection.Emit
                     attributes |= MethodAttributes.HasSecurity;
                     goto default;
                 default:
-                    this.ModuleBuilder.SetCustomAttribute(pseudoToken, customBuilder);
+                    ModuleBuilder.SetCustomAttribute(pseudoToken, customBuilder);
                     break;
             }
         }
@@ -278,10 +268,7 @@ namespace IKVM.Reflection.Emit
         public void __AddDeclarativeSecurity(CustomAttributeBuilder customBuilder)
         {
             attributes |= MethodAttributes.HasSecurity;
-            if (declarativeSecurity == null)
-            {
-                declarativeSecurity = new List<CustomAttributeBuilder>();
-            }
+            declarativeSecurity ??= new List<CustomAttributeBuilder>();
             declarativeSecurity.Add(customBuilder);
         }
 
@@ -298,19 +285,17 @@ namespace IKVM.Reflection.Emit
 
         public ParameterBuilder DefineParameter(int position, ParameterAttributes attributes, string strParamName)
         {
-            if (parameters == null)
-            {
-                parameters = new List<ParameterBuilder>();
-            }
-            this.ModuleBuilder.Param.AddVirtualRecord();
-            ParameterBuilder pb = new ParameterBuilder(this.ModuleBuilder, position, attributes, strParamName);
+            parameters ??= new List<ParameterBuilder>();
+
+            ModuleBuilder.ParamTable.AddVirtualRecord();
+            var pb = new ParameterBuilder(ModuleBuilder, position, attributes, strParamName);
             if (parameters.Count == 0 || position >= parameters[parameters.Count - 1].Position)
             {
                 parameters.Add(pb);
             }
             else
             {
-                for (int i = 0; i < parameters.Count; i++)
+                for (var i = 0; i < parameters.Count; i++)
                 {
                     if (parameters[i].Position > position)
                     {
@@ -319,15 +304,14 @@ namespace IKVM.Reflection.Emit
                     }
                 }
             }
+
             return pb;
         }
 
-        private void CheckSig()
+        void CheckSig()
         {
             if (methodSignature != null)
-            {
                 throw new InvalidOperationException("The method signature can not be modified after it has been used.");
-            }
         }
 
         public void SetParameters(params Type[] parameterTypes)
@@ -344,8 +328,7 @@ namespace IKVM.Reflection.Emit
 
         public void SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
         {
-            SetSignature(returnType, parameterTypes, PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers,
-                parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, Util.NullSafeLength(parameterTypes)));
+            SetSignature(returnType, parameterTypes, PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, Util.NullSafeLength(parameterTypes)));
         }
 
         public void __SetSignature(Type returnType, CustomModifiers returnTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
@@ -365,14 +348,12 @@ namespace IKVM.Reflection.Emit
         {
             CheckSig();
             if (gtpb != null)
-            {
                 throw new InvalidOperationException("Generic parameters already defined.");
-            }
+
             gtpb = new GenericTypeParameterBuilder[names.Length];
             for (int i = 0; i < names.Length; i++)
-            {
                 gtpb[i] = new GenericTypeParameterBuilder(names[i], this, i);
-            }
+
             return (GenericTypeParameterBuilder[])gtpb.Clone();
         }
 
@@ -384,9 +365,8 @@ namespace IKVM.Reflection.Emit
         public override MethodInfo GetGenericMethodDefinition()
         {
             if (gtpb == null)
-            {
                 throw new InvalidOperationException();
-            }
+
             return this;
         }
 
@@ -436,32 +416,32 @@ namespace IKVM.Reflection.Emit
             return implFlags;
         }
 
-        private sealed class ParameterInfoImpl : ParameterInfo
+        sealed class ParameterInfoImpl : ParameterInfo
         {
-            private readonly MethodBuilder method;
-            private readonly int parameter;
 
+            readonly MethodBuilder method;
+            readonly int parameter;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="method"></param>
+            /// <param name="parameter"></param>
             internal ParameterInfoImpl(MethodBuilder method, int parameter)
             {
                 this.method = method;
                 this.parameter = parameter;
             }
 
-            private ParameterBuilder ParameterBuilder
+            ParameterBuilder ParameterBuilder
             {
                 get
                 {
                     if (method.parameters != null)
-                    {
-                        foreach (ParameterBuilder pb in method.parameters)
-                        {
-                            // ParameterBuilder.Position is 1-based
+                        foreach (var pb in method.parameters)
                             if (pb.Position - 1 == parameter)
-                            {
                                 return pb;
-                            }
-                        }
-                    }
+
                     return null;
                 }
             }
@@ -470,7 +450,7 @@ namespace IKVM.Reflection.Emit
             {
                 get
                 {
-                    ParameterBuilder pb = this.ParameterBuilder;
+                    var pb = ParameterBuilder;
                     return pb != null ? pb.Name : null;
                 }
             }
@@ -484,7 +464,7 @@ namespace IKVM.Reflection.Emit
             {
                 get
                 {
-                    ParameterBuilder pb = this.ParameterBuilder;
+                    var pb = ParameterBuilder;
                     return pb != null ? (ParameterAttributes)pb.Attributes : ParameterAttributes.None;
                 }
             }
@@ -498,15 +478,12 @@ namespace IKVM.Reflection.Emit
             {
                 get
                 {
-                    ParameterBuilder pb = this.ParameterBuilder;
+                    var pb = ParameterBuilder;
                     if (pb != null && (pb.Attributes & (int)ParameterAttributes.HasDefault) != 0)
-                    {
-                        return method.ModuleBuilder.Constant.GetRawConstantValue(method.ModuleBuilder, pb.PseudoToken);
-                    }
+                        return method.ModuleBuilder.ConstantTable.GetRawConstantValue(method.ModuleBuilder, pb.PseudoToken);
                     if (pb != null && (pb.Attributes & (int)ParameterAttributes.Optional) != 0)
-                    {
                         return Missing.Value;
-                    }
+
                     return null;
                 }
             }
@@ -531,7 +508,7 @@ namespace IKVM.Reflection.Emit
             {
                 get
                 {
-                    ParameterBuilder pb = this.ParameterBuilder;
+                    var pb = ParameterBuilder;
                     return pb != null ? pb.PseudoToken : 0x08000000;
                 }
             }
@@ -540,15 +517,15 @@ namespace IKVM.Reflection.Emit
             {
                 get { return method.Module; }
             }
+
         }
 
         public override ParameterInfo[] GetParameters()
         {
-            ParameterInfo[] parameters = new ParameterInfo[parameterTypes.Length];
+            var parameters = new ParameterInfo[parameterTypes.Length];
             for (int i = 0; i < parameters.Length; i++)
-            {
                 parameters[i] = new ParameterInfoImpl(this, i);
-            }
+
             return parameters;
         }
 
@@ -620,25 +597,22 @@ namespace IKVM.Reflection.Emit
 
         public void __AddUnmanagedExport(string name, int ordinal)
         {
-            this.ModuleBuilder.AddUnmanagedExport(name, ordinal, this, new RelativeVirtualAddress(0xFFFFFFFF));
+            ModuleBuilder.AddUnmanagedExport(name, ordinal, this, new RelativeVirtualAddress(0xFFFFFFFF));
         }
 
         public void CreateMethodBody(byte[] il, int count)
         {
             if (il == null)
-            {
                 throw new NotSupportedException();
-            }
             if (il.Length != count)
-            {
                 Array.Resize(ref il, count);
-            }
+
             SetMethodBody(il, 16, null, null, null);
         }
 
         public void SetMethodBody(byte[] il, int maxStack, byte[] localSignature, IEnumerable<ExceptionHandler> exceptionHandlers, IEnumerable<int> tokenFixups)
         {
-            ByteBuffer bb = this.ModuleBuilder.methodBodies;
+            var bb = ModuleBuilder.methodBodies;
 
             if (localSignature == null && exceptionHandlers == null && maxStack <= 8 && il.Length < 64)
             {
@@ -650,38 +624,33 @@ namespace IKVM.Reflection.Emit
                 // fat headers require 4-byte alignment
                 bb.Align(4);
                 rva = bb.Position;
-                ILGenerator.WriteFatHeader(bb, initLocals, exceptionHandlers != null, (ushort)maxStack, il.Length,
-                    localSignature == null ? 0 : this.ModuleBuilder.GetSignatureToken(localSignature, localSignature.Length).Token);
+                ILGenerator.WriteFatHeader(bb, initLocals, exceptionHandlers != null, (ushort)maxStack, il.Length, localSignature == null ? 0 : ModuleBuilder.GetSignatureToken(localSignature, localSignature.Length).Token);
             }
 
             if (tokenFixups != null)
-            {
-                ILGenerator.AddTokenFixups(bb.Position, this.ModuleBuilder.tokenFixupOffsets, tokenFixups);
-            }
+                ILGenerator.AddTokenFixups(bb.Position, ModuleBuilder.tokenFixupOffsets, tokenFixups);
+
             bb.Write(il);
 
             if (exceptionHandlers != null)
             {
-                List<ILGenerator.ExceptionBlock> exceptions = new List<ILGenerator.ExceptionBlock>();
-                foreach (ExceptionHandler block in exceptionHandlers)
-                {
+                var exceptions = new List<ILGenerator.ExceptionBlock>();
+                foreach (var block in exceptionHandlers)
                     exceptions.Add(new ILGenerator.ExceptionBlock(block));
-                }
+
                 ILGenerator.WriteExceptionHandlers(bb, exceptions);
             }
         }
 
         internal void Bake()
         {
-            this.nameIndex = this.ModuleBuilder.Strings.Add(name);
-            this.signature = this.ModuleBuilder.GetSignatureBlobIndex(this.MethodSignature);
+            nameIndex = ModuleBuilder.GetOrAddString(name);
+            signature = ModuleBuilder.GetSignatureBlobIndex(MethodSignature);
 
             __ReleaseILGenerator();
 
             if (declarativeSecurity != null)
-            {
-                this.ModuleBuilder.AddDeclarativeSecurity(pseudoToken, declarativeSecurity);
-            }
+                ModuleBuilder.AddDeclarativeSecurity(pseudoToken, declarativeSecurity);
         }
 
         internal ModuleBuilder ModuleBuilder
@@ -689,59 +658,40 @@ namespace IKVM.Reflection.Emit
             get { return typeBuilder.ModuleBuilder; }
         }
 
-        internal void WriteMethodDefRecord(int baseRVA, MetadataWriter mw, ref int paramList)
+        internal void WriteMethodDefRecord(MetadataBuilder metadata, ref int paramList)
         {
-            if (rva != -1)
-            {
-                mw.Write(rva + baseRVA);
-            }
-            else
-            {
-                mw.Write(0);
-            }
-            mw.Write((short)implFlags);
-            mw.Write((short)attributes);
-            mw.WriteStringIndex(nameIndex);
-            mw.WriteBlobIndex(signature);
-            mw.WriteParam(paramList);
+            metadata.AddMethodDefinition(
+                (System.Reflection.MethodAttributes)attributes,
+                (System.Reflection.MethodImplAttributes)implFlags,
+                nameIndex,
+                signature,
+                rva,
+                MetadataTokens.ParameterHandle(paramList));
+
             if (parameters != null)
-            {
                 paramList += parameters.Count;
-            }
         }
 
-        internal void WriteParamRecords(MetadataWriter mw)
+        internal void WriteParamRecords(MetadataBuilder metadata)
         {
             if (parameters != null)
-            {
-                foreach (ParameterBuilder pb in parameters)
-                {
-                    pb.WriteParamRecord(mw);
-                }
-            }
+                foreach (var pb in parameters)
+                    pb.WriteParamRecord(metadata);
         }
 
         internal void FixupToken(int token, ref int parameterToken)
         {
-            typeBuilder.ModuleBuilder.RegisterTokenFixup(this.pseudoToken, token);
+            typeBuilder.ModuleBuilder.RegisterTokenFixup(pseudoToken, token);
             if (parameters != null)
-            {
-                foreach (ParameterBuilder pb in parameters)
-                {
+                foreach (var pb in parameters)
                     pb.FixupToken(parameterToken++);
-                }
-            }
         }
 
         internal override MethodSignature MethodSignature
         {
             get
             {
-                if (methodSignature == null)
-                {
-                    methodSignature = MethodSignature.MakeFromBuilder(returnType ?? typeBuilder.Universe.System_Void, parameterTypes ?? Type.EmptyTypes,
-                        customModifiers, callingConvention, gtpb == null ? 0 : gtpb.Length);
-                }
+                methodSignature ??= MethodSignature.MakeFromBuilder(returnType ?? typeBuilder.Universe.System_Void, parameterTypes ?? Type.EmptyTypes, customModifiers, callingConvention, gtpb == null ? 0 : gtpb.Length);
                 return methodSignature;
             }
         }
@@ -759,18 +709,13 @@ namespace IKVM.Reflection.Emit
         internal override int GetCurrentToken()
         {
             if (typeBuilder.ModuleBuilder.IsSaved)
-            {
                 return typeBuilder.ModuleBuilder.ResolvePseudoToken(pseudoToken);
-            }
             else
-            {
                 return pseudoToken;
-            }
         }
 
-        internal override bool IsBaked
-        {
-            get { return typeBuilder.IsBaked; }
-        }
+        internal override bool IsBaked => typeBuilder.IsBaked;
+
     }
+
 }

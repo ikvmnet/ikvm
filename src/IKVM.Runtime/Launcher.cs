@@ -39,19 +39,19 @@ namespace IKVM.Runtime
         static ThreadGroupAccessor threadGroupAccessor;
         static LauncherHelperAccessor launcherHelperAccessor;
 
-        static CallerIDAccessor CallerIDAccessor => JVM.BaseAccessors.Get(ref callerIDAccessor);
+        static CallerIDAccessor CallerIDAccessor => JVM.Internal.BaseAccessors.Get(ref callerIDAccessor);
 
-        static ClassAccessor ClassAccessor => JVM.BaseAccessors.Get(ref classAccessor);
+        static ClassAccessor ClassAccessor => JVM.Internal.BaseAccessors.Get(ref classAccessor);
 
-        static MethodAccessor MethodAccessor => JVM.BaseAccessors.Get(ref methodAccessor);
+        static MethodAccessor MethodAccessor => JVM.Internal.BaseAccessors.Get(ref methodAccessor);
 
-        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+        static SystemAccessor SystemAccessor => JVM.Internal.BaseAccessors.Get(ref systemAccessor);
 
-        static ThreadAccessor ThreadAccessor => JVM.BaseAccessors.Get(ref threadAccessor);
+        static ThreadAccessor ThreadAccessor => JVM.Internal.BaseAccessors.Get(ref threadAccessor);
 
-        static ThreadGroupAccessor ThreadGroupAccessor => JVM.BaseAccessors.Get(ref threadGroupAccessor);
+        static ThreadGroupAccessor ThreadGroupAccessor => JVM.Internal.BaseAccessors.Get(ref threadGroupAccessor);
 
-        static LauncherHelperAccessor LauncherHelperAccessor => JVM.BaseAccessors.Get(ref launcherHelperAccessor);
+        static LauncherHelperAccessor LauncherHelperAccessor => JVM.Internal.BaseAccessors.Get(ref launcherHelperAccessor);
 
 #endif
 
@@ -405,7 +405,7 @@ namespace IKVM.Runtime
 
                     if (ArgEquals(arg, "-Xverify"))
                     {
-                        JVM.relaxedVerification = false;
+                        JVM.RelaxedVerification = false;
                         continue;
                     }
 
@@ -500,7 +500,7 @@ namespace IKVM.Runtime
                 SetUserProperties(initialize);
 
                 // VM initialization, configures system properties, done before any static initializers
-                JVM.EnsureInitialized();
+                JVM.Init();
 
                 // first entry into base assembly
                 EnterMainThread();

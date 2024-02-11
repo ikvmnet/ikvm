@@ -194,6 +194,13 @@ namespace IKVM.Runtime
         }
 
         [Conditional("TRACE")]
+        public static void Verbose(TraceSwitch traceSwitch, string message, params object[] p)
+        {
+            if (traceSwitch.TraceVerbose)
+                WriteLine(message, p);
+        }
+
+        [Conditional("TRACE")]
         public static void Info(TraceSwitch traceSwitch, string message, params object[] p)
         {
             if (traceSwitch.TraceInfo)

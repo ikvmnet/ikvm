@@ -530,11 +530,8 @@ namespace IKVM.Tests.Java.java.nio.channels
             var pos = new int[z];
             for (int i = 0; i < z; i++)
             {
-                var d = ByteBuffer.allocateDirect(size);
-                var b = new byte[size];
-                rng.GetBytes(b);
-                d.put(b);
-                d.flip();
+                var d = ByteBuffer.allocate(size);
+                rng.GetBytes(d.array(), d.arrayOffset(), d.limit());
                 buf[i] = d;
                 pos[i] = rnd.Next(1, size);
             }
@@ -583,11 +580,8 @@ namespace IKVM.Tests.Java.java.nio.channels
             var pos = new int[z];
             for (int i = 0; i < z; i++)
             {
-                var d = ByteBuffer.allocateDirect(size);
-                var b = new byte[size];
-                rng.GetBytes(b);
-                d.put(b);
-                d.flip();
+                var d = ByteBuffer.allocate(size);
+                rng.GetBytes(d.array(), d.arrayOffset(), d.limit());
                 buf[i] = d;
                 pos[i] = rnd.Next(1, size);
             }

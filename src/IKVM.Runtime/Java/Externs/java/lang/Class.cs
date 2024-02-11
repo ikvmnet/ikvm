@@ -40,7 +40,7 @@ namespace IKVM.Java.Externs.java.lang
 
         static ClassLoaderAccessor classLoaderAccessor;
 
-        static ClassLoaderAccessor ClassLoaderAccessor => JVM.BaseAccessors.Get(ref classLoaderAccessor);
+        static ClassLoaderAccessor ClassLoaderAccessor => JVM.Internal.BaseAccessors.Get(ref classLoaderAccessor);
 
 #endif
 

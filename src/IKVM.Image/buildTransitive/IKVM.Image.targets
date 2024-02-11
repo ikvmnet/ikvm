@@ -4,8 +4,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <IkvmImageTargetFrameworks Include="net472;net6.0" />
-        <IkvmImageRuntimeIdentifiers Include="win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64" />
+        <IkvmImageAvailableTargetFrameworks Include="net472;net6.0" />
+        <IkvmImageAvailableRuntimeIdentifiers Include="win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64" />
     </ItemGroup>
 
     <Choose>
@@ -21,18 +21,27 @@
         </When>
     </Choose>
 
+    <Target Name="ResolveIkvmImageTargetFramework">
+        <ItemGroup>
+            <_IkvmImageTargetFrameworks Include="$(_IkvmImageTargetFramework)" />
+        </ItemGroup>
+    </Target>
+
     <Target Name="ResolveIkvmImageRuntimeIdentifier">
-        <IkvmResolveNearestRuntimeIdentifier AvailableRuntimeIdentifiers="@(IkvmImageRuntimeIdentifiers, ';')" TargetRuntimeIdentifier="$(RuntimeIdentifier)">
+        <IkvmResolveNearestRuntimeIdentifier AvailableRuntimeIdentifiers="@(IkvmImageAvailableRuntimeIdentifiers, ';')" TargetRuntimeIdentifier="$(RuntimeIdentifier)">
             <Output TaskParameter="NearestRuntimeIdentifier" PropertyName="_IkvmImageRuntimeIdentifier" />
         </IkvmResolveNearestRuntimeIdentifier>
+        <ItemGroup>
+            <_IkvmImageRuntimeIdentifiers Include="$(_IkvmImageRuntimeIdentifier)" />
+            <_IkvmImageRuntimeIdentifiers Include="win-x64" Condition=" '$(_IkvmImageRuntimeIdentifier)' == 'win-x86' And '$(Prefer32Bit)' == 'false' " />
+            <_IkvmImageRuntimeIdentifiers Include="@(IkvmImageAvailableRuntimeIdentifiers)" Condition=" '@(_IkvmImageRuntimeIdentifiers)' == '' " />
+        </ItemGroup>
     </Target>
 
     <UsingTask TaskName="_ExpandIkvmImageItems" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <TargetFrameworks ParameterType="System.String[]" Required="true" />
             <RuntimeIdentifiers ParameterType="System.String[]" Required="true" />
-            <TargetFramework ParameterType="System.String" />
-            <RuntimeIdentifier ParameterType="System.String" />
             <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
         </ParameterGroup>
         <Task>
@@ -45,14 +54,8 @@
                 
                 foreach (var tfm in TargetFrameworks)
                 {
-                    if (!string.IsNullOrEmpty(TargetFramework) && TargetFramework != tfm)
-                        continue;
-                    
                     foreach (var rid in RuntimeIdentifiers)
                     {
-                        if (!string.IsNullOrEmpty(RuntimeIdentifier) && RuntimeIdentifier != rid)
-                            continue;
-                        
                         foreach (var item in Items)
                         {
                             var itemTfm = item.GetMetadata("TargetFramework");
@@ -83,12 +86,13 @@
     <PropertyGroup>
         <ExpandIkvmImageItemsDependsOn>
             $(ExpandIkvmImageItemsDependsOn);
+            ResolveIkvmImageTargetFramework;
             ResolveIkvmImageRuntimeIdentifier;
         </ExpandIkvmImageItemsDependsOn>
     </PropertyGroup>
 
     <Target Name="ExpandIkvmImageItems" DependsOnTargets="$(ExpandIkvmImageItemsDependsOn)">
-        <_ExpandIkvmImageItems TargetFrameworks="@(IkvmImageTargetFrameworks)" RuntimeIdentifiers="@(IkvmImageRuntimeIdentifiers)" TargetFramework="$(_IkvmImageTargetFramework)" RuntimeIdentifier="$(_IkvmImageRuntimeIdentifier)" Items="@(IkvmImageItem)">
+        <_ExpandIkvmImageItems TargetFrameworks="@(_IkvmImageTargetFrameworks)" RuntimeIdentifiers="@(_IkvmImageRuntimeIdentifiers)" Items="@(IkvmImageItem)">
             <Output TaskParameter="Items" ItemName="_IkvmImageItemExpanded" />
         </_ExpandIkvmImageItems>
         <ItemGroup>

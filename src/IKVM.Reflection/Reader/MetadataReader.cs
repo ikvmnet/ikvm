@@ -22,389 +22,323 @@
   
 */
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
+
 using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
-	sealed class MetadataReader : MetadataRW
-	{
-		private readonly Stream stream;
-		private const int bufferLength = 2048;
-		private readonly byte[] buffer = new byte[bufferLength];
-		private int pos = bufferLength;
 
-		internal MetadataReader(ModuleReader module, Stream stream, byte heapSizes)
-			: base(module, (heapSizes & 0x01) != 0, (heapSizes & 0x02) != 0, (heapSizes & 0x04) != 0)
-		{
-			this.stream = stream;
-		}
+    sealed class MetadataReader : MetadataRW
+    {
 
-		private void FillBuffer(int needed)
-		{
-			int count = bufferLength - pos;
-			if (count != 0)
-			{
-				// move remaining bytes to the front of the buffer
-				Buffer.BlockCopy(buffer, pos, buffer, 0, count);
-			}
-			pos = 0;
+        const int bufferLength = 2048;
 
-			while (count < needed)
-			{
-				int len = stream.Read(buffer, count, bufferLength - count);
-				if (len == 0)
-				{
-					throw new BadImageFormatException();
-				}
-				count += len;
-			}
+        readonly Stream stream;
+        readonly byte[] buffer = new byte[bufferLength];
 
-			if (count != bufferLength)
-			{
-				// we didn't fill the buffer completely, so have to restore the invariant
-				// that all data from pos up until the end of the buffer is valid
-				Buffer.BlockCopy(buffer, 0, buffer, bufferLength - count, count);
-				pos = bufferLength - count;
-			}
-		}
+        int pos = bufferLength;
 
-		internal ushort ReadUInt16()
-		{
-			return (ushort)ReadInt16();
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="stream"></param>
+        /// <param name="heapSizes"></param>
+        internal MetadataReader(ModuleReader module, Stream stream, byte heapSizes) :
+            base(module, (heapSizes & 0x01) != 0, (heapSizes & 0x02) != 0, (heapSizes & 0x04) != 0)
+        {
+            this.stream = stream;
+        }
 
-		internal short ReadInt16()
-		{
-			if (pos > bufferLength - 2)
-			{
-				FillBuffer(2);
-			}
-			byte b1 = buffer[pos++];
-			byte b2 = buffer[pos++];
-			return (short)(b1 | (b2 << 8));
-		}
+        void FillBuffer(int needed)
+        {
+            int count = bufferLength - pos;
+            if (count != 0)
+            {
+                // move remaining bytes to the front of the buffer
+                Buffer.BlockCopy(buffer, pos, buffer, 0, count);
+            }
 
-		internal int ReadInt32()
-		{
-			if (pos > bufferLength - 4)
-			{
-				FillBuffer(4);
-			}
-			byte b1 = buffer[pos++];
-			byte b2 = buffer[pos++];
-			byte b3 = buffer[pos++];
-			byte b4 = buffer[pos++];
-			return b1 | (b2 << 8) | (b3 << 16) | (b4 << 24);
-		}
+            pos = 0;
 
-		private int ReadIndex(bool big)
-		{
-			if (big)
-			{
-				return ReadInt32();
-			}
-			else
-			{
-				return ReadUInt16();
-			}
-		}
+            while (count < needed)
+            {
+                var len = stream.Read(buffer, count, bufferLength - count);
+                if (len == 0)
+                    throw new BadImageFormatException();
 
-		internal int ReadStringIndex()
-		{
-			return ReadIndex(bigStrings);
-		}
+                count += len;
+            }
 
-		internal int ReadGuidIndex()
-		{
-			return ReadIndex(bigGuids);
-		}
+            if (count != bufferLength)
+            {
+                // we didn't fill the buffer completely, so have to restore the invariant
+                // that all data from pos up until the end of the buffer is valid
+                Buffer.BlockCopy(buffer, 0, buffer, bufferLength - count, count);
+                pos = bufferLength - count;
+            }
+        }
 
-		internal int ReadBlobIndex()
-		{
-			return ReadIndex(bigBlobs);
-		}
+        internal ushort ReadUInt16()
+        {
+            return (ushort)ReadInt16();
+        }
 
-		internal int ReadResolutionScope()
-		{
-			int codedIndex = ReadIndex(bigResolutionScope);
-			switch (codedIndex & 3)
-			{
-				case 0:
-					return (ModuleTable.Index << 24) + (codedIndex >> 2);
-				case 1:
-					return (ModuleRefTable.Index << 24) + (codedIndex >> 2);
-				case 2:
-					return (AssemblyRefTable.Index << 24) + (codedIndex >> 2);
-				case 3:
-					return (TypeRefTable.Index << 24) + (codedIndex >> 2);
-				default:
-					throw new BadImageFormatException();
-			}
-		}
+        internal short ReadInt16()
+        {
+            if (pos > bufferLength - 2)
+                FillBuffer(2);
 
-		internal int ReadTypeDefOrRef()
-		{
-			int codedIndex = ReadIndex(bigTypeDefOrRef);
-			switch (codedIndex & 3)
-			{
-				case 0:
-					return (TypeDefTable.Index << 24) + (codedIndex >> 2);
-				case 1:
-					return (TypeRefTable.Index << 24) + (codedIndex >> 2);
-				case 2:
-					return (TypeSpecTable.Index << 24) + (codedIndex >> 2);
-				default:
-					throw new BadImageFormatException();
-			}
-		}
+            var b1 = buffer[pos++];
+            var b2 = buffer[pos++];
+            return (short)(b1 | (b2 << 8));
+        }
 
-		internal int ReadMemberRefParent()
-		{
-			int codedIndex = ReadIndex(bigMemberRefParent);
-			switch (codedIndex & 7)
-			{
-				case 0:
-					return (TypeDefTable.Index << 24) + (codedIndex >> 3);
-				case 1:
-					return (TypeRefTable.Index << 24) + (codedIndex >> 3);
-				case 2:
-					return (ModuleRefTable.Index << 24) + (codedIndex >> 3);
-				case 3:
-					return (MethodDefTable.Index << 24) + (codedIndex >> 3);
-				case 4:
-					return (TypeSpecTable.Index << 24) + (codedIndex >> 3);
-				default:
-					throw new BadImageFormatException();
-			}
-		}
+        internal int ReadInt32()
+        {
+            if (pos > bufferLength - 4)
+                FillBuffer(4);
 
-		internal int ReadHasCustomAttribute()
-		{
-			int codedIndex = ReadIndex(bigHasCustomAttribute);
-			switch (codedIndex & 31)
-			{
-				case 0:
-					return (MethodDefTable.Index << 24) + (codedIndex >> 5);
-				case 1:
-					return (FieldTable.Index << 24) + (codedIndex >> 5);
-				case 2:
-					return (TypeRefTable.Index << 24) + (codedIndex >> 5);
-				case 3:
-					return (TypeDefTable.Index << 24) + (codedIndex >> 5);
-				case 4:
-					return (ParamTable.Index << 24) + (codedIndex >> 5);
-				case 5:
-					return (InterfaceImplTable.Index << 24) + (codedIndex >> 5);
-				case 6:
-					return (MemberRefTable.Index << 24) + (codedIndex >> 5);
-				case 7:
-					return (ModuleTable.Index << 24) + (codedIndex >> 5);
-				case 8:
-					return (DeclSecurityTable.Index << 24) + (codedIndex >> 5);
-				case 9:
-					return (PropertyTable.Index << 24) + (codedIndex >> 5);
-				case 10:
-					return (EventTable.Index << 24) + (codedIndex >> 5);
-				case 11:
-					return (StandAloneSigTable.Index << 24) + (codedIndex >> 5);
-				case 12:
-					return (ModuleRefTable.Index << 24) + (codedIndex >> 5);
-				case 13:
-					return (TypeSpecTable.Index << 24) + (codedIndex >> 5);
-				case 14:
-					return (AssemblyTable.Index << 24) + (codedIndex >> 5);
-				case 15:
-					return (AssemblyRefTable.Index << 24) + (codedIndex >> 5);
-				case 16:
-					return (FileTable.Index << 24) + (codedIndex >> 5);
-				case 17:
-					return (ExportedTypeTable.Index << 24) + (codedIndex >> 5);
-				case 18:
-					return (ManifestResourceTable.Index << 24) + (codedIndex >> 5);
-				case 19:
-					return (GenericParamTable.Index << 24) + (codedIndex >> 5);
-				case 20:
-					return (GenericParamConstraintTable.Index << 24) + (codedIndex >> 5);
-				case 21:
-					return (MethodSpecTable.Index << 24) + (codedIndex >> 5);
-				default:
-					throw new BadImageFormatException();
-			}
-		}
+            var b1 = buffer[pos++];
+            var b2 = buffer[pos++];
+            var b3 = buffer[pos++];
+            var b4 = buffer[pos++];
+            return b1 | (b2 << 8) | (b3 << 16) | (b4 << 24);
+        }
 
-		internal int ReadCustomAttributeType()
-		{
-			int codedIndex = ReadIndex(bigCustomAttributeType);
-			switch (codedIndex & 7)
-			{
-				case 2:
-					return (MethodDefTable.Index << 24) + (codedIndex >> 3);
-				case 3:
-					return (MemberRefTable.Index << 24) + (codedIndex >> 3);
-				default:
-					throw new BadImageFormatException();
-			}
-		}
+        int ReadIndex(bool big)
+        {
+            return big ? ReadInt32() : ReadUInt16();
+        }
 
-		internal int ReadMethodDefOrRef()
-		{
-			int codedIndex = ReadIndex(bigMethodDefOrRef);
-			switch (codedIndex & 1)
-			{
-				case 0:
-					return (MethodDefTable.Index << 24) + (codedIndex >> 1);
-				case 1:
-					return (MemberRefTable.Index << 24) + (codedIndex >> 1);
-				default:
-					throw new BadImageFormatException();
-			}
-		}
+        internal int ReadStringIndex()
+        {
+            return ReadIndex(bigStrings);
+        }
 
-		internal int ReadHasConstant()
-		{
-			int codedIndex = ReadIndex(bigHasConstant);
-			switch (codedIndex & 3)
-			{
-				case 0:
-					return (FieldTable.Index << 24) + (codedIndex >> 2);
-				case 1:
-					return (ParamTable.Index << 24) + (codedIndex >> 2);
-				case 2:
-					return (PropertyTable.Index << 24) + (codedIndex >> 2);
-				default:
-					throw new BadImageFormatException();
-			}
-		}
+        internal int ReadGuidIndex()
+        {
+            return ReadIndex(bigGuids);
+        }
 
-		internal int ReadHasSemantics()
-		{
-			int codedIndex = ReadIndex(bigHasSemantics);
-			switch (codedIndex & 1)
-			{
-				case 0:
-					return (EventTable.Index << 24) + (codedIndex >> 1);
-				case 1:
-					return (PropertyTable.Index << 24) + (codedIndex >> 1);
-				default:
-					throw new BadImageFormatException();
-			}
-		}
+        internal int ReadBlobIndex()
+        {
+            return ReadIndex(bigBlobs);
+        }
 
-		internal int ReadHasFieldMarshal()
-		{
-			int codedIndex = ReadIndex(bigHasFieldMarshal);
-			switch (codedIndex & 1)
-			{
-				case 0:
-					return (FieldTable.Index << 24) + (codedIndex >> 1);
-				case 1:
-					return (ParamTable.Index << 24) + (codedIndex >> 1);
-				default:
-					throw new BadImageFormatException();
-			}
-		}
+        internal int ReadResolutionScope()
+        {
+            var codedIndex = ReadIndex(bigResolutionScope);
+            return (codedIndex & 3) switch
+            {
+                0 => (ModuleTable.Index << 24) + (codedIndex >> 2),
+                1 => (ModuleRefTable.Index << 24) + (codedIndex >> 2),
+                2 => (AssemblyRefTable.Index << 24) + (codedIndex >> 2),
+                3 => (TypeRefTable.Index << 24) + (codedIndex >> 2),
+                _ => throw new BadImageFormatException(),
+            };
+        }
 
-		internal int ReadHasDeclSecurity()
-		{
-			int codedIndex = ReadIndex(bigHasDeclSecurity);
-			switch (codedIndex & 3)
-			{
-				case 0:
-					return (TypeDefTable.Index << 24) + (codedIndex >> 2);
-				case 1:
-					return (MethodDefTable.Index << 24) + (codedIndex >> 2);
-				case 2:
-					return (AssemblyTable.Index << 24) + (codedIndex >> 2);
-				default:
-					throw new BadImageFormatException();
-			}
-		}
+        internal int ReadTypeDefOrRef()
+        {
+            var codedIndex = ReadIndex(bigTypeDefOrRef);
+            return (codedIndex & 3) switch
+            {
+                0 => (TypeDefTable.Index << 24) + (codedIndex >> 2),
+                1 => (TypeRefTable.Index << 24) + (codedIndex >> 2),
+                2 => (TypeSpecTable.Index << 24) + (codedIndex >> 2),
+                _ => throw new BadImageFormatException(),
+            };
+        }
 
-		internal int ReadTypeOrMethodDef()
-		{
-			int codedIndex = ReadIndex(bigTypeOrMethodDef);
-			switch (codedIndex & 1)
-			{
-				case 0:
-					return (TypeDefTable.Index << 24) + (codedIndex >> 1);
-				case 1:
-					return (MethodDefTable.Index << 24) + (codedIndex >> 1);
-				default:
-					throw new BadImageFormatException();
-			}
-		}
+        internal int ReadMemberRefParent()
+        {
+            var codedIndex = ReadIndex(bigMemberRefParent);
+            return (codedIndex & 7) switch
+            {
+                0 => (TypeDefTable.Index << 24) + (codedIndex >> 3),
+                1 => (TypeRefTable.Index << 24) + (codedIndex >> 3),
+                2 => (ModuleRefTable.Index << 24) + (codedIndex >> 3),
+                3 => (MethodDefTable.Index << 24) + (codedIndex >> 3),
+                4 => (TypeSpecTable.Index << 24) + (codedIndex >> 3),
+                _ => throw new BadImageFormatException(),
+            };
+        }
 
-		internal int ReadMemberForwarded()
-		{
-			int codedIndex = ReadIndex(bigMemberForwarded);
-			switch (codedIndex & 1)
-			{
-				case 0:
-					return (FieldTable.Index << 24) + (codedIndex >> 1);
-				case 1:
-					return (MethodDefTable.Index << 24) + (codedIndex >> 1);
-				default:
-					throw new BadImageFormatException();
-			}
-		}
+        internal int ReadHasCustomAttribute()
+        {
+            var codedIndex = ReadIndex(bigHasCustomAttribute);
+            return (codedIndex & 31) switch
+            {
+                0 => (MethodDefTable.Index << 24) + (codedIndex >> 5),
+                1 => (FieldTable.Index << 24) + (codedIndex >> 5),
+                2 => (TypeRefTable.Index << 24) + (codedIndex >> 5),
+                3 => (TypeDefTable.Index << 24) + (codedIndex >> 5),
+                4 => (ParamTable.Index << 24) + (codedIndex >> 5),
+                5 => (InterfaceImplTable.Index << 24) + (codedIndex >> 5),
+                6 => (MemberRefTable.Index << 24) + (codedIndex >> 5),
+                7 => (ModuleTable.Index << 24) + (codedIndex >> 5),
+                8 => (DeclSecurityTable.Index << 24) + (codedIndex >> 5),
+                9 => (PropertyTable.Index << 24) + (codedIndex >> 5),
+                10 => (EventTable.Index << 24) + (codedIndex >> 5),
+                11 => (StandAloneSigTable.Index << 24) + (codedIndex >> 5),
+                12 => (ModuleRefTable.Index << 24) + (codedIndex >> 5),
+                13 => (TypeSpecTable.Index << 24) + (codedIndex >> 5),
+                14 => (AssemblyTable.Index << 24) + (codedIndex >> 5),
+                15 => (AssemblyRefTable.Index << 24) + (codedIndex >> 5),
+                16 => (FileTable.Index << 24) + (codedIndex >> 5),
+                17 => (ExportedTypeTable.Index << 24) + (codedIndex >> 5),
+                18 => (ManifestResourceTable.Index << 24) + (codedIndex >> 5),
+                19 => (GenericParamTable.Index << 24) + (codedIndex >> 5),
+                20 => (GenericParamConstraintTable.Index << 24) + (codedIndex >> 5),
+                21 => (MethodSpecTable.Index << 24) + (codedIndex >> 5),
+                _ => throw new BadImageFormatException(),
+            };
+        }
 
-		internal int ReadImplementation()
-		{
-			int codedIndex = ReadIndex(bigImplementation);
-			switch (codedIndex & 3)
-			{
-				case 0:
-					return (FileTable.Index << 24) + (codedIndex >> 2);
-				case 1:
-					return (AssemblyRefTable.Index << 24) + (codedIndex >> 2);
-				case 2:
-					return (ExportedTypeTable.Index << 24) + (codedIndex >> 2);
-				default:
-					throw new BadImageFormatException();
-			}
-		}
+        internal int ReadCustomAttributeType()
+        {
+            var codedIndex = ReadIndex(bigCustomAttributeType);
+            return (codedIndex & 7) switch
+            {
+                2 => (MethodDefTable.Index << 24) + (codedIndex >> 3),
+                3 => (MemberRefTable.Index << 24) + (codedIndex >> 3),
+                _ => throw new BadImageFormatException(),
+            };
+        }
 
-		internal int ReadField()
-		{
-			return ReadIndex(bigField);
-		}
+        internal int ReadMethodDefOrRef()
+        {
+            var codedIndex = ReadIndex(bigMethodDefOrRef);
+            return (codedIndex & 1) switch
+            {
+                0 => (MethodDefTable.Index << 24) + (codedIndex >> 1),
+                1 => (MemberRefTable.Index << 24) + (codedIndex >> 1),
+                _ => throw new BadImageFormatException(),
+            };
+        }
 
-		internal int ReadMethodDef()
-		{
-			return ReadIndex(bigMethodDef);
-		}
+        internal int ReadHasConstant()
+        {
+            var codedIndex = ReadIndex(bigHasConstant);
+            return (codedIndex & 3) switch
+            {
+                0 => (FieldTable.Index << 24) + (codedIndex >> 2),
+                1 => (ParamTable.Index << 24) + (codedIndex >> 2),
+                2 => (PropertyTable.Index << 24) + (codedIndex >> 2),
+                _ => throw new BadImageFormatException(),
+            };
+        }
 
-		internal int ReadParam()
-		{
-			return ReadIndex(bigParam);
-		}
+        internal int ReadHasSemantics()
+        {
+            var codedIndex = ReadIndex(bigHasSemantics);
+            return (codedIndex & 1) switch
+            {
+                0 => (EventTable.Index << 24) + (codedIndex >> 1),
+                1 => (PropertyTable.Index << 24) + (codedIndex >> 1),
+                _ => throw new BadImageFormatException(),
+            };
+        }
 
-		internal int ReadProperty()
-		{
-			return ReadIndex(bigProperty);
-		}
+        internal int ReadHasFieldMarshal()
+        {
+            var codedIndex = ReadIndex(bigHasFieldMarshal);
+            return (codedIndex & 1) switch
+            {
+                0 => (FieldTable.Index << 24) + (codedIndex >> 1),
+                1 => (ParamTable.Index << 24) + (codedIndex >> 1),
+                _ => throw new BadImageFormatException(),
+            };
+        }
 
-		internal int ReadEvent()
-		{
-			return ReadIndex(bigEvent);
-		}
+        internal int ReadHasDeclSecurity()
+        {
+            var codedIndex = ReadIndex(bigHasDeclSecurity);
+            return (codedIndex & 3) switch
+            {
+                0 => (TypeDefTable.Index << 24) + (codedIndex >> 2),
+                1 => (MethodDefTable.Index << 24) + (codedIndex >> 2),
+                2 => (AssemblyTable.Index << 24) + (codedIndex >> 2),
+                _ => throw new BadImageFormatException(),
+            };
+        }
 
-		internal int ReadTypeDef()
-		{
-			return ReadIndex(bigTypeDef) | (TypeDefTable.Index << 24);
-		}
+        internal int ReadTypeOrMethodDef()
+        {
+            var codedIndex = ReadIndex(bigTypeOrMethodDef);
+            return (codedIndex & 1) switch
+            {
+                0 => (TypeDefTable.Index << 24) + (codedIndex >> 1),
+                1 => (MethodDefTable.Index << 24) + (codedIndex >> 1),
+                _ => throw new BadImageFormatException(),
+            };
+        }
 
-		internal int ReadGenericParam()
-		{
-			return ReadIndex(bigGenericParam) | (GenericParamTable.Index << 24);
-		}
+        internal int ReadMemberForwarded()
+        {
+            var codedIndex = ReadIndex(bigMemberForwarded);
+            return (codedIndex & 1) switch
+            {
+                0 => (FieldTable.Index << 24) + (codedIndex >> 1),
+                1 => (MethodDefTable.Index << 24) + (codedIndex >> 1),
+                _ => throw new BadImageFormatException(),
+            };
+        }
 
-		internal int ReadModuleRef()
-		{
-			return ReadIndex(bigModuleRef) | (ModuleRefTable.Index << 24);
-		}
-	}
+        internal int ReadImplementation()
+        {
+            var codedIndex = ReadIndex(bigImplementation);
+            return (codedIndex & 3) switch
+            {
+                0 => (FileTable.Index << 24) + (codedIndex >> 2),
+                1 => (AssemblyRefTable.Index << 24) + (codedIndex >> 2),
+                2 => (ExportedTypeTable.Index << 24) + (codedIndex >> 2),
+                _ => throw new BadImageFormatException(),
+            };
+        }
+
+        internal int ReadField()
+        {
+            return ReadIndex(bigField);
+        }
+
+        internal int ReadMethodDef()
+        {
+            return ReadIndex(bigMethodDef);
+        }
+
+        internal int ReadParam()
+        {
+            return ReadIndex(bigParam);
+        }
+
+        internal int ReadProperty()
+        {
+            return ReadIndex(bigProperty);
+        }
+
+        internal int ReadEvent()
+        {
+            return ReadIndex(bigEvent);
+        }
+
+        internal int ReadTypeDef()
+        {
+            return ReadIndex(bigTypeDef) | (TypeDefTable.Index << 24);
+        }
+
+        internal int ReadGenericParam()
+        {
+            return ReadIndex(bigGenericParam) | (GenericParamTable.Index << 24);
+        }
+
+        internal int ReadModuleRef()
+        {
+            return ReadIndex(bigModuleRef) | (ModuleRefTable.Index << 24);
+        }
+
+    }
+
 }

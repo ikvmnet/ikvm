@@ -35,7 +35,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Gets the default instance.
         /// </summary>
-        public static LibJvm Instance = new();
+        public static readonly LibJvm Instance = new();
 
         readonly Set_JNI_GetDefaultJavaVMInitArgsDelegate _Set_JNI_GetDefaultJavaVMInitArgs;
         readonly Set_JNI_GetCreatedJavaVMsDelegate _Set_JNI_GetCreatedJavaVMs;
@@ -58,7 +58,7 @@ namespace IKVM.Runtime
             _Set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(Handle.GetExport("Set_JNI_CreateJavaVM", sizeof(nint)).Handle);
             _JVM_LoadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_LoadLibraryDelegate>(Handle.GetExport("JVM_LoadLibrary", sizeof(nint)).Handle);
             _JVM_UnloadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_UnloadLibraryDelegate>(Handle.GetExport("JVM_UnloadLibrary", sizeof(nint)).Handle);
-            _JVM_FindLibraryEntry = Marshal.GetDelegateForFunctionPointer<JVM_FindLibraryEntryDelegate>((Handle.GetExport("JVM_FindLibraryEntry", sizeof(nint) + sizeof(nint))).Handle);
+            _JVM_FindLibraryEntry = Marshal.GetDelegateForFunctionPointer<JVM_FindLibraryEntryDelegate>(Handle.GetExport("JVM_FindLibraryEntry", sizeof(nint) + sizeof(nint)).Handle);
         }
 
         /// <summary>
@@ -89,14 +89,24 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public nint JVM_LoadLibrary(string name) => _JVM_LoadLibrary(name);
+        public nint JVM_LoadLibrary(string name)
+        {
+            var h = _JVM_LoadLibrary(name);
+            Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_LoadLibrary)}: {{0}} => {{1}}", name, h);
+            return h;
+        }
 
         /// <summary>
         /// Invokes the 'JVM_UnloadLibrary' method from libjvm.
         /// </summary>
         /// <param name="handle"></param>
         /// <returns></returns>
-        public nint JVM_UnloadLibrary(nint handle) => _JVM_UnloadLibrary(handle);
+        public nint JVM_UnloadLibrary(nint handle)
+        {
+            var h = _JVM_UnloadLibrary(handle);
+            Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_UnloadLibrary)}: {{0}} => {{1}}", handle, h);
+            return h;
+        }
 
         /// <summary>
         /// Invokes the 'JVM_FindLibraryEntry' method from libjvm.
@@ -104,8 +114,12 @@ namespace IKVM.Runtime
         /// <param name="handle"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public nint JVM_FindLibraryEntry(nint handle, string name) => _JVM_FindLibraryEntry(handle, name);
-
+        public nint JVM_FindLibraryEntry(nint handle, string name)
+        {
+            var h = _JVM_FindLibraryEntry(handle, name);
+            Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_FindLibraryEntry)}: {{0}} {{1}} => {{2}}", handle, name, h);
+            return h;
+        }
     }
 
 #endif

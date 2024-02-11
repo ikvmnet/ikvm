@@ -30,28 +30,6 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Reflection.Impl
 {
 
-    [StructLayout(LayoutKind.Sequential)]
-    struct IMAGE_DEBUG_DIRECTORY
-    {
-        public uint Characteristics;
-        public uint TimeDateStamp;
-        public ushort MajorVersion;
-        public ushort MinorVersion;
-        public uint Type;
-        public uint SizeOfData;
-        public uint AddressOfRawData;
-        public uint PointerToRawData;
-    }
-
-    interface ISymbolWriterImpl : ISymbolWriter
-    {
-        byte[] GetDebugInfo(ref IMAGE_DEBUG_DIRECTORY idd);
-        void RemapToken(int oldToken, int newToken);
-        void DefineLocalVariable2(string name, FieldAttributes attributes, int signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset);
-        void OpenMethod(SymbolToken symbolToken, MethodBase mb);
-        bool IsDeterministic { get; }
-    }
-
     static class SymbolSupport
     {
 

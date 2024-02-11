@@ -20,7 +20,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
         static FileDescriptorAccessor fileDescriptorAccessor;
 
-        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.Internal.BaseAccessors.Get(ref fileDescriptorAccessor);
 
         static global::ikvm.@internal.CallerID __callerID;
         delegate int __jniDelegate__read0(IntPtr jniEnv, IntPtr clazz, IntPtr fdo, long address, int len);

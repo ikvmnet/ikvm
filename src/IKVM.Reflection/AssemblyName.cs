@@ -31,19 +31,21 @@ using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
-    public sealed class AssemblyName
-        : ICloneable
+
+    public sealed class AssemblyName :
+        ICloneable
     {
-        private string name;
-        private string culture;
-        private Version version;
-        private byte[] publicKeyToken;
-        private byte[] publicKey;
-        private StrongNameKeyPair keyPair;
-        private AssemblyNameFlags flags;
-        private AssemblyHashAlgorithm hashAlgorithm;
-        private AssemblyVersionCompatibility versionCompatibility = AssemblyVersionCompatibility.SameMachine;
-        private string codeBase;
+
+        string name;
+        string culture;
+        Version version;
+        byte[] publicKeyToken;
+        byte[] publicKey;
+        StrongNameKeyPair keyPair;
+        AssemblyNameFlags flags;
+        AssemblyHashAlgorithm hashAlgorithm;
+        AssemblyVersionCompatibility versionCompatibility = AssemblyVersionCompatibility.SameMachine;
+        string codeBase;
         internal byte[] hash;
 
         /// <summary>
@@ -54,6 +56,13 @@ namespace IKVM.Reflection
 
         }
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="assemblyName"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="FileLoadException"></exception>
         public AssemblyName(string assemblyName)
         {
             if (assemblyName == null)
@@ -85,7 +94,7 @@ namespace IKVM.Reflection
             if (parsed.PublicKeyToken != null)
             {
                 if (parsed.PublicKeyToken.Equals("null", StringComparison.OrdinalIgnoreCase))
-                    publicKeyToken = Empty<byte>.Array;
+                    publicKeyToken = Array.Empty<byte>();
                 else if (parsed.PublicKeyToken.Length != 16)
                     throw new FileLoadException();
                 else
@@ -127,13 +136,9 @@ namespace IKVM.Reflection
             {
                 digit |= (char)0x20;
                 if (digit >= 'a' && digit <= 'f')
-                {
                     return 10 + digit - 'a';
-                }
                 else
-                {
                     throw new FileLoadException();
-                }
             }
         }
 
@@ -183,7 +188,7 @@ namespace IKVM.Reflection
             get
             {
                 // HACK use the real AssemblyName to escape the codebase
-                System.Reflection.AssemblyName tmp = new System.Reflection.AssemblyName();
+                var tmp = new System.Reflection.AssemblyName();
                 tmp.CodeBase = codeBase;
                 return tmp.EscapedCodeBase;
             }
@@ -217,9 +222,7 @@ namespace IKVM.Reflection
             set
             {
                 if (value >= AssemblyContentType.Default && value <= AssemblyContentType.WindowsRuntime)
-                {
                     flags = (flags & ~(AssemblyNameFlags)0xE00) | (AssemblyNameFlags)((int)value << 9);
-                }
             }
         }
 
@@ -269,6 +272,7 @@ namespace IKVM.Reflection
                 ushort versionMinor = 0xFFFF;
                 ushort versionBuild = 0xFFFF;
                 ushort versionRevision = 0xFFFF;
+
                 if (version != null)
                 {
                     versionMajor = (ushort)version.Major;
@@ -386,7 +390,7 @@ namespace IKVM.Reflection
             return sb.ToString();
         }
 
-        private static void AppendPublicKey(StringBuilder sb, byte[] publicKey)
+        static void AppendPublicKey(StringBuilder sb, byte[] publicKey)
         {
             for (int i = 0; i < publicKey.Length; i++)
             {
@@ -413,7 +417,7 @@ namespace IKVM.Reflection
             return copy;
         }
 
-        private static byte[] Copy(byte[] b)
+        static byte[] Copy(byte[] b)
         {
             return b == null || b.Length == 0 ? b : (byte[])b.Clone();
         }

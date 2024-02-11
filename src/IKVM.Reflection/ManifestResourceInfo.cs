@@ -21,93 +21,95 @@
   jeroen@frijters.net
   
 */
-using System;
-using IKVM.Reflection.Reader;
 using IKVM.Reflection.Metadata;
+using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
-	public sealed class ManifestResourceInfo
-	{
-		private readonly ModuleReader module;
-		private readonly int index;
 
-		internal ManifestResourceInfo(ModuleReader module, int index)
-		{
-			this.module = module;
-			this.index = index;
-		}
+    public sealed class ManifestResourceInfo
+    {
 
-		public ResourceAttributes __ResourceAttributes
-		{
-			get { return (ResourceAttributes)module.ManifestResource.records[index].Flags; }
-		}
+        readonly ModuleReader module;
+        readonly int index;
 
-		public int __Offset
-		{
-			get { return module.ManifestResource.records[index].Offset; }
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="index"></param>
+        internal ManifestResourceInfo(ModuleReader module, int index)
+        {
+            this.module = module;
+            this.index = index;
+        }
 
-		public ResourceLocation ResourceLocation
-		{
-			get
-			{
-				int implementation = module.ManifestResource.records[index].Implementation;
-				if ((implementation >> 24) == AssemblyRefTable.Index)
-				{
-					Assembly asm = ReferencedAssembly;
-					if (asm == null || asm.__IsMissing)
-					{
-						return ResourceLocation.ContainedInAnotherAssembly;
-					}
-					return asm.GetManifestResourceInfo(module.GetString(module.ManifestResource.records[index].Name)).ResourceLocation | ResourceLocation.ContainedInAnotherAssembly;
-				}
-				else if ((implementation >> 24) == FileTable.Index)
-				{
-					if ((implementation & 0xFFFFFF) == 0)
-					{
-						return ResourceLocation.ContainedInManifestFile | ResourceLocation.Embedded;
-					}
-					return 0;
-				}
-				else
-				{
-					throw new BadImageFormatException();
-				}
-			}
-		}
+        public ResourceAttributes __ResourceAttributes
+        {
+            get { return (ResourceAttributes)module.ManifestResourceTable.records[index].Flags; }
+        }
 
-		public Assembly ReferencedAssembly
-		{
-			get
-			{
-				int implementation = module.ManifestResource.records[index].Implementation;
-				if ((implementation >> 24) == AssemblyRefTable.Index)
-				{
-					return module.ResolveAssemblyRef((implementation & 0xFFFFFF) - 1);
-				}
-				return null;
-			}
-		}
+        public int __Offset
+        {
+            get { return module.ManifestResourceTable.records[index].Offset; }
+        }
 
-		public string FileName
-		{
-			get
-			{
-				int implementation = module.ManifestResource.records[index].Implementation;
-				if ((implementation >> 24) == FileTable.Index)
-				{
-					if ((implementation & 0xFFFFFF) == 0)
-					{
-						return null;
-					}
-					else
-					{
-						return module.GetString(module.File.records[(implementation & 0xFFFFFF) - 1].Name);
-					}
-				}
-				return null;
-			}
-		}
-	}
+        public ResourceLocation ResourceLocation
+        {
+            get
+            {
+                var implementation = module.ManifestResourceTable.records[index].Implementation;
+                if ((implementation >> 24) == AssemblyRefTable.Index)
+                {
+                    var asm = ReferencedAssembly;
+                    if (asm == null || asm.__IsMissing)
+                        return ResourceLocation.ContainedInAnotherAssembly;
+
+                    return asm.GetManifestResourceInfo(module.GetString(module.ManifestResourceTable.records[index].Name)).ResourceLocation | ResourceLocation.ContainedInAnotherAssembly;
+                }
+                else if ((implementation >> 24) == FileTable.Index)
+                {
+                    if ((implementation & 0xFFFFFF) == 0)
+                        return ResourceLocation.ContainedInManifestFile | ResourceLocation.Embedded;
+
+                    return 0;
+                }
+                else
+                {
+                    throw new BadImageFormatException();
+                }
+            }
+        }
+
+        public Assembly ReferencedAssembly
+        {
+            get
+            {
+                var implementation = module.ManifestResourceTable.records[index].Implementation;
+                if ((implementation >> 24) == AssemblyRefTable.Index)
+                    return module.ResolveAssemblyRef((implementation & 0xFFFFFF) - 1);
+
+                return null;
+            }
+        }
+
+        public string FileName
+        {
+            get
+            {
+                var implementation = module.ManifestResourceTable.records[index].Implementation;
+                if ((implementation >> 24) == FileTable.Index)
+                {
+                    if ((implementation & 0xFFFFFF) == 0)
+                        return null;
+                    else
+                        return module.GetString(module.FileTable.records[(implementation & 0xFFFFFF) - 1].Name);
+                }
+
+                return null;
+            }
+        }
+
+    }
+
 }

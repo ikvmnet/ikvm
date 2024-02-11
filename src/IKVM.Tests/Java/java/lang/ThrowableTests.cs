@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-using IKVM.Tests.Util;
+using IKVM.Java.Tests.Util;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

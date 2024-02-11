@@ -5,15 +5,26 @@
         <ProjectGuid>55f3f094-ce8e-4734-b14e-7dd5dfe7e4f3</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
         <TargetName>osx</TargetName>
+        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libosxapp\libosxapp.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="**\*.cpp" />
+        <AdditionalLinkOptions Include="-framework Cocoa" />
+        <AdditionalLinkOptions Include="-framework ApplicationServices" />
+        <!--<AdditionalLinkOptions Include="-framework JavaNativeFoundation" />-->
+        <!--<AdditionalLinkOptions Include="-framework JavaRuntimeSupport" />-->
+        <AdditionalLinkOptions Include="-framework Security" />
+        <AdditionalLinkOptions Include="-framework SystemConfiguration" />
         <Compile Include="**\*.c" />
+        <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\concurrent\*.m" />-->
+        <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\java\util\MacOSXPreferencesFile.m" />
+        <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\eio\*.m" />-->
+        <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\apple\security\*.m" />-->
+        <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\apple\launcher\*.m" />-->
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />

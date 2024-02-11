@@ -197,7 +197,7 @@ namespace IKVM.Java.Externs.java.util.zip
                 var path = zipFile.getName();
                 if (JVM.Vfs.IsPath(path))
                 {
-                    var entry = (global::java.util.zip.ZipEntry)entries.get(JVM.JarClassList);
+                    var entry = (global::java.util.zip.ZipEntry)entries.get(JVM.Internal.JarClassList);
                     if (entry != null)
                     {
                         using var stream = new ZipEntryStream(zipFile, entry);

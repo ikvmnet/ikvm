@@ -40,9 +40,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
         static FileDescriptorAccessor fileDescriptorAccessor;
         static DotNetAsynchronousSocketChannelImplAccessor dotNetAsynchronousSocketChannelImplAccessor;
-        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.Internal.BaseAccessors.Get(ref fileDescriptorAccessor);
 
-        static DotNetAsynchronousSocketChannelImplAccessor DotNetAsynchronousSocketChannelImplAccessor => JVM.BaseAccessors.Get(ref dotNetAsynchronousSocketChannelImplAccessor);
+        static DotNetAsynchronousSocketChannelImplAccessor DotNetAsynchronousSocketChannelImplAccessor => JVM.Internal.BaseAccessors.Get(ref dotNetAsynchronousSocketChannelImplAccessor);
 
 #endif
 
