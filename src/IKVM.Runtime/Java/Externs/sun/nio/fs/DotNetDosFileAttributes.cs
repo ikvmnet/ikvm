@@ -34,7 +34,7 @@ namespace IKVM.Java.Externs.sun.nio.fs
 
         static DotNetDosFileAttributesAccessor DotNetDosFileAttributesAccessor => JVM.Internal.BaseAccessors.Get(ref dotNetDosFileAttributesAccessor);
 
-        static UnixFileKeyAccessor UnixFileKeyAccessor => JVM.BaseAccessors.Get(ref unixFileKeyAccessor);
+        static UnixFileKeyAccessor UnixFileKeyAccessor => JVM.Internal.BaseAccessors.Get(ref unixFileKeyAccessor);
 
 #endif
 
