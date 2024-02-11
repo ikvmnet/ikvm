@@ -1,0 +1,51 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>30B763A2-A59A-4CE8-B11E-DD49527480CB</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetIdentifiers>win-x64;win-x86;win-arm64</TargetIdentifiers>
+        <TargetName>jsoundds</TargetName>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <PreprocessorDefinitions Include="X_PLATFORM=X_WINDOWS" />
+        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT=TRUE" />
+        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN=TRUE" />
+        <PreprocessorDefinitions Include="USE_PORTS=TRUE" />
+        <PreprocessorDefinitions Include="USE_DAUDIO=TRUE" />
+        <Dependencies Include="dsound;winmm;user32;ole32" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x86'))">
+        <PreprocessorDefinitions Include="X_ARCH=X_I586" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x64'))">
+        <PreprocessorDefinitions Include="X_ARCH=X_AMD64" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm'))">
+        <PreprocessorDefinitions Include="X_ARCH=X_ARM" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm64'))">
+        <PreprocessorDefinitions Include="X_ARCH=X_AARCH64" />
+    </ItemGroup>
+    <ItemGroup>
+        <!-- LIBJSOUND_SRC_DIRS -->
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\com\sun\media\sound" />
+    </ItemGroup>
+    <ItemGroup>
+        <!-- INCLUDE_FILES -->
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\Utilities.c" LanguageStandard="c99" />
+        <!-- LIBJSOUND_DAUDIOFILES -->
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\DirectAudioDeviceProvider.c" LanguageStandard="c99" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\DirectAudioDevice.c" LanguageStandard="c99" />
+        <!-- INCLUDE_FILES -->
+        <Compile Include="$(OpenJdkDir)jdk\src\windows\native\com\sun\media\sound\PLATFORM_API_WinOS_DirectSound.cpp" LanguageStandard="c++11" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

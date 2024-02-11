@@ -1,0 +1,71 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>555CDB6E-84CE-4FE8-8945-47553C4D0A51</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetIdentifiers>linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
+        <TargetName>jsoundalsa</TargetName>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x86'))">
+        <PreprocessorDefinitions Include="X_ARCH=X_I586" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x64'))">
+        <PreprocessorDefinitions Include="X_ARCH=X_AMD64" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm'))">
+        <PreprocessorDefinitions Include="X_ARCH=X_ARM" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm64'))">
+        <PreprocessorDefinitions Include="X_ARCH=X_AARCH64" />
+    </ItemGroup>
+    <ItemGroup>
+        <!-- CFLAGS -->
+        <PreprocessorDefinitions Include="X_PLATFORM=X_LINUX" />
+        <PreprocessorDefinitions Include="USE_DAUDIO=TRUE" />
+        <PreprocessorDefinitions Include="USE_PORTS=TRUE" />
+        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT=TRUE" />
+        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN=TRUE" />
+        <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS=%5c&quot;%5c&quot;" />
+
+        <Dependencies Include="asound" />
+
+        <!-- LIBJSOUND_SRC_DIRS -->
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\com\sun\media\sound" />
+        
+        <!-- INCLUDE_FILES -->
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\Utilities.c" />
+
+        <!-- LIBJSOUND_MIDIFILES -->
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\MidiInDevice.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\MidiInDeviceProvider.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\MidiOutDevice.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\MidiOutDeviceProvider.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\PlatformMidi.c" />
+
+        <!-- LIBJSOUND_PORTFILES -->
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\PortMixerProvider.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\PortMixer.c" />
+
+        <!-- LIBJSOUND_DAUDIOFILES -->
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\DirectAudioDeviceProvider.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\DirectAudioDevice.c" />
+
+        <!-- BUILD_LIBJSOUNDALSA -->
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\com\sun\media\sound\PLATFORM_API_LinuxOS_ALSA_CommonUtils.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\com\sun\media\sound\PLATFORM_API_LinuxOS_ALSA_PCM.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\com\sun\media\sound\PLATFORM_API_LinuxOS_ALSA_PCMUtils.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\com\sun\media\sound\PLATFORM_API_LinuxOS_ALSA_MidiIn.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\com\sun\media\sound\PLATFORM_API_LinuxOS_ALSA_MidiOut.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\com\sun\media\sound\PLATFORM_API_LinuxOS_ALSA_MidiUtils.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\com\sun\media\sound\PLATFORM_API_LinuxOS_ALSA_Ports.c" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

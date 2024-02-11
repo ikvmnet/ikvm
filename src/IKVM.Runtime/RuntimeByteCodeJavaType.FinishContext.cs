@@ -681,15 +681,12 @@ namespace IKVM.Runtime
                     }
 
                     AddMethodParameterInfo(m, methods[i], mb, out var parameterNames);
+
 #if IMPORTER
                     if (methods[i].HasCallerID)
                     {
                         context.AttributeHelper.SetEditorBrowsableNever(mb);
                         EmitCallerIDStub(methods[i], parameterNames);
-                    }
-                    if (m.DllExportName != null && wrapper.classLoader.TryEnableUnmanagedExports())
-                    {
-                        mb.__AddUnmanagedExport(m.DllExportName, m.DllExportOrdinal);
                     }
 #endif
                 }
