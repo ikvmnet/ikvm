@@ -134,15 +134,15 @@ jobs:
         fetch-depth: 0
         submodules: recursive
     - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 3.1.x
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.0.x
     - name: Setup .NET 7.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 7.0.x
     - name: Cache LLVM and Clang
@@ -157,7 +157,7 @@ jobs:
         version: "16.0"
         cached: ${{ steps.cache-llvm.outputs.cache-hit }}
     - name: Install apple-codesign
-      uses: baptiste0928/cargo-install@v2
+      uses: baptiste0928/cargo-install@v3
       with:
         crate: apple-codesign
         version: latest
@@ -178,7 +178,7 @@ jobs:
         key: nuget--${{ runner.os }}--${{ hashFiles('IKVM.sln', 'src/**/*.csproj', 'src/**/*.msbuildproj') }}--1
         restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v2
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v4
       with:
@@ -196,7 +196,7 @@ jobs:
       shell: pwsh
       run: New-Item -Type Directory -Force ${{ env.WORKPATH }}/ikvm/jtreg; Expand-Archive ${{ env.WORKPATH }}/temp/jtreg-build.zip -DestinationPath ${{ env.WORKPATH }}/ikvm/jtreg
     - name: Download Native SDKs
-      uses: robinraju/release-downloader@v1.8
+      uses: robinraju/release-downloader@v1
       with:
         repository: ikvmnet/ikvm-native-sdk
         tag: ${{ env.NATIVE_SDK_VERSION }}
@@ -570,11 +570,11 @@ jobs:
       shell: pwsh
       run: choco install procdump -y; Add-Content $env:GITHUB_PATH "$env:ProgramData\chocolatey\bin\"
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.0.x
     - name: Setup .NET 7.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 7.0.x
     - name: Setup WSL
@@ -680,7 +680,7 @@ jobs:
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}/dotnet"
     - name: Setup .NET 7.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 7.0.x
     - name: Install GitVersion
