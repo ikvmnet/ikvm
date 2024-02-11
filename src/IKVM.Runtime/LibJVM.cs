@@ -92,7 +92,7 @@ namespace IKVM.Runtime
         public nint JVM_LoadLibrary(string name)
         {
             var h = _JVM_LoadLibrary(name);
-            Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_LoadLibrary)}: {0} => {1}", name, h);
+            Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_LoadLibrary)}: {{0}} => {{1}}", name, h);
             return h;
         }
 
@@ -104,7 +104,7 @@ namespace IKVM.Runtime
         public nint JVM_UnloadLibrary(nint handle)
         {
             var h = _JVM_UnloadLibrary(handle);
-            Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_UnloadLibrary)}: {0} => {1}", handle, h);
+            Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_UnloadLibrary)}: {{0}} => {{1}}", handle, h);
             return h;
         }
 
@@ -117,7 +117,7 @@ namespace IKVM.Runtime
         public nint JVM_FindLibraryEntry(nint handle, string name)
         {
             var h = _JVM_FindLibraryEntry(handle, name);
-            Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_FindLibraryEntry)}: {0} {1} => {2}", handle, name, h);
+            Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_FindLibraryEntry)}: {{0}} {{1}} => {{2}}", handle, name, h);
             return h;
         }
     }

@@ -39,13 +39,16 @@ namespace IKVM.Reflection
     public sealed class Universe : IDisposable
     {
 
+        public static readonly string NetCoreLibName = "System.Runtime";
+        public static readonly string NetFxCoreLibName = "mscorlib";
+
 #if NETCOREAPP3_1_OR_GREATER
 
-        public static readonly string DefaultCoreLibName = "System.Runtime";
+        public static readonly string DefaultCoreLibName = NetCoreLibName;
 
 #elif NETFRAMEWORK
 
-        public static readonly string DefaultCoreLibName = "mscorlib";
+        public static readonly string DefaultCoreLibName = NetFxCoreLibName;
 
 #endif
 
@@ -734,7 +737,7 @@ namespace IKVM.Reflection
         [Obsolete]
         public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
         {
-            AssemblyBuilder ab = new AssemblyBuilder(this, name, dir, null);
+            var ab = new AssemblyBuilder(this, name, dir, null);
             AddLegacyPermissionSet(ab, requiredPermissions, System.Security.Permissions.SecurityAction.RequestMinimum);
             AddLegacyPermissionSet(ab, optionalPermissions, System.Security.Permissions.SecurityAction.RequestOptional);
             AddLegacyPermissionSet(ab, refusedPermissions, System.Security.Permissions.SecurityAction.RequestRefuse);

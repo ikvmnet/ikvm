@@ -22,13 +22,15 @@
   
 */
 using System;
+using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
+
     sealed class FieldMarshalTable : SortedTable<FieldMarshalTable.Record>
     {
 
@@ -36,40 +38,31 @@ namespace IKVM.Reflection.Metadata
         {
 
             internal int Parent;
-            internal int NativeType;
-
-            readonly int IRecord.SortKey => EncodeHasFieldMarshal(Parent);
+            internal BlobHandle NativeType;
 
             readonly int IRecord.FilterKey => Parent;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(EncodeHasFieldMarshal(Parent), EncodeHasFieldMarshal(other.Parent));
 
         }
 
         internal const int Index = 0x0D;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
                 records[i].Parent = mr.ReadHasFieldMarshal();
-                records[i].NativeType = mr.ReadBlobIndex();
+                records[i].NativeType = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
-            {
-                mw.WriteHasFieldMarshal(records[i].Parent);
-                mw.WriteBlobIndex(records[i].NativeType);
-            }
-        }
-
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .WriteHasFieldMarshal()
-                .WriteBlobIndex()
-                .Value;
+                module.Metadata.AddMarshallingDescriptor(
+                    MetadataTokens.EntityHandle(records[i].Parent),
+                    records[i].NativeType);
         }
 
         internal void Fixup(ModuleBuilder moduleBuilder)

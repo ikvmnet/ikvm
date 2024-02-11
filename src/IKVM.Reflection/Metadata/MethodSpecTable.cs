@@ -21,9 +21,11 @@
   jeroen@frijters.net
   
 */
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -35,36 +37,31 @@ namespace IKVM.Reflection.Metadata
         {
 
             internal int Method;
-            internal int Instantiation;
+            internal BlobHandle Instantiation;
 
         }
 
         internal const int Index = 0x2B;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
                 records[i].Method = mr.ReadMethodDefOrRef();
-                records[i].Instantiation = mr.ReadBlobIndex();
+                records[i].Instantiation = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
             {
-                mw.WriteMethodDefOrRef(records[i].Method);
-                mw.WriteBlobIndex(records[i].Instantiation);
-            }
-        }
+                var h = module.Metadata.AddMethodSpecification(
+                    MetadataTokens.EntityHandle(records[i].Method),
+                    records[i].Instantiation);
 
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .WriteMethodDefOrRef()
-                .WriteBlobIndex()
-                .Value;
+                Debug.Assert(h == MetadataTokens.MethodSpecificationHandle(i + 1));
+            }
         }
 
         internal int FindOrAddRecord(Record record)

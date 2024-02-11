@@ -14,7 +14,6 @@
         <ProjectReference Include="..\libfdlibm\libfdlibm.clangproj" />
         <ProjectReference Include="..\libverify\libverify.clangproj" />
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
         <Dependencies Include="shell32;delayimp;advapi32;version" />

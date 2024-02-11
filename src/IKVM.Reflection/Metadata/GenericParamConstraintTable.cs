@@ -21,9 +21,12 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -36,47 +39,44 @@ namespace IKVM.Reflection.Metadata
             internal int Owner;
             internal int Constraint;
 
-            readonly int IRecord.SortKey => Owner;
-
             readonly int IRecord.FilterKey => Owner;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(Owner, other.Owner);
 
         }
 
         internal const int Index = 0x2C;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Owner = mr.ReadGenericParam();
-				records[i].Constraint = mr.ReadTypeDefOrRef();
-			}
-		}
+        internal override void Read(Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Owner = mr.ReadGenericParam();
+                records[i].Constraint = mr.ReadTypeDefOrRef();
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.WriteGenericParam(records[i].Owner);
-				mw.WriteTypeDefOrRef(records[i].Constraint);
-			}
-		}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                var h = module.Metadata.AddGenericParameterConstraint(
+                    (GenericParameterHandle)MetadataTokens.EntityHandle(records[i].Owner),
+                    MetadataTokens.EntityHandle(records[i].Constraint));
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.WriteGenericParam()
-				.WriteTypeDefOrRef()
-				.Value;
-		}
+                Debug.Assert(h == MetadataTokens.GenericParameterConstraintHandle(i + 1));
+            }
+        }
 
-		internal void Fixup(ModuleBuilder moduleBuilder)
-		{
-			var fixups = moduleBuilder.GenericParam.GetIndexFixup();
-			for (int i = 0; i < rowCount; i++)
-				records[i].Owner = fixups[records[i].Owner - 1] + 1;
+        internal void Fixup(ModuleBuilder moduleBuilder)
+        {
+            var fixups = moduleBuilder.GenericParamTable.GetIndexFixup();
+            for (int i = 0; i < rowCount; i++)
+                records[i].Owner = MetadataTokens.GetToken(MetadataTokens.GenericParameterHandle(fixups[MetadataTokens.GetRowNumber(MetadataTokens.EntityHandle(records[i].Owner)) - 1] + 1));
 
-			Sort();
-		}
-	}
+            Sort();
+        }
+
+    }
+
 }

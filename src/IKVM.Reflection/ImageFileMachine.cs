@@ -27,6 +27,7 @@ namespace IKVM.Reflection
     public enum ImageFileMachine
 	{
 
+        UNKNOWN = 0,
 		I386 = 332,
 		ARM = 452,
 		IA64 = 512,

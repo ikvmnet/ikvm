@@ -7,7 +7,6 @@
         <IncludeSymbols>false</IncludeSymbols>
         <ImageRuntimeIdentifier>win-arm64</ImageRuntimeIdentifier>
         <ImageBinProject>..\IKVM.Image-bin\IKVM.Image-bin.csproj</ImageBinProject>
-        <SupportedImageTargetFrameworks>net6.0</SupportedImageTargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>

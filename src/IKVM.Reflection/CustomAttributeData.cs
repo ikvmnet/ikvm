@@ -89,10 +89,12 @@ namespace IKVM.Reflection
 		 *    - lazyNamedArguments != null
 		 * 
 		 */
+
         readonly Module module;
         readonly int customAttributeIndex;
         readonly int declSecurityIndex;
         readonly byte[] declSecurityBlob;
+
         ConstructorInfo lazyConstructor;
         IList<CustomAttributeTypedArgument> lazyConstructorArguments;
         IList<CustomAttributeNamedArgument> lazyNamedArguments;
@@ -104,7 +106,7 @@ namespace IKVM.Reflection
         /// <param name="index"></param>
         internal CustomAttributeData(Module module, int index)
         {
-            this.module = module;
+            this.module = module ?? throw new ArgumentNullException(nameof(module));
             this.customAttributeIndex = index;
             this.declSecurityIndex = -1;
         }
@@ -132,12 +134,22 @@ namespace IKVM.Reflection
         }
 
         // 4) Pseudo Custom Attribute, .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
+
+        /// <summary>
+        /// Pseudo Custom Attribute for .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="constructor"></param>
+        /// <param name="constructorArgs"></param>
+        /// <param name="namedArguments"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         internal CustomAttributeData(Module module, ConstructorInfo constructor, List<CustomAttributeTypedArgument> constructorArgs, List<CustomAttributeNamedArgument> namedArguments)
         {
-            this.module = module;
+            this.module = module ?? throw new ArgumentNullException(nameof(module));
             this.customAttributeIndex = -1;
             this.declSecurityIndex = -1;
             this.lazyConstructor = constructor;
+
             lazyConstructorArguments = constructorArgs.AsReadOnly();
             if (namedArguments == null)
                 this.lazyNamedArguments = Array.Empty<CustomAttributeNamedArgument>();
@@ -145,7 +157,13 @@ namespace IKVM.Reflection
                 this.lazyNamedArguments = namedArguments.AsReadOnly();
         }
 
-        // 3) Pre-resolved Custom Attribute
+        /// <summary>
+        /// Pre-resolved custom attribute.
+        /// </summary>
+        /// <param name="asm"></param>
+        /// <param name="constructor"></param>
+        /// <param name="br"></param>
+        /// <exception cref="BadImageFormatException"></exception>
         internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, ByteReader br)
         {
             this.module = asm.ManifestModule;
@@ -249,8 +267,8 @@ namespace IKVM.Reflection
         internal static void ReadDeclarativeSecurity(Module module, int index, List<CustomAttributeData> list)
         {
             var asm = module.Assembly;
-            var action = module.DeclSecurity.records[index].Action;
-            var br = module.GetBlob(module.DeclSecurity.records[index].PermissionSet);
+            var action = module.DeclSecurityTable.records[index].Action;
+            var br = module.GetBlobReader(module.DeclSecurityTable.records[index].PermissionSet);
             if (br.PeekByte() == '.')
             {
                 br.ReadByte();
@@ -516,7 +534,7 @@ namespace IKVM.Reflection
             else if (customAttributeIndex == -1)
                 return __ToBuilder().GetBlob(module.Assembly);
             else
-                return ((ModuleReader)module).GetBlobCopy(module.CustomAttribute.records[customAttributeIndex].Value);
+                return ((ModuleReader)module).GetBlobCopy(module.CustomAttributeTable.records[customAttributeIndex].Value);
         }
 
         public int __Parent
@@ -524,9 +542,9 @@ namespace IKVM.Reflection
             get
             {
                 return customAttributeIndex >= 0
-                    ? module.CustomAttribute.records[customAttributeIndex].Parent
+                    ? module.CustomAttributeTable.records[customAttributeIndex].Parent
                     : declSecurityIndex >= 0
-                        ? module.DeclSecurity.records[declSecurityIndex].Parent
+                        ? module.DeclSecurityTable.records[declSecurityIndex].Parent
                         : 0;
             }
         }
@@ -541,7 +559,7 @@ namespace IKVM.Reflection
             get
             {
                 if (lazyConstructor == null)
-                    lazyConstructor = (ConstructorInfo)module.ResolveMethod(module.CustomAttribute.records[customAttributeIndex].Type);
+                    lazyConstructor = (ConstructorInfo)module.ResolveMethod(module.CustomAttributeTable.records[customAttributeIndex].Constructor);
 
                 return lazyConstructor;
             }
@@ -584,7 +602,7 @@ namespace IKVM.Reflection
 
         void LazyParseArguments(bool requireNameArguments)
         {
-            var br = module.GetBlob(module.CustomAttribute.records[customAttributeIndex].Value);
+            var br = module.GetBlobReader(module.CustomAttributeTable.records[customAttributeIndex].Value);
             if (br.Length == 0)
             {
                 // it's legal to have an empty blob
@@ -766,7 +784,7 @@ namespace IKVM.Reflection
 
         internal static List<CustomAttributeData> GetCustomAttributesImpl(List<CustomAttributeData> list, Module module, int token, Type attributeType)
         {
-            foreach (var i in module.CustomAttribute.Filter(token))
+            foreach (var i in module.CustomAttributeTable.Filter(token))
             {
                 if (attributeType == null)
                 {
@@ -775,7 +793,7 @@ namespace IKVM.Reflection
                 }
                 else
                 {
-                    if (attributeType.IsAssignableFrom(module.ResolveMethod(module.CustomAttribute.records[i].Type).DeclaringType))
+                    if (attributeType.IsAssignableFrom(module.ResolveMethod(module.CustomAttributeTable.records[i].Constructor).DeclaringType))
                     {
                         list ??= new List<CustomAttributeData>();
                         list.Add(new CustomAttributeData(module, i));
@@ -789,8 +807,8 @@ namespace IKVM.Reflection
         public static IList<CustomAttributeData> __GetCustomAttributes(Type type, Type interfaceType, Type attributeType, bool inherit)
         {
             var module = type.Module;
-            foreach (int i in module.InterfaceImpl.Filter(type.MetadataToken))
-                if (module.ResolveType(module.InterfaceImpl.records[i].Interface, type) == interfaceType)
+            foreach (int i in module.InterfaceImplTable.Filter(type.MetadataToken))
+                if (module.ResolveType(module.InterfaceImplTable.records[i].Interface, type) == interfaceType)
                     return GetCustomAttributesImpl(null, module, (InterfaceImplTable.Index << 24) | (i + 1), attributeType) ?? EmptyList;
 
             return EmptyList;

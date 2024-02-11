@@ -16,6 +16,22 @@
 
     <ItemGroup>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win-arm64</SetRuntimeIdentifier>
+            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net472' ">ikvmc\net472\win-arm64</PublishTargetPath>
+            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net472' ">PreserveNewest</CopyToOutputDirectory>
+            <PublishPackagePath>ikvmc\net472\win-arm64</PublishPackagePath>
+            <Pack>true</Pack>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win-arm64</SetRuntimeIdentifier>
+            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net472' ">ikvmstub\net472\win-arm64\bin</PublishTargetPath>
+            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net472' ">PreserveNewest</CopyToOutputDirectory>
+            <PublishPackagePath>ikvmstub\net472\win-arm64</PublishPackagePath>
+            <Pack>true</Pack>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win-arm64</SetRuntimeIdentifier>
             <PublishTargetPath Condition=" '$(TargetFramework)' == 'net6.0' ">ikvmc\net6.0\win-arm64</PublishTargetPath>

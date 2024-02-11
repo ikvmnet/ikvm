@@ -21,8 +21,10 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
+using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -34,8 +36,8 @@ namespace IKVM.Reflection.Metadata
         {
 
             internal int Flags;
-            internal int TypeName;
-            internal int TypeNamespace;
+            internal StringHandle TypeName;
+            internal StringHandle TypeNamespace;
             internal int Extends;
             internal int FieldList;
             internal int MethodList;
@@ -44,22 +46,22 @@ namespace IKVM.Reflection.Metadata
 
         internal const int Index = 0x02;
 
-		internal override void Read(MetadataReader mr)
+		internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
 		{
 			for (int i = 0; i < records.Length; i++)
 			{
 				records[i].Flags = mr.ReadInt32();
-				records[i].TypeName = mr.ReadStringIndex();
-				records[i].TypeNamespace = mr.ReadStringIndex();
+				records[i].TypeName = MetadataTokens.StringHandle(mr.ReadStringIndex());
+				records[i].TypeNamespace = MetadataTokens.StringHandle(mr.ReadStringIndex());
 				records[i].Extends = mr.ReadTypeDefOrRef();
 				records[i].FieldList = mr.ReadField();
 				records[i].MethodList = mr.ReadMethodDef();
 			}
 		}
 
-		internal override void Write(MetadataWriter mw)
+		internal override void Write(ModuleBuilder module)
 		{
-			mw.ModuleBuilder.WriteTypeDefTable(mw);
+			module.WriteTypeDefTable();
 		}
 
 		internal int AllocToken()
@@ -67,17 +69,6 @@ namespace IKVM.Reflection.Metadata
 			return 0x02000000 + AddVirtualRecord();
 		}
 
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.AddFixed(4)
-				.WriteStringIndex()
-				.WriteStringIndex()
-				.WriteTypeDefOrRef()
-				.WriteField()
-				.WriteMethodDef()
-				.Value;
-		}
 	}
 
 }

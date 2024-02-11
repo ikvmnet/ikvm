@@ -1,0 +1,32 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>0E068B20-9C99-45C5-8D94-A1FF9EDD6739</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
+        <TargetName>osxapp</TargetName>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <AdditionalLinkOptions Include="-framework Accelerate" />
+        <AdditionalLinkOptions Include="-framework ApplicationServices" />
+        <AdditionalLinkOptions Include="-framework AudioToolbox" />
+        <AdditionalLinkOptions Include="-framework Carbon" />
+        <AdditionalLinkOptions Include="-framework Cocoa" />
+        <AdditionalLinkOptions Include="-framework Security" />
+        <AdditionalLinkOptions Include="-framework ExceptionHandling" />
+        <!--<AdditionalLinkOptions Include="-framework JavaNativeFoundation" />-->
+        <!--<AdditionalLinkOptions Include="-framework JavaRuntimeSupport" />-->
+        <AdditionalLinkOptions Include="-framework OpenGL" />
+        <AdditionalLinkOptions Include="-framework IOSurface" />
+        <AdditionalLinkOptions Include="-framework QuartzCore" />
+        <Compile Include="**\*.cpp" />
+        <Compile Include="**\*.c" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

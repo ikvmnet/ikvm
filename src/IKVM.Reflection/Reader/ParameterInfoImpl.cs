@@ -51,7 +51,7 @@ namespace IKVM.Reflection.Reader
 
         public override string Name
         {
-            get { return index == -1 ? null : ((ModuleReader)this.Module).GetString(this.Module.Param.records[index].Name); }
+            get { return index == -1 ? null : ((ModuleReader)this.Module).GetString(this.Module.ParamTable.records[index].Name); }
         }
 
         public override Type ParameterType
@@ -61,7 +61,7 @@ namespace IKVM.Reflection.Reader
 
         public override ParameterAttributes Attributes
         {
-            get { return index == -1 ? ParameterAttributes.None : (ParameterAttributes)this.Module.Param.records[index].Flags; }
+            get { return index == -1 ? ParameterAttributes.None : (ParameterAttributes)this.Module.ParamTable.records[index].Flags; }
         }
 
         public override int Position
@@ -74,7 +74,7 @@ namespace IKVM.Reflection.Reader
             get
             {
                 if ((Attributes & ParameterAttributes.HasDefault) != 0)
-                    return Module.Constant.GetRawConstantValue(Module, MetadataToken);
+                    return Module.ConstantTable.GetRawConstantValue(Module, MetadataToken);
 
                 var universe = Module.universe;
                 if (ParameterType == universe.System_Decimal)

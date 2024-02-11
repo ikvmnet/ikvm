@@ -20,8 +20,12 @@
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libawt\libawt.clangproj" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libmanagement\libmanagement.clangproj" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libw2k_lsa_auth\libw2k_lsa_auth.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libosxapp\libosxapp.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libosx\libosx.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libosxkrb5\libosxkrb5.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libjsound\libjsound.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libjsoundds\libjsoundds.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libjsoundalsa\libjsoundalsa.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
     </ItemGroup>
 
     <Target Name="GetClangProjectReferencesByRuntime" Inputs="@(_ReferencedClangProjects)" Outputs="%(_ReferencedClangProjects.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">

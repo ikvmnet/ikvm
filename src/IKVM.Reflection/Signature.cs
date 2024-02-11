@@ -79,7 +79,7 @@ namespace IKVM.Reflection
         internal const byte ELEMENT_TYPE_CMOD_OPT = 0x20;
         internal const byte ELEMENT_TYPE_PINNED = 0x45;
 
-        internal abstract void WriteSig(ModuleBuilder module, ByteBuffer bb);
+        internal abstract void Write(ModuleBuilder module, ByteBuffer bb);
 
         static Type ReadGenericInst(ModuleReader module, ByteReader br, IGenericContext context)
         {

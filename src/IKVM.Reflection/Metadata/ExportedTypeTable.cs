@@ -21,9 +21,11 @@
   jeroen@frijters.net
   
 */
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Metadata
 {
@@ -33,47 +35,42 @@ namespace IKVM.Reflection.Metadata
 
         internal struct Record
         {
+
             internal int Flags;
             internal int TypeDefId;
-            internal int TypeName;
-            internal int TypeNamespace;
+            internal StringHandle TypeName;
+            internal StringHandle TypeNamespace;
             internal int Implementation;
+
         }
 
         internal const int Index = 0x27;
 
-        internal override void Read(MetadataReader mr)
+        internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
             {
                 records[i].Flags = mr.ReadInt32();
                 records[i].TypeDefId = mr.ReadInt32();
-                records[i].TypeName = mr.ReadStringIndex();
-                records[i].TypeNamespace = mr.ReadStringIndex();
+                records[i].TypeName = MetadataTokens.StringHandle(mr.ReadStringIndex());
+                records[i].TypeNamespace = MetadataTokens.StringHandle(mr.ReadStringIndex());
                 records[i].Implementation = mr.ReadImplementation();
             }
         }
 
-        internal override void Write(MetadataWriter mw)
+        internal override void Write(ModuleBuilder module)
         {
             for (int i = 0; i < rowCount; i++)
             {
-                mw.Write(records[i].Flags);
-                mw.Write(records[i].TypeDefId);
-                mw.WriteStringIndex(records[i].TypeName);
-                mw.WriteStringIndex(records[i].TypeNamespace);
-                mw.WriteImplementation(records[i].Implementation);
-            }
-        }
+                var h = module.Metadata.AddExportedType(
+                    (System.Reflection.TypeAttributes)records[i].Flags,
+                    records[i].TypeNamespace,
+                    records[i].TypeName,
+                    MetadataTokens.EntityHandle(records[i].Implementation),
+                    records[i].TypeDefId);
 
-        protected override int GetRowSize(RowSizeCalc rsc)
-        {
-            return rsc
-                .AddFixed(8)
-                .WriteStringIndex()
-                .WriteStringIndex()
-                .WriteImplementation()
-                .Value;
+                Debug.Assert(h == MetadataTokens.ExportedTypeHandle(i + 1));
+            }
         }
 
         internal int FindOrAddRecord(Record rec)

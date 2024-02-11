@@ -8,12 +8,16 @@
         <TargetIdentifiers>win-x64;win-x86;win-arm64</TargetIdentifiers>
         <TargetName>sunmscapi</TargetName>
         <LanguageStandard>c++11</LanguageStandard>
-        <Dependencies>$(Dependencies);crypt32;advapi32;ncrypt</Dependencies>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
     </ItemGroup>
     <ItemGroup>
+        <Dependencies Include="crypt32;advapi32;ncrypt" />
+        <AdditionalCompileOptions Include="-Wno-c++11-narrowing" />
+        <AdditionalCompileOptions Include="-Wno-writable-strings" />
+        <AdditionalCompileOptions Include="-Wno-pointer-to-int-cast" />
+        <AdditionalCompileOptions Include="-Wno-parentheses" />
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\mscapi\**\*.cpp" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />

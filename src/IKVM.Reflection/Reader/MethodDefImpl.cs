@@ -63,13 +63,13 @@ namespace IKVM.Reflection.Reader
             if ((GetMethodImplementationFlags() & MethodImplAttributes.CodeTypeMask) != MethodImplAttributes.IL)
                 return null; // method is not IL
 
-            var rva = module.MethodDef.records[index].RVA;
+            var rva = module.MethodDefTable.records[index].RVA;
             return rva == 0 ? null : new MethodBody(module, rva, context);
         }
 
         public override int __MethodRVA
         {
-            get { return module.MethodDef.records[index].RVA; }
+            get { return module.MethodDefTable.records[index].RVA; }
         }
 
         public override CallingConventions CallingConvention
@@ -79,12 +79,12 @@ namespace IKVM.Reflection.Reader
 
         public override MethodAttributes Attributes
         {
-            get { return (MethodAttributes)module.MethodDef.records[index].Flags; }
+            get { return (MethodAttributes)module.MethodDefTable.records[index].Flags; }
         }
 
         public override MethodImplAttributes GetMethodImplementationFlags()
         {
-            return (MethodImplAttributes)module.MethodDef.records[index].ImplFlags;
+            return (MethodImplAttributes)module.MethodDefTable.records[index].ImplFlags;
         }
 
         public override ParameterInfo[] GetParameters()
@@ -100,11 +100,11 @@ namespace IKVM.Reflection.Reader
                 var methodSignature = MethodSignature;
                 parameters = new ParameterInfo[methodSignature.GetParameterCount()];
 
-                var parameter = module.MethodDef.records[index].ParamList - 1;
-                var end = module.MethodDef.records.Length > index + 1 ? module.MethodDef.records[index + 1].ParamList - 1 : module.Param.records.Length;
+                var parameter = module.MethodDefTable.records[index].ParamList - 1;
+                var end = module.MethodDefTable.records.Length > index + 1 ? module.MethodDefTable.records[index + 1].ParamList - 1 : module.ParamTable.records.Length;
                 for (; parameter < end; parameter++)
                 {
-                    var seq = module.Param.records[parameter].Sequence - 1;
+                    var seq = module.ParamTable.records[parameter].Sequence - 1;
                     if (seq == -1)
                         returnParameter = new ParameterInfoImpl(this, seq, parameter);
                     else
@@ -149,7 +149,7 @@ namespace IKVM.Reflection.Reader
 
         public override string Name
         {
-            get { return module.GetString(module.MethodDef.records[index].Name); }
+            get { return module.GetString(module.MethodDefTable.records[index].Name); }
         }
 
         public override int MetadataToken
@@ -182,7 +182,7 @@ namespace IKVM.Reflection.Reader
             if (typeArgs == null)
             {
                 var token = MetadataToken;
-                var first = module.GenericParam.FindFirstByOwner(token);
+                var first = module.GenericParamTable.FindFirstByOwner(token);
                 if (first == -1)
                 {
                     typeArgs = Type.EmptyTypes;
@@ -190,8 +190,8 @@ namespace IKVM.Reflection.Reader
                 else
                 {
                     var list = new List<Type>();
-                    var len = module.GenericParam.records.Length;
-                    for (int i = first; i < len && module.GenericParam.records[i].Owner == token; i++)
+                    var len = module.GenericParamTable.records.Length;
+                    for (int i = first; i < len && module.GenericParamTable.records[i].Owner == token; i++)
                         list.Add(new GenericTypeParameter(module, i, Signature.ELEMENT_TYPE_MVAR));
 
                     typeArgs = list.ToArray();
@@ -228,7 +228,7 @@ namespace IKVM.Reflection.Reader
 
         internal override MethodSignature MethodSignature
         {
-            get { return lazyMethodSignature ?? (lazyMethodSignature = MethodSignature.ReadSig(module, module.GetBlob(module.MethodDef.records[index].Signature), this)); }
+            get { return lazyMethodSignature ?? (lazyMethodSignature = MethodSignature.ReadSig(module, module.GetBlobReader(module.MethodDefTable.records[index].Signature), this)); }
         }
 
         internal override int ImportTo(Emit.ModuleBuilder module)
@@ -241,13 +241,13 @@ namespace IKVM.Reflection.Reader
             Type[] typeArgs = null;
             List<MethodInfo> list = null;
 
-            foreach (var i in module.MethodImpl.Filter(declaringType.MetadataToken))
+            foreach (var i in module.MethodImplTable.Filter(declaringType.MetadataToken))
             {
-                if (module.MethodImpl.records[i].MethodBody == this.MetadataToken)
+                if (module.MethodImplTable.records[i].MethodBody == this.MetadataToken)
                 {
                     typeArgs ??= declaringType.GetGenericArguments();
                     list ??= new List<MethodInfo>();
-                    list.Add((MethodInfo)module.ResolveMethod(module.MethodImpl.records[i].MethodDeclaration, typeArgs, null));
+                    list.Add((MethodInfo)module.ResolveMethod(module.MethodImplTable.records[i].MethodDeclaration, typeArgs, null));
                 }
             }
 

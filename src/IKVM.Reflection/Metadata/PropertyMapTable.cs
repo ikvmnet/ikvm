@@ -21,13 +21,17 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Reader;
-using IKVM.Reflection.Writer;
+using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
+using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Metadata
 {
+
     sealed class PropertyMapTable : SortedTable<PropertyMapTable.Record>
-	{
+    {
 
         internal struct Record : IRecord
         {
@@ -35,39 +39,30 @@ namespace IKVM.Reflection.Metadata
             internal int Parent;
             internal int PropertyList;
 
-            readonly int IRecord.SortKey => Parent;
-
             readonly int IRecord.FilterKey => Parent;
+
+            public readonly int CompareTo(Record other) => Comparer<int>.Default.Compare(Parent, other.Parent);
 
         }
 
         internal const int Index = 0x15;
 
-		internal override void Read(MetadataReader mr)
-		{
-			for (int i = 0; i < records.Length; i++)
-			{
-				records[i].Parent = mr.ReadTypeDef();
-				records[i].PropertyList = mr.ReadProperty();
-			}
-		}
+        internal override void Read(Reader.MetadataReader mr)
+        {
+            for (int i = 0; i < records.Length; i++)
+            {
+                records[i].Parent = mr.ReadTypeDef();
+                records[i].PropertyList = mr.ReadProperty();
+            }
+        }
 
-		internal override void Write(MetadataWriter mw)
-		{
-			for (int i = 0; i < rowCount; i++)
-			{
-				mw.WriteTypeDef(records[i].Parent);
-				mw.WriteProperty(records[i].PropertyList);
-			}
-		}
-
-		protected override int GetRowSize(RowSizeCalc rsc)
-		{
-			return rsc
-				.WriteTypeDef()
-				.WriteProperty()
-				.Value;
-		}
-	}
+        internal override void Write(ModuleBuilder module)
+        {
+            for (int i = 0; i < rowCount; i++)
+                module.Metadata.AddPropertyMap(
+                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].Parent),
+                    (PropertyDefinitionHandle)MetadataTokens.EntityHandle(records[i].PropertyList));
+        }
+    }
 
 }

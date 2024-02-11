@@ -100,7 +100,7 @@ namespace IKVM.Reflection
             return new PropertySignature(callingConvention, propertyType.BindTypeParameters(declaringType), BindTypeParameters(declaringType, parameterTypes), customModifiers.Bind(declaringType));
         }
 
-        internal override void WriteSig(ModuleBuilder module, ByteBuffer bb)
+        internal override void Write(ModuleBuilder module, ByteBuffer bb)
         {
             var flags = PROPERTY;
             if ((callingConvention & CallingConventions.HasThis) != 0)

@@ -41,7 +41,8 @@
     <PropertyGroup Condition="$(TargetTriple.Contains('-windows-'))">
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32</PreprocessorDefinitions>
         <MsCompatibility>true</MsCompatibility>
-        <MsCompatibilityVersion>14</MsCompatibilityVersion>
+        <!--<MsCompatibilityVersion>14</MsCompatibilityVersion>-->
+        <AdditionalCompileOptions>$(AdditionalCompileOptions);-fms-extensions</AdditionalCompileOptions>
         <WinSdkArch Condition="$(TargetTriple.StartsWith('x86_64-'))">x86_64</WinSdkArch>
         <WinSdkArch Condition="$(TargetTriple.StartsWith('i686-'))">x86</WinSdkArch>
         <WinSdkArch Condition="$(TargetTriple.StartsWith('aarch64-'))">aarch64</WinSdkArch>
