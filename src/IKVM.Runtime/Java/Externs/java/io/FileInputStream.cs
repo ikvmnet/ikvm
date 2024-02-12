@@ -33,9 +33,9 @@ namespace IKVM.Java.Externs.java.io
         delegate int __jniDelegate__readBytes(IntPtr jniEnv, IntPtr self, IntPtr bytes, int off, int len);
         static __jniDelegate__readBytes __jniPtr__readBytes;
         delegate long __jniDelegate__skip(IntPtr jniEnv, IntPtr self, long toSkip);
-        static __jniDelegate__skip __jniPtr__skip;
+        static __jniDelegate__skip __jniPtr__skip0;
         delegate int __jniDelegate__available(IntPtr jniEnv, IntPtr self);
-        static __jniDelegate__available __jniPtr__available;
+        static __jniDelegate__available __jniPtr__available0;
         delegate int __jniDelegate__close0(IntPtr jniEnv, IntPtr self);
         static __jniDelegate__close0 __jniPtr__close0;
 
@@ -294,12 +294,12 @@ namespace IKVM.Java.Externs.java.io
             else
             {
                 __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.io.FileInputStream).TypeHandle);
-                __jniPtr__skip ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__skip>(JNIFrame.GetFuncPtr(__callerID, "java/io/FileInputStream", nameof(skip0), "(J)J"));
+                __jniPtr__skip0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__skip>(JNIFrame.GetFuncPtr(__callerID, "java/io/FileInputStream", nameof(skip0), "(J)J"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    return __jniPtr__skip(jniEnv, jniFrm.MakeLocalRef(this_), n);
+                    return __jniPtr__skip0(jniEnv, jniFrm.MakeLocalRef(this_), n);
                 }
                 catch (Exception ex)
                 {
@@ -358,12 +358,12 @@ namespace IKVM.Java.Externs.java.io
             else
             {
                 __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.io.FileInputStream).TypeHandle);
-                __jniPtr__available ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__available>(JNIFrame.GetFuncPtr(__callerID, "java/io/FileInputStream", nameof(available0), "()I"));
+                __jniPtr__available0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__available>(JNIFrame.GetFuncPtr(__callerID, "java/io/FileInputStream", nameof(available0), "()I"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    return __jniPtr__available(jniEnv, jniFrm.MakeLocalRef(this_));
+                    return __jniPtr__available0(jniEnv, jniFrm.MakeLocalRef(this_));
                 }
                 catch (Exception ex)
                 {
