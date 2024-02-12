@@ -3254,11 +3254,6 @@ sun/net/sdp/sanity.sh                                                           
 sun/net/www/protocol/http/RetryUponTimeout.java                                                                         linux-all
 sun/nio/cs/TestCompoundTest.java                                                                                        linux-all
 
-# this is broken on .NET Core 3.1, but seems to work on .NET 6
-sun/nio/cs/FindOneCharEncoderBugs.java                                                                                  linux-all
-sun/nio/cs/DecoderOverflow.java                                                                                         linux-all
-sun/nio/cs/EncodingNothing.java                                                                                         linux-all
-
 sun/nio/ch/SelProvider.java                                                                                             linux-all,macosx-all
 
 sun/rmi/rmic/extraCompilation/run.sh                                                                                    linux-all
