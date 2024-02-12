@@ -99,7 +99,7 @@ final class DotNetPath extends AbstractPath {
 
     public Path getRoot() {
         int len = getRootLength();
-return len == 0 ? null : new DotNetPath(fs, path.substring(0, len));
+        return len == 0 ? null : new DotNetPath(fs, path.substring(0, len));
     }
 
     private int getRootLength() {
@@ -474,18 +474,13 @@ return len == 0 ? null : new DotNetPath(fs, path.substring(0, len));
     private static native String toRealPathImpl(String path);
 
     public WatchKey register(WatchService watcher, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers) throws IOException {
-        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
-            if (!(watcher instanceof DotNetFileSystem.NetWatchService)) {
-                // null check
-                watcher.getClass();
-                throw new ProviderMismatchException();
-            }
-
+        if (watcher instanceof DotNetFileSystem.NetWatchService) {
             boolean create = false;
             boolean delete = false;
             boolean modify = false;
             boolean overflow = false;
             boolean subtree = false;
+
             for (WatchEvent.Kind<?> kind : events) {
                 if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
                     create = true;
@@ -527,7 +522,7 @@ return len == 0 ? null : new DotNetPath(fs, path.substring(0, len));
             }
 
             return ((DotNetFileSystem.NetWatchService)watcher).register(this, create, delete, modify, overflow, subtree);
-        } else {
+        } else if (watcher instanceof PollingWatchService) {
             boolean subtree = false;
 
             for (WatchEvent.Modifier modifier : modifiers) {
@@ -551,6 +546,9 @@ return len == 0 ? null : new DotNetPath(fs, path.substring(0, len));
             }
 
             return ((PollingWatchService)watcher).register(this, events, modifiers);
+        } else {
+            watcher.getClass(); // null check
+            throw new ProviderMismatchException();
         }
     }
 

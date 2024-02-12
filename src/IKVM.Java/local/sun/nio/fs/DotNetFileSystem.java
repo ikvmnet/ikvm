@@ -440,12 +440,7 @@ final class DotNetFileSystem extends FileSystem {
     }
 
     public WatchService newWatchService() throws IOException {
-        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
-            return new NetWatchService();
-        } else {
-            // FileSystemWatcher implementation on .NET for Unix consumes way too many inotify queues
-            return new PollingWatchService();
-        }
+        return new NetWatchService();
     }
 
 }
