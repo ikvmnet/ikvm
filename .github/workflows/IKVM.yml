@@ -179,6 +179,8 @@ jobs:
         restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v2
+      with:
+        msbuild-architecture: x64
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v4
       with:
