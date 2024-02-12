@@ -831,6 +831,27 @@ java/awt/xembed/server/RunTestXEmbed.java                                       
 java/awt/xembed/server/TestXEmbedServer.java                                                                            generic-all
 java/awt/xembed/server/TestXEmbedServerJava.java                                                                        generic-all
 java/awt/xembed/server/TesterClient.java                                                                                generic-all
+com/sun/java/swing/plaf/windows/Test8173145.java                                                                        generic-all
+java/awt/Container/MoveToOtherScreenTest/MoveToOtherScreenTest.java                                                     generic-all
+java/awt/Dialog/DialogAboveFrame/DialogAboveFrameTest.java                                                              generic-all
+java/awt/EventQueue/6980209/bug6980209.java                                                                             generic-all
+java/awt/Focus/ModalDialogActivationTest/ModalDialogActivationTest.java                                                 generic-all
+java/awt/font/MonospacedGlyphWidth/MonospacedGlyphWidthTest.java                                                        generic-all
+java/awt/font/TextLayout/DiacriticsDrawingTest.java                                                                     generic-all
+java/awt/Frame/FrameResize/ShowChildWhileResizingTest.java                                                              generic-all
+java/awt/Frame/NormalToIconified/NormalToIconifiedTest.java                                                             generic-all
+java/awt/Frame/ObscuredFrame/ObscuredFrameTest.java                                                                     generic-all
+java/awt/geom/AffineTransform/InvalidTransformParameterTest.java                                                        generic-all
+java/awt/image/VolatileImage/VolatileImageBug.java                                                                      generic-all
+java/awt/Mouse/EnterExitEvents/ModalDialogEnterExitEventsTest.java                                                      generic-all
+java/awt/MouseInfo/GetPointerInfoTest.java                                                                              generic-all
+java/awt/MouseInfo/MultiscreenPointerInfo.java                                                                          generic-all
+java/awt/Paint/ComponentIsNotDrawnAfterRemoveAddTest/ComponentIsNotDrawnAfterRemoveAddTest.java                         generic-all
+java/awt/print/PrinterJob/PrintCrashTest.java                                                                           generic-all
+java/awt/TextArea/TextAreaEditing/TextAreaEditing.java                                                                  generic-all
+java/awt/Window/WindowDeadlockTest/WindowDeadlockTest.java                                                              generic-all
+java/awt/Window/WindowJumpingTest/WindowJumpingTest.java                                                                generic-all
+sun/java2d/ClassCastExceptionForInvalidSurface.java                                                                     generic-all
 java/beans/Beans/6669869/TestDesignTime.java                                                                            generic-all
 java/beans/Beans/6669869/TestGuiAvailable.java                                                                          generic-all
 java/beans/EventHandler/Test6179222.java                                                                                generic-all
@@ -1415,7 +1436,7 @@ java/nio/file/Files/delete_on_close.sh                                          
 java/nio/file/Files/walkFileTree/find.sh                                                                                generic-all
 java/nio/file/Path/Misc.java                                                                                            linux-all,macosx-all
 java/nio/file/Path/PathOps.java                                                                                         windows-all
-#java/nio/file/WatchService/Basic.java                                                                                   linux-all,macosx-all
+java/nio/file/WatchService/Basic.java                                                                                   linux-all,macosx-all
 java/rmi/Naming/DefaultRegistryPort.java                                                                                generic-all
 java/rmi/Naming/LookupIPv6.java                                                                                         generic-all
 java/rmi/Naming/LookupNameWithColon.java                                                                                generic-all
@@ -1844,6 +1865,7 @@ java/util/zip/ZipFile/ReadLongZipFileName.java                                  
 java/util/zip/ZipFile/StreamZipEntriesTest.java                                                                         generic-all
 javax/accessibility/6986385/bug6986385.java                                                                             generic-all
 javax/accessibility/8069268/bug8069268.java                                                                             generic-all
+javax/accessibility/JList/AccessibleJListChildNPETest.java                                                              generic-all
 javax/crypto/JceSecurity/SunJCE_BC_LoadOrdering.java                                                                    generic-all
 javax/crypto/SecretKeyFactory/FailOverTest.sh                                                                           generic-all
 javax/crypto/sanity/CheckManifestForRelease.java                                                                        generic-all
@@ -2615,6 +2637,14 @@ javax/swing/text/html/parser/Parser/7165725/bug7165725.java                     
 javax/swing/text/html/parser/Parser/8028616/bug8028616.java                                                             generic-all
 javax/swing/text/html/parser/Test8017492.java                                                                           generic-all
 javax/swing/tree/DefaultTreeCellRenderer/7142955/bug7142955.java                                                        generic-all
+javax/swing/JComboBox/8136998/bug8136998.java                                                                           generic-all
+javax/swing/JMenuItem/8152981/MenuItemIconTest.java                                                                     generic-all
+javax/swing/JProgressBar/8161664/ProgressBarMemoryLeakTest.java                                                         generic-all
+javax/swing/plaf/basic/BasicComboPopup/8154069/Bug8154069.java                                                          generic-all
+javax/swing/plaf/basic/BasicLabelUI/bug7172652.java                                                                     generic-all
+javax/swing/plaf/nimbus/8057791/bug8057791.java                                                                         generic-all
+javax/swing/text/FlowView/LayoutTest.java                                                                               generic-all
+javax/swing/text/html/parser/Parser/HtmlCommentTagParseTest/HtmlCommentTagParseTest.java                                generic-all
 javax/xml/bind/marshal/8036981/Test.java                                                                                generic-all
 javax/xml/crypto/dsig/GenerationTests.java                                                                              generic-all
 javax/xml/crypto/dsig/SecurityManager/XMLDSigWithSecMgr.java                                                            generic-all
@@ -2899,6 +2929,8 @@ sun/security/krb5/auto/TwoPrinces.java                                          
 sun/security/krb5/auto/TwoTab.java                                                                                      generic-all
 sun/security/krb5/auto/UdpTcp.java                                                                                      generic-all
 sun/security/krb5/auto/UnboundService.java                                                                              generic-all
+sun/security/krb5/auto/UnboundSSLMultipleKeys.java                                                                      generic-all
+sun/security/krb5/auto/UnboundSSLPrincipalProperty.java                                                                 generic-all
 sun/security/krb5/auto/UseCacheAndStoreKey.java                                                                         generic-all
 sun/security/krb5/auto/W83.java                                                                                         generic-all
 sun/security/krb5/ccache/EmptyCC.java                                                                                   generic-all
@@ -3372,7 +3404,6 @@ java/net/MulticastSocket/JoinGroup.java                                         
 java/net/MulticastSocket/Leave.java                                                                                     macosx-all
 java/net/MulticastSocket/Promiscuous.java                                                                               macosx-all
 java/net/MulticastSocket/SetOutgoingIf.java                                                                             macosx-all
-#java/net/NetworkInterface/UniqueMacAddressesTest.java                                                                   macosx-all
 java/net/PlainSocketImpl/SetBufferSize.java                                                                             macosx-all
 java/net/Socket/LinkLocal.java                                                                                          macosx-all
 java/net/Socket/SetSoLinger.java                                                                                        macosx-all
@@ -3394,12 +3425,6 @@ java/nio/channels/DatagramChannel/Refused.java                                  
 java/nio/channels/DatagramChannel/SRTest.java                                                                           macosx-all
 java/nio/channels/DatagramChannel/Sender.java                                                                           macosx-all
 java/nio/channels/DatagramChannel/ThereCanBeOnlyOne.java                                                                macosx-all
-#java/nio/channels/FileChannel/ExpandingMap.java                                                                         macosx-all
-#java/nio/channels/FileChannel/LongTransferTest.java                                                                     macosx-all
-#java/nio/channels/FileChannel/MapTest.java                                                                              macosx-all
-#java/nio/channels/FileChannel/Transfer.java                                                                             macosx-all
-#java/nio/channels/FileChannel/TransferToChannel.java                                                                    macosx-all
-#java/nio/channels/FileChannel/Transfers.java                                                                            macosx-all
 java/nio/channels/Selector/RacyDeregister.java                                                                          macosx-all
 java/nio/channels/ServerSocketChannel/NonBlockingAccept.java                                                            macosx-all
 java/nio/channels/ServerSocketChannel/SocketOptionTests.java                                                            macosx-all
@@ -3407,9 +3432,9 @@ java/nio/channels/SocketChannel/SendUrgentData.java                             
 java/nio/channels/SocketChannel/VectorParams.java                                                                       macosx-all
 java/nio/charset/coders/Check.java                                                                                      macosx-all
 java/nio/file/Path/MacPathTest.java                                                                                     macosx-all
-#java/nio/file/WatchService/LotsOfCancels.java                                                                           macosx-all
-#java/nio/file/WatchService/LotsOfEvents.java                                                                            macosx-all
-#java/nio/file/WatchService/MayFlies.java                                                                                macosx-all
+java/nio/file/WatchService/LotsOfCancels.java                                                                           macosx-all
+java/nio/file/WatchService/LotsOfEvents.java                                                                            macosx-all
+java/nio/file/WatchService/MayFlies.java                                                                                macosx-all
 java/util/prefs/AddNodeChangeListener.java                                                                              macosx-all
 java/util/prefs/CommentsInXml.java                                                                                      macosx-all
 java/util/prefs/ConflictInFlush.java                                                                                    macosx-all
@@ -3419,9 +3444,12 @@ java/util/prefs/RemoveNullKeyCheck.java                                         
 java/util/prefs/RemoveReadOnlyNode.java                                                                                 macosx-all
 java/util/prefs/RemoveUnregedListener.java                                                                              macosx-all
 jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
-sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
-java/nio/channels/AsynchronousFileChannel/Basic.java                                                                    macosx-all
+#java/nio/channels/AsynchronousFileChannel/Basic.java                                                                    macosx-all
 sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java                                        macosx-all
+sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
+sun/security/krb5/auto/TicketSName.java                                                                                 macosx-all
+sun/security/krb5/auto/ForwardableCheck.java                                                                            macosx-all
+sun/security/krb5/auto/RefreshKrb5Config.java                                                                           macosx-all
 
 # Windows-PRNG SecureRandom
 java/security/SecureRandom/DefaultProvider.java                                                                         generic-all
@@ -3460,14 +3488,6 @@ sun/security/tools/keytool/keyalg.sh                                            
 # Class(-Loader) GC not supported
 javax/management/mxbean/MXBeanLoadingTest1.java                                                                         generic-all
 
-# krb5
-sun/security/krb5/auto/UnboundSSL.java                                                                                  generic-all
-sun/security/krb5/auto/UnboundSSLMultipleKeys.java                                                                      generic-all
-sun/security/krb5/auto/UnboundSSLPrincipalProperty.java                                                                 generic-all
-sun/security/krb5/auto/TicketSName.java                                                                                 macosx-all
-sun/security/krb5/auto/ForwardableCheck.java                                                                            macosx-all
-sun/security/krb5/auto/RefreshKrb5Config.java                                                                           macosx-all
-
 # RMI, fails, but works in Debug with attached Debugger
 sun/rmi/server/UnicastServerRef/FilterUSRTest.java                                                                      generic-all
 
@@ -3484,36 +3504,6 @@ com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.j
 
 ## JDK8u152-b16, new broken tests
 # awt/swing
-com/sun/java/swing/plaf/windows/Test8173145.java                                                                        generic-all
-java/awt/Container/MoveToOtherScreenTest/MoveToOtherScreenTest.java                                                     generic-all
-java/awt/Dialog/DialogAboveFrame/DialogAboveFrameTest.java                                                              generic-all
-java/awt/EventQueue/6980209/bug6980209.java                                                                             generic-all
-java/awt/Focus/ModalDialogActivationTest/ModalDialogActivationTest.java                                                 generic-all
-java/awt/font/MonospacedGlyphWidth/MonospacedGlyphWidthTest.java                                                        generic-all
-java/awt/font/TextLayout/DiacriticsDrawingTest.java                                                                     generic-all
-java/awt/Frame/FrameResize/ShowChildWhileResizingTest.java                                                              generic-all
-java/awt/Frame/NormalToIconified/NormalToIconifiedTest.java                                                             generic-all
-java/awt/Frame/ObscuredFrame/ObscuredFrameTest.java                                                                     generic-all
-java/awt/geom/AffineTransform/InvalidTransformParameterTest.java                                                        generic-all
-java/awt/image/VolatileImage/VolatileImageBug.java                                                                      generic-all
-java/awt/Mouse/EnterExitEvents/ModalDialogEnterExitEventsTest.java                                                      generic-all
-java/awt/MouseInfo/GetPointerInfoTest.java                                                                              generic-all
-java/awt/MouseInfo/MultiscreenPointerInfo.java                                                                          generic-all
-java/awt/Paint/ComponentIsNotDrawnAfterRemoveAddTest/ComponentIsNotDrawnAfterRemoveAddTest.java                         generic-all
-java/awt/print/PrinterJob/PrintCrashTest.java                                                                           generic-all
-java/awt/TextArea/TextAreaEditing/TextAreaEditing.java                                                                  generic-all
-java/awt/Window/WindowDeadlockTest/WindowDeadlockTest.java                                                              generic-all
-java/awt/Window/WindowJumpingTest/WindowJumpingTest.java                                                                generic-all
-javax/accessibility/JList/AccessibleJListChildNPETest.java                                                              generic-all
-javax/swing/JComboBox/8136998/bug8136998.java                                                                           generic-all
-javax/swing/JMenuItem/8152981/MenuItemIconTest.java                                                                     generic-all
-javax/swing/JProgressBar/8161664/ProgressBarMemoryLeakTest.java                                                         generic-all
-javax/swing/plaf/basic/BasicComboPopup/8154069/Bug8154069.java                                                          generic-all
-javax/swing/plaf/basic/BasicLabelUI/bug7172652.java                                                                     generic-all
-javax/swing/plaf/nimbus/8057791/bug8057791.java                                                                         generic-all
-javax/swing/text/FlowView/LayoutTest.java                                                                               generic-all
-javax/swing/text/html/parser/Parser/HtmlCommentTagParseTest/HtmlCommentTagParseTest.java                                generic-all
-sun/java2d/ClassCastExceptionForInvalidSurface.java                                                                     generic-all
 
 #expired certificate
 sun/security/tools/jarsigner/warnings/BadNetscapeCertTypeTest.java                                                      generic-all
