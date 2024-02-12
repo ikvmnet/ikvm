@@ -22,17 +22,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Source
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Cache OpenJDK Build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: openjdk/build/linux-x86_64-normal-server-release
         key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-10
     - name: Check OpenJDK Build Stamp
       id: openjdk-build-stamp
-      uses: andstor/file-existence-action@v2
+      uses: andstor/file-existence-action@v3
       with:
         files: openjdk/build/linux-x86_64-normal-server-release/stamp
     - name: Fetch OpenJDK 7
@@ -79,29 +79,29 @@ jobs:
       run: zip -r /tmp/openjdk-build-linux-x86_64-normal-server-release.zip linux-x86_64-normal-server-release/*
       working-directory: openjdk/build
     - name: Upload OpenJDK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: openjdk-build-linux-x86_64-normal-server-release
         path: /tmp/openjdk-build-linux-x86_64-normal-server-release.zip
     - name: Cache OpenJDK Test Harness Build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: jtreg/build
         key: jtreg-build--${{ runner.os }}--${{ hashFiles('jtreg/**', 'openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image', '!jtreg/build') }}-6
     - name: Check OpenJDK Test Harness Build Stamp
       id: jtreg-build-stamp
-      uses: andstor/file-existence-action@v2
+      uses: andstor/file-existence-action@v3
       with:
         files: jtreg/build/stamp
     - name: Build OpenJDK Test Harness
       if: steps.jtreg-build-stamp.outputs.files_exists != 'true'
-      run: bash make/build-all.sh `realpath ../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image` && touch build/stamp
+      run: WGET_OPTS='-U Mozilla/5.0' bash make/build-all.sh `realpath ../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image` && touch build/stamp
       working-directory: jtreg
     - name: Package OpenJDK Test Harness
       run: zip -r /tmp/jtreg-build.zip build
       working-directory: jtreg
-    - name: Upload OpenJDK Test Harness 
-      uses: actions/upload-artifact@v3
+    - name: Upload OpenJDK Test Harness
+      uses: actions/upload-artifact@v4
       with:
         name: jtreg-build
         path: /tmp/jtreg-build.zip
@@ -128,26 +128,26 @@ jobs:
         Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=$WORKPATH\nuget\packages"
         New-Item -Path "$env:GITHUB_WORKSPACE\work" -ItemType SymbolicLink -Value "$WORKPATH\ikvm"
     - name: Checkout Source
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: work
         fetch-depth: 0
         submodules: recursive
     - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 3.1.x
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.0.x
     - name: Setup .NET 7.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 7.0.x
     - name: Cache LLVM and Clang
       id: cache-llvm
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: C:/Program Files/LLVM
         key: llvm-16.0
@@ -157,7 +157,7 @@ jobs:
         version: "16.0"
         cached: ${{ steps.cache-llvm.outputs.cache-hit }}
     - name: Install apple-codesign
-      uses: baptiste0928/cargo-install@v2
+      uses: baptiste0928/cargo-install@v3
       with:
         crate: apple-codesign
         version: latest
@@ -172,15 +172,15 @@ jobs:
         useConfigFile: true
         configFilePath: ${{ env.WORKPATH }}\ikvm\GitVersion.yml
     - name: Cache NuGet
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ env.NUGET_PACKAGES }}
         key: nuget--${{ runner.os }}--${{ hashFiles('IKVM.sln', 'src/**/*.csproj', 'src/**/*.msbuildproj') }}--1
         restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v2
     - name: Download OpenJDK 8 Build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: openjdk-build-linux-x86_64-normal-server-release
         path: ${{ env.WORKPATH }}/temp
@@ -188,7 +188,7 @@ jobs:
       shell: pwsh
       run: New-Item -Type Directory -Force ${{ env.WORKPATH }}/ikvm/openjdk/build; Expand-Archive ${{ env.WORKPATH }}/temp/openjdk-build-linux-x86_64-normal-server-release.zip -DestinationPath ${{ env.WORKPATH }}/ikvm/openjdk/build
     - name: Download JTReg Build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: jtreg-build
         path: ${{ env.WORKPATH }}/temp
@@ -196,7 +196,7 @@ jobs:
       shell: pwsh
       run: New-Item -Type Directory -Force ${{ env.WORKPATH }}/ikvm/jtreg; Expand-Archive ${{ env.WORKPATH }}/temp/jtreg-build.zip -DestinationPath ${{ env.WORKPATH }}/ikvm/jtreg
     - name: Download Native SDKs
-      uses: robinraju/release-downloader@v1.8
+      uses: robinraju/release-downloader@v1.9
       with:
         repository: ikvmnet/ikvm-native-sdk
         tag: ${{ env.NATIVE_SDK_VERSION }}
@@ -234,7 +234,7 @@ jobs:
       working-directory: ${{ env.WORKPATH }}\ikvm
     - name: Upload MSBuild Log
       if: ${{ always() }}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: msbuild.binlog
         path: ${{ env.WORKPATH }}\ikvm\msbuild.binlog
@@ -242,7 +242,7 @@ jobs:
       run: tar czvf C:\nuget.tar.gz nuget
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload NuGet Packages
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: nuget
         path: C:\nuget.tar.gz
@@ -253,7 +253,7 @@ jobs:
       run: tar czvf C:\bin.tar.gz bin
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Binaries
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: bin
         path: C:\bin.tar.gz
@@ -264,7 +264,7 @@ jobs:
       run: tar czvf C:\tools.tar.gz tools
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tools
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tools
         path: C:\tools.tar.gz
@@ -275,7 +275,7 @@ jobs:
       run: tar czvf C:\image.tar.gz image
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Image
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: image
         path: C:\image.tar.gz
@@ -286,7 +286,7 @@ jobs:
       run: tar czvf C:\tests--IKVM.ByteCode.Tests.tar.gz tests\IKVM.ByteCode.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests (IKVM.ByteCode.Tests)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.ByteCode.Tests
         path: C:\tests--IKVM.ByteCode.Tests.tar.gz
@@ -297,7 +297,7 @@ jobs:
       run: tar czvf C:\tests--IKVM.Reflection.Tests.tar.gz tests\IKVM.Reflection.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests (IKVM.Reflection.Tests)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.Reflection.Tests
         path: C:\tests--IKVM.Reflection.Tests.tar.gz
@@ -308,7 +308,7 @@ jobs:
       run: tar czvf C:\tests--IKVM.Tests.tar.gz tests\IKVM.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests (IKVM.Tests)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.Tests
         path: C:\tests--IKVM.Tests.tar.gz
@@ -319,7 +319,7 @@ jobs:
       run: tar czvf C:\tests--IKVM.Java.Tests.tar.gz tests\IKVM.Java.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests (IKVM.Java.Tests)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.Java.Tests
         path: C:\tests--IKVM.Java.Tests.tar.gz
@@ -330,7 +330,7 @@ jobs:
       run: tar czvf C:\tests--IKVM.Tools.Tests.tar.gz tests\IKVM.Tools.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests (IKVM.Tools.Tests)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.Tools.Tests
         path: C:\tests--IKVM.Tools.Tests.tar.gz
@@ -341,7 +341,7 @@ jobs:
       run: tar czvf C:\tests--IKVM.Tools.Exporter.Tests.tar.gz tests\IKVM.Tools.Exporter.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests (IKVM.Tools.Exporter.Tests)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.Tools.Exporter.Tests
         path: C:\tests--IKVM.Tools.Exporter.Tests.tar.gz
@@ -352,7 +352,7 @@ jobs:
       run: tar czvf C:\tests--IKVM.Tools.Importer.Tests.tar.gz tests\IKVM.Tools.Importer.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests (IKVM.Tools.Importer.Tests)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.Tools.Importer.Tests
         path: C:\tests--IKVM.Tools.Importer.Tests.tar.gz
@@ -363,7 +363,7 @@ jobs:
       run: tar czvf C:\tests--IKVM.MSBuild.Tasks.Tests.tar.gz tests\IKVM.MSBuild.Tasks.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests (IKVM.MSBuild.Tasks.Tests)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.MSBuild.Tasks.Tests
         path: C:\tests--IKVM.MSBuild.Tasks.Tests.tar.gz
@@ -374,7 +374,7 @@ jobs:
       run: tar czvf C:\tests--IKVM.MSBuild.Tests.tar.gz tests\IKVM.MSBuild.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests (IKVM.MSBuild.Tests)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.MSBuild.Tests
         path: C:\tests--IKVM.MSBuild.Tests.tar.gz
@@ -385,7 +385,7 @@ jobs:
       run: tar czvf C:\tests--IKVM.NET.Sdk.Tests.tar.gz tests\IKVM.NET.Sdk.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests (IKVM.NET.Sdk.Tests)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.NET.Sdk.Tests
         path: C:\tests--IKVM.NET.Sdk.Tests.tar.gz
@@ -396,7 +396,7 @@ jobs:
       run: tar czvf C:\tests--IKVM.JTReg.TestAdapter.Tests.tar.gz tests\IKVM.JTReg.TestAdapter.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests (IKVM.JTReg.TestAdapter.Tests)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.JTReg.TestAdapter.Tests
         path: C:\tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
@@ -407,7 +407,7 @@ jobs:
       run: tar czvf C:\tests--IKVM.OpenJDK.Tests.tar.gz tests\IKVM.OpenJDK.Tests
       working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests (IKVM.OpenJDK.Tests)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.OpenJDK.Tests
         path: C:\tests--IKVM.OpenJDK.Tests.tar.gz
@@ -419,7 +419,7 @@ jobs:
       run: Compress-Archive -Path doc\* -DestinationPath C:\doc.zip
       working-directory: ${{ env.WORKPATH }}\ikvm
     - name: Upload Documentation
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: doc
         path: C:\doc.zip
@@ -570,22 +570,22 @@ jobs:
       shell: pwsh
       run: choco install procdump -y; Add-Content $env:GITHUB_PATH "$env:ProgramData\chocolatey\bin\"
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.0.x
     - name: Setup .NET 7.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 7.0.x
     - name: Setup WSL
       if: runner.os == 'Windows'
-      uses: Vampire/setup-wsl@v2
+      uses: Vampire/setup-wsl@v3
     - name: Setup Linux
       if: runner.os == 'Linux'
       shell: bash
       run: sudo apt-get update && sudo apt-get install -y libasound2
     - name: Get Test Name
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       id: test-name
       env:
         MATRIX_RUN: '${{ matrix.run }}'
@@ -596,7 +596,7 @@ jobs:
             return tst;
         result-encoding: string
     - name: Download Tests
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: tests--${{ steps.test-name.outputs.result }}
         path: ${{ env.WORKPATH }}
@@ -662,7 +662,7 @@ jobs:
       working-directory: ${{ env.WORKPATH }}
     - name: Upload Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.RET }}
         path: ${{ env.TMPDIR }}/TestResults.tar.gz
@@ -673,14 +673,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Source
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Setup .NET
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}/dotnet"
     - name: Setup .NET 7.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 7.0.x
     - name: Install GitVersion
@@ -693,7 +693,7 @@ jobs:
       with:
         useConfigFile: true
     - name: Download NuGet Packages
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: nuget
         path: dist
@@ -701,7 +701,7 @@ jobs:
       run: tar xzvf nuget.tar.gz
       working-directory: dist
     - name: Download Binaries
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: bin
         path: dist
@@ -712,7 +712,7 @@ jobs:
       shell: pwsh
       run: cd dist && gi bin/* | %{ $tfm = $_.Name; Push-Location "bin/$tfm"; zip -r "../IKVM-${env:GitVersion_SemVer}-bin-$tfm.zip" .; tar czvf "../IKVM-${env:GitVersion_SemVer}-bin-$tfm.tar.gz" .; Pop-Location }
     - name: Download Tools
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: tools
         path: dist
@@ -723,7 +723,7 @@ jobs:
       shell: pwsh
       run: cd dist && gi tools/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.tar.gz" .; Pop-Location }
     - name: Download Image
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: image
         path: dist
@@ -734,7 +734,7 @@ jobs:
       shell: pwsh
       run: cd dist && gi image/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "image/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.tar.gz" .; Pop-Location }
     - name: Download Documentation
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: doc
         path: dist
