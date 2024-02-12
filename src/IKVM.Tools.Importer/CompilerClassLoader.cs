@@ -160,8 +160,11 @@ namespace IKVM.Tools.Importer
             // if configured to emit debug info or stack trace info, add debug DebuggableAttribute
             if (EmitSymbols || EmitStackTraceInfo)
             {
-                var debugAttr = new CustomAttributeBuilder(Context.Resolver.ResolveCoreType(typeof(DebuggableAttribute).FullName).GetConstructor(new[] { Context.Types.Boolean, Context.Types.Boolean }), new object[] { true, EmitSymbols });
-                assemblyBuilder.SetCustomAttribute(debugAttr);
+                var debugModes = DebuggableAttribute.DebuggingModes.Default | DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints;
+                if (EmitSymbols)
+                    debugModes |= DebuggableAttribute.DebuggingModes.DisableOptimizations;
+
+                Context.AttributeHelper.SetDebuggingModes(assemblyBuilder, debugModes);
             }
 
             Context.AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);

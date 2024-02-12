@@ -538,19 +538,19 @@ namespace IKVM.Runtime
             if (JVM.EmitSymbols)
                 debugMode |= DebuggingModes.DisableOptimizations;
 
-            var debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(DebuggingModes) }), new object[] { debugMode });
-            assemblyBuilder.SetCustomAttribute(debugAttr);
+            context.AttributeHelper.SetDebuggingModes(assemblyBuilder, debugMode);
 
 #if NETFRAMEWORK
             var moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name, JVM.EmitSymbols);
 #else
             var moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name);
 #endif
+
             moduleBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(IKVM.Attributes.JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
             return moduleBuilder;
         }
 
-        private static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, IEnumerable<CustomAttributeBuilder> assemblyAttributes)
+        static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, IEnumerable<CustomAttributeBuilder> assemblyAttributes)
         {
 #if NETFRAMEWORK
             return AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, true, assemblyAttributes);

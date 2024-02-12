@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using IKVM.Attributes;
 
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Parsing;
@@ -39,6 +40,7 @@ using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
+
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -107,8 +109,10 @@ namespace IKVM.Runtime
         Type typeofMethodParametersAttribute;
         Type typeofRuntimeVisibleTypeAnnotationsAttribute;
         Type typeofConstantPoolAttribute;
+        Type typeofDebuggableAttribute;
         CustomAttributeBuilder hideFromJavaAttribute;
         CustomAttributeBuilder hideFromReflection;
+        ConstructorInfo debuggableAttribute;
 
 #if IMPORTER
 
@@ -163,6 +167,8 @@ namespace IKVM.Runtime
         Type TypeOfRuntimeVisibleTypeAnnotationsAttribute => typeofRuntimeVisibleTypeAnnotationsAttribute ??= LoadType(typeof(RuntimeVisibleTypeAnnotationsAttribute));
 
         Type TypeOfConstantPoolAttribute => typeofConstantPoolAttribute ??= LoadType(typeof(ConstantPoolAttribute));
+
+        Type TypeOfDebuggableAttribute => typeofDebuggableAttribute ??= LoadType(typeof(DebuggableAttribute));
 
         CustomAttributeBuilder HideFromJavaAttributeBuilder => hideFromJavaAttribute ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
 
@@ -744,6 +750,12 @@ namespace IKVM.Runtime
             }
 
             return new ExModifiers(modifiers, false);
+        }
+
+        internal void SetDebuggingModes(AssemblyBuilder assemblyBuilder, DebuggableAttribute.DebuggingModes modes)
+        {
+            debuggableAttribute ??= TypeOfDebuggableAttribute.GetConstructor(new[] { TypeOfDebuggableAttribute.GetNestedType(nameof(DebuggableAttribute.DebuggingModes)) });
+            assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(debuggableAttribute, new object[] { modes }));
         }
 
 #if IMPORTER
