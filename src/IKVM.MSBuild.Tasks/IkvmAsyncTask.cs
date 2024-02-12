@@ -47,6 +47,11 @@
         }
 
         /// <summary>
+        /// Gets the working directory the task was started with. Since this is an async task, async operations may resume after the working directory has changed.
+        /// </summary>
+        protected string CurrentWorkingDirectory { get; private set; }
+
+        /// <summary>
         /// Executes the task.
         /// </summary>
         /// <returns></returns>
@@ -54,6 +59,9 @@
         {
             if (cts.IsCancellationRequested)
                 return false;
+
+            // save current working directory
+            CurrentWorkingDirectory = Environment.CurrentDirectory;
 
             // wait for result, and ensure we reacquire in case of return value or exception
             Task<bool> run;
