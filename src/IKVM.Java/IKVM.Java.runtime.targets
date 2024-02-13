@@ -252,7 +252,7 @@
             <_SpecialCasingArg>$(_SpecialCasingArg.Replace('\', '\\'))</_SpecialCasingArg>
             <_PropListArg>$(UnicodeDataDir)PropList.txt</_PropListArg>
             <_PropListArg>$(_PropListArg.Replace('\', '\\'))</_PropListArg>
-            <_OutputArg>$(GenSrc)java\lang\%(CharacterDataItem.Identity).java</_OutputArg>
+            <_OutputArg>$(GenSrc)java\lang\%(CharacterDataItem.Identity).java.tmp</_OutputArg>
             <_OutputArg>$(_OutputArg.Replace('\', '\\'))</_OutputArg>
         </PropertyGroup>
 
@@ -276,9 +276,9 @@
         <MakeDir Directories="$(GenSrc)java\lang" />
         <Message Importance="high" Text="Generating %(CharacterDataItem.Identity).java" />
         <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.generatecharacter.GenerateCharacter @(_GenerateCharacterArgs, ' ')" />
+        <Move SourceFiles="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java.tmp" DestinationFiles="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java" />
 
         <ItemGroup>
-            <Compile Include="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java" />
             <FileWrites Include="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java" />
         </ItemGroup>
     </Target>
@@ -287,6 +287,7 @@
         <MakeDir Directories="$(GenSrc)java\lang" />
         <Message Importance="high" Text="Generating %(CharacterDataStaticItem.Identity).java" />
         <Copy SourceFiles="$(CharacterDataDir)%(CharacterDataStaticItem.Identity).java.template" DestinationFiles="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java" />
+        <Touch Files="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java" ForceTouch="true" />
 
         <ItemGroup>
             <FileWrites Include="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java" />
