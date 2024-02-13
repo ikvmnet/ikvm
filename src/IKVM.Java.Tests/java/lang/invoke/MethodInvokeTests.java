@@ -2,6 +2,7 @@ package ikvm.tests.java.java.lang.invoke;
 
 import java.lang.*;
 import java.lang.invoke.*;
+import java.lang.reflect.*;
 import java.util.*;
 
 @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute.Annotation()
