@@ -3498,7 +3498,7 @@ com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithProviderChange.java
 com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.java                                     generic-all
 
 ## JDK8u152-b16, new broken tests
-# awt/swing
+sun/nio/cs/Test4200310.sh                                                                                               generic-all
 
 #expired certificate
 sun/security/tools/jarsigner/warnings/BadNetscapeCertTypeTest.java                                                      generic-all
