@@ -8,7 +8,6 @@ namespace IKVM.ConsoleApp
 
         public static void Main(string[] args)
         {
-            Debugger.Launch();
             Foo();
         }
 
@@ -24,11 +23,6 @@ namespace IKVM.ConsoleApp
             {
                 for (int i = 0; i < 19383; i++)
                     System.Console.WriteLine(java.net.InetAddress.getLocalHost().getHostName());
-            }
-
-            ~Bar()
-            {
-
             }
 
         }
