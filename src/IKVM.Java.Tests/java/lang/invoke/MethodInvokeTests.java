@@ -8,25 +8,27 @@ import java.util.*;
 @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute.Annotation()
 public class MethodInvokeTests {
     
-    public static void switchWithNoCases(String s) {
-        switch (s) { }
+    public static void shouldWrapNullPointerExceptionInFastMethodInvokeImpl() {
+        throw new NullPointerException();
     }
     
     @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
-    public void switchWithNullShouldThrowNullPointerExceptionInInvocationTargetException() throws Throwable {
-        Method method = MethodInvokeTests.class.getDeclaredMethod("switchWithNoCases", String.class);
+    public void shouldWrapNullPointerExceptionInMethodInvoke() throws Throwable {
+        Method method = MethodInvokeTests.class.getDeclaredMethod("shouldWrapNullPointerExceptionInFastMethodInvokeImpl");
 
-        try {
-            method.invoke(null, (String)null);
-        } catch (InvocationTargetException ite) {
-            if (ite.getTargetException() instanceof NullPointerException) {
-                return;
-            } else {
-                throw new RuntimeException("Expected exception not thrown.", ite);
+        for (int i = 0; i < 30; i++) {
+            try {
+                method.invoke();
+            } catch (InvocationTargetException ite) {
+                if (ite.getTargetException() instanceof NullPointerException) {
+                    continue;
+                } else {
+                    throw new RuntimeException("Expected exception not thrown.", ite);
+                }
             }
-        }
 
-        throw new RuntimeException("Expected exception not thrown.");
+            throw new RuntimeException("Expected exception not thrown.");
+        }
     }
 
 }
