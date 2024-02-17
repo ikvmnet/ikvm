@@ -689,9 +689,9 @@ namespace IKVM.Java.Externs.sun.reflect
                     // generate invoker
                     invoker = (Invoker)dm.CreateDelegate(typeof(Invoker));
 
-                    //// invoker needs to run clinit, wrap in an invoker that does so
-                    //if ((mw.IsStatic || mw.DeclaringType.IsInterface) && mw.DeclaringType.HasStaticInitializer)
-                    //    invoker = new Invoker(new RunClassInit(this, mw.DeclaringType, invoker).invoke);
+                    // invoker needs to run clinit, wrap in an invoker that does so
+                    if ((mw.IsStatic || mw.DeclaringType.IsInterface) && mw.DeclaringType.HasStaticInitializer)
+                        invoker = new Invoker(new RunClassInit(this, mw.DeclaringType, invoker).invoke);
                 }
                 catch (RetargetableJavaException x)
                 {
@@ -714,6 +714,10 @@ namespace IKVM.Java.Externs.sun.reflect
                 {
                     // this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
                     throw new global::java.lang.IllegalAccessException().initCause(x);
+                }
+                catch (global::java.lang.NullPointerException)
+                {
+                    throw;
                 }
             }
         }
