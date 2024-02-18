@@ -205,7 +205,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
 
         <Delete Files="$(_ExcludeFilePath)" Condition=" '@(ExcludeRegex)' == '' And Exists('$(_ExcludeFilePath)')" />
-        <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " WriteOnlyWhenDifferent="true" />
+        <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" WriteOnlyWhenDifferent="true" />
 
         <ItemGroup>
             <_Convert Include="@(Convert)" />
@@ -252,7 +252,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
             <_IkvmCompilerArgs Include="-sharedclassloader" Condition=" '$(SharedClassLoader)' == 'true' " />
             <_IkvmCompilerArgs Include="-w$(WarningLevel)" />
             <_IkvmCompilerArgs Include="-noparameterreflection" Condition=" '$(NoParameterReflection)' == 'true' " />
-            <_IkvmCompilerArgs Include="-exclude:$([System.IO.Path]::GetFullPath('$(_ExcludeFilePath)'))" Condition="Exists('$(_ExcludeFilePath)')" />
+            <_IkvmCompilerArgs Include="-exclude:$([System.IO.Path]::GetFullPath('$(_ExcludeFilePath)'))" Condition="Exists('$(_ExcludeFilePath)') And '@(ExcludeRegex)' != '' " />
             <_IkvmCompilerArgs Include="@(_AssemblyAttributesClass->'-assemblyattributes:%(FullPath)')" />
             <_IkvmCompilerReferencePath Remove="@(_IkvmCompilerReferencePath)" />
             <_IkvmCompilerReferencePath Include="@(_IkvmCompilerReferencePathWithRefAssemblies)" Condition=" '%(_IkvmCompilerReferencePathWithRefAssemblies.HideFromJava)' != 'true' " />
