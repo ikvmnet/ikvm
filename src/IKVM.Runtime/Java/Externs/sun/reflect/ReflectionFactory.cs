@@ -476,6 +476,7 @@ namespace IKVM.Java.Externs.sun.reflect
         sealed class FastMethodAccessorImpl : global::sun.reflect.MethodAccessor
         {
 
+            internal static readonly ConstructorInfo nullPointerExceptionCtor;
             internal static readonly ConstructorInfo invocationTargetExceptionCtor;
             internal static readonly ConstructorInfo illegalArgumentExceptionCtor;
             internal static readonly MethodInfo get_TargetSite;
@@ -489,6 +490,7 @@ namespace IKVM.Java.Externs.sun.reflect
             /// </summary>
             static FastMethodAccessorImpl()
             {
+                nullPointerExceptionCtor = typeof(global::java.lang.NullPointerException).GetConstructor(Type.EmptyTypes);
                 invocationTargetExceptionCtor = typeof(global::java.lang.reflect.InvocationTargetException).GetConstructor(new Type[] { typeof(Exception) });
                 illegalArgumentExceptionCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor(Type.EmptyTypes);
                 get_TargetSite = typeof(Exception).GetMethod("get_TargetSite");
@@ -562,8 +564,13 @@ namespace IKVM.Java.Externs.sun.reflect
                     // do a null check for instance argument
                     if (mw.IsStatic == false)
                     {
+                        il.BeginExceptionBlock();
                         il.Emit(OpCodes.Ldarg_0);
                         il.EmitNullCheck();
+                        il.BeginCatchBlock(typeof(NullReferenceException));
+                        il.Emit(OpCodes.Newobj, nullPointerExceptionCtor);
+                        il.Emit(OpCodes.Throw);
+                        il.EndExceptionBlock();
                     }
 
                     // zero length array may be null
@@ -715,11 +722,8 @@ namespace IKVM.Java.Externs.sun.reflect
                     // this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
                     throw new global::java.lang.IllegalAccessException().initCause(x);
                 }
-                catch (global::java.lang.NullPointerException)
-                {
-                    throw;
-                }
             }
+
         }
 
         sealed class FastConstructorAccessorImpl : global::sun.reflect.ConstructorAccessor
