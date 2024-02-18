@@ -18,7 +18,7 @@ public class MethodInvokeTests {
 
         for (int i = 0; i < 30; i++) {
             try {
-                method.invoke();
+                method.invoke(null);
             } catch (InvocationTargetException ite) {
                 if (ite.getTargetException() instanceof NullPointerException) {
                     continue;
