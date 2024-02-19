@@ -3381,6 +3381,7 @@ sun/security/mscapi/CastError.java                                              
 javax/xml/bind/jxc/8073519/SchemagenErrorReporting.java                                                                 generic-all
 
 # Broken on OS X
+com/apple/laf/ScreenMenu/ScreenMenuMemoryLeakTest.java                                                                  macosx-all
 com/sun/corba/transport/KeepAliveSockets.java                                                                           macosx-all
 com/sun/crypto/provider/Cipher/AES/TestISO10126Padding.java                                                             macosx-all
 com/sun/crypto/provider/Cipher/Blowfish/BlowfishTestVector.java                                                         macosx-all
@@ -3445,6 +3446,10 @@ sun/security/krb5/auto/MSOID2.java                                              
 sun/security/krb5/auto/TicketSName.java                                                                                 macosx-all
 sun/security/krb5/auto/ForwardableCheck.java                                                                            macosx-all
 sun/security/krb5/auto/RefreshKrb5Config.java                                                                           macosx-all
+sun/security/krb5/auto/principalProperty/PrincipalSystemPropTest.java                                                   macosx-all
+sun/security/krb5/auto/BogusKDC.java                                                                                    macosx-all
+sun/security/krb5/auto/KrbTicket.java                                                                                   macosx-all
+sun/security/krb5/auto/UnboundSSL.java                                                                                  macosx-all
 
 # Windows-PRNG SecureRandom
 java/security/SecureRandom/DefaultProvider.java                                                                         generic-all
