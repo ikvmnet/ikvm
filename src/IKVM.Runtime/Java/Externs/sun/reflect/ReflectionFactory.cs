@@ -520,12 +520,20 @@ namespace IKVM.Java.Externs.sun.reflect
                 [IKVM.Attributes.HideFromJava]
                 internal object invoke(object obj, object[] args, global::ikvm.@internal.CallerID callerID)
                 {
-                    // FXBUG pre-SP1 a DynamicMethod that calls a static method doesn't trigger the cctor, so we do that explicitly.
-                    // even on .NET 2.0 SP2, interface method invocations don't run the interface cctor
-                    // NOTE when testing, please test both the x86 and x64 CLR JIT, because they have different bugs (even on .NET 2.0 SP2)
-                    tw.RunClassInit();
-                    outer.invoker = invoker;
-                    return invoker(obj, args, callerID);
+                    try
+                    {
+                        // FXBUG pre-SP1 a DynamicMethod that calls a static method doesn't trigger the cctor, so we do that explicitly.
+                        // even on .NET 2.0 SP2, interface method invocations don't run the interface cctor
+                        // NOTE when testing, please test both the x86 and x64 CLR JIT, because they have different bugs (even on .NET 2.0 SP2)
+                        tw.RunClassInit();
+                        outer.invoker = invoker;
+                        return invoker(obj, args, callerID);
+                    }
+                    catch (global::java.lang.NullPointerException e)
+                    {
+                        Console.Error.WriteLine("Caught NPE in runclassinit");
+                        throw;
+                    }
                 }
 
             }
@@ -724,6 +732,11 @@ namespace IKVM.Java.Externs.sun.reflect
                 {
                     // this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
                     throw new global::java.lang.IllegalAccessException().initCause(x);
+                }
+                catch (global::java.lang.NullPointerException e)
+                {
+                    Console.Error.WriteLine("Caught NPE");
+                    throw;
                 }
             }
 
