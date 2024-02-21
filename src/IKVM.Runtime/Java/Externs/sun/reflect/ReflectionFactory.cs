@@ -163,40 +163,64 @@ namespace IKVM.Java.Externs.sun.reflect
             [IKVM.Attributes.HideFromJava]
             public object invoke(object obj, object[] args, global::ikvm.@internal.CallerID callerID)
             {
-                if (!mw.IsStatic && !mw.DeclaringType.IsInstance(obj))
-                {
-                    if (obj == null)
-                        throw new global::java.lang.NullPointerException();
-
-                    throw new global::java.lang.IllegalArgumentException("object is not an instance of declaring class");
-                }
-
-                args = ConvertArgs(mw.DeclaringType.GetClassLoader(), mw.GetParameters(), args);
-
-                // if the method is an interface method, we must explicitly run <clinit>,
-                // because .NET reflection doesn't
-                if (mw.DeclaringType.IsInterface)
-                    mw.DeclaringType.RunClassInit();
-
-                if (mw.HasCallerID)
-                    args = ArrayUtil.Concat(args, callerID);
-
-                object retval;
                 try
                 {
-                    retval = mw.Invoke(obj, args);
+                    if (!mw.IsStatic && !mw.DeclaringType.IsInstance(obj))
+                    {
+                        if (obj == null)
+                            throw new global::java.lang.NullPointerException();
+
+                        throw new global::java.lang.IllegalArgumentException("object is not an instance of declaring class");
+                    }
+
+                    try
+                    {
+                        args = ConvertArgs(mw.DeclaringType.GetClassLoader(), mw.GetParameters(), args);
+                    }
+                    catch (InvalidCastException e)
+                    {
+                        throw new global::java.lang.IllegalArgumentException(e);
+                    }
+                    catch (NullReferenceException e)
+                    {
+                        throw new global::java.lang.IllegalArgumentException(e);
+                    }
+
+                    // if the method is an interface method, we must explicitly run <clinit>,
+                    // because .NET reflection doesn't
+                    if (mw.DeclaringType.IsInterface)
+                        mw.DeclaringType.RunClassInit();
+
+                    if (mw.HasCallerID)
+                        args = ArrayUtil.Concat(args, callerID);
+
+                    object retval;
+                    try
+                    {
+                        retval = mw.Invoke(obj, args);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new global::java.lang.reflect.InvocationTargetException(global::ikvm.runtime.Util.mapException(e));
+                    }
+
+                    if (mw.ReturnType.IsPrimitive && mw.ReturnType != mw.DeclaringType.Context.PrimitiveJavaTypeFactory.VOID)
+                        retval = JVM.Box(retval);
+                    else
+                        retval = mw.ReturnType.GhostUnwrap(retval);
+
+                    return retval;
                 }
-                catch (Exception e)
+                catch (NullReferenceException e)
                 {
-                    throw new global::java.lang.reflect.InvocationTargetException(global::ikvm.runtime.Util.mapException(e));
+                    Console.Error.WriteLine("got nre " + e);
+                    throw;
                 }
-
-                if (mw.ReturnType.IsPrimitive && mw.ReturnType != mw.DeclaringType.Context.PrimitiveJavaTypeFactory.VOID)
-                    retval = JVM.Box(retval);
-                else
-                    retval = mw.ReturnType.GhostUnwrap(retval);
-
-                return retval;
+                catch (global::java.lang.NullPointerException e)
+                {
+                    Console.Error.WriteLine("got npe " + e);
+                    throw;
+                }
             }
         }
 
@@ -477,10 +501,12 @@ namespace IKVM.Java.Externs.sun.reflect
         {
 
             internal static readonly ConstructorInfo nullPointerExceptionCtor;
-            internal static readonly ConstructorInfo invocationTargetExceptionCtor;
+            internal static readonly ConstructorInfo nullPointerExceptionWithMessageCtor;
             internal static readonly ConstructorInfo illegalArgumentExceptionCtor;
-            internal static readonly MethodInfo get_TargetSite;
-            internal static readonly MethodInfo GetCurrentMethod;
+            internal static readonly ConstructorInfo illegalArgumentExceptionWithMessageCtor;
+            internal static readonly ConstructorInfo illegalArgumentExceptionWithMessageAndCauseCtor;
+            internal static readonly ConstructorInfo illegalArgumentExceptionWithCauseCtor;
+            internal static readonly ConstructorInfo invocationTargetExceptionWithCauseCtor;
 
             delegate object Invoker(object obj, object[] args, global::ikvm.@internal.CallerID callerID);
             Invoker invoker;
@@ -491,10 +517,12 @@ namespace IKVM.Java.Externs.sun.reflect
             static FastMethodAccessorImpl()
             {
                 nullPointerExceptionCtor = typeof(global::java.lang.NullPointerException).GetConstructor(Type.EmptyTypes);
-                invocationTargetExceptionCtor = typeof(global::java.lang.reflect.InvocationTargetException).GetConstructor(new Type[] { typeof(Exception) });
+                nullPointerExceptionWithMessageCtor = typeof(global::java.lang.NullPointerException).GetConstructor(new[] { typeof(string) });
                 illegalArgumentExceptionCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor(Type.EmptyTypes);
-                get_TargetSite = typeof(Exception).GetMethod("get_TargetSite");
-                GetCurrentMethod = typeof(MethodBase).GetMethod("GetCurrentMethod");
+                illegalArgumentExceptionWithMessageCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor(new[] { typeof(string) });
+                illegalArgumentExceptionWithMessageAndCauseCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor(new[] { typeof(string), typeof(Exception) });
+                illegalArgumentExceptionWithCauseCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor(new[] { typeof(Exception) });
+                invocationTargetExceptionWithCauseCtor = typeof(global::java.lang.reflect.InvocationTargetException).GetConstructor(new[] { typeof(Exception) });
             }
 
             sealed class RunClassInit
@@ -520,20 +548,12 @@ namespace IKVM.Java.Externs.sun.reflect
                 [IKVM.Attributes.HideFromJava]
                 internal object invoke(object obj, object[] args, global::ikvm.@internal.CallerID callerID)
                 {
-                    try
-                    {
-                        // FXBUG pre-SP1 a DynamicMethod that calls a static method doesn't trigger the cctor, so we do that explicitly.
-                        // even on .NET 2.0 SP2, interface method invocations don't run the interface cctor
-                        // NOTE when testing, please test both the x86 and x64 CLR JIT, because they have different bugs (even on .NET 2.0 SP2)
-                        tw.RunClassInit();
-                        outer.invoker = invoker;
-                        return invoker(obj, args, callerID);
-                    }
-                    catch (global::java.lang.NullPointerException e)
-                    {
-                        Console.Error.WriteLine("Caught NPE in runclassinit");
-                        throw;
-                    }
+                    // FXBUG pre-SP1 a DynamicMethod that calls a static method doesn't trigger the cctor, so we do that explicitly.
+                    // even on .NET 2.0 SP2, interface method invocations don't run the interface cctor
+                    // NOTE when testing, please test both the x86 and x64 CLR JIT, because they have different bugs (even on .NET 2.0 SP2)
+                    tw.RunClassInit();
+                    outer.invoker = invoker;
+                    return invoker(obj, args, callerID);
                 }
 
             }
@@ -542,7 +562,7 @@ namespace IKVM.Java.Externs.sun.reflect
             /// Initializes a new instance.
             /// </summary>
             /// <param name="mw"></param>
-            internal FastMethodAccessorImpl(RuntimeJavaMethod mw)
+            internal unsafe FastMethodAccessorImpl(RuntimeJavaMethod mw)
             {
                 try
                 {
@@ -560,147 +580,181 @@ namespace IKVM.Java.Externs.sun.reflect
 
                     // generate new dynamic method
                     var np = !mw.IsPublic || !mw.DeclaringType.IsPublic;
-                    var dm = DynamicMethodUtil.Create($"__<FastMethodAccessor>__{mw.DeclaringType.Name.Replace(".", "_")}__{mw.Name}", mw.DeclaringType.TypeAsBaseType, np, typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) });
+                    var dm = DynamicMethodUtil.Create($"__<FastMethodAccessor>__{mw.DeclaringType.Name.Replace(".", "_")}__{mw.Name}", mw.DeclaringType.TypeAsBaseType, np, typeof(object), new[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) });
                     var il = JVM.Context.CodeEmitterFactory.Create(dm);
-                    var rt = il.DeclareLocal(typeof(object));
 
                     // labels
-                    var marshalLabel = il.DefineLabel();
-                    var callLabel = il.DefineLabel();
-                    var returnLabel = il.DefineLabel();
+                    var postLabel = il.DefineLabel();
 
-                    // do a null check for instance argument
+                    // local variables for arguments passed to method
+                    var n = 0;
+                    var p = new CodeEmitterLocal[parameters.Length + 2];
+
+                    // load instance if not static
                     if (mw.IsStatic == false)
                     {
+                        // declare variable to hold first argument
+                        var o = p[n++] = il.AllocTempLocal(mw.DeclaringType.TypeAsSignatureType);
+
+                        // explicit null check for target
                         var endIsNullLabel = il.DefineLabel();
+                        il.Emit(OpCodes.Ldarg_0);
+                        il.Emit(OpCodes.Ldnull);
+                        il.EmitBne_Un(endIsNullLabel);
+                        il.Emit(OpCodes.Ldstr, "object is not an instance of declaring class");
+                        il.Emit(OpCodes.Newobj, nullPointerExceptionWithMessageCtor);
+                        il.Emit(OpCodes.Throw);
+                        il.MarkLabel(endIsNullLabel);
+
+                        // temporary variables
+                        var e = il.AllocTempLocal(typeof(Exception));
+
+                        // cast target to appropriate type
+                        var endConvSelf = il.DefineLabel();
                         il.BeginExceptionBlock();
                         il.Emit(OpCodes.Ldarg_0);
-                        il.EmitNullCheck();
-                        il.EmitLeave(endIsNullLabel);
-                        il.BeginCatchBlock(typeof(NullReferenceException));
-                        il.Emit(OpCodes.Newobj, nullPointerExceptionCtor);
+                        mw.DeclaringType.EmitCheckcast(il);
+                        mw.DeclaringType.EmitConvStackTypeToSignatureType(il, null);
+                        il.Emit(OpCodes.Stloc, o);
+                        il.EmitLeave(endConvSelf);
+
+                        // catch InvalidCastException, store, add message, and wrap with IllegalArgumentException
+                        il.BeginCatchBlock(typeof(InvalidCastException));
+                        il.Emit(OpCodes.Stloc, e);
+                        il.Emit(OpCodes.Ldstr, "object is not an instance of declaring class");
+                        il.Emit(OpCodes.Ldloc, e);
+                        il.Emit(OpCodes.Newobj, illegalArgumentExceptionWithMessageAndCauseCtor);
                         il.Emit(OpCodes.Throw);
+
+                        // catch Exception, wrap with IllegalArgumentException
+                        il.BeginCatchBlock(typeof(Exception));
+                        il.Emit(OpCodes.Newobj, illegalArgumentExceptionWithCauseCtor);
+                        il.Emit(OpCodes.Throw);
+
+                        // end of convert self block
                         il.EndExceptionBlock();
-                        il.MarkLabel(endIsNullLabel);
+                        il.MarkLabel(endConvSelf);
+                        il.ReleaseTempLocal(e);
                     }
+
+                    // where we start converting arguemnts
+                    var convArgsLabel = il.DefineLabel();
 
                     // zero length array may be null
                     if (parameters.Length == 0)
                     {
                         il.Emit(OpCodes.Ldarg_1);
-                        il.EmitBrfalse(marshalLabel);
+                        il.EmitBrfalse(convArgsLabel);
                     }
 
+                    // check that arguments array is not null
+                    var chckArgsLabel = il.DefineLabel();
+                    il.Emit(OpCodes.Ldarg_1);
+                    il.Emit(OpCodes.Ldnull);
+                    il.EmitBne_Un(chckArgsLabel);
+                    il.Emit(OpCodes.Ldstr, "wrong number of arguments");
+                    il.Emit(OpCodes.Newobj, illegalArgumentExceptionWithMessageCtor);
+                    il.Emit(OpCodes.Throw);
+
                     // parameters length must match number of parameters on array
+                    il.MarkLabel(chckArgsLabel);
                     il.Emit(OpCodes.Ldarg_1);
                     il.Emit(OpCodes.Ldlen);
                     il.EmitLdc_I4(parameters.Length);
-                    il.EmitBeq(marshalLabel);
-                    il.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
+                    il.EmitBeq(convArgsLabel);
+                    il.Emit(OpCodes.Ldstr, "wrong number of arguments");
+                    il.Emit(OpCodes.Newobj, illegalArgumentExceptionWithMessageCtor);
                     il.Emit(OpCodes.Throw);
 
                     // begin parameter conversion
-                    il.MarkLabel(marshalLabel);
-
-                    // emit self and argument locals
-                    var self = mw.IsStatic == false ? il.DeclareLocal(mw.DeclaringType.TypeAsSignatureType) : null;
-                    var args = new CodeEmitterLocal[parameters.Length];
-                    for (var i = 0; i < args.Length; i++)
-                        args[i] = il.DeclareLocal(parameters[i].TypeAsSignatureType);
-
-                    // try block for conversion code
-                    il.BeginExceptionBlock();
-
-                    // emit conversion code for the 'self' argument
-                    if (self != null)
-                    {
-                        il.Emit(OpCodes.Ldarg_0);
-                        mw.DeclaringType.EmitCheckcast(il);
-                        mw.DeclaringType.EmitConvStackTypeToSignatureType(il, null);
-                        il.Emit(OpCodes.Stloc, self);
-                    }
+                    il.MarkLabel(convArgsLabel);
 
                     // emit conversion code for the remainder of the arguments
-                    for (var i = 0; i < args.Length; i++)
+                    for (var i = 0; i < parameters.Length; i++)
                     {
+                        var tw = parameters[i];
+
+                        // declare variable to hold argument
+                        var o = p[n++] = il.AllocTempLocal(tw.TypeAsSignatureType);
+
+                        // temporary variable for exceptions
+                        var e = il.AllocTempLocal(typeof(Exception));
+
+                        // load and convert argument
+                        var endConvArgn = il.DefineLabel();
+                        il.BeginExceptionBlock();
                         il.Emit(OpCodes.Ldarg_1);
                         il.EmitLdc_I4(i);
                         il.Emit(OpCodes.Ldelem_Ref);
-
-                        var tw = parameters[i];
                         BoxUtil.EmitUnboxArg(il, tw);
                         tw.EmitConvStackTypeToSignatureType(il, null);
-                        il.Emit(OpCodes.Stloc, args[i]);
+                        il.Emit(OpCodes.Stloc, o);
+                        il.EmitLeave(endConvArgn);
+
+                        // catch InvalidCastException, store, add message, and wrap with IllegalArgumentException
+                        il.BeginCatchBlock(typeof(InvalidCastException));
+                        il.Emit(OpCodes.Stloc, e);
+                        il.Emit(OpCodes.Ldstr, $"argument type mismatch on parameter {i}");
+                        il.Emit(OpCodes.Ldloc, e);
+                        il.Emit(OpCodes.Newobj, illegalArgumentExceptionWithMessageAndCauseCtor);
+                        il.Emit(OpCodes.Throw);
+
+                        // catch Exception, wrap with IllegalArgumentException
+                        il.BeginCatchBlock(typeof(Exception));
+                        il.Emit(OpCodes.Stloc, e);
+                        il.Emit(OpCodes.Ldstr, $"exception on parameter {i}");
+                        il.Emit(OpCodes.Ldloc, e);
+                        il.Emit(OpCodes.Newobj, illegalArgumentExceptionWithMessageAndCauseCtor);
+                        il.Emit(OpCodes.Throw);
+
+                        // end of convert self block
+                        il.EndExceptionBlock();
+                        il.MarkLabel(endConvArgn);
+                        il.ReleaseTempLocal(e);
                     }
-
-                    // exception handler
-                    il.EmitLeave(callLabel);
-                    il.BeginCatchBlock(typeof(InvalidCastException));
-                    il.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
-                    il.Emit(OpCodes.Throw);
-                    il.BeginCatchBlock(typeof(NullReferenceException));
-                    il.Emit(OpCodes.Newobj, illegalArgumentExceptionCtor);
-                    il.Emit(OpCodes.Throw);
-                    il.EndExceptionBlock();
-
-                    // begin exception block for actual call
-                    il.MarkLabel(callLabel);
-                    il.BeginExceptionBlock();
-
-                    // first constructor arg for the delegate: null for static, reference for valuetype/ghost, reference for instance
-                    if (self != null && (mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost))
-                        il.Emit(OpCodes.Ldloca, self);
-                    else if (self != null)
-                        il.Emit(OpCodes.Ldloc, self);
-
-                    // load the remainder of the arguments
-                    for (var i = 0; i < args.Length; i++)
-                        il.Emit(OpCodes.Ldloc, args[i]);
 
                     // method requires caller ID passed as final argument
                     if (mw.HasCallerID)
-                        il.EmitLdarg(2);
+                    {
+                        var o = p[n++] = il.AllocTempLocal(typeof(global::ikvm.@internal.CallerID));
+                        il.Emit(OpCodes.Ldarg_2);
+                        il.Emit(OpCodes.Stloc, o);
+                    }
 
-                    // final method call
-                    il.Emit(self == null ? OpCodes.Call : OpCodes.Callvirt, mw.GetMethod());
+                    // storage for return value
+                    var rt = il.AllocTempLocal(typeof(object));
 
-                    // convert and store return value
+                    // call method and convert result
+                    il.BeginExceptionBlock();
+
+                    // load converted arguments
+                    for (int i = 0; i < n; i++)
+                    {
+                        il.Emit(OpCodes.Ldloc, p[i]);
+                        il.ReleaseTempLocal(p[i]);
+                    }
+
+                    // call method
+                    il.Emit(mw.IsStatic == false ? OpCodes.Callvirt : OpCodes.Call, mw.GetMethod());
+
+                    // handle return value
                     mw.ReturnType.EmitConvSignatureTypeToStackType(il);
                     BoxUtil.BoxReturnValue(il, mw.ReturnType);
                     il.Emit(OpCodes.Stloc, rt);
-                    il.EmitLeave(returnLabel);
+                    il.EmitLeave(postLabel);
 
-                    // catch the results of the call
+                    // catch exception from call and wrap
                     il.BeginCatchBlock(typeof(Exception));
-
-                    // labels
-                    var exceptionWrapLabel = il.DefineLabel();
-                    var exceptionThrowLabel = il.DefineLabel();
-
-                    // If the exception we caught is a global::java.lang.reflect.InvocationTargetException, we know it must be
-                    // wrapped, because .NET won't throw that exception and we also cannot check the target site,
-                    // because it may be the same as us if a method is recursively invoking itself.
-                    il.Emit(OpCodes.Dup);
-                    il.Emit(OpCodes.Isinst, typeof(global::java.lang.reflect.InvocationTargetException));
-                    il.EmitBrtrue(exceptionWrapLabel);
-
-                    il.Emit(OpCodes.Dup);
-                    il.Emit(OpCodes.Callvirt, get_TargetSite);
-                    il.Emit(OpCodes.Call, GetCurrentMethod);
-                    il.Emit(OpCodes.Ceq);
-                    il.EmitBrtrue(exceptionThrowLabel);
-
-                    il.MarkLabel(exceptionWrapLabel);
                     il.Emit(OpCodes.Ldc_I4_0);
                     il.Emit(OpCodes.Call, il.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(il.Context.Types.Exception));
-                    il.Emit(OpCodes.Newobj, invocationTargetExceptionCtor);
-
-                    il.MarkLabel(exceptionThrowLabel);
+                    il.Emit(OpCodes.Newobj, invocationTargetExceptionWithCauseCtor);
                     il.Emit(OpCodes.Throw);
                     il.EndExceptionBlock();
 
-                    il.MarkLabel(returnLabel);
+                    // return from method with last return value
+                    il.MarkLabel(postLabel);
                     il.Emit(OpCodes.Ldloc, rt);
+                    il.ReleaseTempLocal(rt);
                     il.Emit(OpCodes.Ret);
                     il.DoEmit();
 
@@ -724,18 +778,14 @@ namespace IKVM.Java.Externs.sun.reflect
                 {
                     return invoker(obj, args, callerID);
                 }
-                catch (System.InvalidProgramException e)
-                {
-                    throw;
-                }
                 catch (MethodAccessException x)
                 {
                     // this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
                     throw new global::java.lang.IllegalAccessException().initCause(x);
                 }
-                catch (global::java.lang.NullPointerException e)
+                catch (NullReferenceException e)
                 {
-                    Console.Error.WriteLine("Caught NPE");
+                    global::java.lang.System.err.println("got NRE " + e);
                     throw;
                 }
             }
@@ -750,102 +800,146 @@ namespace IKVM.Java.Externs.sun.reflect
 
             internal FastConstructorAccessorImpl(global::java.lang.reflect.Constructor constructor)
             {
-                var mw = RuntimeJavaMethod.FromExecutable(constructor);
-
-                RuntimeJavaType[] parameters;
                 try
                 {
+                    var mw = RuntimeJavaMethod.FromExecutable(constructor);
+
                     mw.DeclaringType.Finish();
-                    parameters = mw.GetParameters();
+                    var parameters = mw.GetParameters();
+
                     for (int i = 0; i < parameters.Length; i++)
                     {
-                        // the EnsureLoadable shouldn't fail, because we don't allow a global::java.lang.reflect.Method
-                        // to "escape" if it has an unloadable type in the signature
                         parameters[i] = parameters[i].EnsureLoadable(mw.DeclaringType.GetClassLoader());
                         parameters[i].Finish();
                     }
-                }
-                catch (RetargetableJavaException x)
-                {
-                    throw x.ToJava();
-                }
 
-                mw.ResolveMethod();
-                var dm = DynamicMethodUtil.Create("__<Invoker>", mw.DeclaringType.TypeAsTBD, !mw.IsPublic || !mw.DeclaringType.IsPublic, typeof(object), new Type[] { typeof(object[]) });
-                var ilgen = JVM.Context.CodeEmitterFactory.Create(dm);
-                var ret = ilgen.DeclareLocal(typeof(object));
+                    // resolve the runtime method info
+                    mw.ResolveMethod();
+                    var np = !mw.IsPublic || !mw.DeclaringType.IsPublic;
+                    var dm = DynamicMethodUtil.Create($"__<FastConstructorAccessor>__{mw.DeclaringType.Name.Replace(".", "_")}__{mw.Name}", mw.DeclaringType.TypeAsTBD, np, typeof(object), new[] { typeof(object[]) });
+                    var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
-                // check args length
-                var argsLengthOK = ilgen.DefineLabel();
-                if (parameters.Length == 0)
-                {
+                    // labels
+                    var postLabel = il.DefineLabel();
+
+                    // local variables for arguments passed to constructor
+                    var n = 0;
+                    var p = new CodeEmitterLocal[parameters.Length];
+
+                    // where we start converting arguemnts
+                    var convArgsLabel = il.DefineLabel();
+
                     // zero length array may be null
-                    ilgen.Emit(OpCodes.Ldarg_0);
-                    ilgen.EmitBrfalse(argsLengthOK);
+                    if (parameters.Length == 0)
+                    {
+                        il.Emit(OpCodes.Ldarg_0);
+                        il.EmitBrfalse(convArgsLabel);
+                    }
+
+                    // check that arguments array is not null
+                    var chckArgsLabel = il.DefineLabel();
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldnull);
+                    il.EmitBne_Un(chckArgsLabel);
+                    il.Emit(OpCodes.Ldstr, "wrong number of arguments");
+                    il.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionWithMessageCtor);
+                    il.Emit(OpCodes.Throw);
+
+                    // parameters length must match number of parameters on array
+                    il.MarkLabel(chckArgsLabel);
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldlen);
+                    il.EmitLdc_I4(parameters.Length);
+                    il.EmitBeq(convArgsLabel);
+                    il.Emit(OpCodes.Ldstr, "wrong number of arguments");
+                    il.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionWithMessageCtor);
+                    il.Emit(OpCodes.Throw);
+
+                    // begin parameter conversion
+                    il.MarkLabel(convArgsLabel);
+
+                    // emit conversion code for the remainder of the arguments
+                    for (var i = 0; i < parameters.Length; i++)
+                    {
+                        var tw = parameters[i];
+
+                        // declare variable to hold argument
+                        var o = p[n++] = il.AllocTempLocal(tw.TypeAsSignatureType);
+
+                        // temporary variable for exceptions
+                        var e = il.AllocTempLocal(typeof(Exception));
+
+                        // load and convert argument
+                        var endConvArgn = il.DefineLabel();
+                        il.BeginExceptionBlock();
+                        il.Emit(OpCodes.Ldarg_0);
+                        il.EmitLdc_I4(i);
+                        il.Emit(OpCodes.Ldelem_Ref);
+                        BoxUtil.EmitUnboxArg(il, tw);
+                        tw.EmitConvStackTypeToSignatureType(il, null);
+                        il.Emit(OpCodes.Stloc, o);
+                        il.EmitLeave(endConvArgn);
+
+                        // catch InvalidCastException, store, add message, and wrap with IllegalArgumentException
+                        il.BeginCatchBlock(typeof(InvalidCastException));
+                        il.Emit(OpCodes.Stloc, e);
+                        il.Emit(OpCodes.Ldstr, $"argument type mismatch on parameter {i}");
+                        il.Emit(OpCodes.Ldloc, e);
+                        il.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionWithMessageAndCauseCtor);
+                        il.Emit(OpCodes.Throw);
+
+                        // catch Exception, wrap with IllegalArgumentException
+                        il.BeginCatchBlock(typeof(Exception));
+                        il.Emit(OpCodes.Stloc, e);
+                        il.Emit(OpCodes.Ldstr, $"exception on parameter {i}");
+                        il.Emit(OpCodes.Ldloc, e);
+                        il.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionWithMessageAndCauseCtor);
+                        il.Emit(OpCodes.Throw);
+
+                        // end of convert self block
+                        il.EndExceptionBlock();
+                        il.MarkLabel(endConvArgn);
+                        il.ReleaseTempLocal(e);
+                    }
+
+                    // handle exceptions in constructor
+                    il.BeginExceptionBlock();
+
+                    // load converted arguments
+                    for (int i = 0; i < n; i++)
+                    {
+                        il.Emit(OpCodes.Ldloc, p[i]);
+                        il.ReleaseTempLocal(p[i]);
+                    }
+
+                    // call constructor
+                    var rt = il.AllocTempLocal(typeof(object));
+                    mw.EmitNewobj(il);
+                    il.Emit(OpCodes.Stloc, rt);
+                    il.EmitLeave(postLabel);
+
+                    // catch exception from call and wrap
+                    il.BeginCatchBlock(typeof(Exception));
+                    il.Emit(OpCodes.Ldc_I4_0);
+                    il.Emit(OpCodes.Call, il.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(il.Context.Types.Exception));
+                    il.Emit(OpCodes.Newobj, FastMethodAccessorImpl.invocationTargetExceptionWithCauseCtor);
+                    il.Emit(OpCodes.Throw);
+                    il.EndExceptionBlock();
+
+                    // return from method with last return value
+                    il.MarkLabel(postLabel);
+                    il.Emit(OpCodes.Ldloc, rt);
+                    il.ReleaseTempLocal(rt);
+                    il.Emit(OpCodes.Ret);
+                    il.DoEmit();
+
+                    // generate invoker
+                    invoker = (Invoker)dm.CreateDelegate(typeof(Invoker));
                 }
-                ilgen.Emit(OpCodes.Ldarg_0);
-                ilgen.Emit(OpCodes.Ldlen);
-                ilgen.EmitLdc_I4(parameters.Length);
-                ilgen.EmitBeq(argsLengthOK);
-                ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionCtor);
-                ilgen.Emit(OpCodes.Throw);
-                ilgen.MarkLabel(argsLengthOK);
-
-                var args = new CodeEmitterLocal[parameters.Length];
-                for (int i = 0; i < args.Length; i++)
-                    args[i] = ilgen.DeclareLocal(parameters[i].TypeAsSignatureType);
-
-                ilgen.BeginExceptionBlock();
-                for (int i = 0; i < args.Length; i++)
+                catch (RetargetableJavaException e)
                 {
-                    ilgen.Emit(OpCodes.Ldarg_0);
-                    ilgen.EmitLdc_I4(i);
-                    ilgen.Emit(OpCodes.Ldelem_Ref);
-                    RuntimeJavaType tw = parameters[i];
-                    BoxUtil.EmitUnboxArg(ilgen, tw);
-                    tw.EmitConvStackTypeToSignatureType(ilgen, null);
-                    ilgen.Emit(OpCodes.Stloc, args[i]);
+                    throw e.ToJava();
                 }
-                CodeEmitterLabel label1 = ilgen.DefineLabel();
-                ilgen.EmitLeave(label1);
-                ilgen.BeginCatchBlock(typeof(InvalidCastException));
-                ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionCtor);
-                ilgen.Emit(OpCodes.Throw);
-                ilgen.BeginCatchBlock(typeof(NullReferenceException));
-                ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.illegalArgumentExceptionCtor);
-                ilgen.Emit(OpCodes.Throw);
-                ilgen.EndExceptionBlock();
-
-                // this is the actual call
-                ilgen.MarkLabel(label1);
-                ilgen.BeginExceptionBlock();
-                for (int i = 0; i < args.Length; i++)
-                {
-                    ilgen.Emit(OpCodes.Ldloc, args[i]);
-                }
-                mw.EmitNewobj(ilgen);
-                ilgen.Emit(OpCodes.Stloc, ret);
-                CodeEmitterLabel label2 = ilgen.DefineLabel();
-                ilgen.EmitLeave(label2);
-                ilgen.BeginCatchBlock(typeof(Exception));
-                ilgen.Emit(OpCodes.Dup);
-                ilgen.Emit(OpCodes.Callvirt, FastMethodAccessorImpl.get_TargetSite);
-                ilgen.Emit(OpCodes.Call, FastMethodAccessorImpl.GetCurrentMethod);
-                ilgen.Emit(OpCodes.Ceq);
-                CodeEmitterLabel label = ilgen.DefineLabel();
-                ilgen.EmitBrtrue(label);
-                ilgen.Emit(OpCodes.Ldc_I4_0);
-                ilgen.Emit(OpCodes.Call, ilgen.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(ilgen.Context.Types.Exception));
-                ilgen.Emit(OpCodes.Newobj, FastMethodAccessorImpl.invocationTargetExceptionCtor);
-                ilgen.MarkLabel(label);
-                ilgen.Emit(OpCodes.Throw);
-                ilgen.EndExceptionBlock();
-
-                ilgen.MarkLabel(label2);
-                ilgen.Emit(OpCodes.Ldloc, ret);
-                ilgen.Emit(OpCodes.Ret);
-                ilgen.DoEmit();
-                invoker = (Invoker)dm.CreateDelegate(typeof(Invoker));
             }
 
             [IKVM.Attributes.HideFromJava]
@@ -855,16 +949,18 @@ namespace IKVM.Java.Externs.sun.reflect
                 {
                     return invoker(args);
                 }
-                catch (MethodAccessException x)
+                catch (MethodAccessException e)
                 {
                     // this can happen if we're calling a non-public method and the call stack doesn't have ReflectionPermission.MemberAccess
-                    throw new global::java.lang.IllegalAccessException().initCause(x);
+                    throw new global::java.lang.IllegalAccessException().initCause(e);
                 }
             }
+
         }
 
         private sealed class FastSerializationConstructorAccessorImpl : global::sun.reflect.ConstructorAccessor
         {
+
             private static readonly MethodInfo GetTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle", new Type[] { typeof(RuntimeTypeHandle) });
             private static readonly MethodInfo GetUninitializedObjectMethod = typeof(FormatterServices).GetMethod("GetUninitializedObject", new Type[] { typeof(Type) });
             private delegate object InvokeCtor();
@@ -920,6 +1016,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
         sealed class ActivatorConstructorAccessor : global::sun.reflect.ConstructorAccessor
         {
+
             private readonly Type type;
 
             internal ActivatorConstructorAccessor(RuntimeJavaMethod mw)
@@ -930,9 +1027,8 @@ namespace IKVM.Java.Externs.sun.reflect
             public object newInstance(object[] objarr)
             {
                 if (objarr != null && objarr.Length != 0)
-                {
                     throw new global::java.lang.IllegalArgumentException();
-                }
+
                 try
                 {
                     return Activator.CreateInstance(type);
@@ -945,7 +1041,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
             internal static bool IsSuitable(RuntimeJavaMethod mw)
             {
-                MethodBase mb = mw.GetMethod();
+                var mb = mw.GetMethod();
                 return mb != null
                     && mb.IsConstructor
                     && mb.IsPublic
@@ -953,6 +1049,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     && mb.DeclaringType == mw.DeclaringType.TypeAsBaseType
                     && mb.GetParameters().Length == 0;
             }
+
         }
 
         private abstract class FieldAccessorImplBase : global::sun.reflect.FieldAccessor, IReflectionException

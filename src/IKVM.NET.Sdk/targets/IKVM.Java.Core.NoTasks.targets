@@ -111,7 +111,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
 
         <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
         <Message Text="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" />
-        <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" ContinueOnError="false" />
+        <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" IgnoreStandardErrorWarningFormat="true" />
         <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="Exists('%(ReferenceExport.StagePath)') And !Exists('%(ReferenceExport.CachePath)')" />
         <Touch Files="%(ReferenceExport.CachePath)" />
 
@@ -181,7 +181,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         <MakeDir Directories="$(HeaderOutputPath)" />
         
         <Message Text="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
-        <Exec Command="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
+        <Exec Command="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" IgnoreStandardErrorWarningFormat="true" />
 
         <!-- Remove files that were not modified by this compilation. -->
         <ItemGroup>
@@ -282,7 +282,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         <RemoveDir Directories="$(_AssemblyTempPath)" Condition="Exists('$(_AssemblyTempPath)')" />
         <MakeDir Directories="$(_AssemblyTempPath)" />
         <Message Text="$(IkvmCompilerExec) @$(_IkvmCompilerResponseFile)" />
-        <Exec Command="$(IkvmCompilerExec) @$(_IkvmCompilerResponseFile)" ContinueOnError="false" />
+        <Exec Command="$(IkvmCompilerExec) @$(_IkvmCompilerResponseFile)" IgnoreStandardErrorWarningFormat="true" />
 
         <!-- Move temporary files in place of permanent files. -->
         <Move SourceFiles="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" DestinationFiles="@(IntermediateAssembly)" OverwriteReadOnlyFiles="true" />

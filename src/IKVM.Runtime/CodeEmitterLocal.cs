@@ -68,6 +68,7 @@ namespace IKVM.Runtime
 				// it's a temporary local that is only allocated on-demand
 				local = ilgen.DeclareLocal(type);
 			}
+
 			ilgen.Emit(opcode, local);
 		}
 
