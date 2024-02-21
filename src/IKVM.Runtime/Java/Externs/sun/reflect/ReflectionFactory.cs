@@ -586,15 +586,16 @@ namespace IKVM.Java.Externs.sun.reflect
                     // labels
                     var postLabel = il.DefineLabel();
 
-                    // local variables for arguments passed to method
+                    // arguments passed to the method
+                    var s = default(CodeEmitterLocal);
                     var n = 0;
-                    var p = new CodeEmitterLocal[parameters.Length + 2];
+                    var p = new CodeEmitterLocal[parameters.Length];
 
                     // load instance if not static
                     if (mw.IsStatic == false)
                     {
-                        // declare variable to hold first argument
-                        var o = p[n++] = il.AllocTempLocal(mw.DeclaringType.TypeAsSignatureType);
+                        // declare variable to hold this instance
+                        s = il.AllocTempLocal(mw.DeclaringType.TypeAsSignatureType);
 
                         // explicit null check for target
                         var endIsNullLabel = il.DefineLabel();
@@ -615,7 +616,7 @@ namespace IKVM.Java.Externs.sun.reflect
                         il.Emit(OpCodes.Ldarg_0);
                         mw.DeclaringType.EmitCheckcast(il);
                         mw.DeclaringType.EmitConvStackTypeToSignatureType(il, null);
-                        il.Emit(OpCodes.Stloc, o);
+                        il.Emit(OpCodes.Stloc, s);
                         il.EmitLeave(endConvSelf);
 
                         // catch InvalidCastException, store, add message, and wrap with IllegalArgumentException
@@ -707,18 +708,10 @@ namespace IKVM.Java.Externs.sun.reflect
                         il.Emit(OpCodes.Newobj, illegalArgumentExceptionWithMessageAndCauseCtor);
                         il.Emit(OpCodes.Throw);
 
-                        // end of convert self block
+                        // end convert
                         il.EndExceptionBlock();
                         il.MarkLabel(endConvArgn);
                         il.ReleaseTempLocal(e);
-                    }
-
-                    // method requires caller ID passed as final argument
-                    if (mw.HasCallerID)
-                    {
-                        var o = p[n++] = il.AllocTempLocal(typeof(global::ikvm.@internal.CallerID));
-                        il.Emit(OpCodes.Ldarg_2);
-                        il.Emit(OpCodes.Stloc, o);
                     }
 
                     // storage for return value
@@ -727,6 +720,14 @@ namespace IKVM.Java.Externs.sun.reflect
                     // call method and convert result
                     il.BeginExceptionBlock();
 
+                    // this instance
+                    if (s != null)
+                    {
+                        // null for static, reference for valuetype/ghost, reference for instance
+                        il.Emit(mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost ? OpCodes.Ldloca : OpCodes.Ldloc, s);
+                        il.ReleaseTempLocal(s);
+                    }
+
                     // load converted arguments
                     for (int i = 0; i < n; i++)
                     {
@@ -734,8 +735,15 @@ namespace IKVM.Java.Externs.sun.reflect
                         il.ReleaseTempLocal(p[i]);
                     }
 
+                    // method requires caller ID passed as final argument
+                    if (mw.HasCallerID)
+                        il.Emit(OpCodes.Ldarg_2);
+
                     // call method
-                    il.Emit(mw.IsStatic == false ? OpCodes.Callvirt : OpCodes.Call, mw.GetMethod());
+                    if (s != null)
+                        il.Emit(OpCodes.Callvirt, mw.GetMethod());
+                    else
+                        il.Emit(OpCodes.Call, mw.GetMethod());
 
                     // handle return value
                     mw.ReturnType.EmitConvSignatureTypeToStackType(il);
