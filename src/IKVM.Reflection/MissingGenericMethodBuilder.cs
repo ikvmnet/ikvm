@@ -51,7 +51,7 @@ namespace IKVM.Reflection
         public void SetSignature(Type returnType, CustomModifiers returnTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
         {
             method.signature = new MethodSignature(
-                returnType ?? method.Module.universe.System_Void,
+                returnType ?? method.Module.Universe.System_Void,
                 Util.Copy(parameterTypes),
                 PackedCustomModifiers.CreateFromExternal(returnTypeCustomModifiers, parameterTypeCustomModifiers, parameterTypes.Length),
                 method.signature.CallingConvention,
@@ -62,7 +62,7 @@ namespace IKVM.Reflection
         public void SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
         {
             method.signature = new MethodSignature(
-                returnType ?? method.Module.universe.System_Void,
+                returnType ?? method.Module.Universe.System_Void,
                 Util.Copy(parameterTypes),
                 PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, parameterTypes.Length),
                 method.signature.CallingConvention,

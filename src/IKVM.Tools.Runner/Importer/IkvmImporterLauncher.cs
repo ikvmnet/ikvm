@@ -136,8 +136,12 @@ namespace IKVM.Tools.Runner.Importer
             if (options.CompressResources)
                 w.WriteLine("-compressresources");
 
-            if (options.Debug)
-                w.WriteLine("-debug");
+            if (options.Debug == IkvmImporterDebugMode.Full)
+                w.WriteLine("-debug:full");
+            else if (options.Debug == IkvmImporterDebugMode.Portable)
+                w.WriteLine("-debug:portable");
+            else if (options.Debug == IkvmImporterDebugMode.Embedded)
+                w.WriteLine("-debug:embedded");
 
             if (options.NoAutoSerialization)
                 w.WriteLine("-noautoserialization");

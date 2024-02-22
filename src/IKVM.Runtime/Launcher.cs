@@ -277,6 +277,7 @@ namespace IKVM.Runtime
 
             var initialize = properties != null ? new Dictionary<string, string>(properties) : new Dictionary<string, string>();
             var showversion = false;
+            var exit = false;
             var hasMainArg = false;
             var jvmArgs = args.Where(i => rarg != null).Where(i => i.StartsWith(rarg)).Select(i => i.Substring(rarg.Length)).ToList();
             var appArgs = args.Where(i => rarg == null || i.StartsWith(rarg) == false).ToList();
@@ -363,8 +364,9 @@ namespace IKVM.Runtime
 
                     if (ArgEquals(arg, "-version"))
                     {
-                        PrintVersion();
-                        return 0;
+                        showversion = true;
+                        exit = true;
+                        continue;
                     }
 
                     if (ArgEquals(arg, "-showversion"))
@@ -505,6 +507,10 @@ namespace IKVM.Runtime
                 // we were instructed to show the version
                 if (showversion)
                     PrintVersion();
+
+                // we were instructed to exit immediately
+                if (exit)
+                    return 0;
 
                 // we require a main argument, either a class name or jar file
                 if (main == null)

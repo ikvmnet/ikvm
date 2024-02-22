@@ -54,7 +54,7 @@ namespace IKVM.Reflection.Writer
 
         internal void SetAttribute(AssemblyBuilder asm, CustomAttributeBuilder cab)
         {
-            var u = cab.Constructor.Module.universe;
+            var u = cab.Constructor.Module.Universe;
             var type = cab.Constructor.DeclaringType;
             if (copyright == null && type == u.System_Reflection_AssemblyCopyrightAttribute)
             {

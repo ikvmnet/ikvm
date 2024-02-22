@@ -40,7 +40,7 @@ namespace IKVM.Reflection
         /// <param name="assembly"></param>
         /// <param name="index"></param>
         internal MissingModule(Assembly assembly, int index) :
-            base(assembly.universe)
+            base(assembly.Universe)
         {
             this.assembly = assembly;
             this.index = index;

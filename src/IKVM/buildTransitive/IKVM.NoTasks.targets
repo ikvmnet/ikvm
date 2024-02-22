@@ -29,7 +29,7 @@
 
         <ItemGroup>
             <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
-            <_IkvmCompilerArgs Include="-debug" Condition=" '%(IkvmReferenceItem.Debug)' == 'true' " />
+            <_IkvmCompilerArgs Include="-debug:%(IkvmReferenceItem.Debug)" Condition=" '%(IkvmReferenceItem.Debug)' != '' And '%(IkvmReferenceItem.Debug)' != 'none' " />
             <_IkvmCompilerArgs Include="-assembly:%(IkvmReferenceItem.AssemblyName)" />
             <_IkvmCompilerArgs Include="-version:%(IkvmReferenceItem.AssemblyVersion)" Condition=" '%(IkvmReferenceItem.AssemblyVersion)' != '' " />
             <_IkvmCompilerArgs Include="-fileversion:%(IkvmReferenceItem.AssemblyFileVersion)" Condition=" '%(IkvmReferenceItem.AssemblyFileVersion)' != '' " />

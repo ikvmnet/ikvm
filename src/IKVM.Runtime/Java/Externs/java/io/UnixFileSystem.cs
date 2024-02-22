@@ -22,21 +22,30 @@
   
 */
 
+using System;
+
 namespace IKVM.Java.Externs.java.io
 {
 
     static class UnixFileSystem
     {
 
-        public static int getBooleanAttributes0(object _this, global::java.io.File f)
+        public static int getBooleanAttributes0(object _this, object f)
         {
-            return WinNTFileSystem.getBooleanAttributes(_this, f);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return WinNTFileSystem.getBooleanAttributes(_this, (global::java.io.File)f);
+#endif
         }
 
-        public static long getSpace(object _this, global::java.io.File f, int t)
+        public static long getSpace(object _this, object f, int t)
         {
-            // TODO
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             return 0;
+#endif
         }
 
         public static string canonicalize0(object _this, string path)
@@ -44,25 +53,41 @@ namespace IKVM.Java.Externs.java.io
             return WinNTFileSystem.canonicalize0(_this, path);
         }
 
-        public static bool checkAccess(object _this, global::java.io.File f, int access)
+        public static bool checkAccess(object _this, object f, int access)
         {
-            return WinNTFileSystem.checkAccess(_this, f, access);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return WinNTFileSystem.checkAccess(_this, (global::java.io.File)f, access);
+#endif
         }
 
-        public static long getLastModifiedTime(object _this, global::java.io.File f)
+        public static long getLastModifiedTime(object _this, object f)
         {
-            return WinNTFileSystem.getLastModifiedTime(_this, f);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return WinNTFileSystem.getLastModifiedTime(_this, (global::java.io.File)f);
+#endif
         }
 
-        public static long getLength(object _this, global::java.io.File f)
+        public static long getLength(object _this, object f)
         {
-            return WinNTFileSystem.getLength(_this, f);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return WinNTFileSystem.getLength(_this, (global::java.io.File)f);
+#endif
         }
 
-        public static bool setPermission(object _this, global::java.io.File f, int access, bool enable, bool owneronly)
+        public static bool setPermission(object _this, object f, int access, bool enable, bool owneronly)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             // TODO consider using Mono.Posix
-            return WinNTFileSystem.setPermission(_this, f, access, enable, owneronly);
+            return WinNTFileSystem.setPermission(_this, (global::java.io.File)f, access, enable, owneronly);
+#endif
         }
 
         public static bool createFileExclusively(object _this, string path)
@@ -70,39 +95,65 @@ namespace IKVM.Java.Externs.java.io
             return WinNTFileSystem.createFileExclusively(_this, path);
         }
 
-        public static bool delete0(object _this, global::java.io.File f)
+        public static bool delete0(object _this, object f)
         {
-            return WinNTFileSystem.delete0(_this, f);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return WinNTFileSystem.delete0(_this, (global::java.io.File)f);
+#endif
         }
 
-        public static string[] list(object _this, global::java.io.File f)
+        public static string[] list(object _this, object f)
         {
-            return WinNTFileSystem.list(_this, f);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return WinNTFileSystem.list(_this, (global::java.io.File)f);
+#endif
         }
 
-        public static bool createDirectory(object _this, global::java.io.File f)
+        public static bool createDirectory(object _this, object f)
         {
-            return WinNTFileSystem.createDirectory(_this, f);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return WinNTFileSystem.createDirectory(_this, (global::java.io.File)f);
+#endif
         }
 
-        public static bool rename0(object _this, global::java.io.File f1, global::java.io.File f2)
+        public static bool rename0(object _this, object f1, object f2)
         {
-            return WinNTFileSystem.rename0(_this, f1, f2);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return WinNTFileSystem.rename0(_this, (global::java.io.File)f1, (global::java.io.File)f2);
+#endif
         }
 
-        public static bool setLastModifiedTime(object _this, global::java.io.File f, long time)
+        public static bool setLastModifiedTime(object _this, object f, long time)
         {
-            return WinNTFileSystem.setLastModifiedTime(_this, f, time);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return WinNTFileSystem.setLastModifiedTime(_this, (global::java.io.File)f, time);
+#endif
         }
 
-        public static bool setReadOnly(object _this, global::java.io.File f)
+        public static bool setReadOnly(object _this, object f)
         {
-            return WinNTFileSystem.setReadOnly(_this, f);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return WinNTFileSystem.setReadOnly(_this, (global::java.io.File)f);
+#endif
         }
 
         public static void initIDs()
         {
+
         }
+
     }
 
 }

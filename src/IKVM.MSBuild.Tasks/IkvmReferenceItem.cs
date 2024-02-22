@@ -62,7 +62,7 @@
                 item.References = ResolveReferences(map, item, item.Item.GetMetadata(IkvmReferenceItemMetadata.References)).ToList();
                 item.ClassLoader = item.Item.GetMetadata(IkvmReferenceItemMetadata.ClassLoader);
                 item.ResolvedReferences = item.Item.GetMetadata(IkvmReferenceItemMetadata.ResolvedReferences)?.Split(IkvmReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
-                item.Debug = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.Debug), "true", StringComparison.OrdinalIgnoreCase);
+                item.Debug = ParseDebug(item.Item.GetMetadata(IkvmReferenceItemMetadata.Debug));
                 item.KeyFile = item.Item.GetMetadata(IkvmReferenceItemMetadata.KeyFile);
                 item.DelaySign = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.DelaySign), "true", StringComparison.OrdinalIgnoreCase);
                 item.Aliases = item.Item.GetMetadata(IkvmReferenceItemMetadata.Aliases);
@@ -78,6 +78,21 @@
             // return the resulting imported references
             return map.Values.ToArray();
         }
+
+        /// <summary>
+        /// Parses the debug metadata value into the enum.
+        /// </summary>
+        /// <param name="debug"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        static IkvmReferenceItemDebug ParseDebug(string debug) => debug?.ToLower() switch
+        {
+            "none" or "false" or "" or null => IkvmReferenceItemDebug.None,
+            "full" or "true" => IkvmReferenceItemDebug.Full,
+            "portable" => IkvmReferenceItemDebug.Portable,
+            "embedded" => IkvmReferenceItemDebug.Embedded,
+            _ => IkvmReferenceItemDebug.None
+        };
 
         /// <summary>
         /// Attempts to resolve the references given by the reference string <paramref name="references"/> for
@@ -229,7 +244,7 @@
         /// <summary>
         /// Compile in debug mode.
         /// </summary>
-        public bool Debug { get; set; }
+        public IkvmReferenceItemDebug Debug { get; set; }
 
         /// <summary>
         /// Path to the file to sign the assembly.
@@ -279,13 +294,28 @@
             Item.SetMetadata(IkvmReferenceItemMetadata.StagePath, StagePath);
             Item.SetMetadata(IkvmReferenceItemMetadata.StageSymbolsPath, StageSymbolsPath);
             Item.SetMetadata(IkvmReferenceItemMetadata.Aliases, Aliases);
-            Item.SetMetadata(IkvmReferenceItemMetadata.Debug, Debug ? "true" : "false");
+            Item.SetMetadata(IkvmReferenceItemMetadata.Debug, ToString(Debug));
             Item.SetMetadata(IkvmReferenceItemMetadata.KeyFile, KeyFile);
             Item.SetMetadata(IkvmReferenceItemMetadata.DelaySign, DelaySign ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.Private, Private ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.ReferenceOutputAssembly, ReferenceOutputAssembly ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.ResolvedReferences, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, ResolvedReferences));
         }
+
+        /// <summary>
+        /// Converts the enum value to a string.
+        /// </summary>
+        /// <param name="debug"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        string ToString(IkvmReferenceItemDebug debug) => debug switch
+        {
+            IkvmReferenceItemDebug.None => "none",
+            IkvmReferenceItemDebug.Full => "full",
+            IkvmReferenceItemDebug.Portable => "portable",
+            IkvmReferenceItemDebug.Embedded => "embedded",
+            _ => throw new NotImplementedException(),
+        };
 
     }
 

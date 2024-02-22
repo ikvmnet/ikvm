@@ -23,8 +23,10 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.SymbolStore;
 using System.IO;
 using System.Security;
+using System.Security.Cryptography;
 using System.Text;
 
 using IKVM.Reflection.Emit;
@@ -72,7 +74,9 @@ namespace IKVM.Reflection
         readonly bool useNativeFusion;
         readonly bool returnPseudoCustomAttributes;
         readonly bool automaticallyProvideDefaultConstructor;
+        HashAlgorithmName pdbChecksumAlgorithm = HashAlgorithmName.SHA256;
         readonly UniverseOptions options;
+        Func<ModuleBuilder, ISymbolWriter> symbolWriterFactory;
         Type typeof_System_Object;
         Type typeof_System_ValueType;
         Type typeof_System_Enum;
@@ -150,6 +154,34 @@ namespace IKVM.Reflection
             returnPseudoCustomAttributes = (options & UniverseOptions.DisablePseudoCustomAttributeRetrieval) == 0;
             automaticallyProvideDefaultConstructor = (options & UniverseOptions.DontProvideAutomaticDefaultConstructor) == 0;
             resolveMissingMembers = (options & UniverseOptions.ResolveMissingMembers) != 0;
+        }
+
+        /// <summary>
+        /// Sets a factory to create a <see cref="ISymbolWriter"/> for a module name.
+        /// </summary>
+        /// <param name="factory"></param>
+        public void SetSymbolWriterFactory(Func<ModuleBuilder, ISymbolWriter> factory)
+        {
+            this.symbolWriterFactory = factory;
+        }
+
+        /// <summary>
+        /// Sets the algorithm to use when calculating PDB checksums.
+        /// </summary>
+        /// <param name="pdbChecksumAlgorithm"></param>
+        public void SetPdbChecksumAlgorithm(HashAlgorithmName pdbChecksumAlgorithm)
+        {
+            this.pdbChecksumAlgorithm = pdbChecksumAlgorithm;
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="ISymbolWriter"/> for the specified assembly builder and new module name.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <returns></returns>
+        internal ISymbolWriter CreateSymbolWriter(ModuleBuilder module)
+        {
+            return symbolWriterFactory?.Invoke(module);
         }
 
         static bool GetUseNativeFusion()
@@ -967,11 +999,6 @@ namespace IKVM.Reflection
             }
         }
 
-        public static Universe FromAssembly(Assembly assembly)
-        {
-            return assembly.universe;
-        }
-
         internal bool ResolveMissingTypeIsValueType(MissingType missingType)
         {
             if (missingTypeIsValueType != null)
@@ -990,7 +1017,15 @@ namespace IKVM.Reflection
 
         internal bool DecodeVersionInfoAttributeBlobs => (options & UniverseOptions.DecodeVersionInfoAttributeBlobs) != 0;
 
+        /// <summary>
+        /// Returns <c>true</c> if the module builders should produce deterministic images.
+        /// </summary>
         internal bool Deterministic => (options & UniverseOptions.DeterministicOutput) != 0;
+
+        /// <summary>
+        /// Gets the hash algorithm to use for PDB checksums.
+        /// </summary>
+        internal HashAlgorithmName PdbChecksumAlgorithm => pdbChecksumAlgorithm;
 
     }
 

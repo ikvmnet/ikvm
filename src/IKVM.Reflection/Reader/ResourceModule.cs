@@ -40,7 +40,8 @@ namespace IKVM.Reflection.Reader
         /// <param name="manifest"></param>
         /// <param name="index"></param>
         /// <param name="location"></param>
-        internal ResourceModule(ModuleReader manifest, int index, string location) : base(manifest.universe)
+        internal ResourceModule(ModuleReader manifest, int index, string location) : 
+            base(manifest.Universe)
         {
             this.manifest = manifest;
             this.index = index;

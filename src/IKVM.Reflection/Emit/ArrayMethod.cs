@@ -52,7 +52,7 @@ namespace IKVM.Reflection.Emit
             this.arrayClass = arrayClass;
             this.methodName = methodName;
             this.callingConvention = callingConvention;
-            this.returnType = returnType ?? module.universe.System_Void;
+            this.returnType = returnType ?? module.Universe.System_Void;
             this.parameterTypes = Util.Copy(parameterTypes);
         }
 
@@ -74,6 +74,11 @@ namespace IKVM.Reflection.Emit
         public override ParameterInfo[] GetParameters()
         {
             throw new NotSupportedException();
+        }
+
+        internal override Type[] GetParameterTypes()
+        {
+            return parameterTypes;
         }
 
         internal override int ImportTo(ModuleBuilder module)

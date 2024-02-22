@@ -69,12 +69,12 @@ namespace IKVM.Runtime.JNI
         /// <param name="sig"></param>
         /// <returns></returns>
         /// <exception cref="java.lang.UnsatisfiedLinkError"></exception>
-        public static nint GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
+        public static nint GetFuncPtr(object callerID, string clazz, string name, string sig)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            var loader = RuntimeClassLoader.FromCallerID(callerID);
+            var loader = RuntimeClassLoader.FromCallerID((ikvm.@internal.CallerID)callerID);
             var argl = sizeof(nint) + sizeof(nint);
             for (int i = 1; sig[i] != ')'; i++)
             {
@@ -216,15 +216,15 @@ namespace IKVM.Runtime.JNI
         /// </summary>
         /// <param name="callerID"></param>
         /// <returns></returns>
-        public IntPtr Enter(ikvm.@internal.CallerID callerID)
+        public nint Enter(object callerID)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
             env = TlsHack.ManagedJNIEnv;
             env ??= JNIEnv.CreateJNIEnv(JVM.Context)->GetManagedJNIEnv();
-            prevFrameState = env.Enter(callerID);
-            return (IntPtr)(void*)env.pJNIEnv;
+            prevFrameState = env.Enter((ikvm.@internal.CallerID)callerID);
+            return (nint)(void*)env.pJNIEnv;
 #endif
         }
 

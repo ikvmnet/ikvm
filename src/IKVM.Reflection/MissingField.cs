@@ -64,16 +64,6 @@ namespace IKVM.Reflection
             get { return Forwarder.Attributes; }
         }
 
-        public override void __GetDataFromRVA(byte[] data, int offset, int length)
-        {
-            Forwarder.__GetDataFromRVA(data, offset, length);
-        }
-
-        public override int __FieldRVA
-        {
-            get { return Forwarder.__FieldRVA; }
-        }
-
         public override bool __TryGetFieldOffset(out int offset)
         {
             return Forwarder.__TryGetFieldOffset(out offset);
