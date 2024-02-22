@@ -34,7 +34,7 @@ namespace IKVM.Reflection.Emit
     {
 
         protected readonly byte type;
-        protected ushort paramCount;
+        protected ushort argumentCount;
 
         sealed class Lazy : SignatureHelper
         {
@@ -64,7 +64,7 @@ namespace IKVM.Reflection.Emit
             internal override ByteBuffer GetSignature(ModuleBuilder module)
             {
                 var bb = new ByteBuffer(16);
-                Signature.WriteSignatureHelper(module, bb, type, paramCount, args);
+                Signature.WriteSignatureHelper(module, bb, type, argumentCount, args);
                 return bb;
             }
 
@@ -85,7 +85,7 @@ namespace IKVM.Reflection.Emit
                 }
 
                 args.Add(argument);
-                paramCount++;
+                argumentCount++;
             }
 
         }
@@ -129,8 +129,8 @@ namespace IKVM.Reflection.Emit
                 if (type != Signature.FIELD)
                 {
                     bb.Position = 1;
-                    bb.Insert(MetadataWriter.GetCompressedUIntLength(paramCount) - bb.GetCompressedUIntLength());
-                    bb.WriteCompressedUInt(paramCount);
+                    bb.Insert(MetadataWriter.GetCompressedUIntLength(argumentCount) - bb.GetCompressedUIntLength());
+                    bb.WriteCompressedUInt(argumentCount);
                 }
 
                 return bb;
@@ -152,8 +152,8 @@ namespace IKVM.Reflection.Emit
                     Signature.WriteTypeSpec(module, bb, mod.Type);
                 }
 
-                Signature.WriteTypeSpec(module, bb, argument ?? module.universe.System_Void);
-                paramCount++;
+                Signature.WriteTypeSpec(module, bb, argument ?? module.Universe.System_Void);
+                argumentCount++;
             }
         }
 
@@ -176,9 +176,9 @@ namespace IKVM.Reflection.Emit
             get;
         }
 
-        internal int ParameterCount
+        internal int ArgumentCount 
         {
-            get { return paramCount; }
+            get { return argumentCount; }
         }
 
         private static SignatureHelper Create(Module mod, byte type, Type returnType)
@@ -205,7 +205,7 @@ namespace IKVM.Reflection.Emit
         {
             var sig = Create(mod, Signature.PROPERTY, returnType);
             sig.AddArgument(returnType);
-            sig.paramCount = 0;
+            sig.argumentCount = 0;
             sig.AddArguments(parameterTypes, null, null);
             return sig;
         }
@@ -223,7 +223,7 @@ namespace IKVM.Reflection.Emit
 
             var sig = Create(mod, type, returnType);
             sig.AddArgument(returnType, requiredReturnTypeCustomModifiers, optionalReturnTypeCustomModifiers);
-            sig.paramCount = 0;
+            sig.argumentCount = 0;
             sig.AddArguments(parameterTypes, requiredParameterTypeCustomModifiers, optionalParameterTypeCustomModifiers);
             return sig;
         }
@@ -251,7 +251,7 @@ namespace IKVM.Reflection.Emit
 
             var sig = Create(mod, type, returnType);
             sig.AddArgument(returnType);
-            sig.paramCount = 0;
+            sig.argumentCount = 0;
             return sig;
         }
 
@@ -270,7 +270,7 @@ namespace IKVM.Reflection.Emit
 
             var sig = Create(mod, type, returnType);
             sig.AddArgument(returnType);
-            sig.paramCount = 0;
+            sig.argumentCount = 0;
             return sig;
         }
 
@@ -278,7 +278,7 @@ namespace IKVM.Reflection.Emit
         {
             var sig = Create(mod, 0, returnType);
             sig.AddArgument(returnType);
-            sig.paramCount = 0;
+            sig.argumentCount = 0;
             sig.AddArguments(parameterTypes, null, null);
             return sig;
         }

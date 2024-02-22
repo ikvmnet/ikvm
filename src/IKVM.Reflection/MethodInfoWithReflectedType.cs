@@ -76,6 +76,11 @@ namespace IKVM.Reflection
             return parameters;
         }
 
+        internal override Type[] GetParameterTypes()
+        {
+            return method.GetParameterTypes();
+        }
+
         public override MethodAttributes Attributes
         {
             get { return method.Attributes; }

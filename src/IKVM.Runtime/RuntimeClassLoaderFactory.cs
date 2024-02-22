@@ -153,7 +153,7 @@ namespace IKVM.Runtime
                 {
                     var opt = CodeGenOptions.None;
                     if (JVM.EmitSymbols)
-                        opt |= CodeGenOptions.Debug;
+                        opt |= CodeGenOptions.DisableOptimizations;
 #if NETFRAMEWORK
                     if (!AppDomain.CurrentDomain.IsFullyTrusted)
                         opt |= CodeGenOptions.NoAutomagicSerialization;

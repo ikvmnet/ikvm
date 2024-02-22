@@ -222,7 +222,7 @@ namespace IKVM.Reflection
 
         static void AppendValue(StringBuilder sb, Type type, CustomAttributeTypedArgument arg)
         {
-            if (arg.ArgumentType == arg.ArgumentType.Module.universe.System_String)
+            if (arg.ArgumentType == arg.ArgumentType.Module.Universe.System_String)
             {
                 sb.Append('"').Append(arg.Value).Append('"');
             }
@@ -231,9 +231,9 @@ namespace IKVM.Reflection
                 var elementType = arg.ArgumentType.GetElementType();
                 string elementTypeName;
                 if (elementType.IsPrimitive
-                    || elementType == type.Module.universe.System_Object
-                    || elementType == type.Module.universe.System_String
-                    || elementType == type.Module.universe.System_Type)
+                    || elementType == type.Module.Universe.System_Object
+                    || elementType == type.Module.Universe.System_String
+                    || elementType == type.Module.Universe.System_Type)
                 {
                     elementTypeName = elementType.Name;
                 }
@@ -276,7 +276,7 @@ namespace IKVM.Reflection
                 for (int j = 0; j < count; j++)
                 {
                     var type = ReadType(module, br);
-                    var constructor = type.GetPseudoCustomAttributeConstructor(module.universe.System_Security_Permissions_SecurityAction);
+                    var constructor = type.GetPseudoCustomAttributeConstructor(module.Universe.System_Security_Permissions_SecurityAction);
                     // LAMESPEC there is an additional length here (probably of the named argument list)
                     var blob = br.ReadBytes(br.ReadCompressedUInt());
                     list.Add(new CustomAttributeData(asm, constructor, action, blob, index));
@@ -290,9 +290,9 @@ namespace IKVM.Reflection
                     buf[i] = br.ReadChar();
 
                 var xml = new string(buf);
-                var ctor = module.universe.System_Security_Permissions_PermissionSetAttribute.GetPseudoCustomAttributeConstructor(module.universe.System_Security_Permissions_SecurityAction);
+                var ctor = module.Universe.System_Security_Permissions_PermissionSetAttribute.GetPseudoCustomAttributeConstructor(module.Universe.System_Security_Permissions_SecurityAction);
                 var args = new List<CustomAttributeNamedArgument>();
-                args.Add(new CustomAttributeNamedArgument(GetProperty(null, module.universe.System_Security_Permissions_PermissionSetAttribute, "XML", module.universe.System_String), new CustomAttributeTypedArgument(module.universe.System_String, xml)));
+                args.Add(new CustomAttributeNamedArgument(GetProperty(null, module.Universe.System_Security_Permissions_PermissionSetAttribute, "XML", module.Universe.System_String), new CustomAttributeTypedArgument(module.Universe.System_String, xml)));
                 list.Add(new CustomAttributeData(asm.ManifestModule, ctor, new object[] { action }, args));
             }
         }
@@ -313,7 +313,7 @@ namespace IKVM.Reflection
             this.lazyConstructor = constructor;
 
             var list = new List<CustomAttributeTypedArgument>();
-            list.Add(new CustomAttributeTypedArgument(constructor.Module.universe.System_Security_Permissions_SecurityAction, securityAction));
+            list.Add(new CustomAttributeTypedArgument(constructor.Module.Universe.System_Security_Permissions_SecurityAction, securityAction));
             this.lazyConstructorArguments = list.AsReadOnly();
             this.declSecurityBlob = blob;
         }
@@ -322,30 +322,30 @@ namespace IKVM.Reflection
         {
             return br.ReadByte() switch
             {
-                Signature.ELEMENT_TYPE_BOOLEAN => context.universe.System_Boolean,
-                Signature.ELEMENT_TYPE_CHAR => context.universe.System_Char,
-                Signature.ELEMENT_TYPE_I1 => context.universe.System_SByte,
-                Signature.ELEMENT_TYPE_U1 => context.universe.System_Byte,
-                Signature.ELEMENT_TYPE_I2 => context.universe.System_Int16,
-                Signature.ELEMENT_TYPE_U2 => context.universe.System_UInt16,
-                Signature.ELEMENT_TYPE_I4 => context.universe.System_Int32,
-                Signature.ELEMENT_TYPE_U4 => context.universe.System_UInt32,
-                Signature.ELEMENT_TYPE_I8 => context.universe.System_Int64,
-                Signature.ELEMENT_TYPE_U8 => context.universe.System_UInt64,
-                Signature.ELEMENT_TYPE_R4 => context.universe.System_Single,
-                Signature.ELEMENT_TYPE_R8 => context.universe.System_Double,
-                Signature.ELEMENT_TYPE_STRING => context.universe.System_String,
+                Signature.ELEMENT_TYPE_BOOLEAN => context.Universe.System_Boolean,
+                Signature.ELEMENT_TYPE_CHAR => context.Universe.System_Char,
+                Signature.ELEMENT_TYPE_I1 => context.Universe.System_SByte,
+                Signature.ELEMENT_TYPE_U1 => context.Universe.System_Byte,
+                Signature.ELEMENT_TYPE_I2 => context.Universe.System_Int16,
+                Signature.ELEMENT_TYPE_U2 => context.Universe.System_UInt16,
+                Signature.ELEMENT_TYPE_I4 => context.Universe.System_Int32,
+                Signature.ELEMENT_TYPE_U4 => context.Universe.System_UInt32,
+                Signature.ELEMENT_TYPE_I8 => context.Universe.System_Int64,
+                Signature.ELEMENT_TYPE_U8 => context.Universe.System_UInt64,
+                Signature.ELEMENT_TYPE_R4 => context.Universe.System_Single,
+                Signature.ELEMENT_TYPE_R8 => context.Universe.System_Double,
+                Signature.ELEMENT_TYPE_STRING => context.Universe.System_String,
                 Signature.ELEMENT_TYPE_SZARRAY => ReadFieldOrPropType(context, br).MakeArrayType(),
                 0x55 => ReadType(context, br),
-                0x50 => context.universe.System_Type,
-                0x51 => context.universe.System_Object,
+                0x50 => context.Universe.System_Type,
+                0x51 => context.Universe.System_Object,
                 _ => throw new BadImageFormatException(),
             };
         }
 
         static CustomAttributeTypedArgument ReadFixedArg(Module context, ByteReader br, Type type)
         {
-            var u = context.universe;
+            var u = context.Universe;
             if (type == u.System_String)
             {
                 return new CustomAttributeTypedArgument(type, br.ReadString());
@@ -441,7 +441,7 @@ namespace IKVM.Reflection
                 typeName = typeName.Substring(0, typeName.Length - 1);
             }
 
-            return TypeNameParser.Parse(typeName, true).GetType(context.universe, context, true, typeName, true, false);
+            return TypeNameParser.Parse(typeName, true).GetType(context.Universe, context, true, typeName, true, false);
         }
 
         static IList<CustomAttributeTypedArgument> ReadConstructorArguments(Module context, ByteReader br, ConstructorInfo constructor)
@@ -493,7 +493,7 @@ namespace IKVM.Reflection
                 type = org;
 
             var sig = FieldSignature.Create(fieldType, new CustomModifiers());
-            return type.FindField(name, sig) ?? type.Module.universe.GetMissingFieldOrThrow(context, type, name, sig);
+            return type.FindField(name, sig) ?? type.Module.Universe.GetMissingFieldOrThrow(context, type, name, sig);
         }
 
         static PropertyInfo GetProperty(Module context, Type type, string name, Type propertyType)
@@ -508,7 +508,7 @@ namespace IKVM.Reflection
             if (type == null)
                 type = org;
 
-            return type.Module.universe.GetMissingPropertyOrThrow(context, type, name, PropertySignature.Create(CallingConventions.Standard | CallingConventions.HasThis, propertyType, null, new PackedCustomModifiers()));
+            return type.Module.Universe.GetMissingPropertyOrThrow(context, type, name, PropertySignature.Create(CallingConventions.Standard | CallingConventions.HasThis, propertyType, null, new PackedCustomModifiers()));
         }
 
         [Obsolete("Use AttributeType property instead.")]
@@ -660,7 +660,7 @@ namespace IKVM.Reflection
                 for (int i = 0; i < arr.Length; i++)
                     arr[i] = RewrapArray(elementType, list[i]);
 
-                if (type == type.Module.universe.System_Object)
+                if (type == type.Module.Universe.System_Object)
                     return CustomAttributeBuilder.__MakeTypedArgument(arg.ArgumentType, arr);
 
                 return arr;
@@ -708,9 +708,9 @@ namespace IKVM.Reflection
         {
             var module = parameter.Module;
             List<CustomAttributeData> list = null;
-            if (module.universe.ReturnPseudoCustomAttributes)
+            if (module.Universe.ReturnPseudoCustomAttributes)
             {
-                if (attributeType == null || attributeType.IsAssignableFrom(parameter.Module.universe.System_Runtime_InteropServices_MarshalAsAttribute))
+                if (attributeType == null || attributeType.IsAssignableFrom(parameter.Module.Universe.System_Runtime_InteropServices_MarshalAsAttribute))
                 {
                     if (parameter.__TryGetFieldMarshal(out var spec))
                     {
@@ -770,7 +770,7 @@ namespace IKVM.Reflection
 
         static List<CustomAttributeData> GetCustomAttributesImpl(List<CustomAttributeData> list, MemberInfo member, Type attributeType)
         {
-            if (member.Module.universe.ReturnPseudoCustomAttributes)
+            if (member.Module.Universe.ReturnPseudoCustomAttributes)
             {
                 var pseudo = member.GetPseudoCustomAttributes(attributeType);
                 if (list == null)
@@ -840,7 +840,7 @@ namespace IKVM.Reflection
 
         private static bool IsInheritableAttribute(Type attribute)
         {
-            var attributeUsageAttribute = attribute.Module.universe.System_AttributeUsageAttribute;
+            var attributeUsageAttribute = attribute.Module.Universe.System_AttributeUsageAttribute;
             var attr = __GetCustomAttributes(attribute, attributeUsageAttribute, false);
             if (attr.Count != 0)
                 foreach (CustomAttributeNamedArgument named in attr[0].NamedArguments)
@@ -872,14 +872,14 @@ namespace IKVM.Reflection
             };
 
             var list = new List<CustomAttributeNamedArgument>();
-            var type = module.universe.System_Runtime_InteropServices_DllImportAttribute;
-            var constructor = type.GetPseudoCustomAttributeConstructor(module.universe.System_String);
+            var type = module.Universe.System_Runtime_InteropServices_DllImportAttribute;
+            var constructor = type.GetPseudoCustomAttributeConstructor(module.Universe.System_String);
             AddNamedArgument(list, type, "EntryPoint", entryPoint);
-            AddNamedArgument(list, type, "CharSet", module.universe.System_Runtime_InteropServices_CharSet, (int)charSet);
+            AddNamedArgument(list, type, "CharSet", module.Universe.System_Runtime_InteropServices_CharSet, (int)charSet);
             AddNamedArgument(list, type, "ExactSpelling", (int)flags, (int)ImplMapFlags.NoMangle);
             AddNamedArgument(list, type, "SetLastError", (int)flags, (int)ImplMapFlags.SupportsLastError);
             AddNamedArgument(list, type, "PreserveSig", (int)attr, (int)MethodImplAttributes.PreserveSig);
-            AddNamedArgument(list, type, "CallingConvention", module.universe.System_Runtime_InteropServices_CallingConvention, (int)callingConvention);
+            AddNamedArgument(list, type, "CallingConvention", module.Universe.System_Runtime_InteropServices_CallingConvention, (int)callingConvention);
             AddNamedArgument(list, type, "BestFitMapping", (int)flags, (int)ImplMapFlags.BestFitOn);
             AddNamedArgument(list, type, "ThrowOnUnmappableChar", (int)flags, (int)ImplMapFlags.CharMapErrorOn);
             return new CustomAttributeData(module, constructor, new object[] { dllName }, list);
@@ -887,24 +887,24 @@ namespace IKVM.Reflection
 
         internal static CustomAttributeData CreateMarshalAsPseudoCustomAttribute(Module module, FieldMarshal fm)
         {
-            var typeofMarshalAs = module.universe.System_Runtime_InteropServices_MarshalAsAttribute;
-            var typeofUnmanagedType = module.universe.System_Runtime_InteropServices_UnmanagedType;
-            var typeofVarEnum = module.universe.System_Runtime_InteropServices_VarEnum;
-            var typeofType = module.universe.System_Type;
+            var typeofMarshalAs = module.Universe.System_Runtime_InteropServices_MarshalAsAttribute;
+            var typeofUnmanagedType = module.Universe.System_Runtime_InteropServices_UnmanagedType;
+            var typeofVarEnum = module.Universe.System_Runtime_InteropServices_VarEnum;
+            var typeofType = module.Universe.System_Type;
             var named = new List<CustomAttributeNamedArgument>();
             AddNamedArgument(named, typeofMarshalAs, "ArraySubType", typeofUnmanagedType, (int)(fm.ArraySubType ?? 0));
-            AddNamedArgument(named, typeofMarshalAs, "SizeParamIndex", module.universe.System_Int16, fm.SizeParamIndex ?? 0);
-            AddNamedArgument(named, typeofMarshalAs, "SizeConst", module.universe.System_Int32, fm.SizeConst ?? 0);
-            AddNamedArgument(named, typeofMarshalAs, "IidParameterIndex", module.universe.System_Int32, fm.IidParameterIndex ?? 0);
+            AddNamedArgument(named, typeofMarshalAs, "SizeParamIndex", module.Universe.System_Int16, fm.SizeParamIndex ?? 0);
+            AddNamedArgument(named, typeofMarshalAs, "SizeConst", module.Universe.System_Int32, fm.SizeConst ?? 0);
+            AddNamedArgument(named, typeofMarshalAs, "IidParameterIndex", module.Universe.System_Int32, fm.IidParameterIndex ?? 0);
             AddNamedArgument(named, typeofMarshalAs, "SafeArraySubType", typeofVarEnum, (int)(fm.SafeArraySubType ?? 0));
             if (fm.SafeArrayUserDefinedSubType != null)
                 AddNamedArgument(named, typeofMarshalAs, "SafeArrayUserDefinedSubType", typeofType, fm.SafeArrayUserDefinedSubType);
             if (fm.MarshalType != null)
-                AddNamedArgument(named, typeofMarshalAs, "MarshalType", module.universe.System_String, fm.MarshalType);
+                AddNamedArgument(named, typeofMarshalAs, "MarshalType", module.Universe.System_String, fm.MarshalType);
             if (fm.MarshalTypeRef != null)
-                AddNamedArgument(named, typeofMarshalAs, "MarshalTypeRef", module.universe.System_Type, fm.MarshalTypeRef);
+                AddNamedArgument(named, typeofMarshalAs, "MarshalTypeRef", module.Universe.System_Type, fm.MarshalTypeRef);
             if (fm.MarshalCookie != null)
-                AddNamedArgument(named, typeofMarshalAs, "MarshalCookie", module.universe.System_String, fm.MarshalCookie);
+                AddNamedArgument(named, typeofMarshalAs, "MarshalCookie", module.Universe.System_String, fm.MarshalCookie);
 
             var constructor = typeofMarshalAs.GetPseudoCustomAttributeConstructor(typeofUnmanagedType);
             return new CustomAttributeData(module, constructor, new object[] { (int)fm.UnmanagedType }, named);
@@ -912,12 +912,12 @@ namespace IKVM.Reflection
 
         static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, string value)
         {
-            AddNamedArgument(list, type, fieldName, type.Module.universe.System_String, value);
+            AddNamedArgument(list, type, fieldName, type.Module.Universe.System_String, value);
         }
 
         static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, int flags, int flagMask)
         {
-            AddNamedArgument(list, type, fieldName, type.Module.universe.System_Boolean, (flags & flagMask) != 0);
+            AddNamedArgument(list, type, fieldName, type.Module.Universe.System_Boolean, (flags & flagMask) != 0);
         }
 
         static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type attributeType, string fieldName, Type valueType, object value)
@@ -930,14 +930,14 @@ namespace IKVM.Reflection
 
         internal static CustomAttributeData CreateFieldOffsetPseudoCustomAttribute(Module module, int offset)
         {
-            var type = module.universe.System_Runtime_InteropServices_FieldOffsetAttribute;
-            var constructor = type.GetPseudoCustomAttributeConstructor(module.universe.System_Int32);
+            var type = module.Universe.System_Runtime_InteropServices_FieldOffsetAttribute;
+            var constructor = type.GetPseudoCustomAttributeConstructor(module.Universe.System_Int32);
             return new CustomAttributeData(module, constructor, new object[] { offset }, null);
         }
 
         internal static CustomAttributeData CreatePreserveSigPseudoCustomAttribute(Module module)
         {
-            var type = module.universe.System_Runtime_InteropServices_PreserveSigAttribute;
+            var type = module.Universe.System_Runtime_InteropServices_PreserveSigAttribute;
             var constructor = type.GetPseudoCustomAttributeConstructor();
             return new CustomAttributeData(module, constructor, Array.Empty<object>(), null);
         }

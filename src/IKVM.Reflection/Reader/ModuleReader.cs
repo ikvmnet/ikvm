@@ -57,7 +57,7 @@ namespace IKVM.Reflection.Reader
                 if (type == MarkerType.LazyResolveInProgress)
                 {
                     var typeName = module.GetTypeName(module.ExportedTypeTable.records[index].TypeNamespace, module.ExportedTypeTable.records[index].TypeName);
-                    return module.universe.GetMissingTypeOrThrow(module, module, null, typeName).SetCyclicTypeForwarder();
+                    return module.Universe.GetMissingTypeOrThrow(module, module, null, typeName).SetCyclicTypeForwarder();
                 }
                 else if (type == null)
                 {
@@ -418,7 +418,7 @@ namespace IKVM.Reflection.Reader
                                 }
 
                                 var typeName = GetTypeName(TypeRefTable.records[index].TypeNamespace, TypeRefTable.records[index].TypeName);
-                                typeRefs[index] = module.FindType(typeName) ?? module.universe.GetMissingTypeOrThrow(this, module, null, typeName);
+                                typeRefs[index] = module.FindType(typeName) ?? module.Universe.GetMissingTypeOrThrow(this, module, null, typeName);
                                 break;
                             }
                         default:
@@ -453,9 +453,9 @@ namespace IKVM.Reflection.Reader
                 }
                 else if (type == MarkerType.LazyResolveInProgress)
                 {
-                    if (universe.MissingMemberResolution)
+                    if (Universe.MissingMemberResolution)
                     {
-                        return universe
+                        return Universe
                             .GetMissingTypeOrThrow(this, this, null, new TypeName(null, "Cyclic TypeSpec " + metadataToken.ToString("X")))
                             .SetCyclicTypeSpec()
                             .SetMetadataTokenForMissing(metadataToken, 0);
@@ -536,7 +536,7 @@ namespace IKVM.Reflection.Reader
                 rec.PublicKeyOrToken.IsNil ? Array.Empty<byte>() : (rec.Flags & PublicKey) == 0 ? GetBlobCopy(rec.PublicKeyOrToken) : AssemblyName.ComputePublicKeyToken(GetBlobCopy(rec.PublicKeyOrToken)),
                 rec.Flags);
 
-            return universe.Load(name, this, true);
+            return Universe.Load(name, this, true);
         }
 
         public override Guid ModuleVersionId => GuidFromSpan(guidHeap.AsSpan(16 * (MetadataTokens.GetHeapOffset(ModuleTable.records[0].Mvid) - 1), 16));
@@ -802,7 +802,7 @@ namespace IKVM.Reflection.Reader
                             if (type.IsArray)
                             {
                                 var methodSig = MethodSignature.ReadSig(this, ByteReader.FromBlob(blobHeap, sig), new GenericContext(genericTypeArguments, genericMethodArguments));
-                                return type.FindMethod(name, methodSig) ?? universe.GetMissingMethodOrThrow(this, type, name, methodSig);
+                                return type.FindMethod(name, methodSig) ?? Universe.GetMissingMethodOrThrow(this, type, name, methodSig);
                             }
                             else if (type.IsConstructedGenericType)
                             {
@@ -848,8 +848,8 @@ namespace IKVM.Reflection.Reader
                 var org = type;
                 var fieldSig = FieldSignature.ReadSig(this, sig, type);
                 var field = type.FindField(name, fieldSig);
-                if (field == null && universe.MissingMemberResolution)
-                    return universe.GetMissingFieldOrThrow(this, type, name, fieldSig);
+                if (field == null && Universe.MissingMemberResolution)
+                    return Universe.GetMissingFieldOrThrow(this, type, name, fieldSig);
 
                 while (field == null && (type = type.BaseType) != null)
                     field = type.FindField(name, fieldSig);
@@ -864,8 +864,8 @@ namespace IKVM.Reflection.Reader
                 var org = type;
                 var methodSig = MethodSignature.ReadSig(this, sig, type);
                 var method = type.FindMethod(name, methodSig);
-                if (method == null && universe.MissingMemberResolution)
-                    return universe.GetMissingMethodOrThrow(this, type, name, methodSig);
+                if (method == null && Universe.MissingMemberResolution)
+                    return Universe.GetMissingMethodOrThrow(this, type, name, methodSig);
 
                 while (method == null && (type = type.BaseType) != null)
                     method = type.FindMethod(name, methodSig);
@@ -1080,7 +1080,7 @@ namespace IKVM.Reflection.Reader
                     return ResolveExportedType((implementation & 0xFFFFFF) - 1).ResolveNestedType(this, typeName).SetMetadataTokenForMissing(token, flags);
                 case FileTable.Index:
                     Module module = assembly.GetModule(GetString(FileTable.records[(implementation & 0xFFFFFF) - 1].Name));
-                    return module.FindType(typeName) ?? module.universe.GetMissingTypeOrThrow(this, module, null, typeName).SetMetadataTokenForMissing(token, flags);
+                    return module.FindType(typeName) ?? module.Universe.GetMissingTypeOrThrow(this, module, null, typeName).SetMetadataTokenForMissing(token, flags);
                 default:
                     throw new BadImageFormatException();
             }

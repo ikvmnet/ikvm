@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "java": {
+      "commandName": "Project",
+      "commandLineArgs": "-version",
+      "environmentVariables": {
+        "IKVM_HOME_ROOT": "C:\\dev\\ikvm2\\src\\IKVM.Tests\\bin\\Debug\\net6.0\\ikvm\\"
+      }
+    }
+  }
+}

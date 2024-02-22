@@ -180,11 +180,11 @@ namespace IKVM.Reflection
             var module = Module;
             var list = new List<CustomAttributeData>();
 
-            if ((Attributes & MethodAttributes.PinvokeImpl) != 0 && (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_DllImportAttribute)))
+            if ((Attributes & MethodAttributes.PinvokeImpl) != 0 && (attributeType == null || attributeType.IsAssignableFrom(module.Universe.System_Runtime_InteropServices_DllImportAttribute)))
                 if (__TryGetImplMap(out var flags, out var importName, out var importScope))
                     list.Add(CustomAttributeData.CreateDllImportPseudoCustomAttribute(module, flags, importName, importScope, GetMethodImplementationFlags()));
 
-            if ((GetMethodImplementationFlags() & MethodImplAttributes.PreserveSig) != 0 && (attributeType == null || attributeType.IsAssignableFrom(module.universe.System_Runtime_InteropServices_PreserveSigAttribute)))
+            if ((GetMethodImplementationFlags() & MethodImplAttributes.PreserveSig) != 0 && (attributeType == null || attributeType.IsAssignableFrom(module.Universe.System_Runtime_InteropServices_PreserveSigAttribute)))
                 list.Add(CustomAttributeData.CreatePreserveSigPseudoCustomAttribute(module));
 
             return list;

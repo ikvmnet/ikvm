@@ -178,6 +178,15 @@ namespace IKVM.Reflection
             return parameters;
         }
 
+        internal override Type[] GetParameterTypes()
+        {
+            var parameterTypes = new Type[signature.GetParameterCount()];
+            for (int i = 0; i < parameterTypes.Length; i++)
+                parameterTypes[i] = signature.GetParameterType(i);
+
+            return parameterTypes;
+        }
+
         public override MethodAttributes Attributes
         {
             get { return Forwarder.Attributes; }

@@ -30,7 +30,7 @@ namespace IKVM.Reflection.Emit
     public sealed class ParameterBuilder
     {
 
-        readonly ModuleBuilder moduleBuilder;
+        readonly ModuleBuilder module;
         short flags;
         readonly short sequence;
         readonly StringHandle nameIndex;
@@ -40,16 +40,16 @@ namespace IKVM.Reflection.Emit
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="moduleBuilder"></param>
+        /// <param name="module"></param>
         /// <param name="sequence"></param>
         /// <param name="attribs"></param>
         /// <param name="name"></param>
-        internal ParameterBuilder(ModuleBuilder moduleBuilder, int sequence, ParameterAttributes attribs, string name)
+        internal ParameterBuilder(ModuleBuilder module, int sequence, ParameterAttributes attribs, string name)
         {
-            this.moduleBuilder = moduleBuilder;
+            this.module = module;
             this.flags = (short)attribs;
             this.sequence = (short)sequence;
-            this.nameIndex = name == null ? default : moduleBuilder.GetOrAddString(name);
+            this.nameIndex = name == null ? default : module.GetOrAddString(name);
             this.name = name;
         }
 
@@ -58,7 +58,7 @@ namespace IKVM.Reflection.Emit
             get
             {
                 if (lazyPseudoToken == 0)
-                    lazyPseudoToken = moduleBuilder.AllocPseudoToken();
+                    lazyPseudoToken = module.AllocPseudoToken();
 
                 return lazyPseudoToken;
             }
@@ -116,11 +116,11 @@ namespace IKVM.Reflection.Emit
                     flags |= (short)ParameterAttributes.Optional;
                     break;
                 case KnownCA.MarshalAsAttribute:
-                    FieldMarshal.SetMarshalAsAttribute(moduleBuilder, PseudoToken, customAttributeBuilder);
+                    FieldMarshal.SetMarshalAsAttribute(module, PseudoToken, customAttributeBuilder);
                     flags |= (short)ParameterAttributes.HasFieldMarshal;
                     break;
                 default:
-                    moduleBuilder.SetCustomAttribute(PseudoToken, customAttributeBuilder);
+                    module.SetCustomAttribute(PseudoToken, customAttributeBuilder);
                     break;
             }
         }
@@ -128,12 +128,12 @@ namespace IKVM.Reflection.Emit
         public void SetConstant(object defaultValue)
         {
             flags |= (short)ParameterAttributes.HasDefault;
-            moduleBuilder.AddConstant(PseudoToken, defaultValue);
+            module.AddConstant(PseudoToken, defaultValue);
         }
 
-        internal void WriteParamRecord(MetadataBuilder metadata)
+        internal void WriteMetadata()
         {
-            metadata.AddParameter(
+            module.Metadata.AddParameter(
                 (System.Reflection.ParameterAttributes)flags,
                 nameIndex,
                 sequence);
@@ -142,7 +142,7 @@ namespace IKVM.Reflection.Emit
         internal void FixupToken(int parameterToken)
         {
             if (lazyPseudoToken != 0)
-                moduleBuilder.RegisterTokenFixup(lazyPseudoToken, parameterToken);
+                module.RegisterTokenFixup(lazyPseudoToken, parameterToken);
         }
 
     }

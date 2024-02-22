@@ -39,7 +39,7 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         /// <param name="assembly"></param>
         internal ManifestModule(AssemblyBuilder assembly) :
-            base(assembly.universe)
+            base(assembly.Universe)
         {
             this.assembly = assembly;
         }

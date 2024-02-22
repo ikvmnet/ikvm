@@ -85,30 +85,6 @@ namespace IKVM.Reflection.Reader
             return module.ConstantTable.GetRawConstantValue(module, this.MetadataToken);
         }
 
-        public override void __GetDataFromRVA(byte[] data, int offset, int length)
-        {
-            int rva = this.__FieldRVA;
-            if (rva == 0)
-            {
-                // C++ assemblies can have fields that have an RVA that is zero
-                Array.Clear(data, offset, length);
-                return;
-            }
-
-            module.__ReadDataFromRVA(rva, data, offset, length);
-        }
-
-        public override int __FieldRVA
-        {
-            get
-            {
-                foreach (var i in module.FieldRVATable.Filter(index + 1))
-                    return module.FieldRVATable.records[i].RVA;
-
-                throw new InvalidOperationException();
-            }
-        }
-
         public override bool __TryGetFieldOffset(out int offset)
         {
             foreach (int i in this.Module.FieldLayoutTable.Filter(index + 1))
