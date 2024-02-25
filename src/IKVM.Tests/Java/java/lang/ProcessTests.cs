@@ -52,6 +52,21 @@ namespace IKVM.Tests.Java.java.lang
             l.Should().Be("hello");
         }
 
+        [TestMethod]
+        public void CanWaitForWithInheritIO()
+        {
+            string[] c;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                c = new[] { "cmd.exe", "/c", "echo hello" };
+            else
+                c = new[] { "/bin/sh", "-c", "echo hello" };
+
+            var b = new ProcessBuilder(c);
+            b.inheritIO();
+            var p = b.start();
+            p.waitFor();
+        }
+
     }
 
 }
