@@ -976,6 +976,13 @@ void* JNICALL JVM_FindLibraryEntry(void* handle, const char* name)
     return os_dll_lookup(handle, name);
 }
 
+#ifdef WIN32
+void* JVM_GetThreadInterruptEvent()
+{
+    return 0;
+}
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

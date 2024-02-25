@@ -9,6 +9,8 @@
         <LanguageStandard>c89</LanguageStandard>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\io</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io</IncludeDirectories>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\lang</IncludeDirectories>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang</IncludeDirectories>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libfdlibm\libfdlibm.clangproj" />
@@ -41,15 +43,18 @@
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\provider\**\*.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\ProcessImpl_md.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\io\**\*.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\io\Win32ErrorMode.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\util\locale\provider\HostLocaleProviderAdapter_md.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\UNIXProcess_md.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
         <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\sun\util\locale\**\*.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\macosx\native\sun\util\locale\provider\HostLocaleProviderAdapter_md.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\UNIXProcess_md.c" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
