@@ -52,6 +52,8 @@
  * @since   1.5
  */
 
+ // IKVM Largely a copy of the UNIX version of ProcessEnvironment. Used currently to provide the toEnvironmentBlock method needed by JNI for UNIXProcess.
+
 package java.lang;
 
 import java.io.*;
@@ -294,8 +296,16 @@ final class UNIXProcessEnvironment
     }
 
     static byte[] toEnvironmentBlock(Map<String,String> map, int[]envc) {
-        return map == null ? null :
-            ((StringEnvironment)map).toEnvironmentBlock(envc);
+        if (map == null) {
+            return null;
+        }
+        
+        StringEnvironment env = new StringEnvironment(new HashMap<Variable,Value>(map.size()));
+        for (Map.Entry<String,String> entry : map.entrySet()) {
+            env.put(entry.getKey(), entry.getValue());
+        }
+
+        return env.toEnvironmentBlock(envc);
     }
 
 
