@@ -796,7 +796,6 @@
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\lang\Thread.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\lang\Terminator.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\lang\ProcessEnvironment.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\java\lang\UNIXProcess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\lang\invoke\**\*.java" PackagePath="java\lang\invoke" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\lang\invoke\DirectMethodHandle.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\lang\annotation\**\*.java" PackagePath="java\lang\annotation" />
