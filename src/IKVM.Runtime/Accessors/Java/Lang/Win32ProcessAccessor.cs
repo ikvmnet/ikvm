@@ -7,9 +7,9 @@ namespace IKVM.Runtime.Accessors.Java.Lang
 #if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
 
     /// <summary>
-    /// Provides runtime access to the 'java.io.ProcessImpl' type.
+    /// Provides runtime access to the 'java.lang.Win32Process' type.
     /// </summary>
-    internal sealed class ProcessImplAccessor : Accessor<object>
+    internal sealed class Win32ProcessAccessor : Accessor<object>
     {
 
         MethodAccessor<Func<Process, object, object, object, object>> init;
@@ -19,8 +19,8 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// Initializes a new instance.
         /// </summary>
         /// <param name="resolver"></param>
-        public ProcessImplAccessor(AccessorTypeResolver resolver) :
-            base(resolver, "java.lang.ProcessImpl")
+        public Win32ProcessAccessor(AccessorTypeResolver resolver) :
+            base(resolver, "java.lang.Win32Process")
         {
 
         }

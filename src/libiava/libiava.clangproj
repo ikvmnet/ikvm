@@ -21,12 +21,15 @@
         <Dependencies Include="shell32;delayimp;advapi32;version" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <AdditionalCompileOptions Include="-fcommon" />
+        <AdditionalLinkOptions Include="-fcommon" />
         <Dependencies Include="c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('musl'))">
         <PreprocessorDefinitions Include="isnanf=isnan" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
+        <AdditionalCompileOptions Include="-fcommon" />
         <AdditionalLinkOptions Include="-framework CoreFoundation" />
         <AdditionalLinkOptions Include="-framework Foundation" />
         <AdditionalLinkOptions Include="-framework Security" />
@@ -49,12 +52,16 @@
         <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\util\locale\provider\HostLocaleProviderAdapter_md.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\ProcessEnvironment_md.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\UNIXProcess_md.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\childproc.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\ProcessEnvironment_md.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\UNIXProcess_md.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\childproc.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\sun\util\locale\**\*.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\macosx\native\sun\util\locale\provider\HostLocaleProviderAdapter_md.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\UNIXProcess_md.c" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />

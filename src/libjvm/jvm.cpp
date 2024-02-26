@@ -1,6 +1,5 @@
 #include <jni.h>
 #include <jvm.h>
-#include "jvm.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -21,6 +20,11 @@
 #include <sys/ioctl.h>
 #include <time.h>
 #include <poll.h>
+#include <stdint.h>
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #define assert(condition, fmt, ...);
@@ -977,61 +981,57 @@ void* JNICALL JVM_FindLibraryEntry(void* handle, const char* name)
 }
 
 #ifdef WIN32
-void* JVM_GetThreadInterruptEvent()
+void* JNICALL JVM_GetThreadInterruptEvent()
 {
     return 0;
 }
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+int jio_vsnprintf(char* str, size_t count, const char* fmt, va_list args)
+{
+    // Reject count values that are negative signed values converted to
+    // unsigned; see bug 4399518, 4417214
+    if ((intptr_t)count <= 0) return -1;
 
-    int jio_vsnprintf(char* str, size_t count, const char* fmt, va_list args)
-    {
-        // Reject count values that are negative signed values converted to
-        // unsigned; see bug 4399518, 4417214
-        if ((intptr_t)count <= 0) return -1;
-
-        int result = vsnprintf(str, count, fmt, args);
-        if (result > 0 && (size_t)result >= count) {
-            result = -1;
-        }
-
-        return result;
+    int result = vsnprintf(str, count, fmt, args);
+    if (result > 0 && (size_t)result >= count) {
+        result = -1;
     }
 
-    int jio_snprintf(char* str, size_t count, const char* fmt, ...) {
-        va_list args;
-        int len;
-        va_start(args, fmt);
-        len = jio_vsnprintf(str, count, fmt, args);
-        va_end(args);
-        return len;
-    }
+    return result;
+}
 
-    int jio_fprintf(FILE* f, const char* fmt, ...) {
-        int len;
-        va_list args;
-        va_start(args, fmt);
-        len = jio_vfprintf(f, fmt, args);
-        va_end(args);
-        return len;
-    }
+int jio_snprintf(char* str, size_t count, const char* fmt, ...) {
+    va_list args;
+    int len;
+    va_start(args, fmt);
+    len = jio_vsnprintf(str, count, fmt, args);
+    va_end(args);
+    return len;
+}
 
-    int jio_vfprintf(FILE* f, const char* fmt, va_list args)
-    {
-        return vfprintf(f, fmt, args);
-    }
+int jio_fprintf(FILE* f, const char* fmt, ...) {
+    int len;
+    va_list args;
+    va_start(args, fmt);
+    len = jio_vfprintf(f, fmt, args);
+    va_end(args);
+    return len;
+}
 
-    int jio_printf(const char* fmt, ...) {
-        int len;
-        va_list args;
-        va_start(args, fmt);
-        len = jio_vfprintf(stdout, fmt, args);
-        va_end(args);
-        return len;
-    }
+int jio_vfprintf(FILE* f, const char* fmt, va_list args)
+{
+    return vfprintf(f, fmt, args);
+}
+
+int jio_printf(const char* fmt, ...) {
+    int len;
+    va_list args;
+    va_start(args, fmt);
+    len = jio_vfprintf(stdout, fmt, args);
+    va_end(args);
+    return len;
+}
 
 #ifdef __cplusplus
 }
