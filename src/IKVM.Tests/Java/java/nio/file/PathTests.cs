@@ -54,7 +54,7 @@ namespace IKVM.Tests.Java.java.nio.file
             var t = System.IO.Path.GetTempPath().TrimEnd(System.IO.Path.DirectorySeparatorChar);
             var p = Paths.get(t);
             var u = p.toUri();
-            u.ToString().Should().EndWith(System.IO.Path.DirectorySeparatorChar.ToString());
+            u.ToString().Should().EndWith("/");
         }
 
         [TestMethod]
@@ -63,7 +63,7 @@ namespace IKVM.Tests.Java.java.nio.file
             var r = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\missing" : @"/missing";
             var p = Paths.get(r);
             var u = p.toUri();
-            u.ToString().Should().NotEndWith(System.IO.Path.DirectorySeparatorChar.ToString());
+            u.ToString().Should().NotEndWith("/");
         }
 
     }
