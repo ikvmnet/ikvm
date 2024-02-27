@@ -48,6 +48,15 @@ namespace IKVM.Tests.Java.java.nio.file
             Paths.get(path).resolve(other).ToString().Should().Be(expected);
         }
 
+        [TestMethod]
+        public void ShouldAppendSlashToUriForExistingDirectory()
+        {
+            var t = System.IO.Path.GetTempPath().TrimEnd(System.IO.Path.DirectorySeparatorChar);
+            var p = Paths.get(t);
+            var u = p.toUri();
+            u.ToString().Should().EndWith(System.IO.Path.DirectorySeparatorChar.ToString());
+        }
+
     }
 
 }
