@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,32 @@ class DotNetUnixUriUtils {
         // transform escaped octets and unescaped characters to bytes
         if (p.endsWith("/") && len > 1)
             len--;
+        byte[] result = new byte[len];
+        int rlen = 0;
+        int pos = 0;
+        while (pos < len) {
+            char c = p.charAt(pos++);
+            byte b;
+            if (c == '%') {
+                assert (pos+2) <= len;
+                char c1 = p.charAt(pos++);
+                char c2 = p.charAt(pos++);
+                b = (byte)((decode(c1) << 4) | decode(c2));
+                if (b == 0)
+                    throw new IllegalArgumentException("Nul character not allowed");
+            } else {
+                if (c == 0 || c >= 0x80)
+                    throw new IllegalArgumentException("Bad escape");
+                b = (byte)c;
+            }
+            if (b == '/' && rlen > 0 && result[rlen-1] == '/') {
+                // skip redundant slashes
+                continue;
+            }
+            result[rlen++] = b;
+        }
+        if (rlen != result.length)
+            result = Arrays.copyOf(result, rlen);
 
         return new DotNetPath(fs, p);
     }
@@ -94,7 +120,7 @@ class DotNetUnixUriUtils {
         // trailing slash if directory
         if (sb.charAt(sb.length()-1) != '/') {
             try {
-                 if (cli.System.IO.Directory.Exists(sb.toString()) || isVfsDirectory(sb.toString()))
+                 if (cli.System.IO.Directory.Exists(up.toString()) || isVfsDirectory(up.toString()))
                      sb.append('/');
             } catch (Throwable x) {
                 // ignore
@@ -217,11 +243,11 @@ class DotNetUnixUriUtils {
     private static final long H_PCHAR
         = H_UNRESERVED | highMask(":@&=+$,");
 
-    // All valid path characters
-    private static final long L_PATH = L_PCHAR | lowMask(";/");
-    private static final long H_PATH = H_PCHAR | highMask(";/");
+   // All valid path characters
+   private static final long L_PATH = L_PCHAR | lowMask(";/");
+   private static final long H_PATH = H_PCHAR | highMask(";/");
 
-    private final static char[] hexDigits = {
+   private final static char[] hexDigits = {
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
     };
