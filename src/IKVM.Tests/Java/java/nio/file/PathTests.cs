@@ -57,6 +57,15 @@ namespace IKVM.Tests.Java.java.nio.file
             u.ToString().Should().EndWith(System.IO.Path.DirectorySeparatorChar.ToString());
         }
 
+        [TestMethod]
+        public void ShouldNotAppendSlashToUriForMissingDirectory()
+        {
+            var r = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\missing" : @"/missing";
+            var p = Paths.get(r);
+            var u = p.toUri();
+            u.ToString().Should().NotEndWith(System.IO.Path.DirectorySeparatorChar.ToString());
+        }
+
     }
 
 }
