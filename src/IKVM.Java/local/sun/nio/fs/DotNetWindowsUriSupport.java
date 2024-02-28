@@ -104,7 +104,6 @@ class DotNetWindowsUriSupport {
         boolean addSlash = false;
         if (!s.endsWith("\\")) {
             try {
-                 path.checkRead();
                  addSlash =  cli.System.IO.Directory.Exists(s) || isVfsDirectory(s);
             } catch (Throwable x) {
             }
