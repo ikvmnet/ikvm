@@ -25,6 +25,8 @@ using System;
 using System.Reflection;
 #if !NO_REF_EMIT
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
+
 #endif
 using System.Runtime.Serialization;
 using System.Security;
@@ -282,7 +284,11 @@ namespace IKVM.Java.Externs.sun.reflect
             [SecuritySafeCritical]
             public object newInstance(object[] args)
             {
+#if NETFRAMEWORK
                 var obj = FormatterServices.GetUninitializedObject(type);
+#else
+                var obj = RuntimeHelpers.GetUninitializedObject(type);
+#endif
                 if (mw != null)
                     mw.Invoke(obj, ConvertArgs(mw.DeclaringType.GetClassLoader(), mw.GetParameters(), args));
 
@@ -966,13 +972,17 @@ namespace IKVM.Java.Externs.sun.reflect
 
         }
 
-        private sealed class FastSerializationConstructorAccessorImpl : global::sun.reflect.ConstructorAccessor
+        sealed class FastSerializationConstructorAccessorImpl : global::sun.reflect.ConstructorAccessor
         {
 
-            private static readonly MethodInfo GetTypeFromHandleMethod = typeof(Type).GetMethod("GetTypeFromHandle", new Type[] { typeof(RuntimeTypeHandle) });
-            private static readonly MethodInfo GetUninitializedObjectMethod = typeof(FormatterServices).GetMethod("GetUninitializedObject", new Type[] { typeof(Type) });
-            private delegate object InvokeCtor();
-            private InvokeCtor invoker;
+            static readonly MethodInfo GetTypeFromHandleMethod = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), new[] { typeof(RuntimeTypeHandle) });
+#if NETFRAMEWORK
+            static readonly MethodInfo GetUninitializedObjectMethod = typeof(FormatterServices).GetMethod(nameof(FormatterServices.GetUninitializedObject), new[] { typeof(Type) });
+#else
+            static readonly MethodInfo GetUninitializedObjectMethod = typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.GetUninitializedObject), new[] { typeof(Type) });
+#endif
+            delegate object InvokeCtor();
+            InvokeCtor invoker;
 
             internal FastSerializationConstructorAccessorImpl(global::java.lang.reflect.Constructor constructorToCall, global::java.lang.Class classToInstantiate)
             {
