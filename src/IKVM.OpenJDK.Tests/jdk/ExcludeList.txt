@@ -3451,6 +3451,7 @@ sun/security/krb5/auto/principalProperty/PrincipalSystemPropTest.java           
 sun/security/krb5/auto/BogusKDC.java                                                                                    macosx-all
 sun/security/krb5/auto/KrbTicket.java                                                                                   macosx-all
 sun/security/krb5/auto/UnboundSSL.java                                                                                  macosx-all
+sun/nio/ch/TestMaxCachedBufferSize.java                                                                                 macosx-all
 
 # Windows-PRNG SecureRandom
 java/security/SecureRandom/DefaultProvider.java                                                                         generic-all
