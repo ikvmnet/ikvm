@@ -3404,6 +3404,7 @@ java/net/PlainSocketImpl/SetBufferSize.java                                     
 java/net/Socket/LinkLocal.java                                                                                          macosx-all
 java/net/Socket/SetSoLinger.java                                                                                        macosx-all
 java/net/Socket/TrafficClass.java                                                                                       macosx-all
+java/net/SocketPermission/SocketPermissionTest.java                                                                     macosx-all
 java/net/ipv6tests/TcpTest.java                                                                                         macosx-all
 java/net/ipv6tests/UdpTest.java                                                                                         macosx-all
 java/nio/MappedByteBuffer/Basic.java                                                                                    macosx-all
