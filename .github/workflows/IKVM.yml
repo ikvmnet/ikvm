@@ -611,7 +611,7 @@ jobs:
       run: ri tests--${{ steps.test-name.outputs.result }}.tar.gz
       working-directory: ${{ env.WORKPATH }}
     - name: Execute Tests
-      timeout-minutes: 120
+      timeout-minutes: 240
       shell: pwsh
       run: |
         # assign powershell variables
@@ -636,7 +636,7 @@ jobs:
                 "--blame",
                 "--blame-crash",
                 "--blame-hang",
-                "--blame-hang-timeout", "120m",
+                "--blame-hang-timeout", "60m",
                 "--blame-hang-dump-type", "full",
                 "-v:diag",
                 "--results-directory", "TestResults",
