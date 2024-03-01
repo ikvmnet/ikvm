@@ -640,7 +640,7 @@ jobs:
                 "--blame-hang-dump-type", "full",
                 "-v:diag",
                 "--results-directory", "TestResults",
-                "--logger:console;verbosity=diag",
+                "--logger:console;verbosity=detailed",
                 "--logger:trx"
                 # "--collect", "Code Coverage"
             )
