@@ -611,7 +611,7 @@ jobs:
       run: ri tests--${{ steps.test-name.outputs.result }}.tar.gz
       working-directory: ${{ env.WORKPATH }}
     - name: Execute Tests
-      timeout-minutes: 240
+      timeout-minutes: 120
       shell: pwsh
       run: |
         # assign powershell variables
