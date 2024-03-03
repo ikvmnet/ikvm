@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
-
-using CliWrap;
 
 namespace IKVM.Tests.Util
 {
@@ -34,12 +32,12 @@ namespace IKVM.Tests.Util
         /// </summary>
         /// <param name="dotnetExePath"></param>
         /// <returns></returns>
-        static List<string> GetInfo(string dotnetExePath)
+        static IList<string> GetInfo(string dotnetExePath)
         {
             // Ensure that we set the DOTNET_CLI_UI_LANGUAGE environment variable to "en-US" before
             // running 'dotnet --info'. Otherwise, we may get localized results
             // Also unset some MSBuild variables, see https://github.com/OmniSharp/omnisharp-roslyn/blob/df160f86ce906bc566fe3e04e38a4077bd6023b4/src/OmniSharp.Abstractions/Services/DotNetCliService.cs#L36
-            var environmentVariables = new Dictionary<string, string>
+            var envv = new Dictionary<string, string>
             {
                 ["DOTNET_CLI_UI_LANGUAGE"] = "en-US",
                 ["MSBUILD_EXE_PATH"] = null,
@@ -47,15 +45,23 @@ namespace IKVM.Tests.Util
                 ["MSBuildExtensionsPath"] = null,
             };
 
-            var lines = new List<string>();
-            var task = (Cli.Wrap(dotnetExePath)
-                .WithArguments("--info")
-                .WithEnvironmentVariables(environmentVariables)
-                | lines.Add)
-                .ExecuteAsync(new CancellationTokenSource(10000).Token);
-            task.GetAwaiter().GetResult();
+            // execute dotnet --info, capture output as binary, without stream reader, to prevent deadlocks
+            var psi = new ProcessStartInfo(dotnetExePath);
+            psi.Arguments = "--info";
+            psi.CreateNoWindow = true;
+            psi.UseShellExecute = false;
+            psi.RedirectStandardOutput = true;
 
-            return lines;
+            // start process and append output lines to buffer
+            using var prc = new Process();
+            var buf = new List<string>();
+            prc.StartInfo = psi;
+            prc.EnableRaisingEvents = true;
+            prc.OutputDataReceived += (s, a) => buf.Add(a.Data);
+            prc.Start();
+            prc.BeginOutputReadLine();
+            prc.WaitForExit(2000);
+            return buf;
         }
 
         /// <summary>
@@ -63,7 +69,7 @@ namespace IKVM.Tests.Util
         /// </summary>
         /// <param name="lines"></param>
         /// <returns></returns>
-        static string ParseBasePath(List<string> lines)
+        static string ParseBasePath(IList<string> lines)
         {
             foreach (var line in lines.Where(x => x != null))
             {
@@ -74,13 +80,13 @@ namespace IKVM.Tests.Util
 
                     // Make sure the base path matches the runtime architecture if on Windows
                     // Note that this only works for the default installation locations under "Program Files"
-                    if (basePath.Contains(@"\Program Files\") && !System.Environment.Is64BitProcess)
+                    if (basePath.Contains(@"\Program Files\") && Environment.Is64BitProcess == false)
                     {
                         var newBasePath = basePath.Replace(@"\Program Files\", @"\Program Files (x86)\");
                         if (Directory.Exists(newBasePath))
                             basePath = newBasePath;
                     }
-                    else if (basePath.Contains(@"\Program Files (x86)\") && System.Environment.Is64BitProcess)
+                    else if (basePath.Contains(@"\Program Files (x86)\") && Environment.Is64BitProcess)
                     {
                         var newBasePath = basePath.Replace(@"\Program Files (x86)\", @"\Program Files\");
                         if (Directory.Exists(newBasePath))
@@ -100,7 +106,7 @@ namespace IKVM.Tests.Util
         /// <param name="lines"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        static string ParseInstalledSdksPath(List<string> lines)
+        static string ParseInstalledSdksPath(IList<string> lines)
         {
             var index = lines.IndexOf(".NET SDKs installed:");
             if (index == -1)

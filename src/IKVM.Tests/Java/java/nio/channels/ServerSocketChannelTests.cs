@@ -120,15 +120,17 @@ namespace IKVM.Tests.Java.java.nio.channels
         {
             var cancellationTokenSource = new CancellationTokenSource();
             var receive = ByteBuffer.allocate(sizeof(int) * 4);
+            int port = 0;
 
             // server receives messages until cancelled
             var serverTask = Task.Run(() =>
             {
                 // initialize server
                 using var server = ServerSocketChannel.open();
-                var serverAddr = new InetSocketAddress(42342);
+                var serverAddr = new InetSocketAddress(port);
                 server.bind(serverAddr);
                 server.configureBlocking(false);
+                port = server.socket().getLocalPort();
 
                 // begin selector
                 var selector = Selector.open();
@@ -171,7 +173,7 @@ namespace IKVM.Tests.Java.java.nio.channels
 
             // wait a second and write some messages to the server
             await Task.Delay(1000);
-            using (var c = SocketChannel.open(new InetSocketAddress("127.0.0.1", 42342)))
+            using (var c = SocketChannel.open(new InetSocketAddress("127.0.0.1", port)))
             {
                 foreach (var i in new[] { 1, 2, 3, 4 })
                 {

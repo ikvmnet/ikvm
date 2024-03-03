@@ -305,7 +305,7 @@ namespace IKVM.Tools.Runner.Importer
                     ctk = CancellationTokenSource.CreateLinkedTokenSource(ctk, new CancellationTokenSource(options.Timeout).Token).Token;
 
                 // execute command
-                var pid = cli.ExecuteAsync(ctk);
+                using var pid = cli.ExecuteAsync(ctk);
 
                 // windows provides special support for killing subprocesses on termination of parent
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
