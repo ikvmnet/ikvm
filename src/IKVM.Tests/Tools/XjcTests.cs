@@ -33,6 +33,7 @@ namespace IKVM.Tests.Tools
                     psx.FileAccessPermissions = prm;
             }
 #endif
+
             var r = await Cli.Wrap(c).WithArguments("-help").WithStandardOutputPipe(PipeTarget.ToDelegate(i => s.Append(i))).WithValidation(CommandResultValidation.None).ExecuteAsync();
             r.ExitCode.Should().Be(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? -1 : 255);
             s.ToString().Should().StartWith("Usage: xjc");
