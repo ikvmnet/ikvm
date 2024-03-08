@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
+
+using CliWrap;
 
 namespace IKVM.Tests.Util
 {
@@ -45,23 +47,15 @@ namespace IKVM.Tests.Util
                 ["MSBuildExtensionsPath"] = null,
             };
 
-            // execute dotnet --info, capture output as binary, without stream reader, to prevent deadlocks
-            var psi = new ProcessStartInfo(dotnetExePath);
-            psi.Arguments = "--info";
-            psi.CreateNoWindow = true;
-            psi.UseShellExecute = false;
-            psi.RedirectStandardOutput = true;
+            var info = new List<string>();
+            var task = (Cli.Wrap(dotnetExePath)
+                .WithArguments("--info")
+                .WithEnvironmentVariables(envv)
+                | info.Add)
+                .ExecuteAsync(new CancellationTokenSource(2000).Token);
+            task.GetAwaiter().GetResult();
 
-            // start process and append output lines to buffer
-            using var prc = new Process();
-            var buf = new List<string>();
-            prc.StartInfo = psi;
-            prc.EnableRaisingEvents = true;
-            prc.OutputDataReceived += (s, a) => buf.Add(a.Data);
-            prc.Start();
-            prc.BeginOutputReadLine();
-            prc.WaitForExit(2000);
-            return buf;
+            return info;
         }
 
         /// <summary>
