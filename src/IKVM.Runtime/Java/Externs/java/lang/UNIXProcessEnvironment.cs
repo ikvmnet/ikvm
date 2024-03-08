@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+using IKVM.Runtime;
 using IKVM.Runtime.JNI;
 
 namespace IKVM.Java.Externs.java.lang
@@ -12,7 +13,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS == false
 
         static global::ikvm.@internal.CallerID __callerID;
-        delegate IntPtr __jniDelegate__environ(IntPtr jniEnv);
+        delegate IntPtr __jniDelegate__environ(IntPtr jniEnv, IntPtr clazz);
         static __jniDelegate__environ __jniPtr__environ;
 
 #endif
@@ -32,7 +33,7 @@ namespace IKVM.Java.Externs.java.lang
             var jniEnv = jniFrm.Enter(__callerID);
             try
             {
-                return jniFrm.UnwrapLocalRef(__jniPtr__environ(jniEnv));
+                return jniFrm.UnwrapLocalRef(__jniPtr__environ(jniEnv, jniFrm.MakeLocalRef(ClassLiteral<global::java.lang.UNIXProcessEnvironment>.Value)));
             }
             catch (Exception ex)
             {

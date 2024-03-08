@@ -103,6 +103,29 @@ namespace IKVM.Runtime
             [DllImport("ikvm", SetLastError = false)]
             internal static extern int IKVM_io_lstat(string pathname, out long st_ino, out long st_dev);
 
+            /// <summary>
+            /// Invokes the native 'IKVM_sig_get_size_sigaction' function.
+            /// </summary>
+            /// <returns></returns>
+            [DllImport("ikvm", SetLastError = false)]
+            internal static unsafe extern int IKVM_sig_get_size_sigaction();
+
+            /// <summary>
+            /// Invokes the native 'IKVM_sig_get_chld_action' function.
+            /// </summary>
+            /// <param name="sig"></param>
+            /// <returns></returns>
+            [DllImport("ikvm", SetLastError = false)]
+            internal static unsafe extern int IKVM_sig_get_chld_action(void* sig);
+
+            /// <summary>
+            /// Invokes the native 'IKVM_sig_set_chld_action' function.
+            /// </summary>
+            /// <param name="sig"></param>
+            /// <returns></returns>
+            [DllImport("ikvm", SetLastError = false)]
+            internal static unsafe extern int IKVM_sig_set_chld_action(void* sig);
+
         }
 
         /// <summary>
@@ -288,6 +311,26 @@ namespace IKVM.Runtime
         /// <param name="st_dev"></param>
         /// <returns></returns>
         public int io_lstat(string pathname, out long st_ino, out long st_dev) => Externs.IKVM_io_lstat(pathname, out st_ino, out st_dev);
+
+        /// <summary>
+        /// Invokes the 'sig_get_size_sigaction' function.
+        /// </summary>
+        /// <returns></returns>
+        public unsafe int sig_get_size_sigaction() => Externs.IKVM_sig_get_size_sigaction();
+
+        /// <summary>
+        /// Invokes the 'sig_get_chld_action' function.
+        /// </summary>
+        /// <param name="sig"></param>
+        /// <returns></returns>
+        public unsafe int sig_get_chld_action(void* sig) => Externs.IKVM_sig_get_chld_action(sig);
+
+        /// <summary>
+        /// Invokes the 'sig_set_chld_action' function.
+        /// </summary>
+        /// <param name="sig"></param>
+        /// <returns></returns>
+        public unsafe int sig_set_chld_action(void* sig) => Externs.IKVM_sig_set_chld_action(sig);
 
         /// <summary>
         /// Releases the instance.
