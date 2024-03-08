@@ -38,7 +38,10 @@ namespace IKVM.Tools.Runner
         /// <returns></returns>
         protected Task LogEvent(IkvmToolDiagnosticEventLevel level, string message, params object[] args)
         {
-            return listener?.ReceiveAsync(new IkvmToolDiagnosticEvent(level, message, args));
+            if (message != null && listener != null)
+                return listener.ReceiveAsync(new IkvmToolDiagnosticEvent(level, message, args));
+            else
+                return Task.CompletedTask;
         }
 
         /// <summary>
