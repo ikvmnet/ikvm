@@ -23,7 +23,6 @@
         <PackageReference Include="MSTest.TestFramework" Version="3.2.2" />
         <PackageReference Include="Microsoft.Build" Version="16.11.0" />
         <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.11.0" />
-        <PackageReference Include="StrongNamer" Version="0.2.5" />
     </ItemGroup>
 
     <ItemGroup>
