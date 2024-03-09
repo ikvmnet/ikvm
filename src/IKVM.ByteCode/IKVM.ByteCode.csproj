@@ -5,7 +5,6 @@
         <LangVersion>11</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
-        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
     <ItemGroup>

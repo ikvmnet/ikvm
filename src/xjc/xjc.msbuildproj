@@ -9,7 +9,6 @@
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <StartupObject>com.sun.tools.internal.xjc.Driver</StartupObject>
         <RootNamespace>ikvm.tools.xjc</RootNamespace>
-        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

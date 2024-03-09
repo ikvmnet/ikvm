@@ -7,8 +7,6 @@ using System.Reflection.PortableExecutable;
 
 using Microsoft.Build.Utilities;
 
-using Semver;
-
 namespace IKVM.Tests.Util
 {
 
@@ -82,7 +80,7 @@ namespace IKVM.Tests.Util
         static IList<string> GetCorePathToReferenceAssemblies(string tfm, string targetFrameworkVersion)
         {
             // parse requested version
-            if (SemVersion.TryParse(targetFrameworkVersion, SemVersionStyles.Any, out var targetVer) == false)
+            if (Version.TryParse(targetFrameworkVersion, out var targetVer) == false)
                 throw new InvalidOperationException(targetFrameworkVersion);
 
             // back up to pack directory and get list of ref packs
@@ -91,14 +89,14 @@ namespace IKVM.Tests.Util
             var sdkVers = Directory.EnumerateDirectories(packDir).Select(Path.GetFileName);
 
             // identify maximum matching version
-            var thisVer = default(SemVersion);
+            var thisVer = new Version(0, 0, 0);
             foreach (var ver in sdkVers)
-                if (SemVersion.TryParse(ver, SemVersionStyles.Any, out var v))
-                    if (v.IsPrerelease == false && v.Major == targetVer.Major && v.Minor == targetVer.Minor && v.ComparePrecedenceTo(thisVer) == 1)
+                if (Version.TryParse(ver, out var v))
+                    if (v.Major == targetVer.Major && v.Minor == targetVer.Minor && v > thisVer)
                         thisVer = v;
 
             // no higher version found
-            if (thisVer == null)
+            if (thisVer.Major == 0)
                 return null;
 
             // check for TFM refs directory

@@ -6,7 +6,6 @@
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <SignAssembly>true</SignAssembly>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     </PropertyGroup>
 

@@ -2,7 +2,6 @@
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
-        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
     <ItemGroup>

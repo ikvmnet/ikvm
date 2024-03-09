@@ -4,7 +4,6 @@
         <DefineConstants>$(DefineConstants);EXPORTER</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
-        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
     <ItemGroup>
