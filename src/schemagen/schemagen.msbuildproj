@@ -9,6 +9,7 @@
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <StartupObject>com.sun.tools.internal.jxc.SchemaGenerator</StartupObject>
         <RootNamespace>ikvm.tools.schemagen</RootNamespace>
+        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
