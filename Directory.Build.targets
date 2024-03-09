@@ -7,11 +7,5 @@
         <RuntimeIdentifier Condition=" '$(RuntimeIdentifier)' == 'win7-x64' ">win-x64</RuntimeIdentifier>
         <Prefer32Bit Condition=" '$(RuntimeIdentifier)' == 'win-x86' ">true</Prefer32Bit>
     </PropertyGroup>
-
-    <Target Name="ForceGenerationOfBindingRedirects" AfterTargets="ResolveAssemblyReferences" BeforeTargets="GenerateBindingRedirects" Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And '$(AutoGenerateBindingRedirects)' == 'true' ">
-        <PropertyGroup>
-            <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
-        </PropertyGroup>
-    </Target>
     
 </Project>
