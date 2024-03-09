@@ -18,6 +18,7 @@
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <AssemblyName>IKVM.Java</AssemblyName>
+        <SignAssembly>true</SignAssembly>
         <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
         <Bootstrap>true</Bootstrap>
         <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>

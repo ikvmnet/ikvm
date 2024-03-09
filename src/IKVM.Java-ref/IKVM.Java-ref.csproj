@@ -4,6 +4,7 @@
         <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <AssemblyName>IKVM.Java</AssemblyName>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
 </Project>
