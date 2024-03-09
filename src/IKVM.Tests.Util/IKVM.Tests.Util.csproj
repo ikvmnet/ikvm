@@ -7,6 +7,7 @@
         <PackageReference Include="CliWrap" Version="3.6.6" />
         <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.11.0" />
         <PackageReference Include="Semver" Version="2.3.0" />
+        <PackageReference Include="StrongNamer" Version="0.2.5" />
         <PackageReference Include="System.Reflection.Metadata" Version="8.0.0" />
     </ItemGroup>
 </Project>
