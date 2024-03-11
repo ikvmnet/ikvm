@@ -30,6 +30,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 
 using IKVM.Reflection;
+using IKVM.Reflection.Diagnostics;
 using IKVM.Runtime;
 
 using Type = IKVM.Reflection.Type;
@@ -50,19 +51,33 @@ namespace IKVM.Tools.Importer
 
         internal Universe Universe => universe;
 
-        internal void Init(bool nonDeterministicOutput, IList<string> libpaths)
+        /// <summary>
+        /// Initializes the universe.
+        /// </summary>
+        /// <param name="nonDeterministicOutput"></param>
+        /// <param name="debug"></param>
+        /// <param name="libpaths"></param>
+        /// <exception cref="Exception"></exception>
+        internal void Init(bool nonDeterministicOutput, DebugMode debug, IList<string> libpaths)
         {
             var options = UniverseOptions.ResolveMissingMembers | UniverseOptions.EnableFunctionPointers;
-            if (!nonDeterministicOutput)
+            if (nonDeterministicOutput == false)
                 options |= UniverseOptions.DeterministicOutput;
 
             // discover the core lib from the references
             var coreLibName = FindCoreLibName(rootTarget.unresolvedReferences, libpaths);
             if (coreLibName == null)
-                Console.Error.WriteLine("Error: core library not found");
+            {
+                Console.Error.WriteLine("Core library not found. Make sure the appropriate reference assemblies for the target environment are included.");
+                throw new Exception();
+            }
 
             universe = new Universe(options, coreLibName);
             universe.ResolvedMissingMember += ResolvedMissingMember;
+
+            // enable embedded symbol writer
+            if (debug != DebugMode.None)
+                universe.SetSymbolWriterFactory(module => new PortablePdbSymbolWriter(module));
         }
 
         /// <summary>

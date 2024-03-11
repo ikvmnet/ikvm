@@ -47,17 +47,10 @@ namespace IKVM.Tests.Java.java.net
             /// </summary>
             public void Start()
             {
-                try
-                {
-                    serverSocket = new ServerSocket(port);
-                    port = serverSocket.getLocalPort();
-                    serverSocket.setSoTimeout(15000);
-                    base.start();
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
+                serverSocket = new ServerSocket(port);
+                port = serverSocket.getLocalPort();
+                serverSocket.setSoTimeout(15000);
+                base.start();
             }
 
             public void Stop()
@@ -74,14 +67,7 @@ namespace IKVM.Tests.Java.java.net
 
                     while (running)
                     {
-                        try
-                        {
-                            new ClientHandler(serverSocket.accept()).start();
-                        }
-                        catch (IOException e)
-                        {
-                            e.printStackTrace();
-                        }
+                        new ClientHandler(serverSocket.accept()).start();
                     }
                 }
                 finally

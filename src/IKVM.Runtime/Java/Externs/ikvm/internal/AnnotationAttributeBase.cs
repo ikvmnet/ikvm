@@ -21,6 +21,8 @@
   jeroen@frijters.net
   
 */
+using System;
+
 using IKVM.Attributes;
 
 namespace IKVM.Java.Externs.ikvm.@internal
@@ -34,19 +36,19 @@ namespace IKVM.Java.Externs.ikvm.@internal
             return (object[])AnnotationDefaultAttribute.Unescape(def);
         }
 
-        public static object newAnnotationInvocationHandler(global::java.lang.Class type, object memberValues)
+        public static object newAnnotationInvocationHandler(object type, object memberValues)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            return new global::sun.reflect.annotation.AnnotationInvocationHandler(type, (global::java.util.Map)memberValues);
+            return new global::sun.reflect.annotation.AnnotationInvocationHandler((global::java.lang.Class)type, (global::java.util.Map)memberValues);
 #endif
         }
 
         public static object newAnnotationTypeMismatchExceptionProxy(string msg)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             return new global::sun.reflect.annotation.AnnotationTypeMismatchExceptionProxy(msg);
 #endif

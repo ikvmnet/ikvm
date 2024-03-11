@@ -242,7 +242,7 @@ namespace IKVM.Tools.Importer
         private void AddParameterMetadata(MethodBuilder method, RuntimeJavaMethod mw)
         {
             ParameterBuilder[] pbs;
-            if ((mw.DeclaringType.IsPublic && (mw.IsPublic || mw.IsProtected)) || classLoader.EmitDebugInfo)
+            if ((mw.DeclaringType.IsPublic && (mw.IsPublic || mw.IsProtected)) || classLoader.EmitSymbols)
             {
                 string[] parameterNames = new string[mw.GetParameters().Length];
                 GetParameterNamesFromXml(mw.Name, mw.Signature, parameterNames);

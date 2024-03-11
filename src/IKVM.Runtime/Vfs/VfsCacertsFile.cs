@@ -92,7 +92,7 @@ namespace IKVM.Runtime.Vfs
             }
 
             var baos = new java.io.ByteArrayOutputStream();
-            jstore.store(baos, new char[0]);
+            jstore.store(baos, "changeit".ToCharArray());
             return baos.toByteArray();
 #endif
         }

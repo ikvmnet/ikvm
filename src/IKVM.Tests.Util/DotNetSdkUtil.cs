@@ -9,6 +9,7 @@ using Microsoft.Build.Utilities;
 
 namespace IKVM.Tests.Util
 {
+
     public static class DotNetSdkUtil
     {
 
@@ -80,7 +81,7 @@ namespace IKVM.Tests.Util
         {
             // parse requested version
             if (Version.TryParse(targetFrameworkVersion, out var targetVer) == false)
-                throw new InvalidOperationException();
+                throw new InvalidOperationException(targetFrameworkVersion);
 
             // back up to pack directory and get list of ref packs
             var sdkBase = DotNetSdkResolver.ResolvePath(null) ?? throw new InvalidOperationException();
@@ -88,14 +89,14 @@ namespace IKVM.Tests.Util
             var sdkVers = Directory.EnumerateDirectories(packDir).Select(Path.GetFileName);
 
             // identify maximum matching version
-            var thisVer = new Version(0, 0);
+            var thisVer = new Version(0, 0, 0);
             foreach (var ver in sdkVers)
                 if (Version.TryParse(ver, out var v))
-                    if (v > thisVer && v.Major == targetVer.Major && v.Minor == targetVer.Minor)
+                    if (v.Major == targetVer.Major && v.Minor == targetVer.Minor && v > thisVer)
                         thisVer = v;
 
             // no higher version found
-            if (thisVer == new Version(0, 0))
+            if (thisVer.Major == 0)
                 return null;
 
             // check for TFM refs directory

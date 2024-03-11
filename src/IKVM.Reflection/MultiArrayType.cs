@@ -54,12 +54,12 @@ namespace IKVM.Reflection
 
         public override Type BaseType
         {
-            get { return elementType.Module.universe.System_Array; }
+            get { return elementType.Module.Universe.System_Array; }
         }
 
         public override MethodBase[] __GetDeclaredMethods()
         {
-            var int32 = Module.universe.System_Int32;
+            var int32 = Module.Universe.System_Int32;
             var setArgs = new Type[rank + 1];
             var getArgs = new Type[rank];
             var ctorArgs = new Type[rank * 2];
@@ -75,9 +75,9 @@ namespace IKVM.Reflection
 
             return new MethodBase[]
             {
-                new ConstructorInfoImpl(new BuiltinArrayMethod(Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, Module.universe.System_Void, getArgs)),
-                new ConstructorInfoImpl(new BuiltinArrayMethod(Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, Module.universe.System_Void, ctorArgs)),
-                new BuiltinArrayMethod(Module, this, "Set", CallingConventions.Standard | CallingConventions.HasThis, Module.universe.System_Void, setArgs),
+                new ConstructorInfoImpl(new BuiltinArrayMethod(Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, Module.Universe.System_Void, getArgs)),
+                new ConstructorInfoImpl(new BuiltinArrayMethod(Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, Module.Universe.System_Void, ctorArgs)),
+                new BuiltinArrayMethod(Module, this, "Set", CallingConventions.Standard | CallingConventions.HasThis, Module.Universe.System_Void, setArgs),
                 new BuiltinArrayMethod(Module, this, "Address", CallingConventions.Standard | CallingConventions.HasThis, elementType.MakeByRefType(), getArgs),
                 new BuiltinArrayMethod(Module, this, "Get", CallingConventions.Standard | CallingConventions.HasThis, elementType, getArgs),
             };

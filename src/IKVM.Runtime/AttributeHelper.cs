@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using IKVM.Attributes;
 
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Parsing;
@@ -39,6 +40,7 @@ using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
+
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -107,8 +109,10 @@ namespace IKVM.Runtime
         Type typeofMethodParametersAttribute;
         Type typeofRuntimeVisibleTypeAnnotationsAttribute;
         Type typeofConstantPoolAttribute;
+        Type typeofDebuggableAttribute;
         CustomAttributeBuilder hideFromJavaAttribute;
         CustomAttributeBuilder hideFromReflection;
+        ConstructorInfo debuggableAttribute;
 
 #if IMPORTER
 
@@ -164,9 +168,11 @@ namespace IKVM.Runtime
 
         Type TypeOfConstantPoolAttribute => typeofConstantPoolAttribute ??= LoadType(typeof(ConstantPoolAttribute));
 
-        CustomAttributeBuilder HideFromJavaAttributeBuilder => hideFromJavaAttribute ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
+        Type TypeOfDebuggableAttribute => typeofDebuggableAttribute ??= context.Resolver.ResolveCoreType(typeof(DebuggableAttribute).FullName);
 
-        CustomAttributeBuilder HideFromReflectionBuilder => hideFromReflection ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(new Type[] { TypeOfHideFromJavaFlags }), new object[] { HideFromJavaFlags.Reflection | HideFromJavaFlags.StackTrace | HideFromJavaFlags.StackWalk });
+        CustomAttributeBuilder HideFromJavaAttributeBuilder => hideFromJavaAttribute ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), Array.Empty<object>());
+
+        CustomAttributeBuilder HideFromReflectionBuilder => hideFromReflection ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(new[] { TypeOfHideFromJavaFlags }), new object[] { HideFromJavaFlags.Reflection | HideFromJavaFlags.StackTrace | HideFromJavaFlags.StackWalk });
 
         /// <summary>
         /// Loads the given managed type from the runtime assembly.
@@ -744,6 +750,12 @@ namespace IKVM.Runtime
             }
 
             return new ExModifiers(modifiers, false);
+        }
+
+        internal void SetDebuggingModes(AssemblyBuilder assemblyBuilder, DebuggableAttribute.DebuggingModes modes)
+        {
+            debuggableAttribute ??= TypeOfDebuggableAttribute.GetConstructor(new[] { TypeOfDebuggableAttribute.GetNestedType(nameof(DebuggableAttribute.DebuggingModes)) });
+            assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(debuggableAttribute, new object[] { modes }));
         }
 
 #if IMPORTER

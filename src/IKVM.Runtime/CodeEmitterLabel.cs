@@ -38,6 +38,10 @@ namespace IKVM.Runtime
 		internal readonly Label Label;
 		internal int Temp;
 
+		/// <summary>
+		/// Initializes a new instance.
+		/// </summary>
+		/// <param name="label"></param>
 		internal CodeEmitterLabel(Label label)
 		{
 			this.Label = label;

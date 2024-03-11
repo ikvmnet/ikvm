@@ -50,22 +50,12 @@ namespace IKVM.Reflection
             get { return field.Attributes; }
         }
 
-        public override void __GetDataFromRVA(byte[] data, int offset, int length)
-        {
-            field.__GetDataFromRVA(data, offset, length);
-        }
-
-        public override int __FieldRVA
-        {
-            get { return field.__FieldRVA; }
-        }
-
         public override bool __TryGetFieldOffset(out int offset)
         {
             return field.__TryGetFieldOffset(out offset);
         }
 
-        public override Object GetRawConstantValue()
+        public override object GetRawConstantValue()
         {
             return field.GetRawConstantValue();
         }

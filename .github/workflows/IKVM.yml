@@ -1,6 +1,7 @@
 name: IKVM
 
 on:
+  workflow_dispatch:
   push:
     branches:
     - main
@@ -95,7 +96,7 @@ jobs:
         files: jtreg/build/stamp
     - name: Build OpenJDK Test Harness
       if: steps.jtreg-build-stamp.outputs.files_exists != 'true'
-      run: bash make/build-all.sh `realpath ../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image` && touch build/stamp
+      run: WGET_OPTS='-U Mozilla/5.0' bash make/build-all.sh `realpath ../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image` && touch build/stamp
       working-directory: jtreg
     - name: Package OpenJDK Test Harness
       run: zip -r /tmp/jtreg-build.zip build
@@ -179,6 +180,8 @@ jobs:
         restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v2
+      with:
+        msbuild-architecture: x64
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v4
       with:
@@ -596,13 +599,13 @@ jobs:
         PROCESSOR_ARCHITECTURE: x86
     - name: Setup WSL
       if: runner.os == 'Windows'
-      uses: Vampire/setup-wsl@v2
+      uses: Vampire/setup-wsl@v3
     - name: Setup Linux
       if: runner.os == 'Linux'
       shell: bash
       run: sudo apt-get update && sudo apt-get install -y libasound2
     - name: Get Test Name
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       id: test-name
       env:
         MATRIX_RUN: '${{ matrix.run }}'
@@ -650,12 +653,13 @@ jobs:
                 "--blame",
                 "--blame-crash",
                 "--blame-hang",
-                "--blame-hang-timeout", "120m",
+                "--blame-hang-timeout", "60m",
+                "--blame-hang-dump-type", "full",
                 "-v:diag",
                 "--results-directory", "TestResults",
-                "--logger:console;verbosity=diag",
-                "--logger:trx",
-                "--collect", "Code Coverage"
+                "--logger:console;verbosity=detailed",
+                "--logger:trx"
+                # "--collect", "Code Coverage"
             )
 
             if ($sys -eq "win-x86") {

@@ -25,9 +25,9 @@ namespace IKVM.Runtime
         /// </summary>
         LibJava()
         {
-            // load libjava through libjvm as it is a JNI library
+            // load libiava through libjvm as it is a JNI library
             if ((Handle = LibJvm.Instance.JVM_LoadLibrary(Path.Combine(JVM.Properties.HomePath, "bin", NativeLibrary.MapLibraryName("iava")))) == 0)
-                throw new InternalException("Could not load libjava.");
+                throw new InternalException("Could not load libiava.");
         }
 
         /// <summary>

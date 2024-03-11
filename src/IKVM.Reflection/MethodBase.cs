@@ -38,6 +38,9 @@ namespace IKVM.Reflection
 		internal abstract MethodSignature MethodSignature { get; }
 		internal abstract int ParameterCount { get; }
 		public abstract ParameterInfo[] GetParameters();
+
+		internal abstract Type[] GetParameterTypes();
+
 		public abstract MethodAttributes Attributes { get; }
 		public abstract MethodImplAttributes GetMethodImplementationFlags();
 		public abstract MethodBody GetMethodBody();

@@ -1,10 +1,12 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Security;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Accessors.Sun.Nio.Ch;
+using IKVM.Runtime.Accessors.Sun.Nio.Fs;
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.sun.nio.fs
@@ -22,6 +24,7 @@ namespace IKVM.Java.Externs.sun.nio.fs
         static SecurityManagerAccessor securityManagerAccessor;
         static FileTimeAccessor fileTimeAccessor;
         static DotNetDosFileAttributesAccessor dotNetDosFileAttributesAccessor;
+        static UnixFileKeyAccessor unixFileKeyAccessor;
 
         static SystemAccessor SystemAccessor => JVM.Internal.BaseAccessors.Get(ref systemAccessor);
 
@@ -30,6 +33,8 @@ namespace IKVM.Java.Externs.sun.nio.fs
         static SecurityManagerAccessor SecurityManagerAccessor => JVM.Internal.BaseAccessors.Get(ref securityManagerAccessor);
 
         static DotNetDosFileAttributesAccessor DotNetDosFileAttributesAccessor => JVM.Internal.BaseAccessors.Get(ref dotNetDosFileAttributesAccessor);
+
+        static UnixFileKeyAccessor UnixFileKeyAccessor => JVM.Internal.BaseAccessors.Get(ref unixFileKeyAccessor);
 
 #endif
 
@@ -111,11 +116,17 @@ namespace IKVM.Java.Externs.sun.nio.fs
             {
                 var fileInfo = new FileInfo(path);
                 if (fileInfo.Exists)
+                {
+                    object fileKey = null;
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                        if (LibIkvm.Instance.io_lstat(fileInfo.FullName, out var st_ino, out var st_dev) == 0)
+                            fileKey = UnixFileKeyAccessor.Init(st_dev, st_ino);
+
                     return DotNetDosFileAttributesAccessor.Init(
                         ToFileTime(fileInfo.CreationTimeUtc),
                         ToFileTime(fileInfo.LastAccessTimeUtc),
                         ToFileTime(fileInfo.LastWriteTimeUtc),
-                        null,
+                        fileKey,
                         false,
                         false,
                         true,
@@ -125,14 +136,21 @@ namespace IKVM.Java.Externs.sun.nio.fs
                         (fileInfo.Attributes & FileAttributes.Hidden) != 0,
                         (fileInfo.Attributes & FileAttributes.Archive) != 0,
                         (fileInfo.Attributes & FileAttributes.System) != 0);
+                }
 
                 var directoryInfo = new DirectoryInfo(path);
                 if (directoryInfo.Exists)
+                {
+                    object fileKey = null;
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                        if (LibIkvm.Instance.io_lstat(fileInfo.FullName, out var st_ino, out var st_dev) == 0)
+                            fileKey = UnixFileKeyAccessor.Init(st_dev, st_ino);
+
                     return DotNetDosFileAttributesAccessor.Init(
                         ToFileTime(directoryInfo.CreationTimeUtc),
                         ToFileTime(directoryInfo.LastAccessTimeUtc),
                         ToFileTime(directoryInfo.LastWriteTimeUtc),
-                        null,
+                        fileKey,
                         true,
                         false,
                         false,
@@ -142,6 +160,7 @@ namespace IKVM.Java.Externs.sun.nio.fs
                         (directoryInfo.Attributes & FileAttributes.Hidden) != 0,
                         (directoryInfo.Attributes & FileAttributes.Archive) != 0,
                         (directoryInfo.Attributes & FileAttributes.System) != 0);
+                }
 
                 throw new global::java.nio.file.NoSuchFileException(path);
             }

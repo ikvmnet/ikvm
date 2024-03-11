@@ -232,7 +232,7 @@ namespace IKVM.Reflection.Emit
 
             void WriteFixedArg(Type type, object value)
             {
-                var u = assembly.universe;
+                var u = assembly.Universe;
                 if (type == u.System_String)
                 {
                     WriteString((string)value);
@@ -370,7 +370,7 @@ namespace IKVM.Reflection.Emit
             void GetTypeName(StringBuilder sb, Type type, bool isTypeParam)
             {
                 bool v1 = !assembly.ManifestModule.__IsMissing && assembly.ManifestModule.MDStreamVersion < 0x20000;
-                bool includeAssemblyName = type.Assembly != assembly && (!v1 || type.Assembly != type.Module.universe.CoreLib);
+                bool includeAssemblyName = type.Assembly != assembly && (!v1 || type.Assembly != type.Module.Universe.CoreLib);
                 if (isTypeParam && includeAssemblyName)
                 {
                     sb.Append('[');
@@ -435,7 +435,7 @@ namespace IKVM.Reflection.Emit
 
             void WriteFieldOrPropType(Type type)
             {
-                var u = type.Module.universe;
+                var u = type.Module.Universe;
                 if (type == u.System_Type)
                 {
                     WriteByte(0x50);
@@ -591,7 +591,7 @@ namespace IKVM.Reflection.Emit
             get
             {
                 return ReferenceEquals(con, LegacyPermissionSet)
-                    || (con.DeclaringType == con.Module.universe.System_Security_Permissions_PermissionSetAttribute
+                    || (con.DeclaringType == con.Module.Universe.System_Security_Permissions_PermissionSetAttribute
                         && blob == null
                         && (namedFields == null || namedFields.Length == 0)
                         && namedProperties != null
@@ -661,7 +661,7 @@ namespace IKVM.Reflection.Emit
             if (value is Array)
             {
                 var array = (Array)value;
-                var arrayType = type.Module.universe.Import(array.GetType());
+                var arrayType = type.Module.Universe.Import(array.GetType());
                 return RewrapArray(arrayType, array);
             }
             else if (value is CustomAttributeTypedArgument)
