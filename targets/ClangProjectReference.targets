@@ -58,8 +58,8 @@
                 <Properties>%(_ClangProjectReference.SetConfiguration);%(_ClangProjectReference.SetPlatform);TargetIdentifier=%(_ClangProjectReference.RuntimeIdentifier)</Properties>
             </_ClangProjectReferencesToTarget>
         </ItemGroup>
-        <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" />
-        <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="GetClangTargetItem" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" RebaseOutputs="true">
+        <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier;DesignTimeBuild" />
+        <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="GetClangTargetItem" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier;DesignTimeBuild" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" ItemName="_ResolvedClangProjectReferenceTargetOutput" />
         </MSBuild>
         <ItemGroup>
@@ -67,7 +67,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GetClangProjectReferenceOutputItems" DependsOnTargets="GetClangProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_ClangProjectReferenceItems)' != '' ">
+    <Target Name="GetClangProjectReferenceOutputItems" DependsOnTargets="GetClangProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_ClangProjectReferenceItems)' != '' ">
         <ItemGroup>
             <None Include="@(_ClangProjectReferenceItems)" Condition=" '%(_ClangProjectReferenceItems.TargetIdentifier)' != '' ">
                 <TargetPath>runtimes\%(_ClangProjectReferenceItems.TargetIdentifier)\native\%(_ClangProjectReferenceItems.Filename)%(_ClangProjectReferenceItems.Extension)</TargetPath>

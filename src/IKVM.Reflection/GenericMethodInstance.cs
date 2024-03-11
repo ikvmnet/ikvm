@@ -83,6 +83,15 @@ namespace IKVM.Reflection
             return parameters;
         }
 
+        internal override Type[] GetParameterTypes()
+        {
+            var parameterTypes = method.GetParameterTypes();
+            for (int i = 0; i < parameterTypes.Length; i++)
+                parameterTypes[i] = parameterTypes[i].BindTypeParameters(method);
+
+            return parameterTypes;
+        }
+
         internal override int ParameterCount
         {
             get { return method.ParameterCount; }

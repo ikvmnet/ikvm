@@ -5,6 +5,7 @@
     using System.Collections;
     using System.Collections.Generic;
     using System.Reflection;
+    using System.Runtime.CompilerServices;
     using System.Runtime.Serialization;
     using System.Text;
 
@@ -321,7 +322,11 @@
 
         static object ParseObject(Type type, string json)
         {
+#if NETFRAMEWORK
             object instance = FormatterServices.GetUninitializedObject(type);
+#else
+            object instance = RuntimeHelpers.GetUninitializedObject(type);
+#endif
 
             //The list is split into key/value pairs only, this means the split must be divisible by 2 to be valid JSON
             List<string> elems = Split(json);

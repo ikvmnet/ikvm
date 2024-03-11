@@ -33,9 +33,9 @@ namespace IKVM.Java.Externs.java.io
         delegate int __jniDelegate__readBytes(IntPtr jniEnv, IntPtr self, IntPtr bytes, int off, int len);
         static __jniDelegate__readBytes __jniPtr__readBytes;
         delegate long __jniDelegate__skip(IntPtr jniEnv, IntPtr self, long toSkip);
-        static __jniDelegate__skip __jniPtr__skip;
+        static __jniDelegate__skip __jniPtr__skip0;
         delegate int __jniDelegate__available(IntPtr jniEnv, IntPtr self);
-        static __jniDelegate__available __jniPtr__available;
+        static __jniDelegate__available __jniPtr__available0;
         delegate int __jniDelegate__close0(IntPtr jniEnv, IntPtr self);
         static __jniDelegate__close0 __jniPtr__close0;
 
@@ -249,12 +249,12 @@ namespace IKVM.Java.Externs.java.io
         }
 
         /// <summary>
-        /// Implements the native method 'skip'.
+        /// Implements the native method 'skip0'.
         /// </summary>
         /// <param name="this_"></param>
-        /// <param name="toSkip"></param>
+        /// <param name="n"></param>
         /// <returns></returns>
-        public static long skip(object this_, long toSkip)
+        public static long skip0(object this_, long n)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -275,7 +275,7 @@ namespace IKVM.Java.Externs.java.io
                 try
                 {
                     long cur = stream.Position;
-                    long end = stream.Seek(toSkip, SeekOrigin.Current);
+                    long end = stream.Seek(n, SeekOrigin.Current);
                     return end - cur;
                 }
                 catch (ObjectDisposedException e)
@@ -294,12 +294,12 @@ namespace IKVM.Java.Externs.java.io
             else
             {
                 __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.io.FileInputStream).TypeHandle);
-                __jniPtr__skip ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__skip>(JNIFrame.GetFuncPtr(__callerID, "java/io/FileInputStream", nameof(skip), "(J)J"));
+                __jniPtr__skip0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__skip>(JNIFrame.GetFuncPtr(__callerID, "java/io/FileInputStream", nameof(skip0), "(J)J"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    return __jniPtr__skip(jniEnv, jniFrm.MakeLocalRef(this_), toSkip);
+                    return __jniPtr__skip0(jniEnv, jniFrm.MakeLocalRef(this_), n);
                 }
                 catch (Exception ex)
                 {
@@ -316,11 +316,11 @@ namespace IKVM.Java.Externs.java.io
         }
 
         /// <summary>
-        /// Implements the native method 'available'.
+        /// Implements the native method 'available0'.
         /// </summary>
         /// <param name="this_"></param>
         /// <returns></returns>
-        public static int available(object this_)
+        public static int available0(object this_)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -358,12 +358,12 @@ namespace IKVM.Java.Externs.java.io
             else
             {
                 __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.io.FileInputStream).TypeHandle);
-                __jniPtr__available ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__available>(JNIFrame.GetFuncPtr(__callerID, "java/io/FileInputStream", nameof(available), "()I"));
+                __jniPtr__available0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__available>(JNIFrame.GetFuncPtr(__callerID, "java/io/FileInputStream", nameof(available0), "()I"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    return __jniPtr__available(jniEnv, jniFrm.MakeLocalRef(this_));
+                    return __jniPtr__available0(jniEnv, jniFrm.MakeLocalRef(this_));
                 }
                 catch (Exception ex)
                 {

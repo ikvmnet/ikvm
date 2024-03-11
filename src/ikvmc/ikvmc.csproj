@@ -3,6 +3,7 @@
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net6.0;net472</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedToolRuntimes)</RuntimeIdentifiers>
+        <SignAssembly>true</SignAssembly>
         <PublishReadyToRun>true</PublishReadyToRun>
     </PropertyGroup>
 

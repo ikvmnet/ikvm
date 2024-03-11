@@ -24,8 +24,8 @@
         <OpenJdkMajorVersion>1</OpenJdkMajorVersion>
         <OpenJdkMinorVersion>8</OpenJdkMinorVersion>
         <OpenJdkMicroVersion>0</OpenJdkMicroVersion>
-        <OpenJdkUpdateVersion>92</OpenJdkUpdateVersion>
-        <OpenJdkBuildNumber>b34</OpenJdkBuildNumber>
+        <OpenJdkUpdateVersion>152</OpenJdkUpdateVersion>
+        <OpenJdkBuildNumber>b16</OpenJdkBuildNumber>
         <OpenJdkVersion>OpenJDK $(OpenJdkMinorVersion)u$(OpenJdkUpdateVersion) $(OpenJdkBuildNumber)</OpenJdkVersion>
         <OpenJdkFullVersion>$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)_$(OpenJdkUpdateVersion)-$(OpenJdkBuildNumber)</OpenJdkFullVersion>
         <OpenJdkVendor>Oracle</OpenJdkVendor>

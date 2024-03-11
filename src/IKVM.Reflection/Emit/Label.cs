@@ -1,73 +1,45 @@
-﻿/*
-  Copyright (C) 2008-2012 Jeroen Frijters
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
+#nullable enable
 
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
+using System;
+using System.Diagnostics.CodeAnalysis;
 
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
 namespace IKVM.Reflection.Emit
 {
-
-    public readonly struct Label
+    /// <summary>
+    /// Represents a label in the instruction stream. Used in conjunction with the <see cref="ILGenerator"/> class.
+    /// </summary>
+    /// <remarks>
+    /// The Label class is an opaque representation of a label used by the
+    /// <see cref="ILGenerator"/> class.  The token is used to mark where labels occur in the IL
+    /// stream. Labels are created by using <see cref="ILGenerator.DefineLabel"/> and their position is set
+    /// by using <see cref="ILGenerator.MarkLabel"/>.
+    /// </remarks>
+    public readonly struct Label : IEquatable<Label>
     {
+        internal readonly int m_label;
 
-        // 1-based here, to make sure that an uninitialized Label isn't valid
-        readonly int index1;
+        internal Label(int label) => m_label = label;
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Gets the label unique id assigned by the ILGenerator.
         /// </summary>
-        /// <param name="index"></param>
-        internal Label(int index)
-        {
-            this.index1 = index + 1;
-        }
+        public int Id => m_label;
 
-        internal int Index
-        {
-            get { return index1 - 1; }
-        }
+        public override int GetHashCode() => m_label;
 
-        public bool Equals(Label other)
-        {
-            return other.index1 == index1;
-        }
+        public override bool Equals(object? obj) =>
+            obj is Label other && Equals(other);
 
-        public override bool Equals(object obj)
-        {
-            return this == obj as Label?;
-        }
+        public bool Equals(Label obj) =>
+            obj.m_label == m_label;
 
-        public override int GetHashCode()
-        {
-            return index1;
-        }
+        public static bool operator ==(Label a, Label b) => a.Equals(b);
 
-        public static bool operator ==(Label arg1, Label arg2)
-        {
-            return arg1.index1 == arg2.index1;
-        }
-
-        public static bool operator !=(Label arg1, Label arg2)
-        {
-            return !(arg1 == arg2);
-        }
+        public static bool operator !=(Label a, Label b) => !(a == b);
     }
-
 }
+
+#nullable restore

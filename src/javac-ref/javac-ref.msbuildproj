@@ -6,10 +6,11 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <AssemblyName>javac</AssemblyName>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net472</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <StartupObject>com.sun.tools.javac.Main</StartupObject>
         <RootNamespace>ikvm.tools.javac</RootNamespace>
+        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
     <ItemGroup>

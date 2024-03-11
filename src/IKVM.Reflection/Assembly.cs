@@ -30,7 +30,7 @@ namespace IKVM.Reflection
     public abstract class Assembly : ICustomAttributeProvider
     {
 
-        internal readonly Universe universe;
+        readonly Universe universe;
         protected string fullName;  // AssemblyBuilder needs access to this field to clear it when the name changes
         protected List<ModuleResolveEventHandler> resolvers;
 
@@ -40,8 +40,13 @@ namespace IKVM.Reflection
         /// <param name="universe"></param>
         internal Assembly(Universe universe)
         {
-            this.universe = universe;
+            this.universe = universe ?? throw new ArgumentNullException(nameof(universe));
         }
+
+        /// <summary>
+        /// Gets the universe of types that holds this assembly.
+        /// </summary>
+        public Universe Universe => universe;
 
         public sealed override string ToString()
         {
@@ -62,8 +67,11 @@ namespace IKVM.Reflection
         }
 
         public abstract Type[] GetTypes();
+
         public abstract AssemblyName GetName();
+
         public abstract string ImageRuntimeVersion { get; }
+
         public abstract Module ManifestModule { get; }
         public abstract MethodInfo EntryPoint { get; }
         public abstract string Location { get; }

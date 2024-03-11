@@ -25,7 +25,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 
 using IKVM.ByteCode.Text;
 
@@ -739,7 +741,11 @@ namespace IKVM.Runtime.JNI
                     return IntPtr.Zero;
                 }
                 wrapper.Finish();
-                return pEnv->MakeLocalRef(System.Runtime.Serialization.FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType));
+#if NETFRAMEWORK
+                return pEnv->MakeLocalRef(FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType));
+#else
+                return pEnv->MakeLocalRef(RuntimeHelpers.GetUninitializedObject(wrapper.TypeAsBaseType));
+#endif
             }
             catch (RetargetableJavaException e)
             {

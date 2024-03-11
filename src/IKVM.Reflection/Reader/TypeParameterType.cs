@@ -56,7 +56,7 @@ namespace IKVM.Reflection.Reader
                     if (!type.IsInterface && !type.IsGenericParameter)
                         return type;
 
-                return this.IsValueType ? this.Module.universe.System_ValueType : this.Module.universe.System_Object;
+                return this.IsValueType ? this.Module.Universe.System_ValueType : this.Module.Universe.System_Object;
             }
         }
 

@@ -422,7 +422,7 @@ namespace IKVM.Runtime
         /// Called from map.xml for IKVM.Java.
         /// </remarks>
         /// <returns></returns>
-        internal static ObjectStreamField[] GetPersistentFields()
+        internal static object[] GetPersistentFields()
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -443,15 +443,15 @@ namespace IKVM.Runtime
         /// Called from map.xml for IKVM.Java.
         /// </remarks>
         /// <param name="e"></param>
-        /// <param name="s"></param>
-        internal static void WriteObject(Exception e, ObjectOutputStream s)
+        /// <param name="stream"></param>
+        internal static void WriteObject(Exception e, object stream)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             lock (e)
             {
-                ObjectOutputStream.PutField fields = s.putFields();
+                var fields = ((ObjectOutputStream)stream).putFields();
                 if (e is not Throwable t)
                 {
                     fields.put("detailMessage", e.Message);
@@ -468,12 +468,13 @@ namespace IKVM.Runtime
                     GetOurStackTrace(e);
                     fields.put("stackTrace", t.stackTrace ?? java.lang.ThrowableHelper.SentinelHolder.STACK_TRACE_SENTINEL);
                 }
-                s.writeFields();
+
+                ((ObjectOutputStream)stream).writeFields();
             }
 #endif
         }
 
-        internal static void ReadObject(Exception e, ObjectInputStream stream)
+        internal static void ReadObject(Exception e, object stream)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -485,10 +486,10 @@ namespace IKVM.Runtime
                 Throwable _this = (Throwable)e;
 
                 // this the equivalent of s.defaultReadObject();
-                ObjectInputStream.GetField fields = stream.readFields();
-                object detailMessage = fields.get("detailMessage", null);
-                object cause = fields.get("cause", null);
-                ConstructorInfo ctor = typeof(Throwable).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(string), typeof(Exception), typeof(bool), typeof(bool) }, null);
+                var fields = ((ObjectInputStream)stream).readFields();
+                var detailMessage = fields.get("detailMessage", null);
+                var cause = fields.get("cause", null);
+                var ctor = typeof(Throwable).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(string), typeof(Exception), typeof(bool), typeof(bool) }, null);
                 if (cause == _this)
                 {
                     ctor.Invoke(_this, new object[] { detailMessage, null, false, false });
@@ -498,6 +499,7 @@ namespace IKVM.Runtime
                 {
                     ctor.Invoke(_this, new object[] { detailMessage, cause, false, false });
                 }
+
                 _this.stackTrace = (StackTraceElement[])fields.get("stackTrace", null);
                 _this.suppressedExceptions = (java.util.List)fields.get("suppressedExceptions", null);
 
@@ -514,18 +516,15 @@ namespace IKVM.Runtime
                         suppressed = new java.util.ArrayList(1);
                         for (int i = 0; i < _this.suppressedExceptions.size(); i++)
                         {
-                            Exception entry = (Exception)_this.suppressedExceptions.get(i);
+                            var entry = (Exception)_this.suppressedExceptions.get(i);
                             if (entry == null)
-                            {
                                 throw new java.lang.NullPointerException("Cannot suppress a null exception.");
-                            }
                             if (entry == _this)
-                            {
                                 throw new java.lang.IllegalArgumentException("Self-suppression not permitted");
-                            }
                             suppressed.add(entry);
                         }
                     }
+
                     _this.suppressedExceptions = suppressed;
                 }
 
@@ -535,8 +534,7 @@ namespace IKVM.Runtime
                     {
                         _this.stackTrace = new StackTraceElement[0];
                     }
-                    else if (_this.stackTrace.Length == 1
-                        && java.lang.ThrowableHelper.SentinelHolder.STACK_TRACE_ELEMENT_SENTINEL.equals(_this.stackTrace[0]))
+                    else if (_this.stackTrace.Length == 1 && java.lang.ThrowableHelper.SentinelHolder.STACK_TRACE_ELEMENT_SENTINEL.equals(_this.stackTrace[0]))
                     {
                         _this.stackTrace = null;
                     }
@@ -643,14 +641,10 @@ namespace IKVM.Runtime
                 else
                 {
                     if (_thisJava.suppressedExceptions == null)
-                    {
                         return;
-                    }
 
                     if (_thisJava.suppressedExceptions == Throwable.SUPPRESSED_SENTINEL)
-                    {
                         _thisJava.suppressedExceptions = new java.util.ArrayList();
-                    }
 
                     _thisJava.suppressedExceptions.add(e);
                 }
@@ -686,7 +680,7 @@ namespace IKVM.Runtime
             return GetOurStackTrace(self).Length;
         }
 
-        internal static StackTraceElement GetStackTraceElement(Exception self, int index)
+        internal static object GetStackTraceElement(Exception self, int index)
         {
             return GetOurStackTrace(self)[index];
         }
@@ -698,7 +692,7 @@ namespace IKVM.Runtime
         /// Called from map.xml for IKVM.Java.
         /// </remarks>
         /// <returns></returns>
-        internal static StackTraceElement[] GetOurStackTrace(Exception e)
+        internal static object[] GetOurStackTrace(Exception e)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -708,18 +702,14 @@ namespace IKVM.Runtime
                 lock (e)
                 {
                     ExceptionInfoHelper eih = null;
-                    IDictionary data = e.Data;
+                    var data = e.Data;
                     if (data != null && !data.IsReadOnly)
-                    {
                         lock (data.SyncRoot)
-                        {
                             eih = (ExceptionInfoHelper)data[EXCEPTION_DATA_KEY];
-                        }
-                    }
+
                     if (eih == null)
-                    {
                         return Throwable.UNASSIGNED_STACK;
-                    }
+
                     return eih.get_StackTrace(e);
                 }
             }
@@ -727,15 +717,15 @@ namespace IKVM.Runtime
             {
                 lock (self)
                 {
-                    if (self.stackTrace == Throwable.UNASSIGNED_STACK
-                        || (self.stackTrace == null && (self.tracePart1 != null || self.tracePart2 != null)))
+                    if (self.stackTrace == Throwable.UNASSIGNED_STACK || (self.stackTrace == null && (self.tracePart1 != null || self.tracePart2 != null)))
                     {
-                        ExceptionInfoHelper eih = new ExceptionInfoHelper(JVM.Context.ExceptionHelper, self.tracePart1, self.tracePart2);
+                        var eih = new ExceptionInfoHelper(JVM.Context.ExceptionHelper, self.tracePart1, self.tracePart2);
                         self.stackTrace = eih.get_StackTrace(e);
                         self.tracePart1 = null;
                         self.tracePart2 = null;
                     }
                 }
+
                 return self.stackTrace ?? Throwable.UNASSIGNED_STACK;
             }
 #endif
@@ -748,12 +738,13 @@ namespace IKVM.Runtime
         /// Called from map.xml for IKVM.Java.
         /// </remarks>
         /// <returns></returns>
-        internal static void SetStackTrace(Exception e, StackTraceElement[] stackTrace)
+        internal static void SetStackTrace(Exception e, object[] stackTrace)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var copy = (StackTraceElement[])stackTrace.Clone();
+            var stackTrace_ = (StackTraceElement[])stackTrace;
+            var copy = (StackTraceElement[])stackTrace_.Clone();
             for (int i = 0; i < copy.Length; i++)
                 if (copy[i] == null)
                     throw new java.lang.NullPointerException();
@@ -870,8 +861,8 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            bool wrapped = false;
-            Exception r = MapException<Exception>(t.InnerException, true, false);
+            var wrapped = false;
+            var r = MapException<Exception>(t.InnerException, true, false);
             if (r is not java.lang.Error)
             {
                 // Forwarding "r" as cause only doesn't make it available in the debugger details
@@ -881,16 +872,17 @@ namespace IKVM.Runtime
                 r = new java.lang.ExceptionInInitializerError(r.ToString());
                 wrapped = true;
             }
-            string type = t.TypeName;
+
+            var type = t.TypeName;
             if (failedTypes.ContainsKey(type))
             {
                 r = new java.lang.NoClassDefFoundError("Could not initialize class " + type);
                 wrapped = true;
             }
+
             if (handler != null && !handler.IsInstanceOfType(r))
-            {
                 return null;
-            }
+
             failedTypes[type] = type;
             if (wrapped)
             {
@@ -935,7 +927,8 @@ namespace IKVM.Runtime
                         exceptions.Add(e, NOT_REMAPPED);
                     else
                         exceptions.Add(e, remapped);
-                        e = remapped;
+
+                    e = remapped;
                 }
                 else if (remapped != NOT_REMAPPED)
                 {
@@ -960,7 +953,7 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    IDictionary data = e.Data;
+                    var data = e.Data;
                     if (data != null && !data.IsReadOnly)
                     {
                         lock (data.SyncRoot)

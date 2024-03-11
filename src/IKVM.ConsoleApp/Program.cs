@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace IKVM.ConsoleApp
 {
@@ -13,7 +14,6 @@ namespace IKVM.ConsoleApp
         public static void Foo()
         {
             new Bar();
-            Environment.Exit(0);
         }
 
         class Bar
@@ -23,11 +23,6 @@ namespace IKVM.ConsoleApp
             {
                 for (int i = 0; i < 19383; i++)
                     System.Console.WriteLine(java.net.InetAddress.getLocalHost().getHostName());
-            }
-
-            ~Bar()
-            {
-
             }
 
         }

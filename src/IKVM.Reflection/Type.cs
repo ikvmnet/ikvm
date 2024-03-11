@@ -590,7 +590,7 @@ namespace IKVM.Reflection
 
         public MemberInfo[] GetDefaultMembers()
         {
-            var defaultMemberAttribute = Module.universe.Import(typeof(System.Reflection.DefaultMemberAttribute));
+            var defaultMemberAttribute = Module.Universe.Import(typeof(System.Reflection.DefaultMemberAttribute));
             foreach (var cad in CustomAttributeData.GetCustomAttributes(this))
                 if (cad.Constructor.DeclaringType.Equals(defaultMemberAttribute))
                     return GetMember((string)cad.ConstructorArguments[0].Value);
@@ -992,7 +992,7 @@ namespace IKVM.Reflection
 
         internal Type ResolveNestedType(Module requester, TypeName typeName)
         {
-            return FindNestedType(typeName) ?? Module.universe.GetMissingTypeOrThrow(requester, Module, this, typeName);
+            return FindNestedType(typeName) ?? Module.Universe.GetMissingTypeOrThrow(requester, Module, this, typeName);
         }
 
         // unlike the public API, this takes the namespace and name into account
@@ -1298,12 +1298,12 @@ namespace IKVM.Reflection
 
         public bool IsContextful
         {
-            get { return IsSubclassOf(this.Module.universe.System_ContextBoundObject); }
+            get { return IsSubclassOf(this.Module.Universe.System_ContextBoundObject); }
         }
 
         public bool IsMarshalByRef
         {
-            get { return IsSubclassOf(this.Module.universe.System_MarshalByRefObject); }
+            get { return IsSubclassOf(this.Module.Universe.System_MarshalByRefObject); }
         }
 
         public virtual bool IsVisible
@@ -1546,7 +1546,7 @@ namespace IKVM.Reflection
             if (!type.__IsMissing && type.IsEnum)
                 type = type.GetEnumUnderlyingType();
 
-            Universe u = type.Module.universe;
+            Universe u = type.Module.Universe;
             if (type == u.System_Boolean)
             {
                 return TypeCode.Boolean;
@@ -1672,11 +1672,11 @@ namespace IKVM.Reflection
             }
             else if (type.IsInterface)
             {
-                return this == this.Module.universe.System_Object;
+                return this == this.Module.Universe.System_Object;
             }
             else if (type.IsPointer)
             {
-                return this == this.Module.universe.System_Object || this == this.Module.universe.System_ValueType;
+                return this == this.Module.Universe.System_Object || this == this.Module.Universe.System_ValueType;
             }
             else
             {
@@ -1915,7 +1915,7 @@ namespace IKVM.Reflection
         {
             get
             {
-                var cad = CustomAttributeData.__GetCustomAttributes(this, this.Module.universe.System_AttributeUsageAttribute, false);
+                var cad = CustomAttributeData.__GetCustomAttributes(this, this.Module.Universe.System_AttributeUsageAttribute, false);
                 if (cad.Count == 1)
                     foreach (CustomAttributeNamedArgument arg in cad[0].NamedArguments)
                         if (arg.MemberInfo.Name == "AllowMultiple")
@@ -1939,7 +1939,7 @@ namespace IKVM.Reflection
 
         internal ConstructorInfo GetPseudoCustomAttributeConstructor(params Type[] parameterTypes)
         {
-            var u = Module.universe;
+            var u = Module.Universe;
             var methodSig = MethodSignature.MakeFromBuilder(u.System_Void, parameterTypes, new PackedCustomModifiers(), CallingConventions.Standard | CallingConventions.HasThis, 0);
             var mb = FindMethod(".ctor", methodSig) ?? u.GetMissingMethodOrThrow(null, this, ".ctor", methodSig);
             return (ConstructorInfo)mb;
@@ -1952,7 +1952,7 @@ namespace IKVM.Reflection
 
          MethodBase CreateMissingMethod(string name, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
         {
-            var sig = new MethodSignature(returnType ?? Module.universe.System_Void, Util.Copy(parameterTypes), customModifiers, callingConvention, 0);
+            var sig = new MethodSignature(returnType ?? Module.Universe.System_Void, Util.Copy(parameterTypes), customModifiers, callingConvention, 0);
             var method = new MissingMethod(this, name, sig);
 
             if (name == ".ctor" || name == ".cctor")
@@ -2062,7 +2062,7 @@ namespace IKVM.Reflection
 
         internal virtual Universe Universe
         {
-            get { return Module.universe; }
+            get { return Module.Universe; }
         }
 
         internal sealed override bool BindingFlagsMatch(BindingFlags flags)

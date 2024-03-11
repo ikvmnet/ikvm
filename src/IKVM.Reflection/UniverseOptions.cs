@@ -85,6 +85,7 @@ namespace IKVM.Reflection
         DecodeVersionInfoAttributeBlobs = 128,
         DeterministicOutput = 256,
         DisableDefaultAssembliesLookup = 512,
+
     }
 
 }

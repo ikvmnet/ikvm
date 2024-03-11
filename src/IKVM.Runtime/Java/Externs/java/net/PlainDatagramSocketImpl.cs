@@ -98,6 +98,7 @@ namespace IKVM.Java.Externs.java.net
         static __jniDelegate__init __jniPtr__init;
 
 #if NETCOREAPP3_1_OR_GREATER
+
         // HACK .NET Core has an explicit check for _isConnected https://github.com/dotnet/runtime/issues/77962
         static readonly FieldInfo SocketIsConnectedField = typeof(Socket).GetField("_isConnected", BindingFlags.NonPublic | BindingFlags.Instance);
         static readonly Action<Socket, bool> SocketIsConnectedFieldSetter = MakeFieldSetter<Socket, bool>(SocketIsConnectedField);
@@ -538,38 +539,42 @@ namespace IKVM.Java.Externs.java.net
 #if !FIRST_PASS
 
         /// <summary>
-        /// Peek at the queue to see if there is an ICMP port unreachable. If there is, then receive it.
+        /// Peek at the queue to see if there is an ICMP port unreachable. If there is then receive it.
         /// </summary>
         /// <param name="socket"></param>
         static void PurgeOutstandingICMP(Socket socket)
         {
-            while (true)
+            // check for outstanding packet
+            while (socket.Poll(0, SelectMode.SelectRead))
             {
-                // check for outstanding packet
-                if (socket.Poll(0, SelectMode.SelectRead) == false)
-                    break;
+                var ep = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
 
+                // check for real data on the socket, if so, we can exit, no exceptions
                 try
                 {
-                    var ep = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
                     socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, TempBuffer.Length, SocketFlags.Peek, ref ep, null, null), ref ep);
+                    return;
+                }
+                catch
+                {
+                    // swallow any exceptions emitted by peek, the exception will be thrown again upon following read
+                }
+
+                // consume real data (exception)
+                try
+                {
+                    socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, TempBuffer.Length, SocketFlags.None, ref ep, null, null), ref ep);
                 }
                 catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
                 {
-                    try
-                    {
-                        var ep = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
-                        socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, TempBuffer.Length, SocketFlags.Peek, ref ep, null, null), ref ep);
-                    }
-                    catch (SocketException e2) when (e2.SocketErrorCode == SocketError.ConnectionReset)
-                    {
-
-                    }
-
-                    continue;
+                    // we consumed exception reset and thus can continue to look for next
                 }
-
-                break;
+                catch
+                {
+                    // some other exception besides connection reset
+                    // ignore since the purge method should only purge
+                    return;
+                }
             }
         }
 

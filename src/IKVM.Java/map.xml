@@ -952,7 +952,8 @@
             <field name="suppressedExceptions" sig="Ljava.util.List;" />
             <clinit>
                 <body>
-                    <call type="IKVM.Runtime.ExceptionHelper" name="GetPersistentFields" sig="()[Ljava.io.ObjectStreamField;" />
+                    <call class="cli.IKVM.Runtime.ExceptionHelper" name="GetPersistentFields" sig="()[Ljava.lang.Object;" />
+                    <castclass class="[Ljava.io.ObjectStreamField;" />
                     <stsfld class="java.lang.Throwable" name="serialPersistentFields" sig="[Ljava.io.ObjectStreamField;" />
                     <ldc_i4_0 />
                     <newarr sig="Ljava.lang.StackTraceElement;" />
@@ -1010,7 +1011,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="ReadObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectInputStream;)V" />
+                    <call class="cli.IKVM.Runtime.ExceptionHelper" name="ReadObject" sig="(Ljava.lang.Throwable;Ljava.lang.Object;)V" />
                     <ret />
                 </body>
             </method>
@@ -1019,7 +1020,7 @@
                 <body>
                     <ldarg_0 />
                     <ldarg_1 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="WriteObject" sig="(Ljava.lang.Throwable;Ljava.io.ObjectOutputStream;)V" />
+                    <call class="cli.IKVM.Runtime.ExceptionHelper" name="WriteObject" sig="(Ljava.lang.Throwable;Ljava.lang.Object;)V" />
                     <ret />
                 </body>
             </method>
@@ -1341,18 +1342,29 @@
             <method name="getStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="public">
                 <body>
                     <ldarg_0 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
+                    <call class="cli.IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.Object;" />
+                    <castclass class="[Ljava.lang.StackTraceElement;" />
                     <callvirt type="System.Array" name="Clone" sig="()Ljava.lang.Object;" />
                     <castclass class="[Ljava.lang.StackTraceElement;" />
                     <ret />
                 </body>
             </method>
             <method name="getOurStackTrace" sig="()[Ljava.lang.StackTraceElement;" modifiers="private">
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
+                <body>
+                    <ldarg_0 />
+                    <call class="cli.IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.Object;" />
+                    <castclass class="[Ljava.lang.StackTraceElement;" />
+                    <ret />
+                </body>
             </method>
             <method name="setStackTrace" sig="([Ljava.lang.StackTraceElement;)V" modifiers="public">
                 <parameter name="stackTrace" />
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="SetStackTrace" sig="(Ljava.lang.Throwable;[Ljava.lang.StackTraceElement;)V" />
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <call class="cli.IKVM.Runtime.ExceptionHelper" name="SetStackTrace" sig="(Ljava.lang.Throwable;[Ljava.lang.Object;)V" />
+                    <ret/>
+                </body>
             </method>
             <method name="toString" sig="()Ljava.lang.String;" modifiers="public">
                 <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="ToString" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" />
@@ -1398,14 +1410,21 @@
                 <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="GetStackTraceDepth" sig="(Ljava.lang.Throwable;)I" />
             </method>
             <method name="getStackTraceElement" sig="(I)Ljava.lang.StackTraceElement;" modifiers="">
-                <redirect class="cli.IKVM.Runtime.ExceptionHelper" name="GetStackTraceElement" sig="(Ljava.lang.Throwable;I)Ljava.lang.StackTraceElement;" />
+                <body>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <call class="cli.IKVM.Runtime.ExceptionHelper" name="GetStackTraceElement" sig="(Ljava.lang.Throwable;I)Ljava.lang.Object;" />
+                    <castclass class="java.lang.StackTraceElement" />
+                    <ret />
+                </body>
             </method>
         </class>
         <class name="java.lang.ThrowableHelper">
             <method name="getOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;">
                 <body>
                     <ldarg_0 />
-                    <call type="IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.StackTraceElement;" />
+                    <call class="cli.IKVM.Runtime.ExceptionHelper" name="GetOurStackTrace" sig="(Ljava.lang.Throwable;)[Ljava.lang.Object;" />
+                    <castclass class="[Ljava.lang.StackTraceElement;" />
                     <ret />
                 </body>
             </method>

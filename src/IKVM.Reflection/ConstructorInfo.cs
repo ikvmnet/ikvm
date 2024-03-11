@@ -86,7 +86,12 @@ namespace IKVM.Reflection
 			return parameters;
 		}
 
-		public sealed override CallingConventions CallingConvention
+        internal override Type[] GetParameterTypes()
+        {
+            return GetMethodInfo().GetParameterTypes();
+        }
+
+        public sealed override CallingConventions CallingConvention
 		{
 			get { return GetMethodInfo().CallingConvention; }
 		}

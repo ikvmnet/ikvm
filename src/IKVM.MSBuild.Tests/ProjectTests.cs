@@ -54,6 +54,8 @@ namespace IKVM.MSBuild.Tests
 
         public static Dictionary<string, string> Properties { get; set; }
 
+        public static string TestRoot { get; set; }
+
         public static string TempRoot { get; set; }
 
         public static string WorkRoot { get; set; }
@@ -69,6 +71,9 @@ namespace IKVM.MSBuild.Tests
         {
             // properties to load into test build
             Properties = File.ReadAllLines("IKVM.MSBuild.Tests.properties").Select(i => i.Split('=', 2)).ToDictionary(i => i[0], i => i[1]);
+
+            // root of the project collection itself
+            TestRoot = Path.Combine(Path.GetDirectoryName(typeof(ProjectTests).Assembly.Location), "Project");
 
             // temporary directory
             TempRoot = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", Guid.NewGuid().ToString());
@@ -102,10 +107,10 @@ namespace IKVM.MSBuild.Tests
                         new XElement("add",
                             new XAttribute("key", "dev"),
                             new XAttribute("value", Path.Combine(Path.GetDirectoryName(typeof(ProjectTests).Assembly.Location), @"nuget"))))))
-                .Save(Path.Combine(@"Project", "nuget.config"));
+                .Save(Path.Combine(TestRoot, "nuget.config"));
 
             var manager = new AnalyzerManager();
-            var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
+            var analyzer = manager.GetProject(Path.Combine(TestRoot, "Exe", "ProjectExe.csproj"));
             analyzer.AddBuildLogger(new TargetLogger(context));
             analyzer.AddBinaryLogger(Path.Combine(WorkRoot, "msbuild.binlog"));
             analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
@@ -122,6 +127,7 @@ namespace IKVM.MSBuild.Tests
             analyzer.SetGlobalProperty("Configuration", "Release");
 
             var options = new EnvironmentOptions();
+            options.WorkingDirectory = TestRoot;
             options.DesignTime = false;
             options.Restore = true;
             options.TargetsToBuild.Clear();
@@ -205,7 +211,7 @@ namespace IKVM.MSBuild.Tests
                     return;
 
             var manager = new AnalyzerManager();
-            var analyzer = manager.GetProject(Path.Combine("Project", "Exe", "ProjectExe.csproj"));
+            var analyzer = manager.GetProject(Path.Combine(TestRoot, "Exe", "ProjectExe.csproj"));
             analyzer.AddBuildLogger(new TargetLogger(TestContext));
             analyzer.AddBinaryLogger(Path.Combine(WorkRoot, $"{tfm}-{rid}-msbuild.binlog"));
             analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
@@ -222,6 +228,7 @@ namespace IKVM.MSBuild.Tests
             analyzer.SetGlobalProperty("Configuration", "Release");
 
             var options = new EnvironmentOptions();
+            options.WorkingDirectory = TestRoot;
             options.Preference = env;
             options.DesignTime = false;
             options.Restore = false;

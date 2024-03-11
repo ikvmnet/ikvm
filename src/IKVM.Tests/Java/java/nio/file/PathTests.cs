@@ -48,6 +48,24 @@ namespace IKVM.Tests.Java.java.nio.file
             Paths.get(path).resolve(other).ToString().Should().Be(expected);
         }
 
+        [TestMethod]
+        public void ShouldAppendSlashToUriForExistingDirectory()
+        {
+            var t = System.IO.Path.GetTempPath().TrimEnd(System.IO.Path.DirectorySeparatorChar);
+            var p = Paths.get(t);
+            var u = p.toUri();
+            u.ToString().Should().EndWith("/");
+        }
+
+        [TestMethod]
+        public void ShouldNotAppendSlashToUriForMissingDirectory()
+        {
+            var r = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\missing" : @"/missing";
+            var p = Paths.get(r);
+            var u = p.toUri();
+            u.ToString().Should().NotEndWith("/");
+        }
+
     }
 
 }

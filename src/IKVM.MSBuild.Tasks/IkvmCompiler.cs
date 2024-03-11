@@ -100,7 +100,7 @@ namespace IKVM.MSBuild.Tasks
 
         public bool CompressResources { get; set; }
 
-        public bool Debug { get; set; }
+        public string Debug { get; set; }
 
         public bool NoAutoSerialization { get; set; }
 
@@ -241,12 +241,6 @@ namespace IKVM.MSBuild.Tasks
 
         protected override async Task<bool> ExecuteAsync(IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken)
         {
-            if (Debug && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
-            {
-                Log.LogWarning("Emitting debug symbols from ikvmc is not supported on platforms other than Windows. Continuing without.");
-                Debug = false;
-            }
-
             var options = new IkvmImporterOptions();
             options.ResponseFile = ResponseFile;
             options.Output = Output;
@@ -302,7 +296,16 @@ namespace IKVM.MSBuild.Tasks
                     options.ExternalResources.Add(new IkvmImporterExternalResourceItem(resource.ItemSpec, resource.GetMetadata("ResourcePath")));
 
             options.CompressResources = CompressResources;
-            options.Debug = Debug;
+
+            options.Debug = Debug?.ToLower() switch
+            {
+                "none" or "" or null => IkvmImporterDebugMode.None,
+                "portable" => IkvmImporterDebugMode.Portable,
+                "full" or "pdbonly" => IkvmImporterDebugMode.Full,
+                "embedded" => IkvmImporterDebugMode.Embedded,
+                _ => throw new NotImplementedException($"Unknown Debug option '{Debug}'.")
+            };
+
             options.NoAutoSerialization = NoAutoSerialization;
             options.NoGlobbing = NoGlobbing;
             options.NoJNI = NoJNI;

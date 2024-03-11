@@ -49,7 +49,7 @@ namespace IKVM.Reflection.Writer
         /// <summary>
         /// Initializes a new instance as a copy of the specified instance.
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="other"></param>
         internal ResourceDirectoryEntry(ResourceDirectoryEntry other)
         {
             if (other is null)
