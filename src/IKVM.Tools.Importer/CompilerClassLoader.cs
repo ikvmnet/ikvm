@@ -571,10 +571,9 @@ namespace IKVM.Tools.Importer
                 }
             }
 
-            // assemblies should have access to the internals of their referenced assemblies
             if (targetIsModule == false)
             {
-                // add the IgnoresAccessChecksToAttribute
+                // add IgnoresAccessChecksToAttribute internal type
                 var iactBuilder = mb.DefineType("System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute", TypeAttributes.Class | TypeAttributes.Sealed, Context.Types.Attribute);
                 iactBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[] { Context.Types.String });
                 Context.AttributeHelper.SetAttributeUsage(iactBuilder, AttributeTargets.Assembly, true);
