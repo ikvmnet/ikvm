@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -123,19 +122,6 @@ namespace IKVM.Tools.Importer
         internal AssemblyName GetAssemblyName()
         {
             return assemblyBuilder.GetName();
-        }
-
-        private static PermissionSet Combine(PermissionSet p1, PermissionSet p2)
-        {
-            if (p1 == null)
-            {
-                return p2;
-            }
-            if (p2 == null)
-            {
-                return p1;
-            }
-            return p1.Union(p2);
         }
 
         internal ModuleBuilder CreateModuleBuilder()
@@ -273,17 +259,16 @@ namespace IKVM.Tools.Importer
 
         private RuntimeJavaType GetTypeWrapperCompilerHook(string name)
         {
-            RemapperTypeWrapper rtw;
-            if (remapped.TryGetValue(name, out rtw))
+            if (remapped.TryGetValue(name, out var rtw))
             {
                 return rtw;
             }
             else
             {
-                Jar.Item itemRef;
-                if (classes.TryGetValue(name, out itemRef))
+                if (classes.TryGetValue(name, out var itemRef))
                 {
                     classes.Remove(name);
+
                     ClassFile f;
                     try
                     {
@@ -326,6 +311,7 @@ namespace IKVM.Tools.Importer
                                 break;
                             }
                         }
+
                         if (!found)
                         {
                             f.SetInternal();
@@ -370,12 +356,14 @@ namespace IKVM.Tools.Importer
                         {
                             itemRef.MarkAsStub();
                         }
+
                         int pos = f.Name.LastIndexOf('.');
                         if (pos != -1)
                         {
-                            string manifestJar = options.IsClassesJar(itemRef.Jar) ? null : itemRef.Jar.Name;
+                            var manifestJar = options.IsClassesJar(itemRef.Jar) ? null : itemRef.Jar.Name;
                             packages.DefinePackage(f.Name.Substring(0, pos), manifestJar);
                         }
+
                         return tw;
                     }
                     catch (ClassFormatError x)
@@ -396,12 +384,14 @@ namespace IKVM.Tools.Importer
                         {
                             Context.StaticCompiler.IssueMessage(options, Message.NoClassDefFoundError, name, x.Message);
                         }
+
                         Context.StaticCompiler.IssueMessage(options, Message.ClassNotFound, x.Message);
                     }
                     catch (RetargetableJavaException x)
                     {
                         Context.StaticCompiler.IssueMessage(options, Message.GenericUnableToCompileError, name, x.GetType().Name, x.Message);
                     }
+
                     Context.StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
                     return null;
                 }
@@ -420,57 +410,63 @@ namespace IKVM.Tools.Importer
             {
                 return true;
             }
-            CompilerClassLoader ccl = other as CompilerClassLoader;
+
+            var ccl = other as CompilerClassLoader;
             if (ccl != null && options.sharedclassloader != null && options.sharedclassloader.Contains(ccl))
             {
                 if (!internalsVisibleTo.Contains(ccl))
                 {
                     AddInternalsVisibleToAttribute(ccl);
                 }
+
                 return true;
             }
+
             return false;
         }
 
         internal override bool InternalsVisibleToImpl(RuntimeJavaType wrapper, RuntimeJavaType friend)
         {
             Debug.Assert(wrapper.GetClassLoader() == this);
-            RuntimeClassLoader other = friend.GetClassLoader();
+            var other = friend.GetClassLoader();
+
             // TODO ideally we should also respect InternalsVisibleToAttribute.Annotation here
             if (this == other || internalsVisibleTo.Contains(other))
             {
                 return true;
             }
-            CompilerClassLoader ccl = other as CompilerClassLoader;
+
+            var ccl = other as CompilerClassLoader;
             if (ccl != null)
             {
                 AddInternalsVisibleToAttribute(ccl);
                 return true;
             }
+
             return false;
         }
 
         private void AddInternalsVisibleToAttribute(CompilerClassLoader ccl)
         {
             internalsVisibleTo.Add(ccl);
-            AssemblyBuilder asm = ccl.assemblyBuilder;
-            AssemblyName asmName = asm.GetName();
-            string name = asmName.Name;
-            byte[] pubkey = asmName.GetPublicKey();
+
+            var asm = ccl.assemblyBuilder;
+            var asmName = asm.GetName();
+            var name = asmName.Name;
+
+            var pubkey = asmName.GetPublicKey();
             if (pubkey == null && asmName.KeyPair != null)
-            {
                 pubkey = asmName.KeyPair.PublicKey;
-            }
+
             if (pubkey != null && pubkey.Length != 0)
             {
-                StringBuilder sb = new StringBuilder(name);
+                var sb = new StringBuilder(name);
                 sb.Append(", PublicKey=");
                 foreach (byte b in pubkey)
-                {
                     sb.AppendFormat("{0:X2}", b);
-                }
                 name = sb.ToString();
             }
+
             Context.AttributeHelper.SetInternalsVisibleToAttribute(this.assemblyBuilder, name);
         }
 
@@ -571,23 +567,14 @@ namespace IKVM.Tools.Importer
                 }
             }
 
-            if (targetIsModule == false)
-            {
-                // add IgnoresAccessChecksToAttribute internal type
-                var iactBuilder = mb.DefineType("System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute", TypeAttributes.Class | TypeAttributes.Sealed, Context.Types.Attribute);
-                iactBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[] { Context.Types.String });
-                Context.AttributeHelper.SetAttributeUsage(iactBuilder, AttributeTargets.Assembly, true);
-                var iact = iactBuilder.CreateType();
-                var iactCtor = iact.GetConstructor(new[] { Context.Types.String });
-
-                // add IgnoresAccessChecksToAttribute for each referenced assembly, so access to package-private (internal) members is allowed
-                for (int i = 0; i < referencedAssemblies.Length; i++)
-                    assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(iactCtor, new[] { UnicodeUtil.EscapeInvalidSurrogates(referencedAssemblies[i].MainAssembly.FullName) }));
-            }
-
+            // initialize the global functions for the module
             mb.CreateGlobalFunctions();
 
+            // signify we are creating a Java module
             AddJavaModuleAttribute(mb);
+
+            // ignore access checks to referenced Java modules
+            AddIgnoresAccessChecksToAttribute(mb);
 
             // add a package list and export map
             if (options.sharedclassloader == null || options.sharedclassloader[0] == this)
@@ -641,6 +628,30 @@ namespace IKVM.Tools.Importer
                 {
                     throw new FatalCompilerErrorException(Message.ErrorWritingFile, Path.Combine(assemblyDir, assemblyFile), x.Message);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Adds a 'IgnoresAccessChecksToAttribute' type to the assembly, and attributes on the assembly that ignore
+        /// access checks to all Java modules which are referenced. This ensures package-private references across
+        /// assemblies are possible.
+        /// </summary>
+        /// <param name="mb"></param>
+        void AddIgnoresAccessChecksToAttribute(ModuleBuilder mb)
+        {
+            if (targetIsModule == false)
+            {
+                // add IgnoresAccessChecksToAttribute type
+                var iactBuilder = mb.DefineType("System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute", TypeAttributes.Class | TypeAttributes.Sealed, Context.Types.Attribute);
+                iactBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[] { Context.Types.String });
+                Context.AttributeHelper.SetAttributeUsage(iactBuilder, AttributeTargets.Assembly, true);
+                var iact = iactBuilder.CreateType();
+                var iactCtor = iact.GetConstructor(new[] { Context.Types.String });
+
+                // add IgnoresAccessChecksToAttribute to each referenced assembly
+                for (int i = 0; i < referencedAssemblies.Length; i++)
+                    if (Context.AttributeHelper.IsJavaModule(referencedAssemblies[i].MainAssembly.ManifestModule))
+                        assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(iactCtor, new[] { UnicodeUtil.EscapeInvalidSurrogates(referencedAssemblies[i].MainAssembly.FullName) }));
             }
         }
 

@@ -68,6 +68,7 @@ namespace IKVM.Tools.Importer.Tests
             File.Exists(asm).Should().BeTrue();
             new FileInfo(asm).Length.Should().BeGreaterThanOrEqualTo(128);
         }
+
     }
 
 }

@@ -867,11 +867,15 @@ namespace IKVM.Runtime
         internal virtual string SigName => "L" + Name + ";";
 
         // returns true iff wrapper is allowed to access us
-        internal bool IsAccessibleFrom(RuntimeJavaType wrapper)
+
+        /// <summary>
+        /// Returns <c>true</c> if the specified type is able to access us.
+        /// </summary>
+        /// <param name="wrapper"></param>
+        /// <returns></returns>
+        internal bool IsAccessibleFrom(RuntimeJavaType other)
         {
-            return IsPublic
-                || (IsInternal && InternalsVisibleTo(wrapper))
-                || IsPackageAccessibleFrom(wrapper);
+            return IsPublic || (IsInternal && InternalsVisibleTo(other)) || IsPackageAccessibleFrom(other);
         }
 
         internal bool InternalsVisibleTo(RuntimeJavaType wrapper)
@@ -884,14 +888,14 @@ namespace IKVM.Runtime
             if (MatchingPackageNames(name, wrapper.name))
             {
 #if IMPORTER
-                CompilerClassLoader ccl = GetClassLoader() as CompilerClassLoader;
-                if (ccl != null)
+                if (GetClassLoader() is CompilerClassLoader ccl)
                 {
                     // this is a hack for multi target -sharedclassloader compilation
                     // (during compilation we have multiple CompilerClassLoader instances to represent the single shared runtime class loader)
                     return ccl.IsEquivalentTo(wrapper.GetClassLoader());
                 }
 #endif
+
                 return GetClassLoader() == wrapper.GetClassLoader();
             }
             else

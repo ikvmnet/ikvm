@@ -513,7 +513,7 @@ namespace IKVM.Runtime
 
         public static ModuleBuilder CreateModuleBuilder(RuntimeContext context)
         {
-            AssemblyName name = new AssemblyName();
+            var name = new AssemblyName();
             name.Name = "ikvm_dynamic_assembly__" + (uint)Environment.TickCount;
             return CreateModuleBuilder(context, name);
         }
@@ -523,7 +523,7 @@ namespace IKVM.Runtime
             var now = DateTime.Now;
             name.Version = new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond);
             var attribs = new List<CustomAttributeBuilder>();
-            AssemblyBuilderAccess access = AssemblyBuilderAccess.Run;
+            var access = AssemblyBuilderAccess.Run;
 
 #if NETFRAMEWORK
             if (!AppDomain.CurrentDomain.IsFullyTrusted)
