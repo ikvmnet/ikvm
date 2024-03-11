@@ -1113,11 +1113,6 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\font\TextSource.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\font\TextSourceLabel.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\font\Underline.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\anon\AnonymousClassLoader.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\anon\ConstantPoolParser.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\anon\ConstantPoolPatch.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\anon\ConstantPoolVisitor.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\anon\InvalidConstantPoolFormatException.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\empty\Empty.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\package-info.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\util\BytecodeDescriptor.java" />
@@ -1290,6 +1285,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaNetHttpCookieAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaNioAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaObjectInputStreamAccess.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaOISAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaSecurityAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaSecurityProtectionDomainAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaUtilJarAccess.java" />
@@ -1300,6 +1296,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\MessageUtils.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\MetaIndex.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\NativeSignalHandler.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\ObjectInputFilter.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\ObjectStreamClassValidator.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\Perf.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\PerfCounter.java" />
@@ -1462,6 +1459,7 @@
         <!--<OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\fs\WindowsChannelFactory.java" />-->
         
         <!--<OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\**\*.java" PackagePath="sun\nio\fs" />-->
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\UnixFileKey.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\DefaultFileSystemProvider.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\DefaultFileTypeDetector.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\SolarisAclFileAttributeView.java" />
@@ -1478,6 +1476,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\BackgroundServiceLookup.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\CustomMediaSizeName.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\CustomMediaTray.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\DialogOnTop.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\DialogOwner.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\DocumentPropertiesUI.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\ImagePrinter.java" />
@@ -1698,8 +1697,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <OpenJdkRmiStub Include="sun.rmi.registry.RegistryImpl" Flags="-v1.1" />
-        <OpenJdkRmiStub Include="sun.rmi.transport.DGCImpl" Flags="-v1.1" />
         <OpenJdkRmiStub Include="sun.rmi.server.Activation$ActivationSystemImpl" Flags="-v1.2" />
         <OpenJdkRmiStub Include="java.rmi.activation.ActivationGroup" Flags="-v1.2" />
         <OpenJdkRmiStub Include="com.sun.jndi.rmi.registry.ReferenceWrapper" Flags="-v1.2" />
@@ -1723,11 +1720,9 @@
         <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\currency.data" ImagePath="lib\currency.data" />
         <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\**\*" ImagePath="lib\cmm\%(RecursiveDir)%(Filename)%(Extension)" />
         <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\**\*" ImagePath="lib\management\%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\**\*" ImagePath="lib\security\%(Filename)%(Extension)" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\**\*" ImagePath="lib\security\%(RecursiveDir)%(Filename)%(Extension)" />
         <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\java.security" />
         <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\cacerts" />
-        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\local_policy.jar" />
-        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\US_export_policy.jar" ImagePath="lib\security\local_policy.jar" />
         <OpenJdkImageContent Include="$(OpenJdkDir)\jdk\src\windows\lib\*" ImagePath="lib\%(Filename)%(Extension)" />
     </ItemGroup>
 

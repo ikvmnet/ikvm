@@ -221,6 +221,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-musl-x64", "src\IKVM.Image.JRE.runtime.linux-musl-x64\IKVM.Image.JRE.runtime.linux-musl-x64.csproj", "{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "xjc", "src\xjc\xjc.msbuildproj", "{C35B9502-AC9F-4490-9480-6EAB4FD94AAA}"
+EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libunpack", "src\libunpack\libunpack.clangproj", "{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}"
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjvm", "src\libjvm\libjvm.clangproj", "{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}"
@@ -668,6 +670,10 @@ Global
 		{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C35B9502-AC9F-4490-9480-6EAB4FD94AAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C35B9502-AC9F-4490-9480-6EAB4FD94AAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C35B9502-AC9F-4490-9480-6EAB4FD94AAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C35B9502-AC9F-4490-9480-6EAB4FD94AAA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}.Release|Any CPU.ActiveCfg = Release|Any CPU

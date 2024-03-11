@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -278,8 +277,12 @@ namespace IKVM.Tools.Runner.Importer
                     try
                     {
                         var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(exe);
-                        if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
-                            psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.UserExecute;
+                        var prm = psx.FileAccessPermissions;
+                        prm |= Mono.Unix.FileAccessPermissions.UserExecute;
+                        prm |= Mono.Unix.FileAccessPermissions.GroupExecute;
+                        prm |= Mono.Unix.FileAccessPermissions.OtherExecute;
+                        if (prm != psx.FileAccessPermissions)
+                            psx.FileAccessPermissions = prm;
                     }
                     catch (Exception e)
                     {
@@ -305,7 +308,7 @@ namespace IKVM.Tools.Runner.Importer
                     ctk = CancellationTokenSource.CreateLinkedTokenSource(ctk, new CancellationTokenSource(options.Timeout).Token).Token;
 
                 // execute command
-                var pid = cli.ExecuteAsync(ctk);
+                using var pid = cli.ExecuteAsync(ctk);
 
                 // windows provides special support for killing subprocesses on termination of parent
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

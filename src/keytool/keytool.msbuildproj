@@ -9,6 +9,7 @@
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <StartupObject>sun.security.tools.keytool.Main</StartupObject>
         <RootNamespace>ikvm.tools.keytool</RootNamespace>
+        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

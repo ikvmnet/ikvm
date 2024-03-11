@@ -1704,7 +1704,11 @@ namespace IKVM.Java.Externs.sun.misc
                 throw x.ToJava();
             }
 
+#if NETFRAMEWORK
             return FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
+#else
+            return RuntimeHelpers.GetUninitializedObject(wrapper.TypeAsBaseType);
+#endif
         }
 
         /// <summary>

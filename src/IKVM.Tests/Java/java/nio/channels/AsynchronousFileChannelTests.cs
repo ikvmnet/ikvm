@@ -4,6 +4,7 @@ using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Policy;
+using System.Threading;
 using System.Threading.Tasks;
 
 using FluentAssertions;
@@ -365,9 +366,9 @@ namespace IKVM.Tests.Java.java.nio.channels
                 this.name = name ?? throw new ArgumentNullException(nameof(name));
             }
 
-            public Thread newThread(Runnable r)
+            public global::java.lang.Thread newThread(Runnable r)
             {
-                var t = new Thread(r, name);
+                var t = new global::java.lang.Thread(r, name);
                 t.setDaemon(true);
                 return t;
             }
@@ -379,40 +380,50 @@ namespace IKVM.Tests.Java.java.nio.channels
         /// </summary>
         /// <returns></returns>
         [TestMethod]
-        public async Task ShouldExecuteOnThreadPool()
+        public void ShouldResumeAsyncOnThreadPool()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                return;
+            // check current thread
+            global::java.lang.Thread.currentThread().getName().Should().NotBe("ShouldResumeAsyncOnThreadPool");
 
-            Thread.currentThread().getName().Should().NotBe("ShouldExecuteOnThreadPool");
-            var thisThread = Thread.currentThread();
+            // create temporary file
+            var file = File.createTempFile("ShouldResumeAsyncOnThreadPool", null);
+            file.deleteOnExit();
+            System.IO.File.Create(file.getPath()).Close();
 
-            var f = new File("AsynchronousFileChannelTests_ShouldExecuteOnThreadPool.txt");
-            if (f.exists())
-                f.delete();
+            // custom executor to resume on named thread
+            var t = Executors.newSingleThreadExecutor(new NamedThreadFactory("ShouldResumeAsyncOnThreadPool"));
+            using var c = AsynchronousFileChannel.open(file.toPath(), Collections.singleton(StandardOpenOption.WRITE), t);
 
-            f.createNewFile();
-            using var s = new FileOutputStream(f);
-            s.write(new byte[] { 1 });
-            s.close();
+            // fill buffer with random data
+            var rng = RandomNumberGenerator.Create();
+            var buf = ByteBuffer.allocate(1024 * 1024 * 64);
+            rng.GetBytes(buf.array(), buf.arrayOffset(), buf.limit());
 
-            var t = Executors.newSingleThreadExecutor(new NamedThreadFactory("ShouldExecuteOnThreadPool"));
-            using var c = AsynchronousFileChannel.open(f.toPath(), Collections.singleton(StandardOpenOption.READ), t);
-            var b = ByteBuffer.allocate(1);
+            // capture results
+            var r = new AutoResetEvent(false);
+            var o = default(System.Exception);
 
-            var h = new AwaitableCompletionHandler<Integer>();
-            c.read(b, 0, null, h);
-            var n = await h;
+            // on complete check proper thread
+            void OnCompleted(Integer i)
+            {
+                global::java.lang.Thread.currentThread().getName().Should().Be("ShouldResumeAsyncOnThreadPool");
+                r.Set();
+            }
 
-            // should resume execution either on the same thread (synchronous) or on a thread pool thread
-            if (Thread.currentThread() != thisThread)
-                Thread.currentThread().getName().Should().Be("ShouldExecuteOnThreadPool");
+            // on failed set exception
+            void OnFailed(System.Exception e)
+            {
+                o = e;
+                r.Set();
+            }
 
-            n.intValue().Should().Be(1);
-            c.close();
+            // begin async operation
+            c.write(buf, 0, null, new DelegateCompletionHandler<Integer>(OnCompleted, OnFailed));
 
-            b.flip();
-            b.get().Should().Be(1);
+            // wait for completion
+            r.WaitOne();
+            if (o != null)
+                throw new System.Exception("", o);
         }
 
         /// <summary>

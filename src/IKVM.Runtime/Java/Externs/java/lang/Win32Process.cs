@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Security.AccessControl;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -18,9 +17,9 @@ namespace IKVM.Java.Externs.java.lang
 {
 
     /// <summary>
-    /// Implements the native methods for 'ProcessImpl'.
+    /// Implements the native methods for 'Win32Process'.
     /// </summary>
-    static class ProcessImpl
+    static class Win32Process
     {
 
 #if FIRST_PASS == false
@@ -45,7 +44,7 @@ namespace IKVM.Java.Externs.java.lang
         static MapEntryAccessor mapEntryAccessor;
         static SetAccessor setAccessor;
         static IteratorAccessor iteratorAccessor;
-        static ProcessImplAccessor processImplAccessor;
+        static Win32ProcessAccessor win32ProcessAccessor;
 
         static CallerIDAccessor CallerIDAccessor => JVM.Internal.BaseAccessors.Get(ref callerIDAccessor);
 
@@ -87,7 +86,7 @@ namespace IKVM.Java.Externs.java.lang
 
         static IteratorAccessor IteratorAccessor => JVM.Internal.BaseAccessors.Get(ref iteratorAccessor);
 
-        static ProcessImplAccessor ProcessImplAccessor => JVM.Internal.BaseAccessors.Get(ref processImplAccessor);
+        static Win32ProcessAccessor Win32ProcessAccessor => JVM.Internal.BaseAccessors.Get(ref win32ProcessAccessor);
 
 #endif
 
@@ -229,10 +228,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (RuntimeUtil.IsWindows)
-                return CreateWindows(cmd, env, dir, s0, s1, s2, redirectErrorStream);
-            else
-                return CreateUnix(cmd, env, dir, s0, s1, s2, redirectErrorStream);
+            return CreateWindows(cmd, env, dir, s0, s1, s2, redirectErrorStream);
 #endif
         }
 
@@ -607,43 +603,16 @@ namespace IKVM.Java.Externs.java.lang
                     return true;
                 else if (Directory.Exists(file))
                     return false;
-                else if (file.IndexOf('.') == -1 && File.Exists(file + ".exe"))
-                    return true;
-                else
+                if (Path.GetFileName(file) is not string filename)
                     return false;
+                if (filename.IndexOf('.') != -1)
+                    return false;
+                return File.Exists(file + ".exe");
             }
             catch
             {
                 return false;
             }
-        }
-
-        /// <summary>
-        /// Creates a new 'ProcessImpl' for a Unix machine.
-        /// </summary>
-        /// <param name="cmd"></param>
-        /// <param name="env"></param>
-        /// <param name="dir"></param>
-        /// <param name="h0"></param>
-        /// <param name="h1"></param>
-        /// <param name="h2"></param>
-        /// <param name="redirectErrorStream"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        static object CreateUnix(string[] cmd, Dictionary<string, string> env, string dir, Stream h0, Stream h1, Stream h2, bool redirectErrorStream)
-        {
-#if NETFRAMEWORK
-            throw new NotImplementedException();
-#else
-            var psi = new ProcessStartInfo();
-            psi.FileName = cmd[0];
-
-            foreach (var arg in cmd.Skip(1))
-                psi.ArgumentList.Add(arg);
-
-            return Create(psi, env, dir, h0, h1, h2, redirectErrorStream);
-#endif
-
         }
 
         /// <summary>
@@ -752,10 +721,10 @@ namespace IKVM.Java.Externs.java.lang
                 s0 = h0 == null ? ProcessBuilderNullOutputStreamAccessor.GetInstance() : BufferedOutputStreamAccessor.Init(FileOutputStreamAccessor.Init2(CreateFileDescriptor(h0)));
                 s1 = h1 == null ? ProcessBuilderNullInputStreamAccessor.GetInstance() : BufferedInputStreamAccessor.Init(FileInputStreamAccessor.Init2(CreateFileDescriptor(h1)));
                 s2 = h2 == null ? ProcessBuilderNullInputStreamAccessor.GetInstance() : FileInputStreamAccessor.Init2(CreateFileDescriptor(h2));
-            }), null, CallerIDAccessor.InvokeCreate(ProcessImplAccessor.Type.TypeHandle));
+            }), null, CallerIDAccessor.InvokeCreate(Win32ProcessAccessor.Type.TypeHandle));
 
             // return new process
-            return ProcessImplAccessor.Init(process, s0, s1, s2);
+            return Win32ProcessAccessor.Init(process, s0, s1, s2);
 #endif
         }
 
@@ -933,7 +902,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var pid = ProcessImplAccessor.GetProcess(self);
+            var pid = Win32ProcessAccessor.GetProcess(self);
             if (pid.HasExited)
                 return pid.ExitCode;
 
@@ -953,7 +922,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var pid = ProcessImplAccessor.GetProcess(self);
+            var pid = Win32ProcessAccessor.GetProcess(self);
             if (pid.HasExited == false)
                 throw new global::java.lang.IllegalThreadStateException("process has not exited");
 
@@ -966,7 +935,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var pid = ProcessImplAccessor.GetProcess(self);
+            var pid = Win32ProcessAccessor.GetProcess(self);
             if (pid.HasExited)
                 return;
 

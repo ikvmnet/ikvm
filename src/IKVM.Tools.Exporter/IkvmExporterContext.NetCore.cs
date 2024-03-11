@@ -1,16 +1,11 @@
 ﻿#if NETCOREAPP
 
 using System;
-using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Microsoft.Extensions.DependencyModel.Resolution;
-
-using System.Text.Json;
 
 namespace IKVM.Tools.Exporter
 {

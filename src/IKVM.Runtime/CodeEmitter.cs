@@ -245,7 +245,8 @@ namespace IKVM.Runtime
                 }
             }
 
-            public override string ToString() => (pseudo == CodeType.OpCode ? opcode.ToString() : Enum.GetName(typeof(CodeType), pseudo)) + " " + data;
+            /// <inheritdoc />
+            public override readonly string ToString() => pseudo == CodeType.OpCode ? opcode.ToString() + " " + data : pseudo.ToString() + " " + data;
 
         }
 
@@ -2144,7 +2145,7 @@ namespace IKVM.Runtime
         {
             for (int i = 0; i < tempLocals.Length; i++)
             {
-                CodeEmitterLocal lb = tempLocals[i];
+                var lb = tempLocals[i];
                 if (lb != null && lb.LocalType == type)
                 {
                     tempLocals[i] = null;
