@@ -3,9 +3,9 @@
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net7.0;net8.0</TargetFrameworks>
         <Description>IKVM implementation of System.Reflection[.Emit]</Description>
-        <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>11</LangVersion>
+        <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     </PropertyGroup>
 
     <ItemGroup>

@@ -35,6 +35,8 @@ namespace IKVM.Tests.Java.java.lang
 
         }
 
+        public TestContext TestContext { get; set; }
+
         [TestMethod]
         public void CanJoinThreads()
         {
@@ -91,6 +93,13 @@ namespace IKVM.Tests.Java.java.lang
             t.interrupt();
             t.join();
             e.Should().BeOfType<InterruptedException>();
+        }
+
+        [TestMethod]
+        public void CanGetStackTrace()
+        {
+            foreach (var ste in Thread.currentThread().getStackTrace())
+                TestContext.WriteLine(ste.ToString());
         }
 
     }

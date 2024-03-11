@@ -76,7 +76,7 @@ namespace IKVM.Reflection.Reader
                 if ((Attributes & ParameterAttributes.HasDefault) != 0)
                     return Module.ConstantTable.GetRawConstantValue(Module, MetadataToken);
 
-                var universe = Module.universe;
+                var universe = Module.Universe;
                 if (ParameterType == universe.System_Decimal)
                 {
                     var attr = universe.System_Runtime_CompilerServices_DecimalConstantAttribute;

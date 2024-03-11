@@ -24,6 +24,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Reflection.Metadata;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -428,27 +429,37 @@ namespace IKVM.Reflection
             return System.Reflection.AssemblyName.ReferenceMatchesDefinition(new System.Reflection.AssemblyName(reference.FullName), new System.Reflection.AssemblyName(definition.FullName));
         }
 
-        public static AssemblyName GetAssemblyName(string path)
+        /// <summary>
+        /// Gets the <see cref="AssemblyName"/> for a given file.
+        /// </summary>
+        /// <param name="assemblyFile"></param>
+        /// <returns></returns>
+        /// <exception cref="BadImageFormatException"></exception>
+        /// <exception cref="FileNotFoundException"></exception>
+        public static AssemblyName GetAssemblyName(string assemblyFile)
         {
             try
             {
-                path = Path.GetFullPath(path);
-                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    var module = new ModuleReader(null, null, fs, path, false);
-                    if (module.Assembly == null)
-                        throw new BadImageFormatException("Module does not contain a manifest");
+                using var st = new FileStream(Path.GetFullPath(assemblyFile), FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var pe = new System.Reflection.PortableExecutable.PEReader(st);
+                var mr = pe.GetMetadataReader();
 
-                    return module.Assembly.GetName();
-                }
+                if (mr.IsAssembly == false)
+                    throw new BadImageFormatException("Module does not contain a manifest");
+
+                var nm = mr.GetAssemblyDefinition().Name;
+                if (nm.IsNil)
+                    throw new BadImageFormatException("Module does not contain a manifest");
+
+                return new AssemblyName(mr.GetString(nm));
             }
-            catch (IOException x)
+            catch (IOException e)
             {
-                throw new FileNotFoundException(x.Message, x);
+                throw new FileNotFoundException(e.Message, e);
             }
-            catch (UnauthorizedAccessException x)
+            catch (UnauthorizedAccessException e)
             {
-                throw new FileNotFoundException(x.Message, x);
+                throw new FileNotFoundException(e.Message, e);
             }
         }
 

@@ -8,7 +8,7 @@
     -->
 
     <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
-    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;ResolveIkvmFrameworkReferences" Inputs="$(IkvmCompilerPath);@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
+    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;ResolveIkvmFrameworkReferences" Inputs="$(MSBuildThisFileFullPath);$(IkvmCompilerPath);@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
         <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
@@ -29,7 +29,7 @@
 
         <ItemGroup>
             <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
-            <_IkvmCompilerArgs Include="-debug" Condition=" '%(IkvmReferenceItem.Debug)' == 'true' " />
+            <_IkvmCompilerArgs Include="-debug:%(IkvmReferenceItem.Debug)" Condition=" '%(IkvmReferenceItem.Debug)' != '' And '%(IkvmReferenceItem.Debug)' != 'none' " />
             <_IkvmCompilerArgs Include="-assembly:%(IkvmReferenceItem.AssemblyName)" />
             <_IkvmCompilerArgs Include="-version:%(IkvmReferenceItem.AssemblyVersion)" Condition=" '%(IkvmReferenceItem.AssemblyVersion)' != '' " />
             <_IkvmCompilerArgs Include="-fileversion:%(IkvmReferenceItem.AssemblyFileVersion)" Condition=" '%(IkvmReferenceItem.AssemblyFileVersion)' != '' " />

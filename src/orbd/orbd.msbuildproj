@@ -10,6 +10,7 @@
         <SelfContained>true</SelfContained>
         <StartupObject>com.sun.corba.se.impl.activation.ORBD</StartupObject>
         <RootNamespace>ikvm.tools.orbd</RootNamespace>
+        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

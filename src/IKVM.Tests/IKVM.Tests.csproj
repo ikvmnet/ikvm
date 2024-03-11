@@ -24,17 +24,19 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentAssertions" Version="5.0.0" />
+        <PackageReference Include="FluentAssertions" Version="6.12.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.3" />
-        <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
-        <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+        <PackageReference Include="MSTest.TestAdapter" Version="3.2.2" />
+        <PackageReference Include="MSTest.TestFramework" Version="3.2.2" />
         <PackageReference Include="System.Net.Http" Version="4.3.4" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj" />
         <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
+        <ProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.csproj" />
+        <ProjectReference Include="..\IKVM.Image.JDK\IKVM.Image.JDK.csproj" />
         <ProjectReference Include="..\IKVM.Java.Tests.Util\IKVM.Java.Tests.Util.csproj" />
         <ProjectReference Include="..\IKVM.Tests.Util\IKVM.Tests.Util.csproj" />
         <ProjectReference Include="..\IKVM.Tools.Runner\IKVM.Tools.Runner.csproj" />

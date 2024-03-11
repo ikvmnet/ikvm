@@ -31,6 +31,9 @@ using System.Runtime.Serialization;
 using IKVM.Attributes;
 using IKVM.Runtime.Syntax;
 
+using System.Runtime.CompilerServices;
+
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 
@@ -1253,7 +1256,11 @@ namespace IKVM.Runtime
         [System.Security.SecuritySafeCritical]
         static object GetUninitializedObject(Type type)
         {
+#if NETFRAMEWORK
             return FormatterServices.GetUninitializedObject(type);
+#else
+            return RuntimeHelpers.GetUninitializedObject(type);
+#endif
         }
 
         static void LoadCustomClassLoaderRedirects(RuntimeContext context)

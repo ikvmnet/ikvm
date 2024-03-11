@@ -48,4 +48,8 @@
     <Import Project="..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.NoTasks.targets" />
     
     <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
+
+    <Target Name="GenerateSecurityPolicy" BeforeTargets="CollectIkvmImageItemsOutputItems">
+        <Message Text="generate sec policy: $(IntermediateOutputPath)" />
+    </Target>
 </Project>

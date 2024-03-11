@@ -27,6 +27,8 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Collections.Concurrent;
+using static System.Diagnostics.DebuggableAttribute;
+
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -518,9 +520,9 @@ namespace IKVM.Runtime
 
         public static ModuleBuilder CreateModuleBuilder(RuntimeContext context, AssemblyName name)
         {
-            DateTime now = DateTime.Now;
+            var now = DateTime.Now;
             name.Version = new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond);
-            List<CustomAttributeBuilder> attribs = new List<CustomAttributeBuilder>();
+            var attribs = new List<CustomAttributeBuilder>();
             AssemblyBuilderAccess access = AssemblyBuilderAccess.Run;
 
 #if NETFRAMEWORK
@@ -528,21 +530,27 @@ namespace IKVM.Runtime
                 attribs.Add(new CustomAttributeBuilder(typeof(System.Security.SecurityTransparentAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
 #endif
 
-            AssemblyBuilder assemblyBuilder = DefineDynamicAssembly(name, access, attribs);
+            var assemblyBuilder = DefineDynamicAssembly(name, access, attribs);
             context.AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
-            bool debug = JVM.EmitSymbols;
-            CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });
-            assemblyBuilder.SetCustomAttribute(debugAttr);
+
+            // determine debugging mode
+            var debugMode = DebuggingModes.Default | DebuggingModes.IgnoreSymbolStoreSequencePoints;
+            if (JVM.EmitSymbols)
+                debugMode |= DebuggingModes.DisableOptimizations;
+
+            context.AttributeHelper.SetDebuggingModes(assemblyBuilder, debugMode);
+
 #if NETFRAMEWORK
-            ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name, debug);
+            var moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name, JVM.EmitSymbols);
 #else
-            ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name);
+            var moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name);
 #endif
+
             moduleBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(IKVM.Attributes.JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
             return moduleBuilder;
         }
 
-        private static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, IEnumerable<CustomAttributeBuilder> assemblyAttributes)
+        static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, IEnumerable<CustomAttributeBuilder> assemblyAttributes)
         {
 #if NETFRAMEWORK
             return AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, true, assemblyAttributes);

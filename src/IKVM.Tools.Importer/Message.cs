@@ -39,8 +39,6 @@
         LegacySearchRule = 126,
         AssemblyLocationIgnored = 127,
         InterfaceMethodCantBeInternal = 128,
-        DllExportMustBeStaticMethod = 129,
-        DllExportRequiresSupportedPlatform = 130,
         DuplicateAssemblyReference = 132,
         UnableToResolveType = 133,
         StubsAreDeprecated = 134,

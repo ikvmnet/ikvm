@@ -7,13 +7,13 @@
     <PropertyGroup>
         <TargetName>nio</TargetName>
         <LanguageStandard>c99</LanguageStandard>
-        <AdditionalCompileOptions>$(AdditionalCompileOptions);-fms-extensions</AdditionalCompileOptions>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\nio\ch</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\io</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\net</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net</IncludeDirectories>
+        <AdditionalCompileOptions>$(AdditionalCompileOptions);-fms-extensions</AdditionalCompileOptions>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
@@ -21,6 +21,7 @@
         <ProjectReference Include="..\libnet\libnet.clangproj" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
+        <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
         <Dependencies Include="ws2_32;advapi32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">

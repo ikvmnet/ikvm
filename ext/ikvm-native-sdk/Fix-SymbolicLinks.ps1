@@ -19,7 +19,7 @@ function Fix-SymbolicLink ($i, $p) {
 		}
 
 		# recurse into target, attempting to fix it
-		$t = gi $(Join-Path $i.DirectoryName $i.Target)
+		$t = gi $(Join-Path "$($i.DirectoryName)" "$($i.Target)")
 		$t = Fix-SymbolicLink $t
 
 		# is the target a directory?
@@ -28,11 +28,11 @@ function Fix-SymbolicLink ($i, $p) {
 			$t = $i.Target
 
 			# remove original item and replace with mklink /D
-			ri $i
+			ri $i.FullName
 			& cmd /c "mklink /D $n $t" | Write-Host
 
 			# refresh item for recursive call
-			return (gi $i)
+			return (gi $i.FullName)
 		}
 	} catch {
 		Write-Host -Foreground Red -Background Black ($i.FullName + ": " + $_.Exception.Message)

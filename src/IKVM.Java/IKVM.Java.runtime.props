@@ -54,10 +54,8 @@
 
     <ItemGroup>
         <None Include="$(MSBuildThisFileDirectory)icedtea_jce\**\*" Link="icedtea_jce\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="$(MSBuildThisFileDirectory)icedtea_rt\**\*" Link="icedtea_rt\%(RecursiveDir)%(Filename)%(Extension)" />
         <None Include="$(MSBuildThisFileDirectory)local\**\*" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
         <Compile Include="$(MSBuildThisFileDirectory)icedtea_jce\**\*.java" Link="icedtea_jce\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Compile Include="$(MSBuildThisFileDirectory)icedtea_rt\**\*.java" Link="icedtea_rt\%(RecursiveDir)%(Filename)%(Extension)" />
         <Compile Include="$(MSBuildThisFileDirectory)local\**\*.java" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
         <None Include="@(OpenJdkSource->WithMetadataValue('RuntimeIdentifier', ''))" LinkBase="openjdk\%(PackagePath)" />
         <None Include="@(OpenJdkSource->WithMetadataValue('RuntimeIdentifier', '$(IkvmJavaRuntimeIdentifier)'))" LinkBase="openjdk\%(PackagePath)" />

@@ -11,6 +11,7 @@
         <SelfContained>true</SelfContained>
         <StartupObject>com.sun.tools.javac.Main</StartupObject>
         <RootNamespace>ikvm.tools.javac</RootNamespace>
+        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
     <ItemGroup>

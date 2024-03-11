@@ -15,6 +15,18 @@
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.targets" />
 
+    <!-- IKVM.Java uses the java executable from JAVA_HOME -->
+    <Target Name="ResolveJava" Condition=" '$(JAVA_HOME)' != '' And '$(JavaPath)' == '' ">
+        <PropertyGroup>
+            <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\java') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java'))</JavaPath>
+            <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\java.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java.exe'))</JavaPath>
+            <JavaArgs>-Xmx1536M</JavaArgs>
+            <JavaExec Condition=" '$(JavaPath)' != '' ">"$(JavaPath)" $(JavaArgs)</JavaExec>
+        </PropertyGroup>
+        <Message Text="Using java executable found in JAVA_HOME at '$(JavaPath)'." Importance="high" Condition=" '$(JavaPath)' != '' " />
+        <Error Text="Could not locate java executable in JAVA_HOME. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(JavaPath)' == '' " />
+    </Target>
+
     <!-- IKVM.Java uses the javac executable from JAVA_HOME: bootstrap -->
     <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
         <PropertyGroup>
@@ -101,5 +113,1134 @@
             $(CoreCompileDependsOn);
         </CoreCompileDependsOn>
     </PropertyGroup>
+
+    <Target Name="ResolveRuntimeJar" Condition=" '$(RuntimeJarPath)' == '' ">
+        <PropertyGroup>
+            <RuntimeJarPath Condition="Exists('$(JAVA_HOME)\jre\lib\rt.jar')">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\jre\lib\rt.jar'))</RuntimeJarPath>
+        </PropertyGroup>
+        <Message Text="Using rt.jar found in JAVA_HOME at '$(RuntimeJarPath)'." Importance="high" Condition=" '$(RuntimeJarPath)' != '' " />
+        <Error Text="Could not locate rt.jar found in JAVA_HOME at '$(ToolsJarPath)'. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(ToolsJarPath)' == '' " />
+    </Target>
+
+    <Target Name="ResolveToolsJar" Condition=" '$(ToolsJarPath)' == '' ">
+        <PropertyGroup>
+            <ToolsJarPath Condition="Exists('$(JAVA_HOME)\lib\tools.jar')">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\lib\tools.jar'))</ToolsJarPath>
+        </PropertyGroup>
+        <Message Text="Using tools.jar found in JAVA_HOME at '$(ToolsJarPath)'." Importance="high" Condition=" '$(ToolsJarPath)' != '' " />
+        <Error Text="Could not locate tools.jar in JAVA_HOME. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(ToolsJarPath)' == '' " />
+    </Target>
+
+    <PropertyGroup>
+        <BuildToolsResponseFile>$(IntermediateOutputPath)btclasses.javac.rsp</BuildToolsResponseFile>
+        <BuildToolsOutputPath>$(IntermediateOutputPath)btclasses\</BuildToolsOutputPath>
+        <BuildToolsStampFile>$(IntermediateOutputPath)BuildTools.stamp</BuildToolsStampFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <BuildOpenJDKToolsSource Include="$(OpenJdkDir)jdk\make\src\classes\**\*.java" />
+    </ItemGroup>
+
+    <Target Name="BuildToolsResponseFile" DependsOnTargets="ResolveToolsJar" Inputs="$(MSBuildThisFileFullPath);@(BuildOpenJDKToolsSource)" Outputs="$(BuildToolsResponseFile)">
+        <Error Text="Could not locate tools.jar." Condition=" '$(ToolsJarPath)' == '' " />
+        <Error Text="tools.jar could not be located at '$(ToolsJarPath)'." Condition="!Exists('$(ToolsJarPath)')" />
+
+        <ItemGroup>
+            <_BuildToolsJavaCompilerClasspath Include="$(ToolsJarPath)" />
+        </ItemGroup>
+
+        <PropertyGroup>
+            <_BuildToolsJavaCompilerClasspathArg>@(_BuildToolsJavaCompilerClasspath, '$([System.IO.Path]::PathSeparator)')</_BuildToolsJavaCompilerClasspathArg>
+            <_BuildToolsJavaCompilerClasspathArg>$(_BuildToolsJavaCompilerClasspathArg.Replace('\', '\\'))</_BuildToolsJavaCompilerClasspathArg>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <_BuildToolsJavaCompilerArgs Include="-cp" />
+            <_BuildToolsJavaCompilerArgs Include="&quot;$([MSBuild]::Escape('$(_BuildToolsJavaCompilerClasspathArg)'))&quot;" />
+            <_BuildToolsJavaCompilerArgs Include="-source" />
+            <_BuildToolsJavaCompilerArgs Include="1.8" />
+            <_BuildToolsJavaCompilerArgs Include="-target" />
+            <_BuildToolsJavaCompilerArgs Include="1.8" />
+            <_BuildToolsJavaCompilerArgs Include="-nowarn" />
+            <_BuildToolsJavaCompilerArgs Include="-d" />
+            <_BuildToolsJavaCompilerArgs Include="$(BuildToolsOutputPath)" />
+            <_BuildToolsJavaCompilerArgs Include="@(BuildOpenJDKToolsSource->'%(FullPath)')" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(BuildToolsResponseFile)" Lines="@(_BuildToolsJavaCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(BuildToolsResponseFile)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildTools" DependsOnTargets="ResolveJavaCompiler;BuildToolsResponseFile" Inputs="$(MSBuildThisFileFullPath);$(BuildToolsResponseFile);@(BuildOpenJDKToolsSource)" Outputs="$(BuildToolsStampFile)">
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
+        <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
+        <Exec Command="chmod +x $(JavaCompilerPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Delete Files="$(BuildToolsStampFile)" />
+        <PropertyGroup>
+            <_BuildToolsStartTime>$([System.DateTime]::Now.Ticks)</_BuildToolsStartTime>
+        </PropertyGroup>
+
+        <MakeDir Directories="$(BuildToolsOutputPath)" />
+        <Message Text="$(JavaCompilerExec) @$(BuildToolsResponseFile)" />
+        <Exec Command="$(JavaCompilerExec) @$(BuildToolsResponseFile)" />
+
+        <ItemGroup>
+            <_BuildToolsStaleFiles Include="$(BuildToolsOutputPath)**\*.class" Condition=" '%(ModifiedTime)' == '' Or $([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_BuildToolsStartTime) " />
+        </ItemGroup>
+
+        <!--<Delete Files="@(_BuildToolsStaleFiles)" />-->
+        <Touch Files="$(BuildToolsStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <_BuildToolsStaleFiles Remove="@(_BuildToolsStaleFiles)" />
+        </ItemGroup>
+
+        <ItemGroup>
+            <BuildToolsClassFiles Include="$(BuildToolsOutputPath)**\*.class" />
+            <FileWrites Include="$(BuildToolsStampFile)" />
+            <FileWrites Include="$(BuildToolsOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            ResolveToolsJar;
+            BuildToolsResponseFile;
+            BuildTools;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <GenSrc>$(IntermediateOutputPath)gensrc\</GenSrc>
+        <GenLib>$(IntermediateOutputPath)genlib\</GenLib>
+        <BuildScriptsDir>$(OpenJdkDir)jdk\make\scripts\</BuildScriptsDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <BuildScripts Include="$(BuildScriptsDir)**\*.sh" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <CharacterDataDir>$(OpenJdkDir)jdk\make\data\characterdata\</CharacterDataDir>
+        <UnicodeDataDir>$(OpenJdkDir)jdk\make\data\unicodedata\</UnicodeDataDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CharacterDataItem Include="CharacterDataLatin1" Arg2="" Arg3="-latin1 8" />
+        <CharacterDataItem Include="CharacterData00" Arg2="-plane 0" Arg3="11 4 1" />
+        <CharacterDataItem Include="CharacterData01" Arg2="-plane 1" Arg3="11 4 1" />
+        <CharacterDataItem Include="CharacterData02" Arg2="-plane 2" Arg3="11 4 1" />
+        <CharacterDataItem Include="CharacterData0E" Arg2="-plane 14" Arg3="11 4 1" />
+        <CharacterDataStaticItem Include="CharacterDataUndefined" />
+        <CharacterDataStaticItem Include="CharacterDataPrivateUse" />
+    </ItemGroup>
+
+    <Target Name="GenerateCharacterData" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(CharacterDataDir)%(CharacterDataItem.Identity).java.template;$(UnicodeDataDir)UnicodeData.txt;$(UnicodeDataDir)SpecialCasing.txt;$(UnicodeDataDir)PropList.txt;@(BuildToolsClassFiles)" Outputs="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <PropertyGroup>
+            <_TemplateArg>$(CharacterDataDir)%(CharacterDataItem.Identity).java.template</_TemplateArg>
+            <_TemplateArg>$(_TemplateArg.Replace('\', '\\'))</_TemplateArg>
+            <_SpecArg>$(UnicodeDataDir)UnicodeData.txt</_SpecArg>
+            <_SpecArg>$(_SpecArg.Replace('\', '\\'))</_SpecArg>
+            <_SpecialCasingArg>$(UnicodeDataDir)SpecialCasing.txt</_SpecialCasingArg>
+            <_SpecialCasingArg>$(_SpecialCasingArg.Replace('\', '\\'))</_SpecialCasingArg>
+            <_PropListArg>$(UnicodeDataDir)PropList.txt</_PropListArg>
+            <_PropListArg>$(_PropListArg.Replace('\', '\\'))</_PropListArg>
+            <_OutputArg>$(GenSrc)java\lang\%(CharacterDataItem.Identity).java.tmp</_OutputArg>
+            <_OutputArg>$(_OutputArg.Replace('\', '\\'))</_OutputArg>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <_GenerateCharacterArgs Include="%(CharacterDataItem.Arg2)" />
+            <_GenerateCharacterArgs Include="-template" />
+            <_GenerateCharacterArgs Include="$(_TemplateArg)" />
+            <_GenerateCharacterArgs Include="-spec" />
+            <_GenerateCharacterArgs Include="$(_SpecArg)" />
+            <_GenerateCharacterArgs Include="-specialcasing" />
+            <_GenerateCharacterArgs Include="$(_SpecialCasingArg)" />
+            <_GenerateCharacterArgs Include="-proplist" />
+            <_GenerateCharacterArgs Include="$(_PropListArg)" />
+            <_GenerateCharacterArgs Include="-o" />
+            <_GenerateCharacterArgs Include="$(_OutputArg)" />
+            <_GenerateCharacterArgs Include="-string" />
+            <_GenerateCharacterArgs Include="-usecharforbyte" />
+            <_GenerateCharacterArgs Include="%(CharacterDataItem.Arg3)" />
+        </ItemGroup>
+
+        <MakeDir Directories="$(GenSrc)java\lang" />
+        <Message Importance="high" Text="Generating %(CharacterDataItem.Identity).java" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.generatecharacter.GenerateCharacter @(_GenerateCharacterArgs, ' ')" />
+        <Move SourceFiles="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java.tmp" DestinationFiles="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java" />
+
+        <ItemGroup>
+            <FileWrites Include="$(GenSrc)java\lang\%(CharacterDataItem.Identity).java" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GenerateCharacterDataStatic" Inputs="$(MSBuildThisFileFullPath);$(CharacterDataDir)%(CharacterDataStaticItem.Identity).java.template" Outputs="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java">
+        <MakeDir Directories="$(GenSrc)java\lang" />
+        <Message Importance="high" Text="Generating %(CharacterDataStaticItem.Identity).java" />
+        <Copy SourceFiles="$(CharacterDataDir)%(CharacterDataStaticItem.Identity).java.template" DestinationFiles="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java" />
+        <Touch Files="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(GenSrc)java\lang\%(CharacterDataStaticItem.Identity).java" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateCharacterData;
+            GenerateCharacterDataStatic;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <GenerateCharsetDecoderTemplateFile Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\charset\Charset-X-Coder.java.template" OutputFile="$(GenSrc)java\nio\charset\CharsetDecoder.java" />
+        <GenerateCharsetEncoderTemplateFile Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\charset\Charset-X-Coder.java.template" OutputFile="$(GenSrc)java\nio\charset\CharsetEncoder.java" />
+    </ItemGroup>
+
+    <Target Name="GenerateCharsetDecoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(GenerateCharsetDecoderTemplateFile);@(BuildToolsClassFiles)" Outputs="%(GenerateCharsetDecoderTemplateFile.OutputFile)">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <_GenerateCharsetDecoderArgs Include="-Kdecoder" />
+            <_GenerateCharsetDecoderArgs Include="-DA=&quot;A&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Da=&quot;a&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DCode=&quot;Decode&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Dcode=&quot;decode&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DitypesPhrase=&quot;bytes in a specific charset&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DotypesPhrase=&quot;sixteen-bit Unicode characters&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Ditype=&quot;byte&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Dotype=&quot;character&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DItype=&quot;Byte&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DOtype=&quot;Char&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Dcoder=&quot;decoder&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DCoder=&quot;Decoder&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Dcoding=&quot;decoding&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DOtherCoder=&quot;Encoder&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DreplTypeName=&quot;string&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DdefaultRepl=&quot;\&quot;%5c%5cuFFFD\&quot;&quot;" />
+            <_GenerateCharsetDecoderArgs Condition="$([MSBuild]::IsOsPlatform('Windows'))" Include="-DdefaultReplName=&quot;&lt;tt&gt;&quot;&quot;&amp;#92%3buFFFD&quot;&quot;&lt;/tt&gt;&quot;" />
+            <_GenerateCharsetDecoderArgs Condition="!$([MSBuild]::IsOsPlatform('Windows'))" Include="-DdefaultReplName='&lt;tt&gt;&quot;\&amp;#92%3buFFFD&quot;&lt;\/tt&gt;'" />
+            <_GenerateCharsetDecoderArgs Include="-DreplType=&quot;String&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DreplFQType=&quot;java.lang.String&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DreplLength=&quot;length()&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DItypesPerOtype=&quot;CharsPerByte&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DnotLegal=&quot;not legal for this charset&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-Dotypes-per-itype=&quot;chars-per-byte&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DoutSequence=&quot;Unicode character&quot;" />
+        </ItemGroup>
+
+        <MakeDir Directories="$(GenSrc)java\nio\charset\" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetDecoderArgs, ' ') &lt; @(GenerateCharsetDecoderTemplateFile) &gt; %(GenerateCharsetDecoderTemplateFile.OutputFile).tmp" />
+        <Move SourceFiles="%(GenerateCharsetDecoderTemplateFile.OutputFile).tmp" DestinationFiles="%(GenerateCharsetDecoderTemplateFile.OutputFile)" />
+
+        <ItemGroup>
+            <FileWrites Include="%(GenerateCharsetDecoderTemplateFile.OutputFile)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GenerateCharsetEncoder" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(GenerateCharsetEncoderTemplateFile);@(BuildToolsClassFiles)" Outputs="%(GenerateCharsetEncoderTemplateFile.OutputFile)">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <_GenerateCharsetEncoderArgs Include="-Kencoder" />
+            <_GenerateCharsetEncoderArgs Include="-DA=&quot;An&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Da=&quot;an&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DCode=&quot;Encode&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Dcode=&quot;encode&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DitypesPhrase=&quot;sixteen-bit Unicode characters&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DotypesPhrase=&quot;bytes in a specific charset&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Ditype=&quot;character&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Dotype=&quot;byte&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DItype=&quot;Char&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DOtype=&quot;Byte&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Dcoder=&quot;encoder&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DCoder=&quot;Encoder&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Dcoding=&quot;encoding&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DOtherCoder=&quot;Decoder&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DreplTypeName=&quot;byte array&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DdefaultRepl=&quot;new byte[] { (byte)'?' }&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DdefaultReplName=&quot;&lt;tt&gt;{&lt;/tt&gt;\&amp;nbsp%3B&lt;tt&gt;(byte)'?'&lt;/tt&gt;\&amp;nbsp%3B&lt;tt&gt;}&lt;/tt&gt;&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DreplType=&quot;byte[]&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DreplFQType=&quot;byte[]&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DreplLength=&quot;length&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DItypesPerOtype=&quot;BytesPerChar&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DnotLegal=&quot;not a legal sixteen-bit Unicode sequence&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-Dotypes-per-itype=&quot;bytes-per-char&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DoutSequence=&quot;byte sequence in the given charset&quot;" />
+        </ItemGroup>
+
+        <MakeDir Directories="$(GenSrc)java\nio\charset\" />
+        <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetEncoderArgs, ' ') &lt; @(GenerateCharsetEncoderTemplateFile) &gt; %(GenerateCharsetEncoderTemplateFile.OutputFile).tmp" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetEncoderArgs, ' ') &lt; @(GenerateCharsetEncoderTemplateFile) &gt; %(GenerateCharsetEncoderTemplateFile.OutputFile).tmp" />
+        <Move SourceFiles="%(GenerateCharsetEncoderTemplateFile.OutputFile).tmp" DestinationFiles="%(GenerateCharsetEncoderTemplateFile.OutputFile)" />
+
+        <ItemGroup>
+            <FileWrites Include="%(GenerateCharsetEncoderTemplateFile.OutputFile)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateCharsetDecoder;
+            GenerateCharsetEncoder;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <GenerateCharsetMappingData>$(OpenJdkDir)jdk\make\data\charsetmapping\</GenerateCharsetMappingData>
+        <GenerateCharsetMappingJavaSource>$(OpenJdkDir)jdk\make\src\classes\build\tools\charsetmapping\</GenerateCharsetMappingJavaSource>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <GenerateCharsetMappingTemplate Include="$(GenerateCharsetMappingData)\SingleByte-X.java.template" />
+        <GenerateCharsetMappingTemplate Include="$(GenerateCharsetMappingData)\DoubleByte-X.java.template" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <GenerateCharsetMappingItem Include="sbcs" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs" />
+        <GenerateCharsetMappingItem Include="sjis0213" Source="$(GenerateCharsetMappingData)sjis0213.map" Destination="$(GenSrc)sun\nio\cs\ext\sjis0213.dat" />
+        <GenerateCharsetMappingItem Include="euctw" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs\ext" Copyright="$(GenerateCharsetMappingJavaSource)EUC_TW.java" />
+        <GenerateCharsetMappingItem Include="hkscs" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs\ext" Copyright="$(GenerateCharsetMappingJavaSource)HKSCS.java" />
+        <GenerateCharsetMappingItem Include="extsbcs" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs\ext" />
+        <GenerateCharsetMappingItem Include="dbcs" Source="$(GenerateCharsetMappingData)" Destination="$(GenSrc)sun\nio\cs\ext" />
+    </ItemGroup>
+
+    <Target Name="GenerateCharsetMappings" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(GenerateCharsetMappingTemplate);@(BuildToolsClassFiles)" Outputs="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <_GenerateCharsetMappingArgs Include="%(GenerateCharsetMappingItem.Source)" />
+            <_GenerateCharsetMappingArgs Include="%(GenerateCharsetMappingItem.Destination)" />
+            <_GenerateCharsetMappingArgs Include="%(GenerateCharsetMappingItem.Identity)" />
+            <_GenerateCharsetMappingArgs Include="%(GenerateCharsetMappingItem.Copyright)" Condition=" '%(GenerateCharsetMappingItem.Copyright)' != '' " />
+        </ItemGroup>
+
+        <MakeDir Directories="$(GenSrc)sun\nio\cs\;$(GenSrc)sun\nio\cs\ext\" />
+        <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.charsetmapping.Main @(_GenerateCharsetMappingArgs, ' ')" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.charsetmapping.Main @(_GenerateCharsetMappingArgs, ' ')" />
+        <Touch Files="$(IntermediateOutputPath)GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)\GenerateCharsetMapping.%(GenerateCharsetMappingItem.Identity).stamp" />
+            <FileWrites Include="%(GenerateCharsetMappingItem.Destination)" Condition="Exists('%(GenerateCharsetMappingItem.Destination)')" />
+        </ItemGroup>
+    </Target>
+
+    <UsingTask TaskName="ReadStandardCharsets" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
+
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
     
+public class ReadStandardCharsets : Task
+{
+
+    class Charset
+    {
+    
+        public string Name { get; set; }
+        
+        public string ClassName { get; set; }
+        
+        public List<string> Aliases { get; set; } = new ();
+        
+    }
+    
+    static readonly Regex copyrightRegex = new Regex(@"copyright\s+(?<copyright>\S+)*", RegexOptions.Compiled);
+    static readonly Regex packageRegex = new Regex(@"package\s+(?<package>\S+)", RegexOptions.Compiled);
+    static readonly Regex classRegex = new Regex(@"class\s+(?<class>\S+)", RegexOptions.Compiled);
+    static readonly Regex charsetRegex = new Regex(@"charset\s+(?<name>\S+)\s+(?<classname>\S+)", RegexOptions.Compiled);
+    static readonly Regex aliasRegex = new Regex(@"\s+alias\s+(?<alias>\S+)", RegexOptions.Compiled);
+    
+    [Required]
+    public string SourceFile { get; set; }
+    
+    [Output]
+    public string Copyright { get; set; }
+    
+    [Output]
+    public string Package { get; set; }
+    
+    [Output]
+    public string Class { get; set; }
+    
+    [Required]
+    public string ClassesFile { get; set; }
+    
+    [Required]
+    public string AliasesFile { get; set; }
+    
+    [Output]
+    public ITaskItem[] Charsets { get; set; }
+    
+    public override bool Execute()
+    {
+        string copyright = null;
+        string package = null;
+        string clazz = null;
+        List<Charset> charsets = new ();
+        Charset currentCharset = null;
+
+        string line;
+        using var file = File.OpenText(SourceFile);
+        while ((line = file.ReadLine()) != null)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+
+            var p = line.IndexOf("#");
+            if (p >= 0)
+                line = line.Substring(0, p);
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+
+            if (copyrightRegex.Match(line) is Match copyrightMatch && copyrightMatch.Success)
+            {
+                currentCharset = null;
+                copyright = copyrightMatch.Groups["copyright"].Value;
+                continue;
+            }
+
+            if (packageRegex.Match(line) is Match packageMatch && packageMatch.Success)
+            {
+                currentCharset = null;
+                package = packageMatch.Groups["package"].Value;
+                continue;
+            }
+
+            if (classRegex.Match(line) is Match classMatch && classMatch.Success)
+            {
+                currentCharset = null;
+                clazz = classMatch.Groups["class"].Value;
+                continue;
+            }
+
+            if (charsetRegex.Match(line) is Match charsetMatch && charsetMatch.Success)
+            {
+                charsets.Add(currentCharset = new Charset());
+                currentCharset.Name = charsetMatch.Groups["name"].Value;
+                currentCharset.ClassName = charsetMatch.Groups["classname"].Value;
+                continue;
+            }
+
+            if (currentCharset != null && aliasRegex.Match(line) is Match aliasMatch && aliasMatch.Success)
+            {
+                if (currentCharset == null)
+                    continue;
+                    
+                currentCharset.Aliases.Add(aliasMatch.Groups["alias"].Value);
+                continue;
+            }
+        }
+        
+        Copyright = copyright;
+        Package = package;
+        Class = clazz;
+        var l = new List<ITaskItem>();
+        foreach (var charset in charsets)
+        {
+            var t = new TaskItem(charset.Name);
+            t.SetMetadata("ClassName", charset.ClassName);
+            t.SetMetadata("Aliases", string.Join(";", charset.Aliases));
+            l.Add(t);
+        }
+        Charsets = l.ToArray();
+        
+        using var classesFile = new StreamWriter(File.Open(ClassesFile, FileMode.Create));
+        foreach (var charset in charsets)
+            classesFile.WriteLine("{0} \"{1}\"", charset.Name.ToLower().PadRight(20), charset.ClassName);
+        
+        using var aliasesFile = new StreamWriter(File.Open(AliasesFile, FileMode.Create));
+        foreach (var charset in charsets)
+            foreach (var alias in charset.Aliases)
+                aliasesFile.WriteLine("{0} \"{1}\"", alias.ToLower().PadRight(20), charset.Name.ToLower());
+        
+        return true;
+    }
+    
+}
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <UsingTask TaskName="WriteStandardCharsets" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
+
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+    
+public class WriteStandardCharsets : Task
+{
+
+    [Required]
+    public string OutputFile { get; set; }
+    
+    [Output]
+    public string Copyright { get; set; }
+    
+    [Output]
+    public string Package { get; set; }
+    
+    [Output]
+    public string Class { get; set; }
+    
+    [Output]
+    public ITaskItem[] Charsets { get; set; }
+    
+    [Required]
+    public string AliasesClassFile { get; set; }
+    
+    [Required]
+    public string ClassesClassFile { get; set; }
+    
+    [Required]
+    public string CacheClassFile { get; set; }
+    
+    public override bool Execute()
+    {
+        using var o = new StreamWriter(File.Open(OutputFile, FileMode.Create));
+        o.WriteLine($@"package {Package};");
+        o.WriteLine($@"");
+        o.WriteLine($@"import java.nio.charset.*;");
+        o.WriteLine($@"");
+        o.WriteLine($@"");
+        o.WriteLine($@"public class {Class}");
+        o.WriteLine($@"    extends FastCharsetProvider");
+        o.WriteLine($@"{{");
+        o.WriteLine($@"");
+        
+        foreach (var charset in Charsets)
+        {
+            o.WriteLine($@"    static final String[] aliases_{charset.GetMetadata("ClassName")} = new String[] {{");
+            foreach (var alias in charset.GetMetadata("Aliases").Split(';'))
+                o.WriteLine($@"        ""{alias}"",");
+            o.WriteLine($@"    }};");
+            o.WriteLine($@"");
+        }
+        
+        o.Write(File.ReadAllText(AliasesClassFile));
+        o.Write(File.ReadAllText(ClassesClassFile));
+        o.Write(File.ReadAllText(CacheClassFile));
+        
+        o.WriteLine($@"    public StandardCharsets() {{");
+        o.WriteLine($@"        super(""sun.nio.cs"", new Aliases(), new Classes(), new Cache());");
+        o.WriteLine($@"    }}");
+        o.WriteLine($@"");
+        
+        o.WriteLine($@"}}");
+        o.WriteLine($@"");
+        
+        return true;
+    }
+    
+}
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GenerateStandardCharsets" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkDir)jdk\src\share\classes\sun\nio\cs\standard-charsets" Outputs="$(GenSrc)sun\nio\cs\StandardCharsets.java">
+
+        <ReadStandardCharsets SourceFile="$(OpenJdkDir)jdk\src\share\classes\sun\nio\cs\standard-charsets" ClassesFile="$(IntermediateOutputPath)GenerateStandardCharsets.classes" AliasesFile="$(IntermediateOutputPath)GenerateStandardCharsets.aliases">
+            <Output TaskParameter="Copyright" PropertyName="_Copyright" />
+            <Output TaskParameter="Package" PropertyName="_Package" />
+            <Output TaskParameter="Class" PropertyName="_Class" />
+            <Output TaskParameter="Charsets" ItemName="_Charsets" />
+        </ReadStandardCharsets>
+
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.hasher.Hasher -i Aliases &lt; $(IntermediateOutputPath)GenerateStandardCharsets.aliases &gt; $(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Aliases.java" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.hasher.Hasher -i Classes &lt; $(IntermediateOutputPath)GenerateStandardCharsets.classes &gt; $(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Classes.java" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.hasher.Hasher -i -e Cache -t Charset &lt; $(IntermediateOutputPath)GenerateStandardCharsets.classes &gt; $(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Cache.java" />
+
+        <WriteStandardCharsets OutputFile="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.java" Copyright="$(_Copyright)" Package="$(_Package)" Class="$(_Class)" Charsets="@(_Charsets)" AliasesClassFile="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Aliases.java" ClassesClassFile="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Classes.java" CacheClassFile="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Cache.java" />
+
+        <MakeDir Directories="$(GenSrc)sun\nio\cs" />
+        <Move SourceFiles="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.java" DestinationFiles="$(GenSrc)sun\nio\cs\StandardCharsets.java" OverwriteReadOnlyFiles="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)GenerateStandardCharsets.aliases" />
+            <FileWrites Include="$(IntermediateOutputPath)GenerateStandardCharsets.classes" />
+            <FileWrites Include="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Aliases.java" />
+            <FileWrites Include="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Classes.java" />
+            <FileWrites Include="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.Cache.java" />
+            <FileWrites Include="$(IntermediateOutputPath)GenerateStandardCharsets.StandardCharsets.java" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateCharsetMappings;
+            GenerateStandardCharsets;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GenerateHtml32DTD" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(BuildScripts);@(BuildToolsClassFiles)" Outputs="$(GenSrc)javax\swing\text\html\parser\html32.bdtd">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <PropertyGroup>
+            <_DtdHome>$(OpenJdkDir)jdk\make\data\dtdbuilder</_DtdHome>
+        </PropertyGroup>
+
+        <MakeDir Directories="$(GenSrc)javax\swing\text\html\parser\" />
+        <Message Text="$(JavaExec) -Ddtd_home=$(_DtdHome.Replace('\', '\\')) -Djava.awt.headless=true -cp $(BuildToolsOutputPath) build.tools.dtdbuilder.DTDBuilder html32 &gt; $(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" />
+        <Exec Command="$(JavaExec) -Ddtd_home=$(_DtdHome.Replace('\', '\\')) -Djava.awt.headless=true -cp $(BuildToolsOutputPath) build.tools.dtdbuilder.DTDBuilder html32 &gt; $(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" />
+        <Move SourceFiles="$(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" DestinationFiles="$(GenSrc)javax\swing\text\html\parser\html32.bdtd" OverwriteReadOnlyFiles="true" />
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateHtml32DTD;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <!--
+    
+    GenerateExceptions
+    
+    Reimplementation of GensrcExceptions.gmk.
+    
+    We implement the make logic and call out to the OpenJDK genExceptions.sh shell script within a Unix environment.
+    
+    -->
+
+    <ItemGroup>
+        <GenerateExceptions Include="." />
+        <GenerateExceptions Include="charset" />
+        <GenerateExceptions Include="channels" />
+    </ItemGroup>
+
+    <Target Name="GenerateExceptions" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(BuildScripts);@(BuildToolsClassFiles)" Outputs="$(IntermediateOutputPath)GenerateExceptions.$([System.String]::Copy('%(GenerateExceptions.Identity)').Replace('.', '_')).stamp">
+        <!-- Disabled for now, otherwise we'd have to call out to POSIX shell which is expensive  -->
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateExceptions;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <!--
+    
+    GenerateBuffer
+    
+    Derived from jdk/make/gensrc/GensrcBuffer.gmk. Original code is predominately written in Make. Sets up a number of target files, then calculates some string replacements, and runs the SPP tool.
+    We use a custom task to transform the SetupGenBuffer calls into a set of items that contain the SPP commands to run.
+    
+    -->
+
+    <ItemGroup>
+        <GenBuffer Include="ByteBuffer" Template="X-Buffer" Type="byte" Bin="1" />
+        <GenBuffer Include="CharBuffer" Template="X-Buffer" Type="char" />
+        <GenBuffer Include="ShortBuffer" Template="X-Buffer" Type="short" />
+        <GenBuffer Include="IntBuffer" Template="X-Buffer" Type="int" />
+        <GenBuffer Include="LongBuffer" Template="X-Buffer" Type="long" />
+        <GenBuffer Include="FloatBuffer" Template="X-Buffer" Type="float" />
+        <GenBuffer Include="DoubleBuffer" Template="X-Buffer" Type="double" />
+
+        <!-- Buffers whose contents are heap-allocated -->
+        <GenBuffer Include="HeapByteBuffer" Template="Heap-X-Buffer" Type="byte" />
+        <GenBuffer Include="HeapByteBufferR" Template="Heap-X-Buffer" Type="byte" RW="R" />
+        <GenBuffer Include="HeapCharBuffer" Template="Heap-X-Buffer" Type="char" />
+        <GenBuffer Include="HeapCharBufferR" Template="Heap-X-Buffer" Type="char" RW="R" />
+        <GenBuffer Include="HeapShortBuffer" Template="Heap-X-Buffer" Type="short" />
+        <GenBuffer Include="HeapShortBufferR" Template="Heap-X-Buffer" Type="short" RW="R" />
+        <GenBuffer Include="HeapIntBuffer" Template="Heap-X-Buffer" Type="int" />
+        <GenBuffer Include="HeapIntBufferR" Template="Heap-X-Buffer" Type="int" RW="R" />
+        <GenBuffer Include="HeapLongBuffer" Template="Heap-X-Buffer" Type="long" />
+        <GenBuffer Include="HeapLongBufferR" Template="Heap-X-Buffer" Type="long" RW="R" />
+        <GenBuffer Include="HeapFloatBuffer" Template="Heap-X-Buffer" Type="float" />
+        <GenBuffer Include="HeapFloatBufferR" Template="Heap-X-Buffer" Type="float" RW="R" />
+        <GenBuffer Include="HeapDoubleBuffer" Template="Heap-X-Buffer" Type="double" />
+        <GenBuffer Include="HeapDoubleBufferR" Template="Heap-X-Buffer" Type="double" RW="R" />
+
+        <!-- Direct byte buffer -->
+        <GenBuffer Include="DirectByteBuffer" Template="Direct-X-Buffer" Type="byte" Bin="1" />
+        <GenBuffer Include="DirectByteBufferR" Template="Direct-X-Buffer" Type="byte" Bin="1" RW="R" />
+
+        <!-- Unswapped views of direct byte buffers -->
+        <GenBuffer Include="DirectCharBufferU" Template="Direct-X-Buffer" Type="char" BO="U" />
+        <GenBuffer Include="DirectCharBufferRU" Template="Direct-X-Buffer" Type="char" RW="R" BO="U" />
+        <GenBuffer Include="DirectShortBufferU" Template="Direct-X-Buffer" Type="short" BO="U" />
+        <GenBuffer Include="DirectShortBufferRU" Template="Direct-X-Buffer" Type="short" RW="R" BO="U" />
+        <GenBuffer Include="DirectIntBufferU" Template="Direct-X-Buffer" Type="int" BO="U" />
+        <GenBuffer Include="DirectIntBufferRU" Template="Direct-X-Buffer" Type="int" RW="R" BO="U" />
+        <GenBuffer Include="DirectLongBufferU" Template="Direct-X-Buffer" Type="long" BO="U" />
+        <GenBuffer Include="DirectLongBufferRU" Template="Direct-X-Buffer" Type="long" RW="R" BO="U" />
+        <GenBuffer Include="DirectFloatBufferU" Template="Direct-X-Buffer" Type="float" BO="U" />
+        <GenBuffer Include="DirectFloatBufferRU" Template="Direct-X-Buffer" Type="float" RW="R" BO="U" />
+        <GenBuffer Include="DirectDoubleBufferU" Template="Direct-X-Buffer" Type="double" BO="U" />
+        <GenBuffer Include="DirectDoubleBufferRU" Template="Direct-X-Buffer" Type="double" RW="R" BO="U" />
+
+        <!-- Swapped views of direct byte buffers -->
+        <GenBuffer Include="DirectCharBufferS" Template="Direct-X-Buffer" Type="char" BO="S" />
+        <GenBuffer Include="DirectCharBufferRS" Template="Direct-X-Buffer" Type="char" RW="R" BO="S" />
+        <GenBuffer Include="DirectShortBufferS" Template="Direct-X-Buffer" Type="short" BO="S" />
+        <GenBuffer Include="DirectShortBufferRS" Template="Direct-X-Buffer" Type="short" RW="R" BO="S" />
+        <GenBuffer Include="DirectIntBufferS" Template="Direct-X-Buffer" Type="int" BO="S" />
+        <GenBuffer Include="DirectIntBufferRS" Template="Direct-X-Buffer" Type="int" RW="R" BO="S" />
+        <GenBuffer Include="DirectLongBufferS" Template="Direct-X-Buffer" Type="long" BO="S" />
+        <GenBuffer Include="DirectLongBufferRS" Template="Direct-X-Buffer" Type="long" RW="R" BO="S" />
+        <GenBuffer Include="DirectFloatBufferS" Template="Direct-X-Buffer" Type="float" BO="S" />
+        <GenBuffer Include="DirectFloatBufferRS" Template="Direct-X-Buffer" Type="float" RW="R" BO="S" />
+        <GenBuffer Include="DirectDoubleBufferS" Template="Direct-X-Buffer" Type="double" BO="S" />
+        <GenBuffer Include="DirectDoubleBufferRS" Template="Direct-X-Buffer" Type="double" RW="R" BO="S" />
+
+        <!-- Big-endian views of byte buffers -->
+        <GenBuffer Include="ByteBufferAsCharBufferB" Template="ByteBufferAs-X-Buffer" Type="char" BO="B" />
+        <GenBuffer Include="ByteBufferAsCharBufferRB" Template="ByteBufferAs-X-Buffer" Type="char" RW="R" BO="B" />
+        <GenBuffer Include="ByteBufferAsShortBufferB" Template="ByteBufferAs-X-Buffer" Type="short" BO="B" />
+        <GenBuffer Include="ByteBufferAsShortBufferRB" Template="ByteBufferAs-X-Buffer" Type="short" RW="R" BO="B" />
+        <GenBuffer Include="ByteBufferAsIntBufferB" Template="ByteBufferAs-X-Buffer" Type="int" BO="B" />
+        <GenBuffer Include="ByteBufferAsIntBufferRB" Template="ByteBufferAs-X-Buffer" Type="int" RW="R" BO="B" />
+        <GenBuffer Include="ByteBufferAsLongBufferB" Template="ByteBufferAs-X-Buffer" Type="long" BO="B" />
+        <GenBuffer Include="ByteBufferAsLongBufferRB" Template="ByteBufferAs-X-Buffer" Type="long" RW="R" BO="B" />
+        <GenBuffer Include="ByteBufferAsFloatBufferB" Template="ByteBufferAs-X-Buffer" Type="float" BO="B" />
+        <GenBuffer Include="ByteBufferAsFloatBufferRB" Template="ByteBufferAs-X-Buffer" Type="float" RW="R" BO="B" />
+        <GenBuffer Include="ByteBufferAsDoubleBufferB" Template="ByteBufferAs-X-Buffer" Type="double" BO="B" />
+        <GenBuffer Include="ByteBufferAsDoubleBufferRB" Template="ByteBufferAs-X-Buffer" Type="double" RW="R" BO="B" />
+
+        <!-- Little-endian views of byte buffers -->
+        <GenBuffer Include="ByteBufferAsCharBufferL" Template="ByteBufferAs-X-Buffer" Type="char" BO="L" />
+        <GenBuffer Include="ByteBufferAsCharBufferRL" Template="ByteBufferAs-X-Buffer" Type="char" RW="R" BO="L" />
+        <GenBuffer Include="ByteBufferAsShortBufferL" Template="ByteBufferAs-X-Buffer" Type="short" BO="L" />
+        <GenBuffer Include="ByteBufferAsShortBufferRL" Template="ByteBufferAs-X-Buffer" Type="short" RW="R" BO="L" />
+        <GenBuffer Include="ByteBufferAsIntBufferL" Template="ByteBufferAs-X-Buffer" Type="int" BO="L" />
+        <GenBuffer Include="ByteBufferAsIntBufferRL" Template="ByteBufferAs-X-Buffer" Type="int" RW="R" BO="L" />
+        <GenBuffer Include="ByteBufferAsLongBufferL" Template="ByteBufferAs-X-Buffer" Type="long" BO="L" />
+        <GenBuffer Include="ByteBufferAsLongBufferRL" Template="ByteBufferAs-X-Buffer" Type="long" RW="R" BO="L" />
+        <GenBuffer Include="ByteBufferAsFloatBufferL" Template="ByteBufferAs-X-Buffer" Type="float" BO="L" />
+        <GenBuffer Include="ByteBufferAsFloatBufferRL" Template="ByteBufferAs-X-Buffer" Type="float" RW="R" BO="L" />
+        <GenBuffer Include="ByteBufferAsDoubleBufferL" Template="ByteBufferAs-X-Buffer" Type="double" BO="L" />
+        <GenBuffer Include="ByteBufferAsDoubleBufferRL" Template="ByteBufferAs-X-Buffer" Type="double" RW="R" BO="L" />
+    </ItemGroup>
+
+    <!--
+    
+    Reimplementation of the Make code in C#. Accepts the set of calls to SetupGenBuffer, produces an ItemGroup of the commands to be run with SPP.
+    
+    -->
+    <UsingTask TaskName="SetupGenBuffer" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <GenBuffer ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+            <GenBufferCommand ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+void fixRw(Hashtable kv, string rw)
+{
+    kv["RW"] = rw;
+    kv["rwkey"] = "rw";
+    if (rw == "R")
+    {
+        kv["rwkey"] = "ro";
+    }
+}
+
+void typesAndBits(Hashtable kv, string type, string bo)
+{
+    kv["a"] = "a";
+    kv["A"] = "A";
+    
+    kv["type"] = type;
+    
+    if (type == "byte")
+    {
+        kv["x"] = "b";
+        kv["Type"] = "Byte";
+        kv["fulltype"] = "byte";
+        kv["Fulltype"] = "Byte";
+        kv["category"] = "integralType";
+        kv["LBPV"] = "0";
+    }
+    
+    if (type == "char")
+    {
+        kv["x"] = "c";
+        kv["Type"] = "Char";
+        kv["fulltype"] = "character";
+        kv["Fulltype"] = "Character";
+        kv["category"] = "integralType";
+        kv["streams"] = "streamableType";
+        kv["streamtype"] = "int";
+        kv["Streamtype"] = "Int";
+        kv["LBPV"] = "1";
+    }
+    
+    if (type == "short")
+    {
+        kv["x"] = "s";
+        kv["Type"] = "Short";
+        kv["fulltype"] = "short";
+        kv["Fulltype"] = "Short";
+        kv["category"] = "integralType";
+        kv["LBPV"] = "1";
+    }
+    
+    if (type == "int")
+    {
+        kv["a"] = "an";
+        kv["A"] = "An";
+        kv["x"] = "i";
+        kv["Type"] = "Int";
+        kv["fulltype"] = "integer";
+        kv["Fulltype"] = "Integer";
+        kv["category"] = "integralType";
+        kv["LBPV"] = "2";
+    }
+    
+    if (type == "long")
+    {
+        kv["x"] = "l";
+        kv["Type"] = "Long";
+        kv["fulltype"] = "long";
+        kv["Fulltype"] = "Long";
+        kv["category"] = "integralType";
+        kv["LBPV"] = "3";
+    }
+    
+    if (type == "float")
+    {
+        kv["x"] = "f";
+        kv["Type"] = "Float";
+        kv["fulltype"] = "float";
+        kv["Fulltype"] = "Float";
+        kv["category"] = "floatingPointType";
+        kv["LBPV"] = "2";
+    }
+    
+    if (type == "double")
+    {
+        kv["x"] = "d";
+        kv["Type"] = "Double";
+        kv["fulltype"] = "double";
+        kv["Fulltype"] = "Double";
+        kv["category"] = "floatingPointType";
+        kv["LBPV"] = "3";
+    }
+    
+    kv["Swaptype"] = kv["Type"];
+    kv["memtype"] = type;
+    kv["Memtype"] = kv["Type"];
+    
+    if (type == "float")
+    {
+        kv["memtype"] = "int";
+        kv["Memtype"] = "Int";
+        if (bo != "U")
+        {
+            kv["Swaptype"] = "Int";
+            kv["fromBits"] = "Float.intBitsToFloat";
+            kv["toBits"] = "Float.floatToRawIntBits";
+        }
+    }
+    
+    if (type == "double")
+    {
+        kv["memtype"] = "long";
+        kv["Memtype"] = "Long";
+        if (bo != "U")
+        {
+            kv["Swaptype"] = "Long";
+            kv["fromBits"] = "Double.longBitsToDouble";
+            kv["toBits"] = "Double.doubleToRawLongBits";
+        }
+    }
+    
+    if (bo == "S")
+    {
+        kv["swap"] = "Bits.swap";
+    }
+}
+
+string genBinOps(string type, string bo, string rw, string nbytes, string nbytesButOne)
+{
+    var kv = new Hashtable();
+
+    typesAndBits(kv, type, bo);
+    fixRw(kv, rw);
+    kv["nbytes"] = nbytes;
+    kv["nbytesButOne"] = nbytesButOne;
+    
+    var args = new List<string>();
+    args.Add($"-Dtype={kv["type"]}");
+    args.Add($"-DType={kv["Type"]}");
+    args.Add($"-Dfulltype={kv["fulltype"]}");
+    args.Add($"-Dmemtype={kv["memtype"]}");
+    args.Add($"-DMemtype={kv["Memtype"]}");
+    args.Add($"-DfromBits={kv["fromBits"]}");
+    args.Add($"-DtoBits={kv["toBits"]}");
+    args.Add($"-DLG_BYTES_PER_VALUE={kv["LBPV"]}");
+    args.Add($"-DBYTES_PER_VALUE=\"{(1 << int.Parse((string)kv["LBPV"]))}\"");
+    args.Add($"-Dnbytes={kv["nbytes"]}");
+    args.Add($"-DnbytesButOne={kv["nbytesButOne"]}");
+    args.Add($"-DRW={kv["RW"]}");
+    args.Add($"-K{kv["rwkey"]}");
+    args.Add($"-Da={kv["a"]}");
+    args.Add($"-be");
+    return string.Join(" ", args);
+}
+                
+var genBufferCommand = new List<ITaskItem>();
+
+foreach (var bb in GenBuffer)
+{
+    var kv = new Hashtable();
+    kv["type"] = bb.GetMetadata("Type");
+    kv["RW"] = bb.GetMetadata("RW");
+    kv["BO"] = bb.GetMetadata("BO");
+    kv["BIN"] = bb.GetMetadata("Bin");
+
+    fixRw(kv, (string)kv["RW"]);
+    typesAndBits(kv, (string)kv["type"], (string)kv["BO"]);
+    
+    var args = new List<string>();
+    args.Add($"-K{kv["type"]}");
+    args.Add($"-K{kv["category"]}");
+    args.Add($"-K{kv["streams"]}");
+	args.Add($"-Dtype={kv["type"]}");
+	args.Add($"-DType={kv["Type"]}");
+	args.Add($"-Dfulltype={kv["fulltype"]}");
+	args.Add($"-DFulltype={kv["Fulltype"]}");
+	args.Add($"-Dstreamtype={kv["streamtype"]}");
+	args.Add($"-DStreamtype={kv["Streamtype"]}");
+	args.Add($"-Dx={kv["x"]}");
+	args.Add($"-Dmemtype={kv["memtype"]}");
+	args.Add($"-DMemtype={kv["Memtype"]}");
+	args.Add($"-DSwaptype={kv["Swaptype"]}");
+	args.Add($"-DfromBits={kv["fromBits"]}");
+	args.Add($"-DtoBits={kv["toBits"]}");
+	args.Add($"-DLG_BYTES_PER_VALUE={kv["LBPV"]}");
+	args.Add($"-DBYTES_PER_VALUE=\"{(1 << int.Parse((string)kv["LBPV"]))}\"");
+	args.Add($"-DBO={kv["BO"]}");
+	args.Add($"-Dswap={kv["swap"]}");
+	args.Add($"-DRW={kv["RW"]}");
+	args.Add($"-K{kv["rwkey"]}");
+	args.Add($"-Da={kv["a"]}");
+	args.Add($"-DA={kv["A"]}");
+	args.Add($"-Kbo{kv["BO"]}");
+    
+    var t = new TaskItem(bb);
+    t.SetMetadata("CMD", string.Join(" ", args));
+    
+    if ((string)kv["BIN"] == "1")
+    {
+        t.SetMetadata("CMD_char", genBinOps("char", (string)kv["BO"], (string)kv["RW"], "two", "one"));
+        t.SetMetadata("CMD_short", genBinOps("short", (string)kv["BO"], (string)kv["RW"], "two", "one"));
+        t.SetMetadata("CMD_int", genBinOps("int", (string)kv["BO"], (string)kv["RW"], "four", "three"));
+        t.SetMetadata("CMD_long", genBinOps("long", (string)kv["BO"], (string)kv["RW"], "eight", "seven"));
+        t.SetMetadata("CMD_float", genBinOps("float", (string)kv["BO"], (string)kv["RW"], "four", "three"));
+        t.SetMetadata("CMD_double", genBinOps("double", (string)kv["BO"], (string)kv["RW"], "eight", "seven"));
+    }
+    
+    genBufferCommand.Add(t);
+}
+
+GenBufferCommand = genBufferCommand.ToArray();
+
+]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <!--
+    
+    Strips text from a file after the line containing #BIN. This is done using sed in the original Make code.
+    
+    -->
+
+    <UsingTask TaskName="SetupGenBuffer_StripBin" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Path ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN") == false));
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GenerateBuffersSetup">
+        <SetupGenBuffer GenBuffer="@(GenBuffer)">
+            <Output TaskParameter="GenBufferCommand" ItemName="_GenBufferCommand" />
+        </SetupGenBuffer>
+    </Target>
+
+    <Target Name="GenerateBuffers" DependsOnTargets="BuildTools;ResolveJava;GenerateBuffersSetup" Inputs="$(MSBuildThisFileFullPath);@(BuildScripts);@(BuildToolsClassFiles);$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template" Outputs="$(GenSrc)java\nio\%(_GenBufferCommand.Identity).java">
+        <Message Text="$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template --&gt; $(GenSrc)java\nio\%(_GenBufferCommand.Identity).java" />
+
+        <PropertyGroup>
+            <_Src>$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template</_Src>
+            <_Bin>$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template)-bin.java.template</_Bin>
+            <_Tmp>$(GenSrc)java\nio\%(_GenBufferCommand.Identity).java.tmp</_Tmp>
+            <_Dst>$(GenSrc)java\nio\%(_GenBufferCommand.Identity).java</_Dst>
+        </PropertyGroup>
+
+        <MakeDir Directories="$(GenSrc)java\nio\" />
+        <Delete Files="$(_Tmp)" />
+        <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD) &lt; $(_Src) &gt; $(_Tmp)" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD) &lt; $(_Src) &gt; $(_Tmp)" />
+
+        <SetupGenBuffer_StripBin Path="$(_Tmp)" Condition=" '%(_GenBufferCommand.Bin)' == '1' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_char) &lt; $(_Bin) &gt;&gt; $(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_char)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_short) &lt; $(_Bin) &gt;&gt; $(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_short)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_int) &lt; $(_Bin) &gt;&gt; $(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_int)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_long) &lt; $(_Bin) &gt;&gt; $(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_long)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_float) &lt; $(_Bin) &gt;&gt; $(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_float)' != '' " />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp %(_GenBufferCommand.CMD_double) &lt; $(_Bin) &gt;&gt; $(_Tmp)" Condition=" '%(_GenBufferCommand.CMD_double)' != '' " />
+        <WriteLinesToFile File="$(_Tmp)" Lines="}" Condition=" '%(_GenBufferCommand.Bin)' == '1' " />
+
+        <Delete Files="$(_Dst)" />
+        <Move SourceFiles="$(_Tmp)" DestinationFiles="$(_Dst)" OverwriteReadOnlyFiles="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(_Tmp)" />
+            <FileWrites Include="$(_Dst)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateBuffersSetup;
+            GenerateBuffers;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <CalendarDataVersion>21.0.1</CalendarDataVersion>
+        <CalendarSourceDir>$(OpenJdkDir)jdk\src\share\classes\sun\util\cldr\resources\$(CalendarDataVersion.Replace('.', '_'))</CalendarSourceDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CalendarSourceItem Include="$(CalendarSourceDir)\common\dtd\*.dtd" />
+        <CalendarSourceItem Include="$(CalendarSourceDir)\common\main\*.xml" />
+        <CalendarSourceItem Include="$(CalendarSourceDir)\common\supplemental\*.xml" />
+    </ItemGroup>
+
+    <Target Name="GenerateCalendarData" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(BuildToolsClassFiles);@(CalendarSourceItem)" Outputs="$(GenSrc)sun\util\cldr\CLDRLocaleDataMetaInfo.java">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <MakeDir Directories="$(GenSrc)sun\util\cldr\" />
+        <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.cldrconverter.CLDRConverter -base $(CalendarSourceDir) -o $(GenSrc)" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.cldrconverter.CLDRConverter -base $(CalendarSourceDir) -o $(GenSrc)" />
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateCalendarData;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GenerateSource" DependsOnTargets="$(GenerateSourceDependsOn)">
+        <ItemGroup>
+            <Compile Include="$(GenSrc)**\*.java" />
+            <_GenSrcJavaResource Include="$(GenSrc)**\*" Exclude="$(GenSrc)**\*.java;$(GenSrc)**\*.class" />
+            <JavaResource Include="@(_GenSrcJavaResource)" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+            <FileWrites Include="$(GenSrc)**\*" />
+        </ItemGroup>
+    </Target>
+    
+    <Target Name="CleanGenerateSource">
+        <RemoveDir Directories="$(GenSrc)" />
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDataDependsOn>
+            $(GenerateDataDependsOn);
+        </GenerateDataDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GenerateData" DependsOnTargets="$(GenerateDataDependsOn)">
+        <ItemGroup>
+            <FileWrites Include="$(GenLib)**\*" />
+        </ItemGroup>
+    </Target>
+    
+    <Target Name="CleanGenerateData">
+        <RemoveDir Directories="$(GenLib)" />
+    </Target>
+
+    <PropertyGroup>
+        <CompileJavaDependsOn>
+            GenerateSource;
+            GenerateData;
+            $(CompileJavaDependsOn);
+        </CompileJavaDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
+            CleanGenerateSource;
+            CleanGenerateData;
+        </CoreCleanDependsOn>
+    </PropertyGroup>
+
+    <UsingTask TaskName="WriteTextToFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Path ParameterType="System.String" Required="true" />
+            <Text ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+File.WriteAllBytes(Path, Encoding.UTF8.GetBytes(Text));
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
 </Project>

@@ -35,8 +35,6 @@ namespace IKVM.JTReg.TestAdapter.Core
         internal const string DEFAULT_PARAM_TAG = "regtest";
         internal const string ENV_PREFIX = "JTREG_";
 
-        static readonly MD5 md5 = MD5.Create();
-
         /// <summary>
         /// Initializes the static instance.
         /// </summary>
@@ -47,7 +45,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 var javaHome = java.lang.System.getProperty("java.home");
-                foreach (var exec in new[] { "java", "javac", "jar", "jarsigner", "javadoc", "javah", "javap", "jdeps", "keytool", "native2ascii", "orbd", "policytool", "rmic", "schemagen", "wsgen", "wsimport" })
+                foreach (var exec in new[] { "java", "javac", "jar", "jarsigner", "javadoc", "javah", "javap", "jdeps", "keytool", "native2ascii", "orbd", "policytool", "rmic", "schemagen", "wsgen", "wsimport", "xjc" })
                 {
                     var execPath = Path.Combine(javaHome, "bin", exec);
                     if (File.Exists(execPath))
@@ -76,22 +74,13 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <returns></returns>
         protected static string GetSourceId(string source)
         {
-            // allows a lock around the MD5 instance
-            byte[] ComputeHash(byte[] buffer)
-            {
-                lock (md5)
-                {
-                    var b = new byte[8];
-                    var h = md5.ComputeHash(buffer);
-                    Array.Copy(h, b, 8);
-                    return b;
-                }
-            }
+            using var md5 = MD5.Create();
+            var h = md5.ComputeHash(Encoding.UTF8.GetBytes(source));
 
-            var b = ComputeHash(Encoding.UTF8.GetBytes(source));
             var s = new StringBuilder(16);
-            for (int i = 0; i < b.Length; i++)
-                s.Append(b[i].ToString("x2"));
+            for (int i = 0; i < 8; i++)
+                s.Append(h[i].ToString("x2"));
+
             return s.ToString();
         }
 

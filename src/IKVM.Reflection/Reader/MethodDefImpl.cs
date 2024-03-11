@@ -74,7 +74,7 @@ namespace IKVM.Reflection.Reader
 
         public override CallingConventions CallingConvention
         {
-            get { return this.MethodSignature.CallingConvention; }
+            get { return MethodSignature.CallingConvention; }
         }
 
         public override MethodAttributes Attributes
@@ -93,7 +93,7 @@ namespace IKVM.Reflection.Reader
             return (ParameterInfo[])parameters.Clone();
         }
 
-        private void PopulateParameters()
+        void PopulateParameters()
         {
             if (parameters == null)
             {
@@ -118,6 +118,15 @@ namespace IKVM.Reflection.Reader
                 if (returnParameter == null)
                     returnParameter = new ParameterInfoImpl(this, -1, -1);
             }
+        }
+
+        internal override Type[] GetParameterTypes()
+        {
+            var parameterTypes = new Type[MethodSignature.GetParameterCount()];
+            for (int i = 0; i < parameterTypes.Length; i++)
+                parameterTypes[i] = MethodSignature.GetParameterType(i);
+
+            return parameterTypes;
         }
 
         internal override int ParameterCount
@@ -177,7 +186,7 @@ namespace IKVM.Reflection.Reader
             return Util.Copy(typeArgs);
         }
 
-         void PopulateGenericArguments()
+        void PopulateGenericArguments()
         {
             if (typeArgs == null)
             {
@@ -228,7 +237,7 @@ namespace IKVM.Reflection.Reader
 
         internal override MethodSignature MethodSignature
         {
-            get { return lazyMethodSignature ?? (lazyMethodSignature = MethodSignature.ReadSig(module, module.GetBlobReader(module.MethodDefTable.records[index].Signature), this)); }
+            get { return lazyMethodSignature ??= MethodSignature.ReadSig(module, module.GetBlobReader(module.MethodDefTable.records[index].Signature), this); }
         }
 
         internal override int ImportTo(Emit.ModuleBuilder module)

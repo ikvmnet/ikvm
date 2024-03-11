@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
-using IKVM.Runtime.Extensions;
 using IKVM.Tests.Util;
 using IKVM.Tools.Runner;
 using IKVM.Tools.Runner.Importer;
@@ -28,12 +27,8 @@ namespace IKVM.Tests.Java.ikvm.runtime
 
         public TestContext TestContext { get; set; }
 
-        /// <summary>
-        /// Initializes the test DLL.
-        /// </summary>
-        /// <returns></returns>
         [TestInitialize]
-        public async Task Setup()
+        public async Task TestInitialize()
         {
 #if NET8_0
             var ikvmTool = "net6.0";
@@ -89,6 +84,12 @@ namespace IKVM.Tests.Java.ikvm.runtime
             exitCode.Should().Be(0);
 
             helloworldDll = Assembly.LoadFrom(p);
+        }
+
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            helloworldDll = null;
         }
 
         [TestMethod]

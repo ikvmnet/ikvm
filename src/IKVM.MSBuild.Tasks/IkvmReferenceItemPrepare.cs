@@ -500,7 +500,7 @@
             manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
             manifest.WriteLine("AssemblyFileVersion={0}", item.AssemblyFileVersion);
             manifest.WriteLine("ClassLoader={0}", item.ClassLoader);
-            manifest.WriteLine("Debug={0}", item.Debug ? "true" : "false");
+            manifest.WriteLine("Debug={0}", Enum.GetName(typeof(IkvmReferenceItemDebug), item.Debug));
             manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? await fileIdentityUtil.GetIdentityForFileAsync(item.KeyFile, Log, cancellationToken) : "");
             manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
 

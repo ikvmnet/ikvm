@@ -681,15 +681,12 @@ namespace IKVM.Runtime
                     }
 
                     AddMethodParameterInfo(m, methods[i], mb, out var parameterNames);
+
 #if IMPORTER
                     if (methods[i].HasCallerID)
                     {
                         context.AttributeHelper.SetEditorBrowsableNever(mb);
                         EmitCallerIDStub(methods[i], parameterNames);
-                    }
-                    if (m.DllExportName != null && wrapper.classLoader.TryEnableUnmanagedExports())
-                    {
-                        mb.__AddUnmanagedExport(m.DllExportName, m.DllExportOrdinal);
                     }
 #endif
                 }
@@ -978,7 +975,7 @@ namespace IKVM.Runtime
                 parameterNames = null;
                 ParameterBuilder[] parameterBuilders = null;
 
-                if (wrapper.GetClassLoader().EmitDebugInfo
+                if (wrapper.GetClassLoader().EmitSymbols
 #if IMPORTER
                     || (classFile.IsPublic && (m.IsPublic || m.IsProtected))
                     || (m.MethodParameters != null && !wrapper.GetClassLoader().NoParameterReflection)
@@ -1727,6 +1724,7 @@ namespace IKVM.Runtime
                     ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
                     var oklabel = ilGenerator.DefineLabel();
                     ilGenerator.EmitBrtrue(oklabel);
+
                     if (thruProxy)
                         ilGenerator.EmitLdarg(args.Length + (mw.IsStatic ? 0 : 1));
                     else
@@ -1743,8 +1741,10 @@ namespace IKVM.Runtime
                     else
                         context.EmitCallerID(ilGenerator, m.IsLambdaFormCompiled);
                     ilGenerator.Emit(OpCodes.Call, EnterLocalRefStructMethod);
+
                     var jnienv = ilGenerator.DeclareLocal(context.context.Types.IntPtr);
                     ilGenerator.Emit(OpCodes.Stloc, jnienv);
+
                     ilGenerator.BeginExceptionBlock();
                     var retTypeWrapper = mw.ReturnType;
                     if (retTypeWrapper.IsUnloadable || !retTypeWrapper.IsPrimitive)
@@ -1752,6 +1752,7 @@ namespace IKVM.Runtime
                         // this one is for use after we return from "calli"
                         ilGenerator.Emit(OpCodes.Ldloca, localRefStruct);
                     }
+
                     ilGenerator.Emit(OpCodes.Ldloc, jnienv);
 
                     var modargs = new Type[args.Length + 2];

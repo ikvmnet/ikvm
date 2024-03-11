@@ -10,6 +10,7 @@
         <SelfContained>true</SelfContained>
         <StartupObject>com.sun.tools.javah.Main</StartupObject>
         <RootNamespace>ikvm.tools.javah</RootNamespace>
+        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

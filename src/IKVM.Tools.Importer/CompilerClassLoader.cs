@@ -151,17 +151,20 @@ namespace IKVM.Tools.Importer
 
             // define a dynamic assembly and module
             assemblyBuilder = Context.StaticCompiler.Universe.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
-            var moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, this.EmitDebugInfo);
+            var moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, EmitSymbols);
 
             // if configured to emit stack trace info set source file
             if (EmitStackTraceInfo)
                 Context.AttributeHelper.SetSourceFile(moduleBuilder, null);
 
             // if configured to emit debug info or stack trace info, add debug DebuggableAttribute
-            if (EmitDebugInfo || EmitStackTraceInfo)
+            if (EmitSymbols || EmitStackTraceInfo)
             {
-                var debugAttr = new CustomAttributeBuilder(Context.Resolver.ResolveCoreType(typeof(DebuggableAttribute).FullName).GetConstructor(new[] { Context.Types.Boolean, Context.Types.Boolean }), new object[] { true, EmitDebugInfo });
-                assemblyBuilder.SetCustomAttribute(debugAttr);
+                var debugModes = DebuggableAttribute.DebuggingModes.Default | DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints;
+                if (EmitSymbols)
+                    debugModes |= DebuggableAttribute.DebuggingModes.DisableOptimizations;
+
+                Context.AttributeHelper.SetDebuggingModes(assemblyBuilder, debugModes);
             }
 
             Context.AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
@@ -311,6 +314,7 @@ namespace IKVM.Tools.Importer
                             }
                         }
                     }
+
                     if (f.IsPublic && options.publicPackages != null)
                     {
                         bool found = false;
@@ -327,23 +331,23 @@ namespace IKVM.Tools.Importer
                             f.SetInternal();
                         }
                     }
+
                     if (f.SourceFileAttribute != null)
                     {
-                        FileInfo path = itemRef.Path;
+                        var path = itemRef.Path;
                         if (path != null)
                         {
-                            string sourceFile = Path.GetFullPath(Path.Combine(path.DirectoryName, f.SourceFileAttribute));
+                            var sourceFile = Path.GetFullPath(Path.Combine(path.DirectoryName, f.SourceFileAttribute));
                             if (File.Exists(sourceFile))
-                            {
                                 f.SourcePath = sourceFile;
-                            }
                         }
+
                         if (f.SourcePath == null)
                         {
                             if (options.sourcepath != null)
                             {
-                                string package = f.Name;
-                                int index = package.LastIndexOf('.');
+                                var package = f.Name;
+                                var index = package.LastIndexOf('.');
                                 package = index == -1 ? "" : package.Substring(0, index).Replace('.', '/');
                                 f.SourcePath = Path.GetFullPath(Path.Combine(options.sourcepath + "/" + package, f.SourceFileAttribute));
                             }
@@ -353,6 +357,7 @@ namespace IKVM.Tools.Importer
                             }
                         }
                     }
+
                     try
                     {
                         var tw = DefineClass(f, null);
@@ -3169,23 +3174,6 @@ namespace IKVM.Tools.Importer
             Context.StaticCompiler.IssueMessage(options, msgId, values);
         }
 
-        internal bool TryEnableUnmanagedExports()
-        {
-            // we only support -platform:x86 and -platform:x64
-            // (currently IKVM.Reflection doesn't support unmanaged exports for ARM)
-            if ((options.imageFileMachine == ImageFileMachine.I386 && (options.pekind & PortableExecutableKinds.Required32Bit) != 0) || options.imageFileMachine == ImageFileMachine.AMD64)
-            {
-                // when you add unmanaged exports, the ILOnly flag MUST NOT be set or the DLL will fail to load
-                options.pekind &= ~PortableExecutableKinds.ILOnly;
-                return true;
-            }
-            else
-            {
-                Context.StaticCompiler.IssueMessage(Message.DllExportRequiresSupportedPlatform);
-                return false;
-            }
-        }
-
         internal override bool WarningLevelHigh
         {
             get { return options.warningLevelHigh; }
@@ -3349,6 +3337,8 @@ namespace IKVM.Tools.Importer
         internal Dictionary<string, string> props;
         internal bool noglobbing;
         internal CodeGenOptions codegenoptions;
+        internal DebugMode debugMode = DebugMode.Portable;
+        internal string debugFileName;
         internal bool compressedResources;
         internal string[] privatePackages;
         internal string[] publicPackages;

@@ -22,7 +22,7 @@
             <Sources></Sources>
             <References></References>
             <ClassLoader></ClassLoader>
-            <Debug></Debug>
+            <Debug>$(DebugType)</Debug>
             <KeyFile>$(IkvmKeyFile)</KeyFile>
             <DelaySign></DelaySign>
             <Aliases></Aliases>

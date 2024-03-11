@@ -63,9 +63,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.NET.Sdk", "src\IKVM.NET.Sdk\IKVM.NET.Sdk.msbuildproj", "{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild", "src\IKVM.MSBuild\IKVM.MSBuild.msbuildproj", "{AE5BFBC6-7DD4-4ACA-BEA7-86F842F38B64}"
-	ProjectSection(ProjectDependencies) = postProject
-		{B60EC8AA-3CDF-45E4-9ACD-3246B375C027} = {B60EC8AA-3CDF-45E4-9ACD-3246B375C027}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM", "src\IKVM\IKVM.csproj", "{95F23908-2D65-40C7-9EF1-B5C8543503AA}"
 EndProject
@@ -140,24 +137,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.win-
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.win-x86", "src\IKVM.Image.JDK.runtime.win-x86\IKVM.Image.JDK.runtime.win-x86.csproj", "{3E91FECF-80C0-463C-AD62-40062E0D313F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{CCE3DE31-5DE7-4157-90D1-BAFA08C181EC} = {CCE3DE31-5DE7-4157-90D1-BAFA08C181EC}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK-bin", "src\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj", "{CCE3DE31-5DE7-4157-90D1-BAFA08C181EC}"
-	ProjectSection(ProjectDependencies) = postProject
-		{004561E2-DED0-464D-A7B9-85D98281FED4} = {004561E2-DED0-464D-A7B9-85D98281FED4}
-		{03F00630-3625-440D-BE43-51751FCE7806} = {03F00630-3625-440D-BE43-51751FCE7806}
-		{1685EDBF-1A43-46C1-BC3B-378C909CA3DF} = {1685EDBF-1A43-46C1-BC3B-378C909CA3DF}
-		{2B536749-A2CD-4873-803A-5553D25E88EC} = {2B536749-A2CD-4873-803A-5553D25E88EC}
-		{4371190E-AD8B-4625-A520-B745B05DE005} = {4371190E-AD8B-4625-A520-B745B05DE005}
-		{78BE5834-EC02-48C5-A83A-2693D777375A} = {78BE5834-EC02-48C5-A83A-2693D777375A}
-		{7BC3FC79-5938-4CD7-9528-47D5DC18729E} = {7BC3FC79-5938-4CD7-9528-47D5DC18729E}
-		{B240F8BA-6C35-4C19-9035-2821CC6BFEA8} = {B240F8BA-6C35-4C19-9035-2821CC6BFEA8}
-		{C6C34134-D80C-43CC-A477-32B4172374D2} = {C6C34134-D80C-43CC-A477-32B4172374D2}
-		{ECF6B110-DF3B-4D29-91C8-45AD4C7D4B17} = {ECF6B110-DF3B-4D29-91C8-45AD4C7D4B17}
-		{FB1F02F2-3A18-49CC-A288-EC0834D90EED} = {FB1F02F2-3A18-49CC-A288-EC0834D90EED}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE-bin", "src\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj", "{162A1F6D-7752-4686-A6C2-923633F4E4C0}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -199,9 +180,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linux-arm64", "src\IKVM.Image.JDK.runtime.linux-arm64\IKVM.Image.JDK.runtime.linux-arm64.csproj", "{DF09A175-C790-434D-9810-A6BBB3EEC548}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-arm64", "src\IKVM.Image.JRE.runtime.linux-arm64\IKVM.Image.JRE.runtime.linux-arm64.csproj", "{2D787827-44DA-406C-8DAC-34CE61D658B0}"
-	ProjectSection(ProjectDependencies) = postProject
-		{162A1F6D-7752-4686-A6C2-923633F4E4C0} = {162A1F6D-7752-4686-A6C2-923633F4E4C0}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.linux-arm64", "src\IKVM.MSBuild.Tools.runtime.linux-arm64\IKVM.MSBuild.Tools.runtime.linux-arm64.csproj", "{5D5A51AC-95FE-42DE-BEBE-560109003C1D}"
 EndProject
@@ -210,9 +188,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linux-arm", "src\IKVM.Image.JDK.runtime.linux-arm\IKVM.Image.JDK.runtime.linux-arm.csproj", "{437506E7-B124-4808-8AE7-8864AC9EA36A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-arm", "src\IKVM.Image.JRE.runtime.linux-arm\IKVM.Image.JRE.runtime.linux-arm.csproj", "{833EAB0B-F2EE-47B5-8A54-EDE4DC655122}"
-	ProjectSection(ProjectDependencies) = postProject
-		{162A1F6D-7752-4686-A6C2-923633F4E4C0} = {162A1F6D-7752-4686-A6C2-923633F4E4C0}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "native2ascii", "src\native2ascii\native2ascii.msbuildproj", "{7BC3FC79-5938-4CD7-9528-47D5DC18729E}"
 EndProject
@@ -245,6 +220,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-musl-arm64", "src\IKVM.Image.JRE.runtime.linux-musl-arm64\IKVM.Image.JRE.runtime.linux-musl-arm64.csproj", "{405F453A-4801-44DF-AD4A-59D0D4391D2D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-musl-x64", "src\IKVM.Image.JRE.runtime.linux-musl-x64\IKVM.Image.JRE.runtime.linux-musl-x64.csproj", "{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "xjc", "src\xjc\xjc.msbuildproj", "{C35B9502-AC9F-4490-9480-6EAB4FD94AAA}"
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libunpack", "src\libunpack\libunpack.clangproj", "{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}"
 EndProject
@@ -326,6 +303,14 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Reflection.Tests", "src\IKVM.Reflection.Tests\IKVM.Reflection.Tests.csproj", "{17755A44-22EC-4D28-B219-3C5CAE6317C8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Tests.Util", "src\IKVM.Java.Tests.Util\IKVM.Java.Tests.Util.csproj", "{00AFE142-5F4F-48DD-90C1-20CC0512C43C}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjsound", "src\libjsound\libjsound.clangproj", "{403E0642-B6ED-464E-8694-2E467CDA2C02}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjsoundalsa", "src\libjsoundalsa\libjsoundalsa.clangproj", "{555CDB6E-84CE-4FE8-8945-47553C4D0A51}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjsoundds", "src\libjsoundds\libjsoundds.clangproj", "{30B763A2-A59A-4CE8-B11E-DD49527480CB}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libosxapp", "src\libosxapp\libosxapp.clangproj", "{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -685,6 +670,10 @@ Global
 		{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C35B9502-AC9F-4490-9480-6EAB4FD94AAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C35B9502-AC9F-4490-9480-6EAB4FD94AAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C35B9502-AC9F-4490-9480-6EAB4FD94AAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C35B9502-AC9F-4490-9480-6EAB4FD94AAA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -821,6 +810,22 @@ Global
 		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{00AFE142-5F4F-48DD-90C1-20CC0512C43C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{403E0642-B6ED-464E-8694-2E467CDA2C02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{403E0642-B6ED-464E-8694-2E467CDA2C02}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{403E0642-B6ED-464E-8694-2E467CDA2C02}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{403E0642-B6ED-464E-8694-2E467CDA2C02}.Release|Any CPU.Build.0 = Release|Any CPU
+		{555CDB6E-84CE-4FE8-8945-47553C4D0A51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{555CDB6E-84CE-4FE8-8945-47553C4D0A51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{555CDB6E-84CE-4FE8-8945-47553C4D0A51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{555CDB6E-84CE-4FE8-8945-47553C4D0A51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30B763A2-A59A-4CE8-B11E-DD49527480CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30B763A2-A59A-4CE8-B11E-DD49527480CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30B763A2-A59A-4CE8-B11E-DD49527480CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30B763A2-A59A-4CE8-B11E-DD49527480CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

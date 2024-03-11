@@ -16,9 +16,10 @@
         <BinProject Include="..\jdeps\jdeps.msbuildproj" />
         <BinProject Include="..\native2ascii\native2ascii.msbuildproj" />
         <BinProject Include="..\rmic\rmic.msbuildproj" />
+        <BinProject Include="..\schemagen\schemagen.msbuildproj" />
         <BinProject Include="..\wsgen\wsgen.msbuildproj" />
         <BinProject Include="..\wsimport\wsimport.msbuildproj" />
-        <BinProject Include="..\schemagen\schemagen.msbuildproj" />
+        <BinProject Include="..\xjc\xjc.msbuildproj" />
     </ItemGroup>
 
     <ItemGroup>

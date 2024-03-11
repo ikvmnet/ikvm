@@ -27,19 +27,21 @@ namespace IKVM.Runtime
 
     sealed partial class ClassFile
     {
+
         internal sealed partial class Method
         {
+
             sealed class LowFreqData
             {
                 internal object annotationDefault;
                 internal object[][] parameterAnnotations;
 #if IMPORTER
-				internal string DllExportName;
-				internal int DllExportOrdinal;
 				internal string InterlockedCompareAndSetField;
 #endif
             }
+
         }
+
     }
 
 }

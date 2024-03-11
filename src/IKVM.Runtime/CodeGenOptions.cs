@@ -23,16 +23,6 @@
 */
 using System;
 
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-using ProtectionDomain = System.Object;
-#else
-#endif
-
-
 namespace IKVM.Runtime
 {
 
@@ -41,7 +31,7 @@ namespace IKVM.Runtime
     {
 
         None = 0,
-        Debug = 1,
+        DisableOptimizations = 1,
         NoStackTraceInfo = 2,
         StrictFinalFieldSemantics = 4,
         NoJNI = 8,
@@ -50,6 +40,7 @@ namespace IKVM.Runtime
         DisableDynamicBinding = 64,
         NoRefEmitHelpers = 128,
         RemoveUnusedFields = 256,
+        EmitSymbols = 512,
 
     }
 

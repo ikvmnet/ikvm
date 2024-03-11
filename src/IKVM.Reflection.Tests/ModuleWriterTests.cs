@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
+using System.Text;
 
 using FluentAssertions;
 
@@ -25,6 +29,7 @@ namespace IKVM.Reflection.Tests
         {
 
             readonly TestAssemblyResolver resolver;
+            readonly ConcurrentDictionary<string, PEReader> cache = new ConcurrentDictionary<string, PEReader>();
 
             /// <summary>
             /// Initializes a new instance.
@@ -37,7 +42,7 @@ namespace IKVM.Reflection.Tests
 
             public PEReader ResolveAssembly(System.Reflection.AssemblyName assemblyName)
             {
-                return resolver.Resolve(assemblyName.Name) is string s ? new PEReader(File.OpenRead(s)) : null;
+                return cache.GetOrAdd(assemblyName.Name, _ => resolver.Resolve(_) is string s ? new PEReader(File.OpenRead(s)) : null);
             }
 
             public PEReader ResolveModule(System.Reflection.AssemblyName referencingAssembly, string fileName)
@@ -88,7 +93,22 @@ namespace IKVM.Reflection.Tests
         /// <param name="resolver"></param>
         /// <param name="verifier"></param>
         /// <param name="tempPath"></param>
+        /// <param name="tempLoad"></param>
         bool Init(FrameworkSpec framework, out Universe universe, out TestAssemblyResolver resolver, out ILVerify.Verifier verifier, out string tempPath, out MetadataLoadContext tempLoad)
+        {
+            return Init(framework, null, out universe, out resolver, out verifier, out tempPath, out tempLoad);
+        }
+
+        /// <summary>
+        /// Initializes the variables requires to execute tests.
+        /// </summary
+        /// <param name="framework"></param>
+        /// <param name="searchPaths"></param>
+        /// <param name="universe"></param>
+        /// <param name="resolver"></param>
+        /// <param name="verifier"></param>
+        /// <param name="tempPath"></param>
+        bool Init(FrameworkSpec framework, IEnumerable<string> searchPaths, out Universe universe, out TestAssemblyResolver resolver, out ILVerify.Verifier verifier, out string tempPath, out MetadataLoadContext tempLoad)
         {
             universe = null;
             resolver = null;
@@ -110,8 +130,8 @@ namespace IKVM.Reflection.Tests
 
             // initialize primary classes
             universe = new Universe(DotNetSdkUtil.GetCoreLibName(framework.Tfm, framework.TargetFrameworkIdentifier, framework.TargetFrameworkVersion));
-            resolver = new TestAssemblyResolver(universe, framework.Tfm, framework.TargetFrameworkIdentifier, framework.TargetFrameworkVersion);
-            verifier = new ILVerify.Verifier(new VerifyResolver(resolver), new ILVerify.VerifierOptions() { SanityChecks = true });
+            resolver = new TestAssemblyResolver(universe, framework.Tfm, framework.TargetFrameworkIdentifier, framework.TargetFrameworkVersion, searchPaths);
+            verifier = new ILVerify.Verifier(new VerifyResolver(resolver), new ILVerify.VerifierOptions() { IncludeMetadataTokensInErrorMessages = true, SanityChecks = true });
             verifier.SetSystemModuleName(new System.Reflection.AssemblyName(universe.CoreLibName));
             tempLoad = new MetadataLoadContext(new MetadataAssemblyResolver(resolver));
 
@@ -462,6 +482,79 @@ namespace IKVM.Reflection.Tests
             a.GetModule("Test").Should().NotBeNull();
             var t = a.GetType("Type");
             t.Should().HaveMethod("Main", new[] { tempLoad.CoreAssembly.GetType("System.String").MakeArrayType() }).Which.Should().Return(tempLoad.CoreAssembly.GetType("System.Void"));
+        }
+
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void CanWriteTryCatch(FrameworkSpec framework)
+        {
+            if (Init(framework, out var universe, out var resolver, out var verifier, out var tempPath, out var tempLoad) == false)
+                return;
+
+            var assembly = universe.DefineDynamicAssembly(new AssemblyName("Test"), AssemblyBuilderAccess.Save, tempPath);
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+            var type = module.DefineType("Type");
+
+            var execMethod = type.DefineMethod("Exec", MethodAttributes.Public, null, Array.Empty<Type>());
+            var execMethodIL = execMethod.GetILGenerator();
+
+            var end = execMethodIL.BeginExceptionBlock();
+            execMethodIL.Emit(OpCodes.Nop);
+            execMethodIL.BeginCatchBlock(universe.Import(typeof(Exception)));
+            execMethodIL.Emit(OpCodes.Nop);
+            execMethodIL.EndExceptionBlock();
+            execMethodIL.Emit(OpCodes.Ret);
+
+            type.CreateType();
+            assembly.Save("Test.dll");
+
+            foreach (var v in verifier.Verify(new PEReader(File.OpenRead(Path.Combine(tempPath, "Test.dll")))))
+                if (v.Code != ILVerify.VerifierError.None)
+                    throw new Exception(string.Format(v.Message, v.Args ?? Array.Empty<object>()));
+        }
+
+        static string ToString(MetadataReader metadata, TypeDefinitionHandle typeHandle)
+        {
+            var b = new StringBuilder();
+
+            if (typeHandle.IsNil)
+            {
+                b.Append("<global>");
+            }
+            else
+            {
+                var type = metadata.GetTypeDefinition(typeHandle);
+                if (type.GetDeclaringType().IsNil)
+                {
+                    var typeNamespace = type.Namespace.IsNil == false ? metadata.GetString(type.Namespace) : null;
+                    var typeName = type.Name.IsNil == false ? metadata.GetString(type.Name) : null;
+                    if (typeNamespace != null)
+                        b.Append(typeNamespace).Append(".");
+
+                    b.Append(typeName ?? "<UNKNOWN>");
+                }
+                else
+                {
+                    b.Append(ToString(metadata, type.GetDeclaringType())).Append("+");
+                }
+            }
+
+            return b.ToString();
+        }
+
+        static string ToString(MetadataReader metadata, TypeDefinitionHandle typeHandle, MethodDefinitionHandle methodHandle)
+        {
+            var b = new StringBuilder();
+            var method = metadata.GetMethodDefinition(methodHandle);
+            typeHandle = method.GetDeclaringType();
+
+            b.Append(ToString(metadata, typeHandle));
+            b.Append(":");
+
+            var methodName = method.Name.IsNil == false ? metadata.GetString(method.Name) : null;
+            b.Append(methodName ?? "<UNKNOWN>");
+
+            return b.ToString();
         }
 
     }
