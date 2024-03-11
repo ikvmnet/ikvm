@@ -147,7 +147,7 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Setup .NET 8.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
     - name: Cache LLVM and Clang
@@ -442,6 +442,9 @@ jobs:
         - IKVM.Tools.Exporter.Tests
         - IKVM.Tools.Importer.Tests
         - IKVM.Tools.Tests
+        - IKVM.MSBuild.Tasks.Tests
+        - IKVM.MSBuild.Tests
+        - IKVM.NET.Sdk.Tests
         - IKVM.JTReg.TestAdapter.Tests
         - IKVM.OpenJDK.Tests?TestPartition=0
         - IKVM.OpenJDK.Tests?TestPartition=1
@@ -462,6 +465,7 @@ jobs:
         tfm:
         - net472
         - net6.0
+        - net8.0
         sys:
         - win-x64
         - linux-x64
@@ -470,70 +474,6 @@ jobs:
         - tfm: net472
           sys: linux-x64
         - tfm: net472
-          sys: osx-x64
-        include:
-        - run: IKVM.ByteCode.Tests
-          tfm: net7.0
-          sys: win-x64
-        - run: IKVM.ByteCode.Tests
-          tfm: net7.0
-          sys: linux-x64
-        - run: IKVM.ByteCode.Tests
-          tfm: net7.0
-          sys: osx-x64
-        - run: IKVM.Reflection.Tests
-          tfm: net7.0
-          sys: win-x64
-        - run: IKVM.Reflection.Tests
-          tfm: net7.0
-          sys: linux-x64
-        - run: IKVM.Reflection.Tests
-          tfm: net7.0
-          sys: osx-x64
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net472
-          sys: win-x64
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net7.0
-          sys: win-x64
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net7.0
-          sys: osx-x64
-        - run: IKVM.MSBuild.Tests
-          tfm: net7.0
-          sys: win-x64
-        # - run: IKVM.MSBuild.Tests
-        #   tfm: net7.0
-        #   sys: linux-x64
-        # - run: IKVM.MSBuild.Tests
-        #   tfm: net7.0
-        #   sys: osx-x64
-        - run: IKVM.NET.Sdk.Tests
-          tfm: net7.0
-          sys: win-x64
-        - run: IKVM.NET.Sdk.Tests
-          tfm: net7.0
-          sys: linux-x64
-        - run: IKVM.NET.Sdk.Tests
-          tfm: net7.0
-          sys: osx-x64
-        - run: IKVM.Tests
-          tfm: net7.0
-          sys: win-x64
-        - run: IKVM.Tests
-          tfm: net7.0
-          sys: linux-x64
-        - run: IKVM.Tests
-          tfm: net7.0
-          sys: osx-x64
-        - run: IKVM.Tools.Tests
-          tfm: net7.0
-          sys: win-x64
-        - run: IKVM.Tools.Tests
-          tfm: net7.0
-          sys: linux-x64
-        - run: IKVM.Tools.Tests
-          tfm: net7.0
           sys: osx-x64
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
@@ -585,7 +525,7 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Setup .NET 8.0
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
     - name: Setup WSL
@@ -602,9 +542,9 @@ jobs:
         MATRIX_RUN: '${{ matrix.run }}'
       with:
         script: |
-            const run = process.env.MATRIX_RUN;
-            const tst = run.split('?')[0];
-            return tst;
+          const run = process.env.MATRIX_RUN;
+          const tst = run.split('?')[0];
+          return tst;
         result-encoding: string
     - name: Download Tests
       uses: actions/download-artifact@v4
