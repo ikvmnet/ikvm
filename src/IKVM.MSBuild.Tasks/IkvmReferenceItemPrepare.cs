@@ -196,7 +196,6 @@
         /// <summary>
         /// Attempts to load the state file.
         /// </summary>
-        /// <param name="cancellationToken"></param>
         internal void LoadState()
         {
             if (StateFile != null && File.Exists(StateFile))

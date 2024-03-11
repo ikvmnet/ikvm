@@ -555,7 +555,7 @@ namespace IKVM.Tools.Importer
 
         void Save()
         {
-            ModuleBuilder mb = GetTypeWrapperFactory().ModuleBuilder;
+            var mb = GetTypeWrapperFactory().ModuleBuilder;
             if (targetIsModule)
             {
                 // HACK force all referenced assemblies to end up as references in the assembly
@@ -565,13 +565,27 @@ namespace IKVM.Tools.Importer
                 // assemblies in the ikvm.exports resource.
                 for (int i = 0; i < referencedAssemblies.Length; i++)
                 {
-                    Type[] types = referencedAssemblies[i].MainAssembly.GetExportedTypes();
+                    var types = referencedAssemblies[i].MainAssembly.GetExportedTypes();
                     if (types.Length > 0)
-                    {
                         mb.GetTypeToken(types[0]);
-                    }
                 }
             }
+
+            // assemblies should have access to the internals of their referenced assemblies
+            if (targetIsModule == false)
+            {
+                // add the IgnoresAccessChecksToAttribute
+                var iactBuilder = mb.DefineType("System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute", TypeAttributes.Class | TypeAttributes.Sealed, Context.Types.Attribute);
+                iactBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[] { Context.Types.String });
+                Context.AttributeHelper.SetAttributeUsage(iactBuilder, AttributeTargets.Assembly, true);
+                var iact = iactBuilder.CreateType();
+                var iactCtor = iact.GetConstructor(new[] { Context.Types.String });
+
+                // add IgnoresAccessChecksToAttribute for each referenced assembly, so access to package-private (internal) members is allowed
+                for (int i = 0; i < referencedAssemblies.Length; i++)
+                    assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(iactCtor, new[] { UnicodeUtil.EscapeInvalidSurrogates(referencedAssemblies[i].MainAssembly.FullName) }));
+            }
+
             mb.CreateGlobalFunctions();
 
             AddJavaModuleAttribute(mb);
@@ -579,16 +593,17 @@ namespace IKVM.Tools.Importer
             // add a package list and export map
             if (options.sharedclassloader == null || options.sharedclassloader[0] == this)
             {
-                var packageListAttributeCtor = Context.Resolver.ResolveRuntimeType(typeof(PackageListAttribute).FullName).GetConstructor(new Type[] { Context.Types.String, Context.Types.String.MakeArrayType() });
-                foreach (object[] args in packages.ToArray())
+                var packageListAttributeCtor = Context.Resolver.ResolveRuntimeType(typeof(PackageListAttribute).FullName).GetConstructor(new[] { Context.Types.String, Context.Types.String.MakeArrayType() });
+                foreach (var args in packages.ToArray())
                 {
                     args[1] = UnicodeUtil.EscapeInvalidSurrogates((string[])args[1]);
                     mb.SetCustomAttribute(new CustomAttributeBuilder(packageListAttributeCtor, args));
                 }
+
                 // We can't add the resource when we're a module, because a multi-module assembly has a single resource namespace
                 // and since you cannot combine -target:module with -sharedclassloader we don't need an export map
                 // (the wildcard exports have already been added above, by making sure that we statically reference the assemblies).
-                if (!targetIsModule)
+                if (targetIsModule == false)
                 {
                     WriteExportMap();
                 }
@@ -597,6 +612,7 @@ namespace IKVM.Tools.Importer
             if (targetIsModule)
             {
                 Tracer.Info(Tracer.Compiler, "CompilerClassLoader saving {0} in {1}", assemblyFile, assemblyDir);
+
                 try
                 {
                     GetTypeWrapperFactory().ModuleBuilder.__Save(options.pekind, options.imageFileMachine);

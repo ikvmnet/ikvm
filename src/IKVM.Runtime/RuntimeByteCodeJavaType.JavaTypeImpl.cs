@@ -267,17 +267,12 @@ namespace IKVM.Runtime
                 {
                     TypeAttributes typeAttribs = 0;
                     if (f.IsAbstract)
-                    {
                         typeAttribs |= TypeAttributes.Abstract;
-                    }
                     if (f.IsFinal)
-                    {
                         typeAttribs |= TypeAttributes.Sealed;
-                    }
-                    if (!hasclinit)
-                    {
+                    if (hasclinit == false)
                         typeAttribs |= TypeAttributes.BeforeFieldInit;
-                    }
+
 #if IMPORTER
                     bool cantNest = false;
                     bool setModifiers = false;
@@ -295,6 +290,7 @@ namespace IKVM.Runtime
                     {
                         enclosingClassName = f.EnclosingMethod[0];
                     }
+
                     if (enclosingClassName != null)
                     {
                         if (!CheckInnerOuterNames(f.Name, enclosingClassName))
@@ -311,35 +307,34 @@ namespace IKVM.Runtime
                             {
                                 Tracer.Warning(Tracer.Compiler, "Unable to load outer class {0} for inner class {1} ({2}: {3})", enclosingClassName, f.Name, x.GetType().Name, x.Message);
                             }
+
                             if (enclosingClassWrapper != null)
                             {
                                 // make sure the relationship is reciprocal (otherwise we run the risk of
                                 // baking the outer type before the inner type) and that the inner and outer
                                 // class live in the same class loader (when doing a multi target compilation,
                                 // it is possible to split the two classes across assemblies)
-                                JavaTypeImpl oimpl = enclosingClassWrapper.impl as JavaTypeImpl;
+                                var oimpl = enclosingClassWrapper.impl as JavaTypeImpl;
                                 if (oimpl != null && enclosingClassWrapper.GetClassLoader() == wrapper.GetClassLoader())
                                 {
-                                    ClassFile outerClassFile = oimpl.classFile;
-                                    ClassFile.InnerClass[] outerInnerClasses = outerClassFile.InnerClasses;
+                                    var outerClassFile = oimpl.classFile;
+                                    var outerInnerClasses = outerClassFile.InnerClasses;
                                     if (outerInnerClasses == null)
                                     {
                                         enclosingClassWrapper = null;
                                     }
                                     else
                                     {
-                                        bool ok = false;
+                                        var ok = false;
                                         for (int i = 0; i < outerInnerClasses.Length; i++)
                                         {
-                                            if (((outerInnerClasses[i].outerClass != 0 && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].outerClass) == outerClassFile.Name)
-                                                    || (outerInnerClasses[i].outerClass == 0 && outerClass.outerClass == 0))
-                                                && outerInnerClasses[i].innerClass != 0
-                                                && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].innerClass) == f.Name)
+                                            if (((outerInnerClasses[i].outerClass != 0 && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].outerClass) == outerClassFile.Name) || (outerInnerClasses[i].outerClass == 0 && outerClass.outerClass == 0)) && outerInnerClasses[i].innerClass != 0 && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].innerClass) == f.Name)
                                             {
                                                 ok = true;
                                                 break;
                                             }
                                         }
+
                                         if (!ok)
                                         {
                                             enclosingClassWrapper = null;
@@ -350,6 +345,7 @@ namespace IKVM.Runtime
                                 {
                                     enclosingClassWrapper = null;
                                 }
+
                                 if (enclosingClassWrapper != null)
                                 {
                                     enclosingClassWrapper.CreateStep2();
@@ -367,6 +363,7 @@ namespace IKVM.Runtime
                             }
                         }
                     }
+
                     if (f.IsPublic)
                     {
                         if (enclosing != null)
@@ -393,27 +390,29 @@ namespace IKVM.Runtime
                         typeAttribs |= TypeAttributes.NestedAssembly;
                     }
 #else // IMPORTER
+
                     if (f.IsPublic)
                     {
                         typeAttribs |= TypeAttributes.Public;
                     }
+
 #endif // IMPORTER
+
                     if (f.IsInterface)
                     {
                         typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
 #if IMPORTER
-                        // if any "meaningless" bits are set, preserve them
-                        setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
-                        // by default we assume interfaces are abstract, so in the exceptional case we need a ModifiersAttribute
-                        setModifiers |= (f.Modifiers & Modifiers.Abstract) == 0;
+
+                        setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0; // if any "meaningless" bits are set, preserve them
+                        setModifiers |= (f.Modifiers & Modifiers.Abstract) == 0; // by default we assume interfaces are abstract, so in the exceptional case we need a ModifiersAttribute
                         if (enclosing != null && !cantNest)
                         {
                             if (wrapper.IsGhost)
                             {
-                                // TODO this is low priority, since the current Java class library doesn't define any ghost interfaces
-                                // as inner classes
+                                // TODO this is low priority, since the current Java class library doesn't define any ghost interfaces as inner classes
                                 throw new NotImplementedException();
                             }
+
                             // LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
                             // (and broken by J# as well), so we'll just ignore it too.
                             typeBuilder = enclosing.DefineNestedType(AllocNestedTypeName(enclosingClassWrapper.Name, f.Name), typeAttribs);
@@ -453,6 +452,7 @@ namespace IKVM.Runtime
                             typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
                         }
                     }
+
 #if IMPORTER
                     // When we're statically compiling, we associate the typeBuilder with the wrapper. This enables types in referenced assemblies to refer back to
                     // types that we're currently compiling (i.e. a cyclic dependency between the currently assembly we're compiling and a referenced assembly).
@@ -468,48 +468,59 @@ namespace IKVM.Runtime
                             wrapper.Context.AttributeHelper.SetNonNestedOuterClass(typeBuilder, enclosingClassName);
                         }
                     }
+
                     if (classFile.InnerClasses != null)
                     {
-                        foreach (ClassFile.InnerClass inner in classFile.InnerClasses)
+                        foreach (var inner in classFile.InnerClasses)
                         {
-                            string name = classFile.GetConstantPoolClass(inner.innerClass);
-                            bool exists = false;
+                            var name = classFile.GetConstantPoolClass(inner.innerClass);
+                            var exists = false;
+
                             try
                             {
                                 exists = wrapper.GetClassLoader().TryLoadClassByName(name) != null;
                             }
-                            catch (RetargetableJavaException) { }
+                            catch (RetargetableJavaException)
+                            {
+
+                            }
+
                             if (!exists)
                             {
                                 wrapper.Context.AttributeHelper.SetNonNestedInnerClass(typeBuilder, name);
                             }
                         }
                     }
-                    if (typeBuilder.FullName != wrapper.Name
-                        && wrapper.Name.Replace('$', '+') != typeBuilder.FullName)
+
+                    if (typeBuilder.FullName != wrapper.Name && wrapper.Name.Replace('$', '+') != typeBuilder.FullName)
                     {
                         wrapper.classLoader.AddNameMapping(wrapper.Name, typeBuilder.FullName);
                     }
+
                     if (f.IsAnnotation && Annotation.HasRetentionPolicyRuntime(f.Annotations))
                     {
                         annotationBuilder = new AnnotationBuilder(wrapper.Context, this, enclosing);
                         wrapper.SetAnnotation(annotationBuilder);
                     }
+
                     // For Java 5 Enum types, we generate a nested .NET enum.
                     // This is primarily to support annotations that take enum parameters.
                     if (f.IsEnum && f.IsPublic)
                     {
                         AddCliEnum();
                     }
+
                     AddInnerClassAttribute(enclosing != null, outerClass.innerClass != 0, mangledTypeName, outerClass.accessFlags);
                     if (classFile.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(classFile.Annotations))
                     {
                         wrapper.Context.AttributeHelper.SetDeprecatedAttribute(typeBuilder);
                     }
+
                     if (classFile.GenericSignature != null)
                     {
                         wrapper.Context.AttributeHelper.SetSignatureAttribute(typeBuilder, classFile.GenericSignature);
                     }
+
                     if (classFile.EnclosingMethod != null)
                     {
                         if (outerClass.outerClass == 0 && enclosing != null && !cantNest)
@@ -522,16 +533,17 @@ namespace IKVM.Runtime
                             wrapper.Context.AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, classFile.EnclosingMethod[0], classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
                         }
                     }
+
                     if (classFile.RuntimeVisibleTypeAnnotations != null)
                     {
                         wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(typeBuilder, classFile.RuntimeVisibleTypeAnnotations);
                     }
+
                     if (wrapper.classLoader.EmitStackTraceInfo)
                     {
                         if (f.SourceFileAttribute != null)
                         {
-                            if ((enclosingClassWrapper == null && f.SourceFileAttribute == typeBuilder.Name + ".java")
-                                || (enclosingClassWrapper != null && f.SourceFileAttribute == enclosingClassWrapper.sourceFileName))
+                            if ((enclosingClassWrapper == null && f.SourceFileAttribute == typeBuilder.Name + ".java") || (enclosingClassWrapper != null && f.SourceFileAttribute == enclosingClassWrapper.sourceFileName))
                             {
                                 // we don't need to record the name because it matches our heuristic
                             }
@@ -545,16 +557,24 @@ namespace IKVM.Runtime
                             wrapper.Context.AttributeHelper.SetSourceFile(typeBuilder, null);
                         }
                     }
-                    // NOTE in Whidbey we can (and should) use CompilerGeneratedAttribute to mark Synthetic types
+
                     if (setModifiers || classFile.IsInternal || (classFile.Modifiers & (Modifiers.Synthetic | Modifiers.Annotation | Modifiers.Enum)) != 0)
                     {
                         wrapper.Context.AttributeHelper.SetModifiers(typeBuilder, classFile.Modifiers, classFile.IsInternal);
                     }
+
 #endif // IMPORTER
+
+                    if ((classFile.Modifiers & Modifiers.Synthetic) != 0)
+                    {
+                        wrapper.Context.AttributeHelper.SetCompilerGenerated(typeBuilder);
+                    }
+
                     if (hasclinit)
                     {
                         AddClinitTrigger();
                     }
+
                     if (HasStructLayoutAttributeAnnotation(classFile))
                     {
                         // when we have a StructLayoutAttribute, field order is significant,
@@ -566,7 +586,10 @@ namespace IKVM.Runtime
                     }
                 }
 #if IMPORTER
-                finally { }
+                finally
+                {
+
+                }
 #else
                 catch (Exception x)
                 {
@@ -1483,19 +1506,19 @@ namespace IKVM.Runtime
                                 {
                                     if (def[i].Equals("value"))
                                     {
-                                        object[] val = def[i + 1] as object[];
-                                        if (val != null
-                                            && val.Length > 0
-                                            && val[0].Equals(AnnotationDefaultAttribute.TAG_ARRAY))
+                                        var val = def[i + 1] as object[];
+                                        if (val != null &&
+                                            val.Length > 0 &&
+                                            val[0].Equals(AnnotationDefaultAttribute.TAG_ARRAY))
                                         {
                                             AttributeTargets targets = 0;
                                             for (int j = 1; j < val.Length; j++)
                                             {
-                                                object[] eval = val[j] as object[];
-                                                if (eval != null
-                                                    && eval.Length == 3
-                                                    && eval[0].Equals(AnnotationDefaultAttribute.TAG_ENUM)
-                                                    && eval[1].Equals("Ljava/lang/annotation/ElementType;"))
+                                                var eval = val[j] as object[];
+                                                if (eval != null &&
+                                                    eval.Length == 3 &&
+                                                    eval[0].Equals(AnnotationDefaultAttribute.TAG_ENUM) &&
+                                                    eval[1].Equals("Ljava/lang/annotation/ElementType;"))
                                                 {
                                                     switch ((string)eval[2])
                                                     {
@@ -1525,7 +1548,8 @@ namespace IKVM.Runtime
                                                     }
                                                 }
                                             }
-                                            attributeUsageAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName).GetConstructor(new Type[] { context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName) }), new object[] { targets });
+
+                                            attributeUsageAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName).GetConstructor(new[] { context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName) }), new object[] { targets });
                                         }
                                     }
                                 }
@@ -1534,24 +1558,21 @@ namespace IKVM.Runtime
                             {
                                 // apply any .NET custom attributes that are on the annotation to the custom attribute we synthesize
                                 // (for example, to allow AttributeUsageAttribute to be overridden)
-                                Annotation annotation = Annotation.Load(o.wrapper, def);
+                                var annotation = Annotation.Load(o.wrapper, def);
                                 if (annotation != null && annotation.IsCustomAttribute)
-                                {
                                     annotation.Apply(o.wrapper.GetClassLoader(), attributeTypeBuilder, def);
-                                }
                                 if (def[1].Equals("Lcli/System/AttributeUsageAttribute$Annotation;"))
-                                {
                                     hasAttributeUsageAttribute = true;
-                                }
                             }
                         }
+
                         if (attributeUsageAttribute != null && !hasAttributeUsageAttribute)
                         {
                             attributeTypeBuilder.SetCustomAttribute(attributeUsageAttribute);
                         }
                     }
 
-                    defineConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, new Type[] { context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType() });
+                    defineConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, new[] { context.Types.Object.MakeArrayType() });
                     context.AttributeHelper.SetEditorBrowsableNever(defineConstructor);
                 }
 
@@ -1587,15 +1608,15 @@ namespace IKVM.Runtime
                         {
                             argType = tw.TypeAsSignatureType;
                         }
+
                         if (isArray)
-                        {
                             argType = RuntimeArrayJavaType.MakeArrayType(argType, 1);
-                        }
+
                         return argType;
                     }
                 }
 
-                private static bool IsDotNetEnum(RuntimeJavaType tw)
+                static bool IsDotNetEnum(RuntimeJavaType tw)
                 {
                     return tw.IsFakeNestedType && (tw.Modifiers & Modifiers.Enum) != 0;
                 }
@@ -1613,11 +1634,12 @@ namespace IKVM.Runtime
                     }
                 }
 
-                private static void EmitSetValueCall(RuntimeJavaType annotationAttributeBaseType, CodeEmitter ilgen, string name, RuntimeJavaType tw, int argIndex)
+                static void EmitSetValueCall(RuntimeJavaType annotationAttributeBaseType, CodeEmitter ilgen, string name, RuntimeJavaType tw, int argIndex)
                 {
                     ilgen.Emit(OpCodes.Ldarg_0);
                     ilgen.Emit(OpCodes.Ldstr, name);
                     ilgen.EmitLdarg(argIndex);
+
                     if (tw.TypeAsSignatureType.IsValueType)
                     {
                         ilgen.Emit(OpCodes.Box, tw.TypeAsSignatureType);
@@ -1630,6 +1652,7 @@ namespace IKVM.Runtime
                     {
                         ilgen.Emit(OpCodes.Box, tw.DeclaringTypeWrapper.TypeAsSignatureType);
                     }
+
                     var setValueMethod = annotationAttributeBaseType.GetMethodWrapper("setValue", "(Ljava.lang.String;Ljava.lang.Object;)V", false);
                     setValueMethod.Link();
                     setValueMethod.EmitCall(ilgen);
@@ -1638,25 +1661,24 @@ namespace IKVM.Runtime
                 internal void Finish(JavaTypeImpl o)
                 {
                     Link();
+
+                    // not a valid annotation type
                     if (annotationTypeBuilder == null)
-                    {
-                        // not a valid annotation type
                         return;
-                    }
-                    RuntimeJavaType annotationAttributeBaseType = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
+
+                    var annotationAttributeBaseType = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
                     annotationAttributeBaseType.Finish();
 
                     int requiredArgCount = 0;
                     int valueArg = -1;
-                    bool unsupported = false;
+                    var unsupported = false;
                     for (int i = 0; i < o.methods.Length; i++)
                     {
                         if (!o.methods[i].IsStatic)
                         {
                             if (valueArg == -1 && o.methods[i].Name == "value")
-                            {
                                 valueArg = i;
-                            }
+
                             if (o.classFile.Methods[i].AnnotationDefault == null)
                             {
                                 if (TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType) == null)
@@ -1664,12 +1686,13 @@ namespace IKVM.Runtime
                                     unsupported = true;
                                     break;
                                 }
+
                                 requiredArgCount++;
                             }
                         }
                     }
 
-                    MethodBuilder defaultConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, unsupported || requiredArgCount > 0 ? MethodAttributes.Private : MethodAttributes.Public, Type.EmptyTypes);
+                    var defaultConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, unsupported || requiredArgCount > 0 ? MethodAttributes.Private : MethodAttributes.Public, Type.EmptyTypes);
                     CodeEmitter ilgen;
 
                     if (!unsupported)
