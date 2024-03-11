@@ -3453,10 +3453,6 @@ sun/security/krb5/auto/BogusKDC.java                                            
 sun/security/krb5/auto/KrbTicket.java                                                                                   macosx-all
 sun/security/krb5/auto/UnboundSSL.java                                                                                  macosx-all
 sun/nio/ch/TestMaxCachedBufferSize.java                                                                                 macosx-all
-sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java                                        macosx-all
-java/net/InetAddress/CheckJNI.java                                                                                      macosx-all
-java/net/Inet6Address/B6206527.java                                                                                     macosx-all
-java/net/Inet6Address/B6558853.java                                                                                     macosx-all
 
 # Windows-PRNG SecureRandom
 java/security/SecureRandom/DefaultProvider.java                                                                         generic-all
