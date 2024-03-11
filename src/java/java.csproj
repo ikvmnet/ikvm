@@ -5,7 +5,6 @@
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <SelfContained>true</SelfContained>
         <RootNamespace>ikvm.tools.java</RootNamespace>
-        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
