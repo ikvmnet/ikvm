@@ -61,122 +61,123 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
 
-#if IMPORTER
+        Type typeOfModifiers;
+        Type typeOfSourceFileAttribute;
+        Type typeOfLineNumberTableAttribute;
+        ConstructorInfo implementsAttributeConstructor;
+        ConstructorInfo throwsAttributeConstructor;
+        ConstructorInfo sourceFileAttributeConstructor;
+        ConstructorInfo lineNumberTableAttributeConstructor1;
+        ConstructorInfo lineNumberTableAttributeConstructor2;
+        ConstructorInfo enclosingMethodAttributeConstructor;
+        ConstructorInfo signatureAttributeConstructor;
+        ConstructorInfo methodParametersAttributeConstructor;
+        ConstructorInfo runtimeVisibleTypeAnnotationsAttributeConstructor;
+        ConstructorInfo constantPoolAttributeConstructor;
+        ConstructorInfo nonNestedInnerClassAttributeConstructor;
+        ConstructorInfo nonNestedOuterClassAttributeConstructor;
+        CustomAttributeBuilder paramArrayAttributeBuilder;
+        CustomAttributeBuilder ghostInterfaceAttributeBuilder;
+        CustomAttributeBuilder deprecatedAttributeBuilder;
+        CustomAttributeBuilder editorBrowsableAttributeNeverBuilder;
 
-
-        Type typeofModifiers;
-        Type typeofSourceFileAttribute;
-        Type typeofLineNumberTableAttribute;
-        ConstructorInfo implementsAttribute;
-        ConstructorInfo throwsAttribute;
-        ConstructorInfo sourceFileAttribute;
-        ConstructorInfo lineNumberTableAttribute1;
-        ConstructorInfo lineNumberTableAttribute2;
-        ConstructorInfo enclosingMethodAttribute;
-        ConstructorInfo signatureAttribute;
-        ConstructorInfo methodParametersAttribute;
-        ConstructorInfo runtimeVisibleTypeAnnotationsAttribute;
-        ConstructorInfo constantPoolAttribute;
-        ConstructorInfo nonNestedInnerClassAttribute;
-        ConstructorInfo nonNestedOuterClassAttribute;
-        CustomAttributeBuilder paramArrayAttribute;
-        CustomAttributeBuilder ghostInterfaceAttribute;
-        CustomAttributeBuilder deprecatedAttribute;
-        CustomAttributeBuilder editorBrowsableNever;
-
-#endif
-
-        Type typeofRemappedClassAttribute;
-        Type typeofRemappedTypeAttribute;
-        Type typeofModifiersAttribute;
-        Type typeofRemappedInterfaceMethodAttribute;
-        Type typeofNameSigAttribute;
-        Type typeofJavaModuleAttribute;
-        Type typeofSignatureAttribute;
-        Type typeofInnerClassAttribute;
-        Type typeofImplementsAttribute;
-        Type typeofGhostInterfaceAttribute;
-        Type typeofExceptionIsUnsafeForMappingAttribute;
-        Type typeofThrowsAttribute;
-        Type typeofHideFromJavaAttribute;
-        Type typeofHideFromJavaFlags;
-        Type typeofNoPackagePrefixAttribute;
-        Type typeofAnnotationAttributeAttribute;
-        Type typeofNonNestedInnerClassAttribute;
-        Type typeofNonNestedOuterClassAttribute;
-        Type typeofEnclosingMethodAttribute;
-        Type typeofMethodParametersAttribute;
-        Type typeofRuntimeVisibleTypeAnnotationsAttribute;
-        Type typeofConstantPoolAttribute;
-        Type typeofDebuggableAttribute;
-        Type typeofAttributeUsageAttribute;
-        ConstructorInfo debuggableAttribute;
-        ConstructorInfo attributeUsageAttribute;
-        CustomAttributeBuilder hideFromJavaAttribute;
-        CustomAttributeBuilder hideFromReflection;
+        Type typeOfRemappedClassAttribute;
+        Type typeOfRemappedTypeAttribute;
+        Type typeOfModifiersAttribute;
+        Type typeOfRemappedInterfaceMethodAttribute;
+        Type typeOfNameSigAttribute;
+        Type typeOfJavaModuleAttribute;
+        Type typeOfSignatureAttribute;
+        Type typeOfInnerClassAttribute;
+        Type typeOfImplementsAttribute;
+        Type typeOfGhostInterfaceAttribute;
+        Type typeOfExceptionIsUnsafeForMappingAttribute;
+        Type typeOfThrowsAttribute;
+        Type typeOfHideFromJavaAttribute;
+        Type typeOfHideFromJavaFlags;
+        Type typeOfNoPackagePrefixAttribute;
+        Type typeOfAnnotationAttributeAttribute;
+        Type typeOfNonNestedInnerClassAttribute;
+        Type typeOfNonNestedOuterClassAttribute;
+        Type typeOfEnclosingMethodAttribute;
+        Type typeOfMethodParametersAttribute;
+        Type typeOfRuntimeVisibleTypeAnnotationsAttribute;
+        Type typeOfConstantPoolAttribute;
+        Type typeOfDebuggableAttribute;
+        Type typeOfAttributeUsageAttribute;
+        ConstructorInfo debuggableAttributeConstructor;
+        ConstructorInfo attributeUsageAttributeConstructor;
+        CustomAttributeBuilder hideFromJavaAttributeBuilder;
+        CustomAttributeBuilder hideFromReflectionBuilder;
         CustomAttributeBuilder compilerGeneratedAttribute;
 
-#if IMPORTER
+        Type TypeOfModifiers => typeOfModifiers ??= ResolveRuntimeType(typeof(Modifiers));
 
-        Type TypeOfModifiers => typeofModifiers ??= ResolveRuntimeType(typeof(Modifiers));
+        Type TypeOfSourceFileAttribute => typeOfSourceFileAttribute ??= ResolveRuntimeType(typeof(SourceFileAttribute));
 
-        Type TypeOfSourceFileAttribute => typeofSourceFileAttribute ??= ResolveRuntimeType(typeof(SourceFileAttribute));
+        Type TypeOfLineNumberTableAttribute => typeOfLineNumberTableAttribute ??= ResolveRuntimeType(typeof(LineNumberTableAttribute));
 
-        Type TypeOfLineNumberTableAttribute => typeofLineNumberTableAttribute ??= ResolveRuntimeType(typeof(LineNumberTableAttribute));
+        Type TypeOfRemappedClassAttribute => typeOfRemappedClassAttribute ??= ResolveRuntimeType(typeof(RemappedClassAttribute));
 
-#endif
+        Type TypeOfRemappedTypeAttribute => typeOfRemappedTypeAttribute ??= ResolveRuntimeType(typeof(RemappedTypeAttribute));
 
-        Type TypeOfRemappedClassAttribute => typeofRemappedClassAttribute ??= ResolveRuntimeType(typeof(RemappedClassAttribute));
+        Type TypeOfModifiersAttribute => typeOfModifiersAttribute ??= ResolveRuntimeType(typeof(ModifiersAttribute));
 
-        Type TypeOfRemappedTypeAttribute => typeofRemappedTypeAttribute ??= ResolveRuntimeType(typeof(RemappedTypeAttribute));
+        Type TypeOfRemappedInterfaceMethodAttribute => typeOfRemappedInterfaceMethodAttribute ??= ResolveRuntimeType(typeof(RemappedInterfaceMethodAttribute));
 
-        Type TypeOfModifiersAttribute => typeofModifiersAttribute ??= ResolveRuntimeType(typeof(ModifiersAttribute));
+        Type TypeOfNameSigAttribute => typeOfNameSigAttribute ??= ResolveRuntimeType(typeof(NameSigAttribute));
 
-        Type TypeOfRemappedInterfaceMethodAttribute => typeofRemappedInterfaceMethodAttribute ??= ResolveRuntimeType(typeof(RemappedInterfaceMethodAttribute));
+        Type TypeOfJavaModuleAttribute => typeOfJavaModuleAttribute ??= ResolveRuntimeType(typeof(JavaModuleAttribute));
 
-        Type TypeOfNameSigAttribute => typeofNameSigAttribute ??= ResolveRuntimeType(typeof(NameSigAttribute));
+        Type TypeOfSignatureAttribute => typeOfSignatureAttribute ??= ResolveRuntimeType(typeof(SignatureAttribute));
 
-        Type TypeOfJavaModuleAttribute => typeofJavaModuleAttribute ??= ResolveRuntimeType(typeof(JavaModuleAttribute));
+        Type TypeOfInnerClassAttribute => typeOfInnerClassAttribute ??= ResolveRuntimeType(typeof(InnerClassAttribute));
 
-        Type TypeOfSignatureAttribute => typeofSignatureAttribute ??= ResolveRuntimeType(typeof(SignatureAttribute));
+        Type TypeOfImplementsAttribute => typeOfImplementsAttribute ??= ResolveRuntimeType(typeof(ImplementsAttribute));
 
-        Type TypeOfInnerClassAttribute => typeofInnerClassAttribute ??= ResolveRuntimeType(typeof(InnerClassAttribute));
+        Type TypeOfGhostInterfaceAttribute => typeOfGhostInterfaceAttribute ??= ResolveRuntimeType(typeof(GhostInterfaceAttribute));
 
-        Type TypeOfImplementsAttribute => typeofImplementsAttribute ??= ResolveRuntimeType(typeof(ImplementsAttribute));
+        Type TypeOfExceptionIsUnsafeForMappingAttribute => typeOfExceptionIsUnsafeForMappingAttribute ??= ResolveRuntimeType(typeof(ExceptionIsUnsafeForMappingAttribute));
 
-        Type TypeOfGhostInterfaceAttribute => typeofGhostInterfaceAttribute ??= ResolveRuntimeType(typeof(GhostInterfaceAttribute));
+        Type TypeOfThrowsAttribute => typeOfThrowsAttribute ??= ResolveRuntimeType(typeof(ThrowsAttribute));
 
-        Type TypeOfExceptionIsUnsafeForMappingAttribute => typeofExceptionIsUnsafeForMappingAttribute ??= ResolveRuntimeType(typeof(ExceptionIsUnsafeForMappingAttribute));
+        Type TypeOfHideFromJavaAttribute => typeOfHideFromJavaAttribute ??= ResolveRuntimeType(typeof(HideFromJavaAttribute));
 
-        Type TypeOfThrowsAttribute => typeofThrowsAttribute ??= ResolveRuntimeType(typeof(ThrowsAttribute));
+        Type TypeOfHideFromJavaFlags => typeOfHideFromJavaFlags ??= ResolveRuntimeType(typeof(HideFromJavaFlags));
 
-        Type TypeOfHideFromJavaAttribute => typeofHideFromJavaAttribute ??= ResolveRuntimeType(typeof(HideFromJavaAttribute));
+        Type TypeOfNoPackagePrefixAttribute => typeOfNoPackagePrefixAttribute ??= ResolveRuntimeType(typeof(NoPackagePrefixAttribute));
 
-        Type TypeOfHideFromJavaFlags => typeofHideFromJavaFlags ??= ResolveRuntimeType(typeof(HideFromJavaFlags));
+        Type TypeOfAnnotationAttributeAttribute => typeOfAnnotationAttributeAttribute ??= ResolveRuntimeType(typeof(AnnotationAttributeAttribute));
 
-        Type TypeOfNoPackagePrefixAttribute => typeofNoPackagePrefixAttribute ??= ResolveRuntimeType(typeof(NoPackagePrefixAttribute));
+        Type TypeOfNonNestedInnerClassAttribute => typeOfNonNestedInnerClassAttribute ??= ResolveRuntimeType(typeof(NonNestedInnerClassAttribute));
 
-        Type TypeOfAnnotationAttributeAttribute => typeofAnnotationAttributeAttribute ??= ResolveRuntimeType(typeof(AnnotationAttributeAttribute));
+        Type TypeOfNonNestedOuterClassAttribute => typeOfNonNestedOuterClassAttribute ??= ResolveRuntimeType(typeof(NonNestedOuterClassAttribute));
 
-        Type TypeOfNonNestedInnerClassAttribute => typeofNonNestedInnerClassAttribute ??= ResolveRuntimeType(typeof(NonNestedInnerClassAttribute));
+        Type TypeOfEnclosingMethodAttribute => typeOfEnclosingMethodAttribute ??= ResolveRuntimeType(typeof(EnclosingMethodAttribute));
 
-        Type TypeOfNonNestedOuterClassAttribute => typeofNonNestedOuterClassAttribute ??= ResolveRuntimeType(typeof(NonNestedOuterClassAttribute));
+        Type TypeOfMethodParametersAttribute => typeOfMethodParametersAttribute ??= ResolveRuntimeType(typeof(MethodParametersAttribute));
 
-        Type TypeOfEnclosingMethodAttribute => typeofEnclosingMethodAttribute ??= ResolveRuntimeType(typeof(EnclosingMethodAttribute));
+        Type TypeOfRuntimeVisibleTypeAnnotationsAttribute => typeOfRuntimeVisibleTypeAnnotationsAttribute ??= ResolveRuntimeType(typeof(RuntimeVisibleTypeAnnotationsAttribute));
 
-        Type TypeOfMethodParametersAttribute => typeofMethodParametersAttribute ??= ResolveRuntimeType(typeof(MethodParametersAttribute));
+        Type TypeOfConstantPoolAttribute => typeOfConstantPoolAttribute ??= ResolveRuntimeType(typeof(ConstantPoolAttribute));
 
-        Type TypeOfRuntimeVisibleTypeAnnotationsAttribute => typeofRuntimeVisibleTypeAnnotationsAttribute ??= ResolveRuntimeType(typeof(RuntimeVisibleTypeAnnotationsAttribute));
+        Type TypeOfDebuggableAttribute => typeOfDebuggableAttribute ??= ResolveCoreType(typeof(DebuggableAttribute));
 
-        Type TypeOfConstantPoolAttribute => typeofConstantPoolAttribute ??= ResolveRuntimeType(typeof(ConstantPoolAttribute));
+        Type TypeOfAttributeUsageAttribute => typeOfAttributeUsageAttribute ??= ResolveCoreType(typeof(AttributeUsageAttribute));
 
-        Type TypeOfDebuggableAttribute => typeofDebuggableAttribute ??= context.Resolver.ResolveCoreType(typeof(DebuggableAttribute).FullName);
+        CustomAttributeBuilder HideFromJavaAttributeBuilder => hideFromJavaAttributeBuilder ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), Array.Empty<object>());
 
-        Type TypeOfAttributeUsageAttribute => typeofAttributeUsageAttribute ??= context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName);
+        CustomAttributeBuilder HideFromReflectionBuilder => hideFromReflectionBuilder ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(new[] { TypeOfHideFromJavaFlags }), new object[] { HideFromJavaFlags.Reflection | HideFromJavaFlags.StackTrace | HideFromJavaFlags.StackWalk });
 
-        CustomAttributeBuilder HideFromJavaAttributeBuilder => hideFromJavaAttribute ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), Array.Empty<object>());
-
-        CustomAttributeBuilder HideFromReflectionBuilder => hideFromReflection ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(new[] { TypeOfHideFromJavaFlags }), new object[] { HideFromJavaFlags.Reflection | HideFromJavaFlags.StackTrace | HideFromJavaFlags.StackWalk });
+        /// <summary>
+        /// Loads the given managed type from the core assembly.
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        Type ResolveCoreType(System.Type t)
+        {
+            return context.Resolver.ResolveCoreType(t.FullName);
+        }
 
         /// <summary>
         /// Loads the given managed type from the runtime assembly.
@@ -197,7 +198,8 @@ namespace IKVM.Runtime
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-#if IMPORTER
+
+#if IMPORTER || EXPORTER
 
         object ParseValue(RuntimeClassLoader loader, RuntimeJavaType tw, string val)
         {
@@ -298,18 +300,17 @@ namespace IKVM.Runtime
             for (int i = 0; i < twargs.Length; i++)
             {
                 argTypes[i] = twargs[i].TypeAsSignatureType;
-                RuntimeJavaType tw = twargs[i];
+
+                var tw = twargs[i];
                 if (tw == context.JavaBase.TypeOfJavaLangObject)
-                {
                     tw = loader.FieldTypeWrapperFromSig(attr.Params[i].Sig, LoadMode.Link);
-                }
+
                 if (tw.IsArray)
                 {
-                    Array arr = Array.CreateInstance(Type.__GetSystemType(Type.GetTypeCode(tw.ElementTypeWrapper.TypeAsArrayType)), attr.Params[i].Elements.Length);
+                    var arr = Array.CreateInstance(Type.__GetSystemType(Type.GetTypeCode(tw.ElementTypeWrapper.TypeAsArrayType)), attr.Params[i].Elements.Length);
                     for (int j = 0; j < arr.Length; j++)
-                    {
                         arr.SetValue(ParseValue(loader, tw.ElementTypeWrapper, attr.Params[i].Elements[j].Value), j);
-                    }
+
                     args[i] = arr;
                 }
                 else
@@ -321,10 +322,8 @@ namespace IKVM.Runtime
 
         CustomAttributeBuilder CreateCustomAttribute(RuntimeClassLoader loader, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
-            // TODO add error handling
-            Type[] argTypes;
-            object[] args;
-            GetAttributeArgsAndTypes(loader, attr, out argTypes, out args);
+            GetAttributeArgsAndTypes(loader, attr, out var argTypes, out var args);
+
             if (attr.Type != null)
             {
                 var t = context.Resolver.ResolveCoreType(attr.Type);
@@ -346,9 +345,10 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    namedProperties = new PropertyInfo[0];
-                    propertyValues = new object[0];
+                    namedProperties = Array.Empty<PropertyInfo>();
+                    propertyValues = Array.Empty<object>();
                 }
+
                 FieldInfo[] namedFields;
                 object[] fieldValues;
                 if (attr.Fields != null)
@@ -363,18 +363,19 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    namedFields = new FieldInfo[0];
-                    fieldValues = new object[0];
+                    namedFields = Array.Empty<FieldInfo>();
+                    fieldValues = Array.Empty<object>();
                 }
+
                 return new CustomAttributeBuilder(ci, args, namedProperties, propertyValues, namedFields, fieldValues);
             }
             else
             {
                 if (attr.Properties != null)
-                {
                     throw new NotImplementedException("Setting property values on Java attributes is not implemented");
-                }
-                RuntimeJavaType t = loader.LoadClassByName(attr.Class);
+
+                var t = loader.LoadClassByName(attr.Class);
+
                 FieldInfo[] namedFields;
                 object[] fieldValues;
                 if (attr.Fields != null)
@@ -391,38 +392,38 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    namedFields = new FieldInfo[0];
-                    fieldValues = new object[0];
+                    namedFields = Array.Empty<FieldInfo>();
+                    fieldValues = Array.Empty<object>();
                 }
+
                 var mw = t.GetMethodWrapper("<init>", attr.Sig, false);
                 if (mw == null)
-                {
                     throw new InvalidOperationException(string.Format("Constructor missing: {0}::<init>{1}", attr.Class, attr.Sig));
-                }
+
                 mw.Link();
-                ConstructorInfo ci = (mw.GetMethod() as ConstructorInfo) ?? ((MethodInfo)mw.GetMethod()).__AsConstructorInfo();
+                var ci = (mw.GetMethod() as ConstructorInfo) ?? ((MethodInfo)mw.GetMethod()).__AsConstructorInfo();
                 return new CustomAttributeBuilder(ci, args, namedFields, fieldValues);
             }
         }
 
         CustomAttributeBuilder GetEditorBrowsableNever()
         {
-            if (editorBrowsableNever == null)
+            if (editorBrowsableAttributeNeverBuilder == null)
             {
-                var typeofEditorBrowsableAttribute = context.Resolver.ResolveCoreType(typeof(EditorBrowsableAttribute).FullName);
-                var typeofEditorBrowsableState = context.Resolver.ResolveCoreType(typeof(EditorBrowsableState).FullName);
-                var ctor = (ConstructorInfo)typeofEditorBrowsableAttribute.__CreateMissingMethod(ConstructorInfo.ConstructorName, CallingConventions.Standard | CallingConventions.HasThis, null, default, new Type[] { typeofEditorBrowsableState }, null);
-                editorBrowsableNever = CustomAttributeBuilder.__FromBlob(ctor, new byte[] { 01, 00, 01, 00, 00, 00, 00, 00 });
+                var typeOfEditorBrowsableAttribute = context.Resolver.ResolveCoreType(typeof(EditorBrowsableAttribute).FullName);
+                var typeOfEditorBrowsableState = context.Resolver.ResolveCoreType(typeof(EditorBrowsableState).FullName);
+                var ctor = (ConstructorInfo)typeOfEditorBrowsableAttribute.__CreateMissingMethod(ConstructorInfo.ConstructorName, CallingConventions.Standard | CallingConventions.HasThis, null, default, new Type[] { typeOfEditorBrowsableState }, null);
+                editorBrowsableAttributeNeverBuilder = CustomAttributeBuilder.__FromBlob(ctor, new byte[] { 01, 00, 01, 00, 00, 00, 00, 00 });
             }
 
-            return editorBrowsableNever;
+            return editorBrowsableAttributeNeverBuilder;
         }
 
         internal void SetAttributeUsage(TypeBuilder tb, AttributeTargets targets, bool allowMultiple = true)
         {
             var typeofAttributeTargets = context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName);
-            attributeUsageAttribute ??= TypeOfAttributeUsageAttribute.GetConstructor(new[] { typeofAttributeTargets });
-            var compilerGeneratedAttribute = new CustomAttributeBuilder(attributeUsageAttribute, new object[] { targets }, new[] { TypeOfAttributeUsageAttribute.GetProperty(nameof(AttributeUsageAttribute.AllowMultiple)) }, new[] { (object)allowMultiple });
+            attributeUsageAttributeConstructor ??= TypeOfAttributeUsageAttribute.GetConstructor(new[] { typeofAttributeTargets });
+            var compilerGeneratedAttribute = new CustomAttributeBuilder(attributeUsageAttributeConstructor, new object[] { targets }, new[] { TypeOfAttributeUsageAttribute.GetProperty(nameof(AttributeUsageAttribute.AllowMultiple)) }, new[] { (object)allowMultiple });
             tb.SetCustomAttribute(compilerGeneratedAttribute);
         }
 
@@ -441,60 +442,59 @@ namespace IKVM.Runtime
             pb.SetCustomAttribute(GetEditorBrowsableNever());
         }
 
+#endif
+
         internal void SetDeprecatedAttribute(MethodBuilder mb)
         {
-            deprecatedAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
-
-            mb.SetCustomAttribute(deprecatedAttribute);
+            deprecatedAttributeBuilder ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
+            mb.SetCustomAttribute(deprecatedAttributeBuilder);
         }
 
         internal void SetDeprecatedAttribute(TypeBuilder tb)
         {
-            deprecatedAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
-            tb.SetCustomAttribute(deprecatedAttribute);
+            deprecatedAttributeBuilder ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
+            tb.SetCustomAttribute(deprecatedAttributeBuilder);
         }
 
         internal void SetDeprecatedAttribute(FieldBuilder fb)
         {
-            deprecatedAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
-            fb.SetCustomAttribute(deprecatedAttribute);
+            deprecatedAttributeBuilder ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
+            fb.SetCustomAttribute(deprecatedAttributeBuilder);
         }
 
         internal void SetDeprecatedAttribute(PropertyBuilder pb)
         {
-            deprecatedAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
-            pb.SetCustomAttribute(deprecatedAttribute);
+            deprecatedAttributeBuilder ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
+            pb.SetCustomAttribute(deprecatedAttributeBuilder);
         }
 
         internal void SetThrowsAttribute(MethodBuilder mb, string[] exceptions)
         {
             if (exceptions != null && exceptions.Length != 0)
             {
-                throwsAttribute ??= TypeOfThrowsAttribute.GetConstructor(new Type[] { context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType() });
+                throwsAttributeConstructor ??= TypeOfThrowsAttribute.GetConstructor(new Type[] { context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType() });
                 exceptions = UnicodeUtil.EscapeInvalidSurrogates(exceptions);
-                mb.SetCustomAttribute(new CustomAttributeBuilder(throwsAttribute, new object[] { exceptions }));
+                mb.SetCustomAttribute(new CustomAttributeBuilder(throwsAttributeConstructor, new object[] { exceptions }));
             }
         }
 
         internal void SetGhostInterface(TypeBuilder typeBuilder)
         {
-            ghostInterfaceAttribute ??= new CustomAttributeBuilder(TypeOfGhostInterfaceAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
-            typeBuilder.SetCustomAttribute(ghostInterfaceAttribute);
+            ghostInterfaceAttributeBuilder ??= new CustomAttributeBuilder(TypeOfGhostInterfaceAttribute.GetConstructor(Type.EmptyTypes), new object[0]);
+            typeBuilder.SetCustomAttribute(ghostInterfaceAttributeBuilder);
         }
 
         internal void SetNonNestedInnerClass(TypeBuilder typeBuilder, string className)
         {
-            nonNestedInnerClassAttribute ??= TypeOfNonNestedInnerClassAttribute.GetConstructor(new Type[] { context.Types.String });
-            typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(nonNestedInnerClassAttribute, new object[] { UnicodeUtil.EscapeInvalidSurrogates(className) }));
+            nonNestedInnerClassAttributeConstructor ??= TypeOfNonNestedInnerClassAttribute.GetConstructor(new Type[] { context.Types.String });
+            typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(nonNestedInnerClassAttributeConstructor, new object[] { UnicodeUtil.EscapeInvalidSurrogates(className) }));
         }
 
         internal void SetNonNestedOuterClass(TypeBuilder typeBuilder, string className)
         {
-            nonNestedOuterClassAttribute ??= TypeOfNonNestedOuterClassAttribute.GetConstructor(new Type[] { context.Types.String });
-            typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(nonNestedOuterClassAttribute, new object[] { UnicodeUtil.EscapeInvalidSurrogates(className) }));
+            nonNestedOuterClassAttributeConstructor ??= TypeOfNonNestedOuterClassAttribute.GetConstructor(new Type[] { context.Types.String });
+            typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(nonNestedOuterClassAttributeConstructor, new object[] { UnicodeUtil.EscapeInvalidSurrogates(className) }));
         }
-
-#endif // IMPORTER
 
         internal void SetCompilerGenerated(TypeBuilder tb)
         {
@@ -529,8 +529,7 @@ namespace IKVM.Runtime
 
         internal void HideFromJava(MethodBuilder mb, HideFromJavaFlags flags)
         {
-            CustomAttributeBuilder cab = new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(new Type[] { TypeOfHideFromJavaFlags }), new object[] { flags });
-            mb.SetCustomAttribute(cab);
+            mb.SetCustomAttribute(new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(new Type[] { TypeOfHideFromJavaFlags }), new object[] { flags }));
         }
 
         internal void HideFromJava(FieldBuilder fb)
@@ -538,14 +537,10 @@ namespace IKVM.Runtime
             fb.SetCustomAttribute(HideFromJavaAttributeBuilder);
         }
 
-#if IMPORTER
-
         internal void HideFromJava(PropertyBuilder pb)
         {
             pb.SetCustomAttribute(HideFromJavaAttributeBuilder);
         }
-
-#endif
 
         internal bool IsHideFromJava(Type type)
         {
@@ -573,7 +568,7 @@ namespace IKVM.Runtime
 
 #if !IMPORTER && !EXPORTER
 
-            var attr = mi.GetCustomAttributes(typeofHideFromJavaAttribute, false);
+            var attr = mi.GetCustomAttributes(typeOfHideFromJavaAttribute, false);
             if (attr.Length == 1)
                 return ((HideFromJavaAttribute)attr[0]).Flags;
 
@@ -592,19 +587,15 @@ namespace IKVM.Runtime
             return HideFromJavaFlags.None;
         }
 
-#if IMPORTER
-
         internal void SetImplementsAttribute(TypeBuilder typeBuilder, RuntimeJavaType[] ifaceWrappers)
         {
             var interfaces = new string[ifaceWrappers.Length];
             for (int i = 0; i < interfaces.Length; i++)
                 interfaces[i] = UnicodeUtil.EscapeInvalidSurrogates(ifaceWrappers[i].Name);
 
-            implementsAttribute ??= TypeOfImplementsAttribute.GetConstructor(new[] { context.Types.String.MakeArrayType() });
-            typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(implementsAttribute, new object[] { interfaces }));
+            implementsAttributeConstructor ??= TypeOfImplementsAttribute.GetConstructor(new[] { context.Types.String.MakeArrayType() });
+            typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(implementsAttributeConstructor, new object[] { interfaces }));
         }
-
-#endif
 
         internal bool IsGhostInterface(Type type)
         {
@@ -754,11 +745,9 @@ namespace IKVM.Runtime
 
         internal void SetDebuggingModes(AssemblyBuilder assemblyBuilder, DebuggableAttribute.DebuggingModes modes)
         {
-            debuggableAttribute ??= TypeOfDebuggableAttribute.GetConstructor(new[] { TypeOfDebuggableAttribute.GetNestedType(nameof(DebuggableAttribute.DebuggingModes)) });
-            assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(debuggableAttribute, new object[] { modes }));
+            debuggableAttributeConstructor ??= TypeOfDebuggableAttribute.GetConstructor(new[] { TypeOfDebuggableAttribute.GetNestedType(nameof(DebuggableAttribute.DebuggingModes)) });
+            assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(debuggableAttributeConstructor, new object[] { modes }));
         }
-
-#if IMPORTER
 
         internal void SetModifiers(MethodBuilder mb, Modifiers modifiers, bool isInternal)
         {
@@ -821,14 +810,14 @@ namespace IKVM.Runtime
 
         internal void SetSourceFile(TypeBuilder typeBuilder, string filename)
         {
-            sourceFileAttribute ??= TypeOfSourceFileAttribute.GetConstructor(new Type[] { context.Types.String });
-            typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(sourceFileAttribute, new object[] { filename }));
+            sourceFileAttributeConstructor ??= TypeOfSourceFileAttribute.GetConstructor(new Type[] { context.Types.String });
+            typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(sourceFileAttributeConstructor, new object[] { filename }));
         }
 
         internal void SetSourceFile(ModuleBuilder moduleBuilder, string filename)
         {
-            sourceFileAttribute ??= TypeOfSourceFileAttribute.GetConstructor(new Type[] { context.Types.String });
-            moduleBuilder.SetCustomAttribute(new CustomAttributeBuilder(sourceFileAttribute, new object[] { filename }));
+            sourceFileAttributeConstructor ??= TypeOfSourceFileAttribute.GetConstructor(new Type[] { context.Types.String });
+            moduleBuilder.SetCustomAttribute(new CustomAttributeBuilder(sourceFileAttributeConstructor, new object[] { filename }));
         }
 
         internal void SetLineNumberTable(MethodBuilder mb, IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter writer)
@@ -837,14 +826,14 @@ namespace IKVM.Runtime
             ConstructorInfo con;
             if (writer.Count == 1)
             {
-                lineNumberTableAttribute2 ??= TypeOfLineNumberTableAttribute.GetConstructor(new[] { context.Types.UInt16 });
-                con = lineNumberTableAttribute2;
+                lineNumberTableAttributeConstructor2 ??= TypeOfLineNumberTableAttribute.GetConstructor(new[] { context.Types.UInt16 });
+                con = lineNumberTableAttributeConstructor2;
                 arg = (ushort)writer.LineNo;
             }
             else
             {
-                lineNumberTableAttribute1 ??= TypeOfLineNumberTableAttribute.GetConstructor(new[] { context.Types.Byte.MakeArrayType() });
-                con = lineNumberTableAttribute1;
+                lineNumberTableAttributeConstructor1 ??= TypeOfLineNumberTableAttribute.GetConstructor(new[] { context.Types.Byte.MakeArrayType() });
+                con = lineNumberTableAttributeConstructor1;
                 arg = writer.ToArray();
             }
 
@@ -853,32 +842,32 @@ namespace IKVM.Runtime
 
         internal void SetEnclosingMethodAttribute(TypeBuilder tb, string className, string methodName, string methodSig)
         {
-            enclosingMethodAttribute ??= TypeOfEnclosingMethodAttribute.GetConstructor(new Type[] { context.Types.String, context.Types.String, context.Types.String });
-            tb.SetCustomAttribute(new CustomAttributeBuilder(enclosingMethodAttribute, new object[] { UnicodeUtil.EscapeInvalidSurrogates(className), UnicodeUtil.EscapeInvalidSurrogates(methodName), UnicodeUtil.EscapeInvalidSurrogates(methodSig) }));
+            enclosingMethodAttributeConstructor ??= TypeOfEnclosingMethodAttribute.GetConstructor(new Type[] { context.Types.String, context.Types.String, context.Types.String });
+            tb.SetCustomAttribute(new CustomAttributeBuilder(enclosingMethodAttributeConstructor, new object[] { UnicodeUtil.EscapeInvalidSurrogates(className), UnicodeUtil.EscapeInvalidSurrogates(methodName), UnicodeUtil.EscapeInvalidSurrogates(methodSig) }));
         }
 
         internal void SetSignatureAttribute(TypeBuilder tb, string signature)
         {
-            signatureAttribute ??= TypeOfSignatureAttribute.GetConstructor(new Type[] { context.Types.String });
-            tb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
+            signatureAttributeConstructor ??= TypeOfSignatureAttribute.GetConstructor(new Type[] { context.Types.String });
+            tb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttributeConstructor, new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
         }
 
         internal void SetSignatureAttribute(FieldBuilder fb, string signature)
         {
-            signatureAttribute ??= TypeOfSignatureAttribute.GetConstructor(new Type[] { context.Types.String });
-            fb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
+            signatureAttributeConstructor ??= TypeOfSignatureAttribute.GetConstructor(new Type[] { context.Types.String });
+            fb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttributeConstructor, new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
         }
 
         internal void SetSignatureAttribute(MethodBuilder mb, string signature)
         {
-            signatureAttribute ??= TypeOfSignatureAttribute.GetConstructor(new Type[] { context.Types.String });
-            mb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
+            signatureAttributeConstructor ??= TypeOfSignatureAttribute.GetConstructor(new Type[] { context.Types.String });
+            mb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttributeConstructor, new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
         }
 
         internal void SetMethodParametersAttribute(MethodBuilder mb, Modifiers[] modifiers)
         {
-            methodParametersAttribute ??= TypeOfMethodParametersAttribute.GetConstructor(new Type[] { TypeOfModifiers.MakeArrayType() });
-            mb.SetCustomAttribute(new CustomAttributeBuilder(methodParametersAttribute, new object[] { modifiers }));
+            methodParametersAttributeConstructor ??= TypeOfMethodParametersAttribute.GetConstructor(new Type[] { TypeOfModifiers.MakeArrayType() });
+            mb.SetCustomAttribute(new CustomAttributeBuilder(methodParametersAttributeConstructor, new object[] { modifiers }));
         }
 
         internal void SetRuntimeVisibleTypeAnnotationsAttribute(TypeBuilder tb, IReadOnlyList<TypeAnnotationReader> data)
@@ -889,8 +878,8 @@ namespace IKVM.Runtime
             if (r.TryWrite(ref w) == false)
                 throw new InternalException();
 
-            runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { context.Types.Byte.MakeArrayType() });
-            tb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { m }));
+            runtimeVisibleTypeAnnotationsAttributeConstructor ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { context.Types.Byte.MakeArrayType() });
+            tb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttributeConstructor, new object[] { m }));
         }
 
         internal void SetRuntimeVisibleTypeAnnotationsAttribute(FieldBuilder fb, IReadOnlyList<TypeAnnotationReader> data)
@@ -901,8 +890,8 @@ namespace IKVM.Runtime
             if (r.TryWrite(ref w) == false)
                 throw new InternalException();
 
-            runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { context.Types.Byte.MakeArrayType() });
-            fb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { m }));
+            runtimeVisibleTypeAnnotationsAttributeConstructor ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { context.Types.Byte.MakeArrayType() });
+            fb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttributeConstructor, new object[] { m }));
         }
 
         internal void SetRuntimeVisibleTypeAnnotationsAttribute(MethodBuilder mb, IReadOnlyList<TypeAnnotationReader> data)
@@ -913,23 +902,21 @@ namespace IKVM.Runtime
             if (r.TryWrite(ref w) == false)
                 throw new InternalException();
 
-            runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { context.Types.Byte.MakeArrayType() });
-            mb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { m }));
+            runtimeVisibleTypeAnnotationsAttributeConstructor ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { context.Types.Byte.MakeArrayType() });
+            mb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttributeConstructor, new object[] { m }));
         }
 
         internal void SetConstantPoolAttribute(TypeBuilder tb, object[] constantPool)
         {
-            constantPoolAttribute ??= TypeOfConstantPoolAttribute.GetConstructor(new Type[] { context.Types.Object.MakeArrayType() });
-            tb.SetCustomAttribute(new CustomAttributeBuilder(constantPoolAttribute, new object[] { constantPool }));
+            constantPoolAttributeConstructor ??= TypeOfConstantPoolAttribute.GetConstructor(new Type[] { context.Types.Object.MakeArrayType() });
+            tb.SetCustomAttribute(new CustomAttributeBuilder(constantPoolAttributeConstructor, new object[] { constantPool }));
         }
 
         internal void SetParamArrayAttribute(ParameterBuilder pb)
         {
-            paramArrayAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
-            pb.SetCustomAttribute(paramArrayAttribute);
+            paramArrayAttributeBuilder ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
+            pb.SetCustomAttribute(paramArrayAttributeBuilder);
         }
-
-#endif  // IMPORTER
 
         internal NameSigAttribute GetNameSig(MemberInfo member)
         {
@@ -1254,8 +1241,6 @@ namespace IKVM.Runtime
 #endif
         }
 
-#if IMPORTER
-
         internal void SetRemappedClass(AssemblyBuilder assemblyBuilder, string name, Type shadowType)
         {
             var remappedClassAttribute = TypeOfRemappedClassAttribute.GetConstructor(new Type[] { context.Types.String, context.Types.Type });
@@ -1270,7 +1255,7 @@ namespace IKVM.Runtime
 
         internal void SetRemappedInterfaceMethod(TypeBuilder typeBuilder, string name, string mappedTo, string[] throws)
         {
-            var cab = new CustomAttributeBuilder(TypeOfRemappedInterfaceMethodAttribute.GetConstructor(new Type[] { context.Types.String, context.Types.String, context.Types.String.MakeArrayType() }), new object[] { name, mappedTo, throws });
+            var cab = new CustomAttributeBuilder(TypeOfRemappedInterfaceMethodAttribute.GetConstructor(new[] { context.Types.String, context.Types.String, context.Types.String.MakeArrayType() }), new object[] { name, mappedTo, throws });
             typeBuilder.SetCustomAttribute(cab);
         }
 
@@ -1280,12 +1265,10 @@ namespace IKVM.Runtime
             typeBuilder.SetCustomAttribute(cab);
         }
 
-#endif
-
         internal void SetRuntimeCompatibilityAttribute(AssemblyBuilder assemblyBuilder)
         {
             var runtimeCompatibilityAttribute = context.Resolver.ResolveCoreType(typeof(RuntimeCompatibilityAttribute).FullName);
-            assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(runtimeCompatibilityAttribute.GetConstructor(Type.EmptyTypes), Array.Empty<object>(), new PropertyInfo[] { runtimeCompatibilityAttribute.GetProperty("WrapNonExceptionThrows") }, new object[] { true }, Array.Empty<FieldInfo>(), Array.Empty<object>()));
+            assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(runtimeCompatibilityAttribute.GetConstructor(Type.EmptyTypes), Array.Empty<object>(), new[] { runtimeCompatibilityAttribute.GetProperty("WrapNonExceptionThrows") }, new object[] { true }, Array.Empty<FieldInfo>(), Array.Empty<object>()));
         }
 
         internal void SetInternalsVisibleToAttribute(AssemblyBuilder assemblyBuilder, string assemblyName)

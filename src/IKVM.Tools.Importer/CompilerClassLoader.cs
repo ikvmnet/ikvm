@@ -632,7 +632,7 @@ namespace IKVM.Tools.Importer
         }
 
         /// <summary>
-        /// Adds a 'IgnoresAccessChecksToAttribute' type to the assembly, and attributes on the assembly that ignore
+        /// Adds a 'IgnoresAccessChecksToAttribute' type to the assembly and attributes on the assembly that ignore
         /// access checks to all Java modules which are referenced. This ensures package-private references across
         /// assemblies are possible.
         /// </summary>
@@ -643,15 +643,25 @@ namespace IKVM.Tools.Importer
             {
                 // add IgnoresAccessChecksToAttribute type
                 var iactBuilder = mb.DefineType("System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute", TypeAttributes.Class | TypeAttributes.Sealed, Context.Types.Attribute);
-                iactBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[] { Context.Types.String });
                 Context.AttributeHelper.SetAttributeUsage(iactBuilder, AttributeTargets.Assembly, true);
+
+                // add .ctor to type
+                var ctorBuilder = iactBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[] { Context.Types.String });
+                var ctorIL = ctorBuilder.GetILGenerator();
+                ctorIL.Emit(OpCodes.Ldarg_0);
+                ctorIL.Emit(OpCodes.Call, Context.Types.Attribute.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null));
+                ctorIL.Emit(OpCodes.Ret);
+
+                // create type
                 var iact = iactBuilder.CreateType();
                 var iactCtor = iact.GetConstructor(new[] { Context.Types.String });
 
                 // add IgnoresAccessChecksToAttribute to each referenced assembly
+                var hs = new HashSet<RuntimeAssemblyClassLoader>();
                 for (int i = 0; i < referencedAssemblies.Length; i++)
-                    if (Context.AttributeHelper.IsJavaModule(referencedAssemblies[i].MainAssembly.ManifestModule))
-                        assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(iactCtor, new[] { UnicodeUtil.EscapeInvalidSurrogates(referencedAssemblies[i].MainAssembly.FullName) }));
+                    if (hs.Add(referencedAssemblies[i]))
+                        if (Context.AttributeHelper.IsJavaModule(referencedAssemblies[i].MainAssembly.ManifestModule))
+                            assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(iactCtor, new[] { UnicodeUtil.EscapeInvalidSurrogates(referencedAssemblies[i].MainAssembly.FullName) }));
             }
         }
 

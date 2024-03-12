@@ -883,20 +883,20 @@ namespace IKVM.Runtime
             return GetClassLoader().InternalsVisibleToImpl(this, wrapper);
         }
 
-        internal virtual bool IsPackageAccessibleFrom(RuntimeJavaType wrapper)
+        internal virtual bool IsPackageAccessibleFrom(RuntimeJavaType other)
         {
-            if (MatchingPackageNames(name, wrapper.name))
+            if (MatchingPackageNames(name, other.name))
             {
 #if IMPORTER
                 if (GetClassLoader() is CompilerClassLoader ccl)
                 {
                     // this is a hack for multi target -sharedclassloader compilation
                     // (during compilation we have multiple CompilerClassLoader instances to represent the single shared runtime class loader)
-                    return ccl.IsEquivalentTo(wrapper.GetClassLoader());
+                    return ccl.IsEquivalentTo(other.GetClassLoader());
                 }
 #endif
 
-                return GetClassLoader() == wrapper.GetClassLoader();
+                return GetClassLoader() == other.GetClassLoader();
             }
             else
             {

@@ -130,6 +130,7 @@ namespace IKVM.Runtime
             if (loader is RuntimeAssemblyClassLoader acl)
             {
                 var name = acl.MainAssembly.GetName().Name + context.Options.DynamicAssemblySuffixAndPublicKey;
+
                 foreach (var attr in acl.MainAssembly.GetCustomAttributes<InternalsVisibleToAttribute>())
                 {
                     if (attr.AssemblyName == name)
@@ -546,7 +547,7 @@ namespace IKVM.Runtime
             var moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name);
 #endif
 
-            moduleBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(IKVM.Attributes.JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
+            moduleBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(IKVM.Attributes.JavaModuleAttribute).GetConstructor(Type.EmptyTypes), Array.Empty<object>()));
             return moduleBuilder;
         }
 
