@@ -430,12 +430,12 @@ jobs:
       with:
         name: doc
         path: C:\doc.zip
-  test-excludes:
+  test-vars:
     runs-on: ubuntu-latest
     outputs:
-      xsys: ${{ steps.test-excludes.outputs.xsys }}
+      sys: ${{ steps.test-vars.outputs.sys }}
     steps:
-    - id: test-sys
+    - id: test-vars
       run: |
         if ${{ inputs.full_test != true }}; then
           echo 'sys=[
@@ -457,7 +457,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sys: ${{ fromJSON(needs.test-excludes.outputs.sys) }}
+        sys: ${{ fromJSON(needs.test-vars.outputs.sys) }}
         run:
         - IKVM.ByteCode.Tests
         - IKVM.Reflection.Tests
