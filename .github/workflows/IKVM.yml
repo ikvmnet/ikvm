@@ -435,16 +435,20 @@ jobs:
     outputs:
       xsys: ${{ steps.test-excludes.outputs.xsys }}
     steps:
-    - id: test-excludes
+    - id: test-sys
       run: |
         if ${{ inputs.full_test != true }}; then
-          echo 'xsys=[
+          echo 'sys=[
             "win-arm64",
             "osx-arm64",
             "linux-arm64"
           ]' | tr -d '[:space:]' >> $GITHUB_OUTPUT
         else
-          echo 'xsys=[]' >> $GITHUB_OUTPUT
+          echo 'sys=[
+            "win-arm64",
+            "osx-arm64",
+            "linux-arm64"
+          ]' | tr -d '[:space:]' >> $GITHUB_OUTPUT
         fi
   test:
     needs:
@@ -453,6 +457,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        sys: ${{ fromJSON(needs.test-excludes.outputs.sys) }}
         run:
         - IKVM.ByteCode.Tests
         - IKVM.Reflection.Tests
@@ -485,16 +490,11 @@ jobs:
         - net472
         - net6.0
         - net8.0
-        sys:
-        - win-x64
-        - linux-x64
-        - osx-x64
         exclude:
         - tfm: net472
           sys: linux-x64
         - tfm: net472
           sys: osx-x64
-    if: contains(fromJSON(needs.test-excludes.outputs.xsys), matrix.sys) == false
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
