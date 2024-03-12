@@ -2,6 +2,10 @@ name: IKVM
 
 on:
   workflow_dispatch:
+    inputs:
+      full_test:
+        required: false
+        type: boolean
   push:
     branches:
     - main
