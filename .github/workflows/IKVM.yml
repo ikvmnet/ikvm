@@ -437,6 +437,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       sys: ${{ steps.test-vars.outputs.sys }}
+      tfm: ${{ steps.test-vars.outputs.tfm }}
     steps:
     - id: test-vars
       run: |
@@ -446,11 +447,20 @@ jobs:
             "osx-arm64",
             "linux-arm64"
           ]' | tr -d '[:space:]' >> $GITHUB_OUTPUT
+          echo 'tfm=[
+            "net472",
+            "net6.0",
+            "net8.0"
+          ]' | tr -d '[:space:]' >> $GITHUB_OUTPUT
         else
           echo 'sys=[
             "win-arm64",
             "osx-arm64",
             "linux-arm64"
+          ]' | tr -d '[:space:]' >> $GITHUB_OUTPUT
+          echo 'tfm=[
+            "net472",
+            "net8.0"
           ]' | tr -d '[:space:]' >> $GITHUB_OUTPUT
         fi
   test:
@@ -461,6 +471,7 @@ jobs:
       fail-fast: false
       matrix:
         sys: ${{ fromJSON(needs.test-vars.outputs.sys) }}
+        tfm: ${{ fromJSON(needs.test-vars.outputs.tfm) }}
         run:
         - IKVM.ByteCode.Tests
         - IKVM.Reflection.Tests
@@ -489,10 +500,6 @@ jobs:
         - IKVM.OpenJDK.Tests?TestPartition=13
         - IKVM.OpenJDK.Tests?TestPartition=14
         - IKVM.OpenJDK.Tests?TestPartition=15
-        tfm:
-        - net472
-        - net6.0
-        - net8.0
         exclude:
         - tfm: net472
           sys: linux-x64
