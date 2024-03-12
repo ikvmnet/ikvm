@@ -134,10 +134,6 @@ jobs:
         path: work
         fetch-depth: 0
         submodules: recursive
-    - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 3.1.x
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v4
       with:
