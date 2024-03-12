@@ -540,7 +540,7 @@ jobs:
     - build-ikvm
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
-    if: matrix.sys == 'win-x64' || matrix.sys == 'linux-x64' || matrix.sys == 'osx-x64' || inputs.full_test == true
+    if: ${{ matrix.sys == 'win-x64' || matrix.sys == 'linux-x64' || matrix.sys == 'osx-x64' || inputs.full_test == true }}
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
