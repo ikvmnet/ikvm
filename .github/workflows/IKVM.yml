@@ -430,7 +430,26 @@ jobs:
       with:
         name: doc
         path: C:\doc.zip
+  test-excludes:
+    runs-on: ubuntu-latest
+    outputs:
+      xsys: ${{ steps.test-excludes.outputs.xsys }}
+    steps:
+    - id: test-excludes
+      run: |
+        if ${{ input.full_test != true }}; then
+          echo 'xsys=[
+            "win-arm64",
+            "osx-arm64",
+            "linux-arm64"
+          ]' | tr -d '[:space:]' >> $GITHUB_OUTPUT
+        else
+          echo 'xsys=[]' >> $GITHUB_OUTPUT
+        fi
   test:
+    needs:
+    - build-ikvm
+    - test-excludes
     strategy:
       fail-fast: false
       matrix:
@@ -475,9 +494,8 @@ jobs:
           sys: linux-x64
         - tfm: net472
           sys: osx-x64
+    if: fromJSON(needs.test-excludes.outputs.xsys).contains(matrix.sys) == false
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
-    needs:
-    - build-ikvm
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
     steps:
