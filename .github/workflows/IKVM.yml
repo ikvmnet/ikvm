@@ -431,13 +431,16 @@ jobs:
         name: doc
         path: C:\doc.zip
   test-vars:
+    name: Test Variables
+    needs:
+    - build-ikvm
     runs-on: ubuntu-latest
     outputs:
       sys: ${{ steps.test-vars.outputs.sys }}
     steps:
     - id: test-vars
       run: |
-        if ${{ inputs.full_test != true }}; then
+        if ${{ inputs.full_test == true }}; then
           echo 'sys=[
             "win-arm64",
             "osx-arm64",
