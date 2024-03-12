@@ -494,7 +494,7 @@ jobs:
           sys: linux-x64
         - tfm: net472
           sys: osx-x64
-    if: fromJSON(needs.test-excludes.outputs.xsys).contains(matrix.sys) == false
+    if: contains(fromJSON(needs.test-excludes.outputs.xsys), matrix.sys) == false
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
