@@ -9,7 +9,6 @@
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <StartupObject>com.sun.tools.internal.ws.WsGen</StartupObject>
         <RootNamespace>ikvm.tools.wsgen</RootNamespace>
-        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

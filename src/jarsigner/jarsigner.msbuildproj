@@ -9,7 +9,6 @@
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <StartupObject>sun.security.tools.jarsigner.Main</StartupObject>
         <RootNamespace>ikvm.tools.jarsigner</RootNamespace>
-        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

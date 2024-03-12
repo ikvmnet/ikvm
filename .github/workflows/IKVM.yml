@@ -2,6 +2,10 @@ name: IKVM
 
 on:
   workflow_dispatch:
+    inputs:
+      full_test:
+        required: false
+        type: boolean
   push:
     branches:
     - main
@@ -163,11 +167,11 @@ jobs:
         crate: apple-codesign
         version: latest
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v0
+      uses: gittools/actions/gitversion/setup@v1
       with:
         versionSpec: 5.x
     - name: Execute GitVersion
-      uses: gittools/actions/gitversion/execute@v0
+      uses: gittools/actions/gitversion/execute@v1
       with:
         targetPath: ${{ env.WORKPATH }}\ikvm
         useConfigFile: true
@@ -709,12 +713,12 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v0
+      uses: gittools/actions/gitversion/setup@v1
       with:
         versionSpec: 5.x
     - name: Execute GitVersion
       id: GitVersion
-      uses: gittools/actions/gitversion/execute@v0
+      uses: gittools/actions/gitversion/execute@v1
       with:
         useConfigFile: true
     - name: Download NuGet Packages
