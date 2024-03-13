@@ -50,7 +50,7 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </IncludeProjectReference>
         <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
-            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <IncludeTargetPath>lib\net8.0\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </IncludeProjectReference>

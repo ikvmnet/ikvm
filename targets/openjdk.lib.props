@@ -29,7 +29,7 @@
     </PropertyGroup>
 
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-')) ">
-        <ProjectReference Include="..\IKVM.Java.runtime.win\IKVM.Java.runtime.win.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
+        <ProjectReference Include="..\IKVM.Java.runtime.win\IKVM.Java.runtime.win.msbuildproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
     </ItemGroup>
 
     <!-- common/autoconf/flags.m4 -->
@@ -40,7 +40,7 @@
     </PropertyGroup>
 
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        <ProjectReference Include="..\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
+        <ProjectReference Include="..\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.msbuildproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
     </ItemGroup>
 
     <!-- common/autoconf/flags.m4 -->
@@ -51,7 +51,7 @@
     </PropertyGroup>
 
     <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
-        <ProjectReference Include="..\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
+        <ProjectReference Include="..\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.msbuildproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
     </ItemGroup>
 
     <!-- standard OpenJDK includes -->
