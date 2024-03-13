@@ -33,12 +33,7 @@ namespace IKVM.Runtime
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
-#if NETFRAMEWORK
-            internal static readonly RuntimeContextOptions contextOptions = new RuntimeContextOptions(RuntimeContextOptions.DefaultDynamicAssemblySuffixWithPublicKey);
-#else
-            internal static readonly RuntimeContextOptions contextOptions = new RuntimeContextOptions(RuntimeContextOptions.DefaultDynamicAssemblySuffix);
-#endif
-
+            internal static readonly RuntimeContextOptions contextOptions = new RuntimeContextOptions();
             internal static readonly RuntimeContext context = new RuntimeContext(contextOptions, new Resolver(), false);
             internal static readonly VfsTable vfs = VfsTable.BuildDefaultTable(new VfsRuntimeContext(context), Properties.HomePath);
             internal static readonly Lazy<object> systemThreadGroup = new Lazy<object>(() => ThreadGroupAccessor.Init());
