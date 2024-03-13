@@ -9,11 +9,6 @@
             <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net472\osx-x64\**\*">
-            <TargetFramework>net472</TargetFramework>
-            <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
-            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
-        </IkvmImageItem>
         <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net6.0\osx-x64\**\*">
             <TargetFramework>net6.0</TargetFramework>
             <RuntimeIdentifier>osx-x64</RuntimeIdentifier>

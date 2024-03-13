@@ -7,6 +7,7 @@
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
+        <SelfContained>true</SelfContained>
         <StartupObject>com.sun.tools.internal.xjc.Driver</StartupObject>
         <RootNamespace>ikvm.tools.xjc</RootNamespace>
     </PropertyGroup>

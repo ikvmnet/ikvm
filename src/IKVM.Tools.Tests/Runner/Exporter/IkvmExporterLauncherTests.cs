@@ -26,10 +26,12 @@ namespace IKVM.Tools.Tests.Runner.Exporter
         [DataRow("net472", "net472", "net472", ".NETFramework", "4.7.2")]
         [DataRow("net472", "net472", "net481", ".NETFramework", "4.8.1")]
         [DataRow("net472", "net6.0", "net6.0", ".NETCore", "6.0")]
-        [DataRow("net6.0", "net472", "net472", ".NETFramework", "4.7.2")]
-        [DataRow("net6.0", "net472", "net481", ".NETFramework", "4.8.1")]
-        [DataRow("net6.0", "net6.0", "net6.0", ".NETCore", "6.0")]
-        [DataRow("net6.0", "net6.0", "net7.0", ".NETCore", "7.0")]
+        [DataRow("net8.0", "net472", "net472", ".NETFramework", "4.7.2")]
+        [DataRow("net8.0", "net472", "net481", ".NETFramework", "4.8.1")]
+        [DataRow("net8.0", "net6.0", "net6.0", ".NETCore", "6.0")]
+        [DataRow("net8.0", "net6.0", "net7.0", ".NETCore", "7.0")]
+        [DataRow("net8.0", "net6.0", "net8.0", ".NETCore", "8.0")]
+        [DataRow("net8.0", "net8.0", "net8.0", ".NETCore", "8.0")]
         public async System.Threading.Tasks.Task CanExportDll(string toolFramework, string ikvmFramework, string targetFramework, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
             if (toolFramework == "net472" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)

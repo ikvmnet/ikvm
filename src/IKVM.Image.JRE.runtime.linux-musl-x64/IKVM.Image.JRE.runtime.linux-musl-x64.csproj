@@ -7,6 +7,7 @@
         <IncludeSymbols>false</IncludeSymbols>
         <ImageRuntimeIdentifier>linux-musl-x64</ImageRuntimeIdentifier>
         <ImageBinProject>..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj</ImageBinProject>
+        <SupportedImageTargetFrameworks>net6.0;net8.0</SupportedImageTargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>

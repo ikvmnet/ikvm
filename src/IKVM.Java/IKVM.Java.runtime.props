@@ -16,7 +16,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <AssemblyName>IKVM.Java</AssemblyName>
         <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
         <Bootstrap>true</Bootstrap>
