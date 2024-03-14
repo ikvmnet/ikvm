@@ -436,75 +436,68 @@ jobs:
     - build-ikvm
     runs-on: ubuntu-latest
     outputs:
-      sys: ${{ steps.test-vars.outputs.sys }}
-      tfm: ${{ steps.test-vars.outputs.tfm }}
+      matrix: ${{ steps.test-vars.outputs.matrix }}
     steps:
     - id: test-vars
+      shell: pwsh
       run: |
-        if ${{ inputs.full_test == true }}; then
-          echo 'sys=[
-            "win-arm64",
-            "osx-arm64",
-            "linux-arm64"
-          ]' | tr -d '[:space:]' >> $GITHUB_OUTPUT
-          echo 'tfm=[
+        "matrix=" + (@{
+          "sys" = @(
+            "win-x64",
+            "linux-x64",
+            "osx-x64"
+          )
+          "tfm" = @(
             "net472",
-            "net6.0",
-            "net8.0"
-          ]' | tr -d '[:space:]' >> $GITHUB_OUTPUT
-        else
-          echo 'sys=[
-            "win-arm64",
-            "osx-arm64",
-            "linux-arm64"
-          ]' | tr -d '[:space:]' >> $GITHUB_OUTPUT
-          echo 'tfm=[
-            "net472",
-            "net8.0"
-          ]' | tr -d '[:space:]' >> $GITHUB_OUTPUT
-        fi
+            "net6.0"
+          )
+          "run" = @(
+            "IKVM.ByteCode.Tests",
+            "IKVM.Reflection.Tests",
+            "IKVM.Tests",
+            "IKVM.Java.Tests",
+            "IKVM.Tools.Exporter.Tests",
+            "IKVM.Tools.Importer.Tests",
+            "IKVM.Tools.Tests",
+            "IKVM.MSBuild.Tasks.Tests",
+            "IKVM.MSBuild.Tests",
+            "IKVM.NET.Sdk.Tests",
+            "IKVM.JTReg.TestAdapter.Tests",
+            "IKVM.OpenJDK.Tests?TestPartition=0",
+            "IKVM.OpenJDK.Tests?TestPartition=1",
+            "IKVM.OpenJDK.Tests?TestPartition=2",
+            "IKVM.OpenJDK.Tests?TestPartition=3",
+            "IKVM.OpenJDK.Tests?TestPartition=4",
+            "IKVM.OpenJDK.Tests?TestPartition=5",
+            "IKVM.OpenJDK.Tests?TestPartition=6",
+            "IKVM.OpenJDK.Tests?TestPartition=7",
+            "IKVM.OpenJDK.Tests?TestPartition=8",
+            "IKVM.OpenJDK.Tests?TestPartition=9",
+            "IKVM.OpenJDK.Tests?TestPartition=10",
+            "IKVM.OpenJDK.Tests?TestPartition=11",
+            "IKVM.OpenJDK.Tests?TestPartition=12",
+            "IKVM.OpenJDK.Tests?TestPartition=13",
+            "IKVM.OpenJDK.Tests?TestPartition=14",
+            "IKVM.OpenJDK.Tests?TestPartition=15"
+          )
+          "exclude" = @(
+            @{
+              "tfm" = "net472"
+              "sys" = "linux-x64"
+            },
+            @{
+              "tfm" = "net472"
+              "sys" = "osx-x64"
+            }
+          )
+        } | ConvertTo-Json -Compress).Replace('"', "'") >> $env:GITHUB_OUTPUT
   test:
     needs:
     - build-ikvm
     - test-vars
     strategy:
       fail-fast: false
-      matrix:
-        sys: ${{ fromJSON(needs.test-vars.outputs.sys) }}
-        tfm: ${{ fromJSON(needs.test-vars.outputs.tfm) }}
-        run:
-        - IKVM.ByteCode.Tests
-        - IKVM.Reflection.Tests
-        - IKVM.Tests
-        - IKVM.Java.Tests
-        - IKVM.Tools.Exporter.Tests
-        - IKVM.Tools.Importer.Tests
-        - IKVM.Tools.Tests
-        - IKVM.MSBuild.Tasks.Tests
-        - IKVM.MSBuild.Tests
-        - IKVM.NET.Sdk.Tests
-        - IKVM.JTReg.TestAdapter.Tests
-        - IKVM.OpenJDK.Tests?TestPartition=0
-        - IKVM.OpenJDK.Tests?TestPartition=1
-        - IKVM.OpenJDK.Tests?TestPartition=2
-        - IKVM.OpenJDK.Tests?TestPartition=3
-        - IKVM.OpenJDK.Tests?TestPartition=4
-        - IKVM.OpenJDK.Tests?TestPartition=5
-        - IKVM.OpenJDK.Tests?TestPartition=6
-        - IKVM.OpenJDK.Tests?TestPartition=7
-        - IKVM.OpenJDK.Tests?TestPartition=8
-        - IKVM.OpenJDK.Tests?TestPartition=9
-        - IKVM.OpenJDK.Tests?TestPartition=10
-        - IKVM.OpenJDK.Tests?TestPartition=11
-        - IKVM.OpenJDK.Tests?TestPartition=12
-        - IKVM.OpenJDK.Tests?TestPartition=13
-        - IKVM.OpenJDK.Tests?TestPartition=14
-        - IKVM.OpenJDK.Tests?TestPartition=15
-        exclude:
-        - tfm: net472
-          sys: linux-x64
-        - tfm: net472
-          sys: osx-x64
+      matrix: ${{ fromJSON(needs.test-vars.outputs.matrix) }}
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
