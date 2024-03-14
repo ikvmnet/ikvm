@@ -479,6 +479,18 @@ jobs:
           @{
             "tfm" = "net472"
             "sys" = "osx-x64"
+          },
+          @{
+            "tfm" = "net472"
+            "run" = "IKVM.MSBuild.Tests"
+          },
+          @{
+            "tfm" = "net6.0"
+            "run" = "IKVM.MSBuild.Tests"
+          },
+          @{
+            "tfm" = "net7.0"
+            "run" = "IKVM.MSBuild.Tests"
           }
         )
 
