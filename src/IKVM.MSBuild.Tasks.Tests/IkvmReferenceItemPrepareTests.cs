@@ -343,16 +343,15 @@ namespace IKVM.MSBuild.Tasks.Tests
         [TestMethod]
         public void Should_vary_by_tool_framework()
         {
-
-            var t2 = BuildTestTask("net472", "0.0.0");
-            var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t2.Items = new[] { i2 };
-            t2.Execute().Should().BeTrue();
-
-            var t1 = BuildTestTask("net6.0", "0.0.0");
+            var t1 = BuildTestTask("net472", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
             t1.Items = new[] { i1 };
             t1.Execute().Should().BeTrue();
+
+            var t2 = BuildTestTask("net6.0", "0.0.0");
+            var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
+            t2.Items = new[] { i2 };
+            t2.Execute().Should().BeTrue();
 
             var t3 = BuildTestTask("net8.0", "0.0.0");
             var i3 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
@@ -361,11 +360,13 @@ namespace IKVM.MSBuild.Tasks.Tests
 
             var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
             var identity2 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
-            var identity3 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            var identity3 = i3.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
             identity1.Should().NotBe(identity2);
             identity1.Should().NotBe(identity3);
             identity2.Should().NotBe(identity1);
             identity2.Should().NotBe(identity3);
+            identity3.Should().NotBe(identity1);
+            identity3.Should().NotBe(identity2);
         }
 
         [TestMethod]
