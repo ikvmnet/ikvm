@@ -28,11 +28,27 @@ namespace IKVM.JTReg.TestAdapter.Core
         };
 
         /// <summary>
+        /// Set of relative or absolute file names to add as exclude lists.
+        /// </summary>
+        public List<string> AdditionalExcludeListFiles { get; } = new List<string>()
+        {
+
+        };
+
+        /// <summary>
         /// Set of relative or absolute file names to add as include lists.
         /// </summary>
         public List<string> IncludeListFiles { get; } = new List<string>()
         {
             "IncludeList.txt",
+        };
+
+        /// <summary>
+        /// Set of relative or absolute file names to add as include lists.
+        /// </summary>
+        public List<string> AdditionalIncludeListFiles { get; } = new List<string>()
+        {
+
         };
 
     }

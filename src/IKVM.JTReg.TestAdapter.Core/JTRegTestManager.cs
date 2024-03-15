@@ -122,7 +122,7 @@ namespace IKVM.JTReg.TestAdapter.Core
 
             // if a ProblemList.txt or ExcludeList.txt file exists in the root, add them as exclude files
             var excludeFileList = new List<java.io.File>();
-            foreach (var n in options.ExcludeListFiles)
+            foreach (var n in options.ExcludeListFiles.Concat(options.AdditionalExcludeListFiles))
                 if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
                     excludeFileList.Add(new java.io.File(new java.io.File(f).getAbsoluteFile().toURI().normalize()));
 
@@ -143,7 +143,7 @@ namespace IKVM.JTReg.TestAdapter.Core
 
             // if a IncludeList.txt file exists in the root, add it as include files
             var includeFileList = new List<java.io.File>();
-            foreach (var n in options.IncludeListFiles)
+            foreach (var n in options.IncludeListFiles.Concat(options.AdditionalIncludeListFiles))
                 if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
                     includeFileList.Add(new java.io.File(new java.io.File(f).getAbsoluteFile().toURI().normalize()));
 

@@ -15,7 +15,9 @@ namespace IKVM.JTReg.TestAdapter
         const string PartitionCountElementName = "PartitionCount";
         const string TimeoutFactorElementName = "TimeoutFactor";
         const string ExcludeListFilesElementName = "ExcludeListFile";
+        const string AdditionalExcludeListFilesElementName = "AdditionalExcludeListFile";
         const string IncludeListFilesElementName = "IncludeListFile";
+        const string AdditionalIncludeListFilesElementName = "AdditionalIncludeListFile";
 
         /// <summary>
         /// Returns the <see cref="JTRegTestOptions"/> loaded from the specified <see cref="IRunSettings"/>.
@@ -41,11 +43,25 @@ namespace IKVM.JTReg.TestAdapter
                     o.ExcludeListFiles.AddRange(excludeListFilesElements.Select(i => i.Value));
                 }
 
+                var additionalExcludeListFilesElements = x.Elements(AdditionalExcludeListFilesElementName);
+                if (additionalExcludeListFilesElements != null && additionalExcludeListFilesElements.Any())
+                {
+                    o.AdditionalExcludeListFiles.Clear();
+                    o.AdditionalExcludeListFiles.AddRange(additionalExcludeListFilesElements.Select(i => i.Value));
+                }
+
                 var includeListFilesElements = x.Elements(IncludeListFilesElementName);
                 if (includeListFilesElements != null && includeListFilesElements.Any())
                 {
                     o.IncludeListFiles.Clear();
                     o.IncludeListFiles.AddRange(includeListFilesElements.Select(i => i.Value));
+                }
+
+                var additionalIncludeListFilesElements = x.Elements(AdditionalIncludeListFilesElementName);
+                if (additionalIncludeListFilesElements != null && additionalIncludeListFilesElements.Any())
+                {
+                    o.AdditionalIncludeListFiles.Clear();
+                    o.AdditionalIncludeListFiles.AddRange(additionalIncludeListFilesElements.Select(i => i.Value));
                 }
             }
 
