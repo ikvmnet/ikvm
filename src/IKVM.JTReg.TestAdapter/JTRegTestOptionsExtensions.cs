@@ -14,8 +14,8 @@ namespace IKVM.JTReg.TestAdapter
         const string JTRegConfigurationElementName = "JTRegConfiguration";
         const string PartitionCountElementName = "PartitionCount";
         const string TimeoutFactorElementName = "TimeoutFactor";
-        const string ExcludeListFilesElementName = "ExcludeListFiles";
-        const string IncludeListFilesElementName = "IncludeListFiles";
+        const string ExcludeListFilesElementName = "ExcludeListFile";
+        const string IncludeListFilesElementName = "IncludeListFile";
 
         /// <summary>
         /// Returns the <see cref="JTRegTestOptions"/> loaded from the specified <see cref="IRunSettings"/>.

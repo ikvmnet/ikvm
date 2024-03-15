@@ -10,7 +10,6 @@
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="6.8.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-        <PackageReference Include="Moq" Version="4.18.2" />
     </ItemGroup>
 
     <ItemGroup>
@@ -31,15 +30,27 @@
 
     <ItemGroup>
         <None Update="IKVM.OpenJDK.Tests.runsettings">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="jdk\ExcludeList.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="jdk\ExcludeList.$(TargetFramework).txt" Condition=" '$(TargetFramework)' != '' And Exists('jdk\ExcludeList.$(TargetFramework).txt')">
+            <TargetPath>jdk\ExcludeList.tfm.txt</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="langtools\ExcludeList.txt">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="langtools\ExcludeList.$(TargetFramework).txt" Condition=" '$(TargetFramework)' != '' And Exists('langtools\ExcludeList.$(TargetFramework).txt')">
+            <TargetPath>langtools\ExcludeList.tfm.txt</TargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
         <None Update="nashorn\ExcludeList.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="nashorn\ExcludeList.$(TargetFramework).txt" Condition=" '$(TargetFramework)' != '' And Exists('nashorn\ExcludeList.$(TargetFramework).txt')">
+            <TargetPath>nashorn\ExcludeList.tfm.txt</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

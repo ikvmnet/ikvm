@@ -1,0 +1,3 @@
+# finalizer fails to run since optimization doesn't deref instance
+java/util/concurrent/Executors/AutoShutdown.java                                                                        generic-all
+
