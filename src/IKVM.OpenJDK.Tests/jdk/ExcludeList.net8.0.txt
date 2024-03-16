@@ -1,3 +1,6 @@
-# finalizer fails to run since optimization doesn't deref instance
+# finalizer fails to run since optimization doesn't deref instances since methods get inlined
+# IKVM is different in Hotspot in this regard (.NET 8 optimizations), but these don't violate teh JVM spec
 java/util/concurrent/Executors/AutoShutdown.java                                                                        generic-all
-
+java/lang/ref/ReferenceEnqueuePending.java                                                                              generic-all
+java/util/HashMap/HashMapCloneLeak.java                                                                                 generic-all
+java/util/logging/ClassLoaderLeakTest.java                                                                              generic-all
