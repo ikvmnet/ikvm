@@ -481,28 +481,40 @@ jobs:
             "sys" = "osx-x64"
           },
           @{
+            "run" = "IKVM.MSBuild.Tests"
             "tfm" = "net472"
-            "run" = "IKVM.MSBuild.Tests"
           },
           @{
+            "run" = "IKVM.MSBuild.Tests"
             "tfm" = "net6.0"
-            "run" = "IKVM.MSBuild.Tests"
           },
           @{
+            "run" = "IKVM.MSBuild.Tests"
             "tfm" = "net7.0"
-            "run" = "IKVM.MSBuild.Tests"
           },
           @{
+            "run" = "IKVM.MSBuild.Tests"
+            "sys" = "linux-x64"
+          },
+          @{
+            "run" = "IKVM.MSBuild.Tests"
+            "sys" = "osx-x64"
+          },
+          @{
+            "run" = "IKVM.MSBuild.Tests"
+            "sys" = "osx-arm64"
+          },
+          @{
+            "run" = "IKVM.NET.Sdk.Tests"
             "tfm" = "net472"
-            "run" = "IKVM.NET.Sdk.Tests"
           },
           @{
+            "run" = "IKVM.NET.Sdk.Tests"
             "tfm" = "net6.0"
-            "run" = "IKVM.NET.Sdk.Tests"
           },
           @{
-            "tfm" = "net7.0"
             "run" = "IKVM.NET.Sdk.Tests"
+            "tfm" = "net7.0"
           }
         )
 
