@@ -22,6 +22,7 @@
   
 */
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -29,7 +30,6 @@ using IKVM.Reflection.Emit;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
 using System.Threading;
 #endif
 
