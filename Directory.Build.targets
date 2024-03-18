@@ -5,7 +5,7 @@
     <PropertyGroup>
         <RuntimeIdentifier Condition=" '$(RuntimeIdentifier)' == 'win7-x86' ">win-x86</RuntimeIdentifier>
         <RuntimeIdentifier Condition=" '$(RuntimeIdentifier)' == 'win7-x64' ">win-x64</RuntimeIdentifier>
-        <Prefer32Bit Condition=" '$(RuntimeIdentifier)' == 'win-x86' ">true</Prefer32Bit>
+        <Prefer32Bit Condition=" '$(RuntimeIdentifier)' == 'win-x86' And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</Prefer32Bit>
     </PropertyGroup>
     
 </Project>
