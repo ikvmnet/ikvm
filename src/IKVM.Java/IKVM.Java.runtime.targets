@@ -371,7 +371,7 @@
             <_GenerateCharsetEncoderArgs Include="-Dcoding=&quot;encoding&quot;" />
             <_GenerateCharsetEncoderArgs Include="-DOtherCoder=&quot;Decoder&quot;" />
             <_GenerateCharsetEncoderArgs Include="-DreplTypeName=&quot;byte array&quot;" />
-            <_GenerateCharsetEncoderArgs Include="-DdefaultRepl=&quot;new byte[] { (byte)%27%63%22 }&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DdefaultRepl=&quot;new byte[] { (byte)%27%3f%22 }&quot;" />
             <_GenerateCharsetEncoderArgs Include="-DdefaultReplName=&quot;&quot;" />
             <_GenerateCharsetEncoderArgs Include="-DreplType=&quot;byte[]&quot;" />
             <_GenerateCharsetEncoderArgs Include="-DreplFQType=&quot;byte[]&quot;" />
