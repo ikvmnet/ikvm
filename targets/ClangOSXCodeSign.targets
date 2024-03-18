@@ -13,15 +13,17 @@
 
     <PropertyGroup>
         <EnableOSXCodeSign Condition=" '$(EnableOSXCodeSign)' == ''  And $(TargetTriple.Contains('-apple-'))">true</EnableOSXCodeSign>
+        <OSXCodeSignCommand Condition=" '$(OSXCodeSignExe)' == '' And  $([MSBuild]::IsOSPlatform('OSX'))">codesign -sf</OSXCodeSignCommand>
+        <OSXCodeSignCommand Condition=" '$(OSXCodeSignExe)' == '' And !$([MSBuild]::IsOSPlatform('OSX'))">rcodesign sign</OSXCodeSignCommand>
     </PropertyGroup>
 
     <Target Name="OSXCodeSign" Condition=" '$(EnableOSXCodeSign)' == 'true' And Exists('$(IntermediateOutputPath)$(TargetFileName)')">
-        <Message Text="rcodesign sign $(IntermediateOutputPath)$(TargetFileName)" />
-        <Exec Command="rcodesign sign $(IntermediateOutputPath)$(TargetFileName)" />
+        <Message Text="$(OSXCodeSignCommand) $(IntermediateOutputPath)$(TargetFileName)" />
+        <Exec Command="$(OSXCodeSignCommand) $(IntermediateOutputPath)$(TargetFileName)" />
     </Target>
 
     <PropertyGroup>
-        <TargetsTriggeredByLinking>$(TargetsTriggeredByLinking);OSXCodeSign</TargetsTriggeredByLinking>
+        <TargetsTriggeredByLinking Condition=" '$(EnableOSXCodeSign)' == 'true'">$(TargetsTriggeredByLinking);OSXCodeSign</TargetsTriggeredByLinking>
     </PropertyGroup>
 
 </Project>
