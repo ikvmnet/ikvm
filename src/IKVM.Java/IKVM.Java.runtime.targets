@@ -329,9 +329,8 @@
             <_GenerateCharsetDecoderArgs Include="-Dcoding=&quot;decoding&quot;" />
             <_GenerateCharsetDecoderArgs Include="-DOtherCoder=&quot;Encoder&quot;" />
             <_GenerateCharsetDecoderArgs Include="-DreplTypeName=&quot;string&quot;" />
-            <_GenerateCharsetDecoderArgs Include="-DdefaultRepl=&quot;\&quot;%5c%5cuFFFD\&quot;&quot;" />
-            <_GenerateCharsetDecoderArgs Condition="$([MSBuild]::IsOsPlatform('Windows'))" Include="-DdefaultReplName=&quot;&lt;tt&gt;&quot;&quot;&amp;#92%3buFFFD&quot;&quot;&lt;/tt&gt;&quot;" />
-            <_GenerateCharsetDecoderArgs Condition="!$([MSBuild]::IsOsPlatform('Windows'))" Include="-DdefaultReplName='&lt;tt&gt;&quot;\&amp;#92%3buFFFD&quot;&lt;\/tt&gt;'" />
+            <_GenerateCharsetDecoderArgs Include="-DdefaultRepl=&quot;%22%5c%5c%5c%5cuFFFD%22&quot;" />
+            <_GenerateCharsetDecoderArgs Include="-DdefaultReplName=&quot;&quot;" />
             <_GenerateCharsetDecoderArgs Include="-DreplType=&quot;String&quot;" />
             <_GenerateCharsetDecoderArgs Include="-DreplFQType=&quot;java.lang.String&quot;" />
             <_GenerateCharsetDecoderArgs Include="-DreplLength=&quot;length()&quot;" />
@@ -372,8 +371,8 @@
             <_GenerateCharsetEncoderArgs Include="-Dcoding=&quot;encoding&quot;" />
             <_GenerateCharsetEncoderArgs Include="-DOtherCoder=&quot;Decoder&quot;" />
             <_GenerateCharsetEncoderArgs Include="-DreplTypeName=&quot;byte array&quot;" />
-            <_GenerateCharsetEncoderArgs Include="-DdefaultRepl=&quot;new byte[] { (byte)'?' }&quot;" />
-            <_GenerateCharsetEncoderArgs Include="-DdefaultReplName=&quot;&lt;tt&gt;{&lt;/tt&gt;\&amp;nbsp%3B&lt;tt&gt;(byte)'?'&lt;/tt&gt;\&amp;nbsp%3B&lt;tt&gt;}&lt;/tt&gt;&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DdefaultRepl=&quot;new byte[] { (byte)%27%3f%27 }&quot;" />
+            <_GenerateCharsetEncoderArgs Include="-DdefaultReplName=&quot;&quot;" />
             <_GenerateCharsetEncoderArgs Include="-DreplType=&quot;byte[]&quot;" />
             <_GenerateCharsetEncoderArgs Include="-DreplFQType=&quot;byte[]&quot;" />
             <_GenerateCharsetEncoderArgs Include="-DreplLength=&quot;length&quot;" />
