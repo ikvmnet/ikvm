@@ -23,33 +23,13 @@
         <___PkgSystem_Reflection_Metadata>$(PkgSystem_Reflection_Metadata)</___PkgSystem_Reflection_Metadata>
     </PropertyGroup>
 
-    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(TargetFramework)' != '' And '$(MSBuildRuntimeType)' == 'Core' ">
+    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(TargetFramework)' != '' ">
         <Task>
-            <Reference Include="$(___PkgSystem_Collections_Immutable)\lib\net6.0\System.Collections.Immutable.dll" />
+            <Reference Include="$(___PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" />
             <Reference Include="$(___PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
-#define NETCOREAPP
-                
-$([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
-$([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
-$([MSBuild]::Unescape('$(___IkvmAssemblyInfoUtilCs)'))
-$([MSBuild]::Unescape('$(___IkvmFileIdentityUtilCs)'))
-$([MSBuild]::Unescape('$(___IkvmReferenceExportItemCs)'))
-$([MSBuild]::Unescape('$(___IkvmReferenceExportItemMetadataCs)'))
-$([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
-            ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
-    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(TargetFramework)' != '' And '$(MSBuildRuntimeType)' != 'Core' ">
-        <Task>
-            <Reference Include="$(___PkgSystem_Collections_Immutable)\lib\net462\System.Collections.Immutable.dll" />
-            <Reference Include="$(___PkgSystem_Reflection_Metadata)\lib\net462\System.Reflection.Metadata.dll" />
-            <Code Type="Class" Language="cs">
-                <![CDATA[
-#define NETFRAMEWORK
+#define NETSTANDARD2_0
 
 $([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))

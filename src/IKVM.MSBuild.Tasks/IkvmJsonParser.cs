@@ -322,10 +322,10 @@
 
         static object ParseObject(Type type, string json)
         {
-#if NETFRAMEWORK
-            object instance = FormatterServices.GetUninitializedObject(type);
-#else
+#if NETCOREAPP
             object instance = RuntimeHelpers.GetUninitializedObject(type);
+#else
+            object instance = FormatterServices.GetUninitializedObject(type);
 #endif
 
             //The list is split into key/value pairs only, this means the split must be divisible by 2 to be valid JSON
