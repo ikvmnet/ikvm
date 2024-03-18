@@ -329,8 +329,8 @@
             <_GenerateCharsetDecoderArgs Include="-Dcoding=&quot;decoding&quot;" />
             <_GenerateCharsetDecoderArgs Include="-DOtherCoder=&quot;Encoder&quot;" />
             <_GenerateCharsetDecoderArgs Include="-DreplTypeName=&quot;string&quot;" />
-            <_GenerateCharsetDecoderArgs Include="-DdefaultRepl=&quot;%27%5c%5cuFFFD%27&quot;" Condition="!$([MSBuild]::IsOSUnixLike())" />
-            <_GenerateCharsetDecoderArgs Include="-DdefaultRepl=&quot;%27%5c%5c%5c%5cuFFFD%27&quot;" Condition="$([MSBuild]::IsOSUnixLike())" />
+            <_GenerateCharsetDecoderArgs Include="-DdefaultRepl=&quot;String.valueOf(%27%5c%5cuFFFD%27)&quot;" Condition="!$([MSBuild]::IsOSUnixLike())" />
+            <_GenerateCharsetDecoderArgs Include="-DdefaultRepl=&quot;String.valueOf(%27%5c%5c%5c%5cuFFFD%27)&quot;" Condition="$([MSBuild]::IsOSUnixLike())" />
             <_GenerateCharsetDecoderArgs Include="-DdefaultReplName=&quot;&quot;" />
             <_GenerateCharsetDecoderArgs Include="-DreplType=&quot;String&quot;" />
             <_GenerateCharsetDecoderArgs Include="-DreplFQType=&quot;java.lang.String&quot;" />
