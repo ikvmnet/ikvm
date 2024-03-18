@@ -341,6 +341,7 @@
         </ItemGroup>
 
         <MakeDir Directories="$(GenSrc)java\nio\charset\" />
+        <Message Text="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetDecoderArgs, ' ') &lt; @(GenerateCharsetDecoderTemplateFile) &gt; %(GenerateCharsetDecoderTemplateFile.OutputFile).tmp" />
         <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.spp.Spp @(_GenerateCharsetDecoderArgs, ' ') &lt; @(GenerateCharsetDecoderTemplateFile) &gt; %(GenerateCharsetDecoderTemplateFile.OutputFile).tmp" />
         <Move SourceFiles="%(GenerateCharsetDecoderTemplateFile.OutputFile).tmp" DestinationFiles="%(GenerateCharsetDecoderTemplateFile.OutputFile)" />
 
