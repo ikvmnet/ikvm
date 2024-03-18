@@ -12,7 +12,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <EnableOSXCodeSign Condition=" '$(EnableOSXCodeSign)' == '' And ($(RuntimeIdentifier.StartsWith('osx')) Or $(AppHostRuntimeIdentifier.StartsWith('osx')))">true</EnableOSXCodeSign>
+        <EnableOSXCodeSign Condition="!$([MSBuild]::IsOSPlatform('OSX')) And '$(EnableOSXCodeSign)' == '' And ($(RuntimeIdentifier.StartsWith('osx')) Or $(AppHostRuntimeIdentifier.StartsWith('osx')))">true</EnableOSXCodeSign>
         <OSXCodeSignCommand Condition=" '$(OSXCodeSignExe)' == '' And  $([MSBuild]::IsOSPlatform('OSX'))">codesign -sf</OSXCodeSignCommand>
         <OSXCodeSignCommand Condition=" '$(OSXCodeSignExe)' == '' And !$([MSBuild]::IsOSPlatform('OSX'))">rcodesign sign</OSXCodeSignCommand>
         <_OSXCodeSignStampFile>$(IntermediateOutputPath)$(MSBuildProjectFile).rcodesign.stamp</_OSXCodeSignStampFile>
