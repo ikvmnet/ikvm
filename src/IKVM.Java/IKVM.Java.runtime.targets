@@ -710,14 +710,16 @@ public class WriteStandardCharsets : Task
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
-        <PropertyGroup>
-            <_DtdHome>$(OpenJdkDir)jdk\make\data\dtdbuilder</_DtdHome>
-        </PropertyGroup>
+        <ItemGroup>
+            <_DtdHome Include="$(OpenJdkDir)jdk\make\data\dtdbuilder" />
+            <_BdtdTemp Include="$(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" />
+            <_Bdtd Include="$(GenSrc)javax\swing\text\html\parser\html32.bdtd" />
+        </ItemGroup>
 
         <MakeDir Directories="$(GenSrc)javax\swing\text\html\parser\" />
-        <Message Text="$(JavaExec) -Ddtd_home=$(_DtdHome.Replace('\', '\\')) -Djava.awt.headless=true -cp $(BuildToolsOutputPath) build.tools.dtdbuilder.DTDBuilder html32 &gt; $(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" />
-        <Exec Command="$(JavaExec) -Ddtd_home=$(_DtdHome.Replace('\', '\\')) -Djava.awt.headless=true -cp $(BuildToolsOutputPath) build.tools.dtdbuilder.DTDBuilder html32 &gt; $(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" />
-        <Move SourceFiles="$(GenSrc)javax\swing\text\html\parser\html32.bdtd.tmp" DestinationFiles="$(GenSrc)javax\swing\text\html\parser\html32.bdtd" OverwriteReadOnlyFiles="true" />
+        <Message Text="$(JavaExec) -Ddtd_home=@(_DtdHome) -Djava.awt.headless=true -cp $(BuildToolsOutputPath) build.tools.dtdbuilder.DTDBuilder html32 &gt; @(_BdtdTemp)" />
+        <Exec Command="$(JavaExec) -Ddtd_home=@(_DtdHome) -Djava.awt.headless=true -cp $(BuildToolsOutputPath) build.tools.dtdbuilder.DTDBuilder html32 &gt; @(_BdtdTemp)" />
+        <Move SourceFiles="@(_BdtdTemp)" DestinationFiles="@(_Bdtd)" OverwriteReadOnlyFiles="true" />
     </Target>
 
     <PropertyGroup>
