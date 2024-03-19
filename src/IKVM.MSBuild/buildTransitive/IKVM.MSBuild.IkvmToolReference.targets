@@ -59,9 +59,8 @@
             <Output TaskParameter="TargetOutputs" PropertyName="_JavaCompilerPublishDir" />
         </MSBuild>
         <PropertyGroup>
-            <JavaCompilerPath Condition=" !$([MSBuild]::IsOSUnixLike()) And '$(JavaCompilerPath)' == '' And Exists('$(_JavaCompilerPublishDir)javac.exe') ">$([System.IO.Path]::GetFullPath('$(_JavaCompilerPublishDir)\javac.exe'))</JavaCompilerPath>
-            <JavaCompilerPath Condition="  $([MSBuild]::IsOSUnixLike()) And '$(JavaCompilerPath)' == '' And Exists('$(_JavaCompilerPublishDir)javac') ">$([System.IO.Path]::GetFullPath('$(_JavaCompilerPublishDir)\javac'))</JavaCompilerPath>
-            <JavaCompilerPath Condition="  $([MSBuild]::IsOSUnixLike()) And '$(JavaCompilerPath)' == '' And Exists('$(_JavaCompilerPublishDir)javac.exe') ">$([System.IO.Path]::GetFullPath('$(_JavaCompilerPublishDir)\javac.exe'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" $([MSBuild]::IsOSUnixLike()) And '$(JavaCompilerPath)' == '' And Exists('$(_JavaCompilerPublishDir)javac') ">$([System.IO.Path]::GetFullPath('$(_JavaCompilerPublishDir)\javac'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$(JavaCompilerPath)' == '' And Exists('$(_JavaCompilerPublishDir)javac.exe') ">$([System.IO.Path]::GetFullPath('$(_JavaCompilerPublishDir)\javac.exe'))</JavaCompilerPath>
             <JavaCompilerExec Condition=" '$(JavaCompilerExec)' == '' And $([MSBuild]::IsOSUnixLike()) And '$([System.IO.Path]::GetExtension('$(JavaCompilerPath)'))' == '.exe' ">mono $(JavaCompilerPath)</JavaCompilerExec>
             <JavaCompilerExec Condition=" '$(JavaCompilerExec)' == '' ">$(JavaCompilerPath)</JavaCompilerExec>
         </PropertyGroup>
@@ -83,9 +82,8 @@
             <Output TaskParameter="TargetOutputs" PropertyName="_IkvmCompilerPublishDir" />
         </MSBuild>
         <PropertyGroup>
-            <IkvmCompilerPath Condition=" !$([MSBuild]::IsOSUnixLike()) And '$(IkvmCompilerPath)' == '' And Exists('$(_IkvmCompilerPublishDir)\ikvmc.exe') ">$([System.IO.Path]::GetFullPath('$(_IkvmCompilerPublishDir)\ikvmc.exe'))</IkvmCompilerPath>
-            <IkvmCompilerPath Condition="  $([MSBuild]::IsOSUnixLike()) And '$(IkvmCompilerPath)' == '' And Exists('$(_IkvmCompilerPublishDir)\ikvmc') ">$([System.IO.Path]::GetFullPath('$(_IkvmCompilerPublishDir)\ikvmc'))</IkvmCompilerPath>
-            <IkvmCompilerPath Condition="  $([MSBuild]::IsOSUnixLike()) And '$(IkvmCompilerPath)' == '' And Exists('$(_IkvmCompilerPublishDir)\ikvmc.exe') ">$([System.IO.Path]::GetFullPath('$(_IkvmCompilerPublishDir)\ikvmc.exe'))</IkvmCompilerPath>
+            <IkvmCompilerPath Condition=" $([MSBuild]::IsOSUnixLike()) And '$(IkvmCompilerPath)' == '' And Exists('$(_IkvmCompilerPublishDir)\ikvmc') ">$([System.IO.Path]::GetFullPath('$(_IkvmCompilerPublishDir)\ikvmc'))</IkvmCompilerPath>
+            <IkvmCompilerPath Condition=" '$(IkvmCompilerPath)' == '' And Exists('$(_IkvmCompilerPublishDir)\ikvmc.exe') ">$([System.IO.Path]::GetFullPath('$(_IkvmCompilerPublishDir)\ikvmc.exe'))</IkvmCompilerPath>
             <IkvmCompilerExec Condition=" '$(IkvmCompilerExec)' == '' And $([MSBuild]::IsOSUnixLike()) And '$([System.IO.Path]::GetExtension('$(IkvmCompilerPath)'))' == '.exe' ">mono $(IkvmCompilerPath)</IkvmCompilerExec>
             <IkvmCompilerExec Condition=" '$(IkvmCompilerExec)' == '' ">$(IkvmCompilerPath)</IkvmCompilerExec>
         </PropertyGroup>
@@ -107,9 +105,8 @@
             <Output TaskParameter="TargetOutputs" PropertyName="_IkvmExporterPublishDir" />
         </MSBuild>
         <PropertyGroup>
-            <IkvmExporterPath Condition=" !$([MSBuild]::IsOSUnixLike()) And '$(IkvmExporterPath)' == '' And Exists('$(_IkvmExporterPublishDir)ikvmstub.exe')">$([System.IO.Path]::GetFullPath('$(_IkvmExporterPublishDir)ikvmstub.exe'))</IkvmExporterPath>
-            <IkvmExporterPath Condition="  $([MSBuild]::IsOSUnixLike()) And '$(IkvmExporterPath)' == '' And Exists('$(_IkvmExporterPublishDir)ikvmstub')">$([System.IO.Path]::GetFullPath('$(_IkvmExporterPublishDir)ikvmstub'))</IkvmExporterPath>
-            <IkvmExporterPath Condition="  $([MSBuild]::IsOSUnixLike()) And '$(IkvmExporterPath)' == '' And Exists('$(_IkvmExporterPublishDir)ikvmstub.exe')">$([System.IO.Path]::GetFullPath('$(_IkvmExporterPublishDir)ikvmstub.exe'))</IkvmExporterPath>
+            <IkvmExporterPath Condition=" $([MSBuild]::IsOSUnixLike()) And '$(IkvmExporterPath)' == '' And Exists('$(_IkvmExporterPublishDir)ikvmstub')">$([System.IO.Path]::GetFullPath('$(_IkvmExporterPublishDir)ikvmstub'))</IkvmExporterPath>
+            <IkvmExporterPath Condition=" '$(IkvmExporterPath)' == '' And Exists('$(_IkvmExporterPublishDir)ikvmstub.exe')">$([System.IO.Path]::GetFullPath('$(_IkvmExporterPublishDir)ikvmstub.exe'))</IkvmExporterPath>
             <IkvmExporterExec Condition=" '$(IkvmExporterExec)' == '' And $([MSBuild]::IsOSUnixLike()) And '$([System.IO.Path]::GetExtension('$(IkvmExporterPath)'))' == '.exe' ">mono $(IkvmExporterPath)</IkvmExporterExec>
             <IkvmExporterExec Condition=" '$(IkvmExporterExec)' == '' ">$(IkvmExporterPath)</IkvmExporterExec>
         </PropertyGroup>

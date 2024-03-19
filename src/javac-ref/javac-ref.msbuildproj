@@ -26,9 +26,8 @@
     <!-- javac-ref uses the javac executable from JAVA_HOME: bootstrap -->
     <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
         <PropertyGroup>
-            <JavaCompilerPath Condition=" !$([MSBuild]::IsOSUnixLike()) And '$(JavaCompilerPath)' == '' And Exists('$(_JavaCompilerPublishDir)javac.exe') ">$([System.IO.Path]::GetFullPath('$(_JavaCompilerPublishDir)\javac.exe'))</JavaCompilerPath>
-            <JavaCompilerPath Condition="  $([MSBuild]::IsOSUnixLike()) And '$(JavaCompilerPath)' == '' And Exists('$(_JavaCompilerPublishDir)javac') ">$([System.IO.Path]::GetFullPath('$(_JavaCompilerPublishDir)\javac'))</JavaCompilerPath>
-            <JavaCompilerPath Condition="  $([MSBuild]::IsOSUnixLike()) And '$(JavaCompilerPath)' == '' And Exists('$(_JavaCompilerPublishDir)javac.exe') ">$([System.IO.Path]::GetFullPath('$(_JavaCompilerPublishDir)\javac.exe'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" $([MSBuild]::IsOSUnixLike()) And '$(JavaCompilerPath)' == '' And Exists('$(_JavaCompilerPublishDir)javac') ">$([System.IO.Path]::GetFullPath('$(_JavaCompilerPublishDir)\javac'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$(JavaCompilerPath)' == '' And Exists('$(_JavaCompilerPublishDir)javac.exe') ">$([System.IO.Path]::GetFullPath('$(_JavaCompilerPublishDir)\javac.exe'))</JavaCompilerPath>
             <JavaCompilerArgs>-J-Xmx1536M</JavaCompilerArgs>
             <JavaCompilerExec Condition=" '$(JavaCompilerExec)' == '' And $([MSBuild]::IsOSUnixLike()) And '$([System.IO.Path]::GetExtension('$(JavaCompilerPath)'))' == '.exe' ">mono $(JavaCompilerPath) $(JavaCompilerArgs)</JavaCompilerExec>
             <JavaCompilerExec Condition=" '$(JavaCompilerExec)' == '' ">$(JavaCompilerPath) $(JavaCompilerArgs)</JavaCompilerExec>
