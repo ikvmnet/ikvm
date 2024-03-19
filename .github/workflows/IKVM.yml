@@ -222,6 +222,8 @@ jobs:
         msbuild /m /bl `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
+          /p:PreReleaseLabel=${env:GitVersion_PreReleaseLabel} `
+          /p:PreReleaseNumber=${env:GitVersion_WeightedPreReleaseNumber} `
           /p:Version=${env:GitVersion_FullSemVer} `
           /p:AssemblyVersion=${env:GitVersion_AssemblySemVer} `
           /p:InformationalVersion=${env:GitVersion_InformationalVersion} `
@@ -236,7 +238,6 @@ jobs:
           /p:CreateHardLinksForCopyLocalIfPossible=true `
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
-          /p:FastBuild=true `
           IKVM.dist.msbuildproj
       working-directory: ${{ env.WORKPATH }}\ikvm
     - name: Upload MSBuild Log
