@@ -62,7 +62,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
     <Target Name="_ExportReference" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="$(MSBuildThisFileFullPath);@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
         <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
         <Error Text="ikvmstub executable could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
-        <Exec Command="chmod +x $(IkvmExporterPath) 2>&amp;1 > /dev/null" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+        <Exec Command="chmod +x $(IkvmExporterPath) >/dev/null 2>&amp;1" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <ItemGroup>
             <_ReferenceExportReference Remove="@(_ReferenceExportReference)" />
@@ -104,7 +104,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
     <Target Name="_CompileJavaResponseFile" DependsOnTargets="ResolveJavaCompiler;ExportReferences;GetReferenceClasspath;BeforeCompile">
         <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
-        <Exec Command="chmod +x $(JavaCompilerPath) 2>&amp;1 > /dev/null" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+        <Exec Command="chmod +x $(JavaCompilerPath) >/dev/null 2>&amp;1" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <IkvmSortItemGroup Items="@(Classpath)">
             <Output TaskParameter="Items" ItemName="_JavaCompilerArgsClasspath" />
@@ -256,7 +256,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
     <Target Name="_CoreCompile" DependsOnTargets="_CoreCompileResponseFile" Inputs="$(MSBuildThisFileFullPath);$(_IkvmCompilerResponseFile);$(_ExcludeFilePath);$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly)">
         <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
         <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
-        <Exec Command="chmod +x $(IkvmCompilerPath) 2>&amp;1 > /dev/null" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+        <Exec Command="chmod +x $(IkvmCompilerPath) >/dev/null 2>&amp;1" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
         
         <!-- Build Java assembly into temporary directory. -->
         <RemoveDir Directories="$(_AssemblyTempPath)" Condition="Exists('$(_AssemblyTempPath)')" />
