@@ -116,7 +116,7 @@
         <Dependencies>$(Dependencies);c</Dependencies>
         <PositionIndependentCode>true</PositionIndependentCode>
         <AdditionalCompileOptions>$(AdditionalCompileOptions)</AdditionalCompileOptions>
-        <AdditionalLinkOptions>$(AdditionalLinkOptions);-nostdlib;-Wl,-rpath,$ORIGIN;-Wl</AdditionalLinkOptions>
+        <AdditionalLinkOptions>$(AdditionalLinkOptions);-nostdlib;-Wl,-rpath,%5C$ORIGIN</AdditionalLinkOptions>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
