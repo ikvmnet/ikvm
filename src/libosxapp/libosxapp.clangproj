@@ -12,18 +12,18 @@
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <AdditionalLinkOptions Include="-framework Accelerate" />
-        <AdditionalLinkOptions Include="-framework ApplicationServices" />
-        <AdditionalLinkOptions Include="-framework AudioToolbox" />
-        <AdditionalLinkOptions Include="-framework Carbon" />
-        <AdditionalLinkOptions Include="-framework Cocoa" />
-        <AdditionalLinkOptions Include="-framework Security" />
-        <AdditionalLinkOptions Include="-framework ExceptionHandling" />
+        <AdditionalLinkOptions Include="-framework" Value="Accelerate" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="ApplicationServices" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="AudioToolbox" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Carbon" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="ExceptionHandling" Separator=" " />
         <!--<AdditionalLinkOptions Include="-framework JavaNativeFoundation" />-->
         <!--<AdditionalLinkOptions Include="-framework JavaRuntimeSupport" />-->
-        <AdditionalLinkOptions Include="-framework OpenGL" />
-        <AdditionalLinkOptions Include="-framework IOSurface" />
-        <AdditionalLinkOptions Include="-framework QuartzCore" />
+        <AdditionalLinkOptions Include="-framework" Value="OpenGL" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="IOSurface" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="QuartzCore" Separator=" " />
         <Compile Include="**\*.cpp" />
         <Compile Include="**\*.c" />
     </ItemGroup>
