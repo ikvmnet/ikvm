@@ -14,13 +14,13 @@
     <Import Project="$(MSBuildThisFileDirectory)lib.props" />
 
     <!-- common preprocessor declarations -->
-    <PropertyGroup Condition=" '$(TargetTriple)' != '' ">
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MAJOR_VERSION=%5c&quot;$(OpenJdkMajorVersion)%5c&quot;</PreprocessorDefinitions>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MINOR_VERSION=%5c&quot;$(OpenJdkMinorVersion)%5c&quot;</PreprocessorDefinitions>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MICRO_VERSION=%5c&quot;$(OpenJdkMicroVersion)%5c&quot;</PreprocessorDefinitions>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_UPDATE_VERSION=%5c&quot;$(OpenJdkUpdateVersion)%5c&quot;</PreprocessorDefinitions>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_BUILD_NUMBER=%5c&quot;$(OpenJdkBuildNumber)%5c&quot;</PreprocessorDefinitions>
-    </PropertyGroup>
+    <ItemGroup Condition=" '$(TargetTriple)' != '' ">
+        <PreprocessorDefinitions Include="JDK_MAJOR_VERSION" Value="&quot;$(OpenJdkMajorVersion)&quot;" />
+        <PreprocessorDefinitions Include="JDK_MINOR_VERSION" Value="&quot;$(OpenJdkMinorVersion)&quot;" />
+        <PreprocessorDefinitions Include="JDK_MICRO_VERSION" Value="&quot;$(OpenJdkMicroVersion)&quot;" />
+        <PreprocessorDefinitions Include="JDK_UPDATE_VERSION" Value="&quot;$(OpenJdkUpdateVersion)&quot;" />
+        <PreprocessorDefinitions Include="JDK_BUILD_NUMBER" Value="&quot;$(OpenJdkBuildNumber)&quot;" />
+    </ItemGroup>
 
     <!-- common/autoconf/flags.m4 -->
     <PropertyGroup Condition="$(TargetTriple.Contains('-windows-')) ">

@@ -23,8 +23,8 @@
         <Dependencies Include="c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('musl'))">
-        <PreprocessorDefinitions Include="__SIGRTMIN=32" />
-        <PreprocessorDefinitions Include="__SIGRTMAX=(_NSIG-1)" />
+        <PreprocessorDefinitions Include="__SIGRTMIN" Value="32" />
+        <PreprocessorDefinitions Include="__SIGRTMAX" Value="(_NSIG-1)" />
         <IncludeDirectories Include="musl" />
     </ItemGroup>
     <ItemGroup>

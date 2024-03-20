@@ -26,7 +26,7 @@
         <Dependencies Include="c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('musl'))">
-        <PreprocessorDefinitions Include="isnanf=isnan" />
+        <PreprocessorDefinitions Include="isnanf" Value="isnan" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
         <AdditionalCompileOptions Include="-fcommon" />
