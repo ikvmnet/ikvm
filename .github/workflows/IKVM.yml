@@ -466,11 +466,14 @@ jobs:
         - win-x64
         - linux-x64
         - osx-x64
+        - osx-arm64
         exclude:
         - tfm: net472
           sys: linux-x64
         - tfm: net472
           sys: osx-x64
+        - tfm: net472
+          sys: osx-arm64
         include:
         - run: IKVM.ByteCode.Tests
           tfm: net7.0
@@ -481,6 +484,9 @@ jobs:
         - run: IKVM.ByteCode.Tests
           tfm: net7.0
           sys: osx-x64
+        - run: IKVM.ByteCode.Tests
+          tfm: net7.0
+          sys: osx-arm64
         - run: IKVM.Reflection.Tests
           tfm: net7.0
           sys: win-x64
@@ -490,6 +496,9 @@ jobs:
         - run: IKVM.Reflection.Tests
           tfm: net7.0
           sys: osx-x64
+        - run: IKVM.Reflection.Tests
+          tfm: net7.0
+          sys: osx-arm64
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net472
           sys: win-x64
@@ -499,6 +508,9 @@ jobs:
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net7.0
           sys: osx-x64
+        - run: IKVM.MSBuild.Tasks.Tests
+          tfm: net7.0
+          sys: osx-arm64
         - run: IKVM.MSBuild.Tests
           tfm: net7.0
           sys: win-x64
@@ -517,6 +529,9 @@ jobs:
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
           sys: osx-x64
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net7.0
+          sys: osx-arm64
         - run: IKVM.Tests
           tfm: net7.0
           sys: win-x64
@@ -535,11 +550,14 @@ jobs:
         - run: IKVM.Tools.Tests
           tfm: net7.0
           sys: osx-x64
+        - run: IKVM.Tools.Tests
+          tfm: net7.0
+          sys: osx-arm64
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
     - build-ikvm
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"],"osx-arm64":["macos-14"]}')[matrix.sys] }}
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
