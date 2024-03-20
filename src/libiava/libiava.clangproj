@@ -30,10 +30,10 @@
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
         <AdditionalCompileOptions Include="-fcommon" />
-        <AdditionalLinkOptions Include="-framework CoreFoundation" />
-        <AdditionalLinkOptions Include="-framework Foundation" />
-        <AdditionalLinkOptions Include="-framework Security" />
-        <AdditionalLinkOptions Include="-framework SystemConfiguration" />
+        <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Foundation" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="SystemConfiguration" Separator=" " />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\*.c" />

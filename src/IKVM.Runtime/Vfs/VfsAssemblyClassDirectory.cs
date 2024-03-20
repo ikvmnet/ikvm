@@ -191,8 +191,8 @@ namespace IKVM.Runtime.Vfs
                 if (name.Value.PackageName.IsChildOf(package))
                 {
                     var m = true;
-                    var o = new ReadOnlySpanSeperatorEnumerator(package.Value.Span, '.');
-                    var e = new ReadOnlySpanSeperatorEnumerator(name.Value.PackageName.Value.Span, '.');
+                    var o = new ReadOnlySpanSeparatorEnumerator(package.Value.Span, '.');
+                    var e = new ReadOnlySpanSeparatorEnumerator(name.Value.PackageName.Value.Span, '.');
 
                     // advance past the matching package name
                     while (o.MoveNext())

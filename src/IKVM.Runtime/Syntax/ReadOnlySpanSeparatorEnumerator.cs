@@ -6,7 +6,7 @@ namespace IKVM.Runtime.Syntax
     /// <summary>
     /// Allows navigation over a Java class name.
     /// </summary>
-    ref struct ReadOnlySpanSeperatorEnumerator
+    ref struct ReadOnlySpanSeparatorEnumerator
     {
 
         ReadOnlySpan<char> name;
@@ -18,7 +18,7 @@ namespace IKVM.Runtime.Syntax
         /// </summary>
         /// <param name="name"></param>
         /// <param name="separator"></param>
-        public ReadOnlySpanSeperatorEnumerator(ReadOnlySpan<char> name, char separator)
+        public ReadOnlySpanSeparatorEnumerator(ReadOnlySpan<char> name, char separator)
         {
             this.name = name;
             curr = default;
@@ -29,7 +29,7 @@ namespace IKVM.Runtime.Syntax
         /// Gets an enumerator.
         /// </summary>
         /// <returns></returns>
-        public ReadOnlySpanSeperatorEnumerator GetEnumerator() => this;
+        public ReadOnlySpanSeparatorEnumerator GetEnumerator() => this;
 
         /// <summary>
         /// Gets the current entry.

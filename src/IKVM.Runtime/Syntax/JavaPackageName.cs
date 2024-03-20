@@ -133,8 +133,8 @@ namespace IKVM.Runtime.Syntax
                 return true;
 
             // we're going to enumerate each package element in the other package and test we can advance through that in the target
-            var o = new ReadOnlySpanSeperatorEnumerator(other.value.Span, '.');
-            var e = new ReadOnlySpanSeperatorEnumerator(value.Span, '.');
+            var o = new ReadOnlySpanSeparatorEnumerator(other.value.Span, '.');
+            var e = new ReadOnlySpanSeparatorEnumerator(value.Span, '.');
             while (o.MoveNext())
             {
                 // for each item in the other, we should be able to advance

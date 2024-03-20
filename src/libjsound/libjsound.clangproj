@@ -73,12 +73,12 @@
         
         <Dependencies Include="c" />
         
-        <AdditionalLinkOptions Include="-framework" Value="CoreAudio" Seperator=" " />
-        <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Seperator=" " />
-        <AdditionalLinkOptions Include="-framework" Value="CoreServices" Seperator=" " />
-        <AdditionalLinkOptions Include="-framework" Value="AudioUnit" Seperator=" " />
-        <AdditionalLinkOptions Include="-framework" Value="CoreMIDI" Seperator=" " />
-        <AdditionalLinkOptions Include="-framework" Value="AudioToolbox" Seperator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="CoreAudio" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="CoreServices" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="AudioUnit" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="CoreMIDI" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="AudioToolbox" Separator=" " />
 
         <!-- LIBJSOUND_SRC_FILES -->
         <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\com\sun\media\sound\PLATFORM_API_MacOSX_Utils.cpp" LanguageStandard="c++98" />

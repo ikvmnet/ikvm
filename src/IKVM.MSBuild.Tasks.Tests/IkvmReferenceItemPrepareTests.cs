@@ -71,7 +71,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             var i1 = new TaskItem(Path.Combine(".", "helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"));
             IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItem.Import(new[] { i1 }));
             var c = i1.GetMetadata(IkvmReferenceItemMetadata.Compile);
-            c.Split(IkvmReferenceItemMetadata.PropertySeperatorChar).Should().Contain(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"));
+            c.Split(IkvmReferenceItemMetadata.PropertySeparatorChar).Should().Contain(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"));
         }
 
         [TestMethod]
@@ -80,7 +80,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             var i1 = new TaskItem(Path.Combine(".", "helloworld"));
             IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItem.Import(new[] { i1 }));
             var c = i1.GetMetadata(IkvmReferenceItemMetadata.Compile);
-            c.Split(IkvmReferenceItemMetadata.PropertySeperatorChar).Should().NotContain(@"helloworld");
+            c.Split(IkvmReferenceItemMetadata.PropertySeparatorChar).Should().NotContain(@"helloworld");
         }
 
         [TestMethod]
@@ -91,7 +91,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             i2.SetMetadata(IkvmReferenceItemMetadata.References, Path.Combine(".", "helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"));
             IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItem.Import(new[] { i1, i2 }));
             var c = i2.GetMetadata(IkvmReferenceItemMetadata.References);
-            c.Split(IkvmReferenceItemMetadata.PropertySeperatorChar).Should().Contain(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"));
+            c.Split(IkvmReferenceItemMetadata.PropertySeparatorChar).Should().Contain(Path.Combine("helloworld", "helloworld-2.0-1", "helloworld-2.0.jar"));
         }
 
         [TestMethod]

@@ -71,7 +71,7 @@ namespace IKVM.Tests.Java.java.io
         }
 
         [TestMethod]
-        public void CanGetPathSeperator()
+        public void CanGetPathSeparator()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 global::java.io.File.pathSeparator.Should().Be(";");
