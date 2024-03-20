@@ -13,12 +13,12 @@
         <ProjectReference Include="..\libosxapp\libosxapp.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <AdditionalLinkOptions Include="-framework Cocoa" />
-        <AdditionalLinkOptions Include="-framework ApplicationServices" />
+        <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="ApplicationServices" Separator=" " />
         <!--<AdditionalLinkOptions Include="-framework JavaNativeFoundation" />-->
         <!--<AdditionalLinkOptions Include="-framework JavaRuntimeSupport" />-->
-        <AdditionalLinkOptions Include="-framework Security" />
-        <AdditionalLinkOptions Include="-framework SystemConfiguration" />
+        <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="SystemConfiguration" Separator=" " />
         <Compile Include="**\*.c" />
         <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\concurrent\*.m" />-->
         <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\java\util\MacOSXPreferencesFile.m" />
