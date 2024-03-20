@@ -463,6 +463,7 @@ jobs:
         - net472
         - net6.0
         sys:
+        - win-x86
         - win-x64
         - linux-x64
         - osx-x64
@@ -539,7 +540,7 @@ jobs:
     needs:
     - build-ikvm
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"win-x86":["windows-2022"],"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
@@ -577,13 +578,29 @@ jobs:
       shell: pwsh
       run: choco install procdump -y; Add-Content $env:GITHUB_PATH "$env:ProgramData\chocolatey\bin\"
     - name: Setup .NET 6.0
+      if: matrix.sys != 'win-x86'
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.0.x
     - name: Setup .NET 7.0
+      if: matrix.sys != 'win-x86'
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 7.0.x
+    - name: Setup .NET 6.0
+      if: matrix.sys == 'win-x86'
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+      env:
+        PROCESSOR_ARCHITECTURE: x86
+    - name: Setup .NET 7.0
+      if: matrix.sys == 'win-x86'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 7.0.x
+      env:
+        PROCESSOR_ARCHITECTURE: x86
     - name: Setup WSL
       if: runner.os == 'Windows'
       uses: Vampire/setup-wsl@v3
@@ -598,9 +615,9 @@ jobs:
         MATRIX_RUN: '${{ matrix.run }}'
       with:
         script: |
-            const run = process.env.MATRIX_RUN;
-            const tst = run.split('?')[0];
-            return tst;
+          const run = process.env.MATRIX_RUN;
+          const tst = run.split('?')[0];
+          return tst;
         result-encoding: string
     - name: Download Tests
       uses: actions/download-artifact@v4
@@ -648,6 +665,10 @@ jobs:
                 "--logger:trx"
                 # "--collect", "Code Coverage"
             )
+
+            if ($sys -eq "win-x86") {
+                $argl += @("-a", "x86")
+            }
             
             $runsettings = $(gi .\tests\$tst\$tfm\*.runsettings)
             if ($runsettings) {
