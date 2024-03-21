@@ -180,12 +180,9 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         </ItemGroup>
     </Target>
 
-    <Target Name="_CoreCompileResponseFile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;CompileJava">
+    <Target Name="_CoreCompileResponseFile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;CompileJava;_WriteExcludeFile">
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
-
-        <Delete Files="$(_ExcludeFilePath)" Condition=" '@(ExcludeRegex)' == '' And Exists('$(_ExcludeFilePath)')" />
-        <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" WriteOnlyWhenDifferent="true" />
 
         <ItemGroup>
             <_Convert Include="@(Convert)" />
@@ -244,6 +241,10 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
             <_IkvmCompilerArgs Include="@(_IkvmCompilerConvert->'%(FullPath)')" />
         </ItemGroup>
         <WriteLinesToFile File="$(_IkvmCompilerResponseFile)" Lines="@(_IkvmCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        
+        <ItemGroup>
+            <FileWrites Include="$(_IkvmCompilerResponseFile)" />
+        </ItemGroup>
     </Target>
 
     <PropertyGroup>
@@ -253,7 +254,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         </CoreCompileDependsOn>
     </PropertyGroup>
 
-    <Target Name="_CoreCompile" DependsOnTargets="_CoreCompileResponseFile" Inputs="$(MSBuildThisFileFullPath);$(_IkvmCompilerResponseFile);$(_ExcludeFilePath);$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly)">
+    <Target Name="_CoreCompile" DependsOnTargets="_CoreCompileResponseFile" Inputs="$(MSBuildThisFileFullPath);$(_IkvmCompilerResponseFile);$(_ExcludeFilePath);$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile);$(_ExcludeFilePath)" Outputs="@(IntermediateAssembly)">
         <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
         <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
         <Exec Command="chmod +x $(IkvmCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
