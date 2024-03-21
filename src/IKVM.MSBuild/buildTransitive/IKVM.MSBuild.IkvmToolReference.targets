@@ -11,6 +11,7 @@
         <ItemGroup>
             <_IkvmToolReferenceToConfigure Include="@(IkvmToolReference)">
                 <SetTargetFramework>TargetFramework=$(IkvmToolFramework)</SetTargetFramework>
+                <SetTargetFramework Condition=" '%(IkvmToolReference.TargetFramework)' != '' ">%(IkvmToolReference.TargetFramework)</SetTargetFramework>
                 <SetRuntimeIdentifier>RuntimeIdentifier=$(IkvmToolRuntime)</SetRuntimeIdentifier>
             </_IkvmToolReferenceToConfigure>
         </ItemGroup>
