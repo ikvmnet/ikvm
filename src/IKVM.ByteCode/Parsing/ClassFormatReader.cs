@@ -36,7 +36,12 @@ namespace IKVM.ByteCode.Parsing
         /// <summary>
         /// Gets the count of bytes in the reader.
         /// </summary>
-        public long Length => reader.Length;
+        public readonly long Length => reader.Length;
+
+        /// <summary>
+        /// Gets the current position in the reader.
+        /// </summary>
+        public readonly SequencePosition Position => reader.Position;
 
         /// <summary>
         /// Attempts to read a value defined as a 'u1'.

@@ -7,11 +7,10 @@ using System.Threading.Tasks;
 using FluentAssertions;
 
 using IKVM.ByteCode.Parsing;
-using IKVM.ByteCode.Reading;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.ByteCode.Tests
+namespace IKVM.ByteCode.Reading.Tests
 {
 
     [TestClass]
@@ -19,28 +18,33 @@ namespace IKVM.ByteCode.Tests
     {
 
         [TestMethod]
-        public async Task CanLoadClassAsync()
+        [ExpectedException(typeof(ByteCodeException))]
+        public async Task ShouldThrowOnEmptyStream()
         {
-            using var file = File.OpenRead(Path.Combine(Path.GetDirectoryName(typeof(ClassReaderTests).Assembly.Location), "0.class"));
-            var clazz = await ClassReader.ReadAsync(file);
-            clazz.Should().NotBeNull();
-            clazz.This.Name.Value.Should().Be("0");
-            clazz.Constants.ToList();
-            clazz.Interfaces.ToList();
-            clazz.Fields.Should().HaveCount(0);
-            clazz.Fields.ToList();
-            clazz.Methods.Should().HaveCount(2);
-            clazz.Methods.ToList();
+            var stream = new MemoryStream();
+            await ClassReader.ReadAsync(stream);
+        }
 
-            clazz.Methods[0].Attributes.Code.Code.Should().NotBeNull();
-            clazz.Methods[1].Attributes.Code.Code.Should().NotBeNull();
+        [TestMethod]
+        [ExpectedException(typeof(ByteCodeException))]
+        public async Task ShouldThrowOnSmallStream()
+        {
+            var stream = new MemoryStream(new byte[10]);
+            await ClassReader.ReadAsync(stream);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ByteCodeException))]
+        public async Task ShouldThrowOnBadStream()
+        {
+            var stream = new MemoryStream(new byte[35]);
+            await ClassReader.ReadAsync(stream);
         }
 
         [TestMethod]
         public void CanLoadClass()
         {
-            using var file = File.OpenRead(Path.Combine(Path.GetDirectoryName(typeof(ClassReaderTests).Assembly.Location), "0.class"));
-            var clazz = ClassReader.Read(file);
+            var clazz = ClassReader.Read(Path.Combine(Path.GetDirectoryName(typeof(ClassReaderTests).Assembly.Location), "0.class"));
             clazz.Should().NotBeNull();
             clazz.This.Name.Value.Should().Be("0");
             clazz.Constants.ToList();
@@ -55,15 +59,14 @@ namespace IKVM.ByteCode.Tests
         }
 
         [TestMethod]
-        public void CanLoadValidClassFiles()
+        public void CanLoadTestClassFiles()
         {
             var d = Path.Combine(Path.GetDirectoryName(typeof(ClassReaderTests).Assembly.Location), "resources");
             var l = Directory.GetFiles(d, "*.class", SearchOption.AllDirectories);
 
             foreach (var i in l)
             {
-                using var f = File.OpenRead(i);
-                var c = ClassReader.Read(f);
+                var c = ClassReader.Read(i);
                 c.This.Should().NotBeNull();
                 c.Constants.ToList();
 

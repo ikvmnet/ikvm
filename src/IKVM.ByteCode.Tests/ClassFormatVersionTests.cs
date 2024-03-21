@@ -6,7 +6,7 @@ namespace IKVM.ByteCode.Tests
 {
 
     [TestClass]
-    public class ClassVersionTests
+    public class ClassFormatVersionTests
     {
 
         [TestMethod]

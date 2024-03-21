@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
+using System.IO.MemoryMappedFiles;
 using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 
+using IKVM.ByteCode.Buffers;
 using IKVM.ByteCode.Parsing;
 
 using static IKVM.ByteCode.Util;
@@ -17,6 +19,68 @@ namespace IKVM.ByteCode.Reading
     /// </summary>
     internal sealed class ClassReader : ReaderBase<ClassRecord>
     {
+
+        const int MIN_CLASS_SIZE = 30;
+
+        /// <summary>
+        /// Attempts to read a class from the given memory position.
+        /// </summary>
+        /// <param name="pointer"></param>
+        /// <param name="length"></param>
+        /// <param name="clazz"></param>
+        /// <returns></returns>
+        public static unsafe bool TryRead(byte* pointer, int length, out ClassReader clazz)
+        {
+            using var mmap = new UnmanagedMemoryManager(pointer, length);
+            return TryRead(mmap.Memory, out clazz);
+        }
+
+        /// <summary>
+        /// Attempts to read a class from the given memory location.
+        /// </summary>
+        /// <param name="pointer"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        /// <exception cref="ByteCodeException"></exception>
+        public static unsafe ClassReader Read(byte* pointer, int length)
+        {
+            return TryRead(pointer, length, out var clazz) ? clazz : throw new ByteCodeException("Failed to open ClassReader. Incomplete class data.");
+        }
+
+        /// <summary>
+        /// Attempts to read a class from the given file.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="clazz"></param>
+        /// <returns></returns>
+        public static unsafe bool TryRead(string path, out ClassReader clazz)
+        {
+            using var mmap = MemoryMappedFile.CreateFromFile(path, FileMode.Open, null, 0, MemoryMappedFileAccess.Read);
+            using var view = mmap.CreateViewAccessor(0, 0, MemoryMappedFileAccess.Read);
+
+            try
+            {
+                byte* pntr = null;
+                view.SafeMemoryMappedViewHandle.AcquirePointer(ref pntr);
+                return TryRead(pntr, checked((int)view.SafeMemoryMappedViewHandle.ByteLength), out clazz);
+            }
+            finally
+            {
+                view.SafeMemoryMappedViewHandle.ReleasePointer();
+            }
+        }
+
+        /// <summary>
+        /// Attempts to read a class from the given file.
+        /// </summary>
+        /// <param name="pointer"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        /// <exception cref="ByteCodeException"></exception>
+        public static unsafe ClassReader Read(string path)
+        {
+            return TryRead(path, out var clazz) ? clazz : throw new ByteCodeException("Failed to open ClassReader. Incomplete class data.");
+        }
 
         /// <summary>
         /// Attempts to read a class from the given buffer.
@@ -48,8 +112,36 @@ namespace IKVM.ByteCode.Reading
         /// <returns></returns>
         public static bool TryRead(in ReadOnlySequence<byte> buffer, out ClassReader clazz)
         {
+            return TryRead(buffer, out clazz, out _, out _);
+        }
+
+        /// <summary>
+        /// Attempts to read a class from the given buffer, returning information about the number of consumed and examined bytes.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="clazz"></param>
+        /// <param name="consumed"></param>
+        /// <param name="examined"></param>
+        /// <returns></returns>
+        /// <exception cref="ByteCodeException"></exception>
+        public static bool TryRead(in ReadOnlySequence<byte> buffer, out ClassReader clazz, out SequencePosition consumed, out SequencePosition examined)
+        {
+            consumed = buffer.Start;
+
             var reader = new ClassFormatReader(buffer);
-            return TryRead(ref reader, out clazz);
+            if (TryRead(ref reader, out clazz) == false)
+            {
+                // examined up to the position of the reader, but consumed nothing
+                examined = reader.Position;
+                return false;
+            }
+            else
+            {
+                // examined up to the point of the reader, consumed the same
+                consumed = reader.Position;
+                examined = reader.Position;
+                return true;
+            }
         }
 
         /// <summary>
@@ -60,8 +152,7 @@ namespace IKVM.ByteCode.Reading
         /// <exception cref="ByteCodeException"></exception>
         public static ClassReader Read(in ReadOnlySequence<byte> buffer)
         {
-            var reader = new ClassFormatReader(buffer);
-            return TryRead(ref reader, out var clazz) ? clazz : throw new ByteCodeException("Failed to open ClassReader. Incomplete class data.");
+            return TryRead(buffer, out var clazz) ? clazz : throw new ByteCodeException("Failed to open ClassReader. Incomplete class data.");
         }
 
         /// <summary>
@@ -86,7 +177,7 @@ namespace IKVM.ByteCode.Reading
         /// Reads the next class from the stream.
         /// </summary>
         /// <returns></returns>
-        public static async Task<ClassReader> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        public static async ValueTask<ClassReader> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             if (stream is null)
                 throw new ArgumentNullException(nameof(stream));
@@ -112,72 +203,36 @@ namespace IKVM.ByteCode.Reading
         /// Reads the next class from the stream.
         /// </summary>
         /// <returns></returns>
-        public static async Task<ClassReader> ReadAsync(PipeReader reader, CancellationToken cancellationToken = default)
+        public static ClassReader Read(Stream stream, CancellationToken cancellationToken = default)
         {
-            while (true)
-            {
-                var result = await reader.ReadAtLeastAsync(30, cancellationToken);
-                if (result.IsCanceled)
-                    throw new OperationCanceledException();
-
-                // attempt to read at least one class
-                if (TryRead(result.Buffer, out var clazz) == false)
-                {
-                    reader.AdvanceTo(result.Buffer.Start, result.Buffer.End);
-                    continue;
-                }
-
-                reader.AdvanceTo(result.Buffer.End);
-                return clazz;
-            }
+            return ReadAsync(stream, cancellationToken).AsTask().GetAwaiter().GetResult();
         }
 
         /// <summary>
         /// Reads the next class from the stream.
         /// </summary>
         /// <returns></returns>
-        public static ClassReader Read(Stream stream)
-        {
-            if (stream is null)
-                throw new ArgumentNullException(nameof(stream));
-
-            var reader = PipeReader.Create(stream, new StreamPipeReaderOptions(minimumReadSize: 1, leaveOpen: true));
-
-            try
-            {
-                return Read(reader);
-            }
-            catch (Exception e)
-            {
-                reader.Complete(e);
-                throw;
-            }
-            finally
-            {
-                reader.Complete();
-            }
-        }
-
-        /// <summary>
-        /// Reads the next class from the stream.
-        /// </summary>
-        /// <returns></returns>
-        public static ClassReader Read(PipeReader reader)
+        public static async ValueTask<ClassReader> ReadAsync(PipeReader reader, CancellationToken cancellationToken = default)
         {
             while (true)
             {
-                var result = reader.ReadAtLeastAsync(30, CancellationToken.None).GetAwaiter().GetResult();
+                var result = await reader.ReadAtLeastAsync(MIN_CLASS_SIZE, cancellationToken);
                 if (result.IsCanceled)
                     throw new OperationCanceledException();
 
                 // attempt to read at least one class
-                if (TryRead(result.Buffer, out var clazz) == false)
+                if (TryRead(result.Buffer, out var clazz, out var consumed, out var examined) == false)
                 {
-                    reader.AdvanceTo(result.Buffer.Start, result.Buffer.End);
+                    reader.AdvanceTo(consumed, examined);
+
+                    // we couldn't read a full class, and the pipe is at the end
+                    if (result.IsCompleted)
+                        throw new ByteCodeException("End of stream reached before valid class.");
+
                     continue;
                 }
 
-                reader.AdvanceTo(result.Buffer.End);
+                reader.AdvanceTo(consumed, examined);
                 return clazz;
             }
         }
