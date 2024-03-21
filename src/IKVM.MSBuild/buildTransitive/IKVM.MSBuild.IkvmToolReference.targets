@@ -11,8 +11,9 @@
         <ItemGroup>
             <_IkvmToolReferenceToConfigure Include="@(IkvmToolReference)">
                 <SetTargetFramework>TargetFramework=$(IkvmToolFramework)</SetTargetFramework>
-                <SetTargetFramework Condition=" '%(IkvmToolReference.TargetFramework)' != '' ">%(IkvmToolReference.TargetFramework)</SetTargetFramework>
+                <SetTargetFramework Condition=" '%(IkvmToolReference.TargetFramework)' != '' ">TargetFramework=%(IkvmToolReference.TargetFramework)</SetTargetFramework>
                 <SetRuntimeIdentifier>RuntimeIdentifier=$(IkvmToolRuntime)</SetRuntimeIdentifier>
+                <SetRuntimeIdentifier Condition=" '%(IkvmToolReference.RuntimeIdentifier)' != '' ">RuntimeIdentifier=%(IkvmToolReference.RuntimeIdentifier)</SetRuntimeIdentifier>
             </_IkvmToolReferenceToConfigure>
         </ItemGroup>
         <PropertyGroup>
