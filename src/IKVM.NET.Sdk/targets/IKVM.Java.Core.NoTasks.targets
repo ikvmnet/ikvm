@@ -18,7 +18,9 @@
     </PropertyGroup>
     
     <ItemGroup>
+        <___PkgSystem_Collections_Immutable Remove="@(___PkgSystem_Collections_Immutable" />
         <___PkgSystem_Collections_Immutable Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" />
+        <___PkgSystem_Reflection_Metadata Remove="@(___PkgSystem_Reflection_Metadata" />
         <___PkgSystem_Reflection_Metadata Include="$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
     </ItemGroup>
 
