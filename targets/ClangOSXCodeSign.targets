@@ -13,7 +13,7 @@
 
     <PropertyGroup>
         <EnableOSXCodeSign Condition=" '$(EnableOSXCodeSign)' == ''  And $(TargetTriple.Contains('-apple-'))">true</EnableOSXCodeSign>
-        <OSXCodeSignCommand Condition=" '$(OSXCodeSignCommand)' == '' And  $([MSBuild]::IsOSPlatform('OSX'))">codesign -sf</OSXCodeSignCommand>
+        <OSXCodeSignCommand Condition=" '$(OSXCodeSignCommand)' == '' And  $([MSBuild]::IsOSPlatform('OSX'))">codesign -fs -</OSXCodeSignCommand>
         <OSXCodeSignCommand Condition=" '$(OSXCodeSignCommand)' == '' And !$([MSBuild]::IsOSPlatform('OSX'))">rcodesign sign</OSXCodeSignCommand>
     </PropertyGroup>
 
