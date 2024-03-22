@@ -94,7 +94,6 @@ Value = b.ToString();
         <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
         <Error Text="ikvmstub executable could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
         <Exec Command="chmod +x $(IkvmExporterPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
-        
 
         <ItemGroup>
             <_ReferenceExportReference Remove="@(_ReferenceExportReference)" />
