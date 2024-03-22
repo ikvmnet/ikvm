@@ -64,6 +64,7 @@
             Classpath="@(Classpath)"
             Source="$(LangVersion)"
             Target="$(JavaVersion)"
+            Encoding="$(Encoding)"
             Destination="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))"
             HeaderDestination="$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))"
             Verbose="true"

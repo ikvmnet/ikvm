@@ -150,6 +150,7 @@ Value = b.ToString();
             <_JavaCompilerArgs Remove="@(_JavaCompilerArgs)" />
             <_JavaCompilerArgs Include="-g" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' " />
             <_JavaCompilerArgs Include="-nowarn" />
+            <_JavaCompilerArgs Include="-encoding $(Encoding)" Condition=" '$(Encoding)' != '' " />
             <_JavaCompilerArgs Include="-implicit:none" />
             <_JavaCompilerArgs Include="-parameters" />
             <_JavaCompilerArgs Include="-cp" />

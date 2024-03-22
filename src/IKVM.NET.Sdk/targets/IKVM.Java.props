@@ -6,6 +6,7 @@
     <PropertyGroup>
         <LangVersion>1.8</LangVersion>
         <JavaVersion>1.8</JavaVersion>
+        <Encoding>utf8</Encoding>
     </PropertyGroup>
 
 </Project>
