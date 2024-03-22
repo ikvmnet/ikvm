@@ -15,6 +15,11 @@
         <___IkvmReferenceItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemPrepare.cs'))'))</___IkvmReferenceItemPrepareCs>
     </PropertyGroup>
 
+    <ItemGroup>
+        <___PkgSystem_Collections_Immutable Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" />
+        <___PkgSystem_Reflection_Metadata Include="$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
+    </ItemGroup>
+
     <UsingTask TaskName="IkvmResolveNearestRuntimeIdentifier" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
             <Code Type="Class" Language="cs">
@@ -31,8 +36,8 @@ $([MSBuild]::Unescape('$(___IkvmResolveNearestRuntimeIdentifierCs)'))
 
     <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
-            <Reference Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" />
-            <Reference Include="$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
+            <Reference Include="@(___PkgSystem_Collections_Immutable)" />
+            <Reference Include="@(___PkgSystem_Reflection_Metadata)" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
 #define NETSTANDARD_2_0

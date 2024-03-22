@@ -17,16 +17,15 @@
         <___IkvmReferenceExportItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemPrepare.cs'))'))</___IkvmReferenceExportItemPrepareCs>
     </PropertyGroup>
     
-    <PropertyGroup>
-        <___PkgSystem_Collections_Immutable>$(PkgSystem_Collections_Immutable)</___PkgSystem_Collections_Immutable>
-        <___PkgSystem_Memory>$(PkgSystem_Memory)</___PkgSystem_Memory>
-        <___PkgSystem_Reflection_Metadata>$(PkgSystem_Reflection_Metadata)</___PkgSystem_Reflection_Metadata>
-    </PropertyGroup>
+    <ItemGroup>
+        <___PkgSystem_Collections_Immutable Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" />
+        <___PkgSystem_Reflection_Metadata Include="$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
+    </ItemGroup>
 
     <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(TargetFramework)' != '' ">
         <Task>
-            <Reference Include="$(___PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" />
-            <Reference Include="$(___PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
+            <Reference Include="@(___PkgSystem_Collections_Immutable)" />
+            <Reference Include="@(___PkgSystem_Reflection_Metadata)" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
 #define NETSTANDARD2_0
