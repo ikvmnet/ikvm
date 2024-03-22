@@ -58,11 +58,43 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         </Task>
     </UsingTask>
 
+    <UsingTask TaskName="IkvmGetBase36Hash" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Value ParameterType="System.String" Required="true" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Text" />
+            <Code Language="cs" Type="Fragment">
+                <![CDATA[
+var l = "0123456789abcdefghijklmnopqrstuvwxyz";
+var b = new StringBuilder();
+var v = (long)unchecked((uint)Value.GetHashCode());
+
+while (v > 0)
+{
+    b.Append(l[(int)(v % 36)]);
+    v /= 36;
+}
+
+Value = b.ToString();
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+    
+    <Target Name="_ExportReferenceGetTempSuffix">
+        <IkvmGetBase36Hash Value="$(MSBuildThisFileFullPath)">
+            <Output TaskParameter="Value" PropertyName="_ExportReferenceTempSuffix" />
+        </IkvmGetBase36Hash>
+    </Target>
+
     <!-- Override IKVM.NET.Sdk: directly invoke executable  -->
-    <Target Name="_ExportReference" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="$(MSBuildThisFileFullPath);@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
+    <Target Name="_ExportReference" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports;_ExportReferenceGetTempSuffix" Inputs="$(MSBuildThisFileFullPath);@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
         <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
         <Error Text="ikvmstub executable could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
         <Exec Command="chmod +x $(IkvmExporterPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+        
 
         <ItemGroup>
             <_ReferenceExportReference Remove="@(_ReferenceExportReference)" />
@@ -92,8 +124,8 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
         <Message Text="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" />
         <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" IgnoreStandardErrorWarningFormat="true" />
-        <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="Exists('%(ReferenceExport.StagePath)') And !Exists('%(ReferenceExport.CachePath)')" />
-        <Touch Files="%(ReferenceExport.CachePath)" />
+        <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath).$(_ExportReferenceTempSuffix)" OverwriteReadOnlyFiles="true" UseHardlinksIfPossible="true" Retries="$(CopyRetryCount)" RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)" Condition="!Exists('%(ReferenceExport.CachePath)')" />
+        <Move SourceFiles="%(ReferenceExport.CachePath).$(_ExportReferenceTempSuffix)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="!Exists('%(ReferenceExport.CachePath)')" />
 
         <ItemGroup>
             <FileWrites Include="%(ReferenceExport.StagePath)" />
