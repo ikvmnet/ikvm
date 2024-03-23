@@ -1,6 +1,5 @@
 ﻿<Project>
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
-    <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
@@ -8,6 +7,7 @@
         <IkvmJavaRuntimeIdentifier>linux</IkvmJavaRuntimeIdentifier>
     </PropertyGroup>
     
+    <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.targets" />
 </Project>
