@@ -3,6 +3,7 @@
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
 
     <PropertyGroup>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <PackageId>IKVM.Java.runtime.osx</PackageId>
         <IkvmJavaRuntimeIdentifier>osx</IkvmJavaRuntimeIdentifier>
     </PropertyGroup>
