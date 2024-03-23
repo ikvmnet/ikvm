@@ -8,9 +8,9 @@
 
     <ItemGroup>
         <BinProject Include="..\java\java.csproj" />
-        <BinProject Include="..\keytool\keytool.msbuildproj" />
-        <BinProject Include="..\orbd\orbd.msbuildproj" />
-        <BinProject Include="..\policytool\policytool.msbuildproj" />
+        <BinProject Include="..\keytool\keytool.csproj" />
+        <BinProject Include="..\orbd\orbd.csproj" />
+        <BinProject Include="..\policytool\policytool.csproj" />
     </ItemGroup>
 
     <ItemGroup>

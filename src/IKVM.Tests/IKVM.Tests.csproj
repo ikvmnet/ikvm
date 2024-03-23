@@ -53,7 +53,7 @@
             <IncludeTargetPath>lib\net472\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
+        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <IncludeTargetPath>lib\net472\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -63,7 +63,7 @@
             <IncludeTargetPath>lib\net6.0\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
+        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <IncludeTargetPath>lib\net6.0\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -73,7 +73,7 @@
             <IncludeTargetPath>lib\net8.0\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
+        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
             <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <IncludeTargetPath>lib\net8.0\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -5,7 +5,7 @@
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java\IKVM.Java.msbuildproj">
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java\IKVM.Java.csproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>

@@ -1,9 +1,12 @@
 ﻿<Project>
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
+    <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
+
     <PropertyGroup>
         <PackageId>IKVM.Java.runtime.osx</PackageId>
         <IkvmJavaRuntimeIdentifier>osx</IkvmJavaRuntimeIdentifier>
     </PropertyGroup>
     
-    <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.targets" />
 </Project>

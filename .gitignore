@@ -252,3 +252,6 @@ ModelManifest.xml
 
 # VS Code
 .vscode/
+
+# Mono
+.mono/

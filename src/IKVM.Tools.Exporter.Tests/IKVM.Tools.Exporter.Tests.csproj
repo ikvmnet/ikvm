@@ -19,7 +19,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj" />
         <ProjectReference Include="..\IKVM.Tools.Exporter\IKVM.Tools.Exporter.csproj" />
     </ItemGroup>
 
@@ -29,7 +29,7 @@
             <IncludeTargetPath>lib\net472\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
+        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <IncludeTargetPath>lib\net472\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -39,7 +39,7 @@
             <IncludeTargetPath>lib\net6.0\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
+        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <IncludeTargetPath>lib\net6.0\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -49,7 +49,7 @@
             <IncludeTargetPath>lib\net8.0\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
+        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
             <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <IncludeTargetPath>lib\net8.0\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

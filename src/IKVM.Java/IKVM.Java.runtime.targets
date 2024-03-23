@@ -11,9 +11,8 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
-    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
 
     <!-- IKVM.Java uses the java executable from JAVA_HOME -->
     <Target Name="ResolveJava" Condition=" '$(JAVA_HOME)' != '' And '$(JavaPath)' == '' ">

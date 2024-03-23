@@ -7,19 +7,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <BinProject Include="..\jar\jar.msbuildproj" />
-        <BinProject Include="..\jarsigner\jarsigner.msbuildproj" />
-        <BinProject Include="..\javac\javac.msbuildproj" />
-        <BinProject Include="..\javadoc\javadoc.msbuildproj" />
-        <BinProject Include="..\javah\javah.msbuildproj" />
-        <BinProject Include="..\javap\javap.msbuildproj" />
-        <BinProject Include="..\jdeps\jdeps.msbuildproj" />
-        <BinProject Include="..\native2ascii\native2ascii.msbuildproj" />
-        <BinProject Include="..\rmic\rmic.msbuildproj" />
-        <BinProject Include="..\schemagen\schemagen.msbuildproj" />
-        <BinProject Include="..\wsgen\wsgen.msbuildproj" />
-        <BinProject Include="..\wsimport\wsimport.msbuildproj" />
-        <BinProject Include="..\xjc\xjc.msbuildproj" />
+        <BinProject Include="..\jar\jar.csproj" />
+        <BinProject Include="..\jarsigner\jarsigner.csproj" />
+        <BinProject Include="..\javac\javac.csproj" />
+        <BinProject Include="..\javadoc\javadoc.csproj" />
+        <BinProject Include="..\javah\javah.csproj" />
+        <BinProject Include="..\javap\javap.csproj" />
+        <BinProject Include="..\jdeps\jdeps.csproj" />
+        <BinProject Include="..\native2ascii\native2ascii.csproj" />
+        <BinProject Include="..\rmic\rmic.csproj" />
+        <BinProject Include="..\schemagen\schemagen.csproj" />
+        <BinProject Include="..\wsgen\wsgen.csproj" />
+        <BinProject Include="..\wsimport\wsimport.csproj" />
+        <BinProject Include="..\xjc\xjc.csproj" />
     </ItemGroup>
 
     <ItemGroup>
