@@ -54,25 +54,29 @@
         <AdditionalCompileOptions Include="-fms-extensions" />
     </ItemGroup>
 
-    <!-- known global values -->
-    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetTriple.Contains('-windows-'))">
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\crt\include" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\sdk\include\shared" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\sdk\include\ucrt" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\sdk\include\um" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win-local\crt\include" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win-local\sdk\include\shared" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win-local\sdk\include\ucrt" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win-local\sdk\include\um" />
-    </ItemGroup>
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
+        <WinSdkDirName>win</WinSdkDirName>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+        <WinSdkDirName>win.ci</WinSdkDirName>
+    </PropertyGroup>
 
     <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetTriple.Contains('-windows-'))">
-        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\crt\lib\$(WinSdkArch)" />
-        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\sdk\lib\ucrt\$(WinSdkArch)" />
-        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\sdk\lib\um\$(WinSdkArch)" />
-        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win-local\crt\lib\$(WinSdkArch)" />
-        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win-local\sdk\lib\ucrt\$(WinSdkArch)" />
-        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win-local\sdk\lib\um\$(WinSdkArch)" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\crt\include" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\sdk\include\shared" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\sdk\include\ucrt" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\sdk\include\um" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\crt\include" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\sdk\include\shared" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\sdk\include\ucrt" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\sdk\include\um" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\crt\lib\$(WinSdkArch)" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\sdk\lib\ucrt\$(WinSdkArch)" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\sdk\lib\um\$(WinSdkArch)" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\crt\lib\$(WinSdkArch)" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\sdk\lib\ucrt\$(WinSdkArch)" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\sdk\lib\um\$(WinSdkArch)" />
     </ItemGroup>
 
     <ItemGroup Condition="$(TargetTriple.EndsWith('-linux-gnu')) And $(TargetTriple.StartsWith('x86_64-'))">
