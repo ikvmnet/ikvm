@@ -1,4 +1,5 @@
 win/
+win.ci/
 linux-x86/
 linux-x64/
 linux-arm/
