@@ -3,6 +3,10 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
+    <Target Name="_CheckCompileDesignTimePrerequisite">
+        <Error Condition="'$(SkipCompilerExecution)|$(ProvideCommandLineArgs)' != 'true|true'" Text="SkipCompilerExecution and ProvideCommandLineArgs should be set before calling the CompileDesignTime target" />
+    </Target>
+
     <PropertyGroup>
         <ManagedDesignTimeTargetsPath Condition=" '$(ManagedDesignTimeTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\VisualStudio\Managed\Microsoft.Managed.DesignTime.targets</ManagedDesignTimeTargetsPath>
     </PropertyGroup>
