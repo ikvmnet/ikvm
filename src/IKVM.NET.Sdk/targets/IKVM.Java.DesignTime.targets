@@ -30,7 +30,7 @@
         </PropertyPageSchema>
     </ItemGroup>
 
-    <Target Name="CompileDesignTime" DependsOnTargets="_CheckCompileDesignTimePrerequisite;Compile">
+    <Target Name="CompileDesignTime" DependsOnTargets="_CheckCompileDesignTimePrerequisite;Compile" Condition=" '$(IsCrossTargetingBuild)' != 'true' ">
         <Message Text="CompileDesignTime" />
     </Target>
 
