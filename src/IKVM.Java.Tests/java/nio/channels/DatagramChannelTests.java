@@ -85,6 +85,7 @@ public class DatagramChannelTests {
                 dc.disconnect();
                 dc.close();
             } catch (Exception ex) {
+                ex.printStackTrace(System.out);
                 e = ex;
             }
         }
@@ -125,6 +126,7 @@ public class DatagramChannelTests {
                 dc.disconnect();
                 dc.close();
             } catch (Exception ex) {
+                ex.printStackTrace(System.out);
                 e = ex;
             }
         }
