@@ -213,6 +213,9 @@ public class ObjectStreamClass implements Serializable {
 
     /** true if, and only if, the object has been correctly initialized */
     private boolean initialized;
+    
+    /** [IKVM] true if the the class was dynamically loaded from Java bytecode */
+    private boolean dynamicClass;
 
     /**
      * Initializes native code.
@@ -485,6 +488,7 @@ public class ObjectStreamClass implements Serializable {
         isEnum = Enum.class.isAssignableFrom(cl);
         serializable = Serializable.class.isAssignableFrom(cl);
         externalizable = Externalizable.class.isAssignableFrom(cl);
+        dynamicClass = isDynamicTypeWrapper(cl);
 
         Class<?> superCl = cl.getSuperclass();
         superDesc = (superCl != null) ? lookup(superCl, false) : null;
@@ -2532,4 +2536,18 @@ public class ObjectStreamClass implements Serializable {
             }
         }
     }
+    
+    // [IKVM] interop serialization support
+    boolean isDynamicClass() {
+        return dynamicClass;
+    }
+    
+    private static native boolean isDynamicTypeWrapper(Class cl);
+    
+    // to force us to be resolved early (by the .NET deserialization engine)
+    // we implement readResolve() (which results in us implementing IObjectReference)
+    private Object readResolve() {
+        return this;
+    }
+
 }
