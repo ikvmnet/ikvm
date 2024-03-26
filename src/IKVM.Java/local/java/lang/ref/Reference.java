@@ -30,7 +30,7 @@ public abstract class Reference<T>
     private final cli.System.WeakReference weakRef;
     T strongRef;
     ReferenceQueue queue;
-    Reference<T> next;
+    volatile Reference<T> next;
 
     Reference(T referent)
     {
