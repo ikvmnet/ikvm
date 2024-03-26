@@ -765,7 +765,6 @@
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\Ref.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\SharedSecrets.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\Version.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\VM.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\net\ApplicationProxy.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\net\ConnectionResetException.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\net\dns\ResolverConfiguration.java" />
