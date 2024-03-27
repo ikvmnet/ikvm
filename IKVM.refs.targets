@@ -1,11 +1,11 @@
 <Project>
 
+    <PropertyGroup>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);GetIkvmJavaTfmSpecificContent</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+
     <ItemGroup>
         <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.ByteCode\IKVM.ByteCode.csproj">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java\IKVM.Java.msbuildproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
@@ -14,6 +14,89 @@
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
     </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java\IKVM.Java.msbuildproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+            <Private>False</Private>
+            <OutputItemType>IkvmJavaItem</OutputItemType>
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+            <TargetPath>refs\IKVM.Java.dll</TargetPath>
+            <IkvmJavaRuntimeIdentifier>ref</IkvmJavaRuntimeIdentifier>
+        </ProjectReference>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.runtime.win\IKVM.Java.runtime.win.msbuildproj" Condition="$(_EnabledRuntimes.Contains(';win-'))">
+            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+            <Private>False</Private>
+            <OutputItemType>IkvmJavaItem</OutputItemType>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>runtimes\win\lib\$(TargetFramework)\IKVM.Java.dll</TargetPath>
+            <IkvmJavaRuntimeIdentifier>win</IkvmJavaRuntimeIdentifier>
+        </ProjectReference>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.msbuildproj" Condition="$(_EnabledRuntimes.Contains(';linux-'))">
+            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+            <Private>False</Private>
+            <OutputItemType>IkvmJavaItem</OutputItemType>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>runtimes\linux\lib\$(TargetFramework)\IKVM.Java.dll</TargetPath>
+            <IkvmJavaRuntimeIdentifier>linux</IkvmJavaRuntimeIdentifier>
+        </ProjectReference>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.msbuildproj" Condition="$(_EnabledRuntimes.Contains(';osx-'))">
+            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+            <Private>False</Private>
+            <OutputItemType>IkvmJavaItem</OutputItemType>
+            <IkvmJavaRuntimeIdentifier>osx</IkvmJavaRuntimeIdentifier>
+        </ProjectReference>
+    </ItemGroup>
+
+    <Target Name="GetIkvmJavaCopyToOutputDirectoryItems" DependsOnTargets="ResolveProjectReferences" BeforeTargets="AssignTargetPaths">
+        <ItemGroup>
+            <None Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'ref' ">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <TargetPath>refs\%(Filename)%(Extension)</TargetPath>
+            </None>
+            <None Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' ">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <TargetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename)%(Extension)</TargetPath>
+            </None>
+            <None Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).pdb') ">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <TargetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename).pdb</TargetPath>
+            </None>
+            <None Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).dll.config')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).dll.config') ">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <TargetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename).dll.config</TargetPath>
+            </None>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GetIkvmJavaTfmSpecificContent" DependsOnTargets="ResolveProjectReferences">
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'ref' ">
+                <PackagePath>ref\$(TargetFramework)\%(Filename)%(Extension)</PackagePath>
+            </TfmSpecificPackageFile>
+            <TfmSpecificPackageFile Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' ">
+                <PackagePath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename)%(Extension)</PackagePath>
+            </TfmSpecificPackageFile>
+            <TfmSpecificPackageFile Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).pdb') ">
+                <PackagePath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename).pdb</PackagePath>
+            </TfmSpecificPackageFile>
+            <TfmSpecificPackageFile Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).dll.config')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).dll.config') ">
+                <PackagePath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename).dll.config</PackagePath>
+            </TfmSpecificPackageFile>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GetIkvmJavaRuntimeLibraryAssets" BeforeTargets="GenerateBuildDependencyFileExtensions">
+        <ItemGroup>
+            <AdditionalRuntimeLibraryAssets Include="@(IkvmJavaItem)" Condition =" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And ('$(RuntimeIdentifier)' == '' Or $(RuntimeIdentifier.StartsWith('%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)-'))) ">
+                <LibraryName>IKVM.Java</LibraryName>
+                <LibraryVersion>$(PackageVersion)</LibraryVersion>
+                <LibraryType>project</LibraryType>
+                <AssetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\IKVM.Java.dll</AssetPath>
+                <Runtime Condition=" '$(RuntimeIdentifier)' == '' ">%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)</Runtime>
+            </AdditionalRuntimeLibraryAssets>
+        </ItemGroup>
+    </Target>
 
     <Import Project="IKVM.libs.targets" />
 

@@ -11,6 +11,7 @@
         <TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificDebugSymbolsInPackage);GetProjectReferenceDebugSymbolsInPackage</TargetsForTfmSpecificDebugSymbolsInPackage>
         <NoWarn>NU5118</NoWarn>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+        <PackIkvmJava>true</PackIkvmJava>
     </PropertyGroup>
 
     <ItemGroup>
