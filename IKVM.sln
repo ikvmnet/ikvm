@@ -52,13 +52,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tests", "src\I
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tasks.Tests", "src\IKVM.MSBuild.Tasks.Tests\IKVM.MSBuild.Tasks.Tests.csproj", "{E7C0E8FA-F34C-48C6-AD55-FD9798F5BC71}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java", "src\IKVM.Java\IKVM.Java.msbuildproj", "{ABD81C7E-F986-4018-986E-ACAF82C64D3A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java", "src\IKVM.Java\IKVM.Java.csproj", "{ABD81C7E-F986-4018-986E-ACAF82C64D3A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.linux", "src\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.msbuildproj", "{BC8E0429-5E53-4F23-8CE8-86A1B44D669E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.linux", "src\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.csproj", "{BC8E0429-5E53-4F23-8CE8-86A1B44D669E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.win", "src\IKVM.Java.runtime.win\IKVM.Java.runtime.win.msbuildproj", "{537B5ACE-81A2-4DCA-AB4D-9862E63F448D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.win", "src\IKVM.Java.runtime.win\IKVM.Java.runtime.win.csproj", "{537B5ACE-81A2-4DCA-AB4D-9862E63F448D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.osx", "src\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.msbuildproj", "{C6BC9419-F394-4B59-A707-F9A82A3FE625}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.osx", "src\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.csproj", "{C6BC9419-F394-4B59-A707-F9A82A3FE625}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.NET.Sdk", "src\IKVM.NET.Sdk\IKVM.NET.Sdk.msbuildproj", "{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}"
 EndProject
@@ -74,7 +74,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tools.Exporter.Tests",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tools.Tests", "src\IKVM.Tools.Tests\IKVM.Tools.Tests.csproj", "{8C95ECC6-E996-4DA0-A4C8-F05373CBB0EA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javac", "src\javac\javac.msbuildproj", "{78BE5834-EC02-48C5-A83A-2693D777375A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javac", "src\javac\javac.csproj", "{78BE5834-EC02-48C5-A83A-2693D777375A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "java", "src\java\java.csproj", "{4F7D51D0-F52D-46EF-94DF-C4081587FBB4}"
 EndProject
@@ -86,31 +86,31 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JTReg.TestAdapter.Test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Extensions", "src\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj", "{6ABB187B-EBF6-4726-965B-2D19F3846099}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "rmic", "src\rmic\rmic.msbuildproj", "{1685EDBF-1A43-46C1-BC3B-378C909CA3DF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "rmic", "src\rmic\rmic.csproj", "{1685EDBF-1A43-46C1-BC3B-378C909CA3DF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jar", "src\jar\jar.msbuildproj", "{B240F8BA-6C35-4C19-9035-2821CC6BFEA8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jar", "src\jar\jar.csproj", "{B240F8BA-6C35-4C19-9035-2821CC6BFEA8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "orbd", "src\orbd\orbd.msbuildproj", "{B240F8BA-6C35-4C19-9035-2821CC6BFFA8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "orbd", "src\orbd\orbd.csproj", "{B240F8BA-6C35-4C19-9035-2821CC6BFFA8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jarsigner", "src\jarsigner\jarsigner.msbuildproj", "{C6C34134-D80C-43CC-A477-32B4172374D2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jarsigner", "src\jarsigner\jarsigner.csproj", "{C6C34134-D80C-43CC-A477-32B4172374D2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javadoc", "src\javadoc\javadoc.msbuildproj", "{4371190E-AD8B-4625-A520-B745B05DE005}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javadoc", "src\javadoc\javadoc.csproj", "{4371190E-AD8B-4625-A520-B745B05DE005}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "keytool", "src\keytool\keytool.msbuildproj", "{7C7BCE2E-88CE-4EA8-863E-37F6B8A824C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "keytool", "src\keytool\keytool.csproj", "{7C7BCE2E-88CE-4EA8-863E-37F6B8A824C4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "policytool", "src\policytool\policytool.msbuildproj", "{B2EF307F-90AA-4CFE-B7F3-FF741545E35B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "policytool", "src\policytool\policytool.csproj", "{B2EF307F-90AA-4CFE-B7F3-FF741545E35B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javah", "src\javah\javah.msbuildproj", "{2B536749-A2CD-4873-803A-5553D25E88EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javah", "src\javah\javah.csproj", "{2B536749-A2CD-4873-803A-5553D25E88EC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javap", "src\javap\javap.msbuildproj", "{03F00630-3625-440D-BE43-51751FCE7806}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javap", "src\javap\javap.csproj", "{03F00630-3625-440D-BE43-51751FCE7806}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "schemagen", "src\schemagen\schemagen.msbuildproj", "{03F00630-3625-440D-BE43-51751FCE7802}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "schemagen", "src\schemagen\schemagen.csproj", "{03F00630-3625-440D-BE43-51751FCE7802}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jdeps", "src\jdeps\jdeps.msbuildproj", "{FB1F02F2-3A18-49CC-A288-EC0834D90EED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jdeps", "src\jdeps\jdeps.csproj", "{FB1F02F2-3A18-49CC-A288-EC0834D90EED}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wsgen", "src\wsgen\wsgen.msbuildproj", "{ECF6B110-DF3B-4D29-91C8-45AD4C7D4B17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wsgen", "src\wsgen\wsgen.csproj", "{ECF6B110-DF3B-4D29-91C8-45AD4C7D4B17}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wsimport", "src\wsimport\wsimport.msbuildproj", "{004561E2-DED0-464D-A7B9-85D98281FED4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wsimport", "src\wsimport\wsimport.csproj", "{004561E2-DED0-464D-A7B9-85D98281FED4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-x64", "src\IKVM.Image.JRE.runtime.linux-x64\IKVM.Image.JRE.runtime.linux-x64.csproj", "{8068292D-8B2E-417B-B7CE-0E7159881C50}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -147,7 +147,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE-bin", "src\I
 		{B2EF307F-90AA-4CFE-B7F3-FF741545E35B} = {B2EF307F-90AA-4CFE-B7F3-FF741545E35B}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javac-ref", "src\javac-ref\javac-ref.msbuildproj", "{5DC963FD-6742-47BB-BC96-365B82F73C88}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javac-ref", "src\javac-ref\javac-ref.csproj", "{5DC963FD-6742-47BB-BC96-365B82F73C88}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JTReg.TestAdapter.Core", "src\IKVM.JTReg.TestAdapter.Core\IKVM.JTReg.TestAdapter.Core.csproj", "{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}"
 EndProject
@@ -189,7 +189,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-arm", "src\IKVM.Image.JRE.runtime.linux-arm\IKVM.Image.JRE.runtime.linux-arm.csproj", "{833EAB0B-F2EE-47B5-8A54-EDE4DC655122}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "native2ascii", "src\native2ascii\native2ascii.msbuildproj", "{7BC3FC79-5938-4CD7-9528-47D5DC18729E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "native2ascii", "src\native2ascii\native2ascii.csproj", "{7BC3FC79-5938-4CD7-9528-47D5DC18729E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK", "src\IKVM.Image.JDK\IKVM.Image.JDK.csproj", "{7C97E1C8-7FEB-4C2A-A149-7D77E15838BF}"
 EndProject
@@ -207,7 +207,7 @@ Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libsunmscapi", "src\libsunm
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libikvm-tests", "src\libikvm-tests\libikvm-tests.clangproj", "{E1F10A75-CB47-46A0-86CF-7A6492921878}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Tests", "src\IKVM.Java.Tests\IKVM.Java.Tests.msbuildproj", "{6DD98E75-EDE7-43C6-9EE6-304ACDB51ADE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Tests", "src\IKVM.Java.Tests\IKVM.Java.Tests.csproj", "{6DD98E75-EDE7-43C6-9EE6-304ACDB51ADE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linux-musl-arm", "src\IKVM.Image.JDK.runtime.linux-musl-arm\IKVM.Image.JDK.runtime.linux-musl-arm.csproj", "{3BB8F526-DF1A-4B16-9CB3-E854D0ABC53F}"
 EndProject
@@ -221,7 +221,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-musl-x64", "src\IKVM.Image.JRE.runtime.linux-musl-x64\IKVM.Image.JRE.runtime.linux-musl-x64.csproj", "{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "xjc", "src\xjc\xjc.msbuildproj", "{C35B9502-AC9F-4490-9480-6EAB4FD94AAA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "xjc", "src\xjc\xjc.csproj", "{C35B9502-AC9F-4490-9480-6EAB4FD94AAA}"
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libunpack", "src\libunpack\libunpack.clangproj", "{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}"
 EndProject

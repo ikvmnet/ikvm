@@ -22,23 +22,23 @@
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\Platform.c" LanguageStandard="c99" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x86'))">
-        <PreprocessorDefinitions Include="X_ARCH=X_I586" />
+        <PreprocessorDefinitions Include="X_ARCH" Value="X_I586" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x64'))">
-        <PreprocessorDefinitions Include="X_ARCH=X_AMD64" />
+        <PreprocessorDefinitions Include="X_ARCH" Value="X_AMD64" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm'))">
-        <PreprocessorDefinitions Include="X_ARCH=X_ARM" />
+        <PreprocessorDefinitions Include="X_ARCH" Value="X_ARM" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm64'))">
-        <PreprocessorDefinitions Include="X_ARCH=X_AARCH64" />
+        <PreprocessorDefinitions Include="X_ARCH" Value="X_AARCH64" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
-        <PreprocessorDefinitions Include="X_PLATFORM=X_WINDOWS" />
-        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT=TRUE" />
-        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN=TRUE" />
-        <PreprocessorDefinitions Include="USE_PORTS=TRUE" />
-        <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS=%5c&quot;jsoundds%5c&quot;" />
+        <PreprocessorDefinitions Include="X_PLATFORM" Value="X_WINDOWS" />
+        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT" Value="TRUE" />
+        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN" Value="TRUE" />
+        <PreprocessorDefinitions Include="USE_PORTS" Value="TRUE" />
+        <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS" Value="&quot;jsoundds&quot;" />
 
         <Dependencies Include="msvcrt;advapi32;winmm" />
         
@@ -60,25 +60,25 @@
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\PortMixer.c" LanguageStandard="c99" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        <PreprocessorDefinitions Include="X_PLATFORM=X_LINUX" />
-        <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS=%5c&quot;jsoundalsa%5c&quot;" />
+        <PreprocessorDefinitions Include="X_PLATFORM" Value="X_LINUX" />
+        <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS" Value="&quot;jsoundalsa&quot;" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
-        <PreprocessorDefinitions Include="X_PLATFORM=X_MACOSX" />
-        <PreprocessorDefinitions Include="USE_PORTS=TRUE" />
-        <PreprocessorDefinitions Include="USE_DAUDIO=TRUE" />
-        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT=TRUE" />
-        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN=TRUE" />
-        <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS=%5c&quot;%5c&quot;" />
+        <PreprocessorDefinitions Include="X_PLATFORM" Value="X_MACOSX" />
+        <PreprocessorDefinitions Include="USE_PORTS" Value="TRUE" />
+        <PreprocessorDefinitions Include="USE_DAUDIO" Value="TRUE" />
+        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT" Value="TRUE" />
+        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN" Value="TRUE" />
+        <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS" Value="&quot;&quot;" />
         
         <Dependencies Include="c" />
         
-        <AdditionalLinkOptions Include="-framework CoreAudio" />
-        <AdditionalLinkOptions Include="-framework CoreFoundation" />
-        <AdditionalLinkOptions Include="-framework CoreServices" />
-        <AdditionalLinkOptions Include="-framework AudioUnit" />
-        <AdditionalLinkOptions Include="-framework CoreMIDI" />
-        <AdditionalLinkOptions Include="-framework AudioToolbox" />
+        <AdditionalLinkOptions Include="-framework" Value="CoreAudio" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="CoreServices" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="AudioUnit" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="CoreMIDI" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="AudioToolbox" Separator=" " />
 
         <!-- LIBJSOUND_SRC_FILES -->
         <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\com\sun\media\sound\PLATFORM_API_MacOSX_Utils.cpp" LanguageStandard="c++98" />

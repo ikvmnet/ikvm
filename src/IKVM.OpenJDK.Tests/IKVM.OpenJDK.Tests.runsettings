@@ -2,5 +2,6 @@
     <JTRegConfiguration>
         <PartitionCount>16</PartitionCount>
         <TimeoutFactor>16</TimeoutFactor>
+        <AdditionalExcludeListFile>ExcludeList.tfm.txt</AdditionalExcludeListFile>
     </JTRegConfiguration>
 </RunSettings>

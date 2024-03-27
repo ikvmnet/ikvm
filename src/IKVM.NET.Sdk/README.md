@@ -8,18 +8,16 @@ IKVM.NET.Sdk provides a full MBuild SDK for compiling Java code into .NET assemb
 file with contents like the following, using the latest version.
 
 ```
-<Project Sdk="IKVM.NET.Sdk/8.2.2">
+<Project Sdk="IKVM.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net8.0</TargetFrameworks>
     </PropertyGroup>
 </Project>
 ```
 
 ## Limitations
 
-As of now only `net472` and `net6.0` target Frameworks are supported. Any other target frameworks will throw an error.
-
-Projects will not yet build on Linux.
+.NET Framwork projects will not yet build on Linux.
 
 The project will compile fine in Visual Studio, with some caveats. Since we don't yet have a Visual Studio extension,
 manual modifications will be required to the `.sln` file. Ensure that after you add the project to your solution, you

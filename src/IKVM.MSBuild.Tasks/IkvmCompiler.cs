@@ -305,7 +305,7 @@ namespace IKVM.MSBuild.Tasks
                 "embedded" => IkvmImporterDebugMode.Embedded,
                 _ => throw new NotImplementedException($"Unknown Debug option '{Debug}'.")
             };
-
+            
             options.NoAutoSerialization = NoAutoSerialization;
             options.NoGlobbing = NoGlobbing;
             options.NoJNI = NoJNI;

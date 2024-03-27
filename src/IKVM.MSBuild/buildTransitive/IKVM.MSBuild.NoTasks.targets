@@ -15,11 +15,18 @@
         <___IkvmReferenceItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemPrepare.cs'))'))</___IkvmReferenceItemPrepareCs>
     </PropertyGroup>
 
-    <UsingTask TaskName="IkvmResolveNearestRuntimeIdentifier" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(MSBuildRuntimeType)' == 'Core' ">
+    <ItemGroup>
+        <___PkgSystem_Collections_Immutable Remove="@(___PkgSystem_Collections_Immutable)" />
+        <___PkgSystem_Collections_Immutable Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" />
+        <___PkgSystem_Reflection_Metadata Remove="@(___PkgSystem_Reflection_Metadata)" />
+        <___PkgSystem_Reflection_Metadata Include="$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
+    </ItemGroup>
+
+    <UsingTask TaskName="IkvmResolveNearestRuntimeIdentifier" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
             <Code Type="Class" Language="cs">
                 <![CDATA[
-#define NETCOREAPP
+#define NETSTANDARD_2_0
 
 $([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmJsonParserCs)'))
@@ -29,47 +36,13 @@ $([MSBuild]::Unescape('$(___IkvmResolveNearestRuntimeIdentifierCs)'))
         </Task>
     </UsingTask>
 
-    <UsingTask TaskName="IkvmResolveNearestRuntimeIdentifier" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
+    <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
+            <Reference Include="@(___PkgSystem_Collections_Immutable)" />
+            <Reference Include="@(___PkgSystem_Reflection_Metadata)" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
-#define NETFRAMEWORK
-
-$([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
-$([MSBuild]::Unescape('$(___IkvmJsonParserCs)'))
-$([MSBuild]::Unescape('$(___IkvmResolveNearestRuntimeIdentifierCs)'))
-            ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
-    <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(MSBuildRuntimeType)' == 'Core' ">
-        <Task>
-            <Reference Include="$(PkgSystem_Collections_Immutable)\lib\net6.0\System.Collections.Immutable.dll" />
-            <Reference Include="$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
-            <Code Type="Class" Language="cs">
-                <![CDATA[
-#define NETCOREAPP
-
-$([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
-$([MSBuild]::Unescape('$(___IkvmAssemblyInfoUtilCs)'))
-$([MSBuild]::Unescape('$(___IkvmFileIdentityUtilCs)'))
-$([MSBuild]::Unescape('$(___IkvmReferenceItemCs)'))
-$([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
-$([MSBuild]::Unescape('$(___IkvmReferenceItemMetadataCs)'))
-$([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))
-            ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
-    <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
-        <Task>
-            <Reference Include="$(PkgSystem_Collections_Immutable)\lib\net461\System.Collections.Immutable.dll" />
-            <Reference Include="$(PkgSystem_Reflection_Metadata)\lib\net461\System.Reflection.Metadata.dll" />
-            <Code Type="Class" Language="cs">
-                <![CDATA[
-#define NETFRAMEWORK
+#define NETSTANDARD_2_0
 
 $([MSBuild]::Unescape('$(___IkvmTaskUtilCs)'))
 $([MSBuild]::Unescape('$(___IkvmAssemblyInfoUtilCs)'))

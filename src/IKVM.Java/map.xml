@@ -32,6 +32,7 @@
                 <attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
                     <parameter>Never</parameter>
                 </attribute>
+                <attribute type="System.NonSerializedAttribute" sig="()V" />
             </field>
             <constructor sig="()V" modifiers="public">
                 <body>

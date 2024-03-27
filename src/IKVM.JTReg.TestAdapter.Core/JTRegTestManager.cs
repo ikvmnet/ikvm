@@ -27,9 +27,6 @@ namespace IKVM.JTReg.TestAdapter.Core
 
         internal const string BASEDIR_PREFIX = "ikvm-jtreg-";
         internal const string TEST_ROOT_FILE_NAME = "TEST.ROOT";
-        internal const string TEST_PROBLEM_LIST_FILE_NAME = "ProblemList.txt";
-        internal const string TEST_EXCLUDE_LIST_FILE_NAME = "ExcludeList.txt";
-        internal const string TEST_INCLUDE_LIST_FILE_NAME = "IncludeList.txt";
         internal const string DEFAULT_WORK_DIR_NAME = "work";
         internal const string DEFAULT_REPORT_DIR_NAME = "report";
         internal const string DEFAULT_PARAM_TAG = "regtest";
@@ -115,16 +112,17 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <summary>
         /// Gets the set of files that represent the exclusions for a suite.
         /// </summary>
+        /// <param name="options"></param>
         /// <param name="testSuite"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public List<java.io.File> GetExcludeListFiles(dynamic testSuite)
+        public List<java.io.File> GetExcludeListFiles(JTRegTestOptions options, dynamic testSuite)
         {
             if (testSuite is null)
                 throw new ArgumentNullException(nameof(testSuite));
 
             // if a ProblemList.txt or ExcludeList.txt file exists in the root, add them as exclude files
             var excludeFileList = new List<java.io.File>();
-            foreach (var n in new[] { TEST_PROBLEM_LIST_FILE_NAME, TEST_EXCLUDE_LIST_FILE_NAME })
+            foreach (var n in options.ExcludeListFiles.Concat(options.AdditionalExcludeListFiles))
                 if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
                     excludeFileList.Add(new java.io.File(new java.io.File(f).getAbsoluteFile().toURI().normalize()));
 
@@ -134,17 +132,18 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <summary>
         /// Gets the set of files that represent the inclusions for a suite.
         /// </summary>
+        /// <param name="options"></param>
         /// <param name="testSuite"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public List<java.io.File> GetIncludeListFiles(dynamic testSuite)
+        public List<java.io.File> GetIncludeListFiles(JTRegTestOptions options, dynamic testSuite)
         {
             if (testSuite is null)
                 throw new ArgumentNullException(nameof(testSuite));
 
             // if a IncludeList.txt file exists in the root, add it as include files
             var includeFileList = new List<java.io.File>();
-            foreach (var n in new[] { TEST_INCLUDE_LIST_FILE_NAME })
+            foreach (var n in options.IncludeListFiles.Concat(options.AdditionalIncludeListFiles))
                 if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
                     includeFileList.Add(new java.io.File(new java.io.File(f).getAbsoluteFile().toURI().normalize()));
 
@@ -371,10 +370,10 @@ namespace IKVM.JTReg.TestAdapter.Core
             rp.setReportDir(rd);
 
             // if a ProblemList.txt or ExcludeList.txt file exists in the root, add them as exclude files
-            var excludeFileList = (List<java.io.File>)GetExcludeListFiles(testSuite);
+            var excludeFileList = (List<java.io.File>)GetExcludeListFiles(options, testSuite);
 
             // if a IncludeList.txt file exists in the root, add it as include files
-            var includeFileList = (List<java.io.File>)GetIncludeListFiles(testSuite);
+            var includeFileList = (List<java.io.File>)GetIncludeListFiles(options, testSuite);
 
             rp.setTests((java.util.Set)testManager.getTests(testSuite));
             rp.setExecMode(testSuite.getDefaultExecMode() ?? JTRegTypes.ExecMode.AGENTVM);

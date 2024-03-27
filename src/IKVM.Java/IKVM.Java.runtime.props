@@ -11,12 +11,10 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
         <AssemblyName>IKVM.Java</AssemblyName>
         <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
         <Bootstrap>true</Bootstrap>
@@ -30,7 +28,7 @@
     <ItemGroup>
         <ProjectReference Include="$(MSBuildThisFileDirectory)..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" IncludeNonPublicTypes="true" />
         <ProjectReference Include="$(MSBuildThisFileDirectory)..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'ref' " />
-        <ProjectReference Include="$(MSBuildThisFileDirectory)..\IKVM.Java\IKVM.Java.msbuildproj" Private="False" PrivateAssets="All" HideFromJava="true" Condition=" '$(IkvmJavaRuntimeIdentifier)' != 'ref' " />
+        <ProjectReference Include="$(MSBuildThisFileDirectory)..\IKVM.Java\IKVM.Java.csproj" Private="False" PrivateAssets="All" HideFromJava="true" Condition=" '$(IkvmJavaRuntimeIdentifier)' != 'ref' " />
     </ItemGroup>
 
     <ItemGroup>

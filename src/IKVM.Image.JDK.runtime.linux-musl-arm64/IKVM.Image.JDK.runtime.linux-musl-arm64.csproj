@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM JDK Runtime Image</Description>
         <IncludeSymbols>false</IncludeSymbols>
         <ImageRuntimeIdentifier>linux-musl-arm64</ImageRuntimeIdentifier>
         <ImageBinProject>..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj</ImageBinProject>
-        <SupportedImageTargetFrameworks>net6.0</SupportedImageTargetFrameworks>
+        <SupportedImageTargetFrameworks>net6.0;net8.0</SupportedImageTargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>

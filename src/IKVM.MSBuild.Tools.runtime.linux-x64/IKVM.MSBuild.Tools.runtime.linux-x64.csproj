@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM MSBuild Tools</Description>
@@ -16,35 +16,19 @@
 
     <ItemGroup>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
-            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net472' ">ikvmc\net472\linux-x64</PublishTargetPath>
-            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net472' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>ikvmc\net472\linux-x64</PublishPackagePath>
+            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmc\net8.0\linux-x64</PublishTargetPath>
+            <CopyToOutputDirectory Condition=" '$(TargetFramework)' != '' ">PreserveNewest</CopyToOutputDirectory>
+            <PublishPackagePath>ikvmc\net8.0\linux-x64</PublishPackagePath>
             <Pack>true</Pack>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
-            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net472' ">ikvmstub\net472\linux-x64\bin</PublishTargetPath>
-            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net472' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>ikvmstub\net472\linux-x64</PublishPackagePath>
-            <Pack>true</Pack>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
-            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net6.0' ">ikvmc\net6.0\linux-x64</PublishTargetPath>
-            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net6.0' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>ikvmc\net6.0\linux-x64</PublishPackagePath>
-            <Pack>true</Pack>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
-            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net6.0' ">ikvmstub\net6.0\linux-x64</PublishTargetPath>
-            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net6.0' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>ikvmstub\net6.0\linux-x64</PublishPackagePath>
+            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmstub\net8.0\linux-x64</PublishTargetPath>
+            <CopyToOutputDirectory Condition=" '$(TargetFramework)' != '' ">PreserveNewest</CopyToOutputDirectory>
+            <PublishPackagePath>ikvmstub\net8.0\linux-x64</PublishPackagePath>
             <Pack>true</Pack>
         </PublishProjectReference>
     </ItemGroup>

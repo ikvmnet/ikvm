@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Sun.Nio.Ch;
+using IKVM.Runtime.JNI;
 using IKVM.Runtime.Util.Java.Net;
 
 namespace IKVM.Java.Externs.sun.nio.ch
@@ -57,6 +58,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
         static readonly byte[] IOControlFalseBuffer = BitConverter.GetBytes(0);
         static readonly byte[] TempBuffer = new byte[1];
 
+        static global::ikvm.@internal.CallerID __callerID;
+        delegate void __jniDelegate__disconnect0(IntPtr jniEnv, IntPtr self, IntPtr fdo, sbyte isIPv6);
+        static __jniDelegate__disconnect0 __jniPtr__disconnect0;
+
         /// <summary>
         /// Peek at the queue to see if there is an ICMP port unreachable. If there is, then receive it.
         /// </summary>
@@ -95,11 +100,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
 #endif
 
-        public static void initIDs()
-        {
-
-        }
-
         /// <summary>
         /// Implements the native method 'disconnect0'.
         /// </summary>
@@ -110,33 +110,60 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var socket = FileDescriptorAccessor.GetSocket(fd);
-            if (socket == null)
-                throw new global::java.net.SocketException("Socket closed.");
-
-            try
-            {
 #if NETCOREAPP
-                // HACK .NET Core has an explicit check for _isConnected https://github.com/dotnet/runtime/issues/77962
-                if (SocketIsConnectedFieldSetter != null)
-                    SocketIsConnectedFieldSetter(socket, false);
+            // zero out isconnected
+            if (SocketIsConnectedFieldSetter != null)
+            {
+                var socket = FileDescriptorAccessor.GetSocket(fd);
+                if (socket == null)
+                    throw new global::java.net.SocketException("Socket closed.");
+
+                SocketIsConnectedFieldSetter(FileDescriptorAccessor.GetSocket(fd), false);
+            }
 #endif
 
-                // NOTE we use async connect to work around the issue that the .NET Socket class disallows sync Connect after the socket has received WSAECONNRESET
-                var any = socket.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any;
-                socket.EndConnect(socket.BeginConnect(new IPEndPoint(any, 0), null, null));
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var socket = FileDescriptorAccessor.GetSocket(fd);
+                if (socket == null)
+                    throw new global::java.net.SocketException("Socket closed.");
 
-                // disable WSAECONNRESET errors as socket is no longer connected
-                if (RuntimeUtil.IsWindows)
+                try
+                {
+                    // NOTE we use async connect to work around the issue that the .NET Socket class disallows sync Connect after the socket has received WSAECONNRESET
+                    var any = socket.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any;
+                    socket.EndConnect(socket.BeginConnect(new IPEndPoint(any, 0), null, null));
                     socket.IOControl(SIO_UDP_CONNRESET, IOControlFalseBuffer, null);
+                }
+                catch (SocketException e)
+                {
+                    throw e.ToIOException();
+                }
+                catch (ObjectDisposedException)
+                {
+                    throw new global::java.net.SocketException("Socket closed.");
+                }
             }
-            catch (SocketException e)
+            else
             {
-                throw e.ToIOException();
-            }
-            catch (ObjectDisposedException)
-            {
-                throw new global::java.net.SocketException("Socket closed.");
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::sun.nio.ch.DatagramChannelImpl).TypeHandle);
+                __jniPtr__disconnect0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__disconnect0>(JNIFrame.GetFuncPtr(__callerID, "sun/nio/ch/DatagramChannelImpl", nameof(disconnect0), "(Ljava/io/FileDescriptor;Z)V"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    __jniPtr__disconnect0(jniEnv, jniFrm.MakeLocalRef(ClassLiteral<global::sun.nio.ch.DatagramChannelImpl>.Value), jniFrm.MakeLocalRef(fd), isIPv6 ? JNIEnv.JNI_TRUE : JNIEnv.JNI_FALSE);
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
             }
 #endif
         }

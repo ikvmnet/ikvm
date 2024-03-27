@@ -3,7 +3,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM Runtime Image</Description>
@@ -39,6 +39,7 @@
         <IkvmImageItem Include="ikvm\any\any\**\*" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
         <IkvmImageItem Include="ikvm\net472\any\**\*" TargetFramework="net472" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
         <IkvmImageItem Include="ikvm\net6.0\any\**\*" TargetFramework="net6.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net8.0\any\**\*" TargetFramework="net8.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
         <IkvmImageItem Include="@(OpenJdkImageContent)" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(ImagePath)" />
     </ItemGroup>
 

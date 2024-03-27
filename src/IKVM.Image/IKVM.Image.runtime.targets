@@ -20,6 +20,8 @@
         <IkvmImageItem Include="ikvm\net472\$(ImageRuntimeIdentifier)\**\*" TargetFramework="net472" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
         <IkvmImageItem Include="ikvm\net6.0\any\**\*" TargetFramework="net6.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
         <IkvmImageItem Include="ikvm\net6.0\$(ImageRuntimeIdentifier)\**\*" TargetFramework="net6.0" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net8.0\any\**\*" TargetFramework="net8.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net8.0\$(ImageRuntimeIdentifier)\**\*" TargetFramework="net8.0" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
@@ -34,6 +36,12 @@
             <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
             <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
             <PublishItemMetadata>TargetFramework=net6.0;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
+        </PublishProjectReference>
+        <PublishProjectReference Include="$(ImageBinProject)" Condition="$(SupportedImageTargetFrameworks.Contains('net8.0'))">
+            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
+            <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
+            <PublishItemMetadata>TargetFramework=net8.0;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
         </PublishProjectReference>
     </ItemGroup>
 

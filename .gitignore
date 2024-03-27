@@ -246,3 +246,12 @@ ModelManifest.xml
 /dist/
 /build/
 /msbuild.binlog
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# Mono
+.mono/

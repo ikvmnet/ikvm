@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace IKVM.JTReg.TestAdapter.Core
 {
@@ -16,6 +17,39 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// Gets or sets the factor by which to multiply various timeouts.
         /// </summary>
         public float TimeoutFactor { get; set; } = 1.0f;
+
+        /// <summary>
+        /// Set of relative or absolute file names to add as exclude lists.
+        /// </summary>
+        public List<string> ExcludeListFiles { get; } = new List<string>()
+        {
+            "ProblemList.txt",
+            "ExcludeList.txt",
+        };
+
+        /// <summary>
+        /// Set of relative or absolute file names to add as exclude lists.
+        /// </summary>
+        public List<string> AdditionalExcludeListFiles { get; } = new List<string>()
+        {
+
+        };
+
+        /// <summary>
+        /// Set of relative or absolute file names to add as include lists.
+        /// </summary>
+        public List<string> IncludeListFiles { get; } = new List<string>()
+        {
+            "IncludeList.txt",
+        };
+
+        /// <summary>
+        /// Set of relative or absolute file names to add as include lists.
+        /// </summary>
+        public List<string> AdditionalIncludeListFiles { get; } = new List<string>()
+        {
+
+        };
 
     }
 

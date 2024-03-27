@@ -11,6 +11,11 @@ public class DatagramChannelTests {
     
     @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
     public void canConnectAndSendAndReceive() throws Throwable {
+        if (cli.System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(cli.System.Runtime.InteropServices.OSPlatform.get_OSX())) {
+            // https://bugs.openjdk.org/browse/JDK-8285515 waiting on 8u341
+            return;
+        }
+
         Reactor r = new Reactor();
         Actor a = new Actor(r.port());
         invoke(a, r);
@@ -85,6 +90,7 @@ public class DatagramChannelTests {
                 dc.disconnect();
                 dc.close();
             } catch (Exception ex) {
+                ex.printStackTrace(System.out);
                 e = ex;
             }
         }
@@ -125,6 +131,7 @@ public class DatagramChannelTests {
                 dc.disconnect();
                 dc.close();
             } catch (Exception ex) {
+                ex.printStackTrace(System.out);
                 e = ex;
             }
         }

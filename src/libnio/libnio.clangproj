@@ -29,7 +29,7 @@
     </ItemGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
         <Dependencies Include="pthread" />
-        <AdditionalLinkOptions Include="-framework CoreFoundation" />
+        <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(MSBuildThisFileDirectory)share\**\*.c" />
