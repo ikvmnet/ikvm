@@ -42,7 +42,7 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
-        public static global::java.lang.ClassLoader latestUserDefinedLoader()
+        public static global::java.lang.ClassLoader latestUserDefinedLoader0()
         {
 #if FIRST_PASS
             throw new NotImplementedException();
