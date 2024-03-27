@@ -9,13 +9,13 @@
             <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net472\linux-arm\**\*">
-            <TargetFramework>net472</TargetFramework>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net6.0\linux-arm\**\*">
+            <TargetFramework>net6.0</TargetFramework>
             <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net6.0\linux-arm\**\*">
-            <TargetFramework>net6.0</TargetFramework>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net8.0\linux-arm\**\*">
+            <TargetFramework>net8.0</TargetFramework>
             <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>

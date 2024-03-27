@@ -16,9 +16,7 @@ namespace IKVM.ByteCode.Tests.Reading
 
         ClassReader ReadClass()
         {
-            var f = File.OpenRead(Path.Combine(Path.GetDirectoryName(typeof(ConstantReaderTests).Assembly.Location), "Reading", "ConstantReaderTests.class"));
-            var c = ClassReader.Read(f);
-            return c;
+            return ClassReader.Read(Path.Combine(Path.GetDirectoryName(typeof(ConstantReaderTests).Assembly.Location), "Reading", "ConstantReaderTests.class"));
         }
 
         [TestMethod]

@@ -96,6 +96,8 @@ namespace IKVM.Java.Externs.java.net
         static global::ikvm.@internal.CallerID __callerID;
         delegate void __jniDelegate__init(IntPtr jniEnv, IntPtr self);
         static __jniDelegate__init __jniPtr__init;
+        delegate void __jniDelegate__disconnect0(IntPtr jniEnv, IntPtr self, int family);
+        static __jniDelegate__disconnect0 __jniPtr__disconnect0;
 
 #if NETCOREAPP3_1_OR_GREATER
 
@@ -317,25 +319,49 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction(this_, (Action<global::java.net.PlainDatagramSocketImpl>)(impl =>
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                if (impl.fd == null || impl.fd.getSocket() == null)
-                    return;
-
-                InvokeWithSocket(impl, socket =>
+                InvokeAction(this_, (Action<global::java.net.PlainDatagramSocketImpl>)(impl =>
                 {
-                    // NOTE we use async connect to work around the issue that the .NET Socket class disallows sync Connect after the socket has received WSAECONNRESET
-#if NETCOREAPP3_1_OR_GREATER
-                    // HACK .NET Core has an explicit check for _isConnected https://github.com/dotnet/runtime/issues/77962
-                    SocketIsConnectedFieldSetter(socket, false);
-#endif
-                    socket.EndConnect(socket.BeginConnect(new IPEndPoint(IPAddress.IPv6Any, 0), null, null));
+                    if (impl.fd == null || impl.fd.getSocket() == null)
+                        return;
 
-                    // see comment in in socketCreate
-                    if (RuntimeUtil.IsWindows)
-                        socket.IOControl(SIO_UDP_CONNRESET, IOControlFalseBuffer, null);
-                });
-            }));
+                    InvokeWithSocket(impl, socket =>
+                    {
+                        // NOTE we use async connect to work around the issue that the .NET Socket class disallows sync Connect after the socket has received WSAECONNRESET
+#if NETCOREAPP3_1_OR_GREATER
+                        // HACK .NET Core has an explicit check for _isConnected https://github.com/dotnet/runtime/issues/77962
+                        SocketIsConnectedFieldSetter(socket, false);
+#endif
+                        socket.EndConnect(socket.BeginConnect(new IPEndPoint(IPAddress.IPv6Any, 0), null, null));
+
+                        // see comment in in socketCreate
+                        if (RuntimeUtil.IsWindows)
+                            socket.IOControl(SIO_UDP_CONNRESET, IOControlFalseBuffer, null);
+                    });
+                }));
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.net.PlainDatagramSocketImpl).TypeHandle);
+                __jniPtr__disconnect0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__disconnect0>(JNIFrame.GetFuncPtr(__callerID, "java/net/PlainDatagramSocketImpl", nameof(disconnect0), "(I)V"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    __jniPtr__disconnect0(jniEnv, jniFrm.MakeLocalRef(ClassLiteral<global::java.net.PlainSocketImpl>.Value), family);
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
 #endif
         }
 

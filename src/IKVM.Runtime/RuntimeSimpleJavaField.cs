@@ -22,6 +22,7 @@
   
 */
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -76,6 +77,7 @@ namespace IKVM.Runtime
 
 #if EMITTERS
 
+        /// <inheritdoc />
         protected override void EmitGetImpl(CodeEmitter il)
         {
             var fi = GetField();
@@ -96,6 +98,7 @@ namespace IKVM.Runtime
                 il.Emit(OpCodes.Ldfld, fi);
         }
 
+        /// <inheritdoc />
         protected override void EmitSetImpl(CodeEmitter il)
         {
             var fi = GetField();
@@ -121,6 +124,7 @@ namespace IKVM.Runtime
                 il.EmitMemoryBarrier();
         }
 
+        /// <inheritdoc />
         protected override void EmitUnsafeGetImpl(CodeEmitter il)
         {
             var fi = GetField();
@@ -129,9 +133,8 @@ namespace IKVM.Runtime
             {
                 if (IsFinal)
                 {
-                    // perform an indirect load to prevent the JIT from caching the value
                     il.Emit(OpCodes.Ldsflda, fi);
-                    FieldTypeWrapper.EmitLdind(il);
+                    il.Emit(OpCodes.Call, DeclaringType.Context.Resolver.ResolveRuntimeType(typeof(RuntimeSimpleJavaField).FullName).GetMethod(nameof(UnsafeGetImplByRefNoInline), BindingFlags.Static | BindingFlags.NonPublic).MakeGenericMethod(fi.FieldType));
                 }
                 else
                 {
@@ -147,6 +150,19 @@ namespace IKVM.Runtime
             }
         }
 
+        /// <summary>
+        /// Non-inlinable implementation to retrieve the value of the given reference. Prevents inlining of read-only fields by the JIT.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static T UnsafeGetImplByRefNoInline<T>(ref T r)
+        {
+            return r;
+        }
+
+        /// <inheritdoc />
         protected override void EmitUnsafeSetImpl(CodeEmitter il)
         {
             var fi = GetField();
@@ -169,6 +185,7 @@ namespace IKVM.Runtime
             }
         }
 
+        /// <inheritdoc />
         protected override void EmitUnsafeVolatileGetImpl(CodeEmitter il)
         {
             var fi = GetField();
@@ -184,7 +201,6 @@ namespace IKVM.Runtime
 
                 il.Emit(OpCodes.Ldflda, fi);
             }
-
 
             if (FieldTypeWrapper == DeclaringType.Context.PrimitiveJavaTypeFactory.BOOLEAN)
                 il.Emit(OpCodes.Call, DeclaringType.Context.ByteCodeHelperMethods.VolatileReadBoolean);
@@ -210,6 +226,7 @@ namespace IKVM.Runtime
             }
         }
 
+        /// <inheritdoc />
         protected override void EmitUnsafeVolatileSetImpl(CodeEmitter il)
         {
             var fi = GetField();

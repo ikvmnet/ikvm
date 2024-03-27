@@ -19,7 +19,7 @@ on:
     - created
 
 env:
-  NATIVE_SDK_VERSION: "20240202.1"
+  NATIVE_SDK_VERSION: "20240322.2"
 
 jobs:
   build-openjdk:
@@ -138,10 +138,6 @@ jobs:
         path: work
         fetch-depth: 0
         submodules: recursive
-    - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 3.1.x
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v4
       with:
@@ -150,6 +146,10 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 7.0.x
+    - name: Setup .NET 8.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
     - name: Cache LLVM and Clang
       id: cache-llvm
       uses: actions/cache@v4
@@ -222,6 +222,8 @@ jobs:
         msbuild /m /bl `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
+          /p:PreReleaseLabel=${env:GitVersion_PreReleaseLabel} `
+          /p:PreReleaseNumber=${env:GitVersion_WeightedPreReleaseNumber} `
           /p:Version=${env:GitVersion_FullSemVer} `
           /p:AssemblyVersion=${env:GitVersion_AssemblySemVer} `
           /p:InformationalVersion=${env:GitVersion_InformationalVersion} `
@@ -236,7 +238,6 @@ jobs:
           /p:CreateHardLinksForCopyLocalIfPossible=true `
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
-          /p:FastBuild=true `
           IKVM.dist.msbuildproj
       working-directory: ${{ env.WORKPATH }}\ikvm
     - name: Upload MSBuild Log
@@ -430,114 +431,117 @@ jobs:
       with:
         name: doc
         path: C:\doc.zip
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        run:
-        - IKVM.ByteCode.Tests
-        - IKVM.Reflection.Tests
-        - IKVM.Tests
-        - IKVM.Java.Tests
-        - IKVM.Tools.Exporter.Tests
-        - IKVM.Tools.Importer.Tests
-        - IKVM.Tools.Tests
-        - IKVM.JTReg.TestAdapter.Tests
-        - IKVM.OpenJDK.Tests?TestPartition=0
-        - IKVM.OpenJDK.Tests?TestPartition=1
-        - IKVM.OpenJDK.Tests?TestPartition=2
-        - IKVM.OpenJDK.Tests?TestPartition=3
-        - IKVM.OpenJDK.Tests?TestPartition=4
-        - IKVM.OpenJDK.Tests?TestPartition=5
-        - IKVM.OpenJDK.Tests?TestPartition=6
-        - IKVM.OpenJDK.Tests?TestPartition=7
-        - IKVM.OpenJDK.Tests?TestPartition=8
-        - IKVM.OpenJDK.Tests?TestPartition=9
-        - IKVM.OpenJDK.Tests?TestPartition=10
-        - IKVM.OpenJDK.Tests?TestPartition=11
-        - IKVM.OpenJDK.Tests?TestPartition=12
-        - IKVM.OpenJDK.Tests?TestPartition=13
-        - IKVM.OpenJDK.Tests?TestPartition=14
-        - IKVM.OpenJDK.Tests?TestPartition=15
-        tfm:
-        - net472
-        - net6.0
-        sys:
-        - win-x64
-        - linux-x64
-        - osx-x64
-        exclude:
-        - tfm: net472
-          sys: linux-x64
-        - tfm: net472
-          sys: osx-x64
-        include:
-        - run: IKVM.ByteCode.Tests
-          tfm: net7.0
-          sys: win-x64
-        - run: IKVM.ByteCode.Tests
-          tfm: net7.0
-          sys: linux-x64
-        - run: IKVM.ByteCode.Tests
-          tfm: net7.0
-          sys: osx-x64
-        - run: IKVM.Reflection.Tests
-          tfm: net7.0
-          sys: win-x64
-        - run: IKVM.Reflection.Tests
-          tfm: net7.0
-          sys: linux-x64
-        - run: IKVM.Reflection.Tests
-          tfm: net7.0
-          sys: osx-x64
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net472
-          sys: win-x64
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net7.0
-          sys: win-x64
-        - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net7.0
-          sys: osx-x64
-        - run: IKVM.MSBuild.Tests
-          tfm: net7.0
-          sys: win-x64
-        # - run: IKVM.MSBuild.Tests
-        #   tfm: net7.0
-        #   sys: linux-x64
-        # - run: IKVM.MSBuild.Tests
-        #   tfm: net7.0
-        #   sys: osx-x64
-        - run: IKVM.NET.Sdk.Tests
-          tfm: net7.0
-          sys: win-x64
-        - run: IKVM.NET.Sdk.Tests
-          tfm: net7.0
-          sys: linux-x64
-        - run: IKVM.NET.Sdk.Tests
-          tfm: net7.0
-          sys: osx-x64
-        - run: IKVM.Tests
-          tfm: net7.0
-          sys: win-x64
-        - run: IKVM.Tests
-          tfm: net7.0
-          sys: linux-x64
-        - run: IKVM.Tests
-          tfm: net7.0
-          sys: osx-x64
-        - run: IKVM.Tools.Tests
-          tfm: net7.0
-          sys: win-x64
-        - run: IKVM.Tools.Tests
-          tfm: net7.0
-          sys: linux-x64
-        - run: IKVM.Tools.Tests
-          tfm: net7.0
-          sys: osx-x64
-    name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
+  test-vars:
+    name: Test Variables
     needs:
     - build-ikvm
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.test-vars.outputs.matrix }}
+    steps:
+    - id: test-vars
+      shell: pwsh
+      env:
+        FULL_TEST: ${{ inputs.full_test }}
+      run: |
+        $sys = @(
+          "win-x64",
+          "linux-x64",
+          "osx-x64"
+        )
+        
+        $tfm = @(
+          "net472",
+          "net6.0",
+          "net8.0"
+        )
+
+        $run = @(
+          "IKVM.ByteCode.Tests",
+          "IKVM.Reflection.Tests",
+          "IKVM.Tests",
+          "IKVM.Java.Tests",
+          "IKVM.Tools.Exporter.Tests",
+          "IKVM.Tools.Importer.Tests",
+          "IKVM.Tools.Tests",
+          "IKVM.MSBuild.Tasks.Tests",
+          "IKVM.MSBuild.Tests",
+          "IKVM.NET.Sdk.Tests",
+          "IKVM.JTReg.TestAdapter.Tests")
+        foreach ($_ in (0..15)) {
+          $run += @("IKVM.OpenJDK.Tests?TestPartition=$_")
+        }
+
+        $exclude = @(
+          @{
+            "tfm" = "net472"
+            "sys" = "linux-x64"
+          },
+          @{
+            "tfm" = "net472"
+            "sys" = "osx-x64"
+          },
+          @{
+            "run" = "IKVM.MSBuild.Tests"
+            "tfm" = "net472"
+          },
+          @{
+            "run" = "IKVM.MSBuild.Tests"
+            "tfm" = "net6.0"
+          },
+          @{
+            "run" = "IKVM.MSBuild.Tests"
+            "tfm" = "net7.0"
+          },
+          @{
+            "run" = "IKVM.MSBuild.Tests"
+            "sys" = "linux-x64"
+          },
+          @{
+            "run" = "IKVM.MSBuild.Tests"
+            "sys" = "osx-x64"
+          },
+          @{
+            "run" = "IKVM.MSBuild.Tests"
+            "sys" = "osx-arm64"
+          },
+          @{
+            "run" = "IKVM.NET.Sdk.Tests"
+            "tfm" = "net472"
+          },
+          @{
+            "run" = "IKVM.NET.Sdk.Tests"
+            "tfm" = "net6.0"
+          },
+          @{
+            "run" = "IKVM.NET.Sdk.Tests"
+            "tfm" = "net7.0"
+          }
+        )
+
+        if ($env:FULL_TEST -ne "true") {
+            foreach ($_ in (0..15)) {
+              $exclude += @(@{
+                "run" = "IKVM.OpenJDK.Tests?TestPartition=$_"
+                "tfm" = "net8.0"
+              })
+            }
+        }
+
+        "matrix=" + (@{
+          sys = $sys
+          tfm = $tfm
+          run = $run
+          exclude = $exclude
+        } | ConvertTo-Json -Compress).Replace('"', "'") >> $env:GITHUB_OUTPUT
+  test:
+    needs:
+    - build-ikvm
+    - test-vars
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.test-vars.outputs.matrix) }}
+    name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
     steps:
@@ -584,6 +588,10 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 7.0.x
+    - name: Setup .NET 8.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
     - name: Setup WSL
       if: runner.os == 'Windows'
       uses: Vampire/setup-wsl@v3
@@ -598,9 +606,9 @@ jobs:
         MATRIX_RUN: '${{ matrix.run }}'
       with:
         script: |
-            const run = process.env.MATRIX_RUN;
-            const tst = run.split('?')[0];
-            return tst;
+          const run = process.env.MATRIX_RUN;
+          const tst = run.split('?')[0];
+          return tst;
         result-encoding: string
     - name: Download Tests
       uses: actions/download-artifact@v4
@@ -687,10 +695,10 @@ jobs:
     - name: Setup .NET
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}/dotnet"
-    - name: Setup .NET 7.0
+    - name: Setup .NET 8.0
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 7.0.x
+        dotnet-version: 8.0.x
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v1
       with:

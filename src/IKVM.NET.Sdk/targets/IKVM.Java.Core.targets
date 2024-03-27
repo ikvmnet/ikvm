@@ -178,14 +178,23 @@ Files = files.ToArray();
         <_IkvmCompilerResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).ikvmc.rsp</_IkvmCompilerResponseFile>
     </PropertyGroup>
 
+    <Target Name="_WriteExcludeFile" Outputs="$(_ExcludeFilePath)">
+        <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        
+        <ItemGroup>
+            <FileWrites Include="$(_ExcludeFilePath)" />
+        </ItemGroup>
+    </Target>
+
     <!-- Abstract target to conduct compilation. Overridden either by Command or Task implementation. -->
-    <Target Name="_CoreCompile" DependsOnTargets="CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+    <Target Name="_CoreCompile" DependsOnTargets="CompileJava;_WriteExcludeFile" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
         <Error Text="_CoreCompile not implemented." />
     </Target>
 
     <PropertyGroup>
         <CoreCompileDependsOn>
             $(CoreCompileDependsOn);
+            _WriteExcludeFile;
             CompileJava;
             _CoreCompile;
         </CoreCompileDependsOn>

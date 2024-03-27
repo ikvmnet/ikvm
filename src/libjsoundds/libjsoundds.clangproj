@@ -13,24 +13,24 @@
         <ProjectReference Include="..\libiava\libiava.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <PreprocessorDefinitions Include="X_PLATFORM=X_WINDOWS" />
-        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT=TRUE" />
-        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN=TRUE" />
-        <PreprocessorDefinitions Include="USE_PORTS=TRUE" />
-        <PreprocessorDefinitions Include="USE_DAUDIO=TRUE" />
+        <PreprocessorDefinitions Include="X_PLATFORM" Value="X_WINDOWS" />
+        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT" Value="TRUE" />
+        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN" Value="TRUE" />
+        <PreprocessorDefinitions Include="USE_PORTS" Value="TRUE" />
+        <PreprocessorDefinitions Include="USE_DAUDIO" Value="TRUE" />
         <Dependencies Include="dsound;winmm;user32;ole32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x86'))">
-        <PreprocessorDefinitions Include="X_ARCH=X_I586" />
+        <PreprocessorDefinitions Include="X_ARCH" Value="X_I586" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x64'))">
-        <PreprocessorDefinitions Include="X_ARCH=X_AMD64" />
+        <PreprocessorDefinitions Include="X_ARCH" Value="X_AMD64" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm'))">
-        <PreprocessorDefinitions Include="X_ARCH=X_ARM" />
+        <PreprocessorDefinitions Include="X_ARCH" Value="X_ARM" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm64'))">
-        <PreprocessorDefinitions Include="X_ARCH=X_AARCH64" />
+        <PreprocessorDefinitions Include="X_ARCH" Value="X_AARCH64" />
     </ItemGroup>
     <ItemGroup>
         <!-- LIBJSOUND_SRC_DIRS -->

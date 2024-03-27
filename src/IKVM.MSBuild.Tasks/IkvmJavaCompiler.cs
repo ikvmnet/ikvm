@@ -118,6 +118,11 @@ namespace IKVM.MSBuild.Tasks
         public string Target { get; set; }
 
         /// <summary>
+        /// Encoding.
+        /// </summary>
+        public string Encoding { get; set; }
+
+        /// <summary>
         /// Executes the Java compiler.
         /// </summary>
         /// <returns></returns>

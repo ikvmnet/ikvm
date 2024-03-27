@@ -27,98 +27,122 @@
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-musl-arm' ">arm-unknown-linux-musleabihf</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-x64' ">x86_64-apple-macosx</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-arm64' ">arm64-apple-macosx</TargetTriple>
-        <PreprocessorDefinitions Condition=" '$(DebugSymbols)' == 'true' ">$(PreprocessorDefinitions);_DEBUG</PreprocessorDefinitions>
-        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('x86_64-'))">$(PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
-        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('i686-'))">$(PreprocessorDefinitions);_X86_;x86</PreprocessorDefinitions>
-        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('aarch64-')) Or $(TargetTriple.StartsWith('arm64-'))">$(PreprocessorDefinitions);_ARM64_;arm64</PreprocessorDefinitions>
-        <AdditionalCompileOptions>$(AdditionalCompileOptions);-Wno-ignored-attributes;-Wno-format;-Wno-format-security;-Wno-macro-redefined</AdditionalCompileOptions>
     </PropertyGroup>
 
-    <PropertyGroup Condition="$(TargetTriple.Contains('-windows-')) And $(TargetTriple.StartsWith('aarch64-'))">
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE</PreprocessorDefinitions>
-    </PropertyGroup>
+    <ItemGroup>
+        <PreprocessorDefinitions Include="_DEBUG" Condition=" '$(DebugSymbols)' == 'true' " />
+        <PreprocessorDefinitions Include="_AMD64_;amd64" Condition="$(TargetTriple.StartsWith('x86_64-'))" />
+        <PreprocessorDefinitions Include="_X86_;x86" Condition="$(TargetTriple.StartsWith('i686-'))" />
+        <PreprocessorDefinitions Include="_ARM64_;arm64" Condition="$(TargetTriple.StartsWith('aarch64-')) Or $(TargetTriple.StartsWith('arm64-'))" />
+        <AdditionalCompileOptions Include="-Wno-ignored-attributes;-Wno-format;-Wno-format-security;-Wno-macro-redefined" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$(TargetTriple.Contains('-windows-')) And $(TargetTriple.StartsWith('aarch64-'))">
+        <PreprocessorDefinitions Include="_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE" />
+    </ItemGroup>
 
     <PropertyGroup Condition="$(TargetTriple.Contains('-windows-'))">
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32</PreprocessorDefinitions>
         <MsCompatibility>true</MsCompatibility>
-        <!--<MsCompatibilityVersion>14</MsCompatibilityVersion>-->
-        <AdditionalCompileOptions>$(AdditionalCompileOptions);-fms-extensions</AdditionalCompileOptions>
-        <WinSdkArch Condition="$(TargetTriple.StartsWith('x86_64-'))">x86_64</WinSdkArch>
+        <WinSdkArch Condition="$(TargetTriple.StartsWith('x86_64-'))">x64</WinSdkArch>
         <WinSdkArch Condition="$(TargetTriple.StartsWith('i686-'))">x86</WinSdkArch>
-        <WinSdkArch Condition="$(TargetTriple.StartsWith('aarch64-'))">aarch64</WinSdkArch>
+        <WinSdkArch Condition="$(TargetTriple.StartsWith('aarch64-'))">arm64</WinSdkArch>
+        <WinSdkArch Condition="$(TargetTriple.StartsWith('arm-'))">arm</WinSdkArch>
     </PropertyGroup>
 
-    <!-- known global values -->
-    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetTriple.Contains('-windows-'))">
-        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\crt\include</SystemIncludeDirectories>
-        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\sdk\include\shared</SystemIncludeDirectories>
-        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\sdk\include\ucrt</SystemIncludeDirectories>
-        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\sdk\include\um</SystemIncludeDirectories>
+    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
+        <PreprocessorDefinitions Include="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32" />
+        <AdditionalCompileOptions Include="-fms-extensions" />
+    </ItemGroup>
+
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
+        <WinSdkDirName>win</WinSdkDirName>
     </PropertyGroup>
 
-    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetTriple.Contains('-windows-'))">
-        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\crt\lib\$(WinSdkArch)</LibraryDirectories>
-        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\sdk\lib\ucrt\$(WinSdkArch)</LibraryDirectories>
-        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\win\sdk\lib\um\$(WinSdkArch)</LibraryDirectories>
+    <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+        <WinSdkDirName>win.ci</WinSdkDirName>
     </PropertyGroup>
 
-    <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-gnu')) And $(TargetTriple.StartsWith('x86_64-'))">
-        <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-x64</SystemRootDirectories>
-        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-x64\include</SystemIncludeDirectories>
-        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-x64\lib</LibraryDirectories>
-    </PropertyGroup>
+    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetTriple.Contains('-windows-'))">
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\crt\include" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\sdk\include\shared" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\sdk\include\ucrt" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\sdk\include\um" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\crt\include" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\sdk\include\shared" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\sdk\include\ucrt" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\sdk\include\um" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\crt\lib\$(WinSdkArch)" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\sdk\lib\ucrt\$(WinSdkArch)" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)\sdk\lib\um\$(WinSdkArch)" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\crt\lib\$(WinSdkArch)" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\sdk\lib\ucrt\$(WinSdkArch)" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\sdk\lib\um\$(WinSdkArch)" />
+    </ItemGroup>
 
-    <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-gnu')) And $(TargetTriple.StartsWith('aarch64-'))">
-        <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm64</SystemRootDirectories>
-        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm64\include</SystemIncludeDirectories>
-        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm64\lib</LibraryDirectories>
-    </PropertyGroup>
+    <ItemGroup Condition="$(TargetTriple.EndsWith('-linux-gnu')) And $(TargetTriple.StartsWith('x86_64-'))">
+        <SystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-x64" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-x64\include" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-x64\lib" />
+    </ItemGroup>
 
-    <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-gnueabihf')) And $(TargetTriple.StartsWith('arm-'))">
-        <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm</SystemRootDirectories>
-        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm\include</SystemIncludeDirectories>
-        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm\lib</LibraryDirectories>
-    </PropertyGroup>
+    <ItemGroup Condition="$(TargetTriple.EndsWith('-linux-gnu')) And $(TargetTriple.StartsWith('aarch64-'))">
+        <SystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm64" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm64\include" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm64\lib" />
+    </ItemGroup>
 
-    <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-musl')) And $(TargetTriple.StartsWith('x86_64-'))">
-        <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-x64</SystemRootDirectories>
-        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-x64\include</SystemIncludeDirectories>
-        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-x64\lib</LibraryDirectories>
-    </PropertyGroup>
+    <ItemGroup Condition="$(TargetTriple.EndsWith('-linux-gnueabihf')) And $(TargetTriple.StartsWith('arm-'))">
+        <SystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm\include" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm\lib" />
+    </ItemGroup>
 
-    <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-musl')) And $(TargetTriple.StartsWith('aarch64-'))">
-        <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm64</SystemRootDirectories>
-        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm64\include</SystemIncludeDirectories>
-        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm64\lib</LibraryDirectories>
-    </PropertyGroup>
+    <ItemGroup Condition="$(TargetTriple.EndsWith('-linux-musl')) And $(TargetTriple.StartsWith('x86_64-'))">
+        <SystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-x64" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-x64\include" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-x64\lib" />
+    </ItemGroup>
 
-    <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-musleabihf')) And $(TargetTriple.StartsWith('arm-'))">
-        <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm</SystemRootDirectories>
-        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm\include</SystemIncludeDirectories>
-        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm\lib</LibraryDirectories>
-    </PropertyGroup>
+    <ItemGroup Condition="$(TargetTriple.EndsWith('-linux-musl')) And $(TargetTriple.StartsWith('aarch64-'))">
+        <SystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm64" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm64\include" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm64\lib" />
+    </ItemGroup>
 
-    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetTriple.Contains('-apple-'))">
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);MACOSX</PreprocessorDefinitions>
-        <IncludeSystemRootDirectories>$(IncludeSystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx</IncludeSystemRootDirectories>
-        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx\usr\lib</LibraryDirectories>
-    </PropertyGroup>
+    <ItemGroup Condition="$(TargetTriple.EndsWith('-linux-musleabihf')) And $(TargetTriple.StartsWith('arm-'))">
+        <SystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm\include" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm\lib" />
+    </ItemGroup>
+
+    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetTriple.Contains('-apple-'))">
+        <PreprocessorDefinitions Include="MACOSX" />
+        <IncludeSystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx" />
+        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx\usr\lib" />
+    </ItemGroup>
 
     <PropertyGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);LINUX;__linux__</PreprocessorDefinitions>
-        <Dependencies>$(Dependencies);c</Dependencies>
         <PositionIndependentCode>true</PositionIndependentCode>
-        <AdditionalCompileOptions>$(AdditionalCompileOptions)</AdditionalCompileOptions>
-        <AdditionalLinkOptions>$(AdditionalLinkOptions);-nostdlib;-Wl,-rpath,$ORIGIN;-Wl</AdditionalLinkOptions>
     </PropertyGroup>
 
+    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <PreprocessorDefinitions Include="LINUX;__linux__" />
+        <Dependencies Include="c" />
+        <AdditionalLinkOptions Include="-nostdlib" />
+        <AdditionalLinkOptions Include="-Wl,-rpath,$ORIGIN" />
+    </ItemGroup>
+
     <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);MACOSX;MACOS;</PreprocessorDefinitions>
         <DebugSymbols>false</DebugSymbols>
-        <Dependencies>$(Dependencies);c++</Dependencies>
-        <AdditionalLinkOptions>$(AdditionalLinkOptions);-t;-mmacosx-version-min=10.15</AdditionalLinkOptions>
-        <AdditionalLinkOptions>$(AdditionalLinkOptions);-Wl,-rpath,@loader_path/.</AdditionalLinkOptions>
         <EnableOSXCodeSign>true</EnableOSXCodeSign>
     </PropertyGroup>
-    
+
+    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
+        <PreprocessorDefinitions Include="MACOSX;MACOS" />
+        <Dependencies Include="c++" />
+        <AdditionalLinkOptions Include="-t" />
+        <AdditionalLinkOptions Include="-mmacosx-version-min" Value="10.15" Separator="=" />
+        <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f." />
+    </ItemGroup>
+
 </Project>

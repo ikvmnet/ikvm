@@ -19,6 +19,11 @@
             <RuntimeIdentifier>win-arm64</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net8.0\win-arm64\**\*">
+            <TargetFramework>net8.0</TargetFramework>
+            <RuntimeIdentifier>win-arm64</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+        </IkvmImageItem>
     </ItemGroup>
 
 </Project>

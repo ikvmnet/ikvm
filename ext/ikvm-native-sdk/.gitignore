@@ -1,1 +1,14 @@
-*
+win/
+win.ci/
+linux-x86/
+linux-x64/
+linux-arm/
+linux-arm64/
+linux-musl-x86/
+linux-musl-x64/
+linux-musl-arm/
+linux-musl-arm64/
+osx/
+
+*.tar.gz
+*.tar

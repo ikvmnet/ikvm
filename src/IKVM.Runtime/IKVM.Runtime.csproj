@@ -3,7 +3,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
@@ -15,7 +15,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.ByteCode\IKVM.ByteCode.csproj" />
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj" />
     </ItemGroup>
 
     <ItemGroup>
