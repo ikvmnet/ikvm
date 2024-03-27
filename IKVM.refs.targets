@@ -16,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java\IKVM.Java.msbuildproj">
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java\IKVM.Java.csproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <Private>False</Private>
             <OutputItemType>IkvmJavaItem</OutputItemType>
@@ -24,7 +24,7 @@
             <TargetPath>refs\IKVM.Java.dll</TargetPath>
             <IkvmJavaRuntimeIdentifier>ref</IkvmJavaRuntimeIdentifier>
         </ProjectReference>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.runtime.win\IKVM.Java.runtime.win.msbuildproj" Condition="$(_EnabledRuntimes.Contains(';win-'))">
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.runtime.win\IKVM.Java.runtime.win.csproj" Condition="$(_EnabledRuntimes.Contains(';win-'))">
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
             <Private>False</Private>
             <OutputItemType>IkvmJavaItem</OutputItemType>
@@ -32,7 +32,7 @@
             <TargetPath>runtimes\win\lib\$(TargetFramework)\IKVM.Java.dll</TargetPath>
             <IkvmJavaRuntimeIdentifier>win</IkvmJavaRuntimeIdentifier>
         </ProjectReference>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.msbuildproj" Condition="$(_EnabledRuntimes.Contains(';linux-'))">
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.csproj" Condition="$(_EnabledRuntimes.Contains(';linux-'))">
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
             <Private>False</Private>
             <OutputItemType>IkvmJavaItem</OutputItemType>
@@ -40,7 +40,7 @@
             <TargetPath>runtimes\linux\lib\$(TargetFramework)\IKVM.Java.dll</TargetPath>
             <IkvmJavaRuntimeIdentifier>linux</IkvmJavaRuntimeIdentifier>
         </ProjectReference>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.msbuildproj" Condition="$(_EnabledRuntimes.Contains(';osx-'))">
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.csproj" Condition="$(_EnabledRuntimes.Contains(';osx-'))">
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
             <Private>False</Private>
             <OutputItemType>IkvmJavaItem</OutputItemType>
