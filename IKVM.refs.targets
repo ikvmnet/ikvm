@@ -54,17 +54,20 @@
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>refs\%(Filename)%(Extension)</TargetPath>
             </None>
-            <None Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' ">
+            <None Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And ('$(RuntimeIdentifier)' == '' Or $(RuntimeIdentifier.StartsWith('%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)-')))">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename)%(Extension)</TargetPath>
+                <TargetPath Condition=" '$(RuntimeIdentifier)' != '' ">%(Filename)%(Extension)</TargetPath>
             </None>
-            <None Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).pdb') ">
+            <None Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).pdb') And ('$(RuntimeIdentifier)' == '' Or $(RuntimeIdentifier.StartsWith('%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)-')))">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename).pdb</TargetPath>
+                <TargetPath Condition=" '$(RuntimeIdentifier)' != '' ">%(Filename).pdb</TargetPath>
             </None>
-            <None Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).dll.config')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).dll.config') ">
+            <None Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).dll.config')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).dll.config') And ('$(RuntimeIdentifier)' == '' Or $(RuntimeIdentifier.StartsWith('%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)-')))">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename).dll.config</TargetPath>
+                <TargetPath Condition=" '$(RuntimeIdentifier)' != '' ">%(Filename).dll.config</TargetPath>
             </None>
         </ItemGroup>
     </Target>
@@ -77,10 +80,10 @@
             <TfmSpecificPackageFile Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' ">
                 <PackagePath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename)%(Extension)</PackagePath>
             </TfmSpecificPackageFile>
-            <TfmSpecificPackageFile Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).pdb') ">
+            <TfmSpecificPackageFile Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).pdb')">
                 <PackagePath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename).pdb</PackagePath>
             </TfmSpecificPackageFile>
-            <TfmSpecificPackageFile Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).dll.config')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).dll.config') ">
+            <TfmSpecificPackageFile Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).dll.config')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).dll.config')">
                 <PackagePath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename).dll.config</PackagePath>
             </TfmSpecificPackageFile>
         </ItemGroup>
@@ -88,7 +91,7 @@
 
     <Target Name="GetIkvmJavaRuntimeLibraryAssets" BeforeTargets="GenerateBuildDependencyFileExtensions">
         <ItemGroup>
-            <AdditionalRuntimeLibraryAssets Include="@(IkvmJavaItem)" Condition =" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And ('$(RuntimeIdentifier)' == '' Or $(RuntimeIdentifier.StartsWith('%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)-'))) ">
+            <AdditionalRuntimeLibraryAssets Include="@(IkvmJavaItem)" Condition =" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And ('$(RuntimeIdentifier)' == '' Or $(RuntimeIdentifier.StartsWith('%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)-')))">
                 <LibraryName>IKVM.Java</LibraryName>
                 <LibraryVersion>$(PackageVersion)</LibraryVersion>
                 <LibraryType>project</LibraryType>
