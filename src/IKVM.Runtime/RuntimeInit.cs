@@ -74,6 +74,12 @@ namespace IKVM.Runtime
 
             // scan supported RIDs for current platform
             foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
+                if (Path.Combine(root, "runtimes", rid, "lib", "net472", $"{BASE_ASSEMBLY_NAME}.dll") is string path2)
+                    if (File.Exists(path2) && LoadAssembly(path2) is Assembly asm2)
+                        return asm2;
+
+            // scan supported RIDs for current platform
+            foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
                 if (Path.Combine(root, "runtimes", rid, "lib", $"{BASE_ASSEMBLY_NAME}.dll") is string path2)
                     if (File.Exists(path2) && LoadAssembly(path2) is Assembly asm2)
                         return asm2;

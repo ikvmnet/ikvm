@@ -1,5 +1,5 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using System.Threading;
 
 namespace IKVM.ConsoleApp
 {
@@ -8,23 +8,8 @@ namespace IKVM.ConsoleApp
 
         public static void Main(string[] args)
         {
-            Foo();
-        }
-
-        public static void Foo()
-        {
-            new Bar();
-        }
-
-        class Bar
-        {
-
-            public Bar()
-            {
-                for (int i = 0; i < 19383; i++)
-                    System.Console.WriteLine(java.net.InetAddress.getLocalHost().getHostName());
-            }
-
+            while (Debugger.IsAttached == false)
+                Thread.Sleep(1000);
         }
 
     }
