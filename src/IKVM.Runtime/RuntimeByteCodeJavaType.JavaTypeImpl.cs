@@ -143,6 +143,10 @@ namespace IKVM.Runtime
 
                         methods[i] = new RuntimeTypicalJavaMethod(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
                     }
+
+                    // check for an 'ikvm.lang.ModuleInitializer' annotation and flag method
+                    if (Annotation.HasModuleInitializerAnnotation(m.Annotations))
+                        flags |= MemberFlags.ModuleInitializer;
                 }
 
                 if (hasclinit)
@@ -193,8 +197,7 @@ namespace IKVM.Runtime
 
             bool SupportsCallerID(ClassFile.Method method)
             {
-                if ((classFile.Name == "sun.reflect.Reflection" && method.Name == "getCallerClass")
-                    || (classFile.Name == "java.lang.SecurityManager" && method.Name == "checkMemberAccess"))
+                if ((classFile.Name == "sun.reflect.Reflection" && method.Name == "getCallerClass") || (classFile.Name == "java.lang.SecurityManager" && method.Name == "checkMemberAccess"))
                 {
                     // ignore CallerSensitive on methods that don't need CallerID parameter
                     return false;
@@ -203,9 +206,7 @@ namespace IKVM.Runtime
                 {
                     return true;
                 }
-                else if ((classFile.IsFinal || classFile.Name == "java.lang.Runtime" || classFile.Name == "java.io.ObjectStreamClass")
-                    && wrapper.BaseTypeWrapper.GetMethodWrapper(method.Name, method.Signature, true) == null
-                    && !HasInterfaceMethod(wrapper, method.Name, method.Signature))
+                else if ((classFile.IsFinal || classFile.Name == "java.lang.Runtime" || classFile.Name == "java.io.ObjectStreamClass") && wrapper.BaseTypeWrapper.GetMethodWrapper(method.Name, method.Signature, true) == null && !HasInterfaceMethod(wrapper, method.Name, method.Signature))
                 {
                     // We only support CallerID instance methods on final or effectively final types,
                     // because we don't support interface stubs with CallerID.
@@ -231,7 +232,7 @@ namespace IKVM.Runtime
             {
                 for (; tw != null; tw = tw.BaseTypeWrapper)
                 {
-                    foreach (RuntimeJavaType iface in tw.Interfaces)
+                    foreach (var iface in tw.Interfaces)
                     {
                         if (iface.GetMethodWrapper(name, signature, false) != null)
                         {
@@ -243,6 +244,7 @@ namespace IKVM.Runtime
                         }
                     }
                 }
+
                 return false;
             }
 #endif
@@ -259,26 +261,23 @@ namespace IKVM.Runtime
                     return;
                 }
 #endif
+
                 // this method is not allowed to throw exceptions (if it does, the runtime will abort)
                 var hasclinit = wrapper.HasStaticInitializer;
                 var mangledTypeName = wrapper.classLoader.GetTypeWrapperFactory().AllocMangledName(wrapper);
                 var f = classFile;
+
                 try
                 {
                     TypeAttributes typeAttribs = 0;
                     if (f.IsAbstract)
-                    {
                         typeAttribs |= TypeAttributes.Abstract;
-                    }
                     if (f.IsFinal)
-                    {
                         typeAttribs |= TypeAttributes.Sealed;
-                    }
                     if (!hasclinit)
-                    {
                         typeAttribs |= TypeAttributes.BeforeFieldInit;
-                    }
 #if IMPORTER
+
                     bool cantNest = false;
                     bool setModifiers = false;
                     TypeBuilder enclosing = null;
@@ -295,6 +294,7 @@ namespace IKVM.Runtime
                     {
                         enclosingClassName = f.EnclosingMethod[0];
                     }
+
                     if (enclosingClassName != null)
                     {
                         if (!CheckInnerOuterNames(f.Name, enclosingClassName))
@@ -311,24 +311,25 @@ namespace IKVM.Runtime
                             {
                                 Tracer.Warning(Tracer.Compiler, "Unable to load outer class {0} for inner class {1} ({2}: {3})", enclosingClassName, f.Name, x.GetType().Name, x.Message);
                             }
+
                             if (enclosingClassWrapper != null)
                             {
                                 // make sure the relationship is reciprocal (otherwise we run the risk of
                                 // baking the outer type before the inner type) and that the inner and outer
                                 // class live in the same class loader (when doing a multi target compilation,
                                 // it is possible to split the two classes across assemblies)
-                                JavaTypeImpl oimpl = enclosingClassWrapper.impl as JavaTypeImpl;
+                                var oimpl = enclosingClassWrapper.impl as JavaTypeImpl;
                                 if (oimpl != null && enclosingClassWrapper.GetClassLoader() == wrapper.GetClassLoader())
                                 {
-                                    ClassFile outerClassFile = oimpl.classFile;
-                                    ClassFile.InnerClass[] outerInnerClasses = outerClassFile.InnerClasses;
+                                    var outerClassFile = oimpl.classFile;
+                                    var outerInnerClasses = outerClassFile.InnerClasses;
                                     if (outerInnerClasses == null)
                                     {
                                         enclosingClassWrapper = null;
                                     }
                                     else
                                     {
-                                        bool ok = false;
+                                        var ok = false;
                                         for (int i = 0; i < outerInnerClasses.Length; i++)
                                         {
                                             if (((outerInnerClasses[i].outerClass != 0 && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].outerClass) == outerClassFile.Name)
@@ -340,6 +341,7 @@ namespace IKVM.Runtime
                                                 break;
                                             }
                                         }
+
                                         if (!ok)
                                         {
                                             enclosingClassWrapper = null;
@@ -350,6 +352,7 @@ namespace IKVM.Runtime
                                 {
                                     enclosingClassWrapper = null;
                                 }
+
                                 if (enclosingClassWrapper != null)
                                 {
                                     enclosingClassWrapper.CreateStep2();
@@ -367,6 +370,7 @@ namespace IKVM.Runtime
                             }
                         }
                     }
+
                     if (f.IsPublic)
                     {
                         if (enclosing != null)
@@ -414,6 +418,7 @@ namespace IKVM.Runtime
                                 // as inner classes
                                 throw new NotImplementedException();
                             }
+
                             // LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
                             // (and broken by J# as well), so we'll just ignore it too.
                             typeBuilder = enclosing.DefineNestedType(AllocNestedTypeName(enclosingClassWrapper.Name, f.Name), typeAttribs);
@@ -453,10 +458,12 @@ namespace IKVM.Runtime
                             typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
                         }
                     }
+
 #if IMPORTER
                     // When we're statically compiling, we associate the typeBuilder with the wrapper. This enables types in referenced assemblies to refer back to
                     // types that we're currently compiling (i.e. a cyclic dependency between the currently assembly we're compiling and a referenced assembly).
                     wrapper.Context.ClassLoaderFactory.SetWrapperForType(typeBuilder, wrapper);
+
                     if (outerClass.outerClass != 0)
                     {
                         if (enclosing != null && cantNest)
@@ -468,44 +475,54 @@ namespace IKVM.Runtime
                             wrapper.Context.AttributeHelper.SetNonNestedOuterClass(typeBuilder, enclosingClassName);
                         }
                     }
+
                     if (classFile.InnerClasses != null)
                     {
-                        foreach (ClassFile.InnerClass inner in classFile.InnerClasses)
+                        foreach (var inner in classFile.InnerClasses)
                         {
-                            string name = classFile.GetConstantPoolClass(inner.innerClass);
-                            bool exists = false;
+                            var name = classFile.GetConstantPoolClass(inner.innerClass);
+                            var exists = false;
+
                             try
                             {
                                 exists = wrapper.GetClassLoader().TryLoadClassByName(name) != null;
                             }
-                            catch (RetargetableJavaException) { }
+                            catch (RetargetableJavaException)
+                            {
+
+                            }
+
                             if (!exists)
                             {
                                 wrapper.Context.AttributeHelper.SetNonNestedInnerClass(typeBuilder, name);
                             }
                         }
                     }
-                    if (typeBuilder.FullName != wrapper.Name
-                        && wrapper.Name.Replace('$', '+') != typeBuilder.FullName)
+
+                    if (typeBuilder.FullName != wrapper.Name && wrapper.Name.Replace('$', '+') != typeBuilder.FullName)
                     {
                         wrapper.classLoader.AddNameMapping(wrapper.Name, typeBuilder.FullName);
                     }
+
                     if (f.IsAnnotation && Annotation.HasRetentionPolicyRuntime(f.Annotations))
                     {
                         annotationBuilder = new AnnotationBuilder(wrapper.Context, this, enclosing);
                         wrapper.SetAnnotation(annotationBuilder);
                     }
+
                     // For Java 5 Enum types, we generate a nested .NET enum.
                     // This is primarily to support annotations that take enum parameters.
                     if (f.IsEnum && f.IsPublic)
                     {
                         AddCliEnum();
                     }
+
                     AddInnerClassAttribute(enclosing != null, outerClass.innerClass != 0, mangledTypeName, outerClass.accessFlags);
                     if (classFile.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(classFile.Annotations))
                     {
                         wrapper.Context.AttributeHelper.SetDeprecatedAttribute(typeBuilder);
                     }
+
                     if (classFile.GenericSignature != null)
                     {
                         wrapper.Context.AttributeHelper.SetSignatureAttribute(typeBuilder, classFile.GenericSignature);

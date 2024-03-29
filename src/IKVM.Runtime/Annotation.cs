@@ -25,6 +25,8 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using System.Linq;
+
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -34,6 +36,8 @@ using Type = IKVM.Reflection.Type;
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -58,7 +62,8 @@ namespace IKVM.Runtime
             if (object.Equals(def[0], AnnotationDefaultAttribute.TAG_ANNOTATION) == false)
                 throw new InternalException("LoadAssemblyCustomAttribute did not receive AnnotationDefaultAttribute.TAG_ANNOTATION.");
 
-            string annotationClass = (string)def[1];
+            var annotationClass = (string)def[1];
+
             if (ClassFile.IsValidFieldSig(annotationClass))
             {
                 try
@@ -70,6 +75,7 @@ namespace IKVM.Runtime
 
                 }
             }
+
             return null;
         }
 
@@ -182,6 +188,16 @@ namespace IKVM.Runtime
             }
         }
 
+        /// <summary>
+        /// Returns <c>true</c> if the given annotations contains a 'ikvm.lang.ModuleInitializer' annotation.
+        /// </summary>
+        /// <param name="annotations"></param>
+        /// <returns></returns>
+        internal static bool HasModuleInitializerAnnotation(object[] annotations)
+        {
+            return annotations?.Cast<object[]>().Any(i => i[1].Equals("Likvm/lang/ModuleInitializer;")) ?? false;
+        }
+
         internal static bool HasRetentionPolicyRuntime(object[] annotations)
         {
             if (annotations != null)
@@ -208,6 +224,7 @@ namespace IKVM.Runtime
                     }
                 }
             }
+
             return false;
         }
 
@@ -223,6 +240,7 @@ namespace IKVM.Runtime
                     }
                 }
             }
+
             return false;
         }
 

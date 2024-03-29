@@ -217,6 +217,11 @@ namespace IKVM.Runtime
 
         internal bool IsFinal => (modifiers & Modifiers.Final) != 0;
 
+        /// <summary>
+        /// Gets whether or not this method is marked as a module initializer.
+        /// </summary>
+        internal bool IsModuleInitializer => IsStatic && IsPrivate == false && (flags & MemberFlags.ModuleInitializer) != 0;
+
     }
 
 }

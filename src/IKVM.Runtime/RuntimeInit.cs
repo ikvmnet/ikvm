@@ -17,7 +17,7 @@ namespace IKVM.Runtime
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
-        const string BASE_ASSEMBLY_NAME = "IVKM.Java";
+        const string BASE_ASSEMBLY_NAME = "IKVM.Java";
 
         /// <summary>
         /// Invoked on module initialize to load the JVM.
@@ -28,6 +28,7 @@ namespace IKVM.Runtime
         internal static void Init()
         {
 #if NETFRAMEWORK
+            // in the case of a framework-dependent deployment on NetFX, we need to discover IKVM.Java ourselves
             AppDomain.CurrentDomain.AssemblyResolve += OnAssemblyResolve;
 #endif
 

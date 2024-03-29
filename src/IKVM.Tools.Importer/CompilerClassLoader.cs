@@ -26,6 +26,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -74,7 +76,7 @@ namespace IKVM.Tools.Importer
         List<RuntimeClassLoader> internalsVisibleTo = new List<RuntimeClassLoader>();
         List<RuntimeJavaType> dynamicallyImportedTypes = new List<RuntimeJavaType>();
         List<string> jarList = new List<string>();
-        List<RuntimeJavaType> allTypes;
+        List<RuntimeJavaType> javaTypes;
         FakeTypes fakeTypes;
 
         /// <summary>
@@ -2881,7 +2883,7 @@ namespace IKVM.Tools.Importer
                 fakeTypes.Create(GetTypeWrapperFactory().ModuleBuilder, this);
             }
 
-            allTypes = new List<RuntimeJavaType>();
+            javaTypes = new List<RuntimeJavaType>();
 
             foreach (var s in classesToCompile)
             {
@@ -2900,7 +2902,7 @@ namespace IKVM.Tools.Importer
                     if (options.sharedclassloader != null && options.sharedclassloader[0] != this)
                         options.sharedclassloader[0].dynamicallyImportedTypes.Add(javaType);
 
-                    allTypes.Add(javaType);
+                    javaTypes.Add(javaType);
                 }
             }
         }
@@ -2909,7 +2911,7 @@ namespace IKVM.Tools.Importer
         {
             Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
 
-            foreach (var javaTypes in allTypes)
+            foreach (var javaTypes in javaTypes)
             {
                 var dtw = javaTypes as RuntimeByteCodeJavaType;
                 if (dtw != null)
@@ -2921,16 +2923,22 @@ namespace IKVM.Tools.Importer
         {
             Tracer.Info(Tracer.Compiler, "Compiling class files (3)");
 
+            // emits the IL required for module initialization
+            var moduleInitBuilders = new List<Action<MethodBuilder, CodeEmitter>>();
+
+            // bootstrap mode introduces fake types
             if (map != null && options.bootstrap)
             {
                 fakeTypes.Finish(this);
             }
 
+            // generate configured proxies
             foreach (string proxy in options.proxies)
             {
                 Context.ProxyGenerator.Create(this, proxy);
             }
 
+            // set the main entry point to the main method of the specified class
             if (options.mainClass != null)
             {
                 RuntimeJavaType wrapper = null;
@@ -2972,6 +2980,7 @@ namespace IKVM.Tools.Importer
                 SetMain(wrapper, options.target, options.props, options.noglobbing, apartmentAttributeType);
             }
 
+            // complete map
             if (map != null)
             {
                 LoadMappedExceptions(map);
@@ -2991,16 +3000,19 @@ namespace IKVM.Tools.Importer
             Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
             WriteResources();
 
+            // add external resources
             if (options.externalResources != null)
                 foreach (KeyValuePair<string, string> kv in options.externalResources)
                     assemblyBuilder.AddResourceFile(JVM.MangleResourceName(kv.Key), kv.Value);
 
+            // configure Win32 file version
             if (options.fileversion != null)
             {
                 var filever = new CustomAttributeBuilder(Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyFileVersionAttribute).FullName).GetConstructor(new Type[] { Context.Types.String }), new object[] { options.fileversion });
                 assemblyBuilder.SetCustomAttribute(filever);
             }
 
+            // apply assembly annotations
             if (options.assemblyAttributeAnnotations != null)
             {
                 foreach (object[] def in options.assemblyAttributeAnnotations)
@@ -3011,6 +3023,7 @@ namespace IKVM.Tools.Importer
                 }
             }
 
+            // custom class loader specified
             if (options.classLoader != null)
             {
                 RuntimeJavaType classLoaderType = null;
@@ -3047,14 +3060,13 @@ namespace IKVM.Tools.Importer
                 var mwModuleInit = classLoaderType.GetMethodWrapper("InitializeModule", "(Lcli.System.Reflection.Module;)V", false);
                 if (mwModuleInit != null && mwModuleInit.IsStatic == false)
                 {
-                    // begin a module initializer
-                    var moduleInit = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod(".cctor", MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, Type.EmptyTypes);
-                    var moduleInitIL = moduleInit.GetILGenerator();
-                    moduleInitIL.Emit(OpCodes.Ldtoken, moduleInit);
-                    moduleInitIL.Emit(OpCodes.Call, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MethodBase).FullName).GetMethod("GetMethodFromHandle", new[] { Context.Resolver.ResolveCoreType(typeof(RuntimeMethodHandle).FullName) }));
-                    moduleInitIL.Emit(OpCodes.Callvirt, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MemberInfo).FullName).GetProperty("Module").GetGetMethod());
-                    moduleInitIL.Emit(OpCodes.Call, Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule"));
-                    moduleInitIL.Emit(OpCodes.Ret);
+                    moduleInitBuilders.Add((mb, il) =>
+                    {
+                        il.Emit(OpCodes.Ldtoken, mb);
+                        il.Emit(OpCodes.Call, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MethodBase).FullName).GetMethod("GetMethodFromHandle", new[] { Context.Resolver.ResolveCoreType(typeof(RuntimeMethodHandle).FullName) }));
+                        il.Emit(OpCodes.Callvirt, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MemberInfo).FullName).GetProperty("Module").GetGetMethod());
+                        il.Emit(OpCodes.Call, Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule"));
+                    });
                 }
             }
 
@@ -3069,6 +3081,29 @@ namespace IKVM.Tools.Importer
             }
 
             assemblyBuilder.DefineVersionInfoResource();
+
+            // find methods marked as module initializers and append calls
+            foreach (var modInitMethod in javaTypes.SelectMany(i => i.GetMethods()).Where(i => i.IsModuleInitializer))
+            {
+                var modInitMethod_ = modInitMethod;
+                moduleInitBuilders.Add((mb, il) => modInitMethod_.EmitCall(il));
+            }
+
+            // apply module initializer if any instructions added
+            if (moduleInitBuilders.Count > 0)
+            {
+                // begin a module initializer
+                var moduleInit = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod(".cctor", MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, Type.EmptyTypes);
+                var moduleInitIL = Context.CodeEmitterFactory.Create(moduleInit);
+
+                // allow builders to append IL
+                foreach (var moduleInitBuilder in moduleInitBuilders)
+                    moduleInitBuilder(moduleInit, moduleInitIL);
+
+                // finish method
+                moduleInitIL.Emit(OpCodes.Ret);
+                moduleInitIL.DoEmit();
+            }
 
             return 0;
         }

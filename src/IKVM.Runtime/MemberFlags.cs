@@ -43,6 +43,7 @@ namespace IKVM.Runtime
         DelegateInvokeWithByRefParameter = 1024,
         Type2FinalField = 2048,
         NoOp = 4096, // empty static initializer
+        ModuleInitializer = 8192,
 
     }
 
