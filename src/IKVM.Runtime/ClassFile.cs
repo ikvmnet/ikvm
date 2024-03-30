@@ -43,6 +43,7 @@ namespace IKVM.Runtime
         const ushort FLAG_LAMBDAFORM_HIDDEN = 0x1000;
         const ushort FLAG_FORCEINLINE = 0x2000;
         const ushort FLAG_HAS_ASSERTIONS = 0x4000;
+        const ushort FLAG_MODULE_INITIALIZER = 0x8000;
 
         readonly RuntimeContext context;
         readonly ClassReader reader;

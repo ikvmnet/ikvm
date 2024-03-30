@@ -420,6 +420,12 @@ namespace IKVM.Runtime
             tb.SetCustomAttribute(compilerGeneratedAttribute);
         }
 
+        internal void SetCompilerGenerated(MethodBuilder mb)
+        {
+            compilerGeneratedAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor(Type.EmptyTypes), Array.Empty<object>());
+            mb.SetCustomAttribute(compilerGeneratedAttribute);
+        }
+
         internal void SetEditorBrowsableNever(TypeBuilder tb)
         {
             tb.SetCustomAttribute(GetEditorBrowsableNever());

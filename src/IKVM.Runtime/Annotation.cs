@@ -188,16 +188,6 @@ namespace IKVM.Runtime
             }
         }
 
-        /// <summary>
-        /// Returns <c>true</c> if the given annotations contains a 'ikvm.lang.ModuleInitializer' annotation.
-        /// </summary>
-        /// <param name="annotations"></param>
-        /// <returns></returns>
-        internal static bool HasModuleInitializerAnnotation(object[] annotations)
-        {
-            return annotations?.Cast<object[]>().Any(i => i[1].Equals("Likvm/lang/ModuleInitializer;")) ?? false;
-        }
-
         internal static bool HasRetentionPolicyRuntime(object[] annotations)
         {
             if (annotations != null)
