@@ -27,7 +27,6 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -3086,7 +3085,7 @@ namespace IKVM.Tools.Importer
             foreach (var modInitMethod in javaTypes.SelectMany(i => i.GetMethods()).Where(i => i.IsModuleInitializer))
             {
                 var modInitMethod_ = modInitMethod;
-                moduleInitBuilders.Add((mb, il) => modInitMethod_.EmitCall(il));
+                moduleInitBuilders.Add((mb, il) => { modInitMethod_.Link(); modInitMethod_.EmitCall(il); });
             }
 
             // apply module initializer if any instructions added
