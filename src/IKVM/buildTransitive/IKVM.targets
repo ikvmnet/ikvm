@@ -5,24 +5,19 @@
 
     <PropertyGroup>
         <IkvmInit Condition=" '$(IkvmInit)' == '' And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</IkvmInit>
-        <IkvmInitPath Condition=" '$(Language)' == 'C#' ">$(IntermediateOutputPath)$(MSBuildProjectName).IKVM.Internal.Init.g.cs</IkvmInitPath>
-        <IkvmInitPath Condition=" '$(Language)' == 'Java' ">$(IntermediateOutputPath)$(MSBuildProjectName).IKVM.Internal.Init.g.java</IkvmInitPath>
     </PropertyGroup>
 
-    <Target Name="GenerateIkvmInit" Outputs="$(IkvmInitPath)" Condition=" '$(IkvmInit)' == 'true' And '$(IkvmInitPath)' != '' ">
-        <WriteLinesToFile Lines="$([MSBuild]::Escape('namespace IKVM.Internal { [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)] static class ModuleInit { [global::System.Runtime.CompilerServices.ModuleInitializer] internal static void Init() { global::System.GC.KeepAlive(typeof(global::IKVM.Runtime.JVM)); } } }'))" File="$(IkvmInitPath)" WriteOnlyWhenDifferent="true" Overwrite="true" Condition=" '$(Language)' == 'C#' " />
-        <WriteLinesToFile Lines="$([MSBuild]::Escape('package IKVM.Internal; @cli.System.ComponentModel.EditorBrowsableAttribute.Annotation(Value = cli.System.ComponentModel.EditorBrowsableState.Never) static class ModuleInit { @ikvm.lang.ModuleInitializer() static void Init() { cli.System.GC.KeepAlive(typeof(cli.IKVM.Runtime.JVM)); } }'))" File="$(IkvmInitPath)" WriteOnlyWhenDifferent="true" Overwrite="true" Condition=" '$(Language)' == 'Java' " />
-
+    <Target Name="CallIkvmInit" Condition=" '$(IkvmInit)' == 'true' ">
         <ItemGroup>
             <Compile Include="$(MSBuildThisFileDirectory)ModuleInitializerAttribute.cs" Condition=" '$(Language)' == 'C#' " />
-            <Compile Include="$(IkvmInitPath)" />
-            <FileWrites Include="$(IkvmInitPath)" />
+            <Compile Include="$(MSBuildThisFileDirectory)ModuleInit.cs" Condition=" '$(Language)' == 'C#' " />
+            <Compile Include="$(MSBuildThisFileDirectory)ModuleInit.java" Condition=" '$(Language)' == 'Java' " />
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
         <CoreCompileDependsOn>
-            GenerateIkvmInit;
+            CallIkvmInit;
             $(CoreCompileDependsOn);
         </CoreCompileDependsOn>
     </PropertyGroup>
