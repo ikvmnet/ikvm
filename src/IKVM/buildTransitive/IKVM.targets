@@ -3,24 +3,5 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <IkvmInit Condition=" '$(IkvmInit)' == '' And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</IkvmInit>
-    </PropertyGroup>
-
-    <Target Name="CallIkvmInit" Condition=" '$(IkvmInit)' == 'true' ">
-        <ItemGroup>
-            <Compile Include="$(MSBuildThisFileDirectory)ModuleInitializerAttribute.cs" Condition=" '$(Language)' == 'C#' " />
-            <Compile Include="$(MSBuildThisFileDirectory)ModuleInit.cs" Condition=" '$(Language)' == 'C#' " />
-            <Compile Include="$(MSBuildThisFileDirectory)ModuleInit.java" Condition=" '$(Language)' == 'Java' " />
-        </ItemGroup>
-    </Target>
-
-    <PropertyGroup>
-        <CoreCompileDependsOn>
-            CallIkvmInit;
-            $(CoreCompileDependsOn);
-        </CoreCompileDependsOn>
-    </PropertyGroup>
-
     <Import Project="IKVM.IkvmReference.targets" />
 </Project>
