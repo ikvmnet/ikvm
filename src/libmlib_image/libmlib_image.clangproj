@@ -1,0 +1,28 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>06c1705e-0d51-42a2-a987-bf7bcfd294f1</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>mlib_image</TargetName>
+        <LanguageStandard>c89</LanguageStandard>
+    </PropertyGroup>
+    <ItemGroup>
+        <PreprocessorDefinitions Include="__USE_J2D_NAMES" />
+        <PreprocessorDefinitions Include="__MEDIALIB_OLD_NAMES" />
+        <PreprocessorDefinitions Include="MLIB_NO_LIBSUNMATH" />
+        <PreprocessorDefinitions Include="MLIB_OS64BIT" Condition="$(TargetIdentifier.EndsWith('-x64')) Or $(TargetIdentifier.EndsWith('-arm64'))" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt\medialib" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt\medialib" />
+        <Dependencies Include="c" />
+        <Dependencies Include="m;dl" Condition="!$(TargetIdentifier.StartsWith('win-'))" />
+        <Compile Include="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt\medialib\*.c" />
+        <Compile Remove="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt\medialib\awt_ImagingLib.c" />
+        <Compile Remove="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt\medialib\mlib_c_ImageBlendTable.c" />
+        <Header Include="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt\medialib\**\*.h" IncludePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <Header Include="$(OpenJdkDir)jdk\src\jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt\medialib\**\*.h" IncludePath="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

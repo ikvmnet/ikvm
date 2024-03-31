@@ -2,12 +2,14 @@
   <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
   <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>93b43f23-23b1-4968-951e-dc9a447d6f0e</ProjectGuid>
+    <ProjectGuid>de89413e-2628-486c-aad1-793b9f08c8f2</ProjectGuid>
   </PropertyGroup>
   <PropertyGroup>
-    <TargetName>awt</TargetName>
-    <LanguageStandard>c99</LanguageStandard>
+    <TargetName>mlib_image</TargetName>
+    <LanguageStandard>c89</LanguageStandard>
   </PropertyGroup>
+  <ItemGroup>
+  </ItemGroup>
   <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
   <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>
