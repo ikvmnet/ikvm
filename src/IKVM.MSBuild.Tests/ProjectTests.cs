@@ -134,7 +134,10 @@ namespace IKVM.MSBuild.Tests
             options.TargetsToBuild.Add("Clean");
             options.TargetsToBuild.Add("Restore");
             options.Arguments.Add("/v:d");
-            analyzer.Build(options).OverallSuccess.Should().Be(true);
+
+            var result = analyzer.Build(options);
+            context.AddResultFile(Path.Combine(WorkRoot, "msbuild.binlog"));
+            result.OverallSuccess.Should().Be(true);
         }
 
         [ClassCleanup]
@@ -239,7 +242,10 @@ namespace IKVM.MSBuild.Tests
             options.TargetsToBuild.Add("Build");
             options.TargetsToBuild.Add("Publish");
             options.Arguments.Add("/v:d");
-            analyzer.Build(options).OverallSuccess.Should().Be(true);
+
+            var result = analyzer.Build(options);
+            TestContext.AddResultFile(Path.Combine(WorkRoot, $"{tfm}-{rid}-msbuild.binlog"));
+            result.OverallSuccess.Should().Be(true);
 
             var binDir = Path.Combine("Project", "Exe", "bin", "Release", tfm, rid);
 
