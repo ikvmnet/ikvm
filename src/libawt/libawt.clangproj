@@ -1,13 +1,47 @@
 ﻿<Project>
-  <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
-  <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
-  <PropertyGroup Label="Globals">
-    <ProjectGuid>93b43f23-23b1-4968-951e-dc9a447d6f0e</ProjectGuid>
-  </PropertyGroup>
-  <PropertyGroup>
-    <TargetName>awt</TargetName>
-    <LanguageStandard>c99</LanguageStandard>
-  </PropertyGroup>
-  <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
-  <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>93b43f23-23b1-4968-951e-dc9a447d6f0e</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>awt</TargetName>
+        <LanguageStandard>c99</LanguageStandard>
+    </PropertyGroup>
+    <ItemGroup>
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt\image" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\gif" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\utility" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d\opengl" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\font" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\windows" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d\windows" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d\d3d" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d\x11" />
+    </ItemGroup>
+    <ItemGroup>
+        <PreprocessorDefinitions Include="__MEDIALIB_OLD_NAMES" />
+        <PreprocessorDefinitions Include="__USE_J2D_NAMES" />
+        <IncludeDirectories Include="@(LibAwtDirs)" />
+    </ItemGroup>
+    <ItemGroup>
+        
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>

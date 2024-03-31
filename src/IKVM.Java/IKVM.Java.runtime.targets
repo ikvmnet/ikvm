@@ -1110,12 +1110,20 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </Target>
 
     <Target Name="GenerateBuffers" DependsOnTargets="BuildTools;ResolveJava;GenerateBuffersSetup" Inputs="$(MSBuildThisFileFullPath);@(BuildScripts);@(BuildToolsClassFiles);$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template" Outputs="$(GenSrc)java\nio\%(_GenBufferCommand.Identity).java">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+        
         <Message Text="$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template --&gt; $(GenSrc)java\nio\%(_GenBufferCommand.Identity).java" />
 
         <ItemGroup>
+            <_Src Remove="@(_Src)" />
             <_Src Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template" />
+            <_Bin Remove="@(_Bin)" />
             <_Bin Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template)-bin.java.template" />
+            <_Tmp Remove="@(_Tmp)" />
             <_Tmp Include="$(GenSrc)java\nio\%(_GenBufferCommand.Identity).java.tmp" />
+            <_Dst Remove="@(_Dst)" />
             <_Dst Include="$(GenSrc)java\nio\%(_GenBufferCommand.Identity).java" />
         </ItemGroup>
 
@@ -1174,6 +1182,75 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     <PropertyGroup>
         <GenerateSourceDependsOn>
             GenerateCalendarData;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\classes\sun\awt\X11\java-icon16.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\classes\sun\awt\X11\java-icon24.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\classes\sun\awt\X11\java-icon32.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\classes\sun\awt\X11\java-icon48.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-bw16.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-interim16.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-yellow16.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-bw24.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-interim24.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-yellow24.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-bw32.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-interim32.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-yellow32.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-bw48.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-interim48.png" />
+        <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-yellow48.png" />
+        
+        <AwtIcons Include="@(AwtIconsSrc)">
+            <ShortName>$([System.String]::Copy('%(Filename)%(Extension)').Replace('.', '_').Replace('-', '_'))</ShortName>
+            <ClassName>AWTIcon32_$([System.String]::Copy('%(Filename)%(Extension)').Replace('.', '_').Replace('-', '_'))</ClassName>
+        </AwtIcons>
+        <AwtIcons Include="@(AwtIconsSrc)">
+            <ShortName>$([System.String]::Copy('%(Filename)%(Extension)').Replace('.', '_').Replace('-', '_'))</ShortName>
+            <ClassName>AWTIcon64_$([System.String]::Copy('%(Filename)%(Extension)').Replace('.', '_').Replace('-', '_'))</ClassName>
+        </AwtIcons>
+    </ItemGroup>
+
+    <Target Name="GenerateIcons" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(AwtIcons)" Outputs="$(GenSrc)sun\awt\%(AwtIcons.ClassName).java">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Message Text="%(AwtIcons.Identity) --&gt; $(GenSrc)sun\awt\%(AwtIcons.ClassName).java" />
+        
+        <ItemGroup>
+            <_Src Remove="@(_Src)" />
+            <_Src Include="%(AwtIcons.Identity)" />
+            <_Tmp Remove="@(_Tmp)" />
+            <_Tmp Include="$(GenSrc)sun\awt\%(AwtIcons.ClassName).java.tmp" />
+            <_Dst Remove="@(_Dst)" />
+            <_Dst Include="$(GenSrc)sun\awt\%(AwtIcons.ClassName).java" />
+        </ItemGroup>
+        
+        <MakeDir Directories="$(GenSrc)sun\awt\" />
+        <Delete Files="@(_Dst)" />
+        <WriteLinesToFile Lines="package sun.awt%3b" File="@(_Tmp)" />
+        <WriteLinesToFile Lines="public class %(AwtIcons.ClassName) {" File="@(_Tmp)" />
+        <WriteLinesToFile Lines="public static int[] %(AwtIcons.ShortName) = {" File="@(_Tmp)" />
+        <Exec Command="$(JavaExec) -Djava.awt.headless=true -cp $(BuildToolsOutputPath) build.tools.icondata.awt.ToBin &lt; @(_Src) &gt;&gt; @(_Tmp)" />
+        <WriteLinesToFile Lines="}%3b" File="@(_Tmp)" />
+        <WriteLinesToFile Lines="}" File="@(_Tmp)" />
+
+        <Delete Files="@(_Dst)" />
+        <Move SourceFiles="@(_Tmp)" DestinationFiles="@(_Dst)" OverwriteReadOnlyFiles="true" />
+        
+        <ItemGroup>
+            <FileWrites Include="@(_Tmp)" />
+            <FileWrites Include="@(_Dst)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateIcons;
             $(GenerateSourceDependsOn);
         </GenerateSourceDependsOn>
     </PropertyGroup>

@@ -1421,6 +1421,8 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\print\**\*.java" PackagePath="sun\print" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' " />
     
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\awt\X11\**\*.java" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' " />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\java2d\BackBufferCapsProvider.java" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' " />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\macosx\classes\com\apple\**\*.java" PackagePath="com\apple" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' " />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\macosx\classes\sun\awt\**\*.java" PackagePath="sun\awt" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' " />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\macosx\classes\sun\font\**\*.java" PackagePath="sun\font" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' " />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\macosx\classes\sun\java2d\**\*.java" PackagePath="sun\java2d" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' " />
