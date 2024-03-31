@@ -3,5 +3,15 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
+    <Target Name="ResolveIkvmRuntimeIdentifier">
+        <IkvmResolveNearestRuntimeIdentifier AvailableRuntimeIdentifiers="@(IkvmAvailableRuntimeIdentifiers, ';')" TargetRuntimeIdentifier="$(RuntimeIdentifier)">
+            <Output TaskParameter="NearestRuntimeIdentifier" PropertyName="_IkvmRuntimeIdentifier" />
+        </IkvmResolveNearestRuntimeIdentifier>
+        <ItemGroup>
+            <_IkvmRuntimeIdentifiers Include="$(_IkvmRuntimeIdentifier)" />
+            <_IkvmRuntimeIdentifiers Include="@(IkvmAvailableRuntimeIdentifiers)" Condition=" '@(_IkvmRuntimeIdentifiers)' == '' " />
+        </ItemGroup>
+    </Target>
+
     <Import Project="IKVM.IkvmReference.targets" />
 </Project>

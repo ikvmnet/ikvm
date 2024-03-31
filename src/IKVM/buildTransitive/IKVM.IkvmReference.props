@@ -26,14 +26,6 @@
         </IkvmReference>
     </ItemDefinitionGroup>
 
-    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
-        <None Include="$(MSBuildThisFileDirectory)..\runtimes\**\*" LinkBase="runtimes">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>runtimes\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
-            <Visible>false</Visible>
-        </None>
-    </ItemGroup>
-
     <!-- Targets to be overridden by IKVM.MSBuild package, but declaring them here reduces restore errors. -->
     <Target Name="ResolveIkvmRuntimeAssembly" />
     <Target Name="ResolveIkvmFrameworkReferences" />
