@@ -136,10 +136,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <BuildOpenJDKToolsSource Include="$(OpenJdkDir)jdk\make\src\classes\**\*.java" />
+        <BuildToolsSource Include="$(OpenJdkDir)jdk\make\src\classes\**\*.java" />
+        <BuildToolsSource Include="$(OpenJdkDir)jdk\src\solaris\classes\sun\awt\X11\generator\**\*.java" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' " />
+        <BuildToolsResource Include="$(OpenJdkDir)jdk\src\share\classes\javax\swing\plaf\nimbus\*.template" ResourcePath="build\tools\generatenimbus\resources\%(Filename).template"/>
+        <BuildToolsResource Include="$(OpenJdkDir)jdk\make\data\checkdeps\refs.allowed" ResourcePath="build\tools\deps\refs.allowed"/>
     </ItemGroup>
 
-    <Target Name="BuildToolsResponseFile" DependsOnTargets="ResolveToolsJar" Inputs="$(MSBuildThisFileFullPath);@(BuildOpenJDKToolsSource)" Outputs="$(BuildToolsResponseFile)">
+    <Target Name="BuildToolsResponseFile" DependsOnTargets="ResolveToolsJar" Inputs="$(MSBuildThisFileFullPath);@(BuildToolsSource)" Outputs="$(BuildToolsResponseFile)">
         <Error Text="Could not locate tools.jar." Condition=" '$(ToolsJarPath)' == '' " />
         <Error Text="tools.jar could not be located at '$(ToolsJarPath)'." Condition="!Exists('$(ToolsJarPath)')" />
 
@@ -162,7 +165,7 @@
             <_BuildToolsJavaCompilerArgs Include="-nowarn" />
             <_BuildToolsJavaCompilerArgs Include="-d" />
             <_BuildToolsJavaCompilerArgs Include="$(BuildToolsOutputPath)" />
-            <_BuildToolsJavaCompilerArgs Include="@(BuildOpenJDKToolsSource->'%(FullPath)')" />
+            <_BuildToolsJavaCompilerArgs Include="@(BuildToolsSource->'%(FullPath)')" />
         </ItemGroup>
         <WriteLinesToFile File="$(BuildToolsResponseFile)" Lines="@(_BuildToolsJavaCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
 
@@ -171,35 +174,23 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="BuildTools" DependsOnTargets="ResolveJavaCompiler;BuildToolsResponseFile" Inputs="$(MSBuildThisFileFullPath);$(BuildToolsResponseFile);@(BuildOpenJDKToolsSource)" Outputs="$(BuildToolsStampFile)">
+    <Target Name="BuildTools" DependsOnTargets="ResolveJavaCompiler;BuildToolsResponseFile" Inputs="$(MSBuildThisFileFullPath);$(BuildToolsResponseFile);@(BuildToolsSource);@(BuildToolsResource)" Outputs="$(BuildToolsStampFile);@(BuildToolsResource->'$(BuildToolsOutputPath)%(ResourcePath)')">
         <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
         <Exec Command="chmod +x $(JavaCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <Delete Files="$(BuildToolsStampFile)" />
-        <PropertyGroup>
-            <_BuildToolsStartTime>$([System.DateTime]::Now.Ticks)</_BuildToolsStartTime>
-        </PropertyGroup>
-
         <MakeDir Directories="$(BuildToolsOutputPath)" />
         <Message Text="$(JavaCompilerExec) @$(BuildToolsResponseFile)" />
         <Exec Command="$(JavaCompilerExec) @$(BuildToolsResponseFile)" />
-
-        <ItemGroup>
-            <_BuildToolsStaleFiles Include="$(BuildToolsOutputPath)**\*.class" Condition=" '%(ModifiedTime)' == '' Or $([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_BuildToolsStartTime) " />
-        </ItemGroup>
-
-        <!--<Delete Files="@(_BuildToolsStaleFiles)" />-->
+        <Copy SourceFiles="@(BuildToolsResource)" DestinationFiles="@(BuildToolsResource->'$(BuildToolsOutputPath)%(ResourcePath)')" />
         <Touch Files="$(BuildToolsStampFile)" AlwaysCreate="true" ForceTouch="true" />
-
-        <ItemGroup>
-            <_BuildToolsStaleFiles Remove="@(_BuildToolsStaleFiles)" />
-        </ItemGroup>
 
         <ItemGroup>
             <BuildToolsClassFiles Include="$(BuildToolsOutputPath)**\*.class" />
             <FileWrites Include="$(BuildToolsStampFile)" />
             <FileWrites Include="$(BuildToolsOutputPath)**\*.class" />
+            <FileWrites Include="@(BuildToolsResource->'$(BuildToolsOutputPath)%(ResourcePath)')" />
         </ItemGroup>
     </Target>
 
@@ -1113,7 +1104,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
-        
+
         <Message Text="$(OpenJdkDir)jdk\src\share\classes\java\nio\%(_GenBufferCommand.Template).java.template --&gt; $(GenSrc)java\nio\%(_GenBufferCommand.Identity).java" />
 
         <ItemGroup>
@@ -1203,7 +1194,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-bw48.png" />
         <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-interim48.png" />
         <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-yellow48.png" />
-        
+
         <AwtIcons Include="@(AwtIconsSrc)">
             <ShortName>$([System.String]::Copy('%(Filename)%(Extension)').Replace('.', '_').Replace('-', '_'))</ShortName>
             <ClassName>AWTIcon32_$([System.String]::Copy('%(Filename)%(Extension)').Replace('.', '_').Replace('-', '_'))</ClassName>
@@ -1220,7 +1211,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <Message Text="%(AwtIcons.Identity) --&gt; $(GenSrc)sun\awt\%(AwtIcons.ClassName).java" />
-        
+
         <ItemGroup>
             <_Src Remove="@(_Src)" />
             <_Src Include="%(AwtIcons.Identity)" />
@@ -1229,9 +1220,9 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
             <_Dst Remove="@(_Dst)" />
             <_Dst Include="$(GenSrc)sun\awt\%(AwtIcons.ClassName).java" />
         </ItemGroup>
-        
+
         <MakeDir Directories="$(GenSrc)sun\awt\" />
-        <Delete Files="@(_Dst)" />
+        <Delete Files="@(_Tmp)" />
         <WriteLinesToFile Lines="package sun.awt%3b" File="@(_Tmp)" />
         <WriteLinesToFile Lines="public class %(AwtIcons.ClassName) {" File="@(_Tmp)" />
         <WriteLinesToFile Lines="public static int[] %(AwtIcons.ShortName) = {" File="@(_Tmp)" />
@@ -1241,7 +1232,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
 
         <Delete Files="@(_Dst)" />
         <Move SourceFiles="@(_Tmp)" DestinationFiles="@(_Dst)" OverwriteReadOnlyFiles="true" />
-        
+
         <ItemGroup>
             <FileWrites Include="@(_Tmp)" />
             <FileWrites Include="@(_Dst)" />
@@ -1251,6 +1242,36 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     <PropertyGroup>
         <GenerateSourceDependsOn>
             GenerateIcons;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <NimbusDestPath>$(GenSrc)javax\swing\plaf\nimbus\</NimbusDestPath>
+        <NimbusSkinPath>$(OpenJdkDir)jdk\src\share\classes\javax\swing\plaf\nimbus</NimbusSkinPath>
+        <NimbusSkinFile>$(OpenJdkDir)jdk\src\share\classes\javax\swing\plaf\nimbus\skin.laf</NimbusSkinFile>
+    </PropertyGroup>
+
+    <Target Name="GenerateNimbus" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);@(NimbusSkinFile)" Outputs="$(NimbusDestPath)stamp">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Message Text="Generating Nimbus source files" />
+        <MakeDir Directories="$(GenSrc)" />
+        <Delete Files="$(NimbusDestPath)**\*.java" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.generatenimbus.Generator -skinFile $(NimbusSkinFile) -buildDir $(GenSrc) -packagePrefix javax.swing.plaf.nimbus -lafName Nimbus" />
+        <Touch Files="$(NimbusDestPath)stamp" AlwaysCreate="true" ForceTouch="true" />
+        <Message Text="Finished generating Nimbus source files" />
+    
+        <ItemGroup>
+            <FileWrites Include="$(NimbusDestPath)**\*.java" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateNimbus;
             $(GenerateSourceDependsOn);
         </GenerateSourceDependsOn>
     </PropertyGroup>
@@ -1269,7 +1290,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
             <FileWrites Include="$(GenSrc)**\*" />
         </ItemGroup>
     </Target>
-    
+
     <Target Name="CleanGenerateSource">
         <RemoveDir Directories="$(GenSrc)" />
     </Target>
@@ -1285,7 +1306,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
             <FileWrites Include="$(GenLib)**\*" />
         </ItemGroup>
     </Target>
-    
+
     <Target Name="CleanGenerateData">
         <RemoveDir Directories="$(GenLib)" />
     </Target>
