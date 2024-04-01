@@ -1196,11 +1196,11 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-interim48.png" />
         <AwtIconsSrc Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\security-icon-yellow48.png" />
 
-        <AwtIcons Include="@(AwtIconsSrc)">
+        <AwtIcons Include="@(AwtIconsSrc->Exists())">
             <ShortName>$([System.String]::Copy('%(Filename)%(Extension)').Replace('.', '_').Replace('-', '_'))</ShortName>
             <ClassName>AWTIcon32_$([System.String]::Copy('%(Filename)%(Extension)').Replace('.', '_').Replace('-', '_'))</ClassName>
         </AwtIcons>
-        <AwtIcons Include="@(AwtIconsSrc)">
+        <AwtIcons Include="@(AwtIconsSrc->Exists())">
             <ShortName>$([System.String]::Copy('%(Filename)%(Extension)').Replace('.', '_').Replace('-', '_'))</ShortName>
             <ClassName>AWTIcon64_$([System.String]::Copy('%(Filename)%(Extension)').Replace('.', '_').Replace('-', '_'))</ClassName>
         </AwtIcons>
@@ -1264,7 +1264,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) build.tools.generatenimbus.Generator -skinFile $(NimbusSkinFile) -buildDir $(GenSrc) -packagePrefix javax.swing.plaf.nimbus -lafName Nimbus" />
         <Touch Files="$(NimbusDestPath)stamp" AlwaysCreate="true" ForceTouch="true" />
         <Message Text="Finished generating Nimbus source files" />
-    
+
         <ItemGroup>
             <FileWrites Include="$(NimbusDestPath)**\*.java" />
         </ItemGroup>
@@ -1273,6 +1273,53 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     <PropertyGroup>
         <GenerateSourceDependsOn>
             GenerateNimbus;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <X11WrapperTempPath>$(IntermediateOutputPath)x11wrappers\</X11WrapperTempPath>
+        <X11WrapperDestPath>$(GenSrc)sun\awt\X11\</X11WrapperDestPath>
+        <XLibTypes>$(OpenJdkDir)jdk\src\solaris\classes\sun\awt\X11\generator\xlibtypes.txt</XLibTypes>
+        <XLibSizes32>$(OpenJdkDir)jdk\src\solaris\classes\sun\awt\X11\generator\sizes.32</XLibSizes32>
+        <XLibSizes64>$(OpenJdkDir)jdk\src\solaris\classes\sun\awt\X11\generator\sizes.64</XLibSizes64>
+    </PropertyGroup>
+
+    <Target Name="GenerateX11Wrappers" DependsOnTargets="BuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(BuildToolsStampFile);$(XLibSizes32);$(XLibSizes64);$(XLibTypes)" Outputs="$(X11WrapperTempPath)sizes.32;$(X11WrapperTempPath)sizes.64;$(X11WrapperDestPath)stamp" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' ">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <_X11WrapperSizePath Remove="@(_X11WrapperTempPath)" />
+            <_X11WrapperSizePath Include="$(X11WrapperTempPath)sizes" />
+            <_X11WrapperDestPath Remove="@(_X11WrapperDestPath)" />
+            <_X11WrapperDestPath Include="$(X11WrapperDestPath)" />
+            <_XLibTypes Remove="@(_XLibTypes)" />
+            <_XLibTypes Include="$(XLibTypes)" />
+        </ItemGroup>
+
+        <RemoveDir Directories="$(X11WrapperTempPath)" />
+        <RemoveDir Directories="$(X11WrapperDestPath)" />
+        <MakeDir Directories="$(X11WrapperTempPath)" />
+        <MakeDir Directories="$(X11WrapperDestPath)" />
+        <Copy SourceFiles="$(XLibSizes32)" DestinationFiles="$(X11WrapperTempPath)sizes.32" />
+        <Copy SourceFiles="$(XLibSizes64)" DestinationFiles="$(X11WrapperTempPath)sizes.64" />
+        <Touch Files="$(X11WrapperTempPath)sizes.32" ForceTouch="true" />
+        <Touch Files="$(X11WrapperTempPath)sizes.64" ForceTouch="true" />
+        <Exec Command="$(JavaExec) -cp $(BuildToolsOutputPath) WrapperGenerator @(_X11WrapperDestPath) @(_XLibTypes) gen @(_X11WrapperSizePath)" />
+        <Touch Files="$(X11WrapperDestPath)stamp" ForceTouch="true" AlwaysCreate="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(X11WrapperTempPath)sizes.32" />
+            <FileWrites Include="$(X11WrapperTempPath)sizes.64" />
+            <FileWrites Include="$(X11WrapperDestPath)**\*.java" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateX11Wrappers;
             $(GenerateSourceDependsOn);
         </GenerateSourceDependsOn>
     </PropertyGroup>

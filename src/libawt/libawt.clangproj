@@ -6,7 +6,6 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>awt</TargetName>
-        <LanguageStandard>c99</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
@@ -209,7 +208,8 @@
     <ItemGroup>
         <Compile Include="@(LibAwtFiles)">
             <Language Condition=" '%(Extension)' == '.c' ">c</Language>
-            <Language Condition=" '%(Extension)' == '.cpp' ">c++</Language>
+            <LanguageStandard Condition=" '%(Extension)' == '.c' ">c99</LanguageStandard>
+            <Language Condition=" '%(Extension)' == '.cpp' Or $(TargetIdentifier.StartsWith('win-')) ">c++</Language>
         </Compile>
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
