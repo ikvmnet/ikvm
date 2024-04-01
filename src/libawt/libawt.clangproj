@@ -14,9 +14,9 @@
         <ProjectReference Include="..\libmlib_image\libmlib_image.clangproj" Condition="$(TargetIdentifier.StartsWith('osx-'))" />
     </ItemGroup>
     <ItemGroup>
-        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt" />
-        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt" />
-        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt\image" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image" />
         <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\gif" />
         <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils" />
         <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib" />
