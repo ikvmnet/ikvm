@@ -46,6 +46,11 @@
         <TransformValues Include="OpenJdkSpecificationVendor" Value="$(OpenJdkSpecificationVendor)" />
     </ItemGroup>
 
+    <PropertyGroup>
+        <OpenJdkTargetOsApiDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' Or '$(IkvmJavaRuntimeIdentifier)' == 'ref' ">windows</OpenJdkTargetOsApiDir>
+        <OpenJdkTargetOsApiDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">solaris</OpenJdkTargetOsApiDir>
+    </PropertyGroup>
+
     <ItemGroup>
         <JavaResource Include="$(MSBuildThisFileDirectory)local\**\*" Exclude="$(MSBuildThisFileDirectory)local\**\*.java;$(MSBuildThisFileDirectory)**\*.tt" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
