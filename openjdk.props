@@ -1373,13 +1373,14 @@
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\awt\**\*.java" PackagePath="sun\awt" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\awt\X11\generator\WrapperGenerator.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\font\**\*.java" PackagePath="sun\font" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\java2d\**\*.java" PackagePath="sun\java2d" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\print\**\*.java" PackagePath="sun\print"/>
     </ItemGroup>
     
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' ">
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\awt\X11\**\*.java" PackagePath="sun\awt\X11" />
+        
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' " >

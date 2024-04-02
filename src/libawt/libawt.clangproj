@@ -114,10 +114,15 @@
         <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug\debug_util.c" />
         <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\MapAccelFunc.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('osx-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <LibAwtFiles Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\awt_LoadLibrary.c" />
+        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\awt_Mlib.c" />
         <LibAwtFiles Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\initIDs.c" />
         <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils\img_colors.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\awt_LoadLibrary.c" />
+        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\awt_Mlib.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="UNICODE" />
@@ -209,7 +214,8 @@
         <Compile Include="@(LibAwtFiles)">
             <Language Condition=" '%(Extension)' == '.c' ">c</Language>
             <LanguageStandard Condition=" '%(Extension)' == '.c' ">c99</LanguageStandard>
-            <Language Condition=" '%(Extension)' == '.cpp' Or $(TargetIdentifier.StartsWith('win-')) ">c++</Language>
+            <Language Condition=" '%(Extension)' == '.cpp' ">c++</Language>
+            <LanguageStandard Condition=" '%(Extension)' == '.cpp' "></LanguageStandard>
         </Compile>
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />

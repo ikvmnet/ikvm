@@ -13,15 +13,14 @@
         <PreprocessorDefinitions Include="__MEDIALIB_OLD_NAMES" />
         <PreprocessorDefinitions Include="MLIB_NO_LIBSUNMATH" />
         <PreprocessorDefinitions Include="MLIB_OS64BIT" Condition="$(TargetIdentifier.EndsWith('-x64')) Or $(TargetIdentifier.EndsWith('-arm64'))" />
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt\medialib" />
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt\medialib" />
-        <Dependencies Include="c" />
-        <Dependencies Include="m;dl" Condition="!$(TargetIdentifier.StartsWith('win-'))" />
-        <Compile Include="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt\medialib\*.c" />
-        <Compile Remove="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt\medialib\awt_ImagingLib.c" />
-        <Compile Remove="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt\medialib\mlib_c_ImageBlendTable.c" />
-        <Header Include="$(OpenJdkDir)jdk\src\jdk\src\share\native\sun\awt\medialib\**\*.h" IncludePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <Header Include="$(OpenJdkDir)jdk\src\jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt\medialib\**\*.h" IncludePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt\medialib" />
+        <Dependencies Include="c;m;dl" Condition="!$(TargetIdentifier.StartsWith('win-'))" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib\*.c" />
+        <Compile Remove="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib\awt_ImagingLib.c" />
+        <Compile Remove="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib\mlib_c_ImageBlendTable.c" />
+        <Header Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib\**\*.h" IncludePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt\medialib\**\*.h" IncludePath="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
