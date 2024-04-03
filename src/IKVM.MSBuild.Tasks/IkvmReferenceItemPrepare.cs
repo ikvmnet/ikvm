@@ -456,7 +456,7 @@
         /// <returns></returns>
         static int? GetAssemblyVersionComponent(ModuleVersion version, int index)
         {
-            return version.Number.Count > index && version.Number[index] is int i ? Math.Min(i, ushort.MaxValue) : null;
+            return version.Number.Count > index && version.Number[index] is int i ? Math.Min(i, ushort.MaxValue - 1) : null;
         }
 
         /// <summary>
