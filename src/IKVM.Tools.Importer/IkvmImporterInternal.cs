@@ -128,9 +128,7 @@ namespace IKVM.Tools.Importer
             catch (Exception x)
             {
                 Console.Error.WriteLine();
-                Console.Error.WriteLine("*** INTERNAL COMPILER ERROR ***");
-                Console.Error.WriteLine();
-                Console.Error.WriteLine("PLEASE FILE A BUG REPORT FOR IKVM.NET WHEN YOU SEE THIS MESSAGE");
+                Console.Error.WriteLine("*** COMPILER ERROR ***");
                 Console.Error.WriteLine();
                 Console.Error.WriteLine(System.Reflection.Assembly.GetExecutingAssembly().FullName);
                 Console.Error.WriteLine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());

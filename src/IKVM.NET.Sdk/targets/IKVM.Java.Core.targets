@@ -142,6 +142,7 @@ Files = files.ToArray();
     <PropertyGroup>
         <CompileJavaDependsOn>
             $(CompileJavaDependsOn)
+            GenerateAssemblyInfo;
             GetReferenceClasspath;
             ExportReferences;
             _ResolveClasspathFiles;

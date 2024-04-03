@@ -30,6 +30,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 
 using IKVM.ByteCode.Text;
+using IKVM.Runtime.Extensions;
 
 namespace IKVM.Runtime.JNI
 {
@@ -218,6 +219,7 @@ namespace IKVM.Runtime.JNI
                         }
                     }
                 }
+
                 active = localRefs[localRefSlot];
                 this.localRefIndex = prev.localRefIndex;
                 this.callerID = prev.callerID;
@@ -390,7 +392,7 @@ namespace IKVM.Runtime.JNI
             if (psz is null)
                 return null;
 
-            var l = MUTF8.IndexOfNull(psz);
+            var l = MemoryMarshalExtensions.GetIndexOfNull(psz);
             if (l < 0)
                 throw new java.lang.IllegalArgumentException(arg);
 
@@ -409,7 +411,7 @@ namespace IKVM.Runtime.JNI
             if (psz is null)
                 return null;
 
-            var l = MUTF8.IndexOfNull(psz);
+            var l = MemoryMarshalExtensions.GetIndexOfNull(psz);
             if (l < 0)
                 throw new java.lang.IllegalArgumentException();
 
