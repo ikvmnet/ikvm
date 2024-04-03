@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using IKVM.ByteCode.Text;
+using IKVM.Runtime.Extensions;
 
 namespace IKVM.Runtime.JNI
 {
@@ -79,7 +80,7 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         static string DecodePlatformString(byte* psz)
         {
-            var p = psz is not null ? MUTF8.IndexOfNull(psz) : -1;
+            var p = psz is not null ? MemoryMarshalExtensions.GetIndexOfNull(psz) : -1;
             return p < 0 ? null : platformEncoding.GetString(psz, p);
         }
 

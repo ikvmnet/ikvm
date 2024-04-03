@@ -1,5 +1,13 @@
 #include <jni.h>
 
+#ifdef WIN32
+#define NETEXPORT __declspec(dllexport)
+#define NETCALL __stdcall
+#else
+#define NETEXPORT
+#define NETCALL
+#endif
+
 typedef jint JNI_GetDefaultJavaVMInitArgs_Func(void* vm_args);
 typedef jint JNI_GetCreatedJavaVMs_Func(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
 typedef jint JNI_CreateJavaVM_Func(JavaVM** p_vm, void** p_env, void* vm_args);
@@ -8,17 +16,26 @@ static JNI_GetDefaultJavaVMInitArgs_Func *JNI_GetDefaultJavaVMInitArgs_Ptr;
 static JNI_GetCreatedJavaVMs_Func *JNI_GetCreatedJavaVMs_Ptr;
 static JNI_CreateJavaVM_Func *JNI_CreateJavaVM_Ptr;
 
-JNIEXPORT void JNICALL Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs_Func *func)
+/**
+ * Sets the JNI_GetDefaultJavaVMInitArgs_Ptr value to a delegate.
+ */
+NETEXPORT void NETCALL Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs_Func *func)
 {
     JNI_GetDefaultJavaVMInitArgs_Ptr = func;
 }
 
-JNIEXPORT void JNICALL Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs_Func *func)
+/**
+ * Sets the JNI_GetCreatedJavaVMs_Ptr value to a delegate.
+ */
+NETEXPORT void NETCALL Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs_Func *func)
 {
     JNI_GetCreatedJavaVMs_Ptr = func;
 }
 
-JNIEXPORT void JNICALL Set_JNI_CreateJavaVM(JNI_CreateJavaVM_Func *func)
+/**
+ * Sets the JNI_CreateJavaVM_Ptr value to a delegate.
+ */
+NETEXPORT void NETCALL Set_JNI_CreateJavaVM(JNI_CreateJavaVM_Func *func)
 {
     JNI_CreateJavaVM_Ptr = func;
 }
