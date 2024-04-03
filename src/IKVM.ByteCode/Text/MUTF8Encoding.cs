@@ -29,26 +29,6 @@ namespace IKVM.ByteCode.Text
             this.majorVersion = majorVersion;
         }
 
-        /// <summary>
-        /// Scans for the position of the first NULL given the specified pointer, up to a maximum offset of <paramref name="max"/>.
-        /// </summary>
-        /// <param name="ptr"></param>
-        /// <param name="max"></param>
-        /// <returns></returns>
-        public unsafe int IndexOfNull(byte* ptr, int max = int.MaxValue)
-        {
-            if (ptr is null)
-                throw new ArgumentNullException(nameof(ptr));
-            if (max < 0)
-                throw new ArgumentOutOfRangeException(nameof(max));
-
-            for (int i = 0; i < max; i++)
-                if (ptr[i] == 0)
-                    return i;
-
-            return -1;
-        }
-
         /// <inheritdoc />
         public override int GetByteCount(char[] chars, int index, int count)
         {

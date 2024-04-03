@@ -25,7 +25,7 @@ NETEXPORT void* NETCALL IKVM_dl_open(const char* name)
 #ifdef WIN32
     return LoadLibraryEx(name, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
 #else
-    return dlopen(name, RTLD_LAZY);
+    return dlopen(name, RTLD_LAZY | RTLD_GLOBAL);
 #endif
 }
 

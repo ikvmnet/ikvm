@@ -2,6 +2,7 @@
 #include <jvm.h>
 #include <stdio.h>
 #include <string.h>
+#include "ikvm.h"
 
 #if defined WIN32
 #include <windows.h>
@@ -871,8 +872,7 @@ int JNICALL JVM_GetHostName(char* name, int namelen)
 void* os_dll_load(const char* filename, char* ebuf, int ebuflen)
 {
     void* result = ::LoadLibraryEx(filename, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
-    if (result != NULL)
-    {
+    if (result != NULL) {
         return result;
     }
 
@@ -895,6 +895,7 @@ void* os_dll_load(const char* filename, char* ebuf, int ebuflen) {
         ::strncpy(ebuf, ::dlerror(), ebuflen - 1);
         ebuf[ebuflen - 1] = '\0';
     }
+
     return result;
 }
 #endif
@@ -922,6 +923,7 @@ void* JNICALL JVM_LoadLibrary(const char* name)
     if (load_result == NULL) {
         char msg[1024];
         jio_snprintf(msg, sizeof msg, "%s: %s", name, ebuf);
+        IKVM_ThrowException("java/lang/UnsatisfiedLinkError", (const char*)msg);
         return NULL;
     }
 

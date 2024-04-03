@@ -25,6 +25,7 @@ using System;
 using System.Runtime.InteropServices;
 
 using IKVM.ByteCode.Text;
+using IKVM.Runtime.Extensions;
 
 namespace IKVM.Runtime.JNI
 {
@@ -135,7 +136,7 @@ namespace IKVM.Runtime.JNI
                 {
                     try
                     {
-                        var l = MUTF8.IndexOfNull(pAttachArgs->name);
+                        var l = MemoryMarshalExtensions.GetIndexOfNull(pAttachArgs->name);
                         if (l < 0)
                             return JNIEnv.JNI_ERR;
 
