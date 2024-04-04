@@ -182,7 +182,7 @@
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="OpenGL" Separator=" " />
-        <AdditionalLinkOptions Include="-framework" Value="JavaNativeFoundation" Separator=" " />
+        <!--<AdditionalLinkOptions Include="-framework" Value="JavaNativeFoundation" Separator=" " />-->
         <AdditionalLinkOptions Include="-framework" Value="JavaRuntimeSupport" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="ApplicationServices" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="AudioToolbox" Separator=" " />
@@ -194,6 +194,7 @@
         <Dependencies Include="winspool" />
         <Dependencies Include="imm32" />
         <Dependencies Include="ole32" />
+        <Dependencies Include="OleAut32" />
         <Dependencies Include="uuid" />
         <Dependencies Include="shell32" />
         <Dependencies Include="comdlg32" />
@@ -202,6 +203,7 @@
         <Dependencies Include="shlwapi" />
         <Dependencies Include="delayimp" />
         <Dependencies Include="advapi32" />
+        <Dependencies Include="comsuppw" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <Dependencies Include="dl" />
@@ -215,7 +217,7 @@
             <Language Condition=" '%(Extension)' == '.c' ">c</Language>
             <LanguageStandard Condition=" '%(Extension)' == '.c' ">c99</LanguageStandard>
             <Language Condition=" '%(Extension)' == '.cpp' ">c++</Language>
-            <LanguageStandard Condition=" '%(Extension)' == '.cpp' "></LanguageStandard>
+            <LanguageStandard Condition=" '%(Extension)' == '.cpp' ">c++14</LanguageStandard>
         </Compile>
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />

@@ -50,8 +50,12 @@
     </PropertyGroup>
 
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
-        <PreprocessorDefinitions Include="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32" />
+        <PreprocessorDefinitions Include="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_MT;_DLL" />
         <AdditionalCompileOptions Include="-fms-extensions" />
+        <PreprocessorDefinitions Include="_DEBUG" Condition=" '$(DebugSymbols)' == 'true' " />
+        <AdditionalLinkOptions Include="-Wl,/nodefaultlib" />
+        <Dependencies Include="msvcrt;msvcprt;ucrt;vcruntime" Condition=" '$(DebugSymbols)' != 'true' " />
+        <Dependencies Include="msvcrtd;msvcprt;ucrtd;vcruntimed" Condition=" '$(DebugSymbols)' == 'true' " />
     </ItemGroup>
 
     <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">

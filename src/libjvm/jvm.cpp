@@ -989,6 +989,16 @@ void* JNICALL JVM_GetThreadInterruptEvent()
 }
 #endif
 
+void* JNICALL JVM_RegisterSignal(jint sig, void* handler)
+{
+    return 0;
+}
+
+jboolean JNICALL JVM_RaiseSignal(jint sig)
+{
+    return JNI_FALSE;
+}
+
 int jio_vsnprintf(char* str, size_t count, const char* fmt, va_list args)
 {
     // Reject count values that are negative signed values converted to
