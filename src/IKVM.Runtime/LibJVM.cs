@@ -57,6 +57,8 @@ namespace IKVM.Runtime
         readonly JVM_UnloadLibraryDelegate _JVM_UnloadLibrary;
         readonly JVM_FindLibraryEntryDelegate _JVM_FindLibraryEntry;
 
+        readonly IKVM_ThrowExceptionFunc _IKVM_ThrowException;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -75,8 +77,7 @@ namespace IKVM.Runtime
             _JVM_UnloadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_UnloadLibraryDelegate>(Handle.GetExport("JVM_UnloadLibrary", sizeof(nint)).Handle);
             _JVM_FindLibraryEntry = Marshal.GetDelegateForFunctionPointer<JVM_FindLibraryEntryDelegate>(Handle.GetExport("JVM_FindLibraryEntry", sizeof(nint) + sizeof(nint)).Handle);
 
-            // initialize ThrowException callback
-            Set_IKVM_ThrowException(IKVM_ThrowException);
+            Set_IKVM_ThrowException(_IKVM_ThrowException = IKVM_ThrowException);
         }
 
         /// <summary>
