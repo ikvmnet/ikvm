@@ -55,7 +55,7 @@
         <PreprocessorDefinitions Include="_DEBUG" Condition=" '$(DebugSymbols)' == 'true' " />
         <AdditionalLinkOptions Include="-Wl,/nodefaultlib" />
         <Dependencies Include="msvcrt;msvcprt;ucrt;vcruntime" Condition=" '$(DebugSymbols)' != 'true' " />
-        <Dependencies Include="msvcrtd;msvcprt;ucrtd;vcruntimed" Condition=" '$(DebugSymbols)' == 'true' " />
+        <Dependencies Include="msvcrtd;msvcprtd;ucrtd;vcruntimed" Condition=" '$(DebugSymbols)' == 'true' " />
     </ItemGroup>
 
     <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
