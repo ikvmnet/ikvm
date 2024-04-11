@@ -5,8 +5,9 @@
         <ProjectGuid>555CDB6E-84CE-4FE8-8945-47553C4D0A51</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
         <TargetName>jsoundalsa</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />

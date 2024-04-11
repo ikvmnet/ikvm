@@ -5,8 +5,9 @@
         <ProjectGuid>78a745d7-706a-4b33-9d21-0eb7b5144c42</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>win-x64;win-x86;win-arm64</TargetIdentifiers>
         <TargetName>w2k_lsa_auth</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>win-x64;win-x86;win-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />

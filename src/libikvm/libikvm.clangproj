@@ -6,6 +6,7 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>ikvm</TargetName>
+        <OutputType>dll</OutputType>
     </PropertyGroup>
     <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
         <Dependencies Include="ws2_32" />

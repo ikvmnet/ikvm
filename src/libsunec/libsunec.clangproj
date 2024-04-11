@@ -6,11 +6,18 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>sunec</TargetName>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\ec\impl</IncludeDirectories>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);MP_API_COMPATIBLE;NSS_ECC_MORE_THAN_SUITE_B</PreprocessorDefinitions>
+        <OutputType>dll</OutputType>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\impl" />
+        <PreprocessorDefinitions Include="MP_API_COMPATIBLE;NSS_ECC_MORE_THAN_SUITE_B" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <Dependencies Include="Kernel32;Shlwapi" />
+        <PreprocessorDefinitions Include="strdup" Value="_strdup" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.cpp" LanguageStandard="c++11" />

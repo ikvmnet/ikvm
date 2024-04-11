@@ -6,6 +6,7 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>osx</TargetName>
+        <OutputType>dll</OutputType>
         <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>

@@ -6,6 +6,7 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>mlib_image</TargetName>
+        <OutputType>dll</OutputType>
         <LanguageStandard>c89</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
@@ -15,6 +16,7 @@
         <PreprocessorDefinitions Include="MLIB_OS64BIT" Condition="$(TargetIdentifier.EndsWith('-x64')) Or $(TargetIdentifier.EndsWith('-arm64'))" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt\medialib" />
+        <Dependencies Include="Kernel32" Condition="$(TargetIdentifier.StartsWith('win-'))" />
         <Dependencies Include="c;m;dl" Condition="!$(TargetIdentifier.StartsWith('win-'))" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib\*.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib\awt_ImagingLib.c" />

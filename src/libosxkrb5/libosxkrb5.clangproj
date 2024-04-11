@@ -5,8 +5,9 @@
         <ProjectGuid>f2969046-1672-4685-ae8d-53aed942dae9</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
         <TargetName>osxkrb5</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />

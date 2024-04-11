@@ -1,54 +1,57 @@
 ﻿<Project>
-    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
-    <PropertyGroup Label="Globals">
-        <ProjectGuid>9a35e758-5859-4749-aa85-c788a30173be</ProjectGuid>
-    </PropertyGroup>
-    <PropertyGroup>
-        <TargetName>net</TargetName>
-        <LanguageStandard>c99</LanguageStandard>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\net</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net</IncludeDirectories>
-        <AdditionalCompileOptions>$(AdditionalCompileOptions);-Wno-int-conversion</AdditionalCompileOptions>
-    </PropertyGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
-        <ProjectReference Include="..\libiava\libiava.clangproj" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
-        <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
-        <Dependencies Include="ws2_32;secur32;iphlpapi;delayimp;advapi32" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        <Dependencies Include="c" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('musl'))">
-        <PreprocessorDefinitions Include="__SIGRTMIN" Value="32" />
-        <PreprocessorDefinitions Include="__SIGRTMAX" Value="(_NSIG-1)" />
-        <IncludeDirectories Include="musl" />
-    </ItemGroup>
-    <ItemGroup>
-        <Compile Include="**\*.c" />
-        <Compile Include="**\*.cpp" />
-    </ItemGroup>
-    <ItemGroup>
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\net\**\*.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\net\**\*.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net\**\*.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\net\**\*.c" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
-        <Compile Remove="$(OpenJdkDir)jdk\src\windows\native\java\net\DualStackPlainSocketImpl.c" />
-        <Compile Remove="$(OpenJdkDir)jdk\src\windows\native\java\net\DualStackPlainDatagramSocketImpl.c" />
-        <Compile Remove="$(OpenJdkDir)jdk\src\windows\native\java\net\TwoStacksPlainSocketImpl.c" />
-        <Compile Remove="$(OpenJdkDir)jdk\src\windows\native\java\net\TwoStacksPlainDatagramSocketImpl.c" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        <Compile Remove="$(OpenJdkDir)jdk\src\solaris\native\java\net\bsd_close.c" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
-        <Compile Remove="$(OpenJdkDir)jdk\src\solaris\native\java\net\linux_close.c" />
-    </ItemGroup>
-    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+  <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>9a35e758-5859-4749-aa85-c788a30173be</ProjectGuid>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetName>net</TargetName>
+    <OutputType>dll</OutputType>
+    <LanguageStandard>c99</LanguageStandard>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+    <ProjectReference Include="..\libiava\libiava.clangproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\java\net" />
+    <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net" />
+    <AdditionalCompileOptions Include="-Wno-int-conversion" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+    <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
+    <Dependencies Include="Kernel32;Ws2_32;Secur32;Iphlpapi;delayimp;Advapi32" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+    <Dependencies Include="c" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-musl-'))">
+    <PreprocessorDefinitions Include="__SIGRTMIN" Value="32" />
+    <PreprocessorDefinitions Include="__SIGRTMAX" Value="(_NSIG-1)" />
+    <IncludeDirectories Include="musl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="**\*.c" />
+    <Compile Include="**\*.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\net\**\*.c" />
+    <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\net\**\*.c" />
+    <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net\**\*.c" />
+    <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\net\**\*.c" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+    <Compile Remove="$(OpenJdkDir)jdk\src\windows\native\java\net\DualStackPlainSocketImpl.c" />
+    <Compile Remove="$(OpenJdkDir)jdk\src\windows\native\java\net\DualStackPlainDatagramSocketImpl.c" />
+    <Compile Remove="$(OpenJdkDir)jdk\src\windows\native\java\net\TwoStacksPlainSocketImpl.c" />
+    <Compile Remove="$(OpenJdkDir)jdk\src\windows\native\java\net\TwoStacksPlainDatagramSocketImpl.c" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+    <Compile Remove="$(OpenJdkDir)jdk\src\solaris\native\java\net\bsd_close.c" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+    <Compile Remove="$(OpenJdkDir)jdk\src\solaris\native\java\net\linux_close.c" />
+  </ItemGroup>
+  <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>

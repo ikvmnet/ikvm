@@ -5,8 +5,9 @@
         <ProjectGuid>403E0642-B6ED-464E-8694-2E467CDA2C02</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
         <TargetName>jsound</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />

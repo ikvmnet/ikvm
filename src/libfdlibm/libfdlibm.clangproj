@@ -6,16 +6,13 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>fdlibm</TargetName>
-        <OutputType>Static</OutputType>
+        <OutputType>lib</OutputType>
         <LanguageStandard>c89</LanguageStandard>
-        <UseLd Condition="$(TargetTriple.Contains('-apple-'))">llvm-ar</UseLd>
     </PropertyGroup>
     <ItemGroup>
         <Header Include="$(OpenJdkDir)jdk\src\share\native\java\lang\fdlibm\include\**\*.h" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\java\lang\fdlibm\include" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\lang\fdlibm\src\**\*.c" />
-    </ItemGroup>
-    <ItemGroup>
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />

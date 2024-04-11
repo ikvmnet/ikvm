@@ -6,6 +6,7 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>iava</TargetName>
+        <OutputType>dll</OutputType>
         <LanguageStandard>c89</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
@@ -21,14 +22,14 @@
         <PreprocessorDefinitions Include="ARCHPROPNAME" Value="&quot;$(OpenJdkTargetCpuOsArch)&quot;" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <Dependencies Include="shell32;delayimp;advapi32;version;kernel32" />
+        <Dependencies Include="shell32;delayimp;advapi32;version;Kernel32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <AdditionalCompileOptions Include="-fcommon" />
         <AdditionalLinkOptions Include="-fcommon" />
         <Dependencies Include="c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('musl'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-musl-'))">
         <PreprocessorDefinitions Include="isnanf" Value="isnan" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">

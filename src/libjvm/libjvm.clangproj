@@ -6,6 +6,7 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>jvm</TargetName>
+        <OutputType>dll</OutputType>
     </PropertyGroup>
     <ItemGroup>
         <AdditionalCompileOptions Include="-Wno-dll-attribute-on-redeclaration" />

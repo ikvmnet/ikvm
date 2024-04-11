@@ -26,9 +26,11 @@
     </Target>
 
     <!-- Makes the generated header files available to Clang project types. -->
-    <Target Name="GetClangIncludeDirectories" Returns="@(GetClangIncludeDirectories)">
+    <Target Name="GetOutputItem" Returns="@(GetOutputItem)">
         <ItemGroup>
-            <GetClangIncludeDirectories Include="$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))" />
+            <GetOutputItem Include="$([System.IO.Path]::GetFullPath('$(MSBuildProjectFile)'))">
+                <HeadersPath>$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))</HeadersPath>
+            </GetOutputItem>
         </ItemGroup>
     </Target>
 

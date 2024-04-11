@@ -1,15 +1,16 @@
 ﻿<Project>
-  <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
-  <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
-  <PropertyGroup Label="Globals">
-    <ProjectGuid>53b55ec4-70fb-4b4b-822c-7bd8c3511da9</ProjectGuid>
-  </PropertyGroup>
-  <PropertyGroup>
-    <TargetName>mlib_image</TargetName>
-    <LanguageStandard>c89</LanguageStandard>
-  </PropertyGroup>
-  <ItemGroup>
-  </ItemGroup>
-  <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
-  <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>53b55ec4-70fb-4b4b-822c-7bd8c3511da9</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>awt_headless</TargetName>
+        <OutputType>dll</OutputType>
+        <LanguageStandard>c89</LanguageStandard>
+    </PropertyGroup>
+    <ItemGroup>
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>

@@ -1,15 +1,16 @@
 ﻿<Project>
-  <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
-  <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
-  <PropertyGroup Label="Globals">
-    <ProjectGuid>58889bef-043a-4401-996f-50326f3b78cb</ProjectGuid>
-  </PropertyGroup>
-  <PropertyGroup>
-    <TargetName>mlib_image</TargetName>
-    <LanguageStandard>c89</LanguageStandard>
-  </PropertyGroup>
-  <ItemGroup>
-  </ItemGroup>
-  <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
-  <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>58889bef-043a-4401-996f-50326f3b78cb</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>fontmanager</TargetName>
+        <OutputType>dll</OutputType>
+        <LanguageStandard>c89</LanguageStandard>
+    </PropertyGroup>
+    <ItemGroup>
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>
