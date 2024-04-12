@@ -22,7 +22,7 @@
         <PreprocessorDefinitions Include="ARCHPROPNAME" Value="&quot;$(OpenJdkTargetCpuOsArch)&quot;" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <Dependencies Include="shell32;delayimp;advapi32;version;Kernel32" />
+        <Dependencies Include="shell32;delayimp;advapi32;version" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <AdditionalCompileOptions Include="-fcommon" />

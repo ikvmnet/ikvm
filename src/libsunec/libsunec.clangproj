@@ -16,7 +16,7 @@
         <PreprocessorDefinitions Include="MP_API_COMPATIBLE;NSS_ECC_MORE_THAN_SUITE_B" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <Dependencies Include="Kernel32;Shlwapi" />
+        <Dependencies Include="Shlwapi" />
         <PreprocessorDefinitions Include="strdup" Value="_strdup" />
     </ItemGroup>
     <ItemGroup>

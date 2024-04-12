@@ -26,7 +26,6 @@
         <LibAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d" />
         <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops" />
         <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe" />
-        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image" />
         <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl" />
         <LibAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d\opengl" />
         <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\font" />
@@ -40,144 +39,144 @@
         <LibAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d\x11" />
     </ItemGroup>
     <ItemGroup>
+        <LibAwtFile Include="gifdecoder.c" />
+        <LibAwtFile Include="imageInitIDs.c" />
+        <LibAwtFile Include="img_globals.c" />
+        <LibAwtFile Include="SurfaceData.c" />
+        <LibAwtFile Include="Region.c" />
+        <LibAwtFile Include="BufImgSurfaceData.c" />
+        <LibAwtFile Include="Disposer.c" />
+        <LibAwtFile Include="Trace.c" />
+        <LibAwtFile Include="GraphicsPrimitiveMgr.c" />
+        <LibAwtFile Include="Blit.c" />
+        <LibAwtFile Include="BlitBg.c" />
+        <LibAwtFile Include="ScaledBlit.c" />
+        <LibAwtFile Include="FillRect.c" />
+        <LibAwtFile Include="FillSpans.c" />
+        <LibAwtFile Include="FillParallelogram.c" />
+        <LibAwtFile Include="DrawParallelogram.c" />
+        <LibAwtFile Include="DrawLine.c" />
+        <LibAwtFile Include="DrawRect.c" />
+        <LibAwtFile Include="DrawPolygons.c" />
+        <LibAwtFile Include="DrawPath.c" />
+        <LibAwtFile Include="FillPath.c" />
+        <LibAwtFile Include="ProcessPath.c" />
+        <LibAwtFile Include="MaskBlit.c" />
+        <LibAwtFile Include="MaskFill.c" />
+        <LibAwtFile Include="TransformHelper.c" />
+        <LibAwtFile Include="AlphaMath.c" />
+        <LibAwtFile Include="AlphaMacros.c" />
+        <LibAwtFile Include="AnyByte.c" />
+        <LibAwtFile Include="ByteBinary1Bit.c" />
+        <LibAwtFile Include="ByteBinary2Bit.c" />
+        <LibAwtFile Include="ByteBinary4Bit.c" />
+        <LibAwtFile Include="ByteIndexed.c" />
+        <LibAwtFile Include="ByteGray.c" />
+        <LibAwtFile Include="Index8Gray.c" />
+        <LibAwtFile Include="Index12Gray.c" />
+        <LibAwtFile Include="AnyShort.c" />
+        <LibAwtFile Include="Ushort555Rgb.c" />
+        <LibAwtFile Include="Ushort565Rgb.c" />
+        <LibAwtFile Include="Ushort4444Argb.c" />
+        <LibAwtFile Include="Ushort555Rgbx.c" />
+        <LibAwtFile Include="UshortGray.c" />
+        <LibAwtFile Include="UshortIndexed.c" />
+        <LibAwtFile Include="Any3Byte.c" />
+        <LibAwtFile Include="ThreeByteBgr.c" />
+        <LibAwtFile Include="AnyInt.c" />
+        <LibAwtFile Include="IntArgb.c" />
+        <LibAwtFile Include="IntArgbPre.c" />
+        <LibAwtFile Include="IntArgbBm.c" />
+        <LibAwtFile Include="IntRgb.c" />
+        <LibAwtFile Include="IntBgr.c" />
+        <LibAwtFile Include="IntRgbx.c" />
+        <LibAwtFile Include="Any4Byte.c" />
+        <LibAwtFile Include="FourByteAbgr.c" />
+        <LibAwtFile Include="FourByteAbgrPre.c" />
+        <LibAwtFile Include="BufferedMaskBlit.c" />
+        <LibAwtFile Include="BufferedRenderPipe.c" />
+        <LibAwtFile Include="ShapeSpanIterator.c" />
+        <LibAwtFile Include="SpanClipRenderer.c" />
+        <LibAwtFile Include="awt_ImageRep.c" />
+        <LibAwtFile Include="awt_ImagingLib.c" />
+        <LibAwtFile Include="awt_Mlib.c" />
+        <LibAwtFile Include="awt_parseImage.c" />
+        <LibAwtFile Include="DataBufferNative.c" />
+        <LibAwtFile Include="dither.c" />
+        <LibAwtFile Include="debug_assert.c" />
+        <LibAwtFile Include="debug_mem.c" />
+        <LibAwtFile Include="debug_trace.c" />
+        <LibAwtFile Include="debug_util.c" />
+    </ItemGroup>
+    <ItemGroup>
+        <LibAwtFile Include="MapAccelFunc.c" />
+    </ItemGroup>
+    <ItemGroup>
         <PreprocessorDefinitions Include="__MEDIALIB_OLD_NAMES" />
         <PreprocessorDefinitions Include="__USE_J2D_NAMES" />
         <PreprocessorDefinitions Include="MLIB_NO_LIBSUNMATH" />
         <IncludeDirectories Include="@(LibAwtDirs)" />
     </ItemGroup>
-    <ItemGroup>
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\gif\gifdecoder.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\imageInitIDs.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils\img_globals.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\SurfaceData.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe\Region.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\BufImgSurfaceData.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\Disposer.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\Trace.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\GraphicsPrimitiveMgr.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\Blit.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\BlitBg.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\ScaledBlit.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\FillRect.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\FillSpans.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\FillParallelogram.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\DrawParallelogram.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\DrawLine.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\DrawRect.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\DrawPolygons.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\DrawPath.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\FillPath.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\ProcessPath.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\MaskBlit.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\MaskFill.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\TransformHelper.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\AlphaMath.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\AlphaMacros.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\AnyByte.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\ByteBinary1Bit.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\ByteBinary2Bit.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\ByteBinary4Bit.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\ByteIndexed.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\ByteGray.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\Index8Gray.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\Index12Gray.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\AnyShort.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\Ushort555Rgb.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\Ushort565Rgb.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\Ushort4444Argb.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\Ushort555Rgbx.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\UshortGray.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\UshortIndexed.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\Any3Byte.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\ThreeByteBgr.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\AnyInt.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\IntArgb.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\IntArgbPre.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\IntArgbBm.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\IntRgb.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\IntBgr.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\IntRgbx.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\Any4Byte.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\FourByteAbgr.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\FourByteAbgrPre.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe\BufferedMaskBlit.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe\BufferedRenderPipe.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe\ShapeSpanIterator.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe\SpanClipRenderer.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\awt_ImageRep.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib\awt_ImagingLib.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\awt_parseImage.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\DataBufferNative.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\dither.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug\debug_assert.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug\debug_mem.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug\debug_trace.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug\debug_util.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops\MapAccelFunc.c" />
-    </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\awt_LoadLibrary.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\awt_Mlib.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\initIDs.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils\img_colors.c" />
+        <LibAwtFile Include="awt_LoadLibrary.c" />
+        <LibAwtFile Include="initIDs.c" />
+        <LibAwtFile Include="img_colors.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\awt_LoadLibrary.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\awt_Mlib.c" />
+        <LibAwtFile Include="awt_LoadLibrary.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <PreprocessorDefinitions Include="UNICODE" />
-        <PreprocessorDefinitions Include="_UNICODE" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\font\AccelGlyphCache.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\ShaderList.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\CmdIDList.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\Hashtable.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\GDIHashtable.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\Devices.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\ObjectList.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\windows\GDIBlitLoops.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\windows\GDIRenderer.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\windows\GDIWindowSurfaceData.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\windows\WindowsFlags.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\WPrinterJob.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\awt_*.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DBlitLoops.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DBufImgOps.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DContext.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DGlyphCache.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DGraphicsDevice.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DMaskBlit.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DMaskCache.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DMaskFill.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DPipelineManager.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DPaints.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DRenderer.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DRenderQueue.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DResourceManager.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DSurfaceData.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DTextRenderer.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\d3d\D3DVertexCacher.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\ShellFolder2.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\ThemeReader.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\ComCtl32Util.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\DllUtil.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\initIDs.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\MouseInfo.cpp" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\utility\rect.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl\OGLBlitLoops.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl\OGLBufImgOps.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl\OGLContext.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl\OGLFuncs.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl\OGLMaskBlit.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl\OGLMaskFill.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl\OGLPaints.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl\OGLRenderQueue.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl\OGLRenderer.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl\OGLSurfaceData.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl\OGLTextRenderer.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl\OGLVertexCache.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\opengl\WGLGraphicsConfig.c" />
-        <LibAwtFiles Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\opengl\WGLSurfaceData.c" />
+        <PreprocessorDefinitions Include="UNICODE;_UNICODE" />
+        <LibAwtFile Include="AccelGlyphCache.c" />
+        <LibAwtFile Include="ShaderList.c" />
+        <LibAwtFile Include="CmdIDList.cpp" />
+        <LibAwtFile Include="Hashtable.cpp" />
+        <LibAwtFile Include="GDIHashtable.cpp" />
+        <LibAwtFile Include="Devices.cpp" />
+        <LibAwtFile Include="ObjectList.cpp" />
+        <LibAwtFile Include="GDIBlitLoops.cpp" />
+        <LibAwtFile Include="GDIRenderer.cpp" />
+        <LibAwtFile Include="GDIWindowSurfaceData.cpp" />
+        <LibAwtFile Include="WindowsFlags.cpp" />
+        <LibAwtFile Include="WPrinterJob.cpp" />
+        <LibAwtFile Include="awt_%.cpp" />
+        <LibAwtFile Include="D3DBlitLoops.cpp" />
+        <LibAwtFile Include="D3DBufImgOps.cpp" />
+        <LibAwtFile Include="D3DContext.cpp" />
+        <LibAwtFile Include="D3DGlyphCache.cpp" />
+        <LibAwtFile Include="D3DGraphicsDevice.cpp" />
+        <LibAwtFile Include="D3DMaskBlit.cpp" />
+        <LibAwtFile Include="D3DMaskCache.cpp" />
+        <LibAwtFile Include="D3DMaskFill.cpp" />
+        <LibAwtFile Include="D3DPipelineManager.cpp" />
+        <LibAwtFile Include="D3DPaints.cpp" />
+        <LibAwtFile Include="D3DRenderer.cpp" />
+        <LibAwtFile Include="D3DRenderQueue.cpp" />
+        <LibAwtFile Include="D3DResourceManager.cpp" />
+        <LibAwtFile Include="D3DSurfaceData.cpp" />
+        <LibAwtFile Include="D3DTextRenderer.cpp" />
+        <LibAwtFile Include="D3DVertexCacher.cpp" />
+        <LibAwtFile Include="ShellFolder2.cpp" />
+        <LibAwtFile Include="ThemeReader.cpp" />
+        <LibAwtFile Include="ComCtl32Util.cpp" />
+        <LibAwtFile Include="DllUtil.cpp" />
+        <LibAwtFile Include="initIDs.cpp" />
+        <LibAwtFile Include="MouseInfo.cpp" />
+        <LibAwtFile Include="rect.c" />
+        <LibAwtFile Include="OGLBlitLoops.c" />
+        <LibAwtFile Include="OGLBufImgOps.c" />
+        <LibAwtFile Include="OGLContext.c" />
+        <LibAwtFile Include="OGLFuncs.c" />
+        <LibAwtFile Include="OGLMaskBlit.c" />
+        <LibAwtFile Include="OGLMaskFill.c" />
+        <LibAwtFile Include="OGLPaints.c" />
+        <LibAwtFile Include="OGLRenderQueue.c" />
+        <LibAwtFile Include="OGLRenderer.c" />
+        <LibAwtFile Include="OGLSurfaceData.c" />
+        <LibAwtFile Include="OGLTextRenderer.c" />
+        <LibAwtFile Include="OGLVertexCache.c" />
+        <LibAwtFile Include="WGLGraphicsConfig.c" />
+        <LibAwtFile Include="WGLSurfaceData.c" />
         <PreprocessorDefinitions Include="MLIB_OS64BIT" Condition="$(TargetIdentifier.EndsWith('-x64')) Or $(TargetIdentifier.EndsWith('-arm64'))" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
@@ -189,9 +188,8 @@
         <AdditionalLinkOptions Include="-framework" Value="AudioToolbox" Separator=" " />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <Dependencies Include="kernel32" />
-        <Dependencies Include="user32" />
-        <Dependencies Include="gdi32" />
+        <Dependencies Include="User32" />
+        <Dependencies Include="Gdi32" />
         <Dependencies Include="winspool" />
         <Dependencies Include="imm32" />
         <Dependencies Include="ole32" />
@@ -213,14 +211,65 @@
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <Dependencies Include="m" />
     </ItemGroup>
-    <ItemGroup>
-        <Compile Include="@(LibAwtFiles)">
-            <Language Condition=" '%(Extension)' == '.c' ">c</Language>
-            <LanguageStandard Condition=" '%(Extension)' == '.c' ">c99</LanguageStandard>
-            <Language Condition=" '%(Extension)' == '.cpp' ">c++</Language>
-            <LanguageStandard Condition=" '%(Extension)' == '.cpp' ">c++14</LanguageStandard>
-        </Compile>
-    </ItemGroup>
+
+    <UsingTask TaskName="JoinPathsAndFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+    
+public class JoinPathsAndFiles : Task
+{
+    
+    [Required]
+    public ITaskItem[] Paths { get; set; }
+    
+    [Required]
+    public ITaskItem[] Files { get; set; }
+    
+    [Output]
+    public ITaskItem[] Items { get; set; }
+    
+    public override bool Execute()
+    {
+        var items = new List<ITaskItem>();
+    
+        foreach (var path in Paths)
+            foreach (var file in Files)
+                if (file.ItemSpec.Contains("%"))
+                    foreach (var i in Directory.GetFiles(path.ItemSpec, file.ItemSpec.Replace("%", "*")))
+                        items.Add(new TaskItem(i));
+                else if (File.Exists(Path.Combine(path.ItemSpec, file.ItemSpec)))
+                    items.Add(new TaskItem(Path.Combine(path.ItemSpec, file.ItemSpec)));
+             
+        Items = items.ToArray();
+        return true;
+    }
+    
+}
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GetLibAwtItems">
+        <JoinPathsAndFiles Paths="@(LibAwtDirs)" Files="@(LibAwtFile)">
+            <Output TaskParameter="Items" ItemName="Compile" />
+        </JoinPathsAndFiles>
+    </Target>
+
+    <PropertyGroup>
+        <CompileDependsOn>
+            GetLibAwtItems;
+            $(CompileDependsOn);
+        </CompileDependsOn>
+    </PropertyGroup>
+
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>

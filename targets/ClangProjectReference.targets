@@ -59,23 +59,24 @@
             </_ClangProjectReferencesToTarget>
         </ItemGroup>
         <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier;DesignTimeBuild" />
-        <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="GetClangTargetItem" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier;DesignTimeBuild" RebaseOutputs="true">
+        <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="GetOutputItem" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier;DesignTimeBuild" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" ItemName="_ResolvedClangProjectReferenceTargetOutput" />
         </MSBuild>
         <ItemGroup>
             <_ClangProjectReferenceItems Include="@(_ResolvedClangProjectReferenceTargetOutput)" />
+            <ClangOutputItems Include="@(_ClangProjectReferenceItems->'%(ExecutablePath)')" />
         </ItemGroup>
     </Target>
 
     <Target Name="GetClangProjectReferenceOutputItems" DependsOnTargets="GetClangProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_ClangProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <None Include="@(_ClangProjectReferenceItems)" Condition=" '%(_ClangProjectReferenceItems.TargetIdentifier)' != '' ">
-                <TargetPath>runtimes\%(_ClangProjectReferenceItems.TargetIdentifier)\native\%(_ClangProjectReferenceItems.Filename)%(_ClangProjectReferenceItems.Extension)</TargetPath>
-                <TargetPath Condition=" '$(RuntimeIdentifier)' != '' And '$(RuntimeIdentifier)' == '%(_ClangProjectReferenceItems.TargetIdentifier)' ">%(_ClangProjectReferenceItems.Filename)%(_ClangProjectReferenceItems.Extension)</TargetPath>
+            <None Include="@(ClangOutputItems)" Condition=" '%(ClangOutputItems.TargetIdentifier)' != '' ">
+                <TargetPath>runtimes\%(ClangOutputItems.TargetIdentifier)\native\%(ClangOutputItems.Filename)%(ClangOutputItems.Extension)</TargetPath>
+                <TargetPath Condition=" '$(RuntimeIdentifier)' != '' And '$(RuntimeIdentifier)' == '%(ClangOutputItems.TargetIdentifier)' ">%(ClangOutputItems.Filename)%(ClangOutputItems.Extension)</TargetPath>
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <CopyToOutputDirectory Condition=" '$(RuntimeIdentifier)' != '' And '$(RuntimeIdentifier)' != '%(_ClangProjectReferenceItems.TargetIdentifier)' ">Never</CopyToOutputDirectory>
-                <PackagePath>runtimes\%(_ClangProjectReferenceItems.TargetIdentifier)\native\%(_ClangProjectReferenceItems.Filename)%(_ClangProjectReferenceItems.Extension)</PackagePath>
-                <Pack Condition=" '%(_ClangProjectReferenceItems.Pack)' == '' ">true</Pack>
+                <CopyToOutputDirectory Condition=" '$(RuntimeIdentifier)' != '' And '$(RuntimeIdentifier)' != '%(ClangOutputItems.TargetIdentifier)' ">Never</CopyToOutputDirectory>
+                <PackagePath>runtimes\%(ClangOutputItems.TargetIdentifier)\native\%(ClangOutputItems.Filename)%(ClangOutputItems.Extension)</PackagePath>
+                <Pack Condition=" '%(ClangOutputItems.Pack)' == '' ">true</Pack>
             </None>
         </ItemGroup>
     </Target>
@@ -104,12 +105,12 @@
 
     <Target Name="ResolveClangAdditionalRuntimeNativeAssets" DependsOnTargets="GetClangProjectReferenceItems" BeforeTargets="ResolveBuildDependencyFileExtensions">
         <ItemGroup>
-            <AdditionalRuntimeNativeAssets Include="@(_ClangProjectReferenceItems->'runtimes\%(TargetIdentifier)\native\%(Filename)%(Extension)')" Condition=" '%(_ClangProjectReferenceItems.TargetIdentifier)' != '' ">
-                <LibraryName>%(_ClangProjectReferenceItems.TargetName)</LibraryName>
-                <LibraryVersion>%(_ClangProjectReferenceItems.Version)</LibraryVersion>
+            <AdditionalRuntimeNativeAssets Include="@(ClangOutputItems->'runtimes\%(TargetIdentifier)\native\%(Filename)%(Extension)')" Condition=" '%(ClangOutputItems.TargetIdentifier)' != '' ">
+                <LibraryName>%(ClangOutputItems.TargetName)</LibraryName>
+                <LibraryVersion>%(ClangOutputItems.Version)</LibraryVersion>
                 <LibraryType>project</LibraryType>
-                <LibraryPath>%(_ClangProjectReferenceItems.ProjectName)/%(_ClangProjectReferenceItems.Version)</LibraryPath>
-                <Runtime>%(_ClangProjectReferenceItems.TargetIdentifier)</Runtime>
+                <LibraryPath>%(ClangOutputItems.ProjectName)/%(ClangOutputItems.Version)</LibraryPath>
+                <Runtime>%(ClangOutputItems.TargetIdentifier)</Runtime>
             </AdditionalRuntimeNativeAssets>
         </ItemGroup>
     </Target>

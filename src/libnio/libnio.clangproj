@@ -25,7 +25,7 @@
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
-        <Dependencies Include="Kernel32;Ws2_32;Advapi32;Mswsock" />
+        <Dependencies Include="Ws2_32;Advapi32;Mswsock" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <Dependencies Include="c" />

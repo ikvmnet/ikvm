@@ -34,14 +34,14 @@
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm64'))">
         <PreprocessorDefinitions Include="X_ARCH" Value="X_AARCH64" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="X_PLATFORM" Value="X_WINDOWS" />
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT" Value="TRUE" />
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN" Value="TRUE" />
         <PreprocessorDefinitions Include="USE_PORTS" Value="TRUE" />
         <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS" Value="&quot;jsoundds&quot;" />
 
-        <Dependencies Include="msvcrt;advapi32;winmm" />
+        <Dependencies Include="Advapi32;winmm" />
         
         <!-- LIBJSOUND_SRC_FILES -->
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\com\sun\media\sound\PLATFORM_API_WinOS_MidiIn.cpp" LanguageStandard="c++11" />
@@ -60,11 +60,11 @@
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\PortMixerProvider.c" LanguageStandard="c99" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\PortMixer.c" LanguageStandard="c99" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <PreprocessorDefinitions Include="X_PLATFORM" Value="X_LINUX" />
         <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS" Value="&quot;jsoundalsa&quot;" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <PreprocessorDefinitions Include="X_PLATFORM" Value="X_MACOSX" />
         <PreprocessorDefinitions Include="USE_PORTS" Value="TRUE" />
         <PreprocessorDefinitions Include="USE_DAUDIO" Value="TRUE" />

@@ -7,9 +7,33 @@
     <PropertyGroup>
         <TargetName>jawt</TargetName>
         <OutputType>dll</OutputType>
-        <LanguageStandard>c89</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libawt\libawt.clangproj" />
+        <ProjectReference Include="..\libawt_xawt\libawt_xawt.clangproj" Condition="$(TargetIdentifier.StartsWith('linux-'))" />
+        <ProjectReference Include="..\libawt_lwawt\libawt_lwawt.clangproj" Condition="$(TargetIdentifier.StartsWith('osx-'))" />
+    </ItemGroup>
+    <ItemGroup>
+        
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\windows" />
+        <PreprocessorDirectives Include="UNICODE;_UNICODE" />
+        <Dependencies Include="advapi32" />
+        <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\jawt.cpp" LanguageStandard="c++11" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\jawt.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt" />
+        <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\sun\awt\jawt.m" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />

@@ -7,9 +7,27 @@
     <PropertyGroup>
         <TargetName>lcms</TargetName>
         <OutputType>dll</OutputType>
-        <LanguageStandard>c89</LanguageStandard>
+        <LanguageStandard>c99</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+        <ProjectReference Include="..\libawt\libawt.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\cmm\lcms" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\cmm\lcms\**\*.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <PreprocessorDirectives Include="CMS_IS_WINDOWS_" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <Dependencies Include="m" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <Dependencies Include="m" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />

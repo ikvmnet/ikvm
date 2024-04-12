@@ -17,7 +17,6 @@
         <PreprocessorDefinitions Include="NO_ZLIB;UNPACK_JNI;FULL" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <Dependencies Include="Kernel32" />
         <PreprocessorDefinitions Include="mkdir" Value="_mkdir" />
     </ItemGroup>
     <ItemGroup>

@@ -33,7 +33,7 @@
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_windows" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\windows\vm" />
-        <Dependencies Include="Ws2_32;Kernel32" />
+        <Dependencies Include="Ws2_32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_linux" />

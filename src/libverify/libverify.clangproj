@@ -16,9 +16,6 @@
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\check_code.c" LinkBase="" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\check_format.c" LinkBase="" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <Dependencies Include="Kernel32" />
-    </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>
