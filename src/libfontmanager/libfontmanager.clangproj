@@ -7,9 +7,47 @@
     <PropertyGroup>
         <TargetName>fontmanager</TargetName>
         <OutputType>dll</OutputType>
-        <LanguageStandard>c89</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+        <ProjectReference Include="..\libawt\libawt.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\font" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\font\layout" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\awt\image\cvutils" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
+        <PreprocessorDirectives Include="LE_STANDALONE" />
+        <PreprocessorDirectives Include="HEADLESS" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font\**\*.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font\**\*.cpp" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\font\**\*.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\font\**\*.cpp" />
+        <Compile Remove="$(OpenJdkDir)jdk\src\share\native\sun\font\AccelGlyphCache.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <PreprocessorDirectives Include="CC_NOEX" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\windows" />
+        <Dependencies Include="advapi32" />
+        <Dependencies Include="user32" />
+        <Dependencies Include="gdi32" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <Dependencies Include="c" />
+        <Dependencies Include="m" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <Dependencies Include="m" />
+        <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font\X11TextRenderer.c" />
+        <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font\X11FontScaler.c" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
