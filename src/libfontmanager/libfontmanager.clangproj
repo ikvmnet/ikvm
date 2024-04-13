@@ -36,13 +36,15 @@
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDirectives Include="CC_NOEX" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\windows" />
-        <Dependencies Include="advapi32" />
-        <Dependencies Include="user32" />
-        <Dependencies Include="gdi32" />
+        <Dependencies Include="Advapi32" />
+        <Dependencies Include="User32" />
+        <Dependencies Include="Gdi32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <IncludeDirectories Include="$(LinuxSdkDir)\include\freetype2" />
         <Dependencies Include="c" />
         <Dependencies Include="m" />
+        <Dependencies Include="freetype" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <Dependencies Include="m" />

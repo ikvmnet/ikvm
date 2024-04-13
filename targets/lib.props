@@ -79,40 +79,34 @@
         <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\$(WinSdkDirName)-local\sdk\lib\um\$(WinSdkArch)" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetIdentifier)' == 'linux-x64' ">
-        <SystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-x64" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-x64\include" />
-        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-x64\lib" />
-    </ItemGroup>
+    <PropertyGroup Condition=" '$(TargetIdentifier)' == 'linux-x64' ">
+        <LinuxSdkDir>$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-x64\</LinuxSdkDir>
+    </PropertyGroup>
 
-    <ItemGroup Condition=" '$(TargetIdentifier)' == 'linux-arm64' ">
-        <SystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm64" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm64\include" />
-        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm64\lib" />
-    </ItemGroup>
+    <PropertyGroup Condition=" '$(TargetIdentifier)' == 'linux-arm64' ">
+        <LinuxSdkDir>$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm64\</LinuxSdkDir>
+    </PropertyGroup>
 
-    <ItemGroup Condition=" '$(TargetIdentifier)' == 'linux-arm' ">
-        <SystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm\include" />
-        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm\lib" />
-    </ItemGroup>
+    <PropertyGroup Condition=" '$(TargetIdentifier)' == 'linux-arm' ">
+        <LinuxSdkDir>$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-arm\</LinuxSdkDir>
+    </PropertyGroup>
 
-    <ItemGroup Condition=" '$(TargetIdentifier)' == 'linux-musl-x64' ">
-        <SystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-x64" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-x64\include" />
-        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-x64\lib" />
-    </ItemGroup>
+    <PropertyGroup Condition=" '$(TargetIdentifier)' == 'linux-musl-x64' ">
+        <LinuxSdkDir>$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-x64\</LinuxSdkDir>
+    </PropertyGroup>
 
-    <ItemGroup Condition=" '$(TargetIdentifier)' == 'linux-musl-arm64' ">
-        <SystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm64" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm64\include" />
-        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm64\lib" />
-    </ItemGroup>
+    <PropertyGroup Condition=" '$(TargetIdentifier)' == 'linux-musl-arm64' ">
+        <LinuxSdkDir>$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm64\</LinuxSdkDir>
+    </PropertyGroup>
 
-    <ItemGroup Condition=" '$(TargetIdentifier)' == 'linux-musl-arm' ">
-        <SystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm\include" />
-        <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm\lib" />
+    <PropertyGroup Condition=" '$(TargetIdentifier)' == 'linux-musl-arm' ">
+        <LinuxSdkDir>$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux-musl-arm\</LinuxSdkDir>
+    </PropertyGroup>
+
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <SystemRootDirectories Include="$(LinuxSdkDir)" />
+        <SystemIncludeDirectories Include="$(LinuxSdkDir)\include" />
+        <LibraryDirectories Include="$(LinuxSdkDir)\lib" />
     </ItemGroup>
 
     <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetIdentifier.StartsWith('osx-'))">
