@@ -922,8 +922,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\util\VerifyType.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\util\Wrapper.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\WrapperInstance.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\java2d\**\*.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\java2d\pisces\**\*.java" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' " />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\java2d\**\*.java" PackagePath="sun\java2d" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\launcher\LauncherHelper.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\management\Agent.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\management\AgentConfigurationError.java" />
@@ -1361,7 +1360,6 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' Or '$(IkvmJavaRuntimeIdentifier)' == 'ref' ">
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\java2d\pisces\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\java\swing\plaf\gtk\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\util\**\*.java" PackagePath="java\util" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\krb5\**\*.java" PackagePath="sun\security\krb5" />
