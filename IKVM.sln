@@ -236,6 +236,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "targets", "targets", "{F63A
 		targets\DotNetOSXCodeSign.targets = targets\DotNetOSXCodeSign.targets
 		targets\lib.props = targets\lib.props
 		targets\lib.targets = targets\lib.targets
+		targets\openjdk.buildtools.targets = targets\openjdk.buildtools.targets
 		targets\openjdk.lib.props = targets\openjdk.lib.props
 		targets\openjdk.lib.targets = targets\openjdk.lib.targets
 	EndProjectSection

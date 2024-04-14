@@ -126,7 +126,6 @@
         <LibAwtFile Include="awt_LoadLibrary.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <PreprocessorDefinitions Include="UNICODE;_UNICODE" />
         <LibAwtFile Include="AccelGlyphCache.c" />
         <LibAwtFile Include="ShaderList.c" />
         <LibAwtFile Include="CmdIDList.cpp" />

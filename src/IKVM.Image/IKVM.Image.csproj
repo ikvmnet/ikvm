@@ -43,13 +43,60 @@
         <IkvmImageItem Include="@(OpenJdkImageContent)" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(ImagePath)" />
     </ItemGroup>
 
+    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
     <Import Project="IKVM.Image.pack.targets" />
     <Import Project="buildTransitive\IKVM.Image.targets" />
     <Import Project="..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.NoTasks.targets" />
-    
-    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
+    <Import Project="..\..\targets\openjdk.buildtools.targets" />
 
-    <Target Name="GenerateSecurityPolicy" BeforeTargets="CollectIkvmImageItemsOutputItems">
-        <Message Text="generate sec policy: $(IntermediateOutputPath)" />
+    <!-- IKVM.Java uses the java executable from JAVA_HOME -->
+    <Target Name="ResolveJava" Condition=" '$(JAVA_HOME)' != '' And '$(JavaPath)' == '' ">
+        <PropertyGroup>
+            <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\java') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java'))</JavaPath>
+            <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\java.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java.exe'))</JavaPath>
+            <JavaArgs>-Xmx1536M</JavaArgs>
+            <JavaExec Condition=" '$(JavaPath)' != '' ">"$(JavaPath)" $(JavaArgs)</JavaExec>
+        </PropertyGroup>
+        <Message Text="Using java executable found in JAVA_HOME at '$(JavaPath)'." Importance="high" Condition=" '$(JavaPath)' != '' " />
+        <Error Text="Could not locate java executable in JAVA_HOME. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(JavaPath)' == '' " />
     </Target>
+
+    <!-- IKVM.Java uses the javac executable from JAVA_HOME: bootstrap -->
+    <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
+        <PropertyGroup>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac.exe'))</JavaCompilerPath>
+            <JavaCompilerArgs>-J-Xmx1536M</JavaCompilerArgs>
+            <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
+    </Target>
+
+    <PropertyGroup>
+        <GenData>$(IntermediateOutputPath)gendata\</GenData>
+    </PropertyGroup>
+
+    <Target Name="GenerateSecurityPolicy" DependsOnTargets="OpenJdkBuildTools;ResolveJava" BeforeTargets="CollectIkvmImageItemsOutputItems">
+        <Message Text="GenerateSecurityPolicy" />
+    </Target>
+
+    <!--<Target Name="GenerateFontConfigWindows" DependsOnTargets="OpenJdkBuildTools;ResolveJava" BeforeTargets="CollectIkvmImageItemsOutputItems">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <PropertyGroup>
+            <_FontConfigSrc>$(OpenJdkDir)jdk\src\windows\classes\sun\awt\windows\fontconfig.properties</_FontConfigSrc>
+        </PropertyGroup>
+        
+        <MakeDir Directories="$(GenData)win" />
+        <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compilefontconfig.CompileFontConfig $(_FontConfigSrc) $(GenData)win\fontconfig.bfc" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compilefontconfig.CompileFontConfig $(_FontConfigSrc) $(GenData)win\fontconfig.bfc" />
+
+        <ItemGroup>
+            <FileWrites Include="$(GenData)win\fontconfig.bfc" />
+            <IkvmImageItem Include="$(GenData)win\fontconfig.bfc" RuntimeIdentifier="win" ImagePath="lib\fontconfig.bfc" />
+        </ItemGroup>
+    </Target>-->
+    
 </Project>

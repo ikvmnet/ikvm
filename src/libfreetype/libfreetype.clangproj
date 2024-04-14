@@ -59,7 +59,7 @@
         </Header>
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <PreprocessorDefinitions Include="WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;DLL_EXPORT;_MT;_DLL;_WINDLL" />
+        <PreprocessorDefinitions Include="NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;DLL_EXPORT;_WINDLL" />
         <Compile Include="$(FreeTypeDir)builds\windows\ftdebug.c" />
         <Compile Include="$(FreeTypeDir)builds\windows\ftsystem.c" />
     </ItemGroup>

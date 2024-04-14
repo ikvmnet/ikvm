@@ -8,35 +8,31 @@ namespace IKVM.ConsoleApp
         public class AWTExample1 : Frame
         {
 
-            // initializing using constructor  
             AWTExample1()
             {
-                // creating a button   
-                Button b = new Button("Click Me!!");
+                var t = new TextField("THIS IS TEXT");
+                t.setBounds(30, 30, 80, 30);
+                add(t);
 
-                // setting button position on screen  
+                var b = new Button("1234");
+                b.setLabel("1234");
                 b.setBounds(30, 100, 80, 30);
-
-                // adding button into frame    
                 add(b);
 
-                // frame size 300 width and 300 height    
+                var b2 = new Button("1234");
+                b2.setLabel("1234");
+                b2.setBounds(30, 200, 80, 30);
+                add(b2);
+
                 setSize(300, 300);
-
-                // setting the title of Frame  
                 setTitle("This is our basic AWT example");
-
-                // no layout manager   
                 setLayout(null);
-
-                // now frame will be visible, by default it is not visible    
                 setVisible(true);
             }
 
             public static void Main(string[] args)
             {
-                // creating instance of Frame class   
-                AWTExample1 f = new AWTExample1();
+                new AWTExample1();
             }
 
         }

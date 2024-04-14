@@ -23,8 +23,7 @@
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\windows" />
-        <PreprocessorDirectives Include="UNICODE;_UNICODE" />
-        <Dependencies Include="advapi32" />
+        <Dependencies Include="Advapi32" />
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\jawt.cpp" LanguageStandard="c++11" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
