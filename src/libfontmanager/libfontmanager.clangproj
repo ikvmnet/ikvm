@@ -23,8 +23,8 @@
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
-        <PreprocessorDirectives Include="LE_STANDALONE" />
-        <PreprocessorDirectives Include="HEADLESS" />
+        <PreprocessorDefinitions Include="LE_STANDALONE" />
+        <PreprocessorDefinitions Include="HEADLESS" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font\**\*.c" />
@@ -34,7 +34,10 @@
         <Compile Remove="$(OpenJdkDir)jdk\src\share\native\sun\font\AccelGlyphCache.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <PreprocessorDirectives Include="CC_NOEX" />
+        <ProjectReference Include="..\libfreetype\libfreetype.clangproj" />
+        <PreprocessorDefinitions Include="CC_NOEX" />
+        <PreprocessorDefinitions Include="stricmp" Value="_stricmp" />
+        <PreprocessorDefinitions Include="wcsicmp" Value="_wcsicmp" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\windows" />
         <Dependencies Include="Advapi32" />
         <Dependencies Include="User32" />
@@ -47,6 +50,7 @@
         <Dependencies Include="freetype" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <ProjectReference Include="..\libfreetype\libfreetype.clangproj" />
         <Dependencies Include="m" />
         <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font\X11TextRenderer.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font\X11FontScaler.c" />

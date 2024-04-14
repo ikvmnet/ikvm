@@ -9,3 +9,6 @@
 	ignore = dirty
 	shallow = true
 
+[submodule "ext/freetype"]
+	path = ext/freetype
+	url = https://gitlab.freedesktop.org/freetype/freetype.git

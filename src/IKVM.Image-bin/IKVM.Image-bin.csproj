@@ -33,6 +33,7 @@
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libjpeg\libjpeg.clangproj" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libawt_headless\libawt_headless.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libfontmanager\libfontmanager.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libfreetype\libfreetype.clangproj" SupportedRuntimes="win-x86;win-x64;win-arm64;osx-x64;osx-arm64" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libjawt\libjawt.clangproj" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libawt_lwawt\libawt_lwawt.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
         <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libosxui\libosxui.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
