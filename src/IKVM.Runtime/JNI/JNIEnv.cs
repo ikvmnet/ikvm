@@ -603,7 +603,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception e)
             {
-                JVM.SetPendingException(ikvm.runtime.Util.mapException(e));
+                JVM.SetPendingException(e);
                 return null;
             }
         }
@@ -2391,7 +2391,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                JVM.SetPendingException(ikvm.runtime.Util.mapException(x));
+                JVM.SetPendingException(x);
                 return (void*)IntPtr.Zero;
             }
         }
@@ -2404,7 +2404,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                JVM.SetPendingException(ikvm.runtime.Util.mapException(x));
+                JVM.SetPendingException(x);
                 return 0;
             }
         }

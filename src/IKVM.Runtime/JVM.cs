@@ -168,7 +168,7 @@ namespace IKVM.Runtime
         /// <param name="e"></param>
         internal static void SetPendingException(Exception e)
         {
-            pendingException = ikvm.runtime.Util.mapException(e);
+            pendingException = e != null ? ikvm.runtime.Util.mapException(e) : null;
         }
 
         /// <summary>
