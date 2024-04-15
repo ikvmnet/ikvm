@@ -59,7 +59,6 @@ namespace IKVM.Runtime.JNI
     using jshortArray = System.IntPtr;
     using jsize = System.Int32;
     using jstring = System.IntPtr;
-    using jthrowable = System.IntPtr;
     using jweak = System.IntPtr;
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
@@ -69,8 +68,6 @@ namespace IKVM.Runtime.JNI
     {
 
         internal const string METHOD_PTR_FIELD_PREFIX = "__<jniptr>";
-
-        static readonly MUTF8Encoding MUTF8 = MUTF8Encoding.GetMUTF8(52);
 
         internal const int JNI_OK = 0;
         internal const int JNI_ERR = -1;
@@ -90,269 +87,21 @@ namespace IKVM.Runtime.JNI
         internal const jboolean JNI_TRUE = 1;
         internal const jboolean JNI_FALSE = 0;
 
-        void* vtable;
-        GCHandle managedJNIEnv;
-        GCHandle* pinHandles;
-        int pinHandleMaxCount;
-        int pinHandleInUseCount;
+        static readonly MUTF8Encoding MUTF8 = MUTF8Encoding.GetMUTF8(52);
 
-        internal ManagedJNIEnv GetManagedJNIEnv()
+        internal void* vtable;
+        internal GCHandle context;
+        internal GCHandle* pinHandles;
+        internal int pinHandleMaxCount;
+        internal int pinHandleInUseCount;
+
+        /// <summary>
+        /// Gets the <see cref="JNIEnvContext"/> that tracks JNI information for this environment.
+        /// </summary>
+        /// <returns></returns>
+        internal JNIEnvContext GetContext()
         {
-            return (ManagedJNIEnv)managedJNIEnv.Target;
-        }
-
-        internal sealed class ManagedJNIEnv
-        {
-
-            // NOTE the initial bucket size must be a power of two < LOCAL_REF_MAX_BUCKET_SIZE,
-            // because each time we grow it, we double the size and it must eventually reach
-            // exactly LOCAL_REF_MAX_BUCKET_SIZE
-            const int LOCAL_REF_INITIAL_BUCKET_SIZE = 32;
-            const int LOCAL_REF_SHIFT = 10;
-            const int LOCAL_REF_MAX_BUCKET_SIZE = (1 << LOCAL_REF_SHIFT);
-            const int LOCAL_REF_MASK = (LOCAL_REF_MAX_BUCKET_SIZE - 1);
-
-            internal readonly RuntimeContext context;
-            internal readonly JNIEnv* pJNIEnv;
-            internal RuntimeClassLoader classLoader;
-            internal ikvm.@internal.CallerID callerID;
-
-            object[][] localRefs;
-            int localRefSlot;
-            int localRefIndex;
-            object[] active;
-            internal Exception pendingException;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            internal ManagedJNIEnv(RuntimeContext context)
-            {
-                this.context = context ?? throw new ArgumentNullException(nameof(context));
-
-                pJNIEnv = (JNIEnv*)JNIMemory.Alloc(sizeof(JNIEnv));
-                localRefs = new object[32][];
-                active = localRefs[0] = new object[LOCAL_REF_INITIAL_BUCKET_SIZE];
-                // stuff something in the first entry to make sure we don't hand out a zero handle
-                // (a zero handle corresponds to a null reference)
-                active[0] = "";
-                localRefIndex = 1;
-            }
-
-            ~ManagedJNIEnv()
-            {
-                // NOTE don't clean up when we're being unloaded (we'll get cleaned up anyway and because
-                // of the unorderedness of the finalization process native code could still be run after
-                // we run).
-                // NOTE when we're not the default AppDomain and we're being unloaded,
-                // we're leaking the JNIEnv (but since JNI outside of the default AppDomain isn't currently supported,
-                // I can live with that).
-                if (!Environment.HasShutdownStarted)
-                {
-                    if (pJNIEnv->managedJNIEnv.IsAllocated)
-                        pJNIEnv->managedJNIEnv.Free();
-
-                    for (int i = 0; i < pJNIEnv->pinHandleMaxCount; i++)
-                        if (pJNIEnv->pinHandles[i].IsAllocated)
-                            pJNIEnv->pinHandles[i].Free();
-
-                    JNIMemory.Free((nint)(void*)pJNIEnv);
-                }
-            }
-
-            internal struct FrameState
-            {
-
-                internal readonly ikvm.@internal.CallerID callerID;
-                internal readonly int localRefSlot;
-                internal readonly int localRefIndex;
-
-                internal FrameState(ikvm.@internal.CallerID callerID, int localRefSlot, int localRefIndex)
-                {
-                    this.callerID = callerID;
-                    this.localRefSlot = localRefSlot;
-                    this.localRefIndex = localRefIndex;
-                }
-
-            }
-
-            internal FrameState Enter(ikvm.@internal.CallerID newCallerID)
-            {
-                FrameState prev = new FrameState(callerID, localRefSlot, localRefIndex);
-                this.callerID = newCallerID;
-                localRefSlot++;
-                if (localRefSlot >= localRefs.Length)
-                {
-                    object[][] tmp = new object[localRefs.Length * 2][];
-                    Array.Copy(localRefs, 0, tmp, 0, localRefs.Length);
-                    localRefs = tmp;
-                }
-                localRefIndex = 0;
-                active = localRefs[localRefSlot];
-                if (active == null)
-                {
-                    active = localRefs[localRefSlot] = new object[LOCAL_REF_INITIAL_BUCKET_SIZE];
-                }
-                return prev;
-            }
-
-            internal Exception Leave(FrameState prev)
-            {
-                // on the current (.NET 2.0 SP2) x86 JIT an explicit for loop is faster than Array.Clear() up to about 100 elements
-                for (int i = 0; i < localRefIndex; i++)
-                {
-                    active[i] = null;
-                }
-
-                while (--localRefSlot != prev.localRefSlot)
-                {
-                    if (localRefs[localRefSlot] != null)
-                    {
-                        if (localRefs[localRefSlot].Length == LOCAL_REF_MAX_BUCKET_SIZE)
-                        {
-                            // if the bucket is totally allocated, we're assuming a leaky method so we throw the bucket away
-                            localRefs[localRefSlot] = null;
-                        }
-                        else
-                        {
-                            Array.Clear(localRefs[localRefSlot], 0, localRefs[localRefSlot].Length);
-                        }
-                    }
-                }
-
-                active = localRefs[localRefSlot];
-                this.localRefIndex = prev.localRefIndex;
-                this.callerID = prev.callerID;
-                Exception x = pendingException;
-                pendingException = null;
-                return x;
-            }
-
-            internal jobject MakeLocalRef(object obj)
-            {
-                if (obj == null)
-                {
-                    return IntPtr.Zero;
-                }
-
-                int index;
-                if (localRefIndex == active.Length)
-                {
-                    index = FindFreeIndex();
-                }
-                else
-                {
-                    index = localRefIndex++;
-                }
-                active[index] = obj;
-                return (IntPtr)((localRefSlot << LOCAL_REF_SHIFT) + index);
-            }
-
-            private int FindFreeIndex()
-            {
-                for (int i = 0; i < active.Length; i++)
-                {
-                    if (active[i] == null)
-                    {
-                        while (localRefIndex - 1 > i && active[localRefIndex - 1] == null)
-                        {
-                            localRefIndex--;
-                        }
-                        return i;
-                    }
-                }
-                GrowActiveSlot();
-                return localRefIndex++;
-            }
-
-            private void GrowActiveSlot()
-            {
-                if (active.Length < LOCAL_REF_MAX_BUCKET_SIZE)
-                {
-                    object[] tmp = new object[active.Length * 2];
-                    Array.Copy(active, tmp, active.Length);
-                    active = localRefs[localRefSlot] = tmp;
-                    return;
-                }
-                // if we get here, we're in a native method that most likely is leaking locals refs,
-                // so we're going to allocate a new bucket and increment localRefSlot, this means that
-                // any slots that become available in the previous bucket are not going to be reused,
-                // but since we're assuming that the method is leaking anyway, that isn't a problem
-                // (it's never a correctness issue, just a resource consumption issue)
-                localRefSlot++;
-                localRefIndex = 0;
-                if (localRefSlot == localRefs.Length)
-                {
-                    object[][] tmp = new object[localRefSlot * 2][];
-                    Array.Copy(localRefs, 0, tmp, 0, localRefSlot);
-                    localRefs = tmp;
-                }
-                active = localRefs[localRefSlot];
-                if (active == null)
-                {
-                    active = localRefs[localRefSlot] = new object[LOCAL_REF_MAX_BUCKET_SIZE];
-                }
-            }
-
-            internal object UnwrapLocalRef(nint i)
-            {
-                return localRefs[i >> LOCAL_REF_SHIFT][i & LOCAL_REF_MASK];
-            }
-
-            internal int PushLocalFrame(jint capacity)
-            {
-                localRefSlot += 2;
-                if (localRefSlot >= localRefs.Length)
-                {
-                    object[][] tmp = new object[localRefs.Length * 2][];
-                    Array.Copy(localRefs, 0, tmp, 0, localRefs.Length);
-                    localRefs = tmp;
-                }
-                // we use a null slot to mark the fact that we used PushLocalFrame
-                localRefs[localRefSlot - 1] = null;
-                if (localRefs[localRefSlot] == null)
-                {
-                    // we can't use capacity directly, because the array length must be a power of two
-                    // and it can't be bigger than LOCAL_REF_MAX_BUCKET_SIZE
-                    int r = 1;
-                    capacity = Math.Min(capacity, LOCAL_REF_MAX_BUCKET_SIZE);
-                    while (r < capacity)
-                    {
-                        r *= 2;
-                    }
-                    localRefs[localRefSlot] = new object[r];
-                }
-                localRefIndex = 0;
-                active = localRefs[localRefSlot];
-                return JNI_OK;
-            }
-
-            internal jobject PopLocalFrame(object res)
-            {
-                while (localRefs[localRefSlot] != null)
-                {
-                    localRefs[localRefSlot] = null;
-                    localRefSlot--;
-                }
-                localRefSlot--;
-                localRefIndex = localRefs[localRefSlot].Length;
-                active = localRefs[localRefSlot];
-                return MakeLocalRef(res);
-            }
-
-            internal void DeleteLocalRef(jobject obj)
-            {
-                int i = obj.ToInt32();
-                if (i > 0)
-                {
-                    localRefs[i >> LOCAL_REF_SHIFT][i & LOCAL_REF_MASK] = null;
-                    return;
-                }
-                if (i < 0)
-                {
-                    Debug.Assert(false, "bogus localref in DeleteLocalRef");
-                }
-            }
+            return (JNIEnvContext)context.Target;
         }
 
         /// <summary>
@@ -362,15 +111,14 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         internal static JNIEnv* CreateJNIEnv(RuntimeContext context)
         {
-            var env = new ManagedJNIEnv(context);
-            TlsHack.ManagedJNIEnv = env;
-            var pJNIEnv = env.pJNIEnv;
-            pJNIEnv->vtable = JNINativeInterface.Handle;
-            pJNIEnv->managedJNIEnv = GCHandle.Alloc(env, GCHandleType.WeakTrackResurrection);
-            pJNIEnv->pinHandles = null;
-            pJNIEnv->pinHandleMaxCount = 0;
-            pJNIEnv->pinHandleInUseCount = 0;
-            return pJNIEnv;
+            var env = JNIEnvContext.Current = new JNIEnvContext(context);
+            var jniEnvPtr = env.pJNIEnv;
+            jniEnvPtr->vtable = JNINativeInterface.Handle;
+            jniEnvPtr->context = GCHandle.Alloc(env, GCHandleType.WeakTrackResurrection);
+            jniEnvPtr->pinHandles = null;
+            jniEnvPtr->pinHandleMaxCount = 0;
+            jniEnvPtr->pinHandleInUseCount = 0;
+            return jniEnvPtr;
         }
 
         /// <summary>
@@ -378,13 +126,14 @@ namespace IKVM.Runtime.JNI
         /// </summary>
         internal static void FreeJNIEnv()
         {
-            TlsHack.ManagedJNIEnv = null;
+            JNIEnvContext.Current = null;
         }
 
         /// <summary>
         /// Decodes the NULL terminated modified UTF-8 string pointed to by the given pointer.
         /// </summary>
         /// <param name="psz"></param>
+        /// <param name="arg"></param>
         /// <returns></returns>
         /// <exception cref="java.lang.IllegalArgumentException"></exception>
         internal static string DecodeMUTF8Argument(byte* psz, string arg)
@@ -426,7 +175,7 @@ namespace IKVM.Runtime.JNI
         /// <param name="methodID"></param>
         /// <param name="sig"></param>
         /// <returns></returns>
-        internal static int GetMethodArgs(JNIEnv* pEnv, jmethodID methodID, byte* sig)
+        internal static int GetMethodArgs(JNIEnv* pEnv, nint methodID, byte* sig)
         {
             var args = RuntimeJavaMethod.FromCookie(methodID).GetParameters();
             for (var i = 0; i < args.Length; i++)
@@ -435,12 +184,12 @@ namespace IKVM.Runtime.JNI
             return args.Length;
         }
 
-        internal static jint GetVersion(JNIEnv* pEnv)
+        internal static int GetVersion(JNIEnv* pEnv)
         {
             return JNI_VERSION_1_8;
         }
 
-        internal static jclass DefineClass(JNIEnv* pEnv, byte* name, jobject loader, jbyte* pbuf, jint length)
+        internal static nint DefineClass(JNIEnv* pEnv, byte* name, nint loader, jbyte* pbuf, jint length)
         {
             try
             {
@@ -453,14 +202,14 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception e)
             {
-                SetPendingException(pEnv, e);
+                JVM.SetPendingException(e);
                 return IntPtr.Zero;
             }
         }
 
         static RuntimeClassLoader FindNativeMethodClassLoader(JNIEnv* pEnv)
         {
-            var env = pEnv->GetManagedJNIEnv();
+            var env = pEnv->GetContext();
             if (env.callerID != null)
                 return RuntimeClassLoader.FromCallerID(env.callerID);
             else if (env.classLoader != null)
@@ -469,7 +218,7 @@ namespace IKVM.Runtime.JNI
                 return env.context.ClassLoaderFactory.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
         }
 
-        internal static jclass FindClass(JNIEnv* pEnv, byte* name)
+        internal static nint FindClass(JNIEnv* pEnv, byte* name)
         {
             try
             {
@@ -496,36 +245,36 @@ namespace IKVM.Runtime.JNI
                 if (e is RetargetableJavaException r)
                     e = r.ToJava();
 
-                SetPendingException(pEnv, e);
+                JVM.SetPendingException(e);
                 return IntPtr.Zero;
             }
         }
 
-        internal static jmethodID FromReflectedMethod(JNIEnv* pEnv, jobject method)
+        internal static nint FromReflectedMethod(JNIEnv* pEnv, nint method)
         {
             return RuntimeJavaMethod.FromExecutable((java.lang.reflect.Executable)pEnv->UnwrapRef(method)).Cookie;
         }
 
-        internal static jfieldID FromReflectedField(JNIEnv* pEnv, jobject field)
+        internal static nint FromReflectedField(JNIEnv* pEnv, nint field)
         {
             return RuntimeJavaField.FromField((java.lang.reflect.Field)pEnv->UnwrapRef(field)).Cookie;
         }
 
-        internal static jobject ToReflectedMethod(JNIEnv* pEnv, jclass clazz_ignored, jmethodID method, jboolean isStatic)
+        internal static nint ToReflectedMethod(JNIEnv* pEnv, nint clazz_ignored, nint method, sbyte isStatic)
         {
             return pEnv->MakeLocalRef(RuntimeJavaMethod.FromCookie(method).ToMethodOrConstructor(true));
         }
 
-        internal static jclass GetSuperclass(JNIEnv* pEnv, jclass sub)
+        internal static nint GetSuperclass(JNIEnv* pEnv, nint sub)
         {
-            RuntimeJavaType wrapper = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(sub)).BaseTypeWrapper;
+            var wrapper = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(sub)).BaseTypeWrapper;
             return pEnv->MakeLocalRef(wrapper == null ? null : wrapper.ClassObject);
         }
 
-        internal static jboolean IsAssignableFrom(JNIEnv* pEnv, jclass sub, jclass super)
+        internal static sbyte IsAssignableFrom(JNIEnv* pEnv, nint sub, nint super)
         {
-            RuntimeJavaType w1 = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(sub));
-            RuntimeJavaType w2 = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(super));
+            var w1 = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(sub));
+            var w2 = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(super));
             return w1.IsAssignableTo(w2) ? JNI_TRUE : JNI_FALSE;
         }
 
@@ -534,25 +283,19 @@ namespace IKVM.Runtime.JNI
             return pEnv->MakeLocalRef(RuntimeJavaField.FromCookie(field).ToField(true));
         }
 
-        private static void SetPendingException(JNIEnv* pEnv, Exception x)
+        internal static jint Throw(JNIEnv* pEnv, nint throwable)
         {
-            pEnv->GetManagedJNIEnv().pendingException = ikvm.runtime.Util.mapException(x);
-        }
-
-        internal static jint Throw(JNIEnv* pEnv, jthrowable throwable)
-        {
-            ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
-            Exception x = UnwrapRef(env, throwable) as Exception;
+            var env = pEnv->GetContext();
+            var x = UnwrapRef(env, throwable) as Exception;
             if (x != null)
-            {
-                env.pendingException = x;
-            }
+                JVM.SetPendingException(x);
+
             return JNI_OK;
         }
 
-        internal static jint ThrowNew(JNIEnv* pEnv, jclass clazz, byte* msg)
+        internal static jint ThrowNew(JNIEnv* pEnv, nint clazz, byte* msg)
         {
-            var env = pEnv->GetManagedJNIEnv();
+            var env = pEnv->GetContext();
             var wrapper = RuntimeJavaType.FromClass((java.lang.Class)UnwrapRef(env, clazz));
             var mw = wrapper.GetMethodWrapper("<init>", msg == null ? "()V" : "(Ljava.lang.String;)V", false);
             if (mw != null)
@@ -563,7 +306,7 @@ namespace IKVM.Runtime.JNI
                 try
                 {
                     wrapper.Finish();
-                    java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)mw.ToMethodOrConstructor(false);
+                    var cons = (java.lang.reflect.Constructor)mw.ToMethodOrConstructor(false);
                     exception = (Exception)cons.newInstance(msg == null ? new object[0] : new object[] { DecodeMUTF8Argument(msg, nameof(msg)) }, env.callerID);
                     rc = JNI_OK;
                 }
@@ -578,29 +321,37 @@ namespace IKVM.Runtime.JNI
                     rc = JNI_ERR;
                 }
 
-                SetPendingException(pEnv, exception);
+                JVM.SetPendingException(exception);
                 return rc;
             }
             else
             {
-                SetPendingException(pEnv, new java.lang.NoSuchMethodError("<init>(Ljava.lang.String;)V"));
+                JVM.SetPendingException(new java.lang.NoSuchMethodError("<init>(Ljava.lang.String;)V"));
                 return JNI_ERR;
             }
         }
 
-        internal static jthrowable ExceptionOccurred(JNIEnv* pEnv)
+        /// <summary>
+        /// Implements the JNI 'ExceptionOccurred' function.
+        /// </summary>
+        /// <param name="pEnv"></param>
+        /// <returns></returns>
+        internal static nint ExceptionOccurred(JNIEnv* pEnv)
         {
-            ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
-            return pEnv->MakeLocalRef(env.pendingException);
+            return pEnv->MakeLocalRef(JVM.GetPendingException());
         }
 
+        /// <summary>
+        /// Implements the JNI 'ExceptionDescribe' function.
+        /// </summary>
+        /// <param name="pEnv"></param>
         internal static void ExceptionDescribe(JNIEnv* pEnv)
         {
-            ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
-            Exception x = env.pendingException;
+            var x = JVM.GetPendingException();
             if (x != null)
             {
-                env.pendingException = null;
+                JVM.SetPendingException(null);
+
                 try
                 {
                     ikvm.extensions.ExtensionMethods.printStackTrace(x);
@@ -612,12 +363,20 @@ namespace IKVM.Runtime.JNI
             }
         }
 
+        /// <summary>
+        /// Implements the JNI 'ExceptionClear' function.
+        /// </summary>
+        /// <param name="pEnv"></param>
         internal static void ExceptionClear(JNIEnv* pEnv)
         {
-            var env = pEnv->GetManagedJNIEnv();
-            env.pendingException = null;
+            JVM.SetPendingException(null);
         }
 
+        /// <summary>
+        /// Implements the JNI 'FatalError' function.
+        /// </summary>
+        /// <param name="pEnv"></param>
+        /// <param name="msg"></param>
         internal static void FatalError(JNIEnv* pEnv, byte* msg)
         {
             Console.Error.WriteLine("FATAL ERROR in native method: {0}", msg == null ? "(null)" : DecodeMUTF8Argument(msg, nameof(msg)));
@@ -633,7 +392,7 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         internal static jint PushLocalFrame(JNIEnv* pEnv, jint capacity)
         {
-            return pEnv->GetManagedJNIEnv().PushLocalFrame(capacity);
+            return pEnv->GetContext().PushLocalFrame(capacity);
         }
 
         /// <summary>
@@ -642,9 +401,9 @@ namespace IKVM.Runtime.JNI
         /// <param name="pEnv"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        internal static jobject PopLocalFrame(JNIEnv* pEnv, jobject result)
+        internal static nint PopLocalFrame(JNIEnv* pEnv, nint result)
         {
-            var env = pEnv->GetManagedJNIEnv();
+            var env = pEnv->GetContext();
             return env.PopLocalFrame(UnwrapRef(env, result));
         }
 
@@ -654,10 +413,10 @@ namespace IKVM.Runtime.JNI
         /// <param name="pEnv"></param>
         /// <param name="obj"></param>
         /// <returns></returns>
-        internal static jobject NewGlobalRef(JNIEnv* pEnv, jobject obj)
+        internal static nint NewGlobalRef(JNIEnv* pEnv, nint obj)
         {
             var o = pEnv->UnwrapRef(obj);
-            return o == null ? (jobject)0 : JNIGlobalRefTable.AddGlobalRef(o);
+            return o == null ? 0 : JNIGlobalRefTable.AddGlobalRef(o);
         }
 
         /// <summary>
@@ -665,7 +424,7 @@ namespace IKVM.Runtime.JNI
         /// </summary>
         /// <param name="pEnv"></param>
         /// <param name="obj"></param>
-        internal static void DeleteGlobalRef(JNIEnv* pEnv, jobject obj)
+        internal static void DeleteGlobalRef(JNIEnv* pEnv, nint obj)
         {
             if (IsGlobalRef(obj))
             {
@@ -682,9 +441,9 @@ namespace IKVM.Runtime.JNI
         /// </summary>
         /// <param name="pEnv"></param>
         /// <param name="obj"></param>
-        internal static void DeleteLocalRef(JNIEnv* pEnv, jobject obj)
+        internal static void DeleteLocalRef(JNIEnv* pEnv, nint obj)
         {
-            pEnv->GetManagedJNIEnv().DeleteLocalRef(obj);
+            pEnv->GetContext().DeleteLocalRef(obj);
         }
 
         /// <summary>
@@ -694,7 +453,7 @@ namespace IKVM.Runtime.JNI
         /// <param name="obj1"></param>
         /// <param name="obj2"></param>
         /// <returns></returns>
-        internal static jboolean IsSameObject(JNIEnv* pEnv, jobject obj1, jobject obj2)
+        internal static jboolean IsSameObject(JNIEnv* pEnv, nint obj1, nint obj2)
         {
             return pEnv->UnwrapRef(obj1) == pEnv->UnwrapRef(obj2) ? JNI_TRUE : JNI_FALSE;
         }
@@ -705,7 +464,7 @@ namespace IKVM.Runtime.JNI
         /// <param name="pEnv"></param>
         /// <param name="obj"></param>
         /// <returns></returns>
-        internal static jobject NewLocalRef(JNIEnv* pEnv, jobject obj)
+        internal static nint NewLocalRef(JNIEnv* pEnv, nint obj)
         {
             return pEnv->MakeLocalRef(pEnv->UnwrapRef(obj));
         }
@@ -728,18 +487,18 @@ namespace IKVM.Runtime.JNI
         /// <param name="pEnv"></param>
         /// <param name="clazz"></param>
         /// <returns></returns>
-        internal static jobject AllocObject(JNIEnv* pEnv, jclass clazz)
+        internal static nint AllocObject(JNIEnv* pEnv, nint clazz)
         {
             return AllocObjectImpl(pEnv, RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz)));
         }
 
-        static jobject AllocObjectImpl(JNIEnv* pEnv, RuntimeJavaType wrapper)
+        static nint AllocObjectImpl(JNIEnv* pEnv, RuntimeJavaType wrapper)
         {
             try
             {
                 if (wrapper.IsAbstract)
                 {
-                    SetPendingException(pEnv, new java.lang.InstantiationException(wrapper.Name));
+                    JVM.SetPendingException(new java.lang.InstantiationException(wrapper.Name));
                     return IntPtr.Zero;
                 }
                 wrapper.Finish();
@@ -751,18 +510,18 @@ namespace IKVM.Runtime.JNI
             }
             catch (RetargetableJavaException e)
             {
-                SetPendingException(pEnv, e.ToJava());
+                JVM.SetPendingException(e.ToJava());
                 return IntPtr.Zero;
             }
             catch (Exception e)
             {
-                SetPendingException(pEnv, e);
+                JVM.SetPendingException(e);
                 return IntPtr.Zero;
             }
         }
 
         /// <summary>
-        /// Invokes the given method, by ID, on the given object handle. Accepts a pointer to a <see cref="jvalue"/> array of arguments.
+        /// Invokes the given method, by ID, on the given object handle. Accepts a pointer to a <see cref="JValue"/> array of arguments.
         /// </summary>
         /// <param name="pEnv"></param>
         /// <param name="objHandle"></param>
@@ -770,10 +529,10 @@ namespace IKVM.Runtime.JNI
         /// <param name="pArgs"></param>
         /// <param name="nonVirtual"></param>
         /// <returns></returns>
-        static object InvokeHelper(JNIEnv* pEnv, jobject objHandle, jmethodID methodID, jvalue* pArgs, bool nonVirtual)
+        static object InvokeHelper(JNIEnv* pEnv, nint objHandle, nint methodID, JValue* pArgs, bool nonVirtual)
         {
             // resolve object who's method is being invoked
-            var env = pEnv->GetManagedJNIEnv();
+            var env = pEnv->GetContext();
             var obj = UnwrapRef(env, objHandle);
 
             // resolve the method being invoked on the object
@@ -844,13 +603,13 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception e)
             {
-                SetPendingException(pEnv, ikvm.runtime.Util.mapException(e));
+                JVM.SetPendingException(ikvm.runtime.Util.mapException(e));
                 return null;
             }
         }
 
         /// <summary>
-        /// Invokes the given non-virtual method, by ID, on the given object handle. Accepts a pointer to a <see cref="jvalue"/> array of arguments.
+        /// Invokes the given non-virtual method, by ID, on the given object handle. Accepts a pointer to a <see cref="JValue"/> array of arguments.
         /// </summary>
         /// <param name="env"></param>
         /// <param name="mw"></param>
@@ -858,7 +617,7 @@ namespace IKVM.Runtime.JNI
         /// <param name="argarray"></param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException"></exception>
-        static object InvokeNonVirtual(ManagedJNIEnv env, RuntimeJavaMethod mw, object obj, object[] argarray)
+        static object InvokeNonVirtual(JNIEnvContext env, RuntimeJavaMethod mw, object obj, object[] argarray)
         {
             if (mw.HasCallerID || mw.IsDynamicOnly)
                 throw new NotSupportedException();
@@ -877,7 +636,7 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        public static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
+        public static nint NewObjectA(JNIEnv* pEnv, nint clazz, nint methodID, JValue* args)
         {
             var wrapper = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
             if (wrapper.IsAbstract == false && wrapper.TypeAsBaseType.IsAbstract)
@@ -898,12 +657,12 @@ namespace IKVM.Runtime.JNI
             return obj;
         }
 
-        internal static jclass GetObjectClass(JNIEnv* pEnv, jobject obj)
+        internal static nint GetObjectClass(JNIEnv* pEnv, nint obj)
         {
             return pEnv->MakeLocalRef(IKVM.Java.Externs.ikvm.runtime.Util.getClassFromObject(pEnv->UnwrapRef(obj)));
         }
 
-        internal static jboolean IsInstanceOf(JNIEnv* pEnv, jobject obj, jclass clazz)
+        internal static jboolean IsInstanceOf(JNIEnv* pEnv, nint obj, nint clazz)
         {
             // NOTE if clazz is an interface, this is still the right thing to do
             // (i.e. if the object implements the interface, we return true)
@@ -964,7 +723,7 @@ namespace IKVM.Runtime.JNI
             return null;
         }
 
-        static jmethodID FindMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isStatic)
+        static nint FindMethodID(JNIEnv* pEnv, nint clazz, byte* name, byte* sig, bool isStatic)
         {
             try
             {
@@ -992,31 +751,31 @@ namespace IKVM.Runtime.JNI
                     return mw.Cookie;
                 }
 
-                SetPendingException(pEnv, new java.lang.NoSuchMethodError($"{methodname}{methodsig}"));
+                JVM.SetPendingException(new java.lang.NoSuchMethodError($"{methodname}{methodsig}"));
             }
             catch (RetargetableJavaException e)
             {
-                SetPendingException(pEnv, e.ToJava());
+                JVM.SetPendingException(e.ToJava());
             }
             catch (Exception e)
             {
-                SetPendingException(pEnv, e);
+                JVM.SetPendingException(e);
             }
 
             return IntPtr.Zero;
         }
 
-        internal static jmethodID GetMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
+        internal static nint GetMethodID(JNIEnv* pEnv, nint clazz, byte* name, byte* sig)
         {
             return FindMethodID(pEnv, clazz, name, sig, false);
         }
 
-        internal static jobject CallObjectMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+        internal static nint CallObjectMethodA(JNIEnv* pEnv, nint obj, nint methodID, JValue* args)
         {
             return pEnv->MakeLocalRef(InvokeHelper(pEnv, obj, methodID, args, false));
         }
 
-        internal static jboolean CallBooleanMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+        internal static jboolean CallBooleanMethodA(JNIEnv* pEnv, nint obj, nint methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, obj, methodID, args, false);
             if (o != null)
@@ -1025,7 +784,7 @@ namespace IKVM.Runtime.JNI
             return JNI_FALSE;
         }
 
-        internal static jbyte CallByteMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+        internal static jbyte CallByteMethodA(JNIEnv* pEnv, nint obj, nint methodID, JValue* args)
         {
             object o = InvokeHelper(pEnv, obj, methodID, args, false);
             if (o != null)
@@ -1035,7 +794,7 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static jchar CallCharMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+        internal static jchar CallCharMethodA(JNIEnv* pEnv, nint obj, nint methodID, JValue* args)
         {
             object o = InvokeHelper(pEnv, obj, methodID, args, false);
             if (o != null)
@@ -1045,7 +804,7 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static jshort CallShortMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+        internal static jshort CallShortMethodA(JNIEnv* pEnv, nint obj, nint methodID, JValue* args)
         {
             object o = InvokeHelper(pEnv, obj, methodID, args, false);
             if (o != null)
@@ -1055,7 +814,7 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static jint CallIntMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+        internal static jint CallIntMethodA(JNIEnv* pEnv, nint obj, nint methodID, JValue* args)
         {
             object o = InvokeHelper(pEnv, obj, methodID, args, false);
             if (o != null)
@@ -1065,7 +824,7 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static jlong CallLongMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+        internal static jlong CallLongMethodA(JNIEnv* pEnv, nint obj, nint methodID, JValue* args)
         {
             object o = InvokeHelper(pEnv, obj, methodID, args, false);
             if (o != null)
@@ -1075,7 +834,7 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static jfloat CallFloatMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+        internal static jfloat CallFloatMethodA(JNIEnv* pEnv, nint obj, nint methodID, JValue* args)
         {
             object o = InvokeHelper(pEnv, obj, methodID, args, false);
             if (o != null)
@@ -1085,7 +844,7 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static jdouble CallDoubleMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+        internal static jdouble CallDoubleMethodA(JNIEnv* pEnv, nint obj, nint methodID, JValue* args)
         {
             object o = InvokeHelper(pEnv, obj, methodID, args, false);
             if (o != null)
@@ -1095,17 +854,17 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static void CallVoidMethodA(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args)
+        internal static void CallVoidMethodA(JNIEnv* pEnv, nint obj, nint methodID, JValue* args)
         {
             InvokeHelper(pEnv, obj, methodID, args, false);
         }
 
-        internal static jobject CallNonvirtualObjectMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static nint CallNonvirtualObjectMethodA(JNIEnv* pEnv, nint obj, nint clazz, nint methodID, JValue* args)
         {
             return pEnv->MakeLocalRef(InvokeHelper(pEnv, obj, methodID, args, true));
         }
 
-        internal static jboolean CallNonvirtualBooleanMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jboolean CallNonvirtualBooleanMethodA(JNIEnv* pEnv, nint obj, nint clazz, nint methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, obj, methodID, args, true);
             if (o != null)
@@ -1114,7 +873,7 @@ namespace IKVM.Runtime.JNI
             return JNI_FALSE;
         }
 
-        internal static jbyte CallNonvirtualByteMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jbyte CallNonvirtualByteMethodA(JNIEnv* pEnv, nint obj, nint clazz, nint methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, obj, methodID, args, true);
             if (o != null)
@@ -1123,7 +882,7 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static jchar CallNonvirtualCharMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jchar CallNonvirtualCharMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, obj, methodID, args, true);
             if (o != null)
@@ -1132,7 +891,7 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static jshort CallNonvirtualShortMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jshort CallNonvirtualShortMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, obj, methodID, args, true);
             if (o != null)
@@ -1141,7 +900,7 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static jint CallNonvirtualIntMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jint CallNonvirtualIntMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, obj, methodID, args, true);
             if (o != null)
@@ -1150,7 +909,7 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static jlong CallNonvirtualLongMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jlong CallNonvirtualLongMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, obj, methodID, args, true);
             if (o != null)
@@ -1159,7 +918,7 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static jfloat CallNonvirtualFloatMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jfloat CallNonvirtualFloatMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, obj, methodID, args, true);
             if (o != null)
@@ -1168,7 +927,7 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static jdouble CallNonvirtualDoubleMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jdouble CallNonvirtualDoubleMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, obj, methodID, args, true);
             if (o != null)
@@ -1177,7 +936,7 @@ namespace IKVM.Runtime.JNI
             return 0;
         }
 
-        internal static void CallNonvirtualVoidMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static void CallNonvirtualVoidMethodA(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args)
         {
             InvokeHelper(pEnv, obj, methodID, args, true);
         }
@@ -1215,15 +974,15 @@ namespace IKVM.Runtime.JNI
                             return fw.Cookie;
                 }
 
-                SetPendingException(pEnv, new java.lang.NoSuchFieldError($"{(isStatic ? "Static" : "Instance")} field '{n}' with signature '{s}' not found in class '{tw.Name}'"));
+                JVM.SetPendingException(new java.lang.NoSuchFieldError($"{(isStatic ? "Static" : "Instance")} field '{n}' with signature '{s}' not found in class '{tw.Name}'"));
             }
             catch (RetargetableJavaException x)
             {
-                SetPendingException(pEnv, x.ToJava());
+                JVM.SetPendingException(x.ToJava());
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, x);
+                JVM.SetPendingException(x);
             }
 
             return IntPtr.Zero;
@@ -1406,60 +1165,60 @@ namespace IKVM.Runtime.JNI
             return FindMethodID(pEnv, clazz, name, sig, true);
         }
 
-        internal static jobject CallStaticObjectMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jobject CallStaticObjectMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args)
         {
             return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false));
         }
 
-        internal static jboolean CallStaticBooleanMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jboolean CallStaticBooleanMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
             return o != null ? ((bool)o) ? JNI_TRUE : JNI_FALSE : JNI_FALSE;
         }
 
-        internal static jbyte CallStaticByteMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jbyte CallStaticByteMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
             return o != null ? (jbyte)(byte)o : (sbyte)0;
         }
 
-        internal static jchar CallStaticCharMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jchar CallStaticCharMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
             return o != null ? (jchar)(char)o : (ushort)0;
         }
 
-        internal static jshort CallStaticShortMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jshort CallStaticShortMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
             return o != null ? (jshort)(short)o : (short)0;
         }
 
-        internal static jint CallStaticIntMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jint CallStaticIntMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
             return o != null ? (jint)(int)o : 0;
         }
 
-        internal static jlong CallStaticLongMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jlong CallStaticLongMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
             return o != null ? (jlong)(long)o : 0;
         }
 
-        internal static jfloat CallStaticFloatMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jfloat CallStaticFloatMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
             return o != null ? (jfloat)(float)o : 0;
         }
 
-        internal static jdouble CallStaticDoubleMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
+        internal static jdouble CallStaticDoubleMethodA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args)
         {
             var o = InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
             return o != null ? (jdouble)(double)o : 0;
         }
 
-        internal static void CallStaticVoidMethodA(JNIEnv* pEnv, jclass cls, jmethodID methodID, jvalue* args)
+        internal static void CallStaticVoidMethodA(JNIEnv* pEnv, jclass cls, jmethodID methodID, JValue* args)
         {
             InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false);
         }
@@ -1728,12 +1487,12 @@ namespace IKVM.Runtime.JNI
             }
             catch (ArgumentOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.NegativeArraySizeException());
+                JVM.SetPendingException(new java.lang.NegativeArraySizeException());
                 return IntPtr.Zero;
             }
             catch (Exception e)
             {
-                SetPendingException(pEnv, e);
+                JVM.SetPendingException(e);
                 return IntPtr.Zero;
             }
         }
@@ -1747,7 +1506,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (IndexOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
                 return IntPtr.Zero;
             }
         }
@@ -1761,7 +1520,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (IndexOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -1773,7 +1532,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, x);
+                JVM.SetPendingException(x);
                 return IntPtr.Zero;
             }
         }
@@ -1786,7 +1545,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, x);
+                JVM.SetPendingException(x);
                 return IntPtr.Zero;
             }
         }
@@ -1799,7 +1558,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, x);
+                JVM.SetPendingException(x);
                 return IntPtr.Zero;
             }
         }
@@ -1812,7 +1571,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, x);
+                JVM.SetPendingException(x);
                 return IntPtr.Zero;
             }
         }
@@ -1825,7 +1584,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, x);
+                JVM.SetPendingException(x);
                 return IntPtr.Zero;
             }
         }
@@ -1838,7 +1597,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, x);
+                JVM.SetPendingException(x);
                 return IntPtr.Zero;
             }
         }
@@ -1851,7 +1610,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, x);
+                JVM.SetPendingException(x);
                 return IntPtr.Zero;
             }
         }
@@ -1864,7 +1623,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, x);
+                JVM.SetPendingException(x);
                 return IntPtr.Zero;
             }
         }
@@ -2090,7 +1849,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (IndexOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2107,7 +1866,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (IndexOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2120,7 +1879,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (ArgumentOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2133,7 +1892,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (ArgumentOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2146,7 +1905,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (ArgumentOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2159,7 +1918,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (ArgumentOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2172,7 +1931,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (ArgumentOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2185,7 +1944,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (ArgumentOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2202,7 +1961,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (IndexOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2219,7 +1978,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (IndexOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2232,7 +1991,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (ArgumentOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2245,7 +2004,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (ArgumentOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2258,7 +2017,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (ArgumentOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2271,7 +2030,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (ArgumentOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2284,7 +2043,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (ArgumentOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2297,7 +2056,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (ArgumentOutOfRangeException)
             {
-                SetPendingException(pEnv, new java.lang.ArrayIndexOutOfBoundsException());
+                JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
             }
         }
 
@@ -2339,12 +2098,12 @@ namespace IKVM.Runtime.JNI
             }
             catch (RetargetableJavaException e)
             {
-                SetPendingException(pEnv, e.ToJava());
+                JVM.SetPendingException(e.ToJava());
                 return JNI_ERR;
             }
             catch (Exception e)
             {
-                SetPendingException(pEnv, e);
+                JVM.SetPendingException(e);
                 return JNI_ERR;
             }
         }
@@ -2369,12 +2128,12 @@ namespace IKVM.Runtime.JNI
             }
             catch (RetargetableJavaException x)
             {
-                SetPendingException(pEnv, x.ToJava());
+                JVM.SetPendingException(x.ToJava());
                 return JNI_ERR;
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, x);
+                JVM.SetPendingException(x);
                 return JNI_ERR;
             }
         }
@@ -2392,7 +2151,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, x);
+                JVM.SetPendingException(x);
                 return JNI_ERR;
             }
         }
@@ -2406,7 +2165,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, x);
+                JVM.SetPendingException(x);
                 return JNI_ERR;
             }
         }
@@ -2424,7 +2183,7 @@ namespace IKVM.Runtime.JNI
             {
                 if (start < 0 || start > s.Length || s.Length - start < len)
                 {
-                    SetPendingException(pEnv, new java.lang.StringIndexOutOfBoundsException());
+                    JVM.SetPendingException(new java.lang.StringIndexOutOfBoundsException());
                     return;
                 }
                 else
@@ -2440,7 +2199,7 @@ namespace IKVM.Runtime.JNI
             }
             else
             {
-                SetPendingException(pEnv, new java.lang.NullPointerException());
+                JVM.SetPendingException(new java.lang.NullPointerException());
             }
         }
 
@@ -2451,7 +2210,7 @@ namespace IKVM.Runtime.JNI
             {
                 if (start < 0 || start > s.Length || s.Length - start < len)
                 {
-                    SetPendingException(pEnv, new java.lang.StringIndexOutOfBoundsException());
+                    JVM.SetPendingException(new java.lang.StringIndexOutOfBoundsException());
                     return;
                 }
                 else
@@ -2481,7 +2240,7 @@ namespace IKVM.Runtime.JNI
             }
             else
             {
-                SetPendingException(pEnv, new java.lang.NullPointerException());
+                JVM.SetPendingException(new java.lang.NullPointerException());
             }
         }
 
@@ -2591,10 +2350,14 @@ namespace IKVM.Runtime.JNI
                 Debug.Assert(false, "Local ref passed to DeleteWeakGlobalRef");
         }
 
+        /// <summary>
+        /// Implements the JNI 'ExceptionCheck' function.
+        /// </summary>
+        /// <param name="pEnv"></param>
+        /// <returns></returns>
         internal static jboolean ExceptionCheck(JNIEnv* pEnv)
         {
-            ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
-            return env.pendingException != null ? JNI_TRUE : JNI_FALSE;
+            return JVM.GetPendingException() != null ? JNI_TRUE : JNI_FALSE;
         }
 
         internal static jobject NewDirectByteBuffer(JNIEnv* pEnv, IntPtr address, jlong capacity)
@@ -2606,7 +2369,7 @@ namespace IKVM.Runtime.JNI
             {
                 if (capacity < 0 || capacity > int.MaxValue)
                 {
-                    SetPendingException(pEnv, new java.lang.IllegalArgumentException("capacity"));
+                    JVM.SetPendingException(new java.lang.IllegalArgumentException("capacity"));
                     return IntPtr.Zero;
                 }
 
@@ -2614,7 +2377,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
+                JVM.SetPendingException(x);
                 return IntPtr.Zero;
             }
 #endif
@@ -2628,7 +2391,7 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
+                JVM.SetPendingException(ikvm.runtime.Util.mapException(x));
                 return (void*)IntPtr.Zero;
             }
         }
@@ -2641,44 +2404,44 @@ namespace IKVM.Runtime.JNI
             }
             catch (Exception x)
             {
-                SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
+                JVM.SetPendingException(ikvm.runtime.Util.mapException(x));
                 return 0;
             }
         }
 
-        internal static jobjectRefType GetObjectRefType(JNIEnv* pEnv, jobject obj)
+        internal static JObjectRefType GetObjectRefType(JNIEnv* pEnv, jobject obj)
         {
             int i = obj.ToInt32();
             if (i >= 0)
             {
-                return jobjectRefType.JNILocalRefType;
+                return JObjectRefType.JNILocalRefType;
             }
             i = -i;
             if ((i & (1 << 30)) != 0)
             {
-                return jobjectRefType.JNIWeakGlobalRefType;
+                return JObjectRefType.JNIWeakGlobalRefType;
             }
             else
             {
-                return jobjectRefType.JNIGlobalRefType;
+                return JObjectRefType.JNIGlobalRefType;
             }
         }
 
         internal nint MakeLocalRef(object obj)
         {
-            return GetManagedJNIEnv().MakeLocalRef(obj);
+            return GetContext().MakeLocalRef(obj);
         }
 
         internal object UnwrapRef(nint o)
         {
             if (IsLocalRef(o))
-                return GetManagedJNIEnv().UnwrapLocalRef(o);
+                return GetContext().UnwrapLocalRef(o);
             else if (IsGlobalRef(o))
                 return JNIGlobalRefTable.Unwrap(o);
             return null;
         }
 
-        internal static object UnwrapRef(ManagedJNIEnv env, nint o)
+        internal static object UnwrapRef(JNIEnvContext env, nint o)
         {
             if (IsLocalRef(o))
                 return env.UnwrapLocalRef(o);

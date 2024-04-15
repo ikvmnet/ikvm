@@ -84,7 +84,7 @@ namespace IKVM.Runtime
             this.flags = flags;
         }
 
-        internal IntPtr Cookie
+        internal nint Cookie
         {
             get
             {
@@ -96,7 +96,7 @@ namespace IKVM.Runtime
         }
 
         [System.Security.SecurityCritical]
-        internal static RuntimeJavaMember FromCookieImpl(IntPtr cookie)
+        internal static RuntimeJavaMember FromCookieImpl(nint cookie)
         {
             return (RuntimeJavaMember)GCHandle.FromIntPtr(cookie).Target;
         }

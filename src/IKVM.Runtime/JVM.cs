@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Security;
 using System.Text;
 using System.Threading;
@@ -147,6 +148,43 @@ namespace IKVM.Runtime
         /// </summary>
         internal static object MainThreadGroup => Internal.mainThreadGroup.Value;
 
+        /// <summary>
+        /// Thread-local storage of queued exception to be thrown.
+        /// </summary>
+        [ThreadStatic]
+        static Exception pendingException;
+
+        /// <summary>
+        /// Gets the currently pending exception for the current thread.
+        /// </summary>
+        internal static Exception GetPendingException()
+        {
+            return pendingException;
+        }
+
+        /// <summary>
+        /// Sets the pending exception for the current thread.
+        /// </summary>
+        /// <param name="e"></param>
+        internal static void SetPendingException(Exception e)
+        {
+            pendingException = ikvm.runtime.Util.mapException(e);
+        }
+
+        /// <summary>
+        /// Throws a pending exception for the current thread.
+        /// </summary>
+        internal static void ThrowPendingException()
+        {
+            var e = GetPendingException();
+            if (e is not null)
+            {
+                pendingException = null;
+                ExceptionDispatchInfo.Capture(e).Throw();
+                throw null;
+            }
+        }
+
 #endif
 
         /// <summary>
@@ -189,6 +227,7 @@ namespace IKVM.Runtime
                     sb.Append(string.Format("{0:X4}", (int)c));
                 }
             }
+
             return sb.ToString();
         }
 
