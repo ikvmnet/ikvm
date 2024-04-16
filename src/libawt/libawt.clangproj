@@ -115,6 +115,9 @@
         <PreprocessorDefinitions Include="__MEDIALIB_OLD_NAMES" />
         <PreprocessorDefinitions Include="__USE_J2D_NAMES" />
         <PreprocessorDefinitions Include="MLIB_NO_LIBSUNMATH" />
+        <AdditionalCompileOptions Include="-Wno-extra-tokens" />
+        <AdditionalCompileOptions Include="-Wno-deprecated-declarations" />
+        <AdditionalCompileOptions Include="-Wno-ignored-pragmas" />
         <IncludeDirectories Include="@(LibAwtDirs)" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
@@ -177,11 +180,12 @@
         <LibAwtFile Include="WGLGraphicsConfig.c" />
         <LibAwtFile Include="WGLSurfaceData.c" />
         <PreprocessorDefinitions Include="MLIB_OS64BIT" Condition="$(TargetIdentifier.EndsWith('-x64')) Or $(TargetIdentifier.EndsWith('-arm64'))" />
+        <AdditionalCompileOptions Include="-Wno-microsoft-goto" />
+        <AdditionalCompileOptions Include="-Wmicrosoft-extra-qualification" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="OpenGL" Separator=" " />
-        <!--<AdditionalLinkOptions Include="-framework" Value="JavaNativeFoundation" Separator=" " />-->
         <AdditionalLinkOptions Include="-framework" Value="JavaRuntimeSupport" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="ApplicationServices" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="AudioToolbox" Separator=" " />
