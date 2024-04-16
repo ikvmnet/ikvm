@@ -44,8 +44,8 @@
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_bsd" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\bsd\vm" />
         <Dependencies Include="c" />
-        <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path/." />
-        <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path/.." />
+        <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f." />
+        <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f.." />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="**\*.c" LanguageStandard="c99" />
@@ -55,7 +55,7 @@
         <Header Include="$(OpenJdkDir)jdk\src\share\javavm\export\**\*.h">
             <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
         </Header>
-        <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\javavm\export\**\*.h" Condition=" '$(TargetIdentifier.StartsWith(&quot;osx-&quot;))' == 'false' ">
+        <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\javavm\export\**\*.h" Condition="!$(TargetIdentifier.StartsWith('osx-'))">
             <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
         </Header>
         <Header Include="$(OpenJdkDir)jdk\src\macosx\javavm\export\**\*.h" Condition="$(TargetIdentifier.StartsWith('osx-'))">

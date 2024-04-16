@@ -7,10 +7,122 @@
     <PropertyGroup>
         <TargetName>awt_headless</TargetName>
         <OutputType>dll</OutputType>
-        <LanguageStandard>c89</LanguageStandard>
+        <TargetIdentifiers>linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+        <ProjectReference Include="..\libawt\libawt.clangproj" />
     </ItemGroup>
+    <ItemGroup>
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\font" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\solaris\native\sun\font" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\solaris\native\sun\java2d\opengl" />
+        <LibAwtDirs Include="$(OpenJdkDir)jdk\src\solaris\native\sun\java2d\x11" />
+        <PreprocessorDefinitions Include="HEADLESS" Value="true" />
+    </ItemGroup>
+    <ItemGroup>
+        <LibAwtFile Include="awt_Font.c" />
+        <LibAwtFile Include="HeadlessToolkit.c" />
+        <LibAwtFile Include="fontpath.c" />
+        <LibAwtFile Include="VDrawingArea.c" />
+        <LibAwtFile Include="X11Color.c" />
+        <LibAwtFile Include="X11Renderer.c" />
+        <LibAwtFile Include="X11PMBlitLoops.c" />
+        <LibAwtFile Include="X11SurfaceData.c" />
+        <LibAwtFile Include="X11FontScaler_md.c" />
+        <LibAwtFile Include="X11TextRenderer_md.c" />
+        <LibAwtFile Include="OGLBlitLoops.c" />
+        <LibAwtFile Include="OGLBufImgOps.c" />
+        <LibAwtFile Include="OGLContext.c" />
+        <LibAwtFile Include="OGLFuncs.c" />
+        <LibAwtFile Include="OGLMaskBlit.c" />
+        <LibAwtFile Include="OGLMaskFill.c" />
+        <LibAwtFile Include="OGLPaints.c" />
+        <LibAwtFile Include="OGLRenderQueue.c" />
+        <LibAwtFile Include="OGLRenderer.c" />
+        <LibAwtFile Include="OGLSurfaceData.c" />
+        <LibAwtFile Include="OGLTextRenderer.c" />
+        <LibAwtFile Include="OGLVertexCache.c" />
+        <LibAwtFile Include="GLXGraphicsConfig.c" />
+        <LibAwtFile Include="GLXSurfaceData.c" />
+        <LibAwtFile Include="AccelGlyphCache.c" />
+        <LibAwtFile Include="CUPSfuncs.c" />
+    </ItemGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\jdga" />
+        <IncludeDirectories Include="@(LibAwtDirs)" />
+        <Dependencies Include="dl" />
+        <Dependencies Include="m" />
+    </ItemGroup>
+
+    <UsingTask TaskName="JoinPathsAndFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+    
+public class JoinPathsAndFiles : Task
+{
+    
+    [Required]
+    public ITaskItem[] Paths { get; set; }
+    
+    [Required]
+    public ITaskItem[] Files { get; set; }
+    
+    [Output]
+    public ITaskItem[] Items { get; set; }
+    
+    public override bool Execute()
+    {
+        var items = new List<ITaskItem>();
+    
+        foreach (var path in Paths)
+            foreach (var file in Files)
+                if (file.ItemSpec.Contains("%"))
+                    foreach (var i in Directory.GetFiles(path.ItemSpec, file.ItemSpec.Replace("%", "*")))
+                        items.Add(new TaskItem(i));
+                else if (File.Exists(Path.Combine(path.ItemSpec, file.ItemSpec)))
+                    items.Add(new TaskItem(Path.Combine(path.ItemSpec, file.ItemSpec)));
+             
+        Items = items.ToArray();
+        return true;
+    }
+    
+}
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GetLibAwtItems">
+        <JoinPathsAndFiles Paths="@(LibAwtDirs)" Files="@(LibAwtFile)">
+            <Output TaskParameter="Items" ItemName="Compile" />
+        </JoinPathsAndFiles>
+    </Target>
+
+    <PropertyGroup>
+        <CompileDependsOn>
+            GetLibAwtItems;
+            $(CompileDependsOn);
+        </CompileDependsOn>
+    </PropertyGroup>
+
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>

@@ -189,12 +189,12 @@ size_t os_lasterror(char* buf, size_t len) {
 
     if ((errval = GetLastError()) != 0) {
         // DOS error
-        size_t n = (size_t)FormatMessage(
+        size_t n = (size_t)::FormatMessage(
             FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
             NULL,
             errval,
             0,
-            buf,
+            (LPWSTR)buf,
             (DWORD)len,
             NULL);
         if (n > 3) {
@@ -871,7 +871,7 @@ int JNICALL JVM_GetHostName(char* name, int namelen)
 #ifdef WIN32
 void* os_dll_load(const char* filename, char* ebuf, int ebuflen)
 {
-    void* result = ::LoadLibraryEx(filename, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+    void* result = ::LoadLibraryEx((LPCWSTR)filename, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     if (result != NULL) {
         return result;
     }
