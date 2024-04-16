@@ -46,7 +46,6 @@ namespace IKVM.Runtime
         public static readonly LibJvm Instance = new();
 
         readonly ikvm.@internal.CallerID callerID = ikvm.@internal.CallerID.create(typeof(LibJvm).TypeHandle);
-        readonly ThreadLocal<Exception> pendingException = new();
 
         readonly Set_JNI_GetDefaultJavaVMInitArgsDelegate _Set_JNI_GetDefaultJavaVMInitArgs;
         readonly Set_JNI_GetCreatedJavaVMsDelegate _Set_JNI_GetCreatedJavaVMs;
@@ -110,28 +109,6 @@ namespace IKVM.Runtime
         public void Set_IKVM_ThrowException(IKVM_ThrowExceptionFunc func) => _Set_IKVM_ThrowException(func);
 
         /// <summary>
-        /// Sets the pending exception.
-        /// </summary>
-        /// <param name="e"></param>
-        void SetPendingException(Exception e)
-        {
-            pendingException.Value = e;
-        }
-
-        /// <summary>
-        /// Throws an pending exception.
-        /// </summary>
-        void ThrowPendingException()
-        {
-            var e = pendingException.IsValueCreated ? pendingException.Value : null;
-            if (e is not null)
-            {
-                pendingException.Value = null;
-                throw e;
-            }
-        }
-
-        /// <summary>
         /// Invoked by the native code to register an exception to be thrown.
         /// </summary>
         /// <param name="name"></param>
@@ -169,12 +146,12 @@ namespace IKVM.Runtime
                 var ctorMember = (java.lang.reflect.Constructor)ctor.ToMethodOrConstructor(false);
                 var exception = (Exception)ctorMember.newInstance(msg == null ? Array.Empty<object>() : new object[] { msg }, callerID);
                 Tracer.Verbose(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(IKVM_ThrowException)}: Created exception {{0}} from libjvm.", name);
-                SetPendingException(exception);
+                JVM.SetPendingException(exception);
             }
             catch (Exception e)
             {
                 Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(IKVM_ThrowException)}: Exception occurred creating exception {{0}}: {{1}}", name, e.Message);
-                SetPendingException(e);
+                JVM.SetPendingException(e);
             }
         }
 
@@ -194,7 +171,7 @@ namespace IKVM.Runtime
             }
             finally
             {
-                ThrowPendingException();
+                JVM.ThrowPendingException();
             }
         }
 
@@ -212,7 +189,7 @@ namespace IKVM.Runtime
             }
             finally
             {
-                ThrowPendingException();
+                JVM.ThrowPendingException();
             }
         }
 
@@ -233,7 +210,7 @@ namespace IKVM.Runtime
             }
             finally
             {
-                ThrowPendingException();
+                JVM.ThrowPendingException();
             }
         }
 

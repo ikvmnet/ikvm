@@ -1,6 +1,3 @@
-// This file was forked for IKVM, due to the 'return false' implicit conversion being broken on C++11, and MSCRT requiring C++11.
-
-
 /*
  * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -295,7 +292,7 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_getUnusedInput(JNIEnv *env, jobject
 
   if (uPtr->aborting()) {
     THROW_IOE(uPtr->get_abort_message());
-    return null;
+    return NULL;
   }
 
   // We have fetched all the files.
@@ -313,7 +310,7 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_getUnusedInput(JNIEnv *env, jobject
 JNIEXPORT jlong JNICALL
 Java_com_sun_java_util_jar_pack_NativeUnpack_finish(JNIEnv *env, jobject pObj) {
   unpacker* uPtr = get_unpacker(env, pObj, false);
-  CHECK_EXCEPTION_RETURN_VALUE(uPtr, NULL);
+  CHECK_EXCEPTION_RETURN_VALUE(uPtr, 0);
   size_t consumed = uPtr->input_consumed();
   free_unpacker(env, pObj, uPtr);
   return consumed;

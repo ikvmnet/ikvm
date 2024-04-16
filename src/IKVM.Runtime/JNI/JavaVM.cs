@@ -119,7 +119,7 @@ namespace IKVM.Runtime.JNI
                 }
             }
 
-            var env = TlsHack.ManagedJNIEnv;
+            var env = JNIEnvContext.Current;
             if (env != null)
             {
                 *penv = env.pJNIEnv;
@@ -163,7 +163,7 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         internal static jint DetachCurrentThread(JavaVM* pJVM)
         {
-            if (TlsHack.ManagedJNIEnv == null)
+            if (JNIEnvContext.Current == null)
             {
                 // the JDK allows detaching from an already detached thread
                 return JNIEnv.JNI_OK;
@@ -179,7 +179,7 @@ namespace IKVM.Runtime.JNI
         {
             if (JNIVM.IsSupportedJNIVersion(version))
             {
-                var env = TlsHack.ManagedJNIEnv;
+                var env = JNIEnvContext.Current;
                 if (env != null)
                 {
                     *penv = env.pJNIEnv;

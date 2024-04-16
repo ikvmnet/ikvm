@@ -116,34 +116,34 @@ namespace IKVM.Runtime.JNI
         delegate jint EnsureLocalCapacityDelegateType(JNIEnv* pEnv, jint capacity);
 
         delegate jobject AllocObjectDelegateType(JNIEnv* pEnv, jclass clazz);
-        delegate jobject NewObjectADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args);
+        delegate jobject NewObjectADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args);
 
         delegate jclass GetObjectClassDelegateType(JNIEnv* pEnv, jobject obj);
         delegate jboolean IsInstanceOfDelegateType(JNIEnv* pEnv, jobject obj, jclass clazz);
 
         delegate jmethodID GetMethodIDDelegateType(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig);
 
-        delegate jobject CallObjectMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args);
-        delegate jboolean CallBooleanMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args);
-        delegate jbyte CallByteMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args);
-        delegate jchar CallCharMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args);
-        delegate jshort CallShortMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args);
-        delegate jint CallIntMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args);
-        delegate jlong CallLongMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args);
-        delegate jfloat CallFloatMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args);
-        delegate jdouble CallDoubleMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args);
-        delegate void CallVoidMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, jvalue* args);
+        delegate jobject CallObjectMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, JValue* args);
+        delegate jboolean CallBooleanMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, JValue* args);
+        delegate jbyte CallByteMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, JValue* args);
+        delegate jchar CallCharMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, JValue* args);
+        delegate jshort CallShortMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, JValue* args);
+        delegate jint CallIntMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, JValue* args);
+        delegate jlong CallLongMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, JValue* args);
+        delegate jfloat CallFloatMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, JValue* args);
+        delegate jdouble CallDoubleMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, JValue* args);
+        delegate void CallVoidMethodADelegateType(JNIEnv* pEnv, jobject obj, jmethodID methodID, JValue* args);
 
-        delegate jobject CallNonvirtualObjectMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jboolean CallNonvirtualBooleanMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jbyte CallNonvirtualByteMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jchar CallNonvirtualCharMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jshort CallNonvirtualShortMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jint CallNonvirtualIntMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jlong CallNonvirtualLongMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jfloat CallNonvirtualFloatMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jdouble CallNonvirtualDoubleMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate void CallNonvirtualVoidMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, jvalue* args);
+        delegate jobject CallNonvirtualObjectMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jboolean CallNonvirtualBooleanMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jbyte CallNonvirtualByteMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jchar CallNonvirtualCharMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jshort CallNonvirtualShortMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jint CallNonvirtualIntMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jlong CallNonvirtualLongMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jfloat CallNonvirtualFloatMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jdouble CallNonvirtualDoubleMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args);
+        delegate void CallNonvirtualVoidMethodADelegateType(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, JValue* args);
 
         delegate jfieldID GetFieldIDDelegateType(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig);
 
@@ -169,16 +169,16 @@ namespace IKVM.Runtime.JNI
 
         delegate jmethodID GetStaticMethodIDDelegateType(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig);
 
-        delegate jobject CallStaticObjectMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jboolean CallStaticBooleanMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jbyte CallStaticByteMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jchar CallStaticCharMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jshort CallStaticShortMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jint CallStaticIntMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jlong CallStaticLongMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jfloat CallStaticFloatMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate jdouble CallStaticDoubleMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args);
-        delegate void CallStaticVoidMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args);
+        delegate jobject CallStaticObjectMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jboolean CallStaticBooleanMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jbyte CallStaticByteMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jchar CallStaticCharMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jshort CallStaticShortMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jint CallStaticIntMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jlong CallStaticLongMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jfloat CallStaticFloatMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args);
+        delegate jdouble CallStaticDoubleMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args);
+        delegate void CallStaticVoidMethodADelegateType(JNIEnv* pEnv, jclass clazz, jmethodID methodID, JValue* args);
 
         delegate jfieldID GetStaticFieldIDDelegateType(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig);
 
@@ -289,7 +289,7 @@ namespace IKVM.Runtime.JNI
         delegate void* GetDirectBufferAddressDelegateType(JNIEnv* pEnv, jobject buf);
         delegate jlong GetDirectBufferCapacityDelegateType(JNIEnv* pEnv, jobject buf);
 
-        delegate jobjectRefType GetObjectRefTypeDelegateType(JNIEnv* pEnv, jobject obj);
+        delegate JObjectRefType GetObjectRefTypeDelegateType(JNIEnv* pEnv, jobject obj);
 
         #endregion
 
@@ -573,7 +573,7 @@ namespace IKVM.Runtime.JNI
 
             Handle->AllocObject = (void*)Marshal.GetFunctionPointerForDelegate(AllocObjectDelegate);
             Handle->NewObject = (void*)GetLibJvmFunctionHandle("__JNI_NewObject");
-            Handle->NewObjectV = (void*)GetLibJvmFunctionHandle("__JNI_NewObjectV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->NewObjectV = (void*)GetLibJvmFunctionHandle("__JNI_NewObjectV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->NewObjectA = (void*)Marshal.GetFunctionPointerForDelegate(NewObjectADelegate);
 
             Handle->GetObjectClass = (void*)Marshal.GetFunctionPointerForDelegate(GetObjectClassDelegate);
@@ -582,83 +582,83 @@ namespace IKVM.Runtime.JNI
             Handle->GetMethodID = (void*)Marshal.GetFunctionPointerForDelegate(GetMethodIDDelegate);
 
             Handle->CallObjectMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallObjectMethod");
-            Handle->CallObjectMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallObjectMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallObjectMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallObjectMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallObjectMethodADelegate);
 
             Handle->CallBooleanMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallBooleanMethod");
-            Handle->CallBooleanMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallBooleanMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallBooleanMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallBooleanMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallBooleanMethodADelegate);
 
             Handle->CallByteMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallByteMethod");
-            Handle->CallByteMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallByteMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallByteMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallByteMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallByteMethodADelegate);
 
             Handle->CallCharMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallCharMethod");
-            Handle->CallCharMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallCharMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallCharMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallCharMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallCharMethodADelegate);
 
             Handle->CallShortMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallShortMethod");
-            Handle->CallShortMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallShortMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallShortMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallShortMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallShortMethodADelegate);
 
             Handle->CallIntMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallIntMethod");
-            Handle->CallIntMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallIntMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallIntMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallIntMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallIntMethodADelegate);
 
             Handle->CallLongMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallLongMethod");
-            Handle->CallLongMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallLongMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallLongMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallLongMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallLongMethodADelegate);
 
             Handle->CallFloatMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallFloatMethod");
-            Handle->CallFloatMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallFloatMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallFloatMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallFloatMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallFloatMethodADelegate);
 
             Handle->CallDoubleMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallDoubleMethod");
-            Handle->CallDoubleMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallDoubleMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallDoubleMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallDoubleMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallDoubleMethodADelegate);
 
             Handle->CallVoidMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallVoidMethod");
-            Handle->CallVoidMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallVoidMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallVoidMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallVoidMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallVoidMethodADelegate);
 
             Handle->CallNonvirtualObjectMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualObjectMethod");
-            Handle->CallNonvirtualObjectMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualObjectMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualObjectMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualObjectMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallNonvirtualObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualObjectMethodADelegate);
 
             Handle->CallNonvirtualBooleanMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualBooleanMethod");
-            Handle->CallNonvirtualBooleanMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualBooleanMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualBooleanMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualBooleanMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallNonvirtualBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualBooleanMethodADelegate);
 
             Handle->CallNonvirtualByteMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualByteMethod");
-            Handle->CallNonvirtualByteMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualByteMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualByteMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualByteMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallNonvirtualByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualByteMethodADelegate);
 
             Handle->CallNonvirtualCharMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualCharMethod");
-            Handle->CallNonvirtualCharMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualCharMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualCharMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualCharMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallNonvirtualCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualCharMethodADelegate);
 
             Handle->CallNonvirtualShortMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualShortMethod");
-            Handle->CallNonvirtualShortMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualShortMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualShortMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualShortMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallNonvirtualShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualShortMethodADelegate);
 
             Handle->CallNonvirtualIntMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualIntMethod");
-            Handle->CallNonvirtualIntMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualIntMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualIntMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualIntMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallNonvirtualIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualIntMethodADelegate);
 
             Handle->CallNonvirtualLongMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualLongMethod");
-            Handle->CallNonvirtualLongMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualLongMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualLongMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualLongMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallNonvirtualLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualLongMethodADelegate);
 
             Handle->CallNonvirtualFloatMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualFloatMethod");
-            Handle->CallNonvirtualFloatMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualFloatMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualFloatMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualFloatMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallNonvirtualFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualFloatMethodADelegate);
 
             Handle->CallNonvirtualDoubleMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualDoubleMethod");
-            Handle->CallNonvirtualDoubleMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualDoubleMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualDoubleMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualDoubleMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallNonvirtualDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualDoubleMethodADelegate);
 
             Handle->CallNonvirtualVoidMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualVoidMethod");
-            Handle->CallNonvirtualVoidMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualVoidMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallNonvirtualVoidMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallNonvirtualVoidMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jobject) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallNonvirtualVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallNonvirtualVoidMethodADelegate);
 
             Handle->GetFieldID = (void*)Marshal.GetFunctionPointerForDelegate(GetFieldIDDelegate);
@@ -686,43 +686,43 @@ namespace IKVM.Runtime.JNI
             Handle->GetStaticMethodID = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticMethodIDDelegate);
 
             Handle->CallStaticObjectMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticObjectMethod");
-            Handle->CallStaticObjectMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticObjectMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticObjectMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticObjectMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallStaticObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticObjectMethodADelegate);
 
             Handle->CallStaticBooleanMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticBooleanMethod");
-            Handle->CallStaticBooleanMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticBooleanMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticBooleanMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticBooleanMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallStaticBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticBooleanMethodADelegate);
 
             Handle->CallStaticByteMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticByteMethod");
-            Handle->CallStaticByteMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticByteMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticByteMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticByteMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallStaticByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticByteMethodADelegate);
 
             Handle->CallStaticCharMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticCharMethod");
-            Handle->CallStaticCharMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticCharMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticCharMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticCharMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallStaticCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticCharMethodADelegate);
 
             Handle->CallStaticShortMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticShortMethod");
-            Handle->CallStaticShortMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticShortMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticShortMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticShortMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallStaticShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticShortMethodADelegate);
 
             Handle->CallStaticIntMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticIntMethod");
-            Handle->CallStaticIntMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticIntMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticIntMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticIntMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallStaticIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticIntMethodADelegate);
 
             Handle->CallStaticLongMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticLongMethod");
-            Handle->CallStaticLongMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticLongMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticLongMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticLongMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallStaticLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticLongMethodADelegate);
 
             Handle->CallStaticFloatMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticFloatMethod");
-            Handle->CallStaticFloatMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticFloatMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticFloatMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticFloatMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallStaticFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticFloatMethodADelegate);
 
             Handle->CallStaticDoubleMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticDoubleMethod");
-            Handle->CallStaticDoubleMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticDoubleMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticDoubleMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticDoubleMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallStaticDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticDoubleMethodADelegate);
 
             Handle->CallStaticVoidMethod = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticVoidMethod");
-            Handle->CallStaticVoidMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticVoidMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(jvalue*));
+            Handle->CallStaticVoidMethodV = (void*)GetLibJvmFunctionHandle("__JNI_CallStaticVoidMethodV", sizeof(JNIEnv*) + sizeof(jclass) + sizeof(jmethodID) + sizeof(JValue*));
             Handle->CallStaticVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(CallStaticVoidMethodADelegate);
 
             Handle->GetStaticFieldID = (void*)Marshal.GetFunctionPointerForDelegate(GetStaticFieldIDDelegate);

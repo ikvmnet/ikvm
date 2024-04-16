@@ -176,8 +176,8 @@ namespace IKVM.Runtime.JNI
 #if FIRST_PASS || IMPORTER || EXPORTER
 #else
 
-        JNIEnv.ManagedJNIEnv env;
-        JNIEnv.ManagedJNIEnv.FrameState prevFrameState;
+        JNIEnvContext env;
+        JNIEnvContext.FrameState prevFrameState;
 
 #endif
 
@@ -191,8 +191,9 @@ namespace IKVM.Runtime.JNI
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            Enter((ikvm.@internal.CallerID)null);
-            RuntimeClassLoader prev = env.classLoader;
+            Enter((object)null);
+
+            var prev = env.classLoader;
             env.classLoader = loader;
             return prev;
 #endif
@@ -201,7 +202,7 @@ namespace IKVM.Runtime.JNI
         /// <summary>
         /// Leaves a <see cref="JNIFrame"/> previously entered.
         /// </summary>
-        internal void Leave(RuntimeClassLoader prev)
+        internal readonly void Leave(RuntimeClassLoader prev)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
@@ -221,8 +222,7 @@ namespace IKVM.Runtime.JNI
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            env = TlsHack.ManagedJNIEnv;
-            env ??= JNIEnv.CreateJNIEnv(JVM.Context)->GetManagedJNIEnv();
+            env = JNIEnvContext.Current ?? JNIEnv.CreateJNIEnv(JVM.Context)->GetContext();
             prevFrameState = env.Enter((ikvm.@internal.CallerID)callerID);
             return (nint)(void*)env.pJNIEnv;
 #endif
@@ -231,18 +231,17 @@ namespace IKVM.Runtime.JNI
         /// <summary>
         /// Leaves a <see cref="JNIFrame"/> previously entered.
         /// </summary>
-        public void Leave()
+        public readonly void Leave()
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            var x = env.Leave(prevFrameState);
-            if (x != null)
-                throw x;
+            env.Leave(prevFrameState);
+            JVM.ThrowPendingException();
 #endif
         }
 
-        public nint MakeLocalRef(object obj)
+        public readonly nint MakeLocalRef(object obj)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
@@ -251,7 +250,7 @@ namespace IKVM.Runtime.JNI
 #endif
         }
 
-        public object UnwrapLocalRef(nint p)
+        public readonly object UnwrapLocalRef(nint p)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
