@@ -181,7 +181,9 @@
         <LibAwtFile Include="WGLSurfaceData.c" />
         <PreprocessorDefinitions Include="MLIB_OS64BIT" Condition="$(TargetIdentifier.EndsWith('-x64')) Or $(TargetIdentifier.EndsWith('-arm64'))" />
         <AdditionalCompileOptions Include="-Wno-microsoft-goto" />
-        <AdditionalCompileOptions Include="-Wmicrosoft-extra-qualification" />
+        <AdditionalCompileOptions Include="-Wno-microsoft-extra-qualification" />
+        <AdditionalCompileOptions Include="-Wno-microsoft-exception-spec" />
+        <AdditionalCompileOptions Include="-Wno-writable-strings" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
