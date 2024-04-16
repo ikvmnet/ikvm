@@ -113,7 +113,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Gets the cookie for this member. A cookie is a unique platform sized pointer that can be resolved to the member info.
         /// </summary>
-        internal IntPtr Cookie
+        internal nint Cookie
         {
             get
             {
@@ -131,7 +131,7 @@ namespace IKVM.Runtime
         /// <param name="cookie"></param>
         /// <returns></returns>
         [System.Security.SecurityCritical]
-        internal static RuntimeJavaMember FromCookieImpl(IntPtr cookie)
+        internal static RuntimeJavaMember FromCookieImpl(nint cookie)
         {
             return (RuntimeJavaMember)HandleManager.FromCookie(cookie);
         }

@@ -294,7 +294,7 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_getUnusedInput(JNIEnv *env, jobject
 
   if (uPtr->aborting()) {
     THROW_IOE(uPtr->get_abort_message());
-    return null;
+    return NULL;
   }
 
   // We have fetched all the files.

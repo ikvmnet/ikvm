@@ -20,9 +20,11 @@
         <PreprocessorDefinitions Include="mkdir" Value="_mkdir" />
     </ItemGroup>
     <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack" />
+        <PreprocessorDefinitions Include="NO_ZLIB;UNPACK_JNI;FULL" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\**\*.cpp" Exclude="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\main.cpp;$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\jni.cpp" LanguageStandard="c++11" />
-        <Compile Include="**\*.cpp" Exclude="bin\**\*.cpp;obj\**\*.cpp" LanguageStandard="c++11" />
-        <Compile Include="**\*.c" Exclude="bin\**\*.c;obj\**\*.c" LanguageStandard="c99" />
+        <Compile Include="jni.cpp" LanguageStandard="c++11" />
+        <Compile Include="jni_onload.c" LanguageStandard="c99" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
