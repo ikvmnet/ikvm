@@ -30,15 +30,13 @@ namespace IKVM.Runtime.JNI
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
-    using jint = System.Int32;
 
-    /// <summary>
     /// Manages the set of loaded native JNI libraries.
     /// </summary>
     static unsafe class JNINativeLoader
     {
 
-        delegate jint JNI_OnLoadFunc(JavaVM* vm, void* reserved);
+        delegate int JNI_OnLoadFunc(JavaVM* vm, void* reserved);
         delegate void JNI_OnUnloadFunc(JavaVM* vm, void* reserved);
 
         public static readonly object SyncRoot = new object();

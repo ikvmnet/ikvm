@@ -10,8 +10,4 @@
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.targets" />
-    <ItemGroup>
-      <Compile Remove="obj\Debug\net8.0\net6.0\**" />
-      <None Remove="obj\Debug\net8.0\net6.0\**" />
-    </ItemGroup>
 </Project>
