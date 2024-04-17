@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
 
 using IKVM.Runtime.JNI;
 
@@ -29,16 +27,16 @@ namespace IKVM.Runtime
         public delegate int JNI_CreateJavaVMFunc(JavaVM** p_vm, void** p_env, void* vm_args);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate void IKVM_ThrowExceptionFunc([MarshalAs(UnmanagedType.LPTStr)] string name, [MarshalAs(UnmanagedType.LPTStr)] string message);
+        public delegate void IKVM_ThrowExceptionFunc([MarshalAs(UnmanagedType.LPUTF8Str)] string name, [MarshalAs(UnmanagedType.LPUTF8Str)] string message);
 
         delegate void Set_JNI_GetDefaultJavaVMInitArgsDelegate(JNI_GetDefaultJavaVMInitArgsFunc func);
         delegate void Set_JNI_GetCreatedJavaVMsDelegate(JNI_GetCreatedJavaVMsFunc func);
         delegate void Set_JNI_CreateJavaVMDelegate(JNI_CreateJavaVMFunc func);
 
         delegate void Set_IKVM_ThrowExceptionDelegate(IKVM_ThrowExceptionFunc func);
-        delegate nint JVM_LoadLibraryDelegate([MarshalAs(UnmanagedType.LPTStr)] string name);
+        delegate nint JVM_LoadLibraryDelegate([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
         delegate void JVM_UnloadLibraryDelegate(nint handle);
-        delegate nint JVM_FindLibraryEntryDelegate(nint handle, [MarshalAs(UnmanagedType.LPTStr)] string name);
+        delegate nint JVM_FindLibraryEntryDelegate(nint handle, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
 
         /// <summary>
         /// Gets the default instance.
