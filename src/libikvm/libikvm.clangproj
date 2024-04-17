@@ -9,6 +9,7 @@
         <OutputType>dll</OutputType>
     </PropertyGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <PreprocessorDefinitions Include="UNICODE;_UNICODE" />
         <Dependencies Include="Ws2_32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
