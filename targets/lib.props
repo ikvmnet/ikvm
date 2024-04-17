@@ -48,7 +48,6 @@
     </PropertyGroup>
 
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <PreprocessorDefinitions Include="UNICODE;_UNICODE" />
         <PreprocessorDefinitions Include="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_MT;_DLL" />
         <AdditionalCompileOptions Include="-fms-extensions" />
         <AdditionalLinkOptions Include="-Wl,/nodefaultlib" />
