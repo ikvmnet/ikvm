@@ -6,6 +6,7 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>verify</TargetName>
+        <OutputType>dll</OutputType>
         <LanguageStandard>c99</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>

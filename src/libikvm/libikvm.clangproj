@@ -6,11 +6,12 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>ikvm</TargetName>
+        <OutputType>dll</OutputType>
     </PropertyGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
-        <Dependencies Include="ws2_32" />
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <Dependencies Include="Ws2_32" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <Dependencies Include="c" />
     </ItemGroup>
     <ItemGroup>

@@ -26,7 +26,7 @@ namespace IKVM.Runtime
             /// <param name="path"></param>
             /// <returns></returns>
             [DllImport("ikvm", SetLastError = false)]
-            internal static extern nint IKVM_dl_open(string path);
+            internal static extern nint IKVM_dl_open([MarshalAs(UnmanagedType.LPUTF8Str)] string path);
 
             /// <summary>
             /// Invokes the native 'IKVM_dl_sym' function.
@@ -101,7 +101,7 @@ namespace IKVM.Runtime
             /// <param name="st_dev"></param>
             /// <returns></returns>
             [DllImport("ikvm", SetLastError = false)]
-            internal static extern int IKVM_io_lstat(string pathname, out long st_ino, out long st_dev);
+            internal static extern int IKVM_io_lstat([MarshalAs(UnmanagedType.LPUTF8Str)] string pathname, out long st_ino, out long st_dev);
 
             /// <summary>
             /// Invokes the native 'IKVM_sig_get_size_sigaction' function.

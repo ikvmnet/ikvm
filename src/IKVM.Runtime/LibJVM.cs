@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
 
 using IKVM.Runtime.JNI;
 
@@ -36,9 +34,9 @@ namespace IKVM.Runtime
         delegate void Set_JNI_CreateJavaVMDelegate(JNI_CreateJavaVMFunc func);
 
         delegate void Set_IKVM_ThrowExceptionDelegate(IKVM_ThrowExceptionFunc func);
-        delegate nint JVM_LoadLibraryDelegate(string name);
+        delegate nint JVM_LoadLibraryDelegate([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
         delegate void JVM_UnloadLibraryDelegate(nint handle);
-        delegate nint JVM_FindLibraryEntryDelegate(nint handle, string name);
+        delegate nint JVM_FindLibraryEntryDelegate(nint handle, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
 
         /// <summary>
         /// Gets the default instance.

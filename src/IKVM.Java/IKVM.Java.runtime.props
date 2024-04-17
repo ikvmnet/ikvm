@@ -10,6 +10,14 @@
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
+    
+    <PropertyGroup>
+        <OpenJdkTargetOsApiDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' Or '$(IkvmJavaRuntimeIdentifier)' == 'ref' ">windows</OpenJdkTargetOsApiDir>
+        <OpenJdkTargetOsApiDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">solaris</OpenJdkTargetOsApiDir>
+        <OpenJdkTargetOsDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' Or '$(IkvmJavaRuntimeIdentifier)' == 'ref' ">windows</OpenJdkTargetOsDir>
+        <OpenJdkTargetOsDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' ">linux</OpenJdkTargetOsDir>
+        <OpenJdkTargetOsDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">macosx</OpenJdkTargetOsDir>
+    </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
@@ -55,16 +63,11 @@
         <None Include="$(MSBuildThisFileDirectory)local\**\*" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
         <Compile Include="$(MSBuildThisFileDirectory)icedtea_jce\**\*.java" Link="icedtea_jce\%(RecursiveDir)%(Filename)%(Extension)" />
         <Compile Include="$(MSBuildThisFileDirectory)local\**\*.java" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="@(OpenJdkSource->WithMetadataValue('RuntimeIdentifier', ''))" LinkBase="openjdk\%(PackagePath)" />
-        <None Include="@(OpenJdkSource->WithMetadataValue('RuntimeIdentifier', '$(IkvmJavaRuntimeIdentifier)'))" LinkBase="openjdk\%(PackagePath)" />
-        <Compile Include="@(OpenJdkSource->WithMetadataValue('RuntimeIdentifier', ''))" LinkBase="openjdk\%(PackagePath)" />
-        <Compile Include="@(OpenJdkSource->WithMetadataValue('RuntimeIdentifier', '$(IkvmJavaRuntimeIdentifier)'))" LinkBase="openjdk\%(PackagePath)" />
-        <Convert Include="@(OpenJdkClass->WithMetadataValue('RuntimeIdentifier', ''))" LinkBase="openjdk\%(PackagePath)" />
-        <Convert Include="@(OpenJdkClass->WithMetadataValue('RuntimeIdentifier', '$(IkvmJavaRuntimeIdentifier)'))" LinkBase="openjdk\%(PackagePath)" />
-        <None Include="@(OpenJdkClass->WithMetadataValue('RuntimeIdentifier', ''))" LinkBase="openjdk\%(PackagePath)" />
-        <None Include="@(OpenJdkClass->WithMetadataValue('RuntimeIdentifier', '$(IkvmJavaRuntimeIdentifier)'))" LinkBase="openjdk\%(PackagePath)" />
-        <JavaResource Include="@(OpenJdkResource->WithMetadataValue('RuntimeIdentifier', ''))" LinkBase="openjdk\%(PackagePath)" />
-        <JavaResource Include="@(OpenJdkResource->WithMetadataValue('RuntimeIdentifier', '$(IkvmJavaRuntimeIdentifier)'))" LinkBase="openjdk\%(PackagePath)" />
+        <None Include="@(OpenJdkSource)" LinkBase="openjdk\%(PackagePath)" />
+        <Compile Include="@(OpenJdkSource)" LinkBase="openjdk\%(PackagePath)" />
+        <None Include="@(OpenJdkClass)" LinkBase="openjdk\%(PackagePath)" />
+        <Convert Include="@(OpenJdkClass)" LinkBase="openjdk\%(PackagePath)" />
+        <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk\%(PackagePath)" />
         <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
     </ItemGroup>
 
