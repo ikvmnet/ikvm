@@ -63,7 +63,7 @@
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <Compile Update="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\java_props_md.c" Language="objective-c" />
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\java_props_macosx.c" Language="objective-c" />-->
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\java_props_macosx.c" Language="objective-c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\ProcessEnvironment_md.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\UNIXProcess_md.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\childproc.c" />
