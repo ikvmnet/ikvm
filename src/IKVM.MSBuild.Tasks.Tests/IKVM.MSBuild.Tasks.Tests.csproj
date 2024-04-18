@@ -21,8 +21,8 @@
         <PackageReference Include="Moq" Version="4.18.2" />
         <PackageReference Include="MSTest.TestAdapter" Version="3.2.2" />
         <PackageReference Include="MSTest.TestFramework" Version="3.2.2" />
-        <PackageReference Include="Microsoft.Build" Version="17.9.5" />
-        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.9.5" />
+        <PackageReference Include="Microsoft.Build" Version="17.3.2" />
+        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.3.2" />
     </ItemGroup>
 
     <ItemGroup>

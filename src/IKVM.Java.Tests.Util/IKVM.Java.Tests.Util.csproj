@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\IKVM.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.props" />
@@ -9,8 +9,8 @@
 
     <ItemGroup>
         <PackageReference Include="CliWrap" Version="3.6.6" />
-        <PackageReference Include="Microsoft.Build" Version="17.9.5" />
-        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.9.5" />
+        <PackageReference Include="Microsoft.Build" Version="17.3.2" />
+        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.3.2" />
     </ItemGroup>
     
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

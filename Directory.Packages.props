@@ -1,7 +1,7 @@
 <Project>
     <ItemGroup>
         <PackageVersion Include="System.Buffers" />
-        <PackageVersion Include="System.Collections.Immutable" Version="7.0.0" />
+        <PackageVersion Include="System.Collections.Immutable" Version="8.0.0" />
         <PackageVersion Include="System.IO.Compression" Version="4.3.0" />
         <PackageVersion Include="System.IO.Pipelines" />
         <PackageVersion Include="System.Memory" Version="4.5.5" />
@@ -22,8 +22,8 @@
         <PackageVersion Include="Microsoft.NETCore.Platforms" Version="8.0.0-preview.7.23375.6" />
         <PackageVersion Include="Microsoft.TestPlatform.ObjectModel" Version="17.3.3" />
         <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
-        <PackageVersion Include="Microsoft.Build" Version="17.9.5" />
-        <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.9.5" />
+        <PackageVersion Include="Microsoft.Build" Version="17.3.2" />
+        <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.3.2" />
         <PackageVersion Include="Microsoft.CodeCoverage" Version="17.4.0" />
         <PackageVersion Include="MSTest.TestAdapter" Version="2.2.10" />
         <PackageVersion Include="MSTest.TestFramework" Version="2.2.10" />
