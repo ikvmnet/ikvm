@@ -35,7 +35,7 @@ namespace IKVM.Runtime
             /// <param name="symbol"></param>
             /// <returns></returns>
             [DllImport("ikvm", SetLastError = false)]
-            internal static extern nint IKVM_dl_sym(nint handle, string symbol);
+            internal static extern nint IKVM_dl_sym(nint handle, [MarshalAs(UnmanagedType.LPStr)] string symbol);
 
             /// <summary>
             /// Invokes the native 'IKVM_dl_close' function.
