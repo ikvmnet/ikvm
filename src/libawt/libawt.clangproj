@@ -6,11 +6,11 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>awt</TargetName>
-        <LanguageStandard>c99</LanguageStandard>
+        <OutputType>dll</OutputType>
     </PropertyGroup>
-    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
     <ItemGroup>
         <Compile Include="awt.c" />
     </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>
