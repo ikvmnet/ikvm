@@ -8,7 +8,7 @@
         <PackageVersion Include="System.Runtime.CompilerServices.Unsafe" />
         <PackageVersion Include="System.Runtime.InteropServices.RuntimeInformation" />
         <PackageVersion Include="System.ValueTuple" />
-        <PackageVersion Include="System.Text.Json" />
+        <PackageVersion Include="System.Text.Json" Version="8.0.0" />
         <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
         <PackageVersion Include="System.Drawing.Common" />
         <PackageVersion Include="System.Data.Odbc" />
