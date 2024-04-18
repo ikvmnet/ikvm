@@ -874,9 +874,9 @@ int JNICALL JVM_GetHostName(char* name, int namelen)
 #ifdef WIN32
 void* os_dll_load(const char* filename, char* ebuf, int ebuflen)
 {
-    size_t szfilename = (size_t)::MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
-    LPWSTR wfilename = new WCHAR[szfilename];
-    ::MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, szfilename);
+    size_t sfilename = (size_t)::MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+    LPWSTR wfilename = new WCHAR[sfilename];
+    ::MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, sfilename);
 
     void* result = ::LoadLibraryExW(wfilename, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     delete[] wfilename;

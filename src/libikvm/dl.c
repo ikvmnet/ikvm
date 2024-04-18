@@ -24,7 +24,7 @@ NETEXPORT void* NETCALL IKVM_dl_open(const char* name)
 {
 #ifdef WIN32
     size_t sname = (size_t)MultiByteToWideChar(CP_UTF8, 0, name, -1, NULL, 0);
-    LPWSTR wname = (LPWSTR)malloc(sname);
+    LPWSTR wname = (LPWSTR)malloc(sname * sizeof(WCHAR));
     MultiByteToWideChar(CP_UTF8, 0, name, -1, wname, sname);
 
     void* result = LoadLibraryExW(wname, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
