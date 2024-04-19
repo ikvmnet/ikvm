@@ -4,7 +4,6 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
@@ -51,6 +50,15 @@ namespace IKVM.Runtime
             internal static string HomePath => homePath.Value;
 
             /// <summary>
+            /// Gets the path of the runtime.
+            /// </summary>
+            /// <returns></returns>
+            static string GetDefaultRuntimePath()
+            {
+                return AppContext.BaseDirectory ?? Path.GetDirectoryName(typeof(JVM).Assembly.Location);
+            }
+
+            /// <summary>
             /// Gets the  set of properties loaded from any companion 'ikvm.properties' file.
             /// </summary>
             /// <returns></returns>
@@ -58,12 +66,9 @@ namespace IKVM.Runtime
             {
                 var props = new Dictionary<string, string>();
 
-                // the runtime assembly will set the root of various relative paths
-                var runtimePath = Path.GetDirectoryName(typeof(JVM).Assembly.Location);
-
                 try
                 {
-                    var ikvmPropertiesPath = Path.Combine(runtimePath, "ikvm.properties");
+                    var ikvmPropertiesPath = Path.Combine(GetDefaultRuntimePath(), "ikvm.properties");
                     if (File.Exists(ikvmPropertiesPath))
                         LoadProperties(File.ReadAllLines(ikvmPropertiesPath), props);
                 }
@@ -81,7 +86,7 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static string GetHomePath()
             {
-                var rootPath = Path.GetDirectoryName(typeof(JVM).Assembly.Location);
+                var rootPath = GetDefaultRuntimePath();
 
 #if NETFRAMEWORK
                 // attempt to find settings in legacy app.config
@@ -674,8 +679,7 @@ namespace IKVM.Runtime
 
                 try
                 {
-                    // append relative .NET search paths from IKVM.Java assembly
-                    var s = Path.GetDirectoryName(Context.Resolver.ResolveBaseAssembly().Location);
+                    var s = GetDefaultRuntimePath();
                     var l = new List<string>() { s };
 
                     foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)

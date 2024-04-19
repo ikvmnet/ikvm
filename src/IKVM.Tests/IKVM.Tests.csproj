@@ -48,7 +48,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libikvm-tests\libikvm-tests.clangproj " />
+        <DotNetClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" />
     </ItemGroup>
 
     <ItemGroup>
