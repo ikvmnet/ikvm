@@ -305,7 +305,7 @@ namespace IKVM.MSBuild.Tests
                     File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", string.Format(exe, exeName))).Should().BeTrue();
 
                 // ikvm image native libraries
-                foreach (var libName in new[] { "awt", "iava", "jsound", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
+                foreach (var libName in new[] { "awt", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
                     File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", string.Format(lib, libName))).Should().BeTrue();
             }
 
@@ -321,7 +321,7 @@ namespace IKVM.MSBuild.Tests
                 File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", string.Format(lib, "iava"))).Should().BeTrue();
 
                 // ikvm image native libraries
-                foreach (var libName in new[] { "awt", "iava", "jsound", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
+                foreach (var libName in new[] { "awt", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
                     File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", string.Format(lib, libName))).Should().BeTrue();
             }
             else

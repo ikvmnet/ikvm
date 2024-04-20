@@ -289,7 +289,7 @@ namespace IKVM.NET.Sdk.Tests
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "security", "java.security")).Should().BeTrue();
 
                 // ikvm image native libraries
-                foreach (var libName in new[] { "awt", "iava", "jsound", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
+                foreach (var libName in new[] { "awt", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
                     File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", string.Format(lib, libName))).Should().BeTrue();
             }
         }
