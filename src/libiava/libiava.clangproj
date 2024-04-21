@@ -6,6 +6,7 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>iava</TargetName>
+        <OutputType>dll</OutputType>
         <LanguageStandard>c89</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
@@ -18,19 +19,20 @@
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\java\lang" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang" />
+        <PreprocessorDefinitions Include="ARCHPROPNAME" Value="&quot;$(OpenJdkTargetCpuOsArch)&quot;" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <Dependencies Include="shell32;delayimp;advapi32;version" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <AdditionalCompileOptions Include="-fcommon" />
         <AdditionalLinkOptions Include="-fcommon" />
         <Dependencies Include="c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('musl'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-musl-'))">
         <PreprocessorDefinitions Include="isnanf" Value="isnan" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <AdditionalCompileOptions Include="-fcommon" />
         <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Foundation" Separator=" " />
@@ -43,22 +45,25 @@
         <Compile Remove="$(OpenJdkDir)jdk\src\share\native\common\check_format.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\io\**\*.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common\*.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\java_props_md.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io\**\*.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\util\locale\**\*.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\provider\**\*.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\ProcessImpl_md.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\io\**\*.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\io\Win32ErrorMode.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\util\locale\provider\HostLocaleProviderAdapter_md.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\ProcessEnvironment_md.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\UNIXProcess_md.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\childproc.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <Compile Update="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\java_props_md.c" Language="objective-c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\java_props_macosx.c" Language="objective-c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\ProcessEnvironment_md.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\UNIXProcess_md.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\childproc.c" />

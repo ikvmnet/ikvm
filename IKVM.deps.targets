@@ -17,7 +17,7 @@
                 <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
                 <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
                 <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-                <PackageReference Include="System.Text.Json" Version="6.0.6" />
+                <PackageReference Include="System.Text.Json" Version="8.0.0" />
             </ItemGroup>
         </When>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">

@@ -6,28 +6,31 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>nio</TargetName>
+        <OutputType>dll</OutputType>
         <LanguageStandard>c99</LanguageStandard>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\nio\ch</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\io</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\net</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net</IncludeDirectories>
-        <AdditionalCompileOptions>$(AdditionalCompileOptions);-fms-extensions</AdditionalCompileOptions>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
         <ProjectReference Include="..\libiava\libiava.clangproj" />
         <ProjectReference Include="..\libnet\libnet.clangproj" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
-        <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
-        <Dependencies Include="ws2_32;advapi32" />
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\nio\ch" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\java\io" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\java\net" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net" />
+        <AdditionalCompileOptions Include="-fms-extensions" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
+        <Dependencies Include="Ws2_32;Advapi32;Mswsock" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <Dependencies Include="c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <Dependencies Include="pthread" />
         <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
     </ItemGroup>
@@ -48,7 +51,7 @@
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\SocketChannelImpl.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\SocketDispatcher.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <IncludeDirectories Include="windows" />
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\Iocp.c" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\RegistryFileTypeDetector.c" />-->
@@ -58,7 +61,7 @@
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\WindowsNativeDispatcher.c" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\WindowsSelectorImpl.c" />-->
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <IncludeDirectories Include="solaris" />
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\EPoll.c" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\EPollArrayWrapper.c" />-->
@@ -75,7 +78,7 @@
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\UnixCopyFile.c" />-->
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\UnixNativeDispatcher.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\macosx\native\sun\nio\ch" />
         <IncludeDirectories Include="solaris" />
         <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\InheritedChannel.c" />-->

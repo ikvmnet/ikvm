@@ -134,7 +134,10 @@ namespace IKVM.MSBuild.Tests
             options.TargetsToBuild.Add("Clean");
             options.TargetsToBuild.Add("Restore");
             options.Arguments.Add("/v:d");
-            analyzer.Build(options).OverallSuccess.Should().Be(true);
+
+            var result = analyzer.Build(options);
+            context.AddResultFile(Path.Combine(WorkRoot, "msbuild.binlog"));
+            result.OverallSuccess.Should().Be(true);
         }
 
         [ClassCleanup]
@@ -175,6 +178,17 @@ namespace IKVM.MSBuild.Tests
         [DataRow(EnvironmentPreference.Core, "net7.0", "linux-musl-arm64", "{0}", "lib{0}.so")]
         [DataRow(EnvironmentPreference.Core, "net7.0", "osx-x64", "{0}", "lib{0}.dylib")]
         [DataRow(EnvironmentPreference.Core, "net7.0", "osx-arm64", "{0}", "lib{0}.dylib")]
+        [DataRow(EnvironmentPreference.Core, "net8.0", "win-x86", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net8.0", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net8.0", "win-arm64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Core, "net8.0", "linux-x64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net8.0", "linux-arm", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net8.0", "linux-arm64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net8.0", "linux-musl-x64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net8.0", "linux-musl-arm", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net8.0", "linux-musl-arm64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Core, "net8.0", "osx-x64", "{0}", "lib{0}.dylib")]
+        [DataRow(EnvironmentPreference.Core, "net8.0", "osx-arm64", "{0}", "lib{0}.dylib")]
         [DataRow(EnvironmentPreference.Framework, "net472", "win-x86", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Framework, "net472", "win-x64", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Framework, "net472", "win-arm64", "{0}.exe", "{0}.dll")]
@@ -203,6 +217,17 @@ namespace IKVM.MSBuild.Tests
         [DataRow(EnvironmentPreference.Framework, "net7.0", "linux-musl-arm64", "{0}", "lib{0}.so")]
         [DataRow(EnvironmentPreference.Framework, "net7.0", "osx-x64", "{0}", "lib{0}.dylib")]
         [DataRow(EnvironmentPreference.Framework, "net7.0", "osx-arm64", "{0}", "lib{0}.dylib")]
+        [DataRow(EnvironmentPreference.Framework, "net8.0", "win-x86", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net8.0", "win-x64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net8.0", "win-arm64", "{0}.exe", "{0}.dll")]
+        [DataRow(EnvironmentPreference.Framework, "net8.0", "linux-x64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net8.0", "linux-arm", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net8.0", "linux-arm64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net8.0", "linux-musl-x64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net8.0", "linux-musl-arm", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net8.0", "linux-musl-arm64", "{0}", "lib{0}.so")]
+        [DataRow(EnvironmentPreference.Framework, "net8.0", "osx-x64", "{0}", "lib{0}.dylib")]
+        [DataRow(EnvironmentPreference.Framework, "net8.0", "osx-arm64", "{0}", "lib{0}.dylib")]
         public void CanBuildTestProject(EnvironmentPreference env, string tfm, string rid, string exe, string lib)
         {
             // skip framework tests for non-Windows platforms
@@ -239,7 +264,10 @@ namespace IKVM.MSBuild.Tests
             options.TargetsToBuild.Add("Build");
             options.TargetsToBuild.Add("Publish");
             options.Arguments.Add("/v:d");
-            analyzer.Build(options).OverallSuccess.Should().Be(true);
+
+            var result = analyzer.Build(options);
+            TestContext.AddResultFile(Path.Combine(WorkRoot, $"{tfm}-{rid}-msbuild.binlog"));
+            result.OverallSuccess.Should().Be(true);
 
             var binDir = Path.Combine("Project", "Exe", "bin", "Release", tfm, rid);
 
@@ -273,11 +301,11 @@ namespace IKVM.MSBuild.Tests
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "security", "java.security")).Should().BeTrue();
 
                 // ikvm image bin exeecutables
-                foreach (var exeName in new[] { "jar", "jarsigner", "java", "javac", "javah", "javap", "jdeps", "keytool", "native2ascii", "orbd", "policytool", "rmic", "schemagen", "wsgen", "wsimport" })
+                foreach (var exeName in new[] { "jar", "jarsigner", "java", "javac", "javah", "javap", "jdeps", "keytool", "native2ascii", "orbd", "policytool", "rmic", "schemagen", "wsgen", "wsimport", "xjc" })
                     File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", string.Format(exe, exeName))).Should().BeTrue();
 
                 // ikvm image native libraries
-                foreach (var libName in new[] { "awt", "fdlibm", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
+                foreach (var libName in new[] { "awt", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
                     File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", string.Format(lib, libName))).Should().BeTrue();
             }
 
@@ -293,7 +321,7 @@ namespace IKVM.MSBuild.Tests
                 File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", string.Format(lib, "iava"))).Should().BeTrue();
 
                 // ikvm image native libraries
-                foreach (var libName in new[] { "awt", "fdlibm", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
+                foreach (var libName in new[] { "awt", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
                     File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", string.Format(lib, libName))).Should().BeTrue();
             }
             else

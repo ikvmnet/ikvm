@@ -1,4 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project>
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\IKVM.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.props" />
+    
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
@@ -14,4 +18,8 @@
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
+
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\IKVM.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.targets" />
 </Project>

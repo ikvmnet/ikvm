@@ -7,16 +7,10 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
+using IKVM.Java.Tests.Util;
 using IKVM.Tests.Util;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using IKVM.Java.Tests.Util;
-
-
-#if NETCOREAPP
-using Microsoft.Extensions.DependencyModel;
-#endif
 
 namespace IKVM.Tools.Importer.Tests
 {

@@ -1,30 +1,23 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace IKVM.ConsoleApp
 {
+
     public static class Program
     {
 
+        [ModuleInitializer]
+        internal static void Foo()
+        {
+            Console.WriteLine("hi");
+        }
+
         public static void Main(string[] args)
         {
-            Foo();
-        }
-
-        public static void Foo()
-        {
-            new Bar();
-        }
-
-        class Bar
-        {
-
-            public Bar()
-            {
-                for (int i = 0; i < 19383; i++)
-                    System.Console.WriteLine(java.net.InetAddress.getLocalHost().getHostName());
-            }
-
+            Console.WriteLine("main");
         }
 
     }

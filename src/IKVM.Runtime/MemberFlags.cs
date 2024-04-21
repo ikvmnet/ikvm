@@ -26,23 +26,58 @@ using System;
 namespace IKVM.Runtime
 {
 
+    /// <summary>
+    /// Describes various options applied to a member.
+    /// </summary>
     [Flags]
     enum MemberFlags : short
     {
 
         None = 0,
+
+        /// <summary>
+        /// Member should be hidden from Java reflection.
+        /// </summary>
         HideFromReflection = 1,
+
         ExplicitOverride = 2,
+
+        /// <summary>
+        /// Member is a Java miranda method.
+        /// </summary>
         MirandaMethod = 8,
+
         AccessStub = 16,
-        InternalAccess = 32,  // member has "internal" access (@ikvm.lang.Internal)
+
+        /// <summary>
+        /// Member should be generated with "internal" .NET access.
+        /// </summary>
+        InternalAccess = 32,
+
+        /// <summary>
+        /// Method represents a property accessor.
+        /// </summary>
         PropertyAccessor = 64,
+
         Intrinsic = 128,
+
         CallerID = 256,
+
         NonPublicTypeInSignature = 512, // this flag is only available after linking and is not set for access stubs
+
         DelegateInvokeWithByRefParameter = 1024,
+
         Type2FinalField = 2048,
-        NoOp = 4096, // empty static initializer
+
+        /// <summary>
+        /// Member is an empty static initializer.
+        /// </summary>
+        NoOp = 4096,
+
+        /// <summary>
+        /// Member is a module initializer method.
+        /// </summary>
+        ModuleInitializer = 8192,
 
     }
 

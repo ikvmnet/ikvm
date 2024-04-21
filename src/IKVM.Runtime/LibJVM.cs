@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
 
 using IKVM.Runtime.JNI;
 
@@ -34,9 +32,9 @@ namespace IKVM.Runtime
         delegate void Set_JNI_CreateJavaVMDelegate(JNI_CreateJavaVMFunc func);
 
         delegate void Set_IKVM_ThrowExceptionDelegate(IKVM_ThrowExceptionFunc func);
-        delegate nint JVM_LoadLibraryDelegate(string name);
+        delegate nint JVM_LoadLibraryDelegate([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
         delegate void JVM_UnloadLibraryDelegate(nint handle);
-        delegate nint JVM_FindLibraryEntryDelegate(nint handle, string name);
+        delegate nint JVM_FindLibraryEntryDelegate(nint handle, [MarshalAs(UnmanagedType.LPStr)] string name);
 
         /// <summary>
         /// Gets the default instance.
@@ -69,7 +67,7 @@ namespace IKVM.Runtime
             _Set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>(Handle.GetExport("Set_JNI_GetCreatedJavaVMs", sizeof(nint)).Handle);
             _Set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(Handle.GetExport("Set_JNI_CreateJavaVM", sizeof(nint)).Handle);
 
-            _Set_IKVM_ThrowException = Marshal.GetDelegateForFunctionPointer<Set_IKVM_ThrowExceptionDelegate>(Handle.GetExport("Set_IKVM_ThrowException", sizeof(nint) + sizeof(nint)).Handle);
+            _Set_IKVM_ThrowException = Marshal.GetDelegateForFunctionPointer<Set_IKVM_ThrowExceptionDelegate>(Handle.GetExport("Set_IKVM_ThrowException", sizeof(nint)).Handle);
             _JVM_LoadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_LoadLibraryDelegate>(Handle.GetExport("JVM_LoadLibrary", sizeof(nint)).Handle);
             _JVM_UnloadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_UnloadLibraryDelegate>(Handle.GetExport("JVM_UnloadLibrary", sizeof(nint)).Handle);
             _JVM_FindLibraryEntry = Marshal.GetDelegateForFunctionPointer<JVM_FindLibraryEntryDelegate>(Handle.GetExport("JVM_FindLibraryEntry", sizeof(nint) + sizeof(nint)).Handle);

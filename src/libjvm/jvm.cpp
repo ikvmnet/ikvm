@@ -188,22 +188,23 @@ size_t os_lasterror(char* buf, size_t len) {
     DWORD errval;
 
     if ((errval = GetLastError()) != 0) {
-        // DOS error
-        size_t n = (size_t)FormatMessage(
+        LPWSTR w = new wchar_t[len];
+        size_t n = (size_t)::FormatMessageW(
             FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
             NULL,
             errval,
             0,
-            buf,
+            w,
             (DWORD)len,
             NULL);
-        if (n > 3) {
-            // Drop final '.', CR, LF
-            if (buf[n - 1] == '\n') n--;
-            if (buf[n - 1] == '\r') n--;
-            if (buf[n - 1] == '.') n--;
-            buf[n] = '\0';
-        }
+        w[n] = '\0';
+
+        n = ::WideCharToMultiByte(CP_UTF8, 0, w, -1, buf, 0, NULL, NULL);
+        if (n >= len) n = len - 1;
+        ::WideCharToMultiByte(CP_UTF8, 0, w, -1, buf, n, NULL, NULL);
+        buf[n] = '\0';
+
+        delete[] w;
         return n;
     }
 
@@ -211,9 +212,11 @@ size_t os_lasterror(char* buf, size_t len) {
         // C runtime error that has no corresponding DOS error code
         const char* s = strerror(errno);
         size_t n = strlen(s);
+
         if (n >= len) n = len - 1;
         strncpy(buf, s, n);
         buf[n] = '\0';
+
         return n;
     }
 
@@ -871,7 +874,12 @@ int JNICALL JVM_GetHostName(char* name, int namelen)
 #ifdef WIN32
 void* os_dll_load(const char* filename, char* ebuf, int ebuflen)
 {
-    void* result = ::LoadLibraryEx(filename, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+    size_t sfilename = (size_t)::MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+    LPWSTR wfilename = new WCHAR[sfilename];
+    ::MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, sfilename);
+
+    void* result = ::LoadLibraryExW(wfilename, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+    delete[] wfilename;
     if (result != NULL) {
         return result;
     }
@@ -988,6 +996,16 @@ void* JNICALL JVM_GetThreadInterruptEvent()
     return 0;
 }
 #endif
+
+void* JNICALL JVM_RegisterSignal(jint sig, void* handler)
+{
+    return 0;
+}
+
+jboolean JNICALL JVM_RaiseSignal(jint sig)
+{
+    return JNI_FALSE;
+}
 
 int jio_vsnprintf(char* str, size_t count, const char* fmt, va_list args)
 {
