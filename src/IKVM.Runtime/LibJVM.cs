@@ -6,8 +6,6 @@ using System.Threading;
 
 using IKVM.Runtime.JNI;
 
-using jsize = System.Int32;
-
 namespace IKVM.Runtime
 {
 
@@ -23,7 +21,7 @@ namespace IKVM.Runtime
         public delegate int JNI_GetDefaultJavaVMInitArgsFunc(void* vm_args);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int JNI_GetCreatedJavaVMsFunc(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
+        public delegate int JNI_GetCreatedJavaVMsFunc(JavaVM** vmBuf, int bufLen, int* nVMs);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate int JNI_CreateJavaVMFunc(JavaVM** p_vm, void** p_env, void* vm_args);
