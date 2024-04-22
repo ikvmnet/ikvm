@@ -584,6 +584,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\misc\**\*.java" PackagePath="sun\misc" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\net\**\*.java" PackagePath="sun\net" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\**\*.java" PackagePath="sun\nio" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\util\**\*.java" PackagePath="sun\util" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\SolarisAclFileAttributeView.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\SolarisFileStore.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\SolarisFileSystem.java" />
