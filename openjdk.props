@@ -571,6 +571,7 @@
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\AbstractPollSelectorImpl.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\PollSelectorProvider.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\SimpleAsynchronousFileChannelImpl.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\misc\OSEnvironment.java" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">
@@ -602,6 +603,7 @@
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\ch\EventPortWrapper.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\ch\SolarisAsynchronousChannelProvider.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\ch\SolarisEventPort.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\misc\OSEnvironment.java" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' ">
