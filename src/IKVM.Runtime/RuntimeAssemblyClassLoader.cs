@@ -497,7 +497,7 @@ namespace IKVM.Runtime
             {
                 if (delegates == null)
                 {
-                    if (!ReflectUtil.IsDynamicAssembly(assemblyLoader.Assembly) && assemblyLoader.Assembly.GetManifestResourceInfo("ikvm.exports") != null)
+                    if (ReflectUtil.IsDynamicAssembly(assemblyLoader.Assembly) == false && assemblyLoader.Assembly.GetManifestResourceInfo("ikvm.exports") != null)
                     {
                         var wildcardExports = new List<string>();
 
@@ -521,27 +521,25 @@ namespace IKVM.Runtime
                                 for (int j = 0; j < typeCount; j++)
                                 {
                                     int hash = rdr.ReadInt32();
-                                    if (!exports.TryGetValue(hash, out List<int> assemblies))
+                                    if (exports.TryGetValue(hash, out List<int> assemblies) == false)
                                     {
                                         assemblies = new List<int>();
                                         exports.Add(hash, assemblies);
                                     }
+
                                     assemblies.Add(i);
                                 }
                             }
                         }
 
-                        if (references == null)
-                            references = wildcardExports.ToArray();
+                        references ??= wildcardExports.ToArray();
                     }
                     else
                     {
-                        AssemblyName[] refNames = assemblyLoader.Assembly.GetReferencedAssemblies();
+                        var refNames = assemblyLoader.Assembly.GetReferencedAssemblies();
                         references = new string[refNames.Length];
                         for (int i = 0; i < references.Length; i++)
-                        {
                             references[i] = refNames[i].FullName;
-                        }
                     }
 
                     Interlocked.Exchange(ref delegates, new RuntimeAssemblyClassLoader[references.Length]);
@@ -925,12 +923,14 @@ namespace IKVM.Runtime
 
                         loader = exportedAssemblies[index] = GetLoaderForExportedAssembly(asm);
                     }
+
                     urls = loader.FindResources(unmangledName);
                     while (urls.hasMoreElements())
                     {
                         found = true;
                         yield return (java.net.URL)urls.nextElement();
                     }
+
                     if (loader.Assembly.GetManifestResourceInfo(name) != null)
                     {
                         found = true;
@@ -940,15 +940,13 @@ namespace IKVM.Runtime
             }
 
             // if asked for a '.class' resource, we can return the appropriate stub
-            if (!found && unmangledName.EndsWith(".class", StringComparison.Ordinal) && unmangledName.IndexOf('.') == unmangledName.Length - 6)
+            if (found == false && unmangledName.EndsWith(".class", StringComparison.Ordinal) && unmangledName.IndexOf('.') == unmangledName.Length - 6)
             {
                 var tw = FindLoadedClass(unmangledName.Substring(0, unmangledName.Length - 6).Replace('/', '.'));
                 if (tw != null && tw.GetClassLoader() == this && !tw.IsArray && !tw.IsDynamic)
-                    yield return new java.io.File(Path.Combine(VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, assemblyLoader.Assembly, JVM.Properties.HomePath), unmangledName)).toURI().toURL();
+                    yield return MakeResourceURL(assemblyLoader.Assembly, unmangledName);
             }
-
 #endif
-
         }
 
         protected struct Resource

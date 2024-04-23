@@ -362,6 +362,7 @@ namespace IKVM.Tools.Importer
                     try
                     {
                         var tw = DefineClass(f, null);
+
                         // we successfully created the type, so we don't need to include the class as a resource
                         if (options.nojarstubs)
                         {
@@ -371,12 +372,14 @@ namespace IKVM.Tools.Importer
                         {
                             itemRef.MarkAsStub();
                         }
+
                         int pos = f.Name.LastIndexOf('.');
                         if (pos != -1)
                         {
                             string manifestJar = options.IsClassesJar(itemRef.Jar) ? null : itemRef.Jar.Name;
                             packages.DefinePackage(f.Name.Substring(0, pos), manifestJar);
                         }
+
                         return tw;
                     }
                     catch (ClassFormatError x)
@@ -397,12 +400,14 @@ namespace IKVM.Tools.Importer
                         {
                             Context.StaticCompiler.IssueMessage(options, Message.NoClassDefFoundError, name, x.Message);
                         }
+
                         Context.StaticCompiler.IssueMessage(options, Message.ClassNotFound, x.Message);
                     }
                     catch (RetargetableJavaException x)
                     {
                         Context.StaticCompiler.IssueMessage(options, Message.GenericUnableToCompileError, name, x.GetType().Name, x.Message);
                     }
+
                     Context.StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
                     return null;
                 }
