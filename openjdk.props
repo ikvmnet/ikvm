@@ -556,6 +556,9 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' Or '$(IkvmJavaRuntimeIdentifier)' == 'ref' ">
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\AbstractPollSelectorImpl.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\PollSelectorProvider.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\SimpleAsynchronousFileChannelImpl.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\com\sun\security\auth\module\UnixLoginModule.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\com\sun\security\auth\module\UnixSystem.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\io\**\*.java" PackagePath="java\io" />
@@ -568,9 +571,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\net\**\*.java" PackagePath="sun\net" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\**\*.java" PackagePath="sun\nio" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\util\**\*.java" PackagePath="sun\util" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\AbstractPollSelectorImpl.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\PollSelectorProvider.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\SimpleAsynchronousFileChannelImpl.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\java\io\FileDescriptor.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\misc\OSEnvironment.java" />
     </ItemGroup>
 
@@ -586,6 +587,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\net\**\*.java" PackagePath="sun\net" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\**\*.java" PackagePath="sun\nio" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\util\**\*.java" PackagePath="sun\util" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\java\io\FileDescriptor.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\SolarisAclFileAttributeView.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\SolarisFileStore.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\SolarisFileSystem.java" />

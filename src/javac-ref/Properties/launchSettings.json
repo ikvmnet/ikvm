@@ -1,10 +1,11 @@
 {
-    "profiles": {
-        "javac": {
-            "commandName": "Project",
-            "environmentVariables": {
-                "IKVM_HOME_ROOT": "C:\\dev\\ikvm2\\src\\IKVM.Tests\\bin\\Debug\\net6.0\\ikvm\\"
-            }
+  "profiles": {
+    "javac": {
+        "commandName": "Project",
+        "commandLineArgs": "@C:\\dev\\ikvm\\src\\javadoc\\obj\\Debug\\net8.0\\osx-arm64\\javadoc.javac.rsp",
+        "environmentVariables": {
+
         }
     }
+  }
 }
