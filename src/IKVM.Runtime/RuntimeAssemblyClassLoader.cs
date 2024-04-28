@@ -944,7 +944,7 @@ namespace IKVM.Runtime
             {
                 var tw = FindLoadedClass(unmangledName.Substring(0, unmangledName.Length - 6).Replace('/', '.'));
                 if (tw != null && tw.GetClassLoader() == this && !tw.IsArray && !tw.IsDynamic)
-                    yield return MakeResourceURL(assemblyLoader.Assembly, unmangledName);
+                    yield return new java.io.File(Path.Combine(VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, assemblyLoader.Assembly, JVM.Properties.HomePath), unmangledName)).toURI().toURL();
             }
 #endif
         }

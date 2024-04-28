@@ -56,10 +56,10 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static IEnumerable<string> GetIkvmSearchDirs()
             {
-                if (typeof(JVM).Assembly.Location is string runtimePath and not null and not "")
-                    yield return Path.GetDirectoryName(runtimePath);
-                if (AppContext.BaseDirectory is string baseDir and not null and not "")
+                if (AppContext.BaseDirectory is string baseDir && !string.IsNullOrEmpty(baseDir))
                     yield return baseDir;
+                if (typeof(Properties).Assembly.Location is string runtimePath && !string.IsNullOrEmpty(runtimePath))
+                    yield return Path.GetDirectoryName(runtimePath);
             }
 
             /// <summary>

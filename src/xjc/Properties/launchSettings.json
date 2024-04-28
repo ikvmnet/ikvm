@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "xjc": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "IKVM_HOME_ROOT": "C:\\dev\\ikvm\\src\\IKVM.ConsoleApp\\bin\\Debug\\net8.0\\ikvm\\"
+      },
+      "nativeDebugging": true
+    }
+  }
+}

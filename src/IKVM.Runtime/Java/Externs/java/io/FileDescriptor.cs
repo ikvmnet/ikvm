@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
@@ -21,7 +22,7 @@ namespace IKVM.Java.Externs.java.io
 #endif
 
         /// <summary>
-        /// Sets the underlying pointer object. If the pointer value changes, any existing cached object is removed.
+        /// Sets the underlying pointer object. Disposes any associated stream.
         /// </summary>
         /// <param name="self"></param>
         /// <param name="ptr"></param>
@@ -35,10 +36,10 @@ namespace IKVM.Java.Externs.java.io
                 var p = FileDescriptorAccessor.GetPtr(self);
                 if (p != ptr || ptr == -1)
                 {
-                    var obj = (IDisposable)FileDescriptorAccessor.GetStream(self);
-                    if (obj != null)
+                    var stream = (IDisposable)FileDescriptorAccessor.GetStream(self);
+                    if (stream != null)
                     {
-                        obj.Dispose();
+                        stream.Dispose();
                         FileDescriptorAccessor.SetStream(self, null);
                     }
                 }
@@ -109,12 +110,33 @@ namespace IKVM.Java.Externs.java.io
             throw new NotImplementedException();
 #else
             var fdo = FileDescriptorAccessor.Init();
-            FileDescriptorAccessor.SetPtr(fdo, fd);
-            FileDescriptorAccessor.SetStream(fdo, null);
+            FileDescriptorAccessor.SetPtr(fdo, GetStandardHandle(fd));
             return fdo;
 #endif
         }
 
-    }
+        [DllImport("Kernel32")]
+        static extern IntPtr GetStdHandle(int nStdHandle);
 
+        /// <summary>
+        /// Gets the standard handle for the given fd index.
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <returns></returns>
+        static long GetStandardHandle(int fd)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                if (fd == 0)
+                    return (long)GetStdHandle(-10);
+                else if (fd == 1)
+                    return (long)GetStdHandle(-11);
+                else if (fd == 2)
+                    return (long)GetStdHandle(-12);
+            }
+
+            return fd;
+        }
+
+    }
 }

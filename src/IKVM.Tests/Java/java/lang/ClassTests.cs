@@ -39,7 +39,7 @@ namespace IKVM.Tests.Java.java.lang
         public void CanSetFieldSetAccessibleOnBase()
         {
             var bcp = global::java.lang.System.getProperty("sun.boot.class.path").Split(global::java.io.File.pathSeparatorChar);
-            var all = bcp.SelectMany(i => EnumerateClassFiles(Paths.get(i))).ToList();
+            var all = bcp.SelectMany(EnumerateClassFiles).ToList();
 
             if (all.Count < 100)
                 throw new Exception("Expected more classes.");
@@ -49,7 +49,7 @@ namespace IKVM.Tests.Java.java.lang
                 if (file.StartsWith("WrapperGenerator"))
                     continue;
 
-                var c = global::java.lang.Class.forName(file.Replace('/', '.').Substring(0, file.Length - 6), false, null);
+                var c = global::java.lang.Class.forName(file.Replace(global::java.io.File.separator, ".").Substring(0, file.Length - 6), false, null);
                 if (c == null)
                     throw new Exception("Could not load BCP class by name.");
 
@@ -64,19 +64,45 @@ namespace IKVM.Tests.Java.java.lang
         /// <summary>
         /// Returns an enumerable over all of the class files within the specified root path.
         /// </summary>
+        /// <param name="root"></param>
+        /// <returns></returns>
+        IEnumerable<string> EnumerateClassFiles(string root)
+        {
+            return EnumerateClassFiles(root, null);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="root"></param>
         /// <param name="path"></param>
         /// <returns></returns>
-        IEnumerable<string> EnumerateClassFiles(global::java.nio.file.Path path)
+        private IEnumerable<string> EnumerateClassFiles(string root, string path)
         {
-            var file = path.toFile();
-            if (file.canRead() == false || file.isDirectory() == false)
-                return Enumerable.Empty<string>();
+            foreach (var file in new global::java.io.File(JoinPath(root, path)).listFiles())
+            {
+                if (file.isFile())
+                    yield return JoinPath(path, file.getName());
+                else if (file.isDirectory())
+                    foreach (var i in EnumerateClassFiles(root, JoinPath(path, file.getName())))
+                        yield return i;
+            }
+        }
 
-            return Files.walk(path)
-                .filter(new DelegatePredicate<global::java.nio.file.Path>(p => p.getFileName().toString().EndsWith(".class")))
-                .map(new DelegateFunction<global::java.nio.file.Path, global::java.nio.file.Path>(p => path.relativize(p)))
-                .map(new DelegateFunction<global::java.nio.file.Path, string>(p => p.toString().Replace(global::java.io.File.separatorChar, '/')))
-                .AsEnumerable<string>();
+        /// <summary>
+        /// Combines two paths.
+        /// </summary>
+        /// <param name="path1"></param>
+        /// <param name="path2"></param>
+        /// <returns></returns>
+        string JoinPath(string path1, string path2)
+        {
+            if (path1 != null && path2 != null)
+                return path1 + global::java.io.File.separator + path2;
+            else if (path1 != null)
+                return path1;
+            else
+                return path2;
         }
 
     }

@@ -2,6 +2,7 @@
 #include <jvm.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "ikvm.h"
 
 #if defined WIN32
@@ -27,6 +28,18 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+JVMInvokeInterface *jvmii;
+
+void JNICALL JVM_Init(JVMInvokeInterface *p_jvmii)
+{
+    jvmii = p_jvmii;
+}
+
+void JNICALL JVM_ThrowException(const char *name, const char *msg)
+{
+    jvmii->JVM_ThrowException(name, msg);
+}
 
 #define assert(condition, fmt, ...);
 
@@ -102,9 +115,9 @@ jint JNICALL JVM_GetInterfaceVersion()
 //   Java standards require the number of milliseconds since 1/1/1970
 
 // Constant offset - calculated using offset()
-static jlong  _offset = 116444736000000000;
+static jlong _offset = 116444736000000000;
 // Fake time counter for reproducible results when debugging
-static jlong  fake_time = 0;
+static jlong fake_time = 0;
 
 inline jlong windows_to_java_time(FILETIME wt) {
     jlong a = jlong_from(wt.dwHighDateTime, wt.dwLowDateTime);
@@ -931,7 +944,7 @@ void* JNICALL JVM_LoadLibrary(const char* name)
     if (load_result == NULL) {
         char msg[1024];
         jio_snprintf(msg, sizeof msg, "%s: %s", name, ebuf);
-        IKVM_ThrowException("java/lang/UnsatisfiedLinkError", (const char*)msg);
+        JVM_ThrowException("java/lang/UnsatisfiedLinkError", (const char*)msg);
         return NULL;
     }
 
@@ -993,7 +1006,7 @@ void* JNICALL JVM_FindLibraryEntry(void* handle, const char* name)
 #ifdef WIN32
 void* JNICALL JVM_GetThreadInterruptEvent()
 {
-    return 0;
+    return jvmii->JVM_GetThreadInterruptEvent();
 }
 #endif
 

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "IKVM.ConsoleApp": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

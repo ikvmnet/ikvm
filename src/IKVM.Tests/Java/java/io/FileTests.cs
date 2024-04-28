@@ -3,6 +3,11 @@ using System.Runtime.InteropServices;
 
 using FluentAssertions;
 
+using IKVM.Runtime;
+using IKVM.Runtime.Vfs;
+
+using java.io;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Tests.Java.java.io
@@ -79,6 +84,40 @@ namespace IKVM.Tests.Java.java.io
                 global::java.io.File.pathSeparator.Should().Be(":");
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 global::java.io.File.pathSeparator.Should().Be(":");
+        }
+
+        [TestMethod]
+        public void VfsAssemblyClassesDirectoryShouldBeDirectory()
+        {
+            var d = VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, typeof(object).Assembly, JVM.Properties.HomePath);
+            new global::java.io.File(d).isDirectory().Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void VfsAssemblyClassesDirectoryCanBeListed()
+        {
+            var d = VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, typeof(object).Assembly, JVM.Properties.HomePath);
+            var l = new global::java.io.File(d).list();
+            foreach (var s in l)
+                System.Console.WriteLine(s);
+        }
+
+        [TestMethod]
+        public void VfsAssemblyClassCanBeRead()
+        {
+            var f = System.IO.Path.Combine(VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, typeof(global::java.lang.Object).Assembly, JVM.Properties.HomePath), "java", "lang", "Class.class");
+            var s = new global::java.io.FileInputStream(f);
+            var b = new byte[new global::java.io.File(f).length()];
+            s.read(b);
+            b.Length.Should().BeGreaterOrEqualTo(32);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(global::java.io.FileNotFoundException))]
+        public void VfsAssemblyClassCanNotBeWritten()
+        {
+            var f = System.IO.Path.Combine(VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, typeof(global::java.lang.Object).Assembly, JVM.Properties.HomePath), "java", "lang", "Class.class");
+            new global::java.io.FileOutputStream(f).write(0);
         }
 
     }
