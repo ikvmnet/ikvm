@@ -14,6 +14,8 @@
         <ProjectReference Include="..\libiava\libiava.clangproj" />
     </ItemGroup>
     <ItemGroup>
+        <Header Include="$(OpenJdkDir)jdk\src\share\native\java\net\*.h" />
+        <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net\*.h" />
         <AdditionalCompileOptions Include="-Wno-int-conversion" />
         <LibNetDirs Include="$(OpenJdkDir)jdk\src\share\native\java\net" />
         <LibNetDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net" />
