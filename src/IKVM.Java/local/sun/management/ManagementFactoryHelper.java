@@ -293,7 +293,7 @@ public class ManagementFactoryHelper {
     }
 
     static void registerInternalMBeans(MBeanServer mbs) {
-        
+
     }
 
     private static void unregisterMBean(MBeanServer mbs, String mbeanName) {
@@ -319,10 +319,17 @@ public class ManagementFactoryHelper {
     }
 
     static void unregisterInternalMBeans(MBeanServer mbs) {
-        
+
     }
 
     static {
+        AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("management");
+                    return null;
+                }
+            });
         jvm = new VMManagementImpl();
     }
 

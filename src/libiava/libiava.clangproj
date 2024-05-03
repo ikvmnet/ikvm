@@ -7,7 +7,7 @@
     <PropertyGroup>
         <TargetName>iava</TargetName>
         <OutputType>dll</OutputType>
-        <LanguageStandard>c89</LanguageStandard>
+        <LanguageStandard>c99</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libfdlibm\libfdlibm.clangproj" />
@@ -83,8 +83,6 @@
         <LibJavaExclude Include="Win32ErrorMode.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
-        <AdditionalCompileOptions Include="-fcommon" />
-        <AdditionalLinkOptions Include="-fcommon" />
         <Dependencies Include="c" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\provider" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\io" />
@@ -93,7 +91,6 @@
         <PreprocessorDefinitions Include="isnanf" Value="isnan" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
-        <AdditionalCompileOptions Include="-fcommon" />
         <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Foundation" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />

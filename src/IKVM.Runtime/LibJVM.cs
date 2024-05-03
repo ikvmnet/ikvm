@@ -28,6 +28,7 @@ namespace IKVM.Runtime
 
             public nint JVM_ThrowException;
             public nint JVM_GetThreadInterruptEvent;
+            public nint JVM_ActiveProcessorCount;
 
         }
 
@@ -45,6 +46,9 @@ namespace IKVM.Runtime
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate nint JVM_GetThreadInterruptEventDelegate();
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate int JVM_ActiveProcessorCountDelegate();
 
         delegate void JVM_InitDelegate(JVMInvokeInterface* iface);
 
@@ -72,6 +76,7 @@ namespace IKVM.Runtime
         readonly JNI_CreateJavaVMDelegate _JNI_CreateJavaVM;
         readonly JVM_ThrowExceptionDelegate _JVM_ThrowException;
         readonly JVM_GetThreadInterruptEventDelegate _JVM_GetThreadInterruptEvent;
+        readonly JVM_ActiveProcessorCountDelegate _JVM_ActiveProcessorCount;
 
         /// <summary>
         /// Initializes a new instance.
@@ -95,6 +100,7 @@ namespace IKVM.Runtime
             jvmii->JNI_CreateJavaVM = Marshal.GetFunctionPointerForDelegate(_JNI_CreateJavaVM = JNIVM.CreateJavaVM);
             jvmii->JVM_ThrowException = Marshal.GetFunctionPointerForDelegate(_JVM_ThrowException = JVM_ThrowException);
             jvmii->JVM_GetThreadInterruptEvent = Marshal.GetFunctionPointerForDelegate(_JVM_GetThreadInterruptEvent = JVM_GetThreadInterruptEvent);
+            jvmii->JVM_ActiveProcessorCount = Marshal.GetFunctionPointerForDelegate(_JVM_ActiveProcessorCount = JVM_ActiveProcessorCount);
             _JVM_Init(jvmii);
         }
 
@@ -166,6 +172,15 @@ namespace IKVM.Runtime
                 JVM.SetPendingException(e);
                 return 0;
             }
+        }
+
+        /// <summary>
+        /// Invoked by the native code to get the active number of processors.
+        /// </summary>
+        /// <returns></returns>
+        int JVM_ActiveProcessorCount()
+        {
+            return Environment.ProcessorCount;
         }
 
         /// <summary>

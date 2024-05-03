@@ -61,6 +61,9 @@
         <Header Include="$(OpenJdkDir)jdk\src\macosx\javavm\export\**\*.h" Condition="$(TargetIdentifier.StartsWith('osx-'))">
             <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
         </Header>
+        <Header Include="ikvm.h">
+            <IncludePath>ikvm.h</IncludePath>
+        </Header>
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
