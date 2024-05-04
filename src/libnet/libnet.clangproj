@@ -53,6 +53,7 @@
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <Dependencies Include="c" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libnet\mapfile-vers" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-musl-'))">
         <PreprocessorDefinitions Include="__SIGRTMIN" Value="32" />

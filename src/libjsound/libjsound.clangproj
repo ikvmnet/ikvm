@@ -63,6 +63,7 @@
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <PreprocessorDefinitions Include="X_PLATFORM" Value="X_LINUX" />
         <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS" Value="&quot;jsoundalsa&quot;" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libjsound\mapfile-vers" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <PreprocessorDefinitions Include="X_PLATFORM" Value="X_MACOSX" />

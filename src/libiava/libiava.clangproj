@@ -86,6 +86,7 @@
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <Dependencies Include="c" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libjava\mapfile-vers" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\provider" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\io" />
     </ItemGroup>
@@ -139,7 +140,7 @@ public class JoinPathsAndFiles : Task
                 {
                     var n = Path.GetFileName(file);
                     if (Excludes.Any(i => i.ItemSpec == n) == false)
-                        items.Add(new TaskItem(file));
+                        items.Add(new TaskItem(Path.Combine(path.ItemSpec, n)));
                 }
             }
         }
@@ -158,18 +159,20 @@ public class JoinPathsAndFiles : Task
         <JoinPathsAndFiles Paths="@(LibJavaDirs)" Excludes="@(LibJavaExclude)">
             <Output TaskParameter="Items" ItemName="Compile" />
         </JoinPathsAndFiles>
+    </Target>
+    
+    <Target Name="UpdateLibJavaItems" DependsOnTargets="GetLibJavaItems">
         <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
-            <Compile Update="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\java_props_md.c" Language="objective-c" />
-            <Compile Update="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\java_props_macosx_md.c" Language="objective-c" />
-        </ItemGroup>
-        <ItemGroup Condition="!$(TargetIdentifier.StartsWith('osx-'))">
-            <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang\java_props_macosx_md.c" />
+            <Compile Update="@(Compile)" Condition=" '%(Filename)%(Extension)' == 'java_props_md.c' " Language="objective-c" />
+            <Compile Update="@(Compile)" Condition=" '%(Filename)%(Extension)' == 'java_props_macosx.c' " Language="objective-c" />
+            <Compile Update="@(Compile)" Condition=" '%(Filename)%(Extension)' == 'jni_util_md.c' " AdditionalCompileOptions="-fvisibility=default" />
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
         <CompileDependsOn>
             GetLibJavaItems;
+            UpdateLibJavaItems;
             $(CompileDependsOn);
         </CompileDependsOn>
     </PropertyGroup>

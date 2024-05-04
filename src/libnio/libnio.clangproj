@@ -54,6 +54,7 @@
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <Dependencies Include="c" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libnio\mapfile-linux" />
         <LibNioFile Include="EPoll.c" />
         <LibNioFile Include="EPollArrayWrapper.c" />
         <LibNioFile Include="EPollPort.c" />

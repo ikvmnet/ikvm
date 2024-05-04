@@ -27,6 +27,7 @@
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\management\OperatingSystemImpl.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libmanagement\mapfile-vers" />
         <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\management\FileSystemImpl.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\management\OperatingSystemImpl.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\management\LinuxOperatingSystem.c" />

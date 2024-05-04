@@ -17,13 +17,12 @@
         <ProjectReference Include="..\libnio\libnio.clangproj" />
     </ItemGroup>
     <ItemGroup>
+        <Dependencies Include="pthread" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\nio\ch\sctp" />
         <AdditionalCompileOptions Include="-fcommon" />
         <AdditionalLinkOptions Include="-fcommon" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libsctp\mapfile-vers" />
         <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\nio\ch\sctp\**\*.c" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
-        <Dependencies Include="pthread" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
