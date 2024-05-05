@@ -559,8 +559,8 @@
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\AbstractPollSelectorImpl.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\PollSelectorProvider.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\SimpleAsynchronousFileChannelImpl.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\com\sun\security\auth\module\UnixLoginModule.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\com\sun\security\auth\module\UnixSystem.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\security\auth\module\UnixLoginModule.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\security\auth\module\UnixSystem.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\io\**\*.java" PackagePath="java\io" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\lang\**\*.java" PackagePath="java\lang" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\net\**\*.java" PackagePath="java\net" />
@@ -576,8 +576,8 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\com\sun\security\auth\module\NTLoginModule.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\com\sun\security\auth\module\NTSystem.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\security\auth\module\NTLoginModule.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\security\auth\module\NTSystem.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\java\io\**\*.java" PackagePath="java\io" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\java\lang\**\*.java" PackagePath="java\lang" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\java\net\**\*.java" PackagePath="java\net" />

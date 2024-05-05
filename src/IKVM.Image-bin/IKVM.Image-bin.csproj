@@ -19,7 +19,7 @@
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt\libawt.clangproj" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libmanagement\libmanagement.clangproj" />
-        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libw2k_lsa_auth\libw2k_lsa_auth.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libj2pkcs11\libj2pkcs11.clangproj" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosxapp\libosxapp.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosx\libosx.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libkrb5\libkrb5.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;osx-x64;osx-arm64" />
