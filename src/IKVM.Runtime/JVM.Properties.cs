@@ -288,6 +288,10 @@ namespace IKVM.Runtime
                 p["java.awt.headless"] = "true";
                 p["sun.nio.MaxDirectMemorySize"] = "-1";
 
+                // default to FORK on OSX, instead of posix_spawn with jspawnhelper
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    p["jdk.lang.Process.launchMechanism"] = "FORK";
+
                 // cacerts is mounted by the VFS into ikvmHome
                 p.Add("javax.net.ssl.trustStore", Path.Combine(HomePath, "lib", "security", "cacerts"));
 
