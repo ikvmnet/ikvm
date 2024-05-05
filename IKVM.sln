@@ -314,6 +314,8 @@ Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libkrb5", "src\libkrb5\libk
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libj2pkcs11", "src\libj2pkcs11\libj2pkcs11.clangproj", "{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}"
 EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjaas", "src\libjaas\libjaas.clangproj", "{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1089,6 +1091,12 @@ Global
 		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.NoVariablesDefault|Any CPU.Build.0 = NoVariablesDefault
 		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.Release|Any CPU.ActiveCfg = NoVariablesDefault
 		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.Release|Any CPU.Build.0 = NoVariablesDefault
+		{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}.NoVariablesDefault|Any CPU.ActiveCfg = Release|Any CPU
+		{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
+		{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
