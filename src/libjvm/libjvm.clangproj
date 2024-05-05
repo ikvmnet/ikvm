@@ -39,6 +39,7 @@
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_linux" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\linux\vm" />
         <Dependencies Include="c" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)hotspot\make\linux\makefiles\mapfile-vers-product" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_bsd" />
