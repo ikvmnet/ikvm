@@ -176,7 +176,7 @@ namespace IKVM.Java.Externs.java.io
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (JVM.Vfs.IsPath(canonicalPrefix) || JVM.Vfs.IsPath(pathWithCanonicalPrefix))
+            if (JVM.Vfs.IsPath(pathWithCanonicalPrefix))
             {
                 return CanonicalizePath(Path.IsPathRooted(pathWithCanonicalPrefix) == false ? Path.GetFullPath(pathWithCanonicalPrefix) : pathWithCanonicalPrefix);
             }
