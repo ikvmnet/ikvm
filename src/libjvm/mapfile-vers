@@ -266,6 +266,70 @@ SUNWprivate_1.1 {
                 # This is for Forte Analyzer profiling support.
                 AsyncGetCallTrace;
 
+                # JNI varargs entry points
+                __JNI_CallObjectMethod;
+                __JNI_CallObjectMethodV;
+                __JNI_CallNonvirtualObjectMethod;
+                __JNI_CallNonvirtualObjectMethodV;
+                __JNI_CallStaticObjectMethod;
+                __JNI_CallStaticObjectMethodV;
+                __JNI_CallBooleanMethod;
+                __JNI_CallBooleanMethodV;
+                __JNI_CallNonvirtualBooleanMethod;
+                __JNI_CallNonvirtualBooleanMethodV;
+                __JNI_CallStaticBooleanMethod;
+                __JNI_CallStaticBooleanMethodV;
+                __JNI_CallByteMethod;
+                __JNI_CallByteMethodV;
+                __JNI_CallNonvirtualByteMethod;
+                __JNI_CallNonvirtualByteMethodV;
+                __JNI_CallStaticByteMethod;
+                __JNI_CallStaticByteMethodV;
+                __JNI_CallCharMethod;
+                __JNI_CallCharMethodV;
+                __JNI_CallNonvirtualCharMethod;
+                __JNI_CallNonvirtualCharMethodV;
+                __JNI_CallStaticCharMethod;
+                __JNI_CallStaticCharMethodV;
+                __JNI_CallShortMethod;
+                __JNI_CallShortMethodV;
+                __JNI_CallNonvirtualShortMethod;
+                __JNI_CallNonvirtualShortMethodV;
+                __JNI_CallStaticShortMethod;
+                __JNI_CallStaticShortMethodV;
+                __JNI_CallIntMethod;
+                __JNI_CallIntMethodV;
+                __JNI_CallNonvirtualIntMethod;
+                __JNI_CallNonvirtualIntMethodV;
+                __JNI_CallStaticIntMethod;
+                __JNI_CallStaticIntMethodV;
+                __JNI_CallLongMethod;
+                __JNI_CallLongMethodV;
+                __JNI_CallNonvirtualLongMethod;
+                __JNI_CallNonvirtualLongMethodV;
+                __JNI_CallStaticLongMethod;
+                __JNI_CallStaticLongMethodV;
+                __JNI_CallFloatMethod;
+                __JNI_CallFloatMethodV;
+                __JNI_CallNonvirtualFloatMethod;
+                __JNI_CallNonvirtualFloatMethodV;
+                __JNI_CallStaticFloatMethod;
+                __JNI_CallStaticFloatMethodV;
+                __JNI_CallDoubleMethod;
+                __JNI_CallDoubleMethodV;
+                __JNI_CallNonvirtualDoubleMethod;
+                __JNI_CallNonvirtualDoubleMethodV;
+                __JNI_CallStaticDoubleMethod;
+                __JNI_CallStaticDoubleMethodV;
+                __JNI_NewObject;
+                __JNI_NewObjectV;
+                __JNI_CallVoidMethod;
+                __JNI_CallVoidMethodV;
+                __JNI_CallNonvirtualVoidMethod;
+                __JNI_CallNonvirtualVoidMethodV;
+                __JNI_CallStaticVoidMethod;
+                __JNI_CallStaticVoidMethodV;
+
 		# INSERT VTABLE SYMBOLS HERE
 
         local:
