@@ -7,7 +7,7 @@
     <PropertyGroup>
         <TargetName>jnf</TargetName>
         <OutputType>dll</OutputType>
-        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
+        <TargetIdentifiers>osx-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />

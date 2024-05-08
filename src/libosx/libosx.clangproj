@@ -8,20 +8,21 @@
         <TargetName>osx</TargetName>
         <OutputType>dll</OutputType>
         <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
-        <Language>c</Language>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
-        <ProjectReference Include="..\libjnf\libjnf.clangproj" />
+        <ProjectReference Include="..\libjnf\libjnf.clangproj" Condition=" '$(TargetIdentifier)' == 'osx-arm64' " />
         <ProjectReference Include="..\libosxapp\libosxapp.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Foundation" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="ApplicationServices" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="SystemConfiguration" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="JavaNativeFoundation" Separator=" " Condition=" '$(TargetIdentifier)' == 'osx-x64' "/>
         <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\concurrent\*.m" />-->
-        <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\java\util\*.m" />
+        <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\java\util\*.m" Language="objective-c" />
         <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\eio\*.m" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\apple\security\*.m" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\apple\launcher\*.m" />-->
