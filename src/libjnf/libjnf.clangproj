@@ -1,0 +1,25 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>606e173d-798d-4463-8efd-0ad750831dd3</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>jnf</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="." />
+        <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Foundation" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="AppKit" Separator=" " />
+        <Compile Include="*.c" />
+        <Compile Include="JavaNativeFoundation\*.m" Language="objective-c" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

@@ -1,74 +1,74 @@
 ﻿<Project>
-  <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
-  <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
-  <PropertyGroup Label="Globals">
-    <ProjectGuid>fe90ddcb-06f3-4470-a9a7-7640b04ea9e4</ProjectGuid>
-  </PropertyGroup>
-  <PropertyGroup>
-    <TargetName>jvm</TargetName>
-    <OutputType>dll</OutputType>
-  </PropertyGroup>
-  <ItemGroup>
-    <AdditionalCompileOptions Include="-Wno-dll-attribute-on-redeclaration" />
-    <IncludeDirectories Include="$(MSBuildThisFileDirectory)" />
-    <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\share\vm" />
-    <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\share\vm\prims" />
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x86'))">
-    <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
-    <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x64'))">
-    <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
-    <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm'))">
-    <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
-    <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm64'))">
-    <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
-    <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-    <PreprocessorDefinitions Include="TARGET_OS_FAMILY_windows" />
-    <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\windows\vm" />
-    <Dependencies Include="Ws2_32" />
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
-    <PreprocessorDefinitions Include="TARGET_OS_FAMILY_linux" />
-    <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\linux\vm" />
-    <Dependencies Include="c" />
-    <AdditionalLinkOptions Include="-Wl,--version-script=mapfile-vers" />
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
-    <PreprocessorDefinitions Include="TARGET_OS_FAMILY_bsd" />
-    <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\bsd\vm" />
-    <Dependencies Include="c" />
-    <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f." />
-    <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f.." />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="**\*.c" LanguageStandard="c99" />
-    <Compile Include="**\*.cpp" LanguageStandard="c++11" />
-  </ItemGroup>
-  <ItemGroup>
-    <Header Include="$(OpenJdkDir)jdk\src\share\javavm\export\**\*.h">
-      <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
-    </Header>
-    <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\javavm\export\**\*.h" Condition="!$(TargetIdentifier.StartsWith('osx-'))">
-      <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
-    </Header>
-    <Header Include="$(OpenJdkDir)jdk\src\macosx\javavm\export\**\*.h" Condition="$(TargetIdentifier.StartsWith('osx-'))">
-      <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
-    </Header>
-    <Header Include="ikvm.h">
-      <IncludePath>ikvm.h</IncludePath>
-    </Header>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="mapfile-vers" />
-  </ItemGroup>
-  <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
-  <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>fe90ddcb-06f3-4470-a9a7-7640b04ea9e4</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>jvm</TargetName>
+        <OutputType>dll</OutputType>
+    </PropertyGroup>
+    <ItemGroup>
+        <AdditionalCompileOptions Include="-Wno-dll-attribute-on-redeclaration" />
+        <IncludeDirectories Include="$(MSBuildThisFileDirectory)" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\share\vm" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\share\vm\prims" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x86'))">
+        <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x64'))">
+        <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm'))">
+        <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm64'))">
+        <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <PreprocessorDefinitions Include="TARGET_OS_FAMILY_windows" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\windows\vm" />
+        <Dependencies Include="Ws2_32" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <PreprocessorDefinitions Include="TARGET_OS_FAMILY_linux" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\linux\vm" />
+        <Dependencies Include="c" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=mapfile-vers" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <PreprocessorDefinitions Include="TARGET_OS_FAMILY_bsd" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\bsd\vm" />
+        <Dependencies Include="c" />
+        <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f." />
+        <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f.." />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="**\*.c" LanguageStandard="c99" />
+        <Compile Include="**\*.cpp" LanguageStandard="c++11" />
+    </ItemGroup>
+    <ItemGroup>
+        <Header Include="$(OpenJdkDir)jdk\src\share\javavm\export\**\*.h">
+            <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
+        </Header>
+        <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\javavm\export\**\*.h" Condition="!$(TargetIdentifier.StartsWith('osx-'))">
+            <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
+        </Header>
+        <Header Include="$(OpenJdkDir)jdk\src\macosx\javavm\export\**\*.h" Condition="$(TargetIdentifier.StartsWith('osx-'))">
+            <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
+        </Header>
+        <Header Include="ikvm.h">
+            <IncludePath>ikvm.h</IncludePath>
+        </Header>
+    </ItemGroup>
+    <ItemGroup>
+        <None Include="mapfile-vers" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>
