@@ -2,7 +2,7 @@
 #define NETEXPORT __declspec(dllexport)
 #define NETCALL __stdcall
 #else
-#define NETEXPORT
+#define NETEXPORT __attribute__((visibility("default")))
 #define NETCALL
 #endif
 
