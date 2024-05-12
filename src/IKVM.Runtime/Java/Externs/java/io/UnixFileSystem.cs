@@ -625,7 +625,7 @@ namespace IKVM.Java.Externs.java.io
             else
             {
                 __callerID ??= global::ikvm.@internal.CallerID.create(UnixFileSystemAccessor.Type.TypeHandle);
-                __jniPtr__setReadOnly ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__setReadOnly>(JNIFrame.GetFuncPtr(__callerID, "java/io/UnixFileSystem", nameof(setLastModifiedTime), "(Ljava/io/File;)Z"));
+                __jniPtr__setReadOnly ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__setReadOnly>(JNIFrame.GetFuncPtr(__callerID, "java/io/UnixFileSystem", nameof(setReadOnly), "(Ljava/io/File;)Z"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try

@@ -54,6 +54,16 @@ namespace IKVM.Tests.Java.java.io
         }
 
         [TestMethod]
+        public void CanSetReadOnly()
+        {
+            var f = new global::java.io.File(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
+            f.createNewFile().Should().BeTrue();
+            f.canWrite().Should().BeTrue();
+            f.setReadOnly().Should().BeTrue();
+            f.canWrite().Should().BeFalse();
+        }
+
+        [TestMethod]
         public void ShouldRemoveDotFromCanonicalizedPath()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
