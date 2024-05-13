@@ -7,8 +7,6 @@ using FluentAssertions;
 
 using IKVM.JTReg.TestAdapter.Core;
 
-using javax.xml.bind;
-
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Moq;

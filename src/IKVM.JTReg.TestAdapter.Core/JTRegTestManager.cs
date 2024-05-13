@@ -18,6 +18,8 @@ namespace IKVM.JTReg.TestAdapter.Core
     public class JTRegTestManager
     {
 
+        public static readonly JTRegTestManager Instance = new();
+
         public const string URI = "executor://ikvmjtregtestadapter/v1";
 
         internal static readonly string JTREG_LIB = Path.Combine(Path.GetDirectoryName(typeof(JTRegTestManager).Assembly.Location), "jtreg");

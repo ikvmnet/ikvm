@@ -27,9 +27,7 @@ namespace IKVM.JTReg.TestAdapter
 
                 try
                 {
-                    // setup isolation host for source
-                    var proxy = JTRegTestIsolationHost.Instance.CreateManager();
-                    proxy.DiscoverTests(source, new JTRegDiscoveryContextProxy(discoveryContext, logger, discoverySink), new CancellationTokenProxy(CancellationToken.None));
+                    JTRegTestManager.Instance.DiscoverTests(source, new JTRegDiscoveryContextProxy(discoveryContext, logger, discoverySink), CancellationToken.None);
                 }
                 catch (Exception e)
                 {

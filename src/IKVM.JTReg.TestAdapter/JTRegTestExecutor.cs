@@ -28,15 +28,13 @@ namespace IKVM.JTReg.TestAdapter
         public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             cts = new CancellationTokenSource();
-            var ctp = new CancellationTokenProxy(cts.Token);
 
             foreach (var group in tests.GroupBy(i => i.Source))
             {
                 if (cts.Token.IsCancellationRequested)
                     break;
 
-                var proxy = JTRegTestIsolationHost.Instance.CreateManager();
-                proxy.RunTests(group.Key, JTRegProxyUtil.Convert(group).ToList(), new JTRegExecutionContextProxy(runContext, frameworkHandle), ctp);
+                JTRegTestManager.Instance.RunTests(group.Key, JTRegProxyUtil.Convert(group).ToList(), new JTRegExecutionContextProxy(runContext, frameworkHandle), cts.Token);
             }
         }
 
@@ -49,15 +47,13 @@ namespace IKVM.JTReg.TestAdapter
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             cts = new CancellationTokenSource();
-            var ctp = new CancellationTokenProxy(cts.Token);
 
             foreach (var source in sources)
             {
                 if (cts.Token.IsCancellationRequested)
                     break;
 
-                var proxy = JTRegTestIsolationHost.Instance.CreateManager();
-                proxy.RunTests(source, new JTRegExecutionContextProxy(runContext, frameworkHandle), ctp);
+                JTRegTestManager.Instance.RunTests(source, null, new JTRegExecutionContextProxy(runContext, frameworkHandle), cts.Token);
             }
         }
 
@@ -68,6 +64,7 @@ namespace IKVM.JTReg.TestAdapter
         {
             cts?.Cancel();
         }
+
     }
 
 }
