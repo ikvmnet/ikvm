@@ -2,14 +2,21 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
+        <OutputType>Exe</OutputType>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+        <IsTestProject>true</IsTestProject>
+        <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+        <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+        <EnableMSTestRunner>true</EnableMSTestRunner>
         <RunSettingsFilePath>$(MSBuildProjectDirectory)\IKVM.OpenJDK.Tests.runsettings</RunSettingsFilePath>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="6.8.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+        <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.0.0" />
+        <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.9.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -55,6 +62,18 @@
         </None>
     </ItemGroup>
 
+    <Target Name="CopyConfigToTestHostConfig" AfterTargets="Build">
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll.config" DestinationFiles="$(OutputPath)testhost.dll.config" Condition="Exists('$(OutputPath)$(AssemblyName).dll.config')" />
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).exe.config" DestinationFiles="$(OutputPath)testhost.dll.config" Condition="Exists('$(OutputPath)$(AssemblyName).exe.config')" />
+    </Target>
+
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
+
+    <ItemGroup>
+        <TestingPlatformBuilderHook Include="5589F9E6-D758-4D23-BB44-BA98C835DB31" Condition=" $(GenerateTestingPlatformEntryPoint) == 'true' ">
+            <DisplayName>JTReg</DisplayName>
+            <TypeFullName>IKVM.JTReg.TestAdapter.TestingPlatform.TestingPlatformBuilderHook</TypeFullName>
+        </TestingPlatformBuilderHook>
+    </ItemGroup>
 </Project>
