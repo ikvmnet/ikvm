@@ -6,21 +6,25 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\jtreg.props" />
 
     <PropertyGroup>
+        <OutputType>Exe</OutputType>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+        <IsTestProject>true</IsTestProject>
+        <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+        <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+        <EnableMSTestRunner>true</EnableMSTestRunner>
         <RunSettingsFilePath>$(MSBuildProjectDirectory)\IKVM.JTReg.TestAdapter.Tests.runsettings</RunSettingsFilePath>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="6.8.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-        <PackageReference Include="MSTest.TestAdapter" Version="3.2.2" />
-        <PackageReference Include="MSTest.TestFramework" Version="3.2.2" />
         <PackageReference Include="Moq" Version="4.18.2" />
         <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.9.0" />
+        <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.0.0" />
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup> 
         <ProjectReference Include="..\IKVM.JTReg.TestAdapter\IKVM.JTReg.TestAdapter.csproj" />
     </ItemGroup>
 
@@ -35,6 +39,11 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
+
+    <Target Name="CopyConfigToTestHostConfig" AfterTargets="Build">
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll.config" DestinationFiles="$(OutputPath)testhost.dll.config" Condition="Exists('$(OutputPath)$(AssemblyName).dll.config')" />
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).exe.config" DestinationFiles="$(OutputPath)testhost.dll.config" Condition="Exists('$(OutputPath)$(AssemblyName).exe.config')" />
+    </Target>
     
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
@@ -42,4 +51,12 @@
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\IKVM.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.targets" />
+
+    <ItemGroup>
+        <TestingPlatformBuilderHook Include="5589F9E6-D758-4D23-BB44-BA98C835DB31" Condition=" $(GenerateTestingPlatformEntryPoint) == 'true' ">
+            <DisplayName>JTReg</DisplayName>
+            <TypeFullName>IKVM.JTReg.TestAdapter.TestingPlatform.TestingPlatformBuilderHook</TypeFullName>
+        </TestingPlatformBuilderHook>
+    </ItemGroup>
+    
 </Project>

@@ -28,13 +28,23 @@ namespace IKVM.JTReg.TestAdapter
         public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             cts = new CancellationTokenSource();
+            RunTests(tests, runContext, frameworkHandle, cts.Token);
+        }
 
+        /// <summary>
+        /// Executes the given test cases.
+        /// </summary>
+        /// <param name="tests"></param>
+        /// <param name="runContext"></param>
+        /// <param name="frameworkHandle"></param>
+        public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle, CancellationToken cancellationToken)
+        {
             foreach (var group in tests.GroupBy(i => i.Source))
             {
-                if (cts.Token.IsCancellationRequested)
+                if (cancellationToken.IsCancellationRequested)
                     break;
 
-                JTRegTestManager.Instance.RunTests(group.Key, JTRegProxyUtil.Convert(group).ToList(), new JTRegExecutionContextProxy(runContext, frameworkHandle), cts.Token);
+                JTRegTestManager.Instance.RunTests(group.Key, JTRegProxyUtil.Convert(group).ToList(), new JTRegExecutionContextProxy(runContext, frameworkHandle), cancellationToken);
             }
         }
 
@@ -47,13 +57,23 @@ namespace IKVM.JTReg.TestAdapter
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             cts = new CancellationTokenSource();
+            RunTests(sources, runContext, frameworkHandle, cts.Token);
+        }
 
+        /// <summary>
+        /// Executes the test cases in the given sources.
+        /// </summary>
+        /// <param name="sources"></param>
+        /// <param name="runContext"></param>
+        /// <param name="frameworkHandle"></param>
+        public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle, CancellationToken cancellationToken)
+        {
             foreach (var source in sources)
             {
-                if (cts.Token.IsCancellationRequested)
+                if (cancellationToken.IsCancellationRequested)
                     break;
 
-                JTRegTestManager.Instance.RunTests(source, null, new JTRegExecutionContextProxy(runContext, frameworkHandle), cts.Token);
+                JTRegTestManager.Instance.RunTests(source, null, new JTRegExecutionContextProxy(runContext, frameworkHandle), cancellationToken);
             }
         }
 

@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IKVM.JTReg.TestAdapter.Core
@@ -33,10 +34,11 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <summary>
         /// Starts listening for signals.
         /// </summary>
-        public void Start()
+        public void Start(CancellationToken cancellationToken = default)
         {
             lock (syncRoot)
             {
+                cancellationToken.Register(() => Stop());
                 listener = new TcpListener(new IPEndPoint(IPAddress.Loopback, 0));
                 listener.Start();
                 listener.BeginAcceptSocket(OnAcceptSocket, null);

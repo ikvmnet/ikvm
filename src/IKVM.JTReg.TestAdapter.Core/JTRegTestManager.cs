@@ -20,7 +20,7 @@ namespace IKVM.JTReg.TestAdapter.Core
 
         public static readonly JTRegTestManager Instance = new();
 
-        public const string URI = "executor://ikvmjtregtestadapter/v1";
+        public const string URI = "executor://jtregtestadapter/v1";
 
         internal static readonly string JTREG_LIB = Path.Combine(Path.GetDirectoryName(typeof(JTRegTestManager).Assembly.Location), "jtreg");
 
@@ -219,6 +219,9 @@ namespace IKVM.JTReg.TestAdapter.Core
                 {
                     foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite, context.Options.PartitionCount))
                     {
+                        if (cancellationToken.IsCancellationRequested)
+                            return;
+
                         context.SendTestCase(testCase);
                         testCount++;
                     }
@@ -257,7 +260,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                     if (context.CanAttachDebuggerToProcess && Debugger.IsAttached)
                     {
                         debug = new IkvmTraceServer(context);
-                        debug.Start();
+                        debug.Start(cancellationToken);
                     }
 
                     source = Path.GetFullPath(source);
