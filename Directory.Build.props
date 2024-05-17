@@ -101,5 +101,16 @@
         <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\ikvmc\ikvmc.csproj" IsIkvmCompiler="true" />
         <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\ikvmstub\ikvmstub.csproj" IsIkvmExporter="true" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.102">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
 
 </Project>
