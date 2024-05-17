@@ -7,9 +7,9 @@
         <SupportedImageRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedImageRuntimes>
         <EnabledImageRuntimes Condition=" '$(EnabledImageRuntimes)' == '' ">$(SupportedImageRuntimes)</EnabledImageRuntimes>
         
-        <!--<EnabledRuntimes>win-x64;linux-x64</EnabledRuntimes>
-        <EnabledToolRuntimes>win-x64;linux-x64</EnabledToolRuntimes>
-        <EnabledImageRuntimes>win-x64;linux-x64</EnabledImageRuntimes>-->
+        <!--<EnabledRuntimes>win-x64;win-x86;linux-x64</EnabledRuntimes>
+        <EnabledToolRuntimes>win-x64;win-x86;linux-x64</EnabledToolRuntimes>
+        <EnabledImageRuntimes>win-x64;win-x86;linux-x64</EnabledImageRuntimes>-->
 
         <_SupportedRuntimes>;$(SupportedRuntimes);</_SupportedRuntimes>
         <_EnabledRuntimes>;$(EnabledRuntimes);</_EnabledRuntimes>
