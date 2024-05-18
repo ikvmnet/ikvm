@@ -6,13 +6,8 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\jtreg.props" />
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
-        <IsTestProject>true</IsTestProject>
-        <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-        <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
-        <EnableMSTestRunner>true</EnableMSTestRunner>
         <RunSettingsFilePath>$(MSBuildProjectDirectory)\IKVM.JTReg.TestAdapter.Tests.runsettings</RunSettingsFilePath>
     </PropertyGroup>
 
@@ -21,7 +16,7 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
         <PackageReference Include="Moq" Version="4.18.2" />
         <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.9.0" />
-        <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.0.0" />
+        <PackageReference Include="MSTest" Version="3.3.1" />
     </ItemGroup>
 
     <ItemGroup> 
@@ -51,12 +46,5 @@
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\IKVM.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.targets" />
-
-    <ItemGroup>
-        <TestingPlatformBuilderHook Include="5589F9E6-D758-4D23-BB44-BA98C835DB31" Condition=" $(GenerateTestingPlatformEntryPoint) == 'true' ">
-            <DisplayName>JTReg</DisplayName>
-            <TypeFullName>IKVM.JTReg.TestAdapter.TestingPlatform.TestingPlatformBuilderHook</TypeFullName>
-        </TestingPlatformBuilderHook>
-    </ItemGroup>
     
 </Project>
