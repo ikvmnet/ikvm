@@ -65,10 +65,4 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
 
-    <ItemGroup>
-        <TestingPlatformBuilderHook Include="5589F9E6-D758-4D23-BB44-BA98C835DB31" Condition=" $(GenerateTestingPlatformEntryPoint) == 'true' ">
-            <DisplayName>JTReg</DisplayName>
-            <TypeFullName>IKVM.JTReg.TestAdapter.TestingPlatform.TestingPlatformBuilderHook</TypeFullName>
-        </TestingPlatformBuilderHook>
-    </ItemGroup>
 </Project>
