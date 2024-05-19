@@ -1,1 +1,1 @@
-java/nio/channels/ServerSocketChannel.Basic                                                                             macosx-all
+java/nio/channels/ServerSocketChannel/Basic.java                                                                        macosx-all
