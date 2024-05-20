@@ -327,6 +327,7 @@ EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libmlib_image", "src\libmlib_image\libmlib_image.clangproj", "{06C1705E-0D51-42A2-A987-BF7BCFD294F1}"
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libfreetype", "src\libfreetype\libfreetype.clangproj", "{B57CFB23-3EC1-4501-ACAC-8B963FFEB7DB}"
+EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libsctp", "src\libsctp\libsctp.clangproj", "{D6D8258D-456A-4C72-ABA1-1CABC37D471F}"
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libj2pkcs11", "src\libj2pkcs11\libj2pkcs11.clangproj", "{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}"
