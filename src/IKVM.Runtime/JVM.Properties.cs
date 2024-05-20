@@ -4,7 +4,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
@@ -51,21 +51,36 @@ namespace IKVM.Runtime
             internal static string HomePath => homePath.Value;
 
             /// <summary>
-            /// Gets the  set of properties loaded from any companion 'ikvm.properties' file.
+            /// Gets the search paths to examine for ikvm.properties. 
+            /// </summary>
+            /// <returns></returns>
+            static IEnumerable<string> GetIkvmSearchDirs()
+            {
+                if (AppContext.BaseDirectory is string baseDir && !string.IsNullOrEmpty(baseDir))
+                    yield return baseDir;
+                if (typeof(Properties).Assembly.Location is string runtimePath && !string.IsNullOrEmpty(runtimePath))
+                    yield return Path.GetDirectoryName(runtimePath);
+            }
+
+            /// <summary>
+            /// Gets the set of properties loaded from any companion 'ikvm.properties' file.
             /// </summary>
             /// <returns></returns>
             static Dictionary<string, string> GetIkvmProperties()
             {
                 var props = new Dictionary<string, string>();
 
-                // the runtime assembly will set the root of various relative paths
-                var runtimePath = Path.GetDirectoryName(typeof(JVM).Assembly.Location);
-
                 try
                 {
-                    var ikvmPropertiesPath = Path.Combine(runtimePath, "ikvm.properties");
-                    if (File.Exists(ikvmPropertiesPath))
-                        LoadProperties(File.ReadAllLines(ikvmPropertiesPath), props);
+                    foreach (var searchDir in GetIkvmSearchDirs())
+                    {
+                        var ikvmPropertiesPath = Path.Combine(searchDir, "ikvm.properties");
+                        if (File.Exists(ikvmPropertiesPath))
+                        {
+                            LoadProperties(File.ReadAllLines(ikvmPropertiesPath), props);
+                            break;
+                        }
+                    }
                 }
                 catch (Exception)
                 {
@@ -81,45 +96,52 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static string GetHomePath()
             {
-                var rootPath = Path.GetDirectoryName(typeof(JVM).Assembly.Location);
-
+                foreach (var searchDir in GetIkvmSearchDirs())
+                {
 #if NETFRAMEWORK
-                // attempt to find settings in legacy app.config
-                try
-                {
-                    // specified home directory
-                    if (ConfigurationManager.AppSettings["ikvm:ikvm.home"] is string confHome)
-                        return Path.GetFullPath(Path.Combine(rootPath, confHome));
+                    // attempt to find settings in legacy app.config
+                    try
+                    {
+                        // specified home directory
+                        if (ConfigurationManager.AppSettings["ikvm:ikvm.home"] is string confHome)
+                            if (Directory.Exists(Path.GetFullPath(Path.Combine(searchDir, confHome))))
+                                return Path.GetFullPath(Path.Combine(searchDir, confHome));
 
-                    // specified home root directory
-                    if (ConfigurationManager.AppSettings["ikvm:ikvm.home.root"] is string confHomeRoot)
-                        if (ResolveHomePathFromRoot(Path.Combine(rootPath, confHomeRoot)) is string confHomePath)
-                            return confHomePath;
-                }
-                catch (ConfigurationException)
-                {
-                    // app.config is invalid, ignore
-                }
+                        // specified home root directory
+                        if (ConfigurationManager.AppSettings["ikvm:ikvm.home.root"] is string confHomeRoot)
+                            if (ResolveHomePathFromRoot(Path.Combine(searchDir, confHomeRoot)) is string confHomePath)
+                                return confHomePath;
+                    }
+                    catch (ConfigurationException)
+                    {
+                        // app.config is invalid, ignore
+                    }
 #endif
 
-                // user value takes priority
-                if (User.TryGetValue("ikvm.home", out var homePath1))
-                    return Path.GetFullPath(Path.Combine(rootPath, homePath1));
+                    // user value takes priority
+                    if (User.TryGetValue("ikvm.home", out var homePath1))
+                        if (Directory.Exists(Path.GetFullPath(Path.Combine(searchDir, homePath1))))
+                            return Path.GetFullPath(Path.Combine(searchDir, homePath1));
 
-                // ikvm properties value comes next
-                if (Ikvm.TryGetValue("ikvm.home", out var homePath2))
-                    return Path.GetFullPath(Path.Combine(rootPath, homePath2));
+                    // ikvm properties value comes next
+                    if (Ikvm.TryGetValue("ikvm.home", out var homePath2))
+                        if (Directory.Exists(Path.GetFullPath(Path.Combine(searchDir, homePath2))))
+                            return Path.GetFullPath(Path.Combine(searchDir, homePath2));
 
-                // find first occurance of home root
-                if (User.TryGetValue("ikvm.home.root", out var homePathRoot) == false)
-                    Ikvm.TryGetValue("ikvm.home.root", out homePathRoot);
+                    // find first occurance of home root
+                    if (User.TryGetValue("ikvm.home.root", out var homePathRoot) == false)
+                        Ikvm.TryGetValue("ikvm.home.root", out homePathRoot);
 
-                // attempt to resolve the path from the given root
-                if (ResolveHomePathFromRoot(Path.GetFullPath(Path.Combine(rootPath, homePathRoot ?? "ikvm"))) is string resolvedHomePath)
-                    return resolvedHomePath;
+                    // attempt to resolve the path from the given root
+                    if (ResolveHomePathFromRoot(Path.GetFullPath(Path.Combine(searchDir, homePathRoot ?? "ikvm"))) is string resolvedHomePath)
+                        return resolvedHomePath;
 
-                // fallback to local 'ikvm' directory next to IKVM.Runtime
-                return Path.GetFullPath(Path.Combine(rootPath, "ikvm"));
+                    // fallback to local 'ikvm' directory
+                    if (Directory.Exists(Path.GetFullPath(Path.Combine(searchDir, "ikvm"))))
+                        return Path.GetFullPath(Path.Combine(searchDir, "ikvm"));
+                }
+
+                throw new InternalException("Could not locate ikvm home path.");
             }
 
             /// <summary>
@@ -289,6 +311,10 @@ namespace IKVM.Runtime
 
                 // unlimited direct memory
                 p["sun.nio.MaxDirectMemorySize"] = "-1";
+
+                // default to FORK on OSX, instead of posix_spawn with jspawnhelper
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    p["jdk.lang.Process.launchMechanism"] = "FORK";
 
                 // cacerts is mounted by the VFS into ikvmHome
                 p.Add("javax.net.ssl.trustStore", Path.Combine(HomePath, "lib", "security", "cacerts"));
@@ -652,7 +678,8 @@ namespace IKVM.Runtime
 
                     var path = SafeGetEnvironmentVariable("PATH");
                     if (path != null)
-                        libraryPath.Add(path);
+                        foreach (var i in path.Split(Path.PathSeparator))
+                            libraryPath.Add(i);
                 }
 
                 if (RuntimeUtil.IsLinux)
@@ -666,7 +693,8 @@ namespace IKVM.Runtime
                     // prefix with LD_LIBRARY_PATH
                     var ld_library_path = SafeGetEnvironmentVariable("LD_LIBRARY_PATH");
                     if (ld_library_path != null)
-                        libraryPath.Insert(0, ld_library_path);
+                        foreach (var i in ld_library_path.Split(Path.PathSeparator).Reverse())
+                            libraryPath.Insert(0, i);
                 }
 
                 if (RuntimeUtil.IsOSX)
@@ -683,12 +711,14 @@ namespace IKVM.Runtime
                     // prefix with JAVA_LIBRARY_PATH
                     var javaLibraryPath = SafeGetEnvironmentVariable("JAVA_LIBRARY_PATH");
                     if (javaLibraryPath != null)
-                        libraryPath.Add(javaLibraryPath);
+                        foreach (var i in javaLibraryPath.Split(Path.PathSeparator))
+                            libraryPath.Add(i);
 
                     // prefix with DYLD_LIBRARY_PATH
                     var dyldLibraryPath = SafeGetEnvironmentVariable("DYLD_LIBRARY_PATH");
                     if (dyldLibraryPath != null)
-                        libraryPath.Add(dyldLibraryPath);
+                        foreach (var i in dyldLibraryPath.Split(Path.PathSeparator))
+                            libraryPath.Add(i);
 
                     if (home != null)
                         libraryPath.Add(home);
@@ -698,12 +728,14 @@ namespace IKVM.Runtime
 
                 try
                 {
-                    // append relative .NET search paths from IKVM.Java assembly
-                    var s = Path.GetDirectoryName(Context.Resolver.ResolveBaseAssembly().Location);
-                    var l = new List<string>() { s };
+                    var l = new List<string>();
 
-                    foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
-                        l.Add(Path.Combine(s, "runtimes", rid, "native"));
+                    foreach (var d in GetIkvmSearchDirs())
+                    {
+                        l.Add(d);
+                        foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
+                            l.Add(Path.Combine(d, "runtimes", rid, "native"));
+                    }
 
                     libraryPath.InsertRange(0, l);
                 }
@@ -715,7 +747,7 @@ namespace IKVM.Runtime
                 if (RuntimeUtil.IsWindows)
                     libraryPath.Add(".");
 
-                return string.Join(Path.PathSeparator.ToString(), libraryPath);
+                return string.Join(Path.PathSeparator.ToString(), libraryPath.Distinct());
 #endif
             }
 

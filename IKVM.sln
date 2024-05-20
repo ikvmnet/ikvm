@@ -21,7 +21,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		CONTRIBUTING.md = CONTRIBUTING.md
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
-		Directory.Packages.props = Directory.Packages.props
 		GitVersion.yml = GitVersion.yml
 		global.json = global.json
 		IKVM.deps.targets = IKVM.deps.targets
@@ -283,10 +282,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.runtime.win-x86"
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libawt", "src\libawt\libawt.clangproj", "{93B43F23-23B1-4968-951E-DC9A447D6F0E}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libw2k_lsa_auth", "src\libw2k_lsa_auth\libw2k_lsa_auth.clangproj", "{78A745D7-706A-4B33-9D21-0EB7B5144C42}"
-EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libosxkrb5", "src\libosxkrb5\libosxkrb5.clangproj", "{F2969046-1672-4685-AE8D-53AED942DAE9}"
-EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libosx", "src\libosx\libosx.clangproj", "{55F3F094-CE8E-4734-B14E-7DD5DFE7E4F3}"
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libmanagement", "src\libmanagement\libmanagement.clangproj", "{9CE0434D-A6B9-4708-850C-CA83E26851B2}"
@@ -332,6 +327,15 @@ EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libmlib_image", "src\libmlib_image\libmlib_image.clangproj", "{06C1705E-0D51-42A2-A987-BF7BCFD294F1}"
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libfreetype", "src\libfreetype\libfreetype.clangproj", "{B57CFB23-3EC1-4501-ACAC-8B963FFEB7DB}"
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libsctp", "src\libsctp\libsctp.clangproj", "{D6D8258D-456A-4C72-ABA1-1CABC37D471F}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libj2pkcs11", "src\libj2pkcs11\libj2pkcs11.clangproj", "{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjaas", "src\libjaas\libjaas.clangproj", "{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjnf", "src\libjnf\libjnf.clangproj", "{606E173D-798D-4463-8EFD-0AD750831DD3}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libkrb5", "src\libkrb5\libkrb5.clangproj", "{78A745D7-706A-4B33-9D21-0EB7B5144C42}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -787,14 +791,6 @@ Global
 		{93B43F23-23B1-4968-951E-DC9A447D6F0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{93B43F23-23B1-4968-951E-DC9A447D6F0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{93B43F23-23B1-4968-951E-DC9A447D6F0E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F2969046-1672-4685-AE8D-53AED942DAE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F2969046-1672-4685-AE8D-53AED942DAE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F2969046-1672-4685-AE8D-53AED942DAE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F2969046-1672-4685-AE8D-53AED942DAE9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{55F3F094-CE8E-4734-B14E-7DD5DFE7E4F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{55F3F094-CE8E-4734-B14E-7DD5DFE7E4F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{55F3F094-CE8E-4734-B14E-7DD5DFE7E4F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -887,6 +883,26 @@ Global
 		{B57CFB23-3EC1-4501-ACAC-8B963FFEB7DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B57CFB23-3EC1-4501-ACAC-8B963FFEB7DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B57CFB23-3EC1-4501-ACAC-8B963FFEB7DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6D8258D-456A-4C72-ABA1-1CABC37D471F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6D8258D-456A-4C72-ABA1-1CABC37D471F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6D8258D-456A-4C72-ABA1-1CABC37D471F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6D8258D-456A-4C72-ABA1-1CABC37D471F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{606E173D-798D-4463-8EFD-0AD750831DD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{606E173D-798D-4463-8EFD-0AD750831DD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{606E173D-798D-4463-8EFD-0AD750831DD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{606E173D-798D-4463-8EFD-0AD750831DD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

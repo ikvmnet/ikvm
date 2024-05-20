@@ -20,8 +20,6 @@
         <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="ExceptionHandling" Separator=" " />
-        <!--<AdditionalLinkOptions Include="-framework JavaNativeFoundation" />-->
-        <!--<AdditionalLinkOptions Include="-framework JavaRuntimeSupport" />-->
         <AdditionalLinkOptions Include="-framework" Value="OpenGL" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="IOSurface" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="QuartzCore" Separator=" " />

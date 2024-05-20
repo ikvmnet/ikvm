@@ -1,0 +1,29 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>d6d8258d-456a-4c72-aba1-1cabc37d471f</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>sctp</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
+        <LanguageStandard>c99</LanguageStandard>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+        <ProjectReference Include="..\libnet\libnet.clangproj" />
+        <ProjectReference Include="..\libnio\libnio.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Dependencies Include="pthread" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\nio\ch\sctp" />
+        <AdditionalCompileOptions Include="-fcommon" />
+        <AdditionalLinkOptions Include="-fcommon" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libsctp\mapfile-vers" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\nio\ch\sctp\**\*.c" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

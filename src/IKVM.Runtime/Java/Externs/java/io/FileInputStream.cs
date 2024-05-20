@@ -44,9 +44,9 @@ namespace IKVM.Java.Externs.java.io
         /// <summary>
         /// Implements the native method 'open0'.
         /// </summary>
-        /// <param name="this_"></param>
+        /// <param name="self"></param>
         /// <param name="path"></param>
-        public static void open0(object this_, string path)
+        public static void open0(object self, string path)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -55,10 +55,11 @@ namespace IKVM.Java.Externs.java.io
             {
                 try
                 {
-                    var fd = FileInputStreamAccessor.GetFd(this_);
+                    var fd = FileInputStreamAccessor.GetFd(self);
                     if (fd == null)
                         throw new global::java.io.IOException("The handle is invalid.");
 
+                    FileDescriptorAccessor.SetPtr(fd, -1);
                     FileDescriptorAccessor.SetStream(fd, JVM.Vfs.Open(path, FileMode.Open, FileAccess.Read));
                 }
                 catch (ObjectDisposedException e)
@@ -94,7 +95,7 @@ namespace IKVM.Java.Externs.java.io
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    __jniPtr__open0(jniEnv, jniFrm.MakeLocalRef(this_), jniFrm.MakeLocalRef(path));
+                    __jniPtr__open0(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(path));
                 }
                 catch (Exception ex)
                 {
@@ -113,22 +114,18 @@ namespace IKVM.Java.Externs.java.io
         /// <summary>
         /// Implements the native method 'read0'.
         /// </summary>
-        /// <param name="this_"></param>
+        /// <param name="self"></param>
         /// <returns></returns>
-        public static int read0(object this_)
+        public static int read0(object self)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var fd = FileInputStreamAccessor.GetFd(this_);
+            var fd = FileInputStreamAccessor.GetFd(self);
             if (fd == null)
                 throw new global::java.io.IOException("The handle is invalid.");
 
-            var stream = FileDescriptorAccessor.GetStream(fd);
-            if (stream == null)
-                throw new global::java.io.IOException("Stream closed.");
-
-            if (stream is not FileStream fs)
+            if (FileDescriptorAccessor.GetStream(fd) is Stream stream)
             {
                 if (stream.CanRead == false)
                     throw new global::java.io.IOException("Read failed.");
@@ -158,7 +155,7 @@ namespace IKVM.Java.Externs.java.io
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    return __jniPtr__read0(jniEnv, jniFrm.MakeLocalRef(this_));
+                    return __jniPtr__read0(jniEnv, jniFrm.MakeLocalRef(self));
                 }
                 catch (Exception ex)
                 {
@@ -177,25 +174,21 @@ namespace IKVM.Java.Externs.java.io
         /// <summary>
         /// Implements the native method 'readBytes'.
         /// </summary>
-        /// <param name="this_"></param>
+        /// <param name="self"></param>
         /// <param name="bytes"></param>
         /// <param name="off"></param>
         /// <param name="len"></param>
         /// <returns></returns>
-        public static int readBytes(object this_, byte[] bytes, int off, int len)
+        public static int readBytes(object self, byte[] bytes, int off, int len)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var fd = FileInputStreamAccessor.GetFd(this_);
+            var fd = FileInputStreamAccessor.GetFd(self);
             if (fd == null)
                 throw new global::java.io.IOException("The handle is invalid.");
 
-            var stream = FileDescriptorAccessor.GetStream(fd);
-            if (stream == null)
-                throw new global::java.io.IOException("Stream closed.");
-
-            if (stream is not FileStream fs)
+            if (FileDescriptorAccessor.GetStream(fd) is Stream stream)
             {
                 if (len == 0)
                     return 0;
@@ -232,7 +225,7 @@ namespace IKVM.Java.Externs.java.io
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    return __jniPtr__readBytes(jniEnv, jniFrm.MakeLocalRef(this_), jniFrm.MakeLocalRef(bytes), off, len);
+                    return __jniPtr__readBytes(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(bytes), off, len);
                 }
                 catch (Exception ex)
                 {
@@ -251,23 +244,19 @@ namespace IKVM.Java.Externs.java.io
         /// <summary>
         /// Implements the native method 'skip0'.
         /// </summary>
-        /// <param name="this_"></param>
+        /// <param name="self"></param>
         /// <param name="n"></param>
         /// <returns></returns>
-        public static long skip0(object this_, long n)
+        public static long skip0(object self, long n)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var fd = FileInputStreamAccessor.GetFd(this_);
+            var fd = FileInputStreamAccessor.GetFd(self);
             if (fd == null)
                 throw new global::java.io.IOException("The handle is invalid.");
 
-            var stream = FileDescriptorAccessor.GetStream(fd);
-            if (stream == null)
-                throw new global::java.io.IOException("Stream closed.");
-
-            if (stream is not FileStream fs)
+            if (FileDescriptorAccessor.GetStream(fd) is Stream stream)
             {
                 if (stream.CanSeek == false)
                     throw new global::java.io.IOException("The handle is invalid.");
@@ -299,7 +288,7 @@ namespace IKVM.Java.Externs.java.io
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    return __jniPtr__skip0(jniEnv, jniFrm.MakeLocalRef(this_), n);
+                    return __jniPtr__skip0(jniEnv, jniFrm.MakeLocalRef(self), n);
                 }
                 catch (Exception ex)
                 {
@@ -318,22 +307,18 @@ namespace IKVM.Java.Externs.java.io
         /// <summary>
         /// Implements the native method 'available0'.
         /// </summary>
-        /// <param name="this_"></param>
+        /// <param name="self"></param>
         /// <returns></returns>
-        public static int available0(object this_)
+        public static int available0(object self)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var fd = FileInputStreamAccessor.GetFd(this_);
+            var fd = FileInputStreamAccessor.GetFd(self);
             if (fd == null)
                 throw new global::java.io.IOException("The handle is invalid.");
 
-            var stream = FileDescriptorAccessor.GetStream(fd);
-            if (stream == null)
-                throw new global::java.io.IOException("Stream closed.");
-
-            if (stream is not FileStream fs)
+            if (FileDescriptorAccessor.GetStream(fd) is Stream stream)
             {
                 if (stream.CanSeek == false)
                     return 0;
@@ -363,7 +348,7 @@ namespace IKVM.Java.Externs.java.io
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    return __jniPtr__available0(jniEnv, jniFrm.MakeLocalRef(this_));
+                    return __jniPtr__available0(jniEnv, jniFrm.MakeLocalRef(self));
                 }
                 catch (Exception ex)
                 {
@@ -382,23 +367,22 @@ namespace IKVM.Java.Externs.java.io
         /// <summary>
         /// Implements the native method 'close0'.
         /// </summary>
-        /// <param name="this_"></param>
-        public static void close0(object this_)
+        /// <param name="self"></param>
+        public static void close0(object self)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var fd = FileInputStreamAccessor.GetFd(this_);
+            var fd = FileInputStreamAccessor.GetFd(self);
             if (fd == null)
                 throw new global::java.io.IOException("The handle is invalid.");
-                
-            if (FileDescriptorAccessor.GetObj(fd) is not null and not FileStream)
+
+            if (FileDescriptorAccessor.GetStream(fd) is Stream stream)
             {
                 try
                 {
-                    var h = FileDescriptorAccessor.GetHandle(fd);
-                    FileDescriptorAccessor.SetHandle(fd, -1);
-                    LibIkvm.Instance.io_close_file(h);
+                    stream.Close();
+                    FileDescriptorAccessor.SetPtr(fd, -1);
                 }
                 catch
                 {
@@ -413,7 +397,7 @@ namespace IKVM.Java.Externs.java.io
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    __jniPtr__close0(jniEnv, jniFrm.MakeLocalRef(this_));
+                    __jniPtr__close0(jniEnv, jniFrm.MakeLocalRef(self));
                 }
                 catch (Exception ex)
                 {

@@ -4,7 +4,5 @@ There are two major uses of this library. The first is for external hosting of t
 
 The second set of functions prefixed with JVM_ are used internally by OpenJDK C code for various low level operations. To the extent possible we copy the implementations from OpenJDK. But, many of these functions need to call back into the internals of IKVM.
 
-A few functions prefixed IKVM_ are used by our JVM_ implementation functions to provide support for things OpenJDK C code expects, such as throwing exceptions.
-
-We also make use of JVM_LoadLibrary and JVM_UnloadLibrary in our JNI implementation, because this is how OpenJDK does so, and for good reasons: it causes loading of JNI libraries to originate from libjvm.dylib on OSX, and thus inherit it's loader path capabilities to load other JNI libraries from arbitrary locations.
+We also make use of JVM_LoadLibrary and JVM_UnloadLibrary in our JNI implementation, because this is how OpenJDK does so, and for good reasons: it causes loading of JNI libraries to originate from libjvm.dylib on OSX and thus inherit its loader path capabilities to load other JNI libraries from arbitrary locations.
 

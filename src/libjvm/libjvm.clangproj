@@ -39,6 +39,7 @@
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_linux" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\linux\vm" />
         <Dependencies Include="c" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=mapfile-vers" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_bsd" />
@@ -61,6 +62,12 @@
         <Header Include="$(OpenJdkDir)jdk\src\macosx\javavm\export\**\*.h" Condition="$(TargetIdentifier.StartsWith('osx-'))">
             <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
         </Header>
+        <Header Include="ikvm.h">
+            <IncludePath>ikvm.h</IncludePath>
+        </Header>
+    </ItemGroup>
+    <ItemGroup>
+        <None Include="mapfile-vers" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />

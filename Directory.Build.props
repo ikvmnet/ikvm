@@ -7,9 +7,9 @@
         <SupportedImageRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedImageRuntimes>
         <EnabledImageRuntimes Condition=" '$(EnabledImageRuntimes)' == '' ">$(SupportedImageRuntimes)</EnabledImageRuntimes>
         
-        <EnabledRuntimes>win-x64;</EnabledRuntimes>
-        <EnabledToolRuntimes>win-x64;</EnabledToolRuntimes>
-        <EnabledImageRuntimes>win-x64;</EnabledImageRuntimes>
+        <!--<EnabledRuntimes>win-x64;win-x86;linux-x64</EnabledRuntimes>
+        <EnabledToolRuntimes>win-x64;win-x86;linux-x64</EnabledToolRuntimes>
+        <EnabledImageRuntimes>win-x64;win-x86;linux-x64</EnabledImageRuntimes>-->
 
         <_SupportedRuntimes>;$(SupportedRuntimes);</_SupportedRuntimes>
         <_EnabledRuntimes>;$(EnabledRuntimes);</_EnabledRuntimes>
@@ -100,6 +100,17 @@
         <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\javac-ref\javac-ref.csproj" IsJavaCompiler="true" TargetFramework="net8.0" />
         <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\ikvmc\ikvmc.csproj" IsIkvmCompiler="true" />
         <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\ikvmstub\ikvmstub.csproj" IsIkvmExporter="true" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.102">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 
 </Project>

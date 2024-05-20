@@ -82,7 +82,7 @@
     </Target>
 
     <Target Name="GetClangProjectReferenceItemsForPack" BeforeTargets="_GetPackageFiles" DependsOnTargets="$(GetClangProjectReferenceItemsForPackDependsOn)" Condition=" '$(DesignTimeBuild)' != 'true' ">
-        
+
     </Target>
 
     <PropertyGroup>
@@ -93,8 +93,8 @@
             GetClangProjectReferenceOutputItems;
         </GetClangProjectReferenceItemsForPackDependsOn>
     </PropertyGroup>
-    
-     <PropertyGroup>
+
+    <PropertyGroup>
         <AssignTargetPathsDependsOn>
             GetClangProjectReferences;
             GetClangProjectReferenceItems;

@@ -14,13 +14,12 @@
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="6.8.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-        <PackageReference Include="MSTest.TestAdapter" Version="3.2.2" />
-        <PackageReference Include="MSTest.TestFramework" Version="3.2.2" />
         <PackageReference Include="Moq" Version="4.18.2" />
         <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.9.0" />
+        <PackageReference Include="MSTest" Version="3.3.1" />
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup> 
         <ProjectReference Include="..\IKVM.JTReg.TestAdapter\IKVM.JTReg.TestAdapter.csproj" />
     </ItemGroup>
 
@@ -35,6 +34,11 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
+
+    <Target Name="CopyConfigToTestHostConfig" AfterTargets="Build">
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll.config" DestinationFiles="$(OutputPath)testhost.dll.config" Condition="Exists('$(OutputPath)$(AssemblyName).dll.config')" />
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).exe.config" DestinationFiles="$(OutputPath)testhost.dll.config" Condition="Exists('$(OutputPath)$(AssemblyName).exe.config')" />
+    </Target>
     
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
@@ -42,4 +46,5 @@
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\IKVM.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.targets" />
+    
 </Project>

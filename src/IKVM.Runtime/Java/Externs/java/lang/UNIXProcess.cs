@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.JNI;
 
 namespace IKVM.Java.Externs.java.lang
@@ -12,6 +13,10 @@ namespace IKVM.Java.Externs.java.lang
     {
 
 #if FIRST_PASS == false
+
+        static UNIXProcessAccessor unixProcessAccessor;
+
+        static UNIXProcessAccessor UNIXProcessAccessor => JVM.Internal.BaseAccessors.Get(ref unixProcessAccessor);
 
         static global::ikvm.@internal.CallerID __callerID;
         delegate void __jniDelegate__init(IntPtr jniEnv, IntPtr clazz);
@@ -23,7 +28,8 @@ namespace IKVM.Java.Externs.java.lang
         /// Implements the native method 'init'.
         /// </summary>
         /// <remarks>
-        /// We save and load the old SIGCHLD handler between calls to prevent Java from overwriting the .NET handler. This isn't thread safe but should suffice since it's limited to static initialization.
+        /// We save and load the old SIGCHLD handler between calls to prevent Java from overwriting the .NET handler.
+        /// This isn't thread safe but should suffice since it's limited to static initialization.
         /// </remarks>
         /// <returns></returns>
         public static unsafe void init()
@@ -45,13 +51,13 @@ namespace IKVM.Java.Externs.java.lang
 
             try
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(typeof(global::java.lang.UNIXProcess).TypeHandle);
+                __callerID ??= global::ikvm.@internal.CallerID.create(UNIXProcessAccessor.Type.TypeHandle);
                 __jniPtr__init ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__init>(JNIFrame.GetFuncPtr(__callerID, "java/lang/UNIXProcess", nameof(init), "()V"));
                 var jniFrm = new JNIFrame();
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    __jniPtr__init(jniEnv, jniFrm.MakeLocalRef(ClassLiteral<global::java.lang.UNIXProcess>.Value));
+                    __jniPtr__init(jniEnv, jniFrm.MakeLocalRef(typeof(ClassLiteral<>).MakeGenericType(UNIXProcessAccessor.Type)));
                 }
                 catch (Exception ex)
                 {

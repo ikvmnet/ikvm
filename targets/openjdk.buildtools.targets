@@ -22,7 +22,7 @@
     <PropertyGroup>
         <OpenJdkBuildToolsResponseFile>$(IntermediateOutputPath)btclasses.javac.rsp</OpenJdkBuildToolsResponseFile>
         <OpenJdkBuildToolsOutputPath>$(IntermediateOutputPath)btclasses\</OpenJdkBuildToolsOutputPath>
-        <OpenJdkBuildToolsStampFile>$(IntermediateOutputPath)OpenJdkBuildTools.stamp</OpenJdkBuildToolsStampFile>
+        <OpenJdkBuildToolsStampFile>$(IntermediateOutputPath)$(MSBuildProjectName).OpenJdkBuildTools.stamp</OpenJdkBuildToolsStampFile>
     </PropertyGroup>
 
     <ItemGroup>

@@ -35,6 +35,7 @@
         <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS" Value="&quot;&quot;" />
 
         <Dependencies Include="asound" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libjsoundalsa\mapfile-vers" />
 
         <!-- LIBJSOUND_SRC_DIRS -->
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound" />
