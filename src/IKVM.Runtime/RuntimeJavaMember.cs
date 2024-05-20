@@ -42,29 +42,55 @@ namespace IKVM.Runtime
     abstract class RuntimeJavaMember
     {
 
-        readonly RuntimeJavaType declaringType;
-        readonly string name;
-        readonly string sig;
-        protected readonly Modifiers modifiers;
-        HandleWrapper handle;
-        MemberFlags flags;
-
-        sealed class HandleWrapper
+        /// <summary>
+        /// Holds a <see cref="GCHandle"/> for the member and ensures it is released on finalization.
+        /// </summary>
+        class HandleManager
         {
 
-            internal readonly IntPtr Value;
+            /// <summary>
+            /// Gets the <see cref="RuntimeJavaMember"/> associated with the specified cookie.
+            /// </summary>
+            /// <param name="cookie"></param>
+            /// <returns></returns>
+            public static RuntimeJavaMember FromCookie(IntPtr cookie)
+            {
+                return (RuntimeJavaMember)GCHandle.FromIntPtr(cookie).Target;
+            }
+
+            GCHandle handle;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="obj"></param>
-            [System.Security.SecurityCritical]
-            internal HandleWrapper(RuntimeJavaMember obj)
+            /// <param name="member"></param>
+            public HandleManager(RuntimeJavaMember member)
             {
-                Value = (IntPtr)GCHandle.Alloc(obj, GCHandleType.WeakTrackResurrection);
+                handle = GCHandle.Alloc(member, GCHandleType.WeakTrackResurrection);
+            }
+
+            /// <summary>
+            /// Gets the <see cref="GCHandle"/> value.
+            /// </summary>
+            public IntPtr Cookie => GCHandle.ToIntPtr(handle);
+
+            /// <summary>
+            /// Disposes of the handle.
+            /// </summary>
+            ~HandleManager()
+            {
+                handle.Free();
             }
 
         }
+
+        readonly RuntimeJavaType declaringType;
+        readonly string name;
+        readonly string sig;
+        protected readonly Modifiers modifiers;
+        MemberFlags flags;
+
+        HandleManager handle;
 
         /// <summary>
         /// Initializes a new instance.
@@ -84,21 +110,30 @@ namespace IKVM.Runtime
             this.flags = flags;
         }
 
+        /// <summary>
+        /// Gets the cookie for this member. A cookie is a unique platform sized pointer that can be resolved to the member info.
+        /// </summary>
         internal nint Cookie
         {
             get
             {
+                // synchronize the creation of a handle
                 lock (this)
-                    handle ??= new HandleWrapper(this);
+                    handle ??= new HandleManager(this);
 
-                return handle.Value;
+                return handle.Cookie;
             }
         }
 
+        /// <summary>
+        /// Finds the <see cref="RuntimeJavaMember"/> represented by the specied cookie.
+        /// </summary>
+        /// <param name="cookie"></param>
+        /// <returns></returns>
         [System.Security.SecurityCritical]
         internal static RuntimeJavaMember FromCookieImpl(nint cookie)
         {
-            return (RuntimeJavaMember)GCHandle.FromIntPtr(cookie).Target;
+            return (RuntimeJavaMember)HandleManager.FromCookie(cookie);
         }
 
         internal RuntimeJavaType DeclaringType => declaringType;
@@ -216,6 +251,11 @@ namespace IKVM.Runtime
         internal bool IsProtected => (modifiers & Modifiers.Protected) != 0;
 
         internal bool IsFinal => (modifiers & Modifiers.Final) != 0;
+
+        /// <summary>
+        /// Gets whether or not this method is marked as a module initializer.
+        /// </summary>
+        internal bool IsModuleInitializer => IsStatic && IsPrivate == false && (flags & MemberFlags.ModuleInitializer) != 0;
 
     }
 

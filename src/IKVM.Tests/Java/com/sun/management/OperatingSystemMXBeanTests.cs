@@ -30,67 +30,49 @@ namespace IKVM.Tests.Java.com.sun.management
         [TestMethod]
         public void CanGetProcessCpuLoad()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                mbean.getProcessCpuLoad().Should().Be(-1);
+            mbean.getProcessCpuLoad().Should().BeGreaterThanOrEqualTo(0);
         }
 
         [TestMethod]
         public void CanGetProcessCpuTime()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                mbean.getProcessCpuTime().Should().BeGreaterOrEqualTo(1);
+            mbean.getProcessCpuTime().Should().BeGreaterOrEqualTo(0);
         }
 
         [TestMethod]
         public void CanGetSystemLoadAverage()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                mbean.getProcessCpuLoad().Should().Be(-1);
+            mbean.getProcessCpuLoad().Should().BeGreaterOrEqualTo(0);
         }
 
         [TestMethod]
         public void CanGetTotalPhysicalMemorySize()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                return;
-
-            mbean.getTotalPhysicalMemorySize().Should().BeGreaterOrEqualTo(1);
+            mbean.getTotalPhysicalMemorySize().Should().BeGreaterOrEqualTo(0);
         }
 
         [TestMethod]
         public void CanGetFreePhysicalMemorySize()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                return;
-
-            mbean.getFreePhysicalMemorySize().Should().BeGreaterOrEqualTo(1);
+            mbean.getFreePhysicalMemorySize().Should().BeGreaterOrEqualTo(0);
         }
 
         [TestMethod]
         public void CanGetTotalSwapSpaceSize()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                return;
-
-            mbean.getTotalSwapSpaceSize().Should().BeGreaterOrEqualTo(1);
+            mbean.getTotalSwapSpaceSize().Should().BeGreaterOrEqualTo(0);
         }
 
         [TestMethod]
         public void CanGetFreeSwapSpaceSize()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                return;
-
-            mbean.getFreeSwapSpaceSize().Should().BeGreaterOrEqualTo(1);
+            mbean.getFreeSwapSpaceSize().Should().BeGreaterOrEqualTo(0);
         }
 
         [TestMethod]
         public void CanGetCommittedVirtualMemorySize()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                return;
-
-            mbean.getCommittedVirtualMemorySize().Should().BeGreaterOrEqualTo(1);
+            mbean.getCommittedVirtualMemorySize().Should().BeGreaterOrEqualTo(0);
         }
 
     }

@@ -1474,16 +1474,13 @@ namespace IKVM.Runtime.JNI
             try
             {
                 // we want to support (non-primitive) value types so we can't cast to object[]
-                Array array = Array.CreateInstance(RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz)).TypeAsArrayType, len);
-                object o = pEnv->UnwrapRef(init);
+                var a = Array.CreateInstance(RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz)).TypeAsArrayType, len);
+                var o = pEnv->UnwrapRef(init);
                 if (o != null)
-                {
-                    for (int i = 0; i < array.Length; i++)
-                    {
-                        array.SetValue(o, i);
-                    }
-                }
-                return pEnv->MakeLocalRef(array);
+                    for (int i = 0; i < a.Length; i++)
+                        a.SetValue(o, i);
+
+                return pEnv->MakeLocalRef(a);
             }
             catch (ArgumentOutOfRangeException)
             {

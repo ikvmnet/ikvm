@@ -6,25 +6,27 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>osx</TargetName>
+        <OutputType>dll</OutputType>
         <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libjnf\libjnf.clangproj" Condition=" '$(TargetIdentifier)' == 'osx-arm64' " />
         <ProjectReference Include="..\libosxapp\libosxapp.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Foundation" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="ApplicationServices" Separator=" " />
-        <!--<AdditionalLinkOptions Include="-framework JavaNativeFoundation" />-->
-        <!--<AdditionalLinkOptions Include="-framework JavaRuntimeSupport" />-->
         <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="SystemConfiguration" Separator=" " />
-        <Compile Include="**\*.c" />
+        <AdditionalLinkOptions Include="-framework" Value="JavaNativeFoundation" Separator=" " Condition=" '$(TargetIdentifier)' == 'osx-x64' "/>
         <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\concurrent\*.m" />-->
-        <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\java\util\MacOSXPreferencesFile.m" />
+        <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\java\util\*.m" Language="objective-c" />
         <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\eio\*.m" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\apple\security\*.m" />-->
         <!--<Compile Include="$(OpenJdkDir)jdk\src\macosx\native\apple\launcher\*.m" />-->
+        <Compile Include="**\*.c" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />

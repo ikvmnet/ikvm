@@ -74,14 +74,14 @@ namespace IKVM.Runtime
             UpdateNonPublicTypeInSignatureFlag();
 
 #if IMPORTER
-            if (IsFinal
-                && DeclaringType.IsPublic
-                && !DeclaringType.IsInterface
-                && (IsPublic || (IsProtected && !DeclaringType.IsFinal))
-                && !DeclaringType.GetClassLoader().StrictFinalFieldSemantics
-                && DeclaringType.IsDynamic
-                && this is not RuntimeConstantJavaField
-                && this is not RuntimeByteCodePropertyJavaField)
+            if (IsFinal && 
+                DeclaringType.IsPublic && 
+                !DeclaringType.IsInterface && 
+                (IsPublic || (IsProtected && !DeclaringType.IsFinal)) &&
+                !DeclaringType.GetClassLoader().StrictFinalFieldSemantics && 
+                DeclaringType.IsDynamic && 
+                this is not RuntimeConstantJavaField && 
+                this is not RuntimeByteCodePropertyJavaField)
             {
                 SetType2FinalField();
             }

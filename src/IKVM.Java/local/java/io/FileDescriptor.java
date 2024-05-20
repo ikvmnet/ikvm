@@ -40,7 +40,7 @@ public final class FileDescriptor {
         );
     }
 
-    private volatile Object obj;
+    private volatile cli.System.IO.Stream stream;
     private volatile long ptr;
     
     @ikvm.lang.Property(get = "getFd", set = "setFd")
@@ -58,15 +58,6 @@ public final class FileDescriptor {
     private Closeable parent;
     private List<Closeable> otherParents;
     private boolean closed;
-
-    private cli.System.Threading.SemaphoreSlim semaphore;
-    private cli.System.Threading.Tasks.Task task;
-    
-    @ikvm.lang.Internal
-    public native cli.System.IO.Stream getStream();
-
-    @ikvm.lang.Internal
-    public native cli.System.Net.Sockets.Socket getSocket();
     
     /**
      * Constructs an (invalid) FileDescriptor

@@ -132,15 +132,19 @@ namespace IKVM.Runtime
             }
         }
 
+        /// <summary>
+        /// Sets the declared exceptions for the method.
+        /// </summary>
+        /// <param name="exceptions"></param>
         internal void SetDeclaredExceptions(string[] exceptions)
         {
-            if (exceptions == null)
-            {
-                exceptions = new string[0];
-            }
-            this.declaredExceptions = (string[])exceptions.Clone();
+            declaredExceptions = exceptions != null && exceptions.Length > 0 ? (string[])exceptions.Clone() : Array.Empty<string>();
         }
-
+        
+        /// <summary>
+        /// Gest the declared exceptions for the method.
+        /// </summary>
+        /// <returns></returns>
         internal string[] GetDeclaredExceptions()
         {
             return declaredExceptions;
@@ -269,6 +273,11 @@ namespace IKVM.Runtime
         }
 #endif // !IMPORTER && !EXPORTER
 
+        /// <summary>
+        /// Finds the <see cref="RuntimeJavaMethod"/> represented by the specified cookie.
+        /// </summary>
+        /// <param name="cookie"></param>
+        /// <returns></returns>
         [System.Security.SecurityCritical]
         internal static RuntimeJavaMethod FromCookie(IntPtr cookie)
         {

@@ -1,10 +1,13 @@
 ﻿package ikvm.tools.importer.tests;
 
-public class IkvmImporterTests
-{
+public class IkvmImporterTests {
 
-	public static String echo(String value)
-	{
+	@ikvm.lang.ModuleInitializer
+	static void Init() {
+		
+	}
+
+	public static String echo(String value) {
 		return value;
 	}
 

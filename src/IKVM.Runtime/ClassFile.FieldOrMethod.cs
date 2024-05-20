@@ -44,6 +44,7 @@ namespace IKVM.Runtime
             protected string signature;
             protected object[] annotations;
             protected IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations;
+            protected IReadOnlyList<TypeAnnotationReader> runtimeInvisibleTypeAnnotations;
 
             /// <summary>
             /// Initializes a new instance.
@@ -100,6 +101,8 @@ namespace IKVM.Runtime
             internal bool DeprecatedAttribute => (flags & FLAG_MASK_DEPRECATED) != 0;
 
             internal bool IsInternal => (flags & FLAG_MASK_INTERNAL) != 0;
+
+            internal bool IsModuleInitializer => (flags & FLAG_MODULE_INITIALIZER) != 0;
 
             internal IReadOnlyList<TypeAnnotationReader> RuntimeVisibleTypeAnnotations => runtimeVisibleTypeAnnotations;
 

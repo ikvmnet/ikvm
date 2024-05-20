@@ -5,8 +5,9 @@
         <ProjectGuid>0E068B20-9C99-45C5-8D94-A1FF9EDD6739</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
         <TargetName>osxapp</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
@@ -19,8 +20,6 @@
         <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="ExceptionHandling" Separator=" " />
-        <!--<AdditionalLinkOptions Include="-framework JavaNativeFoundation" />-->
-        <!--<AdditionalLinkOptions Include="-framework JavaRuntimeSupport" />-->
         <AdditionalLinkOptions Include="-framework" Value="OpenGL" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="IOSurface" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="QuartzCore" Separator=" " />

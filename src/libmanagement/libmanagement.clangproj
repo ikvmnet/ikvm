@@ -6,13 +6,36 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>management</TargetName>
+        <OutputType>dll</OutputType>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="**\*.cpp" />
-        <Compile Include="**\*.c" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\management" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\management" />
+        <Compile Include="*.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <Dependencies Include="Psapi" />
+        <Dependencies Include="Advapi32" />
+        <Dependencies Include="Shlwapi" />
+        <PreprocessorDefinitions Include="strdup" Value="_strdup" />
+        <PreprocessorDefinitions Include="itoa" Value="_itoa" />
+        <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\management\FileSystemImpl.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\management\OperatingSystemImpl.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libmanagement\mapfile-vers" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\management\FileSystemImpl.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\management\OperatingSystemImpl.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\management\LinuxOperatingSystem.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\management\FileSystemImpl.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\management\OperatingSystemImpl.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\management\MacosxOperatingSystem.c" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />

@@ -89,7 +89,7 @@ namespace IKVM.JTReg.TestAdapter
             foreach (var message in rslt.Messages)
                 r.Messages.Add(new TestResultMessage(Convert(message.Category), message.Text));
 
-            var s = new AttachmentSet(new Uri(JTRegTestManager.URI), "IkvmJtRegTestAdapter");
+            var s = new AttachmentSet(new Uri(JTRegTestManager.URI), "JTRegTestAdapter");
             r.Attachments.Add(s);
             foreach (var attachment in rslt.Attachments)
                 s.Attachments.Add(UriDataAttachment.CreateFrom(attachment.Path, attachment.Name));

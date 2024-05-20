@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
 
 using IKVM.Runtime.JNI;
 
@@ -17,26 +15,48 @@ namespace IKVM.Runtime
     internal unsafe class LibJvm
     {
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int JNI_GetDefaultJavaVMInitArgsFunc(void* vm_args);
+        /// <summary>
+        /// Structure of callbacks passed to libjvm.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        unsafe struct JVMInvokeInterface
+        {
+
+            public nint JNI_GetDefaultJavaVMInitArgs;
+            public nint JNI_GetCreatedJavaVMs;
+            public nint JNI_CreateJavaVM;
+
+            public nint JVM_ThrowException;
+            public nint JVM_GetThreadInterruptEvent;
+            public nint JVM_ActiveProcessorCount;
+
+        }
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int JNI_GetCreatedJavaVMsFunc(JavaVM** vmBuf, int bufLen, int* nVMs);
+        delegate int JNI_GetDefaultJavaVMInitArgsDelegate(void* vm_args);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int JNI_CreateJavaVMFunc(JavaVM** p_vm, void** p_env, void* vm_args);
+        delegate int JNI_GetCreatedJavaVMsDelegate(JavaVM** vmBuf, int bufLen, int* nVMs);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate void IKVM_ThrowExceptionFunc([MarshalAs(UnmanagedType.LPUTF8Str)] string name, [MarshalAs(UnmanagedType.LPUTF8Str)] string message);
+        delegate int JNI_CreateJavaVMDelegate(JavaVM** p_vm, void** p_env, void* vm_args);
 
-        delegate void Set_JNI_GetDefaultJavaVMInitArgsDelegate(JNI_GetDefaultJavaVMInitArgsFunc func);
-        delegate void Set_JNI_GetCreatedJavaVMsDelegate(JNI_GetCreatedJavaVMsFunc func);
-        delegate void Set_JNI_CreateJavaVMDelegate(JNI_CreateJavaVMFunc func);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate void JVM_ThrowExceptionDelegate([MarshalAs(UnmanagedType.LPUTF8Str)] string name, [MarshalAs(UnmanagedType.LPUTF8Str)] string message);
 
-        delegate void Set_IKVM_ThrowExceptionDelegate(IKVM_ThrowExceptionFunc func);
-        delegate nint JVM_LoadLibraryDelegate(string name);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate nint JVM_GetThreadInterruptEventDelegate();
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate int JVM_ActiveProcessorCountDelegate();
+
+        delegate void JVM_InitDelegate(JVMInvokeInterface* iface);
+
+        delegate nint JVM_LoadLibraryDelegate([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+
         delegate void JVM_UnloadLibraryDelegate(nint handle);
-        delegate nint JVM_FindLibraryEntryDelegate(nint handle, string name);
+
+        delegate nint JVM_FindLibraryEntryDelegate(nint handle, [MarshalAs(UnmanagedType.LPStr)] string name);
 
         /// <summary>
         /// Gets the default instance.
@@ -44,17 +64,19 @@ namespace IKVM.Runtime
         public static readonly LibJvm Instance = new();
 
         readonly ikvm.@internal.CallerID callerID = ikvm.@internal.CallerID.create(typeof(LibJvm).TypeHandle);
+        readonly JVMInvokeInterface* jvmii;
 
-        readonly Set_JNI_GetDefaultJavaVMInitArgsDelegate _Set_JNI_GetDefaultJavaVMInitArgs;
-        readonly Set_JNI_GetCreatedJavaVMsDelegate _Set_JNI_GetCreatedJavaVMs;
-        readonly Set_JNI_CreateJavaVMDelegate _Set_JNI_CreateJavaVM;
-
-        readonly Set_IKVM_ThrowExceptionDelegate _Set_IKVM_ThrowException;
+        readonly JVM_InitDelegate _JVM_Init;
         readonly JVM_LoadLibraryDelegate _JVM_LoadLibrary;
         readonly JVM_UnloadLibraryDelegate _JVM_UnloadLibrary;
         readonly JVM_FindLibraryEntryDelegate _JVM_FindLibraryEntry;
 
-        readonly IKVM_ThrowExceptionFunc _IKVM_ThrowException;
+        readonly JNI_GetDefaultJavaVMInitArgsDelegate _JNI_GetDefaultJavaVMInitArgs;
+        readonly JNI_GetCreatedJavaVMsDelegate _JNI_GetCreatedJavaVMs;
+        readonly JNI_CreateJavaVMDelegate _JNI_CreateJavaVM;
+        readonly JVM_ThrowExceptionDelegate _JVM_ThrowException;
+        readonly JVM_GetThreadInterruptEventDelegate _JVM_GetThreadInterruptEvent;
+        readonly JVM_ActiveProcessorCountDelegate _JVM_ActiveProcessorCount;
 
         /// <summary>
         /// Initializes a new instance.
@@ -64,17 +86,21 @@ namespace IKVM.Runtime
             // load libjvm through IKVM native library functionality
             if ((Handle = NativeLibrary.Load(Path.Combine(JVM.Properties.HomePath, "bin", NativeLibrary.MapLibraryName("jvm")))) == null)
                 throw new InternalException("Could not load libjvm.");
-
-            _Set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>(Handle.GetExport("Set_JNI_GetDefaultJavaVMInitArgs", sizeof(nint)).Handle);
-            _Set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>(Handle.GetExport("Set_JNI_GetCreatedJavaVMs", sizeof(nint)).Handle);
-            _Set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(Handle.GetExport("Set_JNI_CreateJavaVM", sizeof(nint)).Handle);
-
-            _Set_IKVM_ThrowException = Marshal.GetDelegateForFunctionPointer<Set_IKVM_ThrowExceptionDelegate>(Handle.GetExport("Set_IKVM_ThrowException", sizeof(nint)).Handle);
+            // obtain delegates to functions declared in libjvm
+            _JVM_Init = Marshal.GetDelegateForFunctionPointer<JVM_InitDelegate>(Handle.GetExport("JVM_Init", sizeof(nint)).Handle);
             _JVM_LoadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_LoadLibraryDelegate>(Handle.GetExport("JVM_LoadLibrary", sizeof(nint)).Handle);
             _JVM_UnloadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_UnloadLibraryDelegate>(Handle.GetExport("JVM_UnloadLibrary", sizeof(nint)).Handle);
             _JVM_FindLibraryEntry = Marshal.GetDelegateForFunctionPointer<JVM_FindLibraryEntryDelegate>(Handle.GetExport("JVM_FindLibraryEntry", sizeof(nint) + sizeof(nint)).Handle);
 
-            Set_IKVM_ThrowException(_IKVM_ThrowException = IKVM_ThrowException);
+            // initialize invoke interface for calls from libjvm to IKVM
+            jvmii = (JVMInvokeInterface*)Marshal.AllocHGlobal(sizeof(JVMInvokeInterface));
+            jvmii->JNI_GetDefaultJavaVMInitArgs = Marshal.GetFunctionPointerForDelegate(_JNI_GetDefaultJavaVMInitArgs = JNIVM.GetDefaultJavaVMInitArgs);
+            jvmii->JNI_GetCreatedJavaVMs = Marshal.GetFunctionPointerForDelegate(_JNI_GetCreatedJavaVMs = JNIVM.GetCreatedJavaVMs);
+            jvmii->JNI_CreateJavaVM = Marshal.GetFunctionPointerForDelegate(_JNI_CreateJavaVM = JNIVM.CreateJavaVM);
+            jvmii->JVM_ThrowException = Marshal.GetFunctionPointerForDelegate(_JVM_ThrowException = JVM_ThrowException);
+            jvmii->JVM_GetThreadInterruptEvent = Marshal.GetFunctionPointerForDelegate(_JVM_GetThreadInterruptEvent = JVM_GetThreadInterruptEvent);
+            jvmii->JVM_ActiveProcessorCount = Marshal.GetFunctionPointerForDelegate(_JVM_ActiveProcessorCount = JVM_ActiveProcessorCount);
+            _JVM_Init(jvmii);
         }
 
         /// <summary>
@@ -83,74 +109,77 @@ namespace IKVM.Runtime
         public NativeLibraryHandle Handle { get; private set; }
 
         /// <summary>
-        /// Invokes the 'Set_JNI_GetDefaultJavaVMInitArgs' method from libjvm.
-        /// </summary>
-        /// <param name="func"></param>
-        public void Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgsFunc func) => _Set_JNI_GetDefaultJavaVMInitArgs(func);
-
-        /// <summary>
-        /// Invokes the 'Set_JNI_GetCreatedJavaVMs' method from libjvm.
-        /// </summary>
-        /// <param name="func"></param>
-        public void Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMsFunc func) => _Set_JNI_GetCreatedJavaVMs(func);
-
-        /// <summary>
-        /// Invokes the 'Set_JNI_CreateJavaVM' method from libjvm.
-        /// </summary>
-        /// <param name="func"></param>
-        public void Set_JNI_CreateJavaVM(JNI_CreateJavaVMFunc func) => _Set_JNI_CreateJavaVM(func);
-
-        /// <summary>
-        /// Invokes the 'Set_IKVM_ThrowException' method from libjvm.
-        /// </summary>
-        /// <param name="func"></param>
-        public void Set_IKVM_ThrowException(IKVM_ThrowExceptionFunc func) => _Set_IKVM_ThrowException(func);
-
-        /// <summary>
         /// Invoked by the native code to register an exception to be thrown.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="msg"></param>
         /// <returns></returns>
-        void IKVM_ThrowException(string name, string msg)
+        void JVM_ThrowException(string name, string msg)
         {
-            if (name == null)
-            {
-                Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(IKVM_ThrowException)}: Missing name argument.");
-                return;
-            }
-
-            // find requested exception class
-            var exceptionClass = RuntimeClassLoader.FromCallerID(callerID).TryLoadClassByName(name.Replace('/', '.'));
-            if (exceptionClass == null)
-            {
-                Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(IKVM_ThrowException)}: Could not find exception class {{0}}.", name);
-                return;
-            }
-
-            // find constructor
-            var ctor = exceptionClass.GetMethodWrapper("<init>", msg == null ? "()V" : "(Ljava.lang.String;)V", false);
-            if (ctor == null)
-            {
-                Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(IKVM_ThrowException)}: Exception {{0}} missing constructor.", name);
-                return;
-            }
-
-            // invoke the constructor
-            exceptionClass.Finish();
-
             try
             {
+                if (name == null)
+                {
+                    Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Missing name argument.");
+                    return;
+                }
+
+                // find requested exception class
+                var exceptionClass = RuntimeClassLoader.FromCallerID(callerID).TryLoadClassByName(name.Replace('/', '.'));
+                if (exceptionClass == null)
+                {
+                    Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Could not find exception class {{0}}.", name);
+                    return;
+                }
+
+                // find constructor
+                var ctor = exceptionClass.GetMethodWrapper("<init>", msg == null ? "()V" : "(Ljava.lang.String;)V", false);
+                if (ctor == null)
+                {
+                    Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Exception {{0}} missing constructor.", name);
+                    return;
+                }
+
+                // invoke the constructor
+                exceptionClass.Finish();
+
                 var ctorMember = (java.lang.reflect.Constructor)ctor.ToMethodOrConstructor(false);
                 var exception = (Exception)ctorMember.newInstance(msg == null ? Array.Empty<object>() : new object[] { msg }, callerID);
-                Tracer.Verbose(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(IKVM_ThrowException)}: Created exception {{0}} from libjvm.", name);
+                Tracer.Verbose(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Created exception {{0}} from libjvm.", name);
                 JVM.SetPendingException(exception);
             }
             catch (Exception e)
             {
-                Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(IKVM_ThrowException)}: Exception occurred creating exception {{0}}: {{1}}", name, e.Message);
+                Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Exception occurred creating exception {{0}}: {{1}}", name, e.Message);
                 JVM.SetPendingException(e);
             }
+        }
+
+        /// <summary>
+        /// Invoked by the native code to get an event handle to wait on for thread interruption.
+        /// </summary>
+        /// <returns></returns>
+        nint JVM_GetThreadInterruptEvent()
+        {
+            try
+            {
+                return global::java.lang.Thread.currentThread().interruptEvent.SafeWaitHandle.DangerousGetHandle();
+            }
+            catch (Exception e)
+            {
+                Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_GetThreadInterruptEvent)}: Exception occurred: {{0}}", e.Message);
+                JVM.SetPendingException(e);
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Invoked by the native code to get the active number of processors.
+        /// </summary>
+        /// <returns></returns>
+        int JVM_ActiveProcessorCount()
+        {
+            return Environment.ProcessorCount;
         }
 
         /// <summary>
@@ -210,6 +239,15 @@ namespace IKVM.Runtime
             {
                 JVM.ThrowPendingException();
             }
+        }
+
+        /// <summary>
+        /// Finalizes the instance.
+        /// </summary>
+        ~LibJvm()
+        {
+            if (jvmii != null)
+                Marshal.FreeHGlobal((IntPtr)jvmii);
         }
 
     }

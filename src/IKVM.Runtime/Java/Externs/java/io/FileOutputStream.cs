@@ -54,7 +54,8 @@ namespace IKVM.Java.Externs.java.io
                     if (fd == null)
                         throw new global::java.io.IOException("The handle is invalid.");
 
-                    FileDescriptorAccessor.SetObj(fd, JVM.Vfs.Open(path, append ? FileMode.Append : FileMode.Create, FileAccess.Write));
+                    FileDescriptorAccessor.SetPtr(fd, -1);
+                    FileDescriptorAccessor.SetStream(fd, JVM.Vfs.Open(path, append ? FileMode.Append : FileMode.Create, FileAccess.Write));
                 }
                 catch (ObjectDisposedException e)
                 {
@@ -110,23 +111,19 @@ namespace IKVM.Java.Externs.java.io
         /// <summary>
         /// Implements the native method 'write'.
         /// </summary>
-        /// <param name="this_"></param>
+        /// <param name="self"></param>
         /// <param name="byte_"></param>
         /// <param name="append"></param>
-        public static void write(object this_, int byte_, bool append)
+        public static void write(object self, int byte_, bool append)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var fd = FileOutputStreamAccessor.GetFd(this_);
+            var fd = FileOutputStreamAccessor.GetFd(self);
             if (fd == null)
                 throw new global::java.io.IOException("The handle is invalid.");
 
-            var stream = FileDescriptorAccessor.GetStream(fd);
-            if (stream == null)
-                throw new global::java.io.IOException("Stream closed.");
-
-            if (stream is not FileStream fs)
+            if (FileDescriptorAccessor.GetStream(fd) is Stream stream)
             {
                 if (stream.CanWrite == false)
                     throw new global::java.io.IOException("The handle is invalid.");
@@ -157,7 +154,7 @@ namespace IKVM.Java.Externs.java.io
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    var selfRef = jniFrm.MakeLocalRef(this_);
+                    var selfRef = jniFrm.MakeLocalRef(self);
                     __jniPtr__write(jniEnv, selfRef, byte_, append ? JNIEnv.JNI_TRUE : JNIEnv.JNI_FALSE);
                 }
                 catch (Exception ex)
@@ -177,25 +174,21 @@ namespace IKVM.Java.Externs.java.io
         /// <summary>
         /// Implements the native method 'writeBytes'.
         /// </summary>
-        /// <param name="this_"></param>
+        /// <param name="self"></param>
         /// <param name="bytes"></param>
         /// <param name="off"></param>
         /// <param name="len"></param>
         /// <param name="append"></param>
-        public static void writeBytes(object this_, byte[] bytes, int off, int len, bool append)
+        public static void writeBytes(object self, byte[] bytes, int off, int len, bool append)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var fd = FileOutputStreamAccessor.GetFd(this_);
+            var fd = FileOutputStreamAccessor.GetFd(self);
             if (fd == null)
                 throw new global::java.io.IOException("The handle is invalid.");
 
-            var stream = FileDescriptorAccessor.GetStream(fd);
-            if (stream == null)
-                throw new global::java.io.IOException("Stream closed.");
-
-            if (stream is not FileStream fs)
+            if (FileDescriptorAccessor.GetStream(fd) is Stream stream)
             {
                 if ((off < 0) || (off > bytes.Length) || (len < 0) || (len > (bytes.Length - off)))
                     throw new global::java.lang.IndexOutOfBoundsException();
@@ -229,7 +222,7 @@ namespace IKVM.Java.Externs.java.io
                 var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    __jniPtr__writeBytes(jniEnv, jniFrm.MakeLocalRef(this_), jniFrm.MakeLocalRef(bytes), off, len, append ? JNIEnv.JNI_TRUE : JNIEnv.JNI_FALSE);
+                    __jniPtr__writeBytes(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(bytes), off, len, append ? JNIEnv.JNI_TRUE : JNIEnv.JNI_FALSE);
                 }
                 catch (Exception ex)
                 {
@@ -257,14 +250,13 @@ namespace IKVM.Java.Externs.java.io
             var fd = FileOutputStreamAccessor.GetFd(this_);
             if (fd == null)
                 throw new global::java.io.IOException("The handle is invalid.");
-                
-            if (FileDescriptorAccessor.GetObj(fd) is not null and not FileStream)
+
+            if (FileDescriptorAccessor.GetStream(fd) is Stream stream)
             {
                 try
                 {
-                    var h = FileDescriptorAccessor.GetHandle(fd);
-                    FileDescriptorAccessor.SetHandle(fd, -1);
-                    LibIkvm.Instance.io_close_file(h);
+                    stream.Close();
+                    FileDescriptorAccessor.SetPtr(fd, -1);
                 }
                 catch
                 {

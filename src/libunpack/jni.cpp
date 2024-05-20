@@ -313,7 +313,7 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_finish(JNIEnv *env, jobject pObj) {
   CHECK_EXCEPTION_RETURN_VALUE(uPtr, 0);
   size_t consumed = uPtr->input_consumed();
   free_unpacker(env, pObj, uPtr);
-  return consumed;
+  return (jlong)consumed;
 }
 
 JNIEXPORT jboolean JNICALL
