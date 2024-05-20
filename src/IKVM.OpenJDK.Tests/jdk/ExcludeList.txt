@@ -2940,6 +2940,7 @@ sun/security/krb5/tools/ktarg.sh                                                
 sun/security/krb5/tools/ktcheck.sh                                                                                      generic-all
 sun/security/krb5/tools/ktmissing.sh                                                                                    generic-all
 sun/security/krb5/tools/ktzero.sh                                                                                       generic-all
+sun/security/krb5/etype/WeakCrypto.java                                                                                 macosx-all
 sun/security/mscapi/AccessKeyStore.sh                                                                                   generic-all
 sun/security/mscapi/IsSunMSCAPIAvailable.sh                                                                             generic-all
 sun/security/mscapi/KeyStoreCompatibilityMode.sh                                                                        generic-all
@@ -3210,6 +3211,7 @@ java/net/URLConnection/6212146/test.sh                                          
 
 java/nio/channels/AsynchronousChannelGroup/Unbounded.java                                                               linux-all
 java/nio/channels/AsynchronousServerSocketChannel/Basic.java                                                            linux-all,macosx-all
+java/nio/channels/ServerSocketChannel/Basic.java                                                                        macosx-all
 java/nio/channels/AsynchronousSocketChannel/DieBeforeComplete.java                                                      linux-all
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java                                                         linux-all
 java/nio/channels/Channels/Basic2.java                                                                                  linux-all
