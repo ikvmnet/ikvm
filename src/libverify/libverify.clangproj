@@ -12,7 +12,7 @@
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
     </ItemGroup>
-    <ItemGroup> 
+    <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\check_code.c" LinkBase="" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\check_format.c" LinkBase="" />
     </ItemGroup>

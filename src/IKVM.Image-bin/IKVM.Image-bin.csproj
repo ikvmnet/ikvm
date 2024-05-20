@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
-    
+
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
@@ -8,34 +8,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libjvm\libjvm.clangproj " />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libfdlibm\libfdlibm.clangproj " />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libverify\libverify.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libiava\libiava.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libnet\libnet.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libnio\libnio.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libunpack\libunpack.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libsunec\libsunec.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libmanagement\libmanagement.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libw2k_lsa_auth\libw2k_lsa_auth.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libosxapp\libosxapp.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libosx\libosx.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libosxkrb5\libosxkrb5.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libjsound\libjsound.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libjsoundds\libjsoundds.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libjsoundalsa\libjsoundalsa.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libawt\libawt.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libmlib_image\libmlib_image.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libawt_xawt\libawt_xawt.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\liblcms\liblcms.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libjpeg\libjpeg.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libawt_headless\libawt_headless.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libfontmanager\libfontmanager.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libfreetype\libfreetype.clangproj" SupportedRuntimes="win-x86;win-x64;win-arm64;osx-x64;osx-arm64" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libjawt\libjawt.clangproj" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libawt_lwawt\libawt_lwawt.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
-        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)..\libosxui\libosxui.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjvm\libjvm.clangproj " />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libfdlibm\libfdlibm.clangproj " />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libverify\libverify.clangproj" />
@@ -52,11 +24,21 @@
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjnf\libjnf.clangproj" SupportedRuntimes="osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosxapp\libosxapp.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosx\libosx.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosxui\libosxui.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libkrb5\libkrb5.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;osx-x64;osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsound\libjsound.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundds\libjsoundds.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundalsa\libjsoundalsa.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsctp\libsctp.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libmlib_image\libmlib_image.clangproj" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_xawt\libawt_xawt.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\liblcms\liblcms.clangproj" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjpeg\libjpeg.clangproj" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_headless\libawt_headless.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libfontmanager\libfontmanager.clangproj" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libfreetype\libfreetype.clangproj" SupportedRuntimes="win-x86;win-x64;win-arm64;osx-x64;osx-arm64" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjawt\libjawt.clangproj" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_lwawt\libawt_lwawt.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
     </ItemGroup>
 
     <Target Name="GetDotNetClangProjectReferencesByRuntime" Inputs="@(DotNetClangProjectReference)" Outputs="%(DotNetClangProjectReference.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">
