@@ -60,10 +60,4 @@
         <PreprocessorDefinitions Include="_ALLBSD_SOURCE;_DARWIN_UNLIMITED_SELECT" />
     </ItemGroup>
 
-    <!-- standard OpenJDK includes -->
-    <PropertyGroup Condition=" '$(TargetIdentifier)' != '' ">
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\common</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common</IncludeDirectories>
-    </PropertyGroup>
-
 </Project>
