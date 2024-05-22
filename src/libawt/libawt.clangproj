@@ -179,6 +179,7 @@
         <LibAwtFile Include="OGLVertexCache.c" />
         <LibAwtFile Include="WGLGraphicsConfig.c" />
         <LibAwtFile Include="WGLSurfaceData.c" />
+        <PreprocessorDefinitions Include="UNICODE;_UNICODE" />
         <PreprocessorDefinitions Include="MLIB_OS64BIT" Condition="$(TargetIdentifier.EndsWith('-x64')) Or $(TargetIdentifier.EndsWith('-arm64'))" />
         <AdditionalCompileOptions Include="-Wno-microsoft-goto" />
         <AdditionalCompileOptions Include="-Wno-microsoft-extra-qualification" />
