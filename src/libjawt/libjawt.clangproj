@@ -24,14 +24,17 @@
         <PreprocessorDefinitions Include="UNICODE;_UNICODE" />
         <Dependencies Include="Advapi32" />
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\jawt.cpp" LanguageStandard="c++11" />
+        <Header Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\*.h" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt" />
         <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\jawt.c" />
+        <Header Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\*.h" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt" />
         <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\sun\awt\jawt.m" />
+        <Header Include="$(OpenJdkDir)jdk\src\macosx\native\sun\awt\*.h" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />   

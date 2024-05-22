@@ -2,15 +2,177 @@
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
     <PropertyGroup Label="Globals">
-        <ProjectGuid>c79b5885-5b41-4d49-a147-d717c96536ff</ProjectGuid>
+        <ProjectGuid>b3b01872-0000-4364-a0f2-a927f1658970</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>awt_lwawt</TargetName>
         <OutputType>dll</OutputType>
-        <LanguageStandard>c89</LanguageStandard>
+        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+        <ProjectReference Include="..\libjnf\libjnf.clangproj" Condition=" '$(TargetIdentifier)' == 'osx-arm64' " />
+        <ProjectReference Include="..\libawt\libawt.clangproj" />
+        <ProjectReference Include="..\libmlib_image\libmlib_image.clangproj" />
+        <ProjectReference Include="..\libosxapp\libosxapp.clangproj" />
     </ItemGroup>
+    <ItemGroup>
+        <LibLWAwtDirs Include="$(OpenJdkDir)jdk\src\macosx\native\sun\awt" />
+        <LibLWAwtDirs Include="$(OpenJdkDir)jdk\src\macosx\native\sun\font" />
+        <LibLWAwtDirs Include="$(OpenJdkDir)jdk\src\macosx\native\sun\java2d\opengl" />
+        <LibLWAwtDirs Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt" />
+        <LibLWAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\font" />
+        <LibLWAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl" />
+        <LibLWAwtFile Include="ApplicationDelegate.m" />
+        <LibLWAwtFile Include="CFRetainedResource.m" />
+        <LibLWAwtFile Include="CGLGraphicsConfig.m" />
+        <LibLWAwtFile Include="CGLSurfaceData.m" />
+        <LibLWAwtFile Include="CGLLayer.m" />
+        <LibLWAwtFile Include="CGraphicsConfig.m" />
+        <LibLWAwtFile Include="CGraphicsDevice.m" />
+        <LibLWAwtFile Include="CGraphicsEnv.m" />
+        <LibLWAwtFile Include="CCharToGlyphMapper.m" />
+        <LibLWAwtFile Include="CSystemColors.m" />
+        <LibLWAwtFile Include="AWTFont.m" />
+        <LibLWAwtFile Include="CGGlyphOutlines.m" />
+        <LibLWAwtFile Include="CGGlyphImages.m" />
+        <LibLWAwtFile Include="CoreTextSupport.m" />
+        <LibLWAwtFile Include="AWTStrike.m" />
+        <LibLWAwtFile Include="InitIDs.m" />
+        <LibLWAwtFile Include="AWTEvent.m" />
+        <LibLWAwtFile Include="AWTView.m" />
+        <LibLWAwtFile Include="AWTWindow.m" />
+        <LibLWAwtFile Include="AWTSurfaceLayers.m" />
+        <LibLWAwtFile Include="CCursorManager.m" />
+        <LibLWAwtFile Include="CClipboard.m" />
+        <LibLWAwtFile Include="CDataTransferer.m" />
+        <LibLWAwtFile Include="CDragSource.m" />
+        <LibLWAwtFile Include="CDragSourceContextPeer.m" />
+        <LibLWAwtFile Include="CDropTarget.m" />
+        <LibLWAwtFile Include="CDropTargetContextPeer.m" />
+        <LibLWAwtFile Include="CInputMethod.m" />
+        <LibLWAwtFile Include="CDesktopPeer.m" />
+        <LibLWAwtFile Include="OSVersion.m" />
+        <LibLWAwtFile Include="DnDUtilities.m" />
+        <LibLWAwtFile Include="CFileDialog.m" />
+        <LibLWAwtFile Include="CImage.m" />
+        <LibLWAwtFile Include="CMenu.m" />
+        <LibLWAwtFile Include="CMenuBar.m" />
+        <LibLWAwtFile Include="CMenuComponent.m" />
+        <LibLWAwtFile Include="CMenuItem.m" />
+        <LibLWAwtFile Include="CPopupMenu.m" />
+        <LibLWAwtFile Include="CRobot.m" />
+        <LibLWAwtFile Include="CTrayIcon.m" />
+        <LibLWAwtFile Include="CWrapper.m" />
+        <LibLWAwtFile Include="JavaAccessibilityAction.m" />
+        <LibLWAwtFile Include="JavaAccessibilityUtilities.m" />
+        <LibLWAwtFile Include="JavaComponentAccessibility.m" />
+        <LibLWAwtFile Include="JavaTextAccessibility.m" />
+        <LibLWAwtFile Include="LWCToolkit.m" />
+        <LibLWAwtFile Include="GeomUtilities.m" />
+        <LibLWAwtFile Include="CPrinterJob.m" />
+        <LibLWAwtFile Include="PrintModel.m" />
+        <LibLWAwtFile Include="PrinterSurfaceData.m" />
+        <LibLWAwtFile Include="PrinterView.m" />
+        <LibLWAwtFile Include="QuartzSurfaceData.m" />
+        <LibLWAwtFile Include="QuartzRenderer.m" />
+        <LibLWAwtFile Include="CTextPipe.m" />
+        <LibLWAwtFile Include="ImageSurfaceData.m" />
+        <LibLWAwtFile Include="awt_DrawingSurface.m" />
+        <LibLWAwtFile Include="OGLBlitLoops.c" />
+        <LibLWAwtFile Include="OGLBufImgOps.c" />
+        <LibLWAwtFile Include="OGLContext.c" />
+        <LibLWAwtFile Include="OGLFuncs.c" />
+        <LibLWAwtFile Include="OGLMaskBlit.c" />
+        <LibLWAwtFile Include="OGLMaskFill.c" />
+        <LibLWAwtFile Include="OGLPaints.c" />
+        <LibLWAwtFile Include="OGLRenderQueue.c" />
+        <LibLWAwtFile Include="OGLRenderer.c" />
+        <LibLWAwtFile Include="OGLSurfaceData.c" />
+        <LibLWAwtFile Include="OGLTextRenderer.c" />
+        <LibLWAwtFile Include="OGLVertexCache.c" />
+        <LibLWAwtFile Include="AccelGlyphCache.c" />
+        <LibLWAwtFile Include="CUPSfuncs.c" />
+    </ItemGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="@(LibLWAwtDirs)" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\sun\java2d" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
+        <AdditionalLinkOptions Include="-framework" Value="Accelerate" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="ApplicationServices" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="AudioToolbox" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Carbon" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="ExceptionHandling" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="JavaNativeFoundation" Separator=" " Condition=" '$(TargetIdentifier)' == 'osx-x64' "/>
+        <AdditionalLinkOptions Include="-framework" Value="JavaRuntimeSupport" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="OpenGL" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="QuartzCore" Separator=" " />
+    </ItemGroup>
+
+    <UsingTask TaskName="JoinPathsAndFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+    
+public class JoinPathsAndFiles : Task
+{
+    
+    [Required]
+    public ITaskItem[] Paths { get; set; }
+    
+    [Required]
+    public ITaskItem[] Files { get; set; }
+    
+    [Output]
+    public ITaskItem[] Items { get; set; }
+    
+    public override bool Execute()
+    {
+        var items = new List<ITaskItem>();
+    
+        foreach (var path in Paths)
+            foreach (var file in Files)
+                if (File.Exists(Path.Combine(path.ItemSpec, file.ItemSpec)))
+                    items.Add(new TaskItem(Path.Combine(path.ItemSpec, file.ItemSpec)));
+             
+        Items = items.ToArray();
+        return true;
+    }
+    
+}
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GetLibLWAwtItems">
+        <JoinPathsAndFiles Paths="@(LibLWAwtDirs)" Files="@(LibLWAwtFile)">
+            <Output TaskParameter="Items" ItemName="Compile" />
+        </JoinPathsAndFiles>
+    </Target>
+
+    <PropertyGroup>
+        <CompileDependsOn>
+            GetLibLWAwtItems;
+            $(CompileDependsOn);
+        </CompileDependsOn>
+    </PropertyGroup>
+
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>

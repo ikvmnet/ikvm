@@ -34,6 +34,14 @@
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_windows" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\windows\vm" />
         <Dependencies Include="Ws2_32" />
+        <AdditionalLinkOptions Include="-Wl,-export:JNI_GetDefaultJavaVMInitArgs" />
+        <AdditionalLinkOptions Include="-Wl,-export:JNI_CreateJavaVM" />
+        <AdditionalLinkOptions Include="-Wl,-export:JNI_GetCreatedJavaVMs" />
+        <AdditionalLinkOptions Include="-Wl,-export:jio_snprintf" />
+        <AdditionalLinkOptions Include="-Wl,-export:jio_printf" />
+        <AdditionalLinkOptions Include="-Wl,-export:jio_fprintf" />
+        <AdditionalLinkOptions Include="-Wl,-export:jio_vfprintf" />
+        <AdditionalLinkOptions Include="-Wl,-export:jio_vsnprintf" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_linux" />
@@ -45,6 +53,7 @@
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_bsd" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\bsd\vm" />
         <Dependencies Include="c" />
+        <AdditionalLinkOptions Include="-Wl,-exported_symbols_list,mapfile-vers-product" />
         <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f." />
         <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f.." />
     </ItemGroup>
@@ -65,9 +74,6 @@
         <Header Include="ikvm.h">
             <IncludePath>ikvm.h</IncludePath>
         </Header>
-    </ItemGroup>
-    <ItemGroup>
-        <None Include="mapfile-vers" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
