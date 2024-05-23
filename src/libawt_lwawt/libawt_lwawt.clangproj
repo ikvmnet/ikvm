@@ -2,7 +2,7 @@
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
     <PropertyGroup Label="Globals">
-        <ProjectGuid>b3b01872-0000-4364-a0f2-a927f1658970</ProjectGuid>
+        <ProjectGuid>c79b5885-5b41-4d49-a147-d717c96536ff</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>awt_lwawt</TargetName>
@@ -53,7 +53,8 @@
         <LibLWAwtFile Include="CDropTargetContextPeer.m" />
         <LibLWAwtFile Include="CInputMethod.m" />
         <LibLWAwtFile Include="CDesktopPeer.m" />
-        <LibLWAwtFile Include="OSVersion.m" />
+        <LibLWAwtFile Include="OSVersion.m" Condition="$(TargetIdentifier.EndsWith('-x64'))" />
+        <LibLWAwtFile Include="OSVersion.m" PreprocessorDefinitions="JRSCopyOSVersion=JRSCopyOSVersion2" AdditionalCompileOptions="-include;JavaRuntimeSupport2.h" Condition="$(TargetIdentifier.EndsWith('-arm64'))" />
         <LibLWAwtFile Include="DnDUtilities.m" />
         <LibLWAwtFile Include="CFileDialog.m" />
         <LibLWAwtFile Include="CImage.m" />
@@ -97,6 +98,7 @@
     </ItemGroup>
     <ItemGroup>
         <IncludeDirectories Include="@(LibLWAwtDirs)" />
+        <IncludeDirectories Include="include\$(TargetIdentifier)" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\sun\java2d" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
@@ -105,6 +107,7 @@
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
+        <AdditionalLinkOptions Include="-framework" Value="Foundation" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Accelerate" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="ApplicationServices" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="AudioToolbox" Separator=" " />
@@ -112,12 +115,11 @@
         <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="ExceptionHandling" Separator=" " />
-        <AdditionalLinkOptions Include="-framework" Value="JavaNativeFoundation" Separator=" " Condition=" '$(TargetIdentifier)' == 'osx-x64' "/>
+        <AdditionalLinkOptions Include="-framework" Value="JavaNativeFoundation" Separator=" " Condition=" '$(TargetIdentifier)' == 'osx-x64' " />
         <AdditionalLinkOptions Include="-framework" Value="JavaRuntimeSupport" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="OpenGL" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="QuartzCore" Separator=" " />
     </ItemGroup>
-
     <UsingTask TaskName="JoinPathsAndFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
             <Code Type="Class" Language="cs">
@@ -148,7 +150,7 @@ public class JoinPathsAndFiles : Task
         foreach (var path in Paths)
             foreach (var file in Files)
                 if (File.Exists(Path.Combine(path.ItemSpec, file.ItemSpec)))
-                    items.Add(new TaskItem(Path.Combine(path.ItemSpec, file.ItemSpec)));
+                    items.Add(new TaskItem(Path.Combine(path.ItemSpec, file.ItemSpec), file.CloneCustomMetadata()));
              
         Items = items.ToArray();
         return true;
@@ -159,20 +161,23 @@ public class JoinPathsAndFiles : Task
             </Code>
         </Task>
     </UsingTask>
-
     <Target Name="GetLibLWAwtItems">
         <JoinPathsAndFiles Paths="@(LibLWAwtDirs)" Files="@(LibLWAwtFile)">
             <Output TaskParameter="Items" ItemName="Compile" />
         </JoinPathsAndFiles>
     </Target>
-
+    <Target Name="UpdateLibLWAwtItems" DependsOnTargets="GetLibLWAwtItems">
+        <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+            <Compile Update="@(Compile)" Condition=" '%(Extension)' == '.m' " Language="objective-c" />
+        </ItemGroup>
+    </Target>
     <PropertyGroup>
         <CompileDependsOn>
             GetLibLWAwtItems;
+            UpdateLibLWAwtItems;
             $(CompileDependsOn);
         </CompileDependsOn>
     </PropertyGroup>
-
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>

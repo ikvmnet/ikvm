@@ -48,10 +48,12 @@
         <Dependencies Include="c" />
         <Dependencies Include="m" />
         <Dependencies Include="freetype" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libfontmanager\mapfile-vers.openjdk" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <ProjectReference Include="..\libfreetype\libfreetype.clangproj" />
         <Dependencies Include="m" />
+        <AdditionalLinkOptions Include="-Wl,-undefined,dynamic_lookup" />
         <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font\X11TextRenderer.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font\X11FontScaler.c" />
     </ItemGroup>

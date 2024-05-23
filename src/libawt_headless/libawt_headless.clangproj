@@ -21,9 +21,6 @@
         <LibAwtDirs Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt" />
         <LibAwtDirs Include="$(OpenJdkDir)jdk\src\solaris\native\sun\java2d\opengl" />
         <LibAwtDirs Include="$(OpenJdkDir)jdk\src\solaris\native\sun\java2d\x11" />
-        <PreprocessorDefinitions Include="HEADLESS" Value="true" />
-    </ItemGroup>
-    <ItemGroup>
         <LibAwtFile Include="awt_Font.c" />
         <LibAwtFile Include="HeadlessToolkit.c" />
         <LibAwtFile Include="fontpath.c" />
@@ -52,6 +49,7 @@
         <LibAwtFile Include="CUPSfuncs.c" />
     </ItemGroup>
     <ItemGroup>
+        <IncludeDirectories Include="@(LibAwtDirs)" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops" />
@@ -60,8 +58,12 @@
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\jdga" />
-        <IncludeDirectories Include="@(LibAwtDirs)" />
-        <Dependencies Include="dl" />
+        <PreprocessorDefinitions Include="HEADLESS" Value="true" />
+        <AdditionalCompileOptions Include="-Wno-implicit-function-declaration;-Wno-error=int-conversion" />
+        <AdditionalCompileOptions Include="-fcommon" />
+        <AdditionalLinkOptions Include="-fcommon" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libawt_headless\mapfile-vers" />
+        <Dependencies Include="c" />
         <Dependencies Include="m" />
     </ItemGroup>
 

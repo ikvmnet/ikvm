@@ -1,10 +1,20 @@
-﻿using java.awt;
+﻿using System.Diagnostics;
+
+using java.awt;
 
 namespace IKVM.ConsoleApp
 {
 
     public static class Program
     {
+        public static void Main(string[] args)
+        {
+            while (!Debugger.IsAttached)
+                System.Threading.Thread.Sleep(100);
+
+            AWTExample1.Foo();
+        }
+
         public class AWTExample1 : Frame
         {
 
@@ -30,7 +40,7 @@ namespace IKVM.ConsoleApp
                 setVisible(true);
             }
 
-            public static void Main(string[] args)
+            public static void Foo()
             {
                 new AWTExample1();
             }

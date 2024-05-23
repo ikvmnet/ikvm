@@ -24,7 +24,7 @@
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjnf\libjnf.clangproj" SupportedRuntimes="osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosxapp\libosxapp.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosx\libosx.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
-        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosxui\libosxui.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosxui\libosxui.clangproj" SupportedRuntimes="osx-x64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libkrb5\libkrb5.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;osx-x64;osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsound\libjsound.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundds\libjsoundds.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
@@ -37,7 +37,7 @@
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_headless\libawt_headless.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libfontmanager\libfontmanager.clangproj" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libfreetype\libfreetype.clangproj" SupportedRuntimes="win-x86;win-x64;win-arm64;osx-x64;osx-arm64" />
-        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjawt\libjawt.clangproj" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjawt\libjawt.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_lwawt\libawt_lwawt.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
     </ItemGroup>
 

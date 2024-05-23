@@ -28,6 +28,7 @@
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\laf" />
         <Header Include="$(OpenJdkDir)jdk\src\macosx\native\sun\osxapp\*.h" />
         <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\laf\*.m" Language="objective-c" />
+        <Compile Include="**\*.c" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />

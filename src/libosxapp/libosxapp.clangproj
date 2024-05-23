@@ -1,7 +1,6 @@
 ﻿<Project>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.buildtools.targets" />
     <PropertyGroup Label="Globals">
         <ProjectGuid>0E068B20-9C99-45C5-8D94-A1FF9EDD6739</ProjectGuid>
     </PropertyGroup>
@@ -32,6 +31,7 @@
         <IncludeDirectories Include="$(IntermediateOutputPath)\gensrc" />
         <Header Include="$(OpenJdkDir)jdk\src\macosx\native\sun\osxapp\*.h" />
         <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\sun\osxapp\*.m" Language="objective-c" />
+        <Compile Include="**\*.c" />
     </ItemGroup>
     
     <Target Name="ResolveJava" Condition=" '$(JAVA_HOME)' != '' And '$(JavaPath)' == '' ">
@@ -96,4 +96,5 @@
     
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.buildtools.targets" />
 </Project>

@@ -118,6 +118,7 @@
         <AdditionalCompileOptions Include="-Wno-extra-tokens" />
         <AdditionalCompileOptions Include="-Wno-deprecated-declarations" />
         <AdditionalCompileOptions Include="-Wno-ignored-pragmas" />
+        <AdditionalCompileOptions Include="-fvisibility=default" />
         <IncludeDirectories Include="@(LibAwtDirs)" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">

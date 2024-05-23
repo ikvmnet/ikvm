@@ -64,7 +64,10 @@
         <Compile Include="$(FreeTypeDir)builds\windows\ftsystem.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <PreprocessorDefinitions Include="HAVE_UNISTD_H" />
+        <PreprocessorDefinitions Include="HAVE_FCNTL_H" />
         <Dependencies Include="m" />
+        <Compile Include="$(FreeTypeDir)src\base\ftdebug.c" />
         <Compile Include="$(FreeTypeDir)builds\unix\ftsystem.c" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />

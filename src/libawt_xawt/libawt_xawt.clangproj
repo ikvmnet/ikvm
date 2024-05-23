@@ -90,9 +90,8 @@
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\jdga" />
-        <AdditionalCompileOptions Include="-Wno-implicit-function-declaration;-Wno-error=int-conversion" />
-        <AdditionalCompileOptions Include="-fcommon" />
-        <AdditionalLinkOptions Include="-fcommon" />
+        <PreprocessorDefinitions Include="XAWT" />
+        <PreprocessorDefinitions Include="XAWT_HACK" />
         <Dependencies Include="c" />
         <Dependencies Include="m" />
         <Dependencies Include="Xext" />
@@ -100,6 +99,10 @@
         <Dependencies Include="Xrender" />
         <Dependencies Include="Xtst" />
         <Dependencies Include="Xi" />
+        <AdditionalCompileOptions Include="-Wno-implicit-function-declaration;-Wno-error=int-conversion" />
+        <AdditionalCompileOptions Include="-fcommon" />
+        <AdditionalLinkOptions Include="-fcommon" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libawt_xawt\mapfile-vers" />
     </ItemGroup>
 
     <UsingTask TaskName="JoinPathsAndFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
