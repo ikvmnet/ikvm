@@ -1478,7 +1478,11 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="address"></param>
         public static unsafe void freeMemory(object self, long address)
         {
-            var ptr = (IntPtr)address - sizeof(IntPtr);
+            var adr = (nint)address;
+            if (adr == 0)
+                return;
+
+            var ptr = adr - sizeof(nint);
             var len = Marshal.ReadIntPtr(ptr);
             Marshal.FreeHGlobal(ptr);
             System.GC.RemoveMemoryPressure((long)len);
