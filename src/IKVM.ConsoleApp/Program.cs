@@ -12,7 +12,8 @@ namespace IKVM.ConsoleApp
             while (!Debugger.IsAttached)
                 System.Threading.Thread.Sleep(100);
 
-            AWTExample1.Foo();
+            java.lang.System.@out.println("hi");
+            System.Console.ReadLine();
         }
 
         public class AWTExample1 : Frame

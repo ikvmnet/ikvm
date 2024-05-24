@@ -166,9 +166,6 @@ public class JoinPathsAndFiles : Task
             <Compile Update="@(Compile)" Condition=" '%(Filename)%(Extension)' == 'java_props_md.c' " Language="objective-c" />
             <Compile Update="@(Compile)" Condition=" '%(Filename)%(Extension)' == 'java_props_macosx.c' " Language="objective-c" />
         </ItemGroup>
-        <ItemGroup>
-            <Compile Update="@(Compile)" Condition=" '%(Filename)%(Extension)' == 'jni_util_md.c' " AdditionalCompileOptions="-fvisibility=default" />
-        </ItemGroup>
     </Target>
 
     <PropertyGroup>
