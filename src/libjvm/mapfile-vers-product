@@ -30,6 +30,7 @@
                 _JNI_GetDefaultJavaVMInitArgs
 
                 # _JVM
+                _JVM_Init
                 _JVM_Accept
                 _JVM_ActiveProcessorCount
                 #_JVM_AllocateNewArray
