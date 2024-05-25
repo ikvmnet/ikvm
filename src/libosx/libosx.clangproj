@@ -12,13 +12,12 @@
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
         <ProjectReference Include="..\libiava\libiava.clangproj" />
-        <ProjectReference Include="..\libjnf\libjnf.clangproj" Condition=" '$(TargetIdentifier)' == 'osx-arm64' " />
+        <ProjectReference Include="..\libjnf\libjnf.clangproj" />
         <ProjectReference Include="..\libosxapp\libosxapp.clangproj" />
     </ItemGroup>
     <ItemGroup>
         <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="ApplicationServices" Separator=" " />
-        <AdditionalLinkOptions Include="-framework" Value="JavaNativeFoundation" Separator=" " Condition=" '$(TargetIdentifier)' == 'osx-x64' "/>
         <AdditionalLinkOptions Include="-framework" Value="JavaRuntimeSupport" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="SystemConfiguration" Separator=" " />

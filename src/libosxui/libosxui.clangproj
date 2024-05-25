@@ -12,7 +12,7 @@
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
         <ProjectReference Include="..\libiava\libiava.clangproj" />
-        <ProjectReference Include="..\libjnf\libjnf.clangproj" Condition=" '$(TargetIdentifier)' == 'osx-arm64' " />
+        <ProjectReference Include="..\libjnf\libjnf.clangproj" />
         <ProjectReference Include="..\libawt\libawt.clangproj" />
         <ProjectReference Include="..\libjawt\libjawt.clangproj" />
         <ProjectReference Include="..\libosxapp\libosxapp.clangproj" />
@@ -22,7 +22,6 @@
         <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Carbon" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="ApplicationServices" Separator=" " />
-        <AdditionalLinkOptions Include="-framework" Value="JavaNativeFoundation" Separator=" " Condition=" '$(TargetIdentifier)' == 'osx-x64' " />
         <AdditionalLinkOptions Include="-framework" Value="JavaRuntimeSupport" Separator=" " />
         <IncludeDirectories Include="include" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\laf" />

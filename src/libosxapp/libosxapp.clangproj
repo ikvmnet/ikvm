@@ -11,7 +11,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
-        <ProjectReference Include="..\libjnf\libjnf.clangproj" Condition=" '$(TargetIdentifier)' == 'osx-arm64' " />
+        <ProjectReference Include="..\libjnf\libjnf.clangproj" />
     </ItemGroup>
     <ItemGroup>
         <AdditionalCompileOptions Include="-O1" />
@@ -22,7 +22,6 @@
         <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="ExceptionHandling" Separator=" " />
-        <AdditionalLinkOptions Include="-framework" Value="JavaNativeFoundation" Separator=" " Condition=" '$(TargetIdentifier)' == 'osx-x64' "/>
         <AdditionalLinkOptions Include="-framework" Value="JavaRuntimeSupport" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="OpenGL" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="IOSurface" Separator=" " />
