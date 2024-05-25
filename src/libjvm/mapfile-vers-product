@@ -259,4 +259,68 @@
                 # This is for Forte Analyzer profiling support.
                 #_AsyncGetCallTrace
 
+                # JNI varargs entry points
+                ___JNI_CallObjectMethod
+                ___JNI_CallObjectMethodV
+                ___JNI_CallNonvirtualObjectMethod
+                ___JNI_CallNonvirtualObjectMethodV
+                ___JNI_CallStaticObjectMethod
+                ___JNI_CallStaticObjectMethodV
+                ___JNI_CallBooleanMethod
+                ___JNI_CallBooleanMethodV
+                ___JNI_CallNonvirtualBooleanMethod
+                ___JNI_CallNonvirtualBooleanMethodV
+                ___JNI_CallStaticBooleanMethod
+                ___JNI_CallStaticBooleanMethodV
+                ___JNI_CallByteMethod
+                ___JNI_CallByteMethodV
+                ___JNI_CallNonvirtualByteMethod
+                ___JNI_CallNonvirtualByteMethodV
+                ___JNI_CallStaticByteMethod
+                ___JNI_CallStaticByteMethodV
+                ___JNI_CallCharMethod
+                ___JNI_CallCharMethodV
+                ___JNI_CallNonvirtualCharMethod
+                ___JNI_CallNonvirtualCharMethodV
+                ___JNI_CallStaticCharMethod
+                ___JNI_CallStaticCharMethodV
+                ___JNI_CallShortMethod
+                ___JNI_CallShortMethodV
+                ___JNI_CallNonvirtualShortMethod
+                ___JNI_CallNonvirtualShortMethodV
+                ___JNI_CallStaticShortMethod
+                ___JNI_CallStaticShortMethodV
+                ___JNI_CallIntMethod
+                ___JNI_CallIntMethodV
+                ___JNI_CallNonvirtualIntMethod
+                ___JNI_CallNonvirtualIntMethodV
+                ___JNI_CallStaticIntMethod
+                ___JNI_CallStaticIntMethodV
+                ___JNI_CallLongMethod
+                ___JNI_CallLongMethodV
+                ___JNI_CallNonvirtualLongMethod
+                ___JNI_CallNonvirtualLongMethodV
+                ___JNI_CallStaticLongMethod
+                ___JNI_CallStaticLongMethodV
+                ___JNI_CallFloatMethod
+                ___JNI_CallFloatMethodV
+                ___JNI_CallNonvirtualFloatMethod
+                ___JNI_CallNonvirtualFloatMethodV
+                ___JNI_CallStaticFloatMethod
+                ___JNI_CallStaticFloatMethodV
+                ___JNI_CallDoubleMethod
+                ___JNI_CallDoubleMethodV
+                ___JNI_CallNonvirtualDoubleMethod
+                ___JNI_CallNonvirtualDoubleMethodV
+                ___JNI_CallStaticDoubleMethod
+                ___JNI_CallStaticDoubleMethodV
+                ___JNI_NewObject
+                ___JNI_NewObjectV
+                ___JNI_CallVoidMethod
+                ___JNI_CallVoidMethodV
+                ___JNI_CallNonvirtualVoidMethod
+                ___JNI_CallNonvirtualVoidMethodV
+                ___JNI_CallStaticVoidMethod
+                ___JNI_CallStaticVoidMethodV
+
                 # INSERT VTABLE SYMBOLS HERE
