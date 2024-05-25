@@ -115,7 +115,6 @@
         <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="ExceptionHandling" Separator=" " />
-        <AdditionalLinkOptions Include="-framework" Value="JavaNativeFoundation" Separator=" " Condition=" '$(TargetIdentifier)' == 'osx-x64' " />
         <AdditionalLinkOptions Include="-framework" Value="JavaRuntimeSupport" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="OpenGL" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="QuartzCore" Separator=" " />
