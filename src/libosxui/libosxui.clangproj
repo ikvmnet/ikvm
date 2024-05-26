@@ -1,0 +1,34 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>24739c0f-eb5f-41df-83b3-af6dd219c67e</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>osxui</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+        <ProjectReference Include="..\libjnf\libjnf.clangproj" />
+        <ProjectReference Include="..\libawt\libawt.clangproj" />
+        <ProjectReference Include="..\libjawt\libjawt.clangproj" />
+        <ProjectReference Include="..\libosxapp\libosxapp.clangproj" />
+        <ProjectReference Include="..\libawt_lwawt\libawt_lwawt.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Carbon" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="ApplicationServices" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="JavaRuntimeSupport" Separator=" " />
+        <IncludeDirectories Include="include" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\laf" />
+        <Header Include="$(OpenJdkDir)jdk\src\macosx\native\sun\osxapp\*.h" />
+        <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\com\apple\laf\*.m" Language="objective-c" />
+        <Compile Include="**\*.c" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

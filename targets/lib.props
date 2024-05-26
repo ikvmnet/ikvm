@@ -32,7 +32,7 @@
         <PreprocessorDefinitions Include="_AMD64_;amd64" Condition="$(TargetIdentifier.EndsWith('-x64'))" />
         <PreprocessorDefinitions Include="_X86_;x86" Condition="$(TargetIdentifier.EndsWith('-x86'))" />
         <PreprocessorDefinitions Include="_ARM64_;arm64" Condition="$(TargetIdentifier.EndsWith('-arm64'))" />
-        <AdditionalCompileOptions Include="-fvisibility=hidden;-Wno-ignored-attributes;-Wno-format;-Wno-format-security;-Wno-macro-redefined" />
+        <AdditionalCompileOptions Include="-Wno-ignored-attributes;-Wno-format;-Wno-format-security;-Wno-macro-redefined" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetIdentifier)' == 'win-arm64' ">
@@ -126,7 +126,11 @@
         <AdditionalLinkOptions Include="-Wl,-rpath,$ORIGIN" />
     </ItemGroup>
 
-    <PropertyGroup Condition="$(TargetIdentifier.Contains('osx-'))">
+    <ItemGroup Condition="$(TargetIdentifier.Contains('-musl-'))">
+        <PreprocessorDefinitions Include="__MUSL__" />
+    </ItemGroup>
+
+    <PropertyGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <DebugSymbols>false</DebugSymbols>
         <EnableOSXCodeSign>true</EnableOSXCodeSign>
     </PropertyGroup>

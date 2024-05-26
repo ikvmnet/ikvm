@@ -86,6 +86,7 @@ namespace IKVM.Runtime
             // load libjvm through IKVM native library functionality
             if ((Handle = NativeLibrary.Load(Path.Combine(JVM.Properties.HomePath, "bin", NativeLibrary.MapLibraryName("jvm")))) == null)
                 throw new InternalException("Could not load libjvm.");
+
             // obtain delegates to functions declared in libjvm
             _JVM_Init = Marshal.GetDelegateForFunctionPointer<JVM_InitDelegate>(Handle.GetExport("JVM_Init", sizeof(nint)).Handle);
             _JVM_LoadLibrary = Marshal.GetDelegateForFunctionPointer<JVM_LoadLibraryDelegate>(Handle.GetExport("JVM_LoadLibrary", sizeof(nint)).Handle);

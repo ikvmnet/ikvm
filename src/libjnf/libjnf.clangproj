@@ -17,7 +17,7 @@
         <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Foundation" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="AppKit" Separator=" " />
-        <Compile Include="*.c" />
+        <Header Include="JavaNativeFoundation\*.h" IncludePath="JavaNativeFoundation\%(Filename)%(Extension)" />
         <Compile Include="JavaNativeFoundation\*.m" Language="objective-c" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />

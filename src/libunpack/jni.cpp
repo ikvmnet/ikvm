@@ -1,3 +1,5 @@
+/* Forked for IKVM because of a few return types that make no sense. */
+
 /*
  * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.

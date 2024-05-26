@@ -284,8 +284,32 @@ namespace IKVM.Runtime
                     p["user.dir"] = ".";
                 }
 
-                // other various properties
-                p["java.awt.headless"] = "true";
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    p["java.awt.printerjob"] = "sun.awt.windows.WPrinterJob";
+                    p["java.awt.graphicsenv"] = "sun.awt.Win32GraphicsEnvironment";
+                    p["awt.toolkit"] = "sun.awt.windows.WToolkit";
+                }
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    p["java.awt.printerjob"] = "sun.print.PSPrinterJob";
+                    p["java.awt.graphicsenv"] = "sun.awt.X11GraphicsEnvironment";
+                    p["awt.toolkit"] = "sun.awt.X11.XToolkit";
+                }
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    p["java.awt.printerjob"] = "sun.lwawt.macosx.CPrinterJob";
+                    p["java.awt.graphicsenv"] = "sun.awt.CGraphicsEnvironment";
+                    p["awt.toolkit"] = "sun.lwawt.macosx.LWCToolkit";
+                }
+
+                var fontPath = SafeGetEnvironmentVariable("JAVA2D_FONTPATH");
+                if (fontPath != null)
+                    p["sun.java2d.fontpath"] = fontPath;
+
+                // unlimited direct memory
                 p["sun.nio.MaxDirectMemorySize"] = "-1";
 
                 // default to FORK on OSX, instead of posix_spawn with jspawnhelper

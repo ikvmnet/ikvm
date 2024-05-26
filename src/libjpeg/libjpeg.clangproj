@@ -1,0 +1,21 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>de89413e-2628-486c-aad1-793b9f08c8f2</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>jpeg</TargetName>
+        <OutputType>dll</OutputType>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\jpeg" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\jpeg\**\*.c" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>
