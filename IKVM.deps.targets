@@ -23,21 +23,18 @@
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
             <ItemGroup>
                 <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.0" />
-                <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
                 <PackageReference Include="System.Data.Odbc" Version="8.0.0" />
             </ItemGroup>
         </When>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">
             <ItemGroup>
                 <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
-                <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
                 <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
             </ItemGroup>
         </When>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">
             <ItemGroup>
                 <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
-                <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
                 <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
                 <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
             </ItemGroup>
