@@ -554,9 +554,6 @@ jobs:
         dotnet: false
         swap-storage: false
         large-packages: false
-    - name: XVFB (Linux)
-      if: runner.os == 'Linux'
-      run: sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
     - name: Set Paths (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
@@ -627,6 +624,12 @@ jobs:
       shell: pwsh
       run: ri tests--${{ steps.test-name.outputs.result }}.tar.gz
       working-directory: ${{ env.WORKPATH }}
+    - name: Start XVFB (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get install -y xvfb &&
+        xvfb-run -n :99 &
+        disown
     - name: Execute Tests
       timeout-minutes: 120
       shell: pwsh
