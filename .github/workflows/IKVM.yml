@@ -544,6 +544,8 @@ jobs:
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
+    env:
+      DISPLAY: ":0"
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
@@ -552,6 +554,9 @@ jobs:
         dotnet: false
         swap-storage: false
         large-packages: false
+    - name: XVFB (Linux)
+      if: runner.os == 'Linux'
+      run: sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
     - name: Set Paths (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
