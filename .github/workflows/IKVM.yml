@@ -544,8 +544,6 @@ jobs:
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
-    env:
-      DISPLAY: ":99"
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
@@ -600,7 +598,7 @@ jobs:
     - name: Setup Linux
       if: runner.os == 'Linux'
       shell: bash
-      run: sudo apt-get update && sudo apt-get install -y libasound2
+      run: sudo apt-get update && sudo apt-get install -y libasound2 xvfb
     - name: Get Test Name
       uses: actions/github-script@v7
       id: test-name
@@ -628,11 +626,12 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get install -y xvfb &&
-        xvfb-run -n :99 &
-        disown
+        xvfb /usr/bin/Xvfb :99 & disown
     - name: Execute Tests
       timeout-minutes: 120
       shell: pwsh
+      env:
+        DISPLAY: ":99"
       run: |
         # assign powershell variables
         $run = "${{ matrix.run }}"
