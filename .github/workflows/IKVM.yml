@@ -545,7 +545,7 @@ jobs:
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
     env:
-      DISPLAY: ":0"
+      DISPLAY: ":99"
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
