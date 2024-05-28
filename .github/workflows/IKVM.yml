@@ -624,7 +624,7 @@ jobs:
       working-directory: ${{ env.WORKPATH }}
     - name: Start XVFB (Linux)
       if: runner.os == 'Linux'
-      run: xvfb /usr/bin/Xvfb :99 & disown
+      run: /usr/bin/Xvfb :99 & disown
     - name: Execute Tests
       timeout-minutes: 120
       shell: pwsh

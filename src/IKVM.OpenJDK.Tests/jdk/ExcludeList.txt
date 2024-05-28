@@ -266,7 +266,7 @@ java/awt/Choice/ItemStateChangeTest/ItemStateChangeTest.java                    
 #java/awt/Container/CheckZOrderChange/CheckZOrderChange.java                                                             generic-all
 #java/awt/Container/ContainerAIOOBE/ContainerAIOOBE.java                                                                 generic-all
 #java/awt/Container/ValidateRoot/InvalidateMustRespectValidateRoots.java                                                 generic-all
-#java/awt/Container/isRemoveNotifyNeeded/JInternalFrameTest.java                                                         generic-all
+java/awt/Container/isRemoveNotifyNeeded/JInternalFrameTest.java                                                         generic-all
 #java/awt/Cursor/CursorOverlappedPanelsTest/CursorOverlappedPanelsTest.java                                              generic-all
 java/awt/Cursor/MultiResolutionCursorTest/MultiResolutionCursorTest.java                                                generic-all
 java/awt/Cursor/PredefinedPrivate/PredefinedPrivate.java                                                                generic-all
@@ -418,7 +418,7 @@ java/awt/Graphics2D/DrawString/DrawStringCrash.java                             
 #java/awt/Graphics2D/DrawString/LCDTextSrcEa.java                                                                        generic-all
 java/awt/Graphics2D/DrawString/RotTransText.java                                                                        generic-all
 #java/awt/Graphics2D/DrawString/ScaledLCDTextMetrics.java                                                                generic-all
-#java/awt/Graphics2D/DrawString/TextRenderingTest.java                                                                   generic-all
+#java/awt/Graphics2D/DrawString/TextRenderingTest.java                                                                   linux-all
 #java/awt/Graphics2D/DrawString/XRenderElt254TextTest.java                                                               generic-all
 #java/awt/Graphics2D/FillTexturePaint/FillTexturePaint.java                                                              generic-all
 #java/awt/Graphics2D/FlipDrawImage/FlipDrawImage.java                                                                    generic-all

@@ -244,9 +244,6 @@
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\tools\jstatd\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\util\**\*.java" PackagePath="sun\util" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\demo\nio\zipfs\src\com\sun\nio\zipfs\**\*.java" PackagePath="com\sun\nio\zipfs" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\**\*.java" PackagePath="sun\security\provider" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\NativePRNG.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\NativeSeedGenerator.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\langtools\src\share\classes\**\*.java" PackagePath="" />
     </ItemGroup>
 
@@ -265,6 +262,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\**\*.java" PackagePath="sun\nio" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\**\*.java" PackagePath="sun\print" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\util\**\*.java" PackagePath="sun\util" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\**\*.java" PackagePath="sun\security" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\java\swing\plaf\gtk\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\security\auth\module\UnixLoginModule.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\security\auth\module\UnixSystem.java" />
@@ -289,6 +287,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\**\*.java" PackagePath="sun\nio" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\print\**\*.java" PackagePath="sun\print"/>
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\util\**\*.java" PackagePath="sun\util" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\security\**\*.java" PackagePath="sun\security" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\security\auth\module\NTLoginModule.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\security\auth\module\NTSystem.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\java\io\FileDescriptor.java" />
