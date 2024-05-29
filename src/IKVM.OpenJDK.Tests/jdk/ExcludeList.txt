@@ -2940,16 +2940,8 @@ sun/security/krb5/tools/ktarg.sh                                                
 sun/security/krb5/tools/ktcheck.sh                                                                                      generic-all
 sun/security/krb5/tools/ktmissing.sh                                                                                    generic-all
 sun/security/krb5/tools/ktzero.sh                                                                                       generic-all
-sun/security/mscapi/AccessKeyStore.sh                                                                                   generic-all
-sun/security/mscapi/IsSunMSCAPIAvailable.sh                                                                             generic-all
-sun/security/mscapi/KeyStoreCompatibilityMode.sh                                                                        generic-all
-sun/security/mscapi/KeytoolChangeAlias.sh                                                                               generic-all
 sun/security/mscapi/PrngSlow.java                                                                                       generic-all
-sun/security/mscapi/PublicKeyInterop.sh                                                                                 generic-all
-sun/security/mscapi/RSAEncryptDecrypt.sh                                                                                generic-all
 sun/security/mscapi/ShortRSAKey1024.sh                                                                                  generic-all
-sun/security/mscapi/SignUsingNONEwithRSA.sh                                                                             generic-all
-sun/security/mscapi/SignUsingSHA2withRSA.sh                                                                             generic-all
 sun/security/mscapi/SmallPrimeExponentP.java                                                                            generic-all
 sun/security/pkcs/pkcs9/UnstructuredName.java                                                                           generic-all
 sun/security/pkcs12/Bug6415637.java                                                                                     generic-all
