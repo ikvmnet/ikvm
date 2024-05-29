@@ -126,7 +126,7 @@ securerandom.source=file:/dev/random
 # This is a comma-separated list of algorithm and/or algorithm:provider
 # entries.
 #
-securerandom.strongAlgorithms=NativePRNG:SUN
+securerandom.strongAlgorithms=NativePRNGBlocking:SUN
 
 #
 # Class to instantiate as the javax.security.auth.login.Configuration
@@ -222,8 +222,7 @@ package.access=sun.,\
                jdk.internal.,\
                jdk.nashorn.internal.,\
                jdk.nashorn.tools.,\
-               com.sun.activation.registries.,\
-               com.sun.java.accessibility.
+               com.sun.activation.registries.
 
 #
 # List of comma-separated packages that start with or equal this string
@@ -272,8 +271,7 @@ package.definition=sun.,\
                    jdk.internal.,\
                    jdk.nashorn.internal.,\
                    jdk.nashorn.tools.,\
-                   com.sun.activation.registries.,\
-                   com.sun.java.accessibility.
+                   com.sun.activation.registries.
 
 #
 # Determines whether this properties file can be appended to
@@ -910,3 +908,4 @@ jdk.xml.dsig.secureValidationPolicy=\
 #    java.rmi.dgc.VMID;\
 #    java.rmi.dgc.Lease;\
 #    maxdepth=5;maxarray=10000
+

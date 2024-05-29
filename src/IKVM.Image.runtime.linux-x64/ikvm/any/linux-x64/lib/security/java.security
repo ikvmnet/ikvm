@@ -126,7 +126,7 @@ securerandom.source=file:/dev/random
 # This is a comma-separated list of algorithm and/or algorithm:provider
 # entries.
 #
-securerandom.strongAlgorithms=NativePRNG:SUN
+securerandom.strongAlgorithms=NativePRNGBlocking:SUN
 
 #
 # Class to instantiate as the javax.security.auth.login.Configuration
