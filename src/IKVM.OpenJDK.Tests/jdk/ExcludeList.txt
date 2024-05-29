@@ -2940,9 +2940,6 @@ sun/security/krb5/tools/ktarg.sh                                                
 sun/security/krb5/tools/ktcheck.sh                                                                                      generic-all
 sun/security/krb5/tools/ktmissing.sh                                                                                    generic-all
 sun/security/krb5/tools/ktzero.sh                                                                                       generic-all
-sun/security/mscapi/PrngSlow.java                                                                                       generic-all
-sun/security/mscapi/ShortRSAKey1024.sh                                                                                  generic-all
-sun/security/mscapi/SmallPrimeExponentP.java                                                                            generic-all
 sun/security/pkcs/pkcs9/UnstructuredName.java                                                                           generic-all
 sun/security/pkcs12/Bug6415637.java                                                                                     generic-all
 sun/security/pkcs12/StorePasswordTest.java                                                                              generic-all
@@ -3365,10 +3362,6 @@ javax/swing/JEditorPane/6882559/bug6882559.java                                 
 javax/swing/JEditorPane/8158734/bug8158734.java                                                                         generic-all
 javax/swing/JScrollPane/HorizontalMouseWheelOnShiftPressed/HorizontalMouseWheelOnShiftPressed.java                      generic-all
 javax/swing/plaf/nimbus/8041642/ScrollBarThumbVisibleTest.java                                                          generic-all
-
-# mscapi / Windows-MY Keystore usage
-sun/security/mscapi/IterateWindowsRootStore.java                                                                        generic-all
-sun/security/mscapi/CastError.java                                                                                      generic-all
 
 # probably related to field or method order
 javax/xml/bind/jxc/8073519/SchemagenErrorReporting.java                                                                 generic-all
