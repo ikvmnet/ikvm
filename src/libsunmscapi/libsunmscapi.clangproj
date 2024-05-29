@@ -5,8 +5,9 @@
         <ProjectGuid>1658e7ac-0fc7-4527-a7cf-9e0ff752b368</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>win-x64;win-x86;win-arm64</TargetIdentifiers>
         <TargetName>sunmscapi</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>win-x64;win-x86;win-arm64</TargetIdentifiers>
         <LanguageStandard>c++11</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
