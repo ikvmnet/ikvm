@@ -1869,34 +1869,31 @@ javax/accessibility/JList/AccessibleJListChildNPETest.java                      
 javax/crypto/JceSecurity/SunJCE_BC_LoadOrdering.java                                                                    generic-all
 javax/crypto/SecretKeyFactory/FailOverTest.sh                                                                           generic-all
 javax/crypto/sanity/CheckManifestForRelease.java                                                                        generic-all
-javax/imageio/metadata/BooleanAttributes.java                                                                           generic-all
-javax/imageio/metadata/IIOMetadataFormat/UserPluginMetadataFormatTest.java                                              generic-all
-javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatTest.java                                                     generic-all
+#javax/imageio/metadata/BooleanAttributes.java                                                                           generic-all
+#javax/imageio/metadata/IIOMetadataFormat/UserPluginMetadataFormatTest.java                                              generic-all
 javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatTest.sh                                                       generic-all
-javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatThreadTest.java                                               generic-all
 javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatThreadTest.sh                                                 generic-all
-javax/imageio/metadata/RegisteredFormatsTest.java                                                                       generic-all
-javax/imageio/plugins/bmp/BMPSubsamplingTest.java                                                                       generic-all
-javax/imageio/plugins/bmp/TopDownTest.java                                                                              generic-all
-javax/imageio/plugins/gif/EncodeSubImageTest.java                                                                       generic-all
-javax/imageio/plugins/gif/GIFPassListenerTest.java                                                                      generic-all
-javax/imageio/plugins/gif/GifTransparencyTest.java                                                                      generic-all
-javax/imageio/plugins/jpeg/ConcurrentReadingTest.java                                                                   generic-all
-javax/imageio/plugins/jpeg/ConcurrentWritingTest.java                                                                   generic-all
-javax/imageio/plugins/jpeg/JpegWriterLeakTest.java                                                                      generic-all
-javax/imageio/plugins/jpeg/ReadAsGrayTest.java                                                                          generic-all
-javax/imageio/plugins/jpeg/ReadingInterruptionTest.java                                                                 generic-all
-javax/imageio/plugins/jpeg/TruncatedImageWarningTest.java                                                               generic-all
-javax/imageio/plugins/jpeg/WritingInterruptionTest.java                                                                 generic-all
-javax/imageio/plugins/png/GrayPngTest.java                                                                              generic-all
-javax/imageio/plugins/png/ITXtTest.java                                                                                 generic-all
-javax/imageio/plugins/png/ItxtUtf8Test.java                                                                             generic-all
-javax/imageio/plugins/png/PngOutputTypeTest.java                                                                        generic-all
-javax/imageio/plugins/png/ShortHistogramTest.java                                                                       generic-all
-javax/imageio/plugins/shared/BitDepth.java                                                                              generic-all
-javax/imageio/plugins/wbmp/CanDecodeTest.java                                                                           generic-all
-javax/imageio/plugins/shared/WriteAfterAbort.java                                                                       generic-all
-javax/imageio/stream/StreamCloserLeak/run_test.java                                                                     generic-all
+#javax/imageio/metadata/RegisteredFormatsTest.java                                                                       generic-all
+#javax/imageio/plugins/bmp/BMPSubsamplingTest.java                                                                       generic-all
+#javax/imageio/plugins/bmp/TopDownTest.java                                                                              generic-all
+#javax/imageio/plugins/gif/EncodeSubImageTest.java                                                                       generic-all
+#javax/imageio/plugins/gif/GIFPassListenerTest.java                                                                      generic-all
+#javax/imageio/plugins/gif/GifTransparencyTest.java                                                                      generic-all
+#javax/imageio/plugins/jpeg/ConcurrentReadingTest.java                                                                   generic-all
+#javax/imageio/plugins/jpeg/ConcurrentWritingTest.java                                                                   generic-all
+#javax/imageio/plugins/jpeg/JpegWriterLeakTest.java                                                                      generic-all
+#javax/imageio/plugins/jpeg/ReadAsGrayTest.java                                                                          generic-all
+#javax/imageio/plugins/jpeg/ReadingInterruptionTest.java                                                                 generic-all
+#javax/imageio/plugins/jpeg/TruncatedImageWarningTest.java                                                               generic-all
+#javax/imageio/plugins/jpeg/WritingInterruptionTest.java                                                                 generic-all
+#javax/imageio/plugins/png/GrayPngTest.java                                                                              generic-all
+#javax/imageio/plugins/png/ITXtTest.java                                                                                 generic-all
+#javax/imageio/plugins/png/ItxtUtf8Test.java                                                                             generic-all
+#javax/imageio/plugins/png/PngOutputTypeTest.java                                                                        generic-all
+#javax/imageio/plugins/png/ShortHistogramTest.java                                                                       generic-all
+#javax/imageio/plugins/shared/BitDepth.java                                                                              generic-all
+#javax/imageio/plugins/wbmp/CanDecodeTest.java                                                                           generic-all
+#javax/imageio/plugins/shared/WriteAfterAbort.java                                                                       generic-all
 javax/imageio/stream/StreamCloserLeak/run_test.sh                                                                       generic-all
 javax/management/ThreadMXBeanTest.java                                                                                  generic-all
 javax/management/ImplementationVersion/ImplVersionTest.java                                                             generic-all
@@ -3254,8 +3251,8 @@ sun/tools/native2ascii/Permission.java                                          
 tools/jar/UpdateJar.java                                                                                                linux-all,macosx-all
 
 # uses System.Drawing, not available on Linux
-javax/imageio/plugins/png/MergeStdCommentTest.java                                                                      linux-all,macosx-all
-javax/imageio/EmptyFileTest.java                                                                                        linux-all,macosx-all
+#javax/imageio/plugins/png/MergeStdCommentTest.java                                                                      linux-all,macosx-all
+#javax/imageio/EmptyFileTest.java                                                                                        linux-all,macosx-all
 sun/java2d/cmm/ColorConvertOp/InvalidRenderIntentTest.java                                                              linux-all,macosx-all
 
 # uses Win32 specific stuff, not available on Linux
@@ -3298,7 +3295,7 @@ java/awt/Component/TreeLockDeadlock/TreeLockDeadlock.java                       
 java/awt/dnd/ImageTransferTest/ImageTransferTest.java                                                                   generic-all
 java/awt/dnd/MissingEventsOnModalDialog/MissingEventsOnModalDialogTest.java                                             generic-all
 java/awt/Toolkit/AutoShutdown/EventQueuePush/EventQueuePushAutoshutdown.sh                                              generic-all
-javax/imageio/plugins/jpeg/JpegImageColorSpaceTest.java                                                                 generic-all
+#javax/imageio/plugins/jpeg/JpegImageColorSpaceTest.java                                                                 generic-all
 javax/swing/JEditorPane/6882559/bug6882559.java                                                                         generic-all
 javax/swing/JEditorPane/8158734/bug8158734.java                                                                         generic-all
 javax/swing/JScrollPane/HorizontalMouseWheelOnShiftPressed/HorizontalMouseWheelOnShiftPressed.java                      generic-all
