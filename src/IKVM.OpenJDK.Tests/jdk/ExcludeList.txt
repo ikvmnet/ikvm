@@ -1881,7 +1881,7 @@ javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatThreadTest.sh         
 #javax/imageio/plugins/gif/GifTransparencyTest.java                                                                      generic-all
 #javax/imageio/plugins/jpeg/ConcurrentReadingTest.java                                                                   generic-all
 #javax/imageio/plugins/jpeg/ConcurrentWritingTest.java                                                                   generic-all
-#javax/imageio/plugins/jpeg/JpegWriterLeakTest.java                                                                      generic-all
+javax/imageio/plugins/jpeg/JpegWriterLeakTest.java                                                                      generic-all
 #javax/imageio/plugins/jpeg/ReadAsGrayTest.java                                                                          generic-all
 #javax/imageio/plugins/jpeg/ReadingInterruptionTest.java                                                                 generic-all
 #javax/imageio/plugins/jpeg/TruncatedImageWarningTest.java                                                               generic-all
