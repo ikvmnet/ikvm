@@ -28,6 +28,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
+using System.Text;
 
 using IKVM.ByteCode.Text;
 using IKVM.Runtime.Extensions;
@@ -1402,61 +1403,100 @@ namespace IKVM.Runtime.JNI
 
         internal static jchar* GetStringChars(JNIEnv* pEnv, jstring str, jboolean* isCopy)
         {
-            var s = (string)pEnv->UnwrapRef(str);
-            if (isCopy != null)
-                *isCopy = JNI_TRUE;
+            try
+            {
+                var s = (string)pEnv->UnwrapRef(str);
+                if (isCopy != null)
+                    *isCopy = JNI_TRUE;
 
-            return (jchar*)(void*)Marshal.StringToHGlobalUni(s);
+                return (jchar*)(void*)Marshal.StringToHGlobalUni(s);
+            }
+            catch (Exception e)
+            {
+                JVM.SetPendingException(e);
+                return null;
+            }
         }
 
         internal static void ReleaseStringChars(JNIEnv* pEnv, jstring str, jchar* chars)
         {
-            Marshal.FreeHGlobal((IntPtr)(void*)chars);
+            try
+            {
+                Marshal.FreeHGlobal((IntPtr)(void*)chars);
+            }
+            catch (Exception e)
+            {
+                JVM.SetPendingException(e);
+                return;
+            }
         }
 
-        internal static jobject NewStringUTF(JNIEnv* pEnv, byte* bytes)
+        internal static nint NewStringUTF(JNIEnv* pEnv, byte* bytes)
         {
-            // the JNI spec does not explicitly allow a null pointer, but the JDK accepts it
-            return bytes == null ? IntPtr.Zero : pEnv->MakeLocalRef(DecodeMUTF8Argument(bytes, nameof(bytes)));
+            try
+            {
+                return bytes == null ? IntPtr.Zero : pEnv->MakeLocalRef(DecodeMUTF8Argument(bytes, nameof(bytes)));
+            }
+            catch (Exception e)
+            {
+                JVM.SetPendingException(e);
+                return -1;
+            }
         }
 
         internal static jint GetStringUTFLength(JNIEnv* pEnv, jstring str)
         {
-            return MUTF8.GetByteCount((string)pEnv->UnwrapRef(str));
+            try
+            {
+                return MUTF8.GetByteCount((string)pEnv->UnwrapRef(str));
+            }
+            catch (Exception e)
+            {
+                JVM.SetPendingException(e);
+                return -1;
+            }
         }
 
         internal static byte* GetStringUTFChars(JNIEnv* pEnv, jstring @string, jboolean* isCopy)
         {
-            var s = (string)pEnv->UnwrapRef(@string);
-            var buf = (byte*)JNIMemory.Alloc(MUTF8.GetByteCount(s) + 1);
-            int j = 0;
-
-            for (int i = 0; i < s.Length; i++)
+            try
             {
-                var ch = s[i];
-                if ((ch != 0) && (ch <= 0x7F))
+                var s = (string)pEnv->UnwrapRef(@string);
+                var buf = (byte*)JNIMemory.Alloc(MUTF8.GetByteCount(s) + 1);
+                int j = 0;
+
+                for (int i = 0; i < s.Length; i++)
                 {
-                    buf[j++] = (byte)ch;
+                    var ch = s[i];
+                    if ((ch != 0) && (ch <= 0x7F))
+                    {
+                        buf[j++] = (byte)ch;
+                    }
+                    else if (ch <= 0x7FF)
+                    {
+                        buf[j++] = (byte)((ch >> 6) | 0xC0);
+                        buf[j++] = (byte)((ch & 0x3F) | 0x80);
+                    }
+                    else
+                    {
+                        buf[j++] = (byte)((ch >> 12) | 0xE0);
+                        buf[j++] = (byte)(((ch >> 6) & 0x3F) | 0x80);
+                        buf[j++] = (byte)((ch & 0x3F) | 0x80);
+                    }
                 }
-                else if (ch <= 0x7FF)
-                {
-                    buf[j++] = (byte)((ch >> 6) | 0xC0);
-                    buf[j++] = (byte)((ch & 0x3F) | 0x80);
-                }
-                else
-                {
-                    buf[j++] = (byte)((ch >> 12) | 0xE0);
-                    buf[j++] = (byte)(((ch >> 6) & 0x3F) | 0x80);
-                    buf[j++] = (byte)((ch & 0x3F) | 0x80);
-                }
+
+                buf[j] = 0;
+
+                if (isCopy != null)
+                    *isCopy = JNI_TRUE;
+
+                return buf;
             }
-
-            buf[j] = 0;
-
-            if (isCopy != null)
-                *isCopy = JNI_TRUE;
-
-            return buf;
+            catch (Exception e)
+            {
+                JVM.SetPendingException(e);
+                return null;
+            }
         }
 
         internal static void ReleaseStringUTFChars(JNIEnv* pEnv, jstring @string, byte* utf)
