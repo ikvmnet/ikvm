@@ -2940,11 +2940,6 @@ sun/security/krb5/tools/ktarg.sh                                                
 sun/security/krb5/tools/ktcheck.sh                                                                                      generic-all
 sun/security/krb5/tools/ktmissing.sh                                                                                    generic-all
 sun/security/krb5/tools/ktzero.sh                                                                                       generic-all
-sun/security/pkcs/pkcs9/UnstructuredName.java                                                                           generic-all
-sun/security/pkcs12/Bug6415637.java                                                                                     generic-all
-sun/security/pkcs12/StorePasswordTest.java                                                                              generic-all
-sun/security/pkcs12/StoreSecretKeyTest.java                                                                             generic-all
-sun/security/pkcs12/StoreTrustedCertTest.java                                                                           generic-all
 sun/security/provider/DSA/TestAlgParameterGenerator.java                                                                generic-all
 sun/security/provider/KeyStore/DKSTest.sh                                                                               generic-all
 sun/security/provider/KeyStore/WrongPassword.java                                                                       generic-all
@@ -3263,63 +3258,6 @@ sun/java2d/cmm/ColorConvertOp/InvalidRenderIntentTest.java                      
 # uses Win32 specific stuff, not available on Linux
 javax/print/PrintServiceLookup/CountPrintServices.java                                                                  linux-all
 
-# PKCS 11 has a few broken tests still
-sun/security/pkcs11/Cipher/ReinitCipher.java                                                                            generic-all
-sun/security/pkcs11/Cipher/TestPKCS5PaddingError.java                                                                   generic-all
-sun/security/pkcs11/Cipher/TestRSACipher.java                                                                           generic-all
-sun/security/pkcs11/Cipher/TestRSACipherWrap.java                                                                       generic-all
-sun/security/pkcs11/Cipher/TestRawRSACipher.java                                                                        generic-all
-sun/security/pkcs11/Cipher/TestSymmCiphers.java                                                                         generic-all
-sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java                                                                    generic-all
-sun/security/pkcs11/KeyAgreement/TestDH.java                                                                            generic-all
-sun/security/pkcs11/KeyAgreement/TestInterop.java                                                                       generic-all
-sun/security/pkcs11/KeyAgreement/TestShort.java                                                                         generic-all
-sun/security/pkcs11/KeyGenerator/DESParity.java                                                                         generic-all
-sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java                                                                  generic-all
-sun/security/pkcs11/KeyPairGenerator/TestDH2048.java                                                                    generic-all
-sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                                                                         generic-all
-sun/security/pkcs11/Mac/ReinitMac.java                                                                                  generic-all
-sun/security/pkcs11/MessageDigest/ByteBuffers.java                                                                      generic-all
-sun/security/pkcs11/MessageDigest/DigestKAT.java                                                                        generic-all
-sun/security/pkcs11/MessageDigest/ReinitDigest.java                                                                     generic-all
-sun/security/pkcs11/MessageDigest/TestCloning.java                                                                      generic-all
-sun/security/pkcs11/Provider/ConfigQuotedString.sh                                                                      generic-all
-sun/security/pkcs11/Provider/Login.sh                                                                                   generic-all
-sun/security/pkcs11/SampleTest.java                                                                                     generic-all
-sun/security/pkcs11/Secmod/AddPrivateKey.java                                                                           generic-all
-sun/security/pkcs11/Secmod/AddTrustedCert.java                                                                          generic-all
-sun/security/pkcs11/Secmod/Crypto.java                                                                                  generic-all
-sun/security/pkcs11/Secmod/GetPrivateKey.java                                                                           generic-all
-sun/security/pkcs11/Secmod/JksSetPrivateKey.java                                                                        generic-all
-sun/security/pkcs11/Secmod/TrustAnchors.java                                                                            generic-all
-sun/security/pkcs11/SecureRandom/Basic.java                                                                             generic-all
-sun/security/pkcs11/SecureRandom/TestDeserialization.java                                                               generic-all
-sun/security/pkcs11/Serialize/SerializeProvider.java                                                                    generic-all
-sun/security/pkcs11/Signature/ByteBuffers.java                                                                          generic-all
-sun/security/pkcs11/Signature/ReinitSignature.java                                                                      generic-all
-sun/security/pkcs11/Signature/TestDSA.java                                                                              generic-all
-sun/security/pkcs11/Signature/TestDSAKeyLength.java                                                                     generic-all
-sun/security/pkcs11/Signature/TestRSAKeyLength.java                                                                     generic-all
-sun/security/pkcs11/ec/ReadCertificates.java                                                                            generic-all
-sun/security/pkcs11/ec/ReadPKCS12.java                                                                                  generic-all
-sun/security/pkcs11/ec/TestCurves.java                                                                                  generic-all
-sun/security/pkcs11/ec/TestECDH.java                                                                                    generic-all
-sun/security/pkcs11/ec/TestECDH2.java                                                                                   generic-all
-sun/security/pkcs11/ec/TestECDSA.java                                                                                   generic-all
-sun/security/pkcs11/ec/TestECDSA2.java                                                                                  generic-all
-sun/security/pkcs11/ec/TestECGenSpec.java                                                                               generic-all
-sun/security/pkcs11/rsa/KeyWrap.java                                                                                    generic-all
-sun/security/pkcs11/rsa/TestCACerts.java                                                                                generic-all
-sun/security/pkcs11/rsa/TestKeyFactory.java                                                                             generic-all
-sun/security/pkcs11/rsa/TestKeyPairGenerator.java                                                                       generic-all
-sun/security/pkcs11/rsa/TestSignatures.java                                                                             generic-all
-sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java                                                                    generic-all
-sun/security/pkcs11/tls/TestKeyMaterial.java                                                                            generic-all
-sun/security/pkcs11/tls/TestLeadingZeroesP11.java                                                                       generic-all
-sun/security/pkcs11/tls/TestMasterSecret.java                                                                           generic-all
-sun/security/pkcs11/tls/TestPRF.java                                                                                    generic-all
-sun/security/pkcs11/tls/TestPremaster.java                                                                              generic-all
-
 # points NativePRNG at a specific file: our implementations don't support this
 sun/security/provider/SecureRandom/StrongSeedReader.java                                                                generic-all
 
@@ -3441,11 +3379,6 @@ sun/nio/ch/TestMaxCachedBufferSize.java                                         
 
 # Windows-PRNG SecureRandom
 java/security/SecureRandom/DefaultProvider.java                                                                         generic-all
-
-# pkcs11
-sun/security/pkcs11/Mac/MacKAT.java                                                                                     generic-all
-sun/security/pkcs11/Mac/MacSameTest.java                                                                                generic-all
-sun/security/pkcs11/Secmod/LoadKeystore.java                                                                            generic-all
 
 # JPS
 sun/tools/jps/TestJpsClass.java                                                                                         generic-all
