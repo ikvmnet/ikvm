@@ -2940,6 +2940,9 @@ sun/security/krb5/tools/ktarg.sh                                                
 sun/security/krb5/tools/ktcheck.sh                                                                                      generic-all
 sun/security/krb5/tools/ktmissing.sh                                                                                    generic-all
 sun/security/krb5/tools/ktzero.sh                                                                                       generic-all
+sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                                                                         generic-all
+sun/security/pkcs11/Provider/ConfigQuotedString.sh                                                                      generic-all
+sun/security/pkcs11/Provider/Login.sh                                                                                   generic-all
 sun/security/provider/DSA/TestAlgParameterGenerator.java                                                                generic-all
 sun/security/provider/KeyStore/DKSTest.sh                                                                               generic-all
 sun/security/provider/KeyStore/WrongPassword.java                                                                       generic-all
