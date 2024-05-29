@@ -1,6 +1,4 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
-    <Import Project="..\..\openjdk.props" />
-
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -38,7 +36,6 @@
 
     <ItemGroup>
         <_ContentFromProject Include="ikvm\**\*" />
-        <_ContentFromSolution Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK" />
     </ItemGroup>
 
     <!-- Runs once per TFM/RID combination to generate individual output. -->
@@ -52,50 +49,78 @@
 
         <!-- output for the TFM/RID -->
         <ItemGroup>
-
-            <!-- files directly part of this project -->
-            <ContentWithTargetPath Include="@(_ContentFromProject)">
-                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(_ContentFromProject.RecursiveDir)%(_ContentFromProject.Filename)%(_ContentFromProject.Extension)</TargetPath>
-                <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-            </ContentWithTargetPath>
-
-            <!-- solution level files -->
-            <ContentWithTargetPath Include="@(_ContentFromSolution)">
-                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(_ContentFromSolution.RecursiveDir)%(_ContentFromSolution.Filename)%(_ContentFromSolution.Extension)</TargetPath>
-                <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-            </ContentWithTargetPath>
-
-            <!-- openjdk contents -->
-            <ContentWithTargetPath Include="@(OpenJdkImageContent)">
-                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(OpenJdkImageContent.ImagePath)</TargetPath>
-                <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-            </ContentWithTargetPath>
-
-            <!-- output of binary projects -->
-            <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj">
+            <PublishItems Include="@(_ContentFromProject)">
+                <TargetPath>$(_TargetFramework)\ikvm\$(_RuntimeIdentifier)\%(_ContentFromProject.RecursiveDir)%(_ContentFromProject.Filename)%(_ContentFromProject.Extension)</TargetPath>
+            </PublishItems>
+            <PublishProjectReference Include="..\IKVM.Image.runtime.$(_RuntimeIdentifier)\IKVM.Image.runtime.$(_RuntimeIdentifier).csproj">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
-                <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
-                <PublishTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\bin</PublishTargetPath>
-                <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+                <PublishTargetPath>$(_TargetFramework)</PublishTargetPath>
+                <PublishItemGroup>PublishItems</PublishItemGroup>
             </PublishProjectReference>
-            <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
+            <PublishProjectReference Include="..\IKVM.Image.JRE.runtime.$(_RuntimeIdentifier)\IKVM.Image.JRE.runtime.$(_RuntimeIdentifier).csproj">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
-                <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
-                <PublishTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\bin</PublishTargetPath>
-                <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+                <PublishTargetPath>$(_TargetFramework)</PublishTargetPath>
+                <PublishItemGroup>PublishItems</PublishItemGroup>
             </PublishProjectReference>
-            <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
+            <PublishProjectReference Include="..\IKVM.Image.JDK.runtime.$(_RuntimeIdentifier)\IKVM.Image.JDK.runtime.$(_RuntimeIdentifier).csproj">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
-                <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
-                <PublishTargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\bin</PublishTargetPath>
-                <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+                <PublishTargetPath>$(_TargetFramework)</PublishTargetPath>
+                <PublishItemGroup>PublishItems</PublishItemGroup>
             </PublishProjectReference>
+        </ItemGroup>
+    </Target>
+
+    <UsingTask TaskName="StripTargetPath" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+    
+public class StripTargetPath : Task
+{
+    
+    [Output]
+    public ITaskItem[] Items { get; set; }
+    
+    public override bool Execute()
+    {
+        var d = new Dictionary<string, ITaskItem>();
+    
+        foreach (var item in Items)
+        {
+            var p = item.GetMetadata("TargetPath");
+            var a = p.Split(Path.DirectorySeparatorChar).ToList();
+            a.RemoveAt(1);
+            p = string.Join(Path.DirectorySeparatorChar.ToString(), a);
+            item.SetMetadata("TargetPath", p);
+            d[p] = item;
+        }
+        
+        Items = d.Values.ToArray();
+        return true;
+    }
+    
+}
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="AfterCollectPublishProjectReferenceItems" BeforeTargets="AssignTargetPaths" AfterTargets="CollectPublishProjectReferenceItems">
+        <StripTargetPath Items="@(PublishItems)">
+            <Output TaskParameter="Items" ItemName="_PublishItems" />
+        </StripTargetPath>
+        <ItemGroup>
+            <None Include="@(_PublishItems)">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+            </None>
         </ItemGroup>
     </Target>
 
