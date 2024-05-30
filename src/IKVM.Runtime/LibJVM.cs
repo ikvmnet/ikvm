@@ -2,12 +2,12 @@
 using System.IO;
 using System.Runtime.InteropServices;
 
-using IKVM.Runtime.JNI;
-
 namespace IKVM.Runtime
 {
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+
+    using IKVM.Runtime.JNI;
 
     /// <summary>
     /// Required native methods available in libjvm.
