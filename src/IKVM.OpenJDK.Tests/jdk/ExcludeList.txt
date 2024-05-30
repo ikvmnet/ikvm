@@ -2937,6 +2937,7 @@ sun/security/krb5/tools/ktarg.sh                                                
 sun/security/krb5/tools/ktcheck.sh                                                                                      generic-all
 sun/security/krb5/tools/ktmissing.sh                                                                                    generic-all
 sun/security/krb5/tools/ktzero.sh                                                                                       generic-all
+sun/security/krb5/etype/WeakCrypto.java                                                                                 macosx-all
 sun/security/mscapi/AccessKeyStore.sh                                                                                   generic-all
 sun/security/mscapi/IsSunMSCAPIAvailable.sh                                                                             generic-all
 sun/security/mscapi/KeyStoreCompatibilityMode.sh                                                                        generic-all
