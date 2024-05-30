@@ -170,7 +170,7 @@
                 #_JVM_GetVersionInfo
                 #_JVM_Halt
                 #_JVM_HoldsLock
-                #_JVM_IHashCode
+                _JVM_IHashCode
                 #_JVM_InitAgentProperties
                 _JVM_InitProperties
                 #_JVM_InitializeCompiler

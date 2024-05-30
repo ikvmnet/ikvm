@@ -29,6 +29,7 @@ namespace IKVM.Runtime
             public nint JVM_ThrowException;
             public nint JVM_GetThreadInterruptEvent;
             public nint JVM_ActiveProcessorCount;
+            public nint JVM_IHashCode;
 
         }
 
@@ -49,6 +50,9 @@ namespace IKVM.Runtime
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate int JVM_ActiveProcessorCountDelegate();
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate int JVM_IHashCodeDelegate(JNIEnv* env, nint handle);
 
         delegate void JVM_InitDelegate(JVMInvokeInterface* iface);
 
@@ -77,6 +81,7 @@ namespace IKVM.Runtime
         readonly JVM_ThrowExceptionDelegate _JVM_ThrowException;
         readonly JVM_GetThreadInterruptEventDelegate _JVM_GetThreadInterruptEvent;
         readonly JVM_ActiveProcessorCountDelegate _JVM_ActiveProcessorCount;
+        readonly JVM_IHashCodeDelegate _JVM_IHashCode;
 
         /// <summary>
         /// Initializes a new instance.
@@ -101,6 +106,7 @@ namespace IKVM.Runtime
             jvmii->JVM_ThrowException = Marshal.GetFunctionPointerForDelegate(_JVM_ThrowException = JVM_ThrowException);
             jvmii->JVM_GetThreadInterruptEvent = Marshal.GetFunctionPointerForDelegate(_JVM_GetThreadInterruptEvent = JVM_GetThreadInterruptEvent);
             jvmii->JVM_ActiveProcessorCount = Marshal.GetFunctionPointerForDelegate(_JVM_ActiveProcessorCount = JVM_ActiveProcessorCount);
+            jvmii->JVM_IHashCode = Marshal.GetFunctionPointerForDelegate(_JVM_IHashCode = JVM_IHashCode);
             _JVM_Init(jvmii);
         }
 
@@ -181,6 +187,17 @@ namespace IKVM.Runtime
         int JVM_ActiveProcessorCount()
         {
             return Environment.ProcessorCount;
+        }
+
+        /// <summary>
+        /// Invoked by the native code to get the hashcode of an object.
+        /// </summary>
+        /// <param name="env"></param>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        int JVM_IHashCode(JNIEnv* env, nint handle)
+        {
+            return handle == 0 ? 0 : env->UnwrapRef(handle).GetHashCode();
         }
 
         /// <summary>

@@ -183,16 +183,18 @@ jlong JNICALL JVM_NanoTime(JNIEnv* env, jclass ignored)
 
 void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pos, jint length)
 {
-
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_ArrayCopy");
 }
 
 jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject properties)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_InitProperties");
     return 0;
 }
 
 jstring JNICALL JVM_GetTemporaryDirectory(JNIEnv* env)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetTemporaryDirectory");
     return 0;
 }
 
@@ -278,167 +280,195 @@ jint JNICALL JVM_ActiveProcessorCount() {
 
 jclass JNICALL JVM_FindClassFromClass(JNIEnv* env, const char* name, jboolean init, jclass from)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_FindClassFromClass");
     return 0;
 }
 
 jclass JNICALL JVM_FindClassFromClassLoader(JNIEnv* env, const char* name, jboolean init, jobject loader, jboolean throwError)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_FindClassFromClassLoader");
     return 0;
 }
 
 jboolean JNICALL JVM_IsInterface(JNIEnv* env, jclass cls)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_IsInterface");
     return 0;
 }
 
 const char* JNICALL JVM_GetClassNameUTF(JNIEnv* env, jclass cls)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetClassNameUTF");
     return 0;
 }
 
 void JNICALL JVM_GetClassCPTypes(JNIEnv* env, jclass cls, unsigned char* types)
 {
-
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetClassCPTypes");
 }
 
 jint JNICALL JVM_GetClassCPEntriesCount(JNIEnv* env, jclass cls)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetClassCPEntriesCount");
     return 0;
 }
 
 jint JNICALL JVM_GetClassFieldsCount(JNIEnv* env, jclass cls)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetClassFieldsCount");
     return 0;
 }
 
 
 jint JNICALL JVM_GetClassMethodsCount(JNIEnv* env, jclass cls)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetClassMethodsCount");
     return 0;
 }
 
 void JNICALL JVM_GetMethodIxExceptionIndexes(JNIEnv* env, jclass cls, jint method_index, unsigned short* exceptions)
 {
-
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetMethodIxExceptionIndexes");
 }
 
 jint JNICALL JVM_GetMethodIxExceptionsCount(JNIEnv* env, jclass cls, jint method_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetMethodIxExceptionsCount");
     return 0;
 }
 
 void JNICALL JVM_GetMethodIxByteCode(JNIEnv* env, jclass cls, jint method_index, unsigned char* code)
 {
-
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetMethodIxByteCode");
 }
 
 jint JNICALL JVM_GetMethodIxByteCodeLength(JNIEnv* env, jclass cls, jint method_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetMethodIxByteCodeLength");
     return 0;
 }
 
 void JNICALL JVM_GetMethodIxExceptionTableEntry(JNIEnv* env, jclass cls, jint method_index, jint entry_index, JVM_ExceptionTableEntryType* entry)
 {
-
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetMethodIxExceptionTableEntry");
 }
 
 jint JNICALL JVM_GetMethodIxExceptionTableLength(JNIEnv* env, jclass cls, int method_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetMethodIxExceptionTableLength");
     return 0;
 }
 
 jint JNICALL JVM_GetMethodIxModifiers(JNIEnv* env, jclass cls, int method_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetMethodIxModifiers");
     return 0;
 }
 
 jint JNICALL JVM_GetFieldIxModifiers(JNIEnv* env, jclass cls, int field_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetFieldIxModifiers");
     return 0;
 }
 
 jint JNICALL  JVM_GetMethodIxLocalsCount(JNIEnv* env, jclass cls, int method_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetMethodIxLocalsCount");
     return 0;
 }
 
 jint JNICALL JVM_GetMethodIxArgsSize(JNIEnv* env, jclass cls, int method_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetMethodIxArgsSize");
     return 0;
 }
 
 jint JNICALL JVM_GetMethodIxMaxStack(JNIEnv* env, jclass cls, int method_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetMethodIxMaxStack");
     return 0;
 }
 
 jboolean JNICALL JVM_IsConstructorIx(JNIEnv* env, jclass cls, int method_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_IsConstructorIx");
     return 0;
 }
 
 jboolean JNICALL JVM_IsVMGeneratedMethodIx(JNIEnv* env, jclass cls, int method_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_IsVMGeneratedMethodIx");
     return 0;
 }
 
 const char* JNICALL JVM_GetMethodIxNameUTF(JNIEnv* env, jclass cls, jint method_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetMethodIxNameUTF");
     return 0;
 }
 
 const char* JVM_GetMethodIxSignatureUTF(JNIEnv* env, jclass cls, jint method_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetMethodIxSignatureUTF");
     return 0;
 }
 
 const char* JNICALL JVM_GetCPMethodNameUTF(JNIEnv* env, jclass cls, jint cp_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetCPMethodNameUTF");
     return 0;
 }
 
 const char* JNICALL JVM_GetCPMethodSignatureUTF(JNIEnv* env, jclass cls, jint cp_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetCPMethodSignatureUTF");
     return 0;
 }
 
 const char* JNICALL JVM_GetCPFieldSignatureUTF(JNIEnv* env, jclass cls, jint cp_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetCPFieldSignatureUTF");
     return 0;
 }
 
 const char* JNICALL JVM_GetCPClassNameUTF(JNIEnv* env, jclass cls, jint cp_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetCPClassNameUTF");
     return 0;
 }
 
 const char* JNICALL JVM_GetCPFieldClassNameUTF(JNIEnv* env, jclass cls, jint cp_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetCPFieldClassNameUTF");
     return 0;
 }
 
 const char* JNICALL JVM_GetCPMethodClassNameUTF(JNIEnv* env, jclass cls, jint cp_index)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetCPMethodClassNameUTF");
     return 0;
 }
 
 jint JNICALL JVM_GetCPFieldModifiers(JNIEnv* env, jclass cls, int cp_index, jclass called_cls)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetCPFieldModifiers");
     return 0;
 }
 
 jint JVM_GetCPMethodModifiers(JNIEnv* env, jclass cls, int cp_index, jclass called_cls)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetCPMethodModifiers");
     return 0;
 }
 
 void JNICALL JVM_ReleaseUTF(const char* utf)
 {
-
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_ReleaseUTF");
 }
 
 jboolean JNICALL JVM_IsSameClassPackage(JNIEnv* env, jclass class1, jclass class2)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_IsSameClassPackage");
     return 0;
 }
 
@@ -446,6 +476,7 @@ jboolean JNICALL JVM_IsSameClassPackage(JNIEnv* env, jclass class1, jclass class
 
 jint JNICALL JVM_InitializeSocketLibrary()
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_InitializeSocketLibrary");
     return 0;
 }
 
@@ -1016,12 +1047,19 @@ void* JNICALL JVM_GetThreadInterruptEvent()
 
 void* JNICALL JVM_RegisterSignal(jint sig, void* handler)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_RegisterSignal");
     return 0;
 }
 
 jboolean JNICALL JVM_RaiseSignal(jint sig)
 {
+    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_RaiseSignal");
     return JNI_FALSE;
+}
+
+jint JNICALL JVM_IHashCode(JNIEnv *pEnv, jobject handle)
+{
+    return jvmii->JVM_IHashCode(pEnv, handle);
 }
 
 int jio_vsnprintf(char* str, size_t count, const char* fmt, va_list args)

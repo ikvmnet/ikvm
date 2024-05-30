@@ -11,13 +11,14 @@ typedef struct JVMInvokeInterface {
     void (*JVM_ThrowException)(const char*, const char*);
     void* (*JVM_GetThreadInterruptEvent)();
     jint (*JVM_ActiveProcessorCount)();
+    jint (*JVM_IHashCode)(JNIEnv *pEnv, jobject handle);
 } JVMInvokeInterface;
 
 extern JVMInvokeInterface *jvmii;
 
 JNIEXPORT void JNICALL JVM_Init(JVMInvokeInterface *p_jvmii);
 
-void JNICALL JVM_ThrowException(const char *name, const char *msg);
+JNIEXPORT void JNICALL JVM_ThrowException(const char *name, const char *msg);
 
 #ifdef __cplusplus
 }
