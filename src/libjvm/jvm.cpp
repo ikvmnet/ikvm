@@ -476,7 +476,6 @@ jboolean JNICALL JVM_IsSameClassPackage(JNIEnv* env, jclass class1, jclass class
 
 jint JNICALL JVM_InitializeSocketLibrary()
 {
-    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_InitializeSocketLibrary");
     return 0;
 }
 
