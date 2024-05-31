@@ -58,19 +58,20 @@ const jushort max_jushort = (jushort)-1; // 0xFFFF     largest jushort
 const juint   max_juint = (juint)-1;   // 0xFFFFFFFF largest juint
 const julong  max_julong = (julong)-1;  // 0xFF....FF largest julong
 
-// the fancy casts are a hopefully portable way
-// to do unsigned 32 to 64 bit type conversion
-inline void set_low(jlong* value, jint low) {
+inline void set_low(jlong* value, jint low)
+{
     *value &= (jlong)0xffffffff << 32;
     *value |= (jlong)(julong)(juint)low;
 }
 
-inline void set_high(jlong* value, jint high) {
+inline void set_high(jlong* value, jint high)
+{
     *value &= (jlong)(julong)(juint)0xffffffff;
     *value |= (jlong)high << 32;
 }
 
-inline jlong jlong_from(jint h, jint l) {
+inline jlong jlong_from(jint h, jint l) 
+{
     jlong result = 0; // initialization to avoid warning
     set_high(&result, h);
     set_low(&result, l);
@@ -78,7 +79,8 @@ inline jlong jlong_from(jint h, jint l) {
 }
 
 // Platform-independent error return values from OS functions
-enum OSReturn {
+enum OSReturn
+{
     OS_OK = 0,          // Operation was successful
     OS_ERR = -1,        // Operation failed
     OS_INTRPT = -2,     // Operation was interrupted
@@ -109,17 +111,10 @@ jint JNICALL JVM_GetInterfaceVersion()
 
 #ifdef WIN32
 
-// Windows format:
-//   The FILETIME structure is a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601.
-// Java format:
-//   Java standards require the number of milliseconds since 1/1/1970
-
-// Constant offset - calculated using offset()
-static jlong _offset = 116444736000000000;
-// Fake time counter for reproducible results when debugging
-static jlong fake_time = 0;
-
-inline jlong windows_to_java_time(FILETIME wt) {
+static jlong _offset = 116444736000000000; // Constant offset - calculated using offset()
+static jlong fake_time = 0; // Fake time counter for reproducible results when debugging
+inline jlong windows_to_java_time(FILETIME wt)
+{
     jlong a = jlong_from(wt.dwHighDateTime, wt.dwLowDateTime);
     return (a - _offset) / 10000;
 }
@@ -129,14 +124,16 @@ inline jlong windows_to_java_time(FILETIME wt) {
 const jint NANOSECS_PER_MILLISEC = 1000000;
 
 #ifdef WIN32
-jlong os_javaTimeMillis() {
+jlong os_javaTimeMillis()
+{
     FILETIME wt;
     GetSystemTimeAsFileTime(&wt);
     return windows_to_java_time(wt);
 }
 #endif
 #ifdef LINUX
-jlong os_javaTimeMillis() {
+jlong os_javaTimeMillis()
+{
     timeval time;
     int status = gettimeofday(&time, NULL);
     assert(status != -1, "linux error");
@@ -144,7 +141,8 @@ jlong os_javaTimeMillis() {
 }
 #endif
 #ifdef MACOS
-jlong os_javaTimeMillis() {
+jlong os_javaTimeMillis()
+{
     timeval time;
     int status = gettimeofday(&time, NULL);
     assert(status != -1, "bsd error");
@@ -158,12 +156,14 @@ jlong JNICALL JVM_CurrentTimeMillis(JNIEnv* env, jclass ignored)
 }
 
 #ifdef WIN32
-jlong os_javaTimeNanos() {
+jlong os_javaTimeNanos()
+{
     return os_javaTimeMillis() * NANOSECS_PER_MILLISEC;
 }
 #endif
 #ifdef LINUX
-jlong os_javaTimeNanos() {
+jlong os_javaTimeNanos()
+{
     struct timespec tp;
     int status = clock_gettime(CLOCK_MONOTONIC, &tp);
     jlong result = jlong(tp.tv_sec) * (1000 * 1000 * 1000) + jlong(tp.tv_nsec);
@@ -171,7 +171,8 @@ jlong os_javaTimeNanos() {
 }
 #endif
 #ifdef MACOS
-jlong os_javaTimeNanos() {
+jlong os_javaTimeNanos()
+{
     return os_javaTimeMillis() * NANOSECS_PER_MILLISEC;
 }
 #endif
@@ -199,7 +200,8 @@ jstring JNICALL JVM_GetTemporaryDirectory(JNIEnv* env)
 }
 
 #ifdef WIN32
-size_t os_lasterror(char* buf, size_t len) {
+size_t os_lasterror(char* buf, size_t len)
+{
     DWORD errval;
 
     if ((errval = GetLastError()) != 0) {
@@ -239,8 +241,8 @@ size_t os_lasterror(char* buf, size_t len) {
 }
 #endif
 #ifdef LINUX
-size_t os_lasterror(char* buf, size_t len) {
-
+size_t os_lasterror(char* buf, size_t len)
+{
     if (errno == 0)  return 0;
 
     const char* s = ::strerror(errno);
@@ -254,8 +256,8 @@ size_t os_lasterror(char* buf, size_t len) {
 }
 #endif
 #ifdef MACOS
-size_t os_lasterror(char* buf, size_t len) {
-
+size_t os_lasterror(char* buf, size_t len)
+{
     if (errno == 0)  return 0;
 
     const char* s = ::strerror(errno);
@@ -485,17 +487,20 @@ jint JNICALL JVM_Socket(jint domain, jint type, jint protocol)
 }
 
 #ifdef WIN32
-int os_socket_close(int fd) {
+int os_socket_close(int fd)
+{
     return ::closesocket(fd);
 }
 #endif
 #ifdef LINUX
-inline int os_socket_close(int fd) {
+inline int os_socket_close(int fd)
+{
     return ::close(fd);
 }
 #endif
 #ifdef MACOS
-inline int os_socket_close(int fd) {
+inline int os_socket_close(int fd)
+{
     return ::close(fd);
 }
 #endif
@@ -506,17 +511,20 @@ jint JNICALL JVM_SocketClose(jint fd)
 }
 
 #ifdef WIN32
-int os_socket_shutdown(int fd, int howto) {
+int os_socket_shutdown(int fd, int howto)
+{
     return ::shutdown(fd, howto);
 }
 #endif
 #ifdef LINUX
-inline int os_socket_shutdown(int fd, int howto) {
+inline int os_socket_shutdown(int fd, int howto)
+{
     return ::shutdown(fd, howto);
 }
 #endif
 #ifdef MACOS
-inline int os_socket_shutdown(int fd, int howto) {
+inline int os_socket_shutdown(int fd, int howto)
+{
     return ::shutdown(fd, howto);
 }
 #endif
@@ -527,17 +535,20 @@ jint JNICALL JVM_SocketShutdown(jint fd, jint howto)
 }
 
 #ifdef WIN32
-int os_recv(int fd, char* buf, size_t nBytes, uint flags) {
+int os_recv(int fd, char* buf, size_t nBytes, uint flags)
+{
     return ::recv(fd, buf, (int)nBytes, flags);
 }
 #endif
 #ifdef LINUX
-inline int os_recv(int fd, char* buf, size_t nBytes, uint flags) {
+inline int os_recv(int fd, char* buf, size_t nBytes, uint flags)
+{
     RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, flags));
 }
 #endif
 #ifdef MACOS
-inline int os_recv(int fd, char* buf, size_t nBytes, uint flags) {
+inline int os_recv(int fd, char* buf, size_t nBytes, uint flags)
+{
     RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, flags));
 }
 #endif
@@ -548,17 +559,20 @@ jint JNICALL JVM_Recv(jint fd, char* buf, jint nBytes, jint flags)
 }
 
 #ifdef WIN32
-int os_send(int fd, char* buf, size_t nBytes, uint flags) {
+int os_send(int fd, char* buf, size_t nBytes, uint flags)
+{
     return ::send(fd, buf, (int)nBytes, flags);
 }
 #endif
 #ifdef LINUX
-inline int os_send(int fd, char* buf, size_t nBytes, uint flags) {
+inline int os_send(int fd, char* buf, size_t nBytes, uint flags)
+{
     RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
 }
 #endif
 #ifdef MACOS
-inline int os_send(int fd, char* buf, size_t nBytes, uint flags) {
+inline int os_send(int fd, char* buf, size_t nBytes, uint flags)
+{
     RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
 }
 #endif
@@ -583,7 +597,8 @@ int os_timeout(int fd, long timeout) {
 }
 #endif
 #ifdef LINUX
-inline int os_timeout(int fd, long timeout) {
+inline int os_timeout(int fd, long timeout)
+{
     julong prevtime, newtime;
     struct timeval t;
 
@@ -617,7 +632,8 @@ inline int os_timeout(int fd, long timeout) {
 }
 #endif
 #ifdef MACOS
-inline int os_timeout(int fd, long timeout) {
+inline int os_timeout(int fd, long timeout)
+{
     julong prevtime, newtime;
     struct timeval t;
 
@@ -657,17 +673,20 @@ jint JNICALL JVM_Timeout(int fd, long timeout)
 }
 
 #ifdef WIN32
-int os_listen(int fd, int count) {
+int os_listen(int fd, int count)
+{
     return ::listen(fd, count);
 }
 #endif
 #ifdef LINUX
-inline int os_listen(int fd, int count) {
+inline int os_listen(int fd, int count)
+{
     return ::listen(fd, count);
 }
 #endif
 #ifdef MACOS
-inline int os_listen(int fd, int count) {
+inline int os_listen(int fd, int count)
+{
     return ::listen(fd, count);
 }
 #endif
@@ -683,12 +702,14 @@ int os_connect(int fd, struct sockaddr* him, socklen_t len) {
 }
 #endif
 #ifdef LINUX
-inline int os_connect(int fd, struct sockaddr* him, socklen_t len) {
+inline int os_connect(int fd, struct sockaddr* him, socklen_t len)
+{
     RESTARTABLE_RETURN_INT(::connect(fd, him, len));
 }
 #endif
 #ifdef MACOS
-inline int os_connect(int fd, struct sockaddr* him, socklen_t len) {
+inline int os_connect(int fd, struct sockaddr* him, socklen_t len)
+{
     RESTARTABLE_RETURN_INT(::connect(fd, him, len));
 }
 #endif
@@ -699,17 +720,20 @@ jint JNICALL JVM_Connect(jint fd, struct sockaddr* him, jint len)
 }
 
 #ifdef WIN32
-int os_bind(int fd, struct sockaddr* him, socklen_t len) {
+int os_bind(int fd, struct sockaddr* him, socklen_t len)
+{
     return ::bind(fd, him, len);
 }
 #endif
 #ifdef LINUX
-inline int os_bind(int fd, struct sockaddr* him, socklen_t len) {
+inline int os_bind(int fd, struct sockaddr* him, socklen_t len)
+{
     return ::bind(fd, him, len);
 }
 #endif
 #ifdef MACOS
-inline int os_bind(int fd, struct sockaddr* him, socklen_t len) {
+inline int os_bind(int fd, struct sockaddr* him, socklen_t len)
+{
     return ::bind(fd, him, len);
 }
 #endif
@@ -720,19 +744,22 @@ jint JNICALL JVM_Bind(jint fd, struct sockaddr* him, jint len)
 }
 
 #ifdef WIN32
-int os_accept(int fd, struct sockaddr* him, socklen_t* len) {
+int os_accept(int fd, struct sockaddr* him, socklen_t* len)
+{
     return ::accept(fd, him, len);
 }
 #endif
 #ifdef LINUX
-inline int os_accept(int fd, struct sockaddr* him, socklen_t* len) {
+inline int os_accept(int fd, struct sockaddr* him, socklen_t* len)
+{
     // Linux doc says this can't return EINTR, unlike accept() on Solaris.
     // But see attachListener_linux.cpp, LinuxAttachListener::dequeue().
     return (int)::accept(fd, him, len);
 }
 #endif
 #ifdef MACOS
-inline int os_accept(int fd, struct sockaddr* him, socklen_t* len) {
+inline int os_accept(int fd, struct sockaddr* him, socklen_t* len)
+{
     // At least OpenBSD and FreeBSD can return EINTR from accept.
     RESTARTABLE_RETURN_INT(::accept(fd, him, len));
 }
@@ -747,21 +774,21 @@ jint JNICALL JVM_Accept(jint fd, struct sockaddr* him, jint* len)
 }
 
 #ifdef WIN32
-int os_recvfrom(int fd, char* buf, size_t nBytes, uint flags,
-    sockaddr* from, socklen_t* fromlen) {
+int os_recvfrom(int fd, char* buf, size_t nBytes, uint flags, sockaddr* from, socklen_t* fromlen)
+{
 
     return ::recvfrom(fd, buf, (int)nBytes, flags, from, fromlen);
 }
 #endif
 #ifdef LINUX
-inline int os_recvfrom(int fd, char* buf, size_t nBytes, uint flags,
-    sockaddr* from, socklen_t* fromlen) {
+inline int os_recvfrom(int fd, char* buf, size_t nBytes, uint flags, sockaddr* from, socklen_t* fromlen)
+{
     RESTARTABLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes, flags, from, fromlen));
 }
 #endif
 #ifdef MACOS
-inline int os_recvfrom(int fd, char* buf, size_t nBytes, uint flags,
-    sockaddr* from, socklen_t* fromlen) {
+inline int os_recvfrom(int fd, char* buf, size_t nBytes, uint flags, sockaddr* from, socklen_t* fromlen)
+{
     RESTARTABLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes, flags, from, fromlen));
 }
 #endif
@@ -775,17 +802,20 @@ jint JNICALL JVM_RecvFrom(jint fd, char* buf, int nBytes, int flags, struct sock
 }
 
 #ifdef WIN32
-int os_get_sock_name(int fd, struct sockaddr* him, socklen_t* len) {
+int os_get_sock_name(int fd, struct sockaddr* him, socklen_t* len)
+{
     return ::getsockname(fd, him, len);
 }
 #endif
 #ifdef LINUX
-inline int os_get_sock_name(int fd, struct sockaddr* him, socklen_t* len) {
+inline int os_get_sock_name(int fd, struct sockaddr* him, socklen_t* len)
+{
     return ::getsockname(fd, him, len);
 }
 #endif
 #ifdef MACOS
-inline int os_get_sock_name(int fd, struct sockaddr* him, socklen_t* len) {
+inline int os_get_sock_name(int fd, struct sockaddr* him, socklen_t* len)
+{
     return ::getsockname(fd, him, len);
 }
 #endif
@@ -799,21 +829,20 @@ jint JNICALL JVM_GetSockName(jint fd, struct sockaddr* him, int* len)
 }
 
 #ifdef WIN32
-int os_sendto(int fd, char* buf, size_t len, uint flags,
-    struct sockaddr* to, socklen_t tolen) {
-
+int os_sendto(int fd, char* buf, size_t len, uint flags, struct sockaddr* to, socklen_t tolen)
+{
     return ::sendto(fd, buf, (int)len, flags, to, tolen);
 }
 #endif
 #ifdef LINUX
-inline int os_sendto(int fd, char* buf, size_t len, uint flags,
-    struct sockaddr* to, socklen_t tolen) {
+inline int os_sendto(int fd, char* buf, size_t len, uint flags, struct sockaddr* to, socklen_t tolen)
+{
     RESTARTABLE_RETURN_INT((int)::sendto(fd, buf, len, flags, to, tolen));
 }
 #endif
 #ifdef MACOS
-inline int os_sendto(int fd, char* buf, size_t len, uint flags,
-    struct sockaddr* to, socklen_t tolen) {
+inline int os_sendto(int fd, char* buf, size_t len, uint flags, struct sockaddr* to, socklen_t tolen)
+{
     RESTARTABLE_RETURN_INT((int)::sendto(fd, buf, len, flags, to, tolen));
 }
 #endif
@@ -824,13 +853,15 @@ jint JNICALL JVM_SendTo(jint fd, char* buf, int len, int flags, struct sockaddr*
 }
 
 #ifdef WIN32
-int os_socket_available(int fd, jint* pbytes) {
+int os_socket_available(int fd, jint* pbytes)
+{
     int ret = ::ioctlsocket(fd, FIONREAD, (u_long*)pbytes);
     return (ret < 0) ? 0 : 1;
 }
 #endif
 #ifdef LINUX
-int os_socket_available(int fd, jint* pbytes) {
+int os_socket_available(int fd, jint* pbytes)
+{
     // Linux doc says EINTR not returned, unlike Solaris
     int ret = ::ioctl(fd, FIONREAD, pbytes);
 
@@ -840,7 +871,8 @@ int os_socket_available(int fd, jint* pbytes) {
 }
 #endif
 #ifdef MACOS
-int os_socket_available(int fd, jint* pbytes) {
+int os_socket_available(int fd, jint* pbytes)
+{
     if (fd < 0)
         return OS_OK;
 
@@ -861,20 +893,20 @@ jint JNICALL JVM_SocketAvailable(jint fd, jint* pbytes)
 }
 
 #ifdef WIN32
-int os_get_sock_opt(int fd, int level, int optname,
-    char* optval, socklen_t* optlen) {
+int os_get_sock_opt(int fd, int level, int optname, char* optval, socklen_t* optlen)
+{
     return ::getsockopt(fd, level, optname, optval, optlen);
 }
 #endif
 #ifdef LINUX
-inline int os_get_sock_opt(int fd, int level, int optname,
-    char* optval, socklen_t* optlen) {
+inline int os_get_sock_opt(int fd, int level, int optname, char* optval, socklen_t* optlen)
+{
     return ::getsockopt(fd, level, optname, optval, optlen);
 }
 #endif
 #ifdef MACOS
-inline int os_get_sock_opt(int fd, int level, int optname,
-    char* optval, socklen_t* optlen) {
+inline int os_get_sock_opt(int fd, int level, int optname, char* optval, socklen_t* optlen)
+{
     return ::getsockopt(fd, level, optname, optval, optlen);
 }
 #endif
@@ -888,20 +920,20 @@ jint JNICALL JVM_GetSockOpt(jint fd, int level, int optname, char* optval, int* 
 }
 
 #ifdef WIN32
-int os_set_sock_opt(int fd, int level, int optname,
-    const char* optval, socklen_t optlen) {
+int os_set_sock_opt(int fd, int level, int optname, const char* optval, socklen_t optlen)
+{
     return ::setsockopt(fd, level, optname, optval, optlen);
 }
 #endif
 #ifdef LINUX
-inline int os_set_sock_opt(int fd, int level, int optname,
-    const char* optval, socklen_t optlen) {
+inline int os_set_sock_opt(int fd, int level, int optname, const char* optval, socklen_t optlen)
+{
     return ::setsockopt(fd, level, optname, optval, optlen);
 }
 #endif
 #ifdef MACOS
-inline int os_set_sock_opt(int fd, int level, int optname,
-    const char* optval, socklen_t optlen) {
+inline int os_set_sock_opt(int fd, int level, int optname, const char* optval, socklen_t optlen)
+{
     return ::setsockopt(fd, level, optname, optval, optlen);
 }
 #endif
@@ -915,8 +947,6 @@ int JNICALL JVM_GetHostName(char* name, int namelen)
 {
     return gethostname(name, namelen);
 }
-
-// Library support ///////////////////////////////////////////////////////////////////////////
 
 #ifdef WIN32
 void* os_dll_load(const char* filename, char* ebuf, int ebuflen)
@@ -944,7 +974,8 @@ void* os_dll_load(const char* filename, char* ebuf, int ebuflen)
 }
 #endif
 #ifdef LINUX
-void* os_dll_load(const char* filename, char* ebuf, int ebuflen) {
+void* os_dll_load(const char* filename, char* ebuf, int ebuflen)
+{
     void* result = ::dlopen(filename, RTLD_LAZY);
     if (result == NULL) {
         ::strncpy(ebuf, ::dlerror(), ebuflen - 1);
@@ -955,7 +986,8 @@ void* os_dll_load(const char* filename, char* ebuf, int ebuflen) {
 }
 #endif
 #ifdef MACOS
-void* os_dll_load(const char* filename, char* ebuf, int ebuflen) {
+void* os_dll_load(const char* filename, char* ebuf, int ebuflen)
+{
     void* result = ::dlopen(filename, RTLD_LAZY);
     if (result != NULL) {
         // Successful loading
@@ -986,17 +1018,20 @@ void* JNICALL JVM_LoadLibrary(const char* name)
 }
 
 #ifdef WIN32
-inline void  os_dll_unload(void* lib) {
+inline void  os_dll_unload(void* lib)
+{
     ::FreeLibrary((HMODULE)lib);
 }
 #endif
 #ifdef LINUX
-inline void os_dll_unload(void* lib) {
+inline void os_dll_unload(void* lib)
+{
     ::dlclose(lib);
 }
 #endif
 #ifdef MACOS
-inline void os_dll_unload(void* lib) {
+inline void os_dll_unload(void* lib)
+{
     ::dlclose(lib);
 }
 #endif
@@ -1007,19 +1042,16 @@ void JNICALL JVM_UnloadLibrary(void* handle)
 }
 
 #ifdef WIN32
-inline void* os_dll_lookup(void* lib, const char* name) {
+inline void* os_dll_lookup(void* lib, const char* name)
+{
     return (void*)::GetProcAddress((HMODULE)lib, name);
 }
 #endif
 #ifdef LINUX
 static pthread_mutex_t dl_mutex;
 
-/*
- * glibc-2.0 libdl is not MT safe.  If you are building with any glibc,
- * chances are you might want to run the generated bits against glibc-2.0
- * libdl.so, so always use locking for any version of glibc.
- */
-void* os_dll_lookup(void* handle, const char* name) {
+void* os_dll_lookup(void* handle, const char* name)
+{
     pthread_mutex_lock(&dl_mutex);
     void* res = dlsym(handle, name);
     pthread_mutex_unlock(&dl_mutex);
@@ -1027,7 +1059,8 @@ void* os_dll_lookup(void* handle, const char* name) {
 }
 #endif
 #ifdef MACOS
-void* os_dll_lookup(void* handle, const char* name) {
+void* os_dll_lookup(void* handle, const char* name)
+{
     return dlsym(handle, name);
 }
 #endif
@@ -1075,7 +1108,8 @@ int jio_vsnprintf(char* str, size_t count, const char* fmt, va_list args)
     return result;
 }
 
-int jio_snprintf(char* str, size_t count, const char* fmt, ...) {
+int jio_snprintf(char* str, size_t count, const char* fmt, ...)
+{
     va_list args;
     int len;
     va_start(args, fmt);
@@ -1084,7 +1118,8 @@ int jio_snprintf(char* str, size_t count, const char* fmt, ...) {
     return len;
 }
 
-int jio_fprintf(FILE* f, const char* fmt, ...) {
+int jio_fprintf(FILE* f, const char* fmt, ...)
+{
     int len;
     va_list args;
     va_start(args, fmt);
@@ -1098,7 +1133,8 @@ int jio_vfprintf(FILE* f, const char* fmt, va_list args)
     return vfprintf(f, fmt, args);
 }
 
-int jio_printf(const char* fmt, ...) {
+int jio_printf(const char* fmt, ...)
+{
     int len;
     va_list args;
     va_start(args, fmt);
