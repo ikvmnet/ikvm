@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.Runtime
 {
@@ -30,6 +31,7 @@ namespace IKVM.Runtime
             public nint JVM_GetThreadInterruptEvent;
             public nint JVM_ActiveProcessorCount;
             public nint JVM_IHashCode;
+            public nint JVM_ArrayCopy;
 
         }
 
@@ -53,6 +55,9 @@ namespace IKVM.Runtime
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate int JVM_IHashCodeDelegate(JNIEnv* env, nint handle);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate void JVM_ArrayCopyDelegate(JNIEnv* env, nint ignored, nint src, int src_pos, nint dst, int dst_pos, int length);
 
         delegate void JVM_InitDelegate(JVMInvokeInterface* iface);
 
@@ -82,6 +87,7 @@ namespace IKVM.Runtime
         readonly JVM_GetThreadInterruptEventDelegate _JVM_GetThreadInterruptEvent;
         readonly JVM_ActiveProcessorCountDelegate _JVM_ActiveProcessorCount;
         readonly JVM_IHashCodeDelegate _JVM_IHashCode;
+        readonly JVM_ArrayCopyDelegate _JVM_ArrayCopy;
 
         /// <summary>
         /// Initializes a new instance.
@@ -107,6 +113,7 @@ namespace IKVM.Runtime
             jvmii->JVM_GetThreadInterruptEvent = Marshal.GetFunctionPointerForDelegate(_JVM_GetThreadInterruptEvent = JVM_GetThreadInterruptEvent);
             jvmii->JVM_ActiveProcessorCount = Marshal.GetFunctionPointerForDelegate(_JVM_ActiveProcessorCount = JVM_ActiveProcessorCount);
             jvmii->JVM_IHashCode = Marshal.GetFunctionPointerForDelegate(_JVM_IHashCode = JVM_IHashCode);
+            jvmii->JVM_ArrayCopy = Marshal.GetFunctionPointerForDelegate(_JVM_ArrayCopy = JVM_ArrayCopy);
             _JVM_Init(jvmii);
         }
 
@@ -197,7 +204,50 @@ namespace IKVM.Runtime
         /// <returns></returns>
         int JVM_IHashCode(JNIEnv* env, nint handle)
         {
-            return handle == 0 ? 0 : env->UnwrapRef(handle).GetHashCode();
+            return handle == 0 ? 0 : RuntimeHelpers.GetHashCode(env->UnwrapRef(handle));
+        }
+
+        /// <summary>
+        /// Invoked by the native code to copy an array.
+        /// </summary>
+        /// <param name="env"></param>
+        /// <param name="ignored"></param>
+        /// <param name="src"></param>
+        /// <param name="src_pos"></param>
+        /// <param name="dst"></param>
+        /// <param name="dst_pos"></param>
+        /// <param name="length"></param>
+        void JVM_ArrayCopy(JNIEnv* env, nint ignored, nint src, int src_pos, nint dst, int dst_pos, int length)
+        {
+            try
+            {
+                if (src == 0 || dst == 0)
+                    throw new java.lang.NullPointerException();
+
+                var s = env->UnwrapRef(src) as Array;
+                var d = env->UnwrapRef(dst) as Array;
+                if (s is null || d is null)
+                    throw new java.lang.ArrayStoreException();
+
+                if (src_pos < 0 || dst_pos < 0 || length < 0)
+                    throw new java.lang.ArrayIndexOutOfBoundsException();
+
+                if (((length + src_pos) > s.Length) || ((length + dst_pos) > d.Length))
+                    throw new java.lang.ArrayIndexOutOfBoundsException();
+
+                if (length == 0)
+                    return;
+
+                Array.Copy(s, src_pos, d, dst_pos, length);
+            }
+            catch (ArrayTypeMismatchException e)
+            {
+                JVM.SetPendingException(new java.lang.ArrayStoreException());
+            }
+            catch (Exception e)
+            {
+                JVM.SetPendingException(e);
+            }
         }
 
         /// <summary>

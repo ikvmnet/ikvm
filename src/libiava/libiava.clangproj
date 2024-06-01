@@ -17,6 +17,10 @@
     <ItemGroup>
         <Header Include="$(OpenJdkDir)jdk\src\share\native\common\*.h" />
         <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common\*.h" />
+        <PreprocessorDefinitions Include="RELEASE" Value="&quot;$(Version)&quot;" />
+        <PreprocessorDefinitions Include="VENDOR" Value="&quot;IKVM&quot;" />
+        <PreprocessorDefinitions Include="VENDOR_URL" Value="&quot;https://ikvm.org&quot;" />
+        <PreprocessorDefinitions Include="VENDOR_URL_BUG" Value="&quot;https://github.com/ikvmnet/ikvm/issues&quot;" />
         <PreprocessorDefinitions Include="ARCHPROPNAME" Value="&quot;$(OpenJdkTargetCpuOsArch)&quot;" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\share\native\java\lang" />
@@ -66,6 +70,7 @@
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <Dependencies Include="shell32;delayimp;advapi32;version" />
+        <AdditionalLinkOptions Include="-Wl,/FORCE" />
         <AdditionalLinkOptions Include="-Wl,-export:winFileHandleOpen" />
         <AdditionalLinkOptions Include="-Wl,-export:handleLseek" />
         <AdditionalLinkOptions Include="-Wl,-export:getErrorString" />
@@ -160,7 +165,7 @@ public class JoinPathsAndFiles : Task
             <Output TaskParameter="Items" ItemName="Compile" />
         </JoinPathsAndFiles>
     </Target>
-    
+
     <Target Name="UpdateLibJavaItems" DependsOnTargets="GetLibJavaItems">
         <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
             <Compile Update="@(Compile)" Condition=" '%(Filename)%(Extension)' == 'java_props_md.c' " Language="objective-c" />

@@ -184,7 +184,7 @@ jlong JNICALL JVM_NanoTime(JNIEnv* env, jclass ignored)
 
 void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pos, jint length)
 {
-    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_ArrayCopy");
+    jvmii->JVM_ArrayCopy(env, ignored, src, src_pos, dst, dst_pos, length);
 }
 
 jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject properties)
