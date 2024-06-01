@@ -18,8 +18,8 @@
         <Header Include="$(OpenJdkDir)jdk\src\share\native\common\*.h" />
         <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common\*.h" />
         <PreprocessorDefinitions Include="RELEASE" Value="&quot;$(Version)&quot;" />
-        <PreprocessorDefinitions Include="VENDOR" Value="&quot;IKVM&quot;" />
-        <PreprocessorDefinitions Include="VENDOR_URL" Value="&quot;https://ikvm.org&quot;" />
+        <PreprocessorDefinitions Include="VENDOR" Value="&quot;$(ProductName)&quot;" />
+        <PreprocessorDefinitions Include="VENDOR_URL" Value="&quot;$(PackageProjectUrl)&quot;" />
         <PreprocessorDefinitions Include="VENDOR_URL_BUG" Value="&quot;https://github.com/ikvmnet/ikvm/issues&quot;" />
         <PreprocessorDefinitions Include="ARCHPROPNAME" Value="&quot;$(OpenJdkTargetCpuOsArch)&quot;" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang" />
@@ -41,7 +41,6 @@
     <ItemGroup>
         <!-- IKVM specific excludes -->
         <LibJavaExclude Include="Shutdown.c" />
-        <LibJavaExclude Include="System.c" />
         <LibJavaExclude Include="AccessController.c" />
         <LibJavaExclude Include="Throwable.c" />
         <LibJavaExclude Include="NativeAccessors.c" />

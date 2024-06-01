@@ -240,7 +240,7 @@ namespace IKVM.Runtime
 
                 Array.Copy(s, src_pos, d, dst_pos, length);
             }
-            catch (ArrayTypeMismatchException e)
+            catch (ArrayTypeMismatchException)
             {
                 JVM.SetPendingException(new java.lang.ArrayStoreException());
             }
