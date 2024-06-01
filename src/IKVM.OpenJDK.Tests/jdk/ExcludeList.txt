@@ -3284,6 +3284,8 @@ sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java                          
 sun/security/pkcs11/KeyPairGenerator/TestDH2048.java                                                                    generic-all
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                                                                         generic-all
 sun/security/pkcs11/Mac/ReinitMac.java                                                                                  generic-all
+sun/security/pkcs11/Mac/MacKAT.java                                                                                     generic-all
+sun/security/pkcs11/Mac/MacSameTest.java                                                                                generic-all
 sun/security/pkcs11/MessageDigest/ByteBuffers.java                                                                      generic-all
 sun/security/pkcs11/MessageDigest/DigestKAT.java                                                                        generic-all
 sun/security/pkcs11/MessageDigest/ReinitDigest.java                                                                     generic-all
@@ -3297,6 +3299,7 @@ sun/security/pkcs11/Secmod/Crypto.java                                          
 sun/security/pkcs11/Secmod/GetPrivateKey.java                                                                           generic-all
 sun/security/pkcs11/Secmod/JksSetPrivateKey.java                                                                        generic-all
 sun/security/pkcs11/Secmod/TrustAnchors.java                                                                            generic-all
+sun/security/pkcs11/Secmod/LoadKeystore.java                                                                            generic-all
 sun/security/pkcs11/SecureRandom/Basic.java                                                                             generic-all
 sun/security/pkcs11/SecureRandom/TestDeserialization.java                                                               generic-all
 sun/security/pkcs11/Serialize/SerializeProvider.java                                                                    generic-all
