@@ -144,7 +144,10 @@ jobs:
         sudo apt-get install -y openjdk-8-jdk-headless && \
         echo "JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> $GITHUB_ENV
     - name: Install LLVM and Clang
-      run: sudo apt-get update && sudo apt-get install -y clang-16
+      run: |
+        sudo apt-get update && \
+        sudo apt-get install -y clang-16 llvm-16 && \
+        echo "PATH=/usr/lib/llvm-16/bin:$PATH" >> $GITHUB_ENV
     - name: Install apple-codesign
       uses: baptiste0928/cargo-install@v3
       with:
