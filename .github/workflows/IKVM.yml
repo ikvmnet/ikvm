@@ -150,12 +150,6 @@ jobs:
       with:
         useConfigFile: true
         configFilePath: GitVersion.yml
-    - name: Cache NuGet
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.NUGET_PACKAGES }}
-        key: nuget--${{ runner.os }}--${{ hashFiles('IKVM.sln', 'src/**/*.csproj', 'src/**/*.msbuildproj') }}--1
-        restore-keys: ${{ runner.os }}-nuget-2-
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v4
       with:
