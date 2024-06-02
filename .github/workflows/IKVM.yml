@@ -115,27 +115,11 @@ jobs:
     needs:
     - build-openjdk
     timeout-minutes: 720
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
-    - name: Set Paths (Windows)
-      shell: pwsh
-      run: |
-        $WORKPATH="C:\work"
-        mkdir $WORKPATH
-        mkdir $WORKPATH\temp
-        mkdir $WORKPATH\dotnet
-        mkdir $WORKPATH\nuget
-        mkdir $WORKPATH\nuget\packages
-        mkdir $WORKPATH\ikvm
-        Add-Content $env:GITHUB_ENV "`nWORKPATH=$WORKPATH"
-        Add-Content $env:GITHUB_ENV "`nTMP=$WORKPATH\temp`nTEMP=$WORKPATH\temp`nTMPDIR=$WORKPATH\temp"
-        Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$WORKPATH\dotnet"
-        Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=$WORKPATH\nuget\packages"
-        New-Item -Path "$env:GITHUB_WORKSPACE\work" -ItemType SymbolicLink -Value "$WORKPATH\ikvm"
     - name: Checkout Source
       uses: actions/checkout@v4
       with:
-        path: work
         fetch-depth: 0
         submodules: recursive
     - name: Setup .NET 6.0
@@ -150,17 +134,10 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-    - name: Cache LLVM and Clang
-      id: cache-llvm
-      uses: actions/cache@v4
-      with:
-        path: C:/Program Files/LLVM
-        key: llvm-16.0
     - name: Install LLVM and Clang
       uses: KyleMayes/install-llvm-action@v1
       with:
         version: "16.0"
-        cached: ${{ steps.cache-llvm.outputs.cache-hit }}
     - name: Install apple-codesign
       uses: baptiste0928/cargo-install@v3
       with:
@@ -173,53 +150,43 @@ jobs:
     - name: Execute GitVersion
       uses: gittools/actions/gitversion/execute@v1
       with:
-        targetPath: ${{ env.WORKPATH }}\ikvm
         useConfigFile: true
-        configFilePath: ${{ env.WORKPATH }}\ikvm\GitVersion.yml
+        configFilePath: GitVersion.yml
     - name: Cache NuGet
       uses: actions/cache@v4
       with:
         path: ${{ env.NUGET_PACKAGES }}
         key: nuget--${{ runner.os }}--${{ hashFiles('IKVM.sln', 'src/**/*.csproj', 'src/**/*.msbuildproj') }}--1
         restore-keys: ${{ runner.os }}-nuget-2-
-    - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v2
-      with:
-        msbuild-architecture: x64
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v4
       with:
         name: openjdk-build-linux-x86_64-normal-server-release
-        path: ${{ env.WORKPATH }}/temp
+        path: /tmp
     - name: Restore OpenJDK 8 Build
       shell: pwsh
-      run: New-Item -Type Directory -Force ${{ env.WORKPATH }}/ikvm/openjdk/build; Expand-Archive ${{ env.WORKPATH }}/temp/openjdk-build-linux-x86_64-normal-server-release.zip -DestinationPath ${{ env.WORKPATH }}/ikvm/openjdk/build
+      run: New-Item -Type Directory -Force openjdk/build; Expand-Archive /tmp/openjdk-build-linux-x86_64-normal-server-release.zip -DestinationPath openjdk/build
     - name: Download JTReg Build
       uses: actions/download-artifact@v4
       with:
         name: jtreg-build
-        path: ${{ env.WORKPATH }}/temp
+        path: /tmp
     - name: Restore JTReg Build
       shell: pwsh
-      run: New-Item -Type Directory -Force ${{ env.WORKPATH }}/ikvm/jtreg; Expand-Archive ${{ env.WORKPATH }}/temp/jtreg-build.zip -DestinationPath ${{ env.WORKPATH }}/ikvm/jtreg
+      run: New-Item -Type Directory -Force jtreg; Expand-Archive /tmp/jtreg-build.zip -DestinationPath jtreg
     - name: Download Native SDKs
       uses: robinraju/release-downloader@v1.9
       with:
         repository: ikvmnet/ikvm-native-sdk
         tag: ${{ env.NATIVE_SDK_VERSION }}
         fileName: "*.tar.gz"
-        out-file-path: ${{ env.WORKPATH }}/ikvm/ext/ikvm-native-sdk
+        out-file-path: ext/ikvm-native-sdk
         extract: true
-    - name: Fix Symbolic Links
-      shell: pwsh
-      run: ri win -Recurse; .\Fix-SymbolicLinks.ps1
-      working-directory: ${{ env.WORKPATH }}/ikvm/ext/ikvm-native-sdk
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
-      working-directory: ${{ env.WORKPATH }}/ikvm
     - name: Build Artifacts
       run: |
-        msbuild /m /bl `
+        dotnet msbuild /m /bl `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
           /p:PreReleaseLabel=${env:GitVersion_PreReleaseLabel} `
@@ -239,198 +206,196 @@ jobs:
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
           IKVM.dist.msbuildproj
-      working-directory: ${{ env.WORKPATH }}\ikvm
     - name: Upload MSBuild Log
       if: ${{ always() }}
       uses: actions/upload-artifact@v4
       with:
         name: msbuild.binlog
-        path: ${{ env.WORKPATH }}\ikvm\msbuild.binlog
+        path: msbuild.binlog
     - name: Package NuGet Packages
-      run: tar czvf C:\nuget.tar.gz nuget
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/nuget.tar.gz nuget
+      working-directory: dist
     - name: Upload NuGet Packages
       uses: actions/upload-artifact@v4
       with:
         name: nuget
-        path: C:\nuget.tar.gz
+        path: /tmp/nuget.tar.gz
     - name: Delete NuGet Packages
       shell: pwsh
-      run: ri C:\nuget.tar.gz
+      run: ri /tmp/nuget.tar.gz
     - name: Package Binaries
-      run: tar czvf C:\bin.tar.gz bin
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/bin.tar.gz bin
+      working-directory: dist
     - name: Upload Binaries
       uses: actions/upload-artifact@v4
       with:
         name: bin
-        path: C:\bin.tar.gz
+        path: /tmp/bin.tar.gz
     - name: Delete Binaries
       shell: pwsh
-      run: ri C:\bin.tar.gz
+      run: ri /tmp/bin.tar.gz
     - name: Package Tools
-      run: tar czvf C:\tools.tar.gz tools
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/tools.tar.gz tools
+      working-directory: dist
     - name: Upload Tools
       uses: actions/upload-artifact@v4
       with:
         name: tools
-        path: C:\tools.tar.gz
+        path: /tmp/tools.tar.gz
     - name: Delete Tools
       shell: pwsh
-      run: ri C:\tools.tar.gz
+      run: ri /tmp/tools.tar.gz
     - name: Package Image
-      run: tar czvf C:\image.tar.gz image
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/image.tar.gz image
+      working-directory: ikvm\dist
     - name: Upload Image
       uses: actions/upload-artifact@v4
       with:
         name: image
-        path: C:\image.tar.gz
+        path: /tmp/image.tar.gz
     - name: Delete Image
       shell: pwsh
-      run: ri C:\image.tar.gz
+      run: ri /tmp/image.tar.gz
     - name: Package Tests (IKVM.ByteCode.Tests)
-      run: tar czvf C:\tests--IKVM.ByteCode.Tests.tar.gz tests\IKVM.ByteCode.Tests
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/tests--IKVM.ByteCode.Tests.tar.gz tests/IKVM.ByteCode.Tests
+      working-directory: dist
     - name: Upload Tests (IKVM.ByteCode.Tests)
       uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.ByteCode.Tests
-        path: C:\tests--IKVM.ByteCode.Tests.tar.gz
+        path: /tmp/tests--IKVM.ByteCode.Tests.tar.gz
     - name: Delete Tests (IKVM.ByteCode.Tests)
       shell: pwsh
-      run: ri C:\tests--IKVM.ByteCode.Tests.tar.gz
+      run: ri /tmp/tests--IKVM.ByteCode.Tests.tar.gz
     - name: Package Tests (IKVM.Reflection.Tests)
-      run: tar czvf C:\tests--IKVM.Reflection.Tests.tar.gz tests\IKVM.Reflection.Tests
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/tests--IKVM.Reflection.Tests.tar.gz tests/IKVM.Reflection.Tests
+      working-directory: dist
     - name: Upload Tests (IKVM.Reflection.Tests)
       uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.Reflection.Tests
-        path: C:\tests--IKVM.Reflection.Tests.tar.gz
+        path: /tmp/tests--IKVM.Reflection.Tests.tar.gz
     - name: Delete Tests (IKVM.Reflection.Tests)
       shell: pwsh
-      run: ri C:\tests--IKVM.Reflection.Tests.tar.gz
+      run: ri /tmp/tests--IKVM.Reflection.Tests.tar.gz
     - name: Package Tests (IKVM.Tests)
-      run: tar czvf C:\tests--IKVM.Tests.tar.gz tests\IKVM.Tests
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/tests--IKVM.Tests.tar.gz tests/IKVM.Tests
+      working-directory: dist
     - name: Upload Tests (IKVM.Tests)
       uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.Tests
-        path: C:\tests--IKVM.Tests.tar.gz
+        path: /tmp/tests--IKVM.Tests.tar.gz
     - name: Delete Tests (IKVM.Tests)
       shell: pwsh
-      run: ri C:\tests--IKVM.Tests.tar.gz
+      run: ri /tmp/tests--IKVM.Tests.tar.gz
     - name: Package Tests (IKVM.Java.Tests)
-      run: tar czvf C:\tests--IKVM.Java.Tests.tar.gz tests\IKVM.Java.Tests
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/tests--IKVM.Java.Tests.tar.gz tests/IKVM.Java.Tests
+      working-directory: dist
     - name: Upload Tests (IKVM.Java.Tests)
       uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.Java.Tests
-        path: C:\tests--IKVM.Java.Tests.tar.gz
+        path: /tmp/tests--IKVM.Java.Tests.tar.gz
     - name: Delete Tests (IKVM.Java.Tests)
       shell: pwsh
-      run: ri C:\tests--IKVM.Java.Tests.tar.gz
+      run: ri /tmp/tests--IKVM.Java.Tests.tar.gz
     - name: Package Tests (IKVM.Tools.Tests)
-      run: tar czvf C:\tests--IKVM.Tools.Tests.tar.gz tests\IKVM.Tools.Tests
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/tests--IKVM.Tools.Tests.tar.gz tests/IKVM.Tools.Tests
+      working-directory: dist
     - name: Upload Tests (IKVM.Tools.Tests)
       uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.Tools.Tests
-        path: C:\tests--IKVM.Tools.Tests.tar.gz
+        path: /tmp/tests--IKVM.Tools.Tests.tar.gz
     - name: Delete Tests (IKVM.Tools.Tests)
       shell: pwsh
-      run: ri C:\tests--IKVM.Tools.Tests.tar.gz
+      run: ri /tmp/tests--IKVM.Tools.Tests.tar.gz
     - name: Package Tests (IKVM.Tools.Exporter.Tests)
-      run: tar czvf C:\tests--IKVM.Tools.Exporter.Tests.tar.gz tests\IKVM.Tools.Exporter.Tests
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz tests/IKVM.Tools.Exporter.Tests
+      working-directory: dist
     - name: Upload Tests (IKVM.Tools.Exporter.Tests)
       uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.Tools.Exporter.Tests
-        path: C:\tests--IKVM.Tools.Exporter.Tests.tar.gz
+        path: /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz
     - name: Delete Tests (IKVM.Tools.Exporter.Tests)
       shell: pwsh
-      run: ri C:\tests--IKVM.Tools.Exporter.Tests.tar.gz
+      run: ri /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz
     - name: Package Tests (IKVM.Tools.Importer.Tests)
-      run: tar czvf C:\tests--IKVM.Tools.Importer.Tests.tar.gz tests\IKVM.Tools.Importer.Tests
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz tests/IKVM.Tools.Importer.Tests
+      working-directory: dist
     - name: Upload Tests (IKVM.Tools.Importer.Tests)
       uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.Tools.Importer.Tests
-        path: C:\tests--IKVM.Tools.Importer.Tests.tar.gz
+        path: /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz
     - name: Delete Tests (IKVM.Tools.Importer.Tests)
       shell: pwsh
-      run: ri C:\tests--IKVM.Tools.Importer.Tests.tar.gz
+      run: ri /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz
     - name: Package Tests (IKVM.MSBuild.Tasks.Tests)
-      run: tar czvf C:\tests--IKVM.MSBuild.Tasks.Tests.tar.gz tests\IKVM.MSBuild.Tasks.Tests
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz tests/IKVM.MSBuild.Tasks.Tests
+      working-directory: dist
     - name: Upload Tests (IKVM.MSBuild.Tasks.Tests)
       uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.MSBuild.Tasks.Tests
-        path: C:\tests--IKVM.MSBuild.Tasks.Tests.tar.gz
+        path: /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz
     - name: Delete Tests (IKVM.MSBuild.Tasks.Tests)
       shell: pwsh
-      run: ri C:\tests--IKVM.MSBuild.Tasks.Tests.tar.gz
+      run: ri /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz
     - name: Package Tests (IKVM.MSBuild.Tests)
-      run: tar czvf C:\tests--IKVM.MSBuild.Tests.tar.gz tests\IKVM.MSBuild.Tests
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/tests--IKVM.MSBuild.Tests.tar.gz tests/IKVM.MSBuild.Tests
+      working-directory: dist
     - name: Upload Tests (IKVM.MSBuild.Tests)
       uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.MSBuild.Tests
-        path: C:\tests--IKVM.MSBuild.Tests.tar.gz
+        path: /tmp/tests--IKVM.MSBuild.Tests.tar.gz
     - name: Delete Tests (IKVM.MSBuild.Tests)
       shell: pwsh
-      run: ri C:\tests--IKVM.MSBuild.Tests.tar.gz
+      run: ri /tmp/tests--IKVM.MSBuild.Tests.tar.gz
     - name: Package Tests (IKVM.NET.Sdk.Tests)
-      run: tar czvf C:\tests--IKVM.NET.Sdk.Tests.tar.gz tests\IKVM.NET.Sdk.Tests
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz tests/IKVM.NET.Sdk.Tests
+      working-directory: dist
     - name: Upload Tests (IKVM.NET.Sdk.Tests)
       uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.NET.Sdk.Tests
-        path: C:\tests--IKVM.NET.Sdk.Tests.tar.gz
+        path: /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz
     - name: Delete Tests (IKVM.NET.Sdk.Tests)
       shell: pwsh
-      run: ri C:\tests--IKVM.NET.Sdk.Tests.tar.gz
+      run: ri /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz
     - name: Package Tests (IKVM.JTReg.TestAdapter.Tests)
-      run: tar czvf C:\tests--IKVM.JTReg.TestAdapter.Tests.tar.gz tests\IKVM.JTReg.TestAdapter.Tests
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz tests/IKVM.JTReg.TestAdapter.Tests
+      working-directory: dist
     - name: Upload Tests (IKVM.JTReg.TestAdapter.Tests)
       uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.JTReg.TestAdapter.Tests
-        path: C:\tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
+        path: /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
     - name: Delete Tests (IKVM.JTReg.TestAdapter.Tests)
       shell: pwsh
-      run: ri C:\tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
+      run: ri /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
     - name: Package Tests (IKVM.OpenJDK.Tests)
-      run: tar czvf C:\tests--IKVM.OpenJDK.Tests.tar.gz tests\IKVM.OpenJDK.Tests
-      working-directory: ${{ env.WORKPATH }}\ikvm\dist
+      run: tar czvf /tmp/tests--IKVM.OpenJDK.Tests.tar.gz tests/IKVM.OpenJDK.Tests
+      working-directory: dist
     - name: Upload Tests (IKVM.OpenJDK.Tests)
       uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.OpenJDK.Tests
-        path: C:\tests--IKVM.OpenJDK.Tests.tar.gz
+        path: /tmp/tests--IKVM.OpenJDK.Tests.tar.gz
     - name: Delete Tests (IKVM.OpenJDK.Tests)
       shell: pwsh
-      run: ri C:\tests--IKVM.OpenJDK.Tests.tar.gz
+      run: ri /tmp/tests--IKVM.OpenJDK.Tests.tar.gz
     - name: Package Documentation
       shell: pwsh
-      run: Compress-Archive -Path doc\* -DestinationPath C:\doc.zip
-      working-directory: ${{ env.WORKPATH }}\ikvm
+      run: Compress-Archive -Path doc/* -DestinationPath /tmp/doc.zip
     - name: Upload Documentation
       uses: actions/upload-artifact@v4
       with:
         name: doc
-        path: C:\doc.zip
+        path: /tmp/doc.zip
   test-vars:
     name: Test Variables
     needs:
