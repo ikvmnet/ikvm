@@ -136,8 +136,8 @@ jobs:
         dotnet-version: 8.0.x
     - name: Install Java
       run: |
-        sudo apt-get update &&
-        sudo apt-get install -y openjdk-8-jdk-headless &&
+        sudo apt-get update && \
+        sudo apt-get install -y openjdk-8-jdk-headless && \
         echo "JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> $GITHUB_ENV
     - name: Install LLVM and Clang
       run: sudo apt-get update && sudo apt-get install -y clang-16
@@ -181,25 +181,25 @@ jobs:
       run: dotnet restore IKVM.sln
     - name: Build Artifacts
       run: |
-        dotnet msbuild /m /bl
-          /p:Configuration="Release"
-          /p:Platform="Any CPU"
-          /p:PreReleaseLabel=${GitVersion_PreReleaseLabel}
-          /p:PreReleaseNumber=${GitVersion_WeightedPreReleaseNumber}
-          /p:Version=${GitVersion_FullSemVer}
-          /p:AssemblyVersion=${GitVersion_AssemblySemVer}
-          /p:InformationalVersion=${GitVersion_InformationalVersion}
-          /p:FileVersion=${GitVersion_AssemblySemFileVer}
-          /p:PackageVersion=${GitVersion_FullSemVer}
-          /p:RepositoryUrl="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
-          /p:PackageProjectUrl="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
-          /p:BuildInParallel=true
-          /p:CreateHardLinksForAdditionalFilesIfPossible=true
-          /p:CreateHardLinksForCopyAdditionalFilesIfPossible=true
-          /p:CreateHardLinksForCopyFilesToOutputDirectoryIfPossible=true
-          /p:CreateHardLinksForCopyLocalIfPossible=true
-          /p:CreateHardLinksForPublishFilesIfPossible=true
-          /p:ContinuousIntegrationBuild=true
+        dotnet msbuild /m /bl \
+          /p:Configuration="Release" \
+          /p:Platform="Any CPU" \
+          /p:PreReleaseLabel=${GitVersion_PreReleaseLabel} \
+          /p:PreReleaseNumber=${GitVersion_WeightedPreReleaseNumber} \
+          /p:Version=${GitVersion_FullSemVer} \
+          /p:AssemblyVersion=${GitVersion_AssemblySemVer} \
+          /p:InformationalVersion=${GitVersion_InformationalVersion} \
+          /p:FileVersion=${GitVersion_AssemblySemFileVer} \
+          /p:PackageVersion=${GitVersion_FullSemVer} \
+          /p:RepositoryUrl="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git" \
+          /p:PackageProjectUrl="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+          /p:BuildInParallel=true \
+          /p:CreateHardLinksForAdditionalFilesIfPossible=true \
+          /p:CreateHardLinksForCopyAdditionalFilesIfPossible=true \
+          /p:CreateHardLinksForCopyFilesToOutputDirectoryIfPossible=true \
+          /p:CreateHardLinksForCopyLocalIfPossible=true \
+          /p:CreateHardLinksForPublishFilesIfPossible=true \
+          /p:ContinuousIntegrationBuild=true \
           IKVM.dist.msbuildproj
     - name: Upload MSBuild Log
       if: ${{ always() }}
