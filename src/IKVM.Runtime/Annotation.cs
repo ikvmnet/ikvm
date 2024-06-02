@@ -25,8 +25,6 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
-using System.Linq;
-
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -36,7 +34,6 @@ using Type = IKVM.Reflection.Type;
 
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 #else
 using System.Reflection;

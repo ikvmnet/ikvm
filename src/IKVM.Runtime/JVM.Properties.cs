@@ -198,6 +198,9 @@ namespace IKVM.Runtime
             /// <param name="p"></param>
             static void InitSystemProperties(Dictionary<string, string> p)
             {
+#if FIRST_PASS || IMPORTER || EXPORTER
+                throw new NotImplementedException();
+#else
                 p["openjdk.version"] = Constants.openjdk_version;
                 p["java.vm.name"] = Constants.java_vm_name;
                 p["java.vm.version"] = Constants.java_vm_version;
@@ -247,6 +250,7 @@ namespace IKVM.Runtime
                 if (user != null)
                     foreach (var kvp in user)
                         p[kvp.Key] = kvp.Value;
+#endif
             }
 
             /// <summary>
