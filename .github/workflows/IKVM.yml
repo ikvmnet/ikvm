@@ -135,9 +135,7 @@ jobs:
       with:
         dotnet-version: 8.0.x
     - name: Install LLVM and Clang
-      uses: KyleMayes/install-llvm-action@v1
-      with:
-        version: "16.0"
+      run: sudo apt-get install -y clang-16
     - name: Install apple-codesign
       uses: baptiste0928/cargo-install@v3
       with:
