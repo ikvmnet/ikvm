@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
@@ -19,7 +18,7 @@ namespace IKVM.Runtime.JNI
         /// <summary>
         /// Returns the underlying object instance for the specified global reference.
         /// </summary>
-        /// <param name="i"></param>
+        /// <param name="z"></param>
         /// <returns></returns>
         internal static object Unwrap(nint z)
         {

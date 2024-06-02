@@ -3,6 +3,8 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
+using IKVM.Runtime.Accessors.Java.Util;
+
 namespace IKVM.Runtime
 {
 
@@ -15,6 +17,10 @@ namespace IKVM.Runtime
     /// </summary>
     internal unsafe class LibJvm
     {
+
+        static PropertiesAccessor propertiesAccessor;
+
+        static PropertiesAccessor PropertiesAccessor => JVM.Internal.BaseAccessors.Get(ref propertiesAccessor);
 
         /// <summary>
         /// Structure of callbacks passed to libjvm.
@@ -32,6 +38,7 @@ namespace IKVM.Runtime
             public nint JVM_ActiveProcessorCount;
             public nint JVM_IHashCode;
             public nint JVM_ArrayCopy;
+            public nint JVM_InitProperties;
 
         }
 
@@ -58,6 +65,9 @@ namespace IKVM.Runtime
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate void JVM_ArrayCopyDelegate(JNIEnv* env, nint ignored, nint src, int src_pos, nint dst, int dst_pos, int length);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate nint JVM_InitPropertiesDelegate(JNIEnv* env, nint props);
 
         delegate void JVM_InitDelegate(JVMInvokeInterface* iface);
 
@@ -88,6 +98,7 @@ namespace IKVM.Runtime
         readonly JVM_ActiveProcessorCountDelegate _JVM_ActiveProcessorCount;
         readonly JVM_IHashCodeDelegate _JVM_IHashCode;
         readonly JVM_ArrayCopyDelegate _JVM_ArrayCopy;
+        readonly JVM_InitPropertiesDelegate _JVM_InitProperties;
 
         /// <summary>
         /// Initializes a new instance.
@@ -114,6 +125,7 @@ namespace IKVM.Runtime
             jvmii->JVM_ActiveProcessorCount = Marshal.GetFunctionPointerForDelegate(_JVM_ActiveProcessorCount = JVM_ActiveProcessorCount);
             jvmii->JVM_IHashCode = Marshal.GetFunctionPointerForDelegate(_JVM_IHashCode = JVM_IHashCode);
             jvmii->JVM_ArrayCopy = Marshal.GetFunctionPointerForDelegate(_JVM_ArrayCopy = JVM_ArrayCopy);
+            jvmii->JVM_InitProperties = Marshal.GetFunctionPointerForDelegate(_JVM_InitProperties = JVM_InitProperties);
             _JVM_Init(jvmii);
         }
 
@@ -247,6 +259,34 @@ namespace IKVM.Runtime
             catch (Exception e)
             {
                 JVM.SetPendingException(e);
+            }
+        }
+
+        /// <summary>
+        /// Invoked by the native code to collect the system properties from the JVM.
+        /// </summary>
+        /// <param name="env"></param>
+        /// <param name="ignored"></param>
+        /// <param name="src"></param>
+        /// <param name="src_pos"></param>
+        /// <param name="dst"></param>
+        /// <param name="dst_pos"></param>
+        /// <param name="length"></param>
+        nint JVM_InitProperties(JNIEnv* env, nint props)
+        {
+            try
+            {
+                var p = env->UnwrapRef(props);
+                foreach (var kvp in JVM.Properties.Init)
+                    if (kvp.Value is string v)
+                        PropertiesAccessor.InvokeSetProperty(p, kvp.Key, v);
+
+                return props;
+            }
+            catch (Exception e)
+            {
+                JVM.SetPendingException(e);
+                return 0;
             }
         }
 

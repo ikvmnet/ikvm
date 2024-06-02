@@ -189,8 +189,7 @@ void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_po
 
 jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject properties)
 {
-    JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_InitProperties");
-    return 0;
+    return jvmii->JVM_InitProperties(env, properties);
 }
 
 jstring JNICALL JVM_GetTemporaryDirectory(JNIEnv* env)

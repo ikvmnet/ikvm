@@ -726,7 +726,7 @@ public final class System {
      * @exception  NullPointerException if <code>key</code> is
      *             <code>null</code>.
      * @exception  IllegalArgumentException if <code>key</code> is empty.
-     * @see        #setPropertycheckKey
+     * @see        #setProperty
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see        java.lang.System#getProperties()

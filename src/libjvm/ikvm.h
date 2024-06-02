@@ -13,6 +13,7 @@ typedef struct JVMInvokeInterface {
     jint (*JVM_ActiveProcessorCount)();
     jint (*JVM_IHashCode)(JNIEnv *pEnv, jobject handle);
     void (*JVM_ArrayCopy)(JNIEnv *pEnv, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pst, jint length);
+    jobject (*JVM_InitProperties)(JNIEnv *pEnv, jobject props);
 } JVMInvokeInterface;
 
 extern JVMInvokeInterface *jvmii;
