@@ -134,6 +134,11 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+    - name: Install Java
+      run: |
+        sudo apt-get update &&
+        sudo apt-get install -y openjdk-8-jdk-headless &&
+        echo "JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> $GITHUB_ENV
     - name: Install LLVM and Clang
       run: sudo apt-get update && sudo apt-get install -y clang-16
     - name: Install apple-codesign
@@ -156,16 +161,14 @@ jobs:
         name: openjdk-build-linux-x86_64-normal-server-release
         path: /tmp
     - name: Restore OpenJDK 8 Build
-      shell: pwsh
-      run: New-Item -Type Directory -Force openjdk/build; Expand-Archive /tmp/openjdk-build-linux-x86_64-normal-server-release.zip -DestinationPath openjdk/build
+      run: mkdir -p openjdk/build && cd openjdk/build && unzip /tmp/openjdk-build-linux-x86_64-normal-server-release.zip
     - name: Download JTReg Build
       uses: actions/download-artifact@v4
       with:
         name: jtreg-build
         path: /tmp
     - name: Restore JTReg Build
-      shell: pwsh
-      run: New-Item -Type Directory -Force jtreg; Expand-Archive /tmp/jtreg-build.zip -DestinationPath jtreg
+      run: mkdir -p jtreg && cd jtreg && unzip /tmp/jtreg-build.zip
     - name: Download Native SDKs
       uses: robinraju/release-downloader@v1.9
       with:
@@ -177,27 +180,26 @@ jobs:
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
     - name: Build Artifacts
-      shell: pwsh
       run: |
-        dotnet msbuild /m /bl `
-          /p:Configuration="Release" `
-          /p:Platform="Any CPU" `
-          /p:PreReleaseLabel=${env:GitVersion_PreReleaseLabel} `
-          /p:PreReleaseNumber=${env:GitVersion_WeightedPreReleaseNumber} `
-          /p:Version=${env:GitVersion_FullSemVer} `
-          /p:AssemblyVersion=${env:GitVersion_AssemblySemVer} `
-          /p:InformationalVersion=${env:GitVersion_InformationalVersion} `
-          /p:FileVersion=${env:GitVersion_AssemblySemFileVer} `
-          /p:PackageVersion=${env:GitVersion_FullSemVer} `
-          /p:RepositoryUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}.git" `
-          /p:PackageProjectUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}" `
-          /p:BuildInParallel=true `
-          /p:CreateHardLinksForAdditionalFilesIfPossible=true `
-          /p:CreateHardLinksForCopyAdditionalFilesIfPossible=true `
-          /p:CreateHardLinksForCopyFilesToOutputDirectoryIfPossible=true `
-          /p:CreateHardLinksForCopyLocalIfPossible=true `
-          /p:CreateHardLinksForPublishFilesIfPossible=true `
-          /p:ContinuousIntegrationBuild=true `
+        dotnet msbuild /m /bl
+          /p:Configuration="Release"
+          /p:Platform="Any CPU"
+          /p:PreReleaseLabel=${GitVersion_PreReleaseLabel}
+          /p:PreReleaseNumber=${GitVersion_WeightedPreReleaseNumber}
+          /p:Version=${GitVersion_FullSemVer}
+          /p:AssemblyVersion=${GitVersion_AssemblySemVer}
+          /p:InformationalVersion=${GitVersion_InformationalVersion}
+          /p:FileVersion=${GitVersion_AssemblySemFileVer}
+          /p:PackageVersion=${GitVersion_FullSemVer}
+          /p:RepositoryUrl="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          /p:PackageProjectUrl="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+          /p:BuildInParallel=true
+          /p:CreateHardLinksForAdditionalFilesIfPossible=true
+          /p:CreateHardLinksForCopyAdditionalFilesIfPossible=true
+          /p:CreateHardLinksForCopyFilesToOutputDirectoryIfPossible=true
+          /p:CreateHardLinksForCopyLocalIfPossible=true
+          /p:CreateHardLinksForPublishFilesIfPossible=true
+          /p:ContinuousIntegrationBuild=true
           IKVM.dist.msbuildproj
     - name: Upload MSBuild Log
       if: ${{ always() }}
@@ -214,8 +216,7 @@ jobs:
         name: nuget
         path: /tmp/nuget.tar.gz
     - name: Delete NuGet Packages
-      shell: pwsh
-      run: ri /tmp/nuget.tar.gz
+      run: rm /tmp/nuget.tar.gz
     - name: Package Binaries
       run: tar czvf /tmp/bin.tar.gz bin
       working-directory: dist
@@ -225,8 +226,7 @@ jobs:
         name: bin
         path: /tmp/bin.tar.gz
     - name: Delete Binaries
-      shell: pwsh
-      run: ri /tmp/bin.tar.gz
+      run: rm /tmp/bin.tar.gz
     - name: Package Tools
       run: tar czvf /tmp/tools.tar.gz tools
       working-directory: dist
@@ -236,8 +236,7 @@ jobs:
         name: tools
         path: /tmp/tools.tar.gz
     - name: Delete Tools
-      shell: pwsh
-      run: ri /tmp/tools.tar.gz
+      run: rm /tmp/tools.tar.gz
     - name: Package Image
       run: tar czvf /tmp/image.tar.gz image
       working-directory: ikvm\dist
@@ -247,8 +246,7 @@ jobs:
         name: image
         path: /tmp/image.tar.gz
     - name: Delete Image
-      shell: pwsh
-      run: ri /tmp/image.tar.gz
+      run: rm /tmp/image.tar.gz
     - name: Package Tests (IKVM.ByteCode.Tests)
       run: tar czvf /tmp/tests--IKVM.ByteCode.Tests.tar.gz tests/IKVM.ByteCode.Tests
       working-directory: dist
@@ -258,8 +256,7 @@ jobs:
         name: tests--IKVM.ByteCode.Tests
         path: /tmp/tests--IKVM.ByteCode.Tests.tar.gz
     - name: Delete Tests (IKVM.ByteCode.Tests)
-      shell: pwsh
-      run: ri /tmp/tests--IKVM.ByteCode.Tests.tar.gz
+      run: rm /tmp/tests--IKVM.ByteCode.Tests.tar.gz
     - name: Package Tests (IKVM.Reflection.Tests)
       run: tar czvf /tmp/tests--IKVM.Reflection.Tests.tar.gz tests/IKVM.Reflection.Tests
       working-directory: dist
@@ -269,8 +266,7 @@ jobs:
         name: tests--IKVM.Reflection.Tests
         path: /tmp/tests--IKVM.Reflection.Tests.tar.gz
     - name: Delete Tests (IKVM.Reflection.Tests)
-      shell: pwsh
-      run: ri /tmp/tests--IKVM.Reflection.Tests.tar.gz
+      run: rm /tmp/tests--IKVM.Reflection.Tests.tar.gz
     - name: Package Tests (IKVM.Tests)
       run: tar czvf /tmp/tests--IKVM.Tests.tar.gz tests/IKVM.Tests
       working-directory: dist
@@ -280,8 +276,7 @@ jobs:
         name: tests--IKVM.Tests
         path: /tmp/tests--IKVM.Tests.tar.gz
     - name: Delete Tests (IKVM.Tests)
-      shell: pwsh
-      run: ri /tmp/tests--IKVM.Tests.tar.gz
+      run: rm /tmp/tests--IKVM.Tests.tar.gz
     - name: Package Tests (IKVM.Java.Tests)
       run: tar czvf /tmp/tests--IKVM.Java.Tests.tar.gz tests/IKVM.Java.Tests
       working-directory: dist
@@ -291,8 +286,7 @@ jobs:
         name: tests--IKVM.Java.Tests
         path: /tmp/tests--IKVM.Java.Tests.tar.gz
     - name: Delete Tests (IKVM.Java.Tests)
-      shell: pwsh
-      run: ri /tmp/tests--IKVM.Java.Tests.tar.gz
+      run: rm /tmp/tests--IKVM.Java.Tests.tar.gz
     - name: Package Tests (IKVM.Tools.Tests)
       run: tar czvf /tmp/tests--IKVM.Tools.Tests.tar.gz tests/IKVM.Tools.Tests
       working-directory: dist
@@ -302,8 +296,7 @@ jobs:
         name: tests--IKVM.Tools.Tests
         path: /tmp/tests--IKVM.Tools.Tests.tar.gz
     - name: Delete Tests (IKVM.Tools.Tests)
-      shell: pwsh
-      run: ri /tmp/tests--IKVM.Tools.Tests.tar.gz
+      run: rm /tmp/tests--IKVM.Tools.Tests.tar.gz
     - name: Package Tests (IKVM.Tools.Exporter.Tests)
       run: tar czvf /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz tests/IKVM.Tools.Exporter.Tests
       working-directory: dist
@@ -313,8 +306,7 @@ jobs:
         name: tests--IKVM.Tools.Exporter.Tests
         path: /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz
     - name: Delete Tests (IKVM.Tools.Exporter.Tests)
-      shell: pwsh
-      run: ri /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz
+      run: rm /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz
     - name: Package Tests (IKVM.Tools.Importer.Tests)
       run: tar czvf /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz tests/IKVM.Tools.Importer.Tests
       working-directory: dist
@@ -324,8 +316,7 @@ jobs:
         name: tests--IKVM.Tools.Importer.Tests
         path: /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz
     - name: Delete Tests (IKVM.Tools.Importer.Tests)
-      shell: pwsh
-      run: ri /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz
+      run: rm /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz
     - name: Package Tests (IKVM.MSBuild.Tasks.Tests)
       run: tar czvf /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz tests/IKVM.MSBuild.Tasks.Tests
       working-directory: dist
@@ -335,8 +326,7 @@ jobs:
         name: tests--IKVM.MSBuild.Tasks.Tests
         path: /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz
     - name: Delete Tests (IKVM.MSBuild.Tasks.Tests)
-      shell: pwsh
-      run: ri /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz
+      run: rm /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz
     - name: Package Tests (IKVM.MSBuild.Tests)
       run: tar czvf /tmp/tests--IKVM.MSBuild.Tests.tar.gz tests/IKVM.MSBuild.Tests
       working-directory: dist
@@ -346,8 +336,7 @@ jobs:
         name: tests--IKVM.MSBuild.Tests
         path: /tmp/tests--IKVM.MSBuild.Tests.tar.gz
     - name: Delete Tests (IKVM.MSBuild.Tests)
-      shell: pwsh
-      run: ri /tmp/tests--IKVM.MSBuild.Tests.tar.gz
+      run: rm /tmp/tests--IKVM.MSBuild.Tests.tar.gz
     - name: Package Tests (IKVM.NET.Sdk.Tests)
       run: tar czvf /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz tests/IKVM.NET.Sdk.Tests
       working-directory: dist
@@ -357,8 +346,7 @@ jobs:
         name: tests--IKVM.NET.Sdk.Tests
         path: /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz
     - name: Delete Tests (IKVM.NET.Sdk.Tests)
-      shell: pwsh
-      run: ri /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz
+      run: rm /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz
     - name: Package Tests (IKVM.JTReg.TestAdapter.Tests)
       run: tar czvf /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz tests/IKVM.JTReg.TestAdapter.Tests
       working-directory: dist
@@ -368,8 +356,7 @@ jobs:
         name: tests--IKVM.JTReg.TestAdapter.Tests
         path: /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
     - name: Delete Tests (IKVM.JTReg.TestAdapter.Tests)
-      shell: pwsh
-      run: ri /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
+      run: rm /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
     - name: Package Tests (IKVM.OpenJDK.Tests)
       run: tar czvf /tmp/tests--IKVM.OpenJDK.Tests.tar.gz tests/IKVM.OpenJDK.Tests
       working-directory: dist
@@ -379,11 +366,9 @@ jobs:
         name: tests--IKVM.OpenJDK.Tests
         path: /tmp/tests--IKVM.OpenJDK.Tests.tar.gz
     - name: Delete Tests (IKVM.OpenJDK.Tests)
-      shell: pwsh
-      run: ri /tmp/tests--IKVM.OpenJDK.Tests.tar.gz
+      run: rm /tmp/tests--IKVM.OpenJDK.Tests.tar.gz
     - name: Package Documentation
-      shell: pwsh
-      run: Compress-Archive -Path doc/* -DestinationPath /tmp/doc.zip
+      run: cd doc && zip /tmp/doc.zip *
     - name: Upload Documentation
       uses: actions/upload-artifact@v4
       with:
