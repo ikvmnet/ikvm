@@ -38,7 +38,7 @@
         <PreprocessorDefinitions Include="close" Value="_close" />
         <PreprocessorDefinitions Include="open" Value="_open" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\windows\vm" />
-        <Dependencies Include="Ws2_32" />
+        <Dependencies Include="WS2_32" />
         <AdditionalLinkOptions Include="-Wl,-export:JNI_GetDefaultJavaVMInitArgs" />
         <AdditionalLinkOptions Include="-Wl,-export:JNI_CreateJavaVM" />
         <AdditionalLinkOptions Include="-Wl,-export:JNI_GetCreatedJavaVMs" />

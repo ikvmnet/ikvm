@@ -22,7 +22,7 @@
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\windows" />
         <PreprocessorDefinitions Include="UNICODE;_UNICODE" />
-        <Dependencies Include="Advapi32" />
+        <Dependencies Include="AdvAPI32" />
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\jawt.cpp" LanguageStandard="c++11" />
         <Header Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\*.h" />
     </ItemGroup>

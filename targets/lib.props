@@ -51,7 +51,7 @@
         <PreprocessorDefinitions Include="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_MT;_DLL" />
         <AdditionalCompileOptions Include="-fms-extensions" />
         <AdditionalLinkOptions Include="-Wl,/nodefaultlib" />
-        <Dependencies Include="msvcrt;msvcprt;ucrt;vcruntime;Kernel32" />
+        <Dependencies Include="msvcrt;msvcprt;ucrt;vcruntime;kernel32" />
     </ItemGroup>
 
     <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">

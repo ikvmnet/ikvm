@@ -10,7 +10,7 @@
     </PropertyGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="UNICODE;_UNICODE" />
-        <Dependencies Include="Ws2_32" />
+        <Dependencies Include="WS2_32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <Dependencies Include="c" />
