@@ -43,7 +43,7 @@
                 #_JVM_ClassDepth
                 #_JVM_ClassLoaderDepth
                 #_JVM_Clone
-                #_JVM_Close
+                _JVM_Close
                 #_JVM_CX8Field
                 #_JVM_CompileClass
                 #_JVM_CompileClasses
@@ -203,17 +203,17 @@
                 #_JVM_MonitorNotifyAll
                 #_JVM_MonitorWait
                 _JVM_NanoTime
-                #_JVM_NativePath
+                _JVM_NativePath
                 #_JVM_NewArray
                 #_JVM_NewInstanceFromConstructor
                 #_JVM_NewMultiArray
                 #_JVM_OnExit
-                #_JVM_Open
+                _JVM_Open
                 _JVM_RaiseSignal
-                #_JVM_RawMonitorCreate
-                #_JVM_RawMonitorDestroy
-                #_JVM_RawMonitorEnter
-                #_JVM_RawMonitorExit
+                _JVM_RawMonitorCreate
+                _JVM_RawMonitorDestroy
+                _JVM_RawMonitorEnter
+                _JVM_RawMonitorExit
                 #_JVM_Read
                 _JVM_Recv
                 _JVM_RecvFrom

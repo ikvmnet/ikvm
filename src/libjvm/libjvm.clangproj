@@ -32,6 +32,11 @@
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_windows" />
+        <PreprocessorDefinitions Include="O_BINARY" Value="_O_BINARY" />
+        <PreprocessorDefinitions Include="O_DELETE" Value="_O_DELETE" />
+        <PreprocessorDefinitions Include="O_NOINHERIT" Value="_O_NOINHERIT" />
+        <PreprocessorDefinitions Include="close" Value="_close" />
+        <PreprocessorDefinitions Include="open" Value="_open" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\windows\vm" />
         <Dependencies Include="Ws2_32" />
         <AdditionalLinkOptions Include="-Wl,-export:JNI_GetDefaultJavaVMInitArgs" />

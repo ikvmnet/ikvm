@@ -111,10 +111,6 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\text\**\*.java" PackagePath="java\text" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\time\**\*.java" PackagePath="java\time" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\util\**\*.java" PackagePath="java\util" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\util\zip\Adler32.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\util\zip\CRC32.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\util\zip\Deflater.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\util\zip\Inflater.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\util\zip\ZipEntry.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\util\zip\ZipFile.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\javax\**\*.java" PackagePath="javax" />

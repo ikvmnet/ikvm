@@ -123,6 +123,7 @@
         <PreprocessorDefinitions Include="LINUX;__linux__" />
         <Dependencies Include="c" />
         <AdditionalLinkOptions Include="-nostdlib" />
+        <AdditionalLinkOptions Include="-Wl,--undefined-version" />
         <AdditionalLinkOptions Include="-Wl,-rpath,$ORIGIN" />
     </ItemGroup>
 

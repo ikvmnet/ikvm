@@ -1,0 +1,47 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>b2cc2e2c-a153-40e7-b573-c56d4b88fd91</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>zip</TargetName>
+        <OutputType>dll</OutputType>
+        <LanguageStandard>c99</LanguageStandard>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\java\util\zip" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\util\zip\*.c" />
+        <Compile Remove="$(OpenJdkDir)jdk\src\share\native\java\util\zip\ZipFile.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <PreprocessorDefinitions Include="strdup" Value="_strdup" />
+        <PreprocessorDefinitions Include="open" Value="_open" />
+        <PreprocessorDefinitions Include="close" Value="_close" />
+        <PreprocessorDefinitions Include="read" Value="_read" />
+        <PreprocessorDefinitions Include="write" Value="_write" />
+        <AdditionalLinkOptions Include="-Wl,-export:ZIP_Open" />
+        <AdditionalLinkOptions Include="-Wl,-export:ZIP_Close" />
+        <AdditionalLinkOptions Include="-Wl,-export:ZIP_FindEntry" />
+        <AdditionalLinkOptions Include="-Wl,-export:ZIP_ReadEntry" />
+        <AdditionalLinkOptions Include="-Wl,-export:ZIP_GetNextEntry" />
+        <AdditionalLinkOptions Include="-Wl,-export:ZIP_CRC32" />
+    </ItemGroup>
+    <ItemGroup Condition="!$(TargetIdentifier.StartsWith('osx-'))">
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\java\util\zip\zlib" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\util\zip\zlib\*.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <PreprocessorDefinitions Include="USE_MMAP" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libzip\mapfile-vers" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <Dependencies Include="z" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

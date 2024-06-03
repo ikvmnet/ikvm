@@ -338,6 +338,8 @@ Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjnf", "src\libjnf\libjnf
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libkrb5", "src\libkrb5\libkrb5.clangproj", "{78A745D7-706A-4B33-9D21-0EB7B5144C42}"
 EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libzip", "src\libzip\libzip.clangproj", "{B2CC2E2C-A153-40E7-B573-C56D4B88FD91}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -904,6 +906,10 @@ Global
 		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{78A745D7-706A-4B33-9D21-0EB7B5144C42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2CC2E2C-A153-40E7-B573-C56D4B88FD91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2CC2E2C-A153-40E7-B573-C56D4B88FD91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2CC2E2C-A153-40E7-B573-C56D4B88FD91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2CC2E2C-A153-40E7-B573-C56D4B88FD91}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

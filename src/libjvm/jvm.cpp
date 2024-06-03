@@ -2,6 +2,7 @@
 #include <jvm.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include "ikvm.h"
 
@@ -10,6 +11,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <stdint.h>
+#include <io.h>
 #endif
 
 #if defined LINUX || defined MACOS
@@ -90,12 +92,13 @@ enum OSReturn
 };
 
 #if defined LINUX || defined MACOS
-// macros for restartable system calls
 
+// macro for restartable system calls
 #define RESTARTABLE(_cmd, _result) do { \
     _result = _cmd; \
 } while(((int)_result == OS_ERR) && (errno == EINTR))
 
+// macro for restartable system calls
 #define RESTARTABLE_RETURN_INT(_cmd) do { \
     int _result; \
     RESTARTABLE(_cmd, _result); \
@@ -775,7 +778,6 @@ jint JNICALL JVM_Accept(jint fd, struct sockaddr* him, jint* len)
 #ifdef WIN32
 int os_recvfrom(int fd, char* buf, size_t nBytes, uint flags, sockaddr* from, socklen_t* fromlen)
 {
-
     return ::recvfrom(fd, buf, (int)nBytes, flags, from, fromlen);
 }
 #endif
@@ -1017,6 +1019,304 @@ void* JNICALL JVM_LoadLibrary(const char* name)
 }
 
 #ifdef WIN32
+inline char* os_native_path(char* path)
+{
+  char *src = path, *dst = path, *end = path;
+  char *colon = NULL;           /* If a drive specifier is found, this will
+                                        point to the colon following the drive
+                                        letter */
+
+  /* Assumption: '/', '\\', ':', and drive letters are never lead bytes */
+  assert(((!::IsDBCSLeadByte('/'))
+    && (!::IsDBCSLeadByte('\\'))
+    && (!::IsDBCSLeadByte(':'))),
+    "Illegal lead byte");
+
+  /* Check for leading separators */
+#define isfilesep(c) ((c) == '/' || (c) == '\\')
+  while (isfilesep(*src)) {
+    src++;
+  }
+
+  if (::isalpha(*src) && !::IsDBCSLeadByte(*src) && src[1] == ':') {
+    /* Remove leading separators if followed by drive specifier.  This
+      hack is necessary to support file URLs containing drive
+      specifiers (e.g., "file://c:/path").  As a side effect,
+      "/c:/path" can be used as an alternative to "c:/path". */
+    *dst++ = *src++;
+    colon = dst;
+    *dst++ = ':';
+    src++;
+  } else {
+    src = path;
+    if (isfilesep(src[0]) && isfilesep(src[1])) {
+      /* UNC pathname: Retain first separator; leave src pointed at
+         second separator so that further separators will be collapsed
+         into the second separator.  The result will be a pathname
+         beginning with "\\\\" followed (most likely) by a host name. */
+      src = dst = path + 1;
+      path[0] = '\\';     /* Force first separator to '\\' */
+    }
+  }
+
+  end = dst;
+
+  /* Remove redundant separators from remainder of path, forcing all
+      separators to be '\\' rather than '/'. Also, single byte space
+      characters are removed from the end of the path because those
+      are not legal ending characters on this operating system.
+  */
+  while (*src != '\0') {
+    if (isfilesep(*src)) {
+      *dst++ = '\\'; src++;
+      while (isfilesep(*src)) src++;
+      if (*src == '\0') {
+        /* Check for trailing separator */
+        end = dst;
+        if (colon == dst - 2) break;                      /* "z:\\" */
+        if (dst == path + 1) break;                       /* "\\" */
+        if (dst == path + 2 && isfilesep(path[0])) {
+          /* "\\\\" is not collapsed to "\\" because "\\\\" marks the
+            beginning of a UNC pathname.  Even though it is not, by
+            itself, a valid UNC pathname, we leave it as is in order
+            to be consistent with the path canonicalizer as well
+            as the win32 APIs, which treat this case as an invalid
+            UNC pathname rather than as an alias for the root
+            directory of the current drive. */
+          break;
+        }
+        end = --dst;  /* Path does not denote a root directory, so
+                                    remove trailing separator */
+        break;
+      }
+      end = dst;
+    } else {
+      if (::IsDBCSLeadByte(*src)) { /* Copy a double-byte character */
+        *dst++ = *src++;
+        if (*src) *dst++ = *src++;
+        end = dst;
+      } else {         /* Copy a single-byte character */
+        char c = *src++;
+        *dst++ = c;
+        /* Space is not a legal ending character */
+        if (c != ' ') end = dst;
+      }
+    }
+  }
+
+  *end = '\0';
+
+  /* For "z:", add "." to work around a bug in the C runtime library */
+  if (colon == dst - 1) {
+          path[2] = '.';
+          path[3] = '\0';
+  }
+
+  return path;
+}
+#endif
+#ifdef LINUX
+inline char* os_native_path(char* path)
+{
+    return path;
+}
+#endif
+#ifdef MACOS
+inline char* os_native_path(char* path)
+{
+    return path;
+}
+#endif
+
+char* JNICALL JVM_NativePath(char* path)
+{
+    return os_native_path(path);
+}
+
+#ifdef WIN32
+inline int os_open(const char *path, int oflag, int mode) 
+{
+  char pathbuf[MAX_PATH];
+
+  if (strlen(path) > MAX_PATH - 1) {
+    errno = ENAMETOOLONG;
+          return -1;
+  }
+  os_native_path(strcpy(pathbuf, path));
+  return open(pathbuf, oflag | O_BINARY | O_NOINHERIT, mode);
+}
+#endif
+#ifdef LINUX
+#ifndef O_DELETE
+#define O_DELETE 0x10000
+#endif
+
+inline int os_open(const char *path, int oflag, int mode) 
+{
+  if (strlen(path) > FILENAME_MAX - 1) {
+    errno = ENAMETOOLONG;
+    return -1;
+  }
+  int fd;
+  int o_delete = (oflag & O_DELETE);
+  oflag = oflag & ~O_DELETE;
+
+  fd = ::open64(path, oflag, mode);
+  if (fd == -1) return -1;
+
+  //If the open succeeded, the file might still be a directory
+  {
+    struct stat64 buf64;
+    int ret = ::fstat64(fd, &buf64);
+    int st_mode = buf64.st_mode;
+
+    if (ret != -1) {
+      if ((st_mode & S_IFMT) == S_IFDIR) {
+        errno = EISDIR;
+        ::close(fd);
+        return -1;
+      }
+    } else {
+      ::close(fd);
+      return -1;
+    }
+  }
+
+    /*
+     * All file descriptors that are opened in the JVM and not
+     * specifically destined for a subprocess should have the
+     * close-on-exec flag set.  If we don't set it, then careless 3rd
+     * party native code might fork and exec without closing all
+     * appropriate file descriptors (e.g. as we do in closeDescriptors in
+     * UNIXProcess.c), and this in turn might:
+     *
+     * - cause end-of-file to fail to be detected on some file
+     *   descriptors, resulting in mysterious hangs, or
+     *
+     * - might cause an fopen in the subprocess to fail on a system
+     *   suffering from bug 1085341.
+     *
+     * (Yes, the default setting of the close-on-exec flag is a Unix
+     * design flaw)
+     *
+     * See:
+     * 1085341: 32-bit stdio routines should support file descriptors >255
+     * 4843136: (process) pipe file descriptor from Runtime.exec not being closed
+     * 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
+     */
+#ifdef FD_CLOEXEC
+    {
+        int flags = ::fcntl(fd, F_GETFD);
+        if (flags != -1)
+            ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+    }
+#endif
+
+  if (o_delete != 0) {
+    ::unlink(path);
+  }
+  return fd;
+}
+#endif
+#ifdef MACOS
+#ifndef O_DELETE
+#define O_DELETE 0x10000
+#endif
+
+inline int os_open(const char *path, int oflag, int mode) 
+{
+  if (strlen(path) > FILENAME_MAX - 1) {
+    errno = ENAMETOOLONG;
+    return -1;
+  }
+  int fd;
+  int o_delete = (oflag & O_DELETE);
+  oflag = oflag & ~O_DELETE;
+
+  fd = ::open(path, oflag, mode);
+  if (fd == -1) return -1;
+
+  //If the open succeeded, the file might still be a directory
+  {
+    struct stat buf;
+    int ret = ::fstat(fd, &buf);
+    int st_mode = buf.st_mode;
+
+    if (ret != -1) {
+      if ((st_mode & S_IFMT) == S_IFDIR) {
+        errno = EISDIR;
+        ::close(fd);
+        return -1;
+      }
+    } else {
+      ::close(fd);
+      return -1;
+    }
+  }
+
+    /*
+     * All file descriptors that are opened in the JVM and not
+     * specifically destined for a subprocess should have the
+     * close-on-exec flag set.  If we don't set it, then careless 3rd
+     * party native code might fork and exec without closing all
+     * appropriate file descriptors (e.g. as we do in closeDescriptors in
+     * UNIXProcess.c), and this in turn might:
+     *
+     * - cause end-of-file to fail to be detected on some file
+     *   descriptors, resulting in mysterious hangs, or
+     *
+     * - might cause an fopen in the subprocess to fail on a system
+     *   suffering from bug 1085341.
+     *
+     * (Yes, the default setting of the close-on-exec flag is a Unix
+     * design flaw)
+     *
+     * See:
+     * 1085341: 32-bit stdio routines should support file descriptors >255
+     * 4843136: (process) pipe file descriptor from Runtime.exec not being closed
+     * 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
+     */
+#ifdef FD_CLOEXEC
+    {
+        int flags = ::fcntl(fd, F_GETFD);
+        if (flags != -1)
+            ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+    }
+#endif
+
+  if (o_delete != 0) {
+    ::unlink(path);
+  }
+  return fd;
+}
+#endif
+
+jint JNICALL JVM_Open(const char *fname, jint flags, jint mode)
+{
+    int result = os_open(fname, flags, mode);
+    if (result >= 0) {
+        return result;
+    } else {
+        switch (errno) {
+            case EEXIST:
+                return JVM_EEXIST;
+            default:
+                return -1;
+        }
+    }
+}
+
+inline int os_close(int fd)
+{
+    return close(fd);
+}
+
+jint JNICALL JVM_Close(jint fd)
+{
+    return os_close(fd);
+}
+
+#ifdef WIN32
 inline void  os_dll_unload(void* lib)
 {
     ::FreeLibrary((HMODULE)lib);
@@ -1091,6 +1391,26 @@ jboolean JNICALL JVM_RaiseSignal(jint sig)
 jint JNICALL JVM_IHashCode(JNIEnv *pEnv, jobject handle)
 {
     return jvmii->JVM_IHashCode(pEnv, handle);
+}
+
+void* JNICALL JVM_RawMonitorCreate()
+{
+    return jvmii->JVM_RawMonitorCreate();
+}
+
+void JNICALL JVM_RawMonitorDestroy(void* mon)
+{
+    jvmii->JVM_RawMonitorDestroy(mon);
+}
+
+jint JNICALL JVM_RawMonitorEnter(void* mon)
+{
+    return jvmii->JVM_RawMonitorEnter(mon);
+}
+
+void JNICALL JVM_RawMonitorExit(void* mon)
+{
+    jvmii->JVM_RawMonitorExit(mon);
 }
 
 int jio_vsnprintf(char* str, size_t count, const char* fmt, va_list args)

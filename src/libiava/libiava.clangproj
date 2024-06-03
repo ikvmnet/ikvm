@@ -17,6 +17,8 @@
     <ItemGroup>
         <Header Include="$(OpenJdkDir)jdk\src\share\native\common\*.h" />
         <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common\*.h" />
+        <Header Include="$(OpenJdkDir)jdk\src\share\native\java\io\*.h" />
+        <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io\*.h" />
         <PreprocessorDefinitions Include="RELEASE" Value="&quot;$(Version)&quot;" />
         <PreprocessorDefinitions Include="VENDOR" Value="&quot;$(ProductName)&quot;" />
         <PreprocessorDefinitions Include="VENDOR_URL" Value="&quot;$(PackageProjectUrl)&quot;" />
