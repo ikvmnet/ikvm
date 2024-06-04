@@ -1,6 +1,6 @@
 <!--
 
-    IKVM.Image.runtime.targets
+    IKVM.Image.JDK.runtime.targets
     
     Imported by the .runtime projects to extract IkvmImageItems for each RuntimeIdentifier and TFM.
 
@@ -28,19 +28,19 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains(';net472;'))">
+        <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains('net472'))">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
             <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
             <PublishItemMetadata>TargetFramework=net472;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
         </PublishProjectReference>
-        <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains(';net6.0;'))">
+        <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains('net6.0'))">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
             <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
             <PublishItemMetadata>TargetFramework=net6.0;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
         </PublishProjectReference>
-        <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains(';net8.0;'))">
+        <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains('net8.0'))">
             <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
             <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
@@ -56,32 +56,10 @@
         </ItemGroup>
     </Target>
 
-    <Import Project="IKVM.Image.project.targets" />
-
-    <PropertyGroup>
-        <FontConfigSrc Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">$(OpenJdkDir)jdk\src\windows\classes\sun\awt\windows\fontconfig.properties</FontConfigSrc>
-        <FontConfigSrc Condition="$(ImageRuntimeIdentifier.StartsWith('osx-'))">$(OpenJdkDir)jdk\src\macosx\classes\sun\awt\fontconfigs\macosx.fontconfig.properties</FontConfigSrc>
-        <FontConfigDst>$(IntermediateOutputPath)fontconfig.bfc</FontConfigDst>
-    </PropertyGroup>
-
-    <Target Name="GenerateFontConfig" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(FontConfigSrc)" Outputs="$(FontConfigDst)" Condition="Exists('$(FontConfigSrc)')">
-        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
-        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
-        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
-
-        <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compilefontconfig.CompileFontConfig $(FontConfigSrc) $(FontConfigDst)" />
-        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compilefontconfig.CompileFontConfig $(FontConfigSrc) $(FontConfigDst)" />
-
-        <ItemGroup>
-            <IkvmImageItem Include="$(FontConfigSrc)" ImagePath="lib\fontconfig.properties.src" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" />
-            <IkvmImageItem Include="$(FontConfigDst)" ImagePath="lib\fontconfig.bfc" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" />
-            <FileWrites Include="$(FontConfigDst)" />
-        </ItemGroup>
-    </Target>
+    <Import Project="..\IKVM.Image\IKVM.Image.project.targets" />
 
     <PropertyGroup>
         <GenerateDependsOn>
-            GenerateFontConfig;
             $(GenerateDependsOn);
         </GenerateDependsOn>
     </PropertyGroup>

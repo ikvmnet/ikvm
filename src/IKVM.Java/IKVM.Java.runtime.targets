@@ -1256,30 +1256,9 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </ItemGroup>
     </Target>
 
-    <Target Name="CleanGenerateSource">
-        <RemoveDir Directories="$(GenSrc)" />
-    </Target>
-
-    <PropertyGroup>
-        <GenerateDataDependsOn>
-            $(GenerateDataDependsOn);
-        </GenerateDataDependsOn>
-    </PropertyGroup>
-
-    <Target Name="GenerateData" DependsOnTargets="$(GenerateDataDependsOn)">
-        <ItemGroup>
-            <FileWrites Include="$(GenLib)**\*" />
-        </ItemGroup>
-    </Target>
-
-    <Target Name="CleanGenerateData">
-        <RemoveDir Directories="$(GenLib)" />
-    </Target>
-
     <PropertyGroup>
         <CompileJavaDependsOn>
             GenerateSource;
-            GenerateData;
             $(CompileJavaDependsOn);
         </CompileJavaDependsOn>
     </PropertyGroup>
@@ -1288,7 +1267,6 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <CoreCleanDependsOn>
             $(CoreCleanDependsOn);
             CleanGenerateSource;
-            CleanGenerateData;
         </CoreCleanDependsOn>
     </PropertyGroup>
 

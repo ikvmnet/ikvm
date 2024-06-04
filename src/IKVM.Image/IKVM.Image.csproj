@@ -1,6 +1,5 @@
 ﻿<Project>
     <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
@@ -33,70 +32,76 @@
         <Content Include="ikvm.properties" Pack="true" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
+    <ItemGroup>
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\*.properties" ImagePath="lib\%(Filename)%(Extension)" />
+        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\content-types.properties" />
+        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\flavormap.properties" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\currency.data" ImagePath="lib\currency.data" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\**\*" ImagePath="lib\cmm\%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\**\*" ImagePath="lib\management\%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\**\*" ImagePath="lib\security\%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\java.security" />
+        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\cacerts" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\jdk\src\windows\lib\*" ImagePath="lib\%(Filename)%(Extension)" />
+    </ItemGroup>
+
     <!-- items to output -->
     <ItemGroup>
         <IkvmImageItem Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(Filename)%(Extension)" />
-        <IkvmImageItem Include="ikvm\any\any\**\*" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <IkvmImageItem Include="ikvm\net472\any\**\*" TargetFramework="net472" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <IkvmImageItem Include="ikvm\net6.0\any\**\*" TargetFramework="net6.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <IkvmImageItem Include="ikvm\net8.0\any\**\*" TargetFramework="net8.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\any\**\*" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net472\**\*" TargetFramework="net472" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net6.0\**\*" TargetFramework="net6.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="ikvm\net8.0\**\*" TargetFramework="net8.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
         <IkvmImageItem Include="@(OpenJdkImageContent)" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(ImagePath)" />
     </ItemGroup>
 
     <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
-    <Import Project="IKVM.Image.pack.targets" />
-    <Import Project="buildTransitive\IKVM.Image.targets" />
-    <Import Project="..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.NoTasks.targets" />
-    <Import Project="..\..\targets\openjdk.buildtools.targets" />
+    <Import Project="IKVM.Image.project.targets" />
 
-    <!-- IKVM.Java uses the java executable from JAVA_HOME -->
-    <Target Name="ResolveJava" Condition=" '$(JAVA_HOME)' != '' And '$(JavaPath)' == '' ">
-        <PropertyGroup>
-            <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\java') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java'))</JavaPath>
-            <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\java.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java.exe'))</JavaPath>
-            <JavaArgs>-Xmx1536M</JavaArgs>
-            <JavaExec Condition=" '$(JavaPath)' != '' ">"$(JavaPath)" $(JavaArgs)</JavaExec>
-        </PropertyGroup>
-        <Message Text="Using java executable found in JAVA_HOME at '$(JavaPath)'." Importance="high" Condition=" '$(JavaPath)' != '' " />
-        <Error Text="Could not locate java executable in JAVA_HOME. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(JavaPath)' == '' " />
-    </Target>
-
-    <!-- IKVM.Java uses the javac executable from JAVA_HOME: bootstrap -->
-    <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
-        <PropertyGroup>
-            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac'))</JavaCompilerPath>
-            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac.exe'))</JavaCompilerPath>
-            <JavaCompilerArgs>-J-Xmx1536M</JavaCompilerArgs>
-            <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
-        </PropertyGroup>
-        <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
-    </Target>
-
-    <PropertyGroup>
-        <GenData>$(IntermediateOutputPath)gendata\</GenData>
-    </PropertyGroup>
-
-    <Target Name="GenerateSecurityPolicy" DependsOnTargets="OpenJdkBuildTools;ResolveJava" BeforeTargets="CollectIkvmImageItemsOutputItems">
+    <Target Name="GenerateSecurityPolicy" DependsOnTargets="OpenJdkBuildTools;ResolveJava">
         <Message Text="GenerateSecurityPolicy" />
     </Target>
 
-    <!--<Target Name="GenerateFontConfigWindows" DependsOnTargets="OpenJdkBuildTools;ResolveJava" BeforeTargets="CollectIkvmImageItemsOutputItems">
+    <PropertyGroup>
+        <TzDataDir>$(OpenJdkDir)jdk\make\data\tzdata</TzDataDir>
+        <TzDbDat>$(IntermediateOutputPath)tzdb.dat</TzDbDat>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <TzFile Include="africa;antarctica;asia;australasia;europe;northamerica;pacificnew;southamerica;backward;etcetera;gmt;jdk11_backward" />
+    </ItemGroup>
+
+    <Target Name="GenerateTZDB" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(TzFile->'$(TzDataDir)\%(Identity)')" Outputs="$(TzDbDat)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
-        <PropertyGroup>
-            <_FontConfigSrc>$(OpenJdkDir)jdk\src\windows\classes\sun\awt\windows\fontconfig.properties</_FontConfigSrc>
-        </PropertyGroup>
-        
-        <MakeDir Directories="$(GenData)win" />
-        <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compilefontconfig.CompileFontConfig $(_FontConfigSrc) $(GenData)win\fontconfig.bfc" />
-        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compilefontconfig.CompileFontConfig $(_FontConfigSrc) $(GenData)win\fontconfig.bfc" />
+        <Delete Files="$(TzDbDat)" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.tzdb.TzdbZoneRulesCompiler -srcdir $(TzDataDir) -dstfile $(TzDbDat) @(TzFile, ' ')" />
+        <Touch Files="$(TzDbDat)" ForceTouch="true" AlwaysCreate="true" />
 
         <ItemGroup>
-            <FileWrites Include="$(GenData)win\fontconfig.bfc" />
-            <IkvmImageItem Include="$(GenData)win\fontconfig.bfc" RuntimeIdentifier="win" ImagePath="lib\fontconfig.bfc" />
+            <IkvmImageItem Include="$(TzDbDat)" ImagePath="lib\tzdb.dat" TargetFramework="any" RuntimeIdentifier="any" />
+            <FileWrites Include="$(TzDbDat)" />
         </ItemGroup>
-    </Target>-->
-    
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            GenerateTZDB;
+            GenerateSecurityPolicy;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <Target Name="Generate" BeforeTargets="ExpandIkvmImageItems" DependsOnTargets="$(GenerateDependsOn)">
+
+    </Target>
+
 </Project>
