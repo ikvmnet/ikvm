@@ -19,14 +19,6 @@
         <OpenJdkTargetOsDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">macosx</OpenJdkTargetOsDir>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <OpenJdkTargetOsApiDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' Or '$(IkvmJavaRuntimeIdentifier)' == 'ref' ">windows</OpenJdkTargetOsApiDir>
-        <OpenJdkTargetOsApiDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">solaris</OpenJdkTargetOsApiDir>
-        <OpenJdkTargetOsDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' Or '$(IkvmJavaRuntimeIdentifier)' == 'ref' ">windows</OpenJdkTargetOsDir>
-        <OpenJdkTargetOsDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' ">linux</OpenJdkTargetOsDir>
-        <OpenJdkTargetOsDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">macosx</OpenJdkTargetOsDir>
-    </PropertyGroup>
-
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 

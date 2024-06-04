@@ -92,14 +92,20 @@ public class StripTargetPath : Task
     {
         var d = new Dictionary<string, ITaskItem>();
     
-        foreach (var item in Items)
+        if (Items != null)
         {
-            var p = item.GetMetadata("TargetPath");
-            var a = p.Split(Path.DirectorySeparatorChar).ToList();
-            a.RemoveAt(1);
-            p = string.Join(Path.DirectorySeparatorChar.ToString(), a);
-            item.SetMetadata("TargetPath", p);
-            d[p] = item;
+            foreach (var item in Items)
+            {
+                var p = item.GetMetadata("TargetPath");
+                if (string.IsNullOrEmpty(p) == false)
+                {
+                    var a = p.Split(Path.DirectorySeparatorChar).ToList();
+                    a.RemoveAt(1);
+                    p = string.Join(Path.DirectorySeparatorChar.ToString(), a);
+                    item.SetMetadata("TargetPath", p);
+                    d[p] = item;
+                }
+            }
         }
         
         Items = d.Values.ToArray();

@@ -32,18 +32,8 @@
         <Content Include="ikvm.properties" Pack="true" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
-    <ItemGroup>
-        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\*.properties" ImagePath="lib\%(Filename)%(Extension)" />
-        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\content-types.properties" />
-        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\flavormap.properties" />
-        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\currency.data" ImagePath="lib\currency.data" />
-        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\**\*" ImagePath="lib\cmm\%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\**\*" ImagePath="lib\management\%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\**\*" ImagePath="lib\security\%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\java.security" />
-        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\cacerts" />
-        <OpenJdkImageContent Include="$(OpenJdkDir)\jdk\src\windows\lib\*" ImagePath="lib\%(Filename)%(Extension)" />
-    </ItemGroup>
+    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
+    <Import Project="IKVM.Image.project.targets" />
 
     <!-- items to output -->
     <ItemGroup>
@@ -52,15 +42,21 @@
         <IkvmImageItem Include="ikvm\net472\**\*" TargetFramework="net472" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
         <IkvmImageItem Include="ikvm\net6.0\**\*" TargetFramework="net6.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
         <IkvmImageItem Include="ikvm\net8.0\**\*" TargetFramework="net8.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <IkvmImageItem Include="@(OpenJdkImageContent)" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(ImagePath)" />
     </ItemGroup>
 
-    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
-    <Import Project="IKVM.Image.project.targets" />
-
-    <Target Name="GenerateSecurityPolicy" DependsOnTargets="OpenJdkBuildTools;ResolveJava">
-        <Message Text="GenerateSecurityPolicy" />
-    </Target>
+    <ItemGroup>
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\management\**\*" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\management\%(RecursiveDir)%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\logging.properties" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\classes\sun\print\*.properties*" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\images\cursors\invalid32x32.gif" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\images\cursors\invalid32x32.gif" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\calendars.properties" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\hijrah-config-umalqura.properties" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\cmm\lcms\*.pf" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\cmm\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\security\java.policy" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\java.policy" />
+        <!--<IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\security\blacklisted.certs" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\blacklisted.certs" />-->
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\sound.properties" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\net.properties" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\%(Filename)%(Extension)" />
+    </ItemGroup>
 
     <PropertyGroup>
         <TzDataDir>$(OpenJdkDir)jdk\make\data\tzdata</TzDataDir>
@@ -87,9 +83,49 @@
     </Target>
 
     <PropertyGroup>
+        <CurrencyDataSrc>$(OpenJdkDir)jdk\src\share\classes\java\util\CurrencyData.properties</CurrencyDataSrc>
+        <CurrencyDataDst>$(IntermediateOutputPath)currency.data</CurrencyDataDst>
+    </PropertyGroup>
+
+    <Target Name="GenerateCurrencyData" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);$(CurrencyDataSrc)" Outputs="$(CurrencyDataDst)">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Delete Files="$(CurrencyDataDst).tmp" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.generatecurrencydata.GenerateCurrencyData -o $(CurrencyDataDst).tmp &lt; $(CurrencyDataSrc)" />
+        <Move SourceFiles="$(CurrencyDataDst).tmp" DestinationFiles="$(CurrencyDataDst)" />
+        <Touch Files="$(CurrencyDataDst)" ForceTouch="true" AlwaysCreate="true" />
+
+        <ItemGroup>
+            <IkvmImageItem Include="$(CurrencyDataDst)" ImagePath="lib\currency.data" TargetFramework="any" RuntimeIdentifier="any" />
+            <FileWrites Include="$(CurrencyDataDst)" />
+            <FileWrites Include="$(CurrencyDataDst).tmp" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GenerateCaCerts" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);$(OpenJdkDir)jdk\make\data\cacerts\**\*" Outputs="$(IntermediateOutputPath)cacerts">
+        <!--<Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Delete Files="$(IntermediateOutputPath)cacerts.tmp" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.generatecacerts.GenerateCacerts $(OpenJdkDir)jdk/make/data/cacerts/ $(CurrencyDataDst).tmp" />
+        <Move SourceFiles="$(IntermediateOutputPath)cacerts.tmp" DestinationFiles="$(IntermediateOutputPath)cacerts" />
+        <Touch Files="$(IntermediateOutputPath)cacerts" ForceTouch="true" AlwaysCreate="true" />
+
+        <ItemGroup>
+            <IkvmImageItem Include="$(IntermediateOutputPath)cacerts" ImagePath="lib\security\cacerts" TargetFramework="any" RuntimeIdentifier="any" />
+            <FileWrites Include="$(IntermediateOutputPath)cacerts" />
+            <FileWrites Include="$(IntermediateOutputPath)cacerts.tmp" />
+        </ItemGroup>-->
+    </Target>
+
+    <PropertyGroup>
         <GenerateDependsOn>
             GenerateTZDB;
-            GenerateSecurityPolicy;
+            GenerateCurrencyData;
+            GenerateCaCerts;
             $(GenerateDependsOn);
         </GenerateDependsOn>
     </PropertyGroup>

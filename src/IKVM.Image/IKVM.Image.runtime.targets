@@ -27,6 +27,36 @@
         <IkvmImageItem Include="ikvm\net8.0\**\*" TargetFramework="net8.0" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Condition=" '$(ImageRuntimeIdentifier)' != '' " />
     </ItemGroup>
 
+    <PropertyGroup>
+        <OpenJdkTargetOsApiDir Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">windows</OpenJdkTargetOsApiDir>
+        <OpenJdkTargetOsApiDir Condition="$(ImageRuntimeIdentifier.StartsWith('linux-')) Or $(ImageRuntimeIdentifier.StartsWith('osx-'))">solaris</OpenJdkTargetOsApiDir>
+        <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">windows</OpenJdkTargetOsDir>
+        <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('linux-'))">linux</OpenJdkTargetOsDir>
+        <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('osx-'))">macosx</OpenJdkTargetOsDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\windows\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))"/>
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\solaris\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('linux-'))"/>
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\macosx\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('osx-'))"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <CursorImagePrefix>motif</CursorImagePrefix>
+        <CursorImagePrefix Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">win32</CursorImagePrefix>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\images\cursors\$(CursorImagePrefix)_*.gif" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\images\cursors\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\lib\images\cursors\cursors.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\images\cursors\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\lib\content-types.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\windows\native\sun\bridge\accessibility.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsDir)\lib\tzmappings" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\%(Filename)%(Extension)" />
+    </ItemGroup>
+
     <ItemGroup>
         <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains(';net472;'))">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
@@ -91,5 +121,5 @@
     <Target Name="Generate" BeforeTargets="ExpandIkvmImageItems" DependsOnTargets="$(GenerateDependsOn)" Condition=" '$(ImageRuntimeIdentifier)' != '' ">
 
     </Target>
-    
+
 </Project>
