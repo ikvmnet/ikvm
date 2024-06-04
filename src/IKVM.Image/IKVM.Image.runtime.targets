@@ -64,18 +64,20 @@
         <FontConfigDst>$(IntermediateOutputPath)fontconfig.bfc</FontConfigDst>
     </PropertyGroup>
 
-    <Target Name="GenerateFontConfig" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(FontConfigSrc)" Outputs="$(FontConfigDst)" Condition="Exists('$(FontConfigSrc)')">
+    <Target Name="GenerateFontConfig" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(FontConfigSrc)" Outputs="$(FontConfigDst);$(IntermediateOutputPath)fontconfig.properties.src" Condition="Exists('$(FontConfigSrc)')">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compilefontconfig.CompileFontConfig $(FontConfigSrc) $(FontConfigDst)" />
         <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compilefontconfig.CompileFontConfig $(FontConfigSrc) $(FontConfigDst)" />
+        <Copy SourceFiles="$(FontConfigSrc)" DestinationFiles="$(IntermediateOutputPath)fontconfig.properties.src" OverwriteReadOnlyFiles="true" />
 
         <ItemGroup>
-            <IkvmImageItem Include="$(FontConfigSrc)" ImagePath="lib\fontconfig.properties.src" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" />
             <IkvmImageItem Include="$(FontConfigDst)" ImagePath="lib\fontconfig.bfc" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" />
+            <IkvmImageItem Include="$(IntermediateOutputPath)fontconfig.properties.src" ImagePath="lib\fontconfig.properties.src" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" />
             <FileWrites Include="$(FontConfigDst)" />
+            <FileWrites Include="$(IntermediateOutputPath)fontconfig.properties.src" />
         </ItemGroup>
     </Target>
 
