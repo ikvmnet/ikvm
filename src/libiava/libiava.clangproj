@@ -17,6 +17,8 @@
     <ItemGroup>
         <Header Include="$(OpenJdkDir)jdk\src\share\native\common\*.h" />
         <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common\*.h" />
+        <Header Include="$(OpenJdkDir)jdk\src\share\native\java\io\*.h" />
+        <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io\*.h" />
         <PreprocessorDefinitions Include="RELEASE" Value="&quot;$(Version)&quot;" />
         <PreprocessorDefinitions Include="VENDOR" Value="&quot;$(ProductName)&quot;" />
         <PreprocessorDefinitions Include="VENDOR_URL" Value="&quot;$(PackageProjectUrl)&quot;" />
@@ -68,7 +70,7 @@
         <LibJavaExclude Include="java_props_macosx.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <Dependencies Include="shell32;delayimp;advapi32;version" />
+        <Dependencies Include="shell32;delayimp;AdvAPI32;version" />
         <AdditionalLinkOptions Include="-Wl,/FORCE" />
         <AdditionalLinkOptions Include="-Wl,-export:winFileHandleOpen" />
         <AdditionalLinkOptions Include="-Wl,-export:handleLseek" />

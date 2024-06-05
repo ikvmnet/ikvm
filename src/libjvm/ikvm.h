@@ -14,6 +14,10 @@ typedef struct JVMInvokeInterface {
     jint (*JVM_IHashCode)(JNIEnv *pEnv, jobject handle);
     void (*JVM_ArrayCopy)(JNIEnv *pEnv, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pst, jint length);
     jobject (*JVM_InitProperties)(JNIEnv *pEnv, jobject props);
+    void* (*JVM_RawMonitorCreate)();
+    void (*JVM_RawMonitorDestroy)(void *mon);
+    jint (*JVM_RawMonitorEnter)(void *mon);
+    void (*JVM_RawMonitorExit)(void *mon);
 } JVMInvokeInterface;
 
 extern JVMInvokeInterface *jvmii;

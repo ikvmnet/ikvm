@@ -7,6 +7,7 @@ using IKVM.Runtime.Accessors.Java.Util;
 
 namespace IKVM.Runtime
 {
+    using System.Threading;
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
@@ -39,6 +40,10 @@ namespace IKVM.Runtime
             public nint JVM_IHashCode;
             public nint JVM_ArrayCopy;
             public nint JVM_InitProperties;
+            public nint JVM_RawMonitorCreate;
+            public nint JVM_RawMonitorDestroy;
+            public nint JVM_RawMonitorEnter;
+            public nint JVM_RawMonitorExit;
 
         }
 
@@ -68,6 +73,18 @@ namespace IKVM.Runtime
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate nint JVM_InitPropertiesDelegate(JNIEnv* env, nint props);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate nint JVM_RawMonitorCreateDelegate();
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate void JVM_RawMonitorDestroyDelegate(nint mon);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate int JVM_RawMonitorEnterDelegate(nint mon);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate void JVM_RawMonitorExitDelegate(nint mon);
 
         delegate void JVM_InitDelegate(JVMInvokeInterface* iface);
 
@@ -99,6 +116,10 @@ namespace IKVM.Runtime
         readonly JVM_IHashCodeDelegate _JVM_IHashCode;
         readonly JVM_ArrayCopyDelegate _JVM_ArrayCopy;
         readonly JVM_InitPropertiesDelegate _JVM_InitProperties;
+        readonly JVM_RawMonitorCreateDelegate _JVM_RawMonitorCreate;
+        readonly JVM_RawMonitorDestroyDelegate _JVM_RawMonitorDestroy;
+        readonly JVM_RawMonitorEnterDelegate _JVM_RawMonitorEnter;
+        readonly JVM_RawMonitorExitDelegate _JVM_RawMonitorExit;
 
         /// <summary>
         /// Initializes a new instance.
@@ -126,6 +147,10 @@ namespace IKVM.Runtime
             jvmii->JVM_IHashCode = Marshal.GetFunctionPointerForDelegate(_JVM_IHashCode = JVM_IHashCode);
             jvmii->JVM_ArrayCopy = Marshal.GetFunctionPointerForDelegate(_JVM_ArrayCopy = JVM_ArrayCopy);
             jvmii->JVM_InitProperties = Marshal.GetFunctionPointerForDelegate(_JVM_InitProperties = JVM_InitProperties);
+            jvmii->JVM_RawMonitorCreate = Marshal.GetFunctionPointerForDelegate(_JVM_RawMonitorCreate = JVM_RawMonitorCreate);
+            jvmii->JVM_RawMonitorDestroy = Marshal.GetFunctionPointerForDelegate(_JVM_RawMonitorDestroy = JVM_RawMonitorDestroy);
+            jvmii->JVM_RawMonitorEnter = Marshal.GetFunctionPointerForDelegate(_JVM_RawMonitorEnter = JVM_RawMonitorEnter);
+            jvmii->JVM_RawMonitorExit = Marshal.GetFunctionPointerForDelegate(_JVM_RawMonitorExit = JVM_RawMonitorExit);
             _JVM_Init(jvmii);
         }
 
@@ -287,6 +312,75 @@ namespace IKVM.Runtime
             {
                 JVM.SetPendingException(e);
                 return 0;
+            }
+        }
+
+        /// <summary>
+        /// Invoked by the native code to create a monitor lock.
+        /// </summary>
+        /// <returns></returns>
+        nint JVM_RawMonitorCreate()
+        {
+            try
+            {
+                return (IntPtr)GCHandle.Alloc(new object(), GCHandleType.Normal);
+            }
+            catch (Exception e)
+            {
+                JVM.SetPendingException(e);
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Invoked by the native code to destroy a monitor lock.
+        /// </summary>v
+        /// <returns></returns>
+        void JVM_RawMonitorDestroy(nint mon)
+        {
+            try
+            {
+                GCHandle.FromIntPtr(mon).Free();
+            }
+            catch (Exception e)
+            {
+                JVM.SetPendingException(e);
+            }
+        }
+
+        /// <summary>
+        /// Invoked by the native code to enter a monitor lock.
+        /// </summary>
+        /// <param name="mon"></param>
+        /// <returns></returns>
+        int JVM_RawMonitorEnter(nint mon)
+        {
+            try
+            {
+                Monitor.Enter(GCHandle.FromIntPtr(mon).Target);
+            }
+            catch (Exception e)
+            {
+                JVM.SetPendingException(e);
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Invoked by the native code to exit a monitor lock.
+        /// </summary>
+        /// <param name="mon"></param>
+        /// <returns></returns>
+        void JVM_RawMonitorExit(nint mon)
+        {
+            try
+            {
+                Monitor.Exit(GCHandle.FromIntPtr(mon).Target);
+            }
+            catch (Exception e)
+            {
+                JVM.SetPendingException(e);
             }
         }
 

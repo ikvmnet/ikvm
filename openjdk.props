@@ -7,21 +7,8 @@
 
     <ItemGroup>
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\corba\gensrc\**\*.java" PackagePath="" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\com\sun\accessibility\**\*.java" PackagePath="com\sun\accessibility" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\com\sun\java\**\*.java" PackagePath="com\sun\java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\com\sun\swing\**\*.java" PackagePath="com\sun\swing" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\com\sun\tools\jdi\**\*.java" PackagePath="com\sun\tools\jdi" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\awt\resources\**\*.java" PackagePath="sun\awt\resources" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\management\resources\**\*.java" PackagePath="sun\management\resources" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\misc\resources\**\*.java" PackagePath="sun\misc\resources" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\print\**\*.java" PackagePath="sun\print" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\security\**\*.java" PackagePath="sun\security" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\tools\jar\**\*.java" PackagePath="sun\tools\jar" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\util\CoreResourceBundleControl.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\util\locale\provider\LocaleDataMetaInfo.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\util\logging\resources\**\*" PackagePath="util\logging\resources" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\util\resources\**\*" PackagePath="sun\util\resources" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\util\resources\cldr\**\*" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\ActivationSystemException.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\InterceptorsSystemException.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\IORSystemException.java" />
@@ -45,7 +32,6 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\java\browser\**\*.java" PackagePath="com\sun\java\browser" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\java\swing\**\*.java" PackagePath="com\sun\java\swing" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\java\util\**\*.java" PackagePath="java\util" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jdi\**\*.java" PackagePath="com\sun\jdi" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jmx\**\*.java" PackagePath="com\sun\jmx"/>
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jmx\snmp\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jndi\**\*.java" PackagePath="com\sun\jndi" />
@@ -68,7 +54,6 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\security\ntlm\**\*.java" PackagePath="com\sun\security\ntlm" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\security\sasl\**\*.java" PackagePath="com\sun\security\sasl" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\tools\attach\**\*.java" PackagePath="com\sun\tools\attach" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\tools\jdi\**\*.java" PackagePath="com\sun\tools\jdi" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\tools\script\**\*.java" PackagePath="com\sun\tools\script" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\applet\**\*.java" PackagePath="java\applet" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\awt\**\*.java" PackagePath="java\awt" />
@@ -111,10 +96,6 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\text\**\*.java" PackagePath="java\text" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\time\**\*.java" PackagePath="java\time" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\util\**\*.java" PackagePath="java\util" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\util\zip\Adler32.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\util\zip\CRC32.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\util\zip\Deflater.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\util\zip\Inflater.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\util\zip\ZipEntry.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\util\zip\ZipFile.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\javax\**\*.java" PackagePath="javax" />
@@ -392,8 +373,6 @@
         <OpenJdkResource Include="$(OpenJdkDir)\langtools\src\share\classes\**\*" Exclude="$(OpenJdkDir)\langtools\src\share\classes\**\_*;$(OpenJdkDir)\langtools\src\share\classes\**\*.java;$(OpenJdkDir)\langtools\src\share\classes\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
 
         <!-- Resources generated by build. -->
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\*" Exclude="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\_*;$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\*.java;$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\**\*" Exclude="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\**\_*;$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\**\*.java;$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
         <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\langtools\gensrc\**\*" Exclude="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\langtools\gensrc\**\_*;$(OpenJdkDir)\build\linux-x86_64-normal-server-release\langtools\gensrc\**\*.java;$(OpenJdkDir)\build\linux-x86_64-normal-server-release\langtools\gensrc\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
 
         <!-- Specific resource files not included by prior expressions. -->
@@ -411,10 +390,6 @@
         <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.FormatConversionProvider" ResourcePath="META-INF/services/javax.sound.sampled.spi.FormatConversionProvider" />
         <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.MixerProvider" ResourcePath="META-INF/services/javax.sound.sampled.spi.MixerProvider" />
 
-        <!-- These classes are loaded as resources at runtime to dynamically generate instances. -->
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\reflect\misc\Trampoline.class" ResourcePath="sun\reflect\misc\Trampoline.class" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\java\lang\invoke\MethodHandleImpl$BindCaller$T.class" ResourcePath="java\lang\invoke\MethodHandleImpl$BindCaller$T.class" />
-
     </ItemGroup>
 
     <ItemGroup>
@@ -423,7 +398,6 @@
         <OpenJdkExcludeRegex Include="^java%5c.lang%5c.Object$" />
         <OpenJdkExcludeRegex Include="^java%5c.lang%5c.String$" />
         <OpenJdkExcludeRegex Include="^java%5c.lang%5c.Throwable$" />
-        <OpenJdkExcludeRegex Include="^sun%5c.reflect%5c.misc%5c.Trampoline$" />
     </ItemGroup>
 
     <ItemGroup>
@@ -440,20 +414,6 @@
         <OpenJdkRmiStub Include="javax.management.remote.rmi.RMIConnection" Flags="-iiop -standardPackage" />
         <OpenJdkRmiStub Include="javax.management.remote.rmi.RMIServer" Flags="-iiop" />
         <OpenJdkRmiStub Include="javax.management.remote.rmi.RMIServer" Flags="-iiop -standardPackage" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\*.properties" ImagePath="lib\%(Filename)%(Extension)" />
-        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\content-types.properties" />
-        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\flavormap.properties" />
-        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\tzdb.dat" ImagePath="lib\tzdb.dat" />
-        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\currency.data" ImagePath="lib\currency.data" />
-        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\**\*" ImagePath="lib\cmm\%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\**\*" ImagePath="lib\management\%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\**\*" ImagePath="lib\security\%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\java.security" />
-        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\cacerts" />
-        <OpenJdkImageContent Include="$(OpenJdkDir)\jdk\src\windows\lib\*" ImagePath="lib\%(Filename)%(Extension)" />
     </ItemGroup>
 
 </Project>

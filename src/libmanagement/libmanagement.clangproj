@@ -19,8 +19,8 @@
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <Dependencies Include="Psapi" />
-        <Dependencies Include="Advapi32" />
-        <Dependencies Include="Shlwapi" />
+        <Dependencies Include="AdvAPI32" />
+        <Dependencies Include="ShLwApi" />
         <PreprocessorDefinitions Include="strdup" Value="_strdup" />
         <PreprocessorDefinitions Include="itoa" Value="_itoa" />
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\management\FileSystemImpl.c" />

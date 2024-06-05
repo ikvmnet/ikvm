@@ -21,6 +21,7 @@
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libmanagement\libmanagement.clangproj" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libj2pkcs11\libj2pkcs11.clangproj" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjaas\libjaas.clangproj" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libzip\libzip.clangproj" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjnf\libjnf.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosxapp\libosxapp.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosx\libosx.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />

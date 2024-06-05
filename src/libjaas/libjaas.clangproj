@@ -20,10 +20,10 @@
         <Compile Include="*.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <Dependencies Include="netapi32" />
-        <Dependencies Include="user32" />
-        <Dependencies Include="mpr" />
-        <Dependencies Include="advapi32" />
+        <Dependencies Include="NetAPI32" />
+        <Dependencies Include="User32" />
+        <Dependencies Include="Mpr" />
+        <Dependencies Include="AdvAPI32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libjaas\mapfile-vers" />
