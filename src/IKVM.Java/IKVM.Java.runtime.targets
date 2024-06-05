@@ -1097,7 +1097,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
             $(GenerateSourceDependsOn);
         </GenerateSourceDependsOn>
     </PropertyGroup>
-    
+
     <PropertyGroup>
         <CalendarDataVersion>21.0.1</CalendarDataVersion>
     </PropertyGroup>
@@ -1308,6 +1308,172 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </GenerateSourceDependsOn>
     </PropertyGroup>
 
+    <ItemGroup>
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\accessibility\internal\resources\*.properties" PackagePath="com\sun\accessibility\internal\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\accessibility\internal\resources\*_zh_TW.properties" PackagePath="com\sun\accessibility\internal\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\motif\resources\*.properties" PackagePath="com\sun\java\swing\plaf\motif\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\motif\resources\*_zh_TW.properties" PackagePath="com\sun\java\swing\plaf\motif\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\windows\resources\*.properties" PackagePath="com\sun\java\swing\plaf\windows\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\windows\resources\*_zh_TW.properties" PackagePath="com\sun\java\swing\plaf\windows\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\basic\resources\*.properties" PackagePath="com\sun\swing\internal\plaf\basic\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\basic\resources\*_zh_TW.properties" PackagePath="com\sun\swing\internal\plaf\basic\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\metal\resources\*.properties" PackagePath="com\sun\swing\internal\plaf\metal\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\metal\resources\*_zh_TW.properties" PackagePath="com\sun\swing\internal\plaf\metal\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\synth\resources\*.properties" PackagePath="com\sun\swing\internal\plaf\synth\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\synth\resources\*_zh_TW.properties" PackagePath="com\sun\swing\internal\plaf\synth\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\*.properties" PackagePath="sun\awt\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\*_zh_TW.properties" PackagePath="sun\awt\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\launcher\resources\*.properties" PackagePath="sun\launcher\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\launcher\resources\*_zh_TW.properties" PackagePath="sun\launcher\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\management\resources\*.properties" PackagePath="sun\management\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\management\resources\*_zh_TW.properties" PackagePath="sun\management\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\print\resources\*.properties" PackagePath="sun\print\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\print\resources\*_zh_TW.properties" PackagePath="sun\print\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jar\resources\*.properties" PackagePath="sun\tools\jar\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jar\resources\*_zh_TW.properties" PackagePath="sun\tools\jar\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\util\logging\resources\*.properties" PackagePath="sun\util\logging\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\util\logging\resources\*_zh_TW.properties" PackagePath="sun\util\logging\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\util\resources\*.properties" PackagePath="sun\util\resources" ClassName="%(Filename)" SuperName="sun.util.resources.LocaleNamesBundle" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' != 'win' And '$(IkvmJavaRuntimeIdentifier)' != 'ref' ">
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\gtk\resources\*.properties" PackagePath="com\sun\java\swing\plaf\gtk\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\gtk\resources\*_zh_TW.properties" PackagePath="com\sun\java\swing\plaf\gtk\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' Or '$(IkvmJavaRuntimeIdentifier)' == 'ref' ">
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\windows\classes\sun\awt\windows\awtLocalization*.properties" PackagePath="sun\awt\windows" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\windows\classes\sun\awt\windows\awtLocalization*_zh_TW.properties" PackagePath="sun\awt\windows" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' ">
+
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\macosx\classes\com\apple\laf\resources\*.properties" PackagePath="com\apple\laf\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' " />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\macosx\classes\sun\awt\resources\*.properties" PackagePath="sun\awt\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+    </ItemGroup>
+
+    <UsingTask TaskName="AddPropertiesToCompile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Item ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+            <Args ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                    var args = new TaskItem[Item.Length * 4];
+                    for (int i = 0; i < Item.Length; i++)
+                    {
+                        args[i * 4 + 0] = new TaskItem("-compile");
+                        args[i * 4 + 1] = new TaskItem(Item[i].ItemSpec);
+                        args[i * 4 + 2] = new TaskItem(Path.GetFullPath(Item[i].GetMetadata("_Dest")));
+                        args[i * 4 + 3] = new TaskItem(Item[i].GetMetadata("SuperName"));
+                    }
+                    
+                    Args = args;
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="CompileProperties" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(CompileProperties)" Outputs="@(CompileProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <CompileProperties Update="@(CompileProperties)">
+                <_Dest>$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java</_Dest>
+            </CompileProperties>
+        </ItemGroup>
+
+        <AddPropertiesToCompile Item="@(CompileProperties)">
+            <Output TaskParameter="Args" ItemName="_Args" />
+        </AddPropertiesToCompile>
+
+        <WriteLinesToFile File="$(IntermediateOutputPath)genprop_compile.cmd" Lines="@(_Args)" Overwrite="true" />
+        <MakeDir Directories="@(CompileProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)')" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compileproperties.CompileProperties %40$(IntermediateOutputPath)genprop_compile.cmd" />
+
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)genprop_compile.cmd" />
+            <FileWrites Include="@(CompileProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')" />
+            <Compile Include="@(CompileProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            CompileProperties;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\imageio\*.properties" PackagePath="com\sun\imageio" ClassName="%(Filename)"  />
+    </ItemGroup>
+
+    <UsingTask TaskName="AddPropertiesToClean" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Item ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+            <Args ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                    var args = new TaskItem[Item.Length * 3];
+                    for (int i = 0; i < Item.Length; i++)
+                    {
+                        args[i * 3 + 0] = new TaskItem("-clean");
+                        args[i * 3 + 1] = new TaskItem(Item[i].ItemSpec);
+                        args[i * 3 + 2] = new TaskItem(Path.GetFullPath(Item[i].GetMetadata("_Dest")));
+                    }
+                    
+                    Args = args;
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="CleanProperties" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(CleanProperties)" Outputs="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).properties')">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <CleanProperties Update="@(CleanProperties)">
+                <_Dest>$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).properties</_Dest>
+            </CleanProperties>
+        </ItemGroup>
+    
+        <AddPropertiesToClean Item="@(CleanProperties)">
+            <Output TaskParameter="Args" ItemName="_Args" />
+        </AddPropertiesToClean>
+
+        <WriteLinesToFile File="$(IntermediateOutputPath)genprop_clean.cmd" Lines="@(_Args)" Overwrite="true" />
+        <MakeDir Directories="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)')" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.stripproperties.StripProperties %40$(IntermediateOutputPath)genprop_clean.cmd" />
+
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)genprop_clean.cmd" />
+            <FileWrites Include="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).properties')" />
+            <JavaResource Include="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).properties')" PackagePath="%(PackagePath)/%(ClassName).properties" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            CleanProperties;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
     <PropertyGroup>
         <GenerateSourceDependsOn>
             $(GenerateSourceDependsOn);
@@ -1315,7 +1481,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </PropertyGroup>
 
     <Target Name="GenerateSource" DependsOnTargets="$(GenerateSourceDependsOn)">
-        
+
     </Target>
 
     <PropertyGroup>
