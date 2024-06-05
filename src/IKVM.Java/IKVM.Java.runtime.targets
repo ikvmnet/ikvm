@@ -113,6 +113,22 @@
             $(CoreCompileDependsOn);
         </CoreCompileDependsOn>
     </PropertyGroup>
+    
+    <!-- a few class files should not be converted to IL, but instead included as resources -->
+    <Target Name="ClassAsResource" DependsOnTargets="CompileJava">
+        <ItemGroup>
+            <Convert Remove="$(IntermediateOutputPath)classes\sun\reflect\misc\Trampoline.class" />
+            <JavaResource Include="$(IntermediateOutputPath)classes\sun\reflect\misc\Trampoline.class" ResourcePath="sun\reflect\misc\Trampoline.class" />
+            <JavaResource Include="$(IntermediateOutputPath)classes\java\lang\invoke\MethodHandleImpl$BindCaller$T.class" ResourcePath="java\lang\invoke\MethodHandleImpl$BindCaller$T.class" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <CoreCompileDependsOn>
+            ClassAsResource;
+            $(CoreCompileDependsOn);
+        </CoreCompileDependsOn>
+    </PropertyGroup>
 
     <PropertyGroup>
         <GenerateSourceDependsOn>
@@ -1389,6 +1405,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
             <CompileProperties Update="@(CompileProperties)">
                 <_Dest>$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java</_Dest>
             </CompileProperties>
+            <_Args Remove="@(_Args)" />
         </ItemGroup>
 
         <AddPropertiesToCompile Item="@(CompileProperties)">
@@ -1397,6 +1414,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
 
         <WriteLinesToFile File="$(IntermediateOutputPath)genprop_compile.cmd" Lines="@(_Args)" Overwrite="true" />
         <MakeDir Directories="@(CompileProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)')" />
+        <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compileproperties.CompileProperties %40$(IntermediateOutputPath)genprop_compile.cmd" />
         <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compileproperties.CompileProperties %40$(IntermediateOutputPath)genprop_compile.cmd" />
 
         <ItemGroup>
@@ -1414,7 +1432,22 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </PropertyGroup>
 
     <ItemGroup>
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\imageio\*.properties" PackagePath="com\sun\imageio" ClassName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\imageio\*.properties" PackagePath="com\sun\imageio" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\util\jar\pack\intrinsic.properties" PackagePath="com\sun\java\util\jar\pack" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\jndi\cosnaming\jndiprovider.properties" PackagePath="com\sun\jndi\cosnaming" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\jndi\ldap\jndiprovider.properties" PackagePath="com\sun\jndi\ldap" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\org\apache\xml\internal\security\resource\xmlsecurity*.properties" PackagePath="com\sun\org\apache\xml\internal\security\resource" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\rowset\*.properties" PackagePath="com\sun\rowset" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\rowset\*_zh_TW.properties" PackagePath="com\sun\rowset" ResourceName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\javax\sql\rowset\*.properties" PackagePath="javax\sql\rowset" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\registry\resources\*.properties" PackagePath="sun\rmi\registry\resources" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\registry\resources\*_zh_TW.properties" PackagePath="sun\rmi\registry\resources" ResourceName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\rmic\resources\*.properties" PackagePath="sun\rmi\rmic\resources" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\server\resources\*.properties" PackagePath="sun\rmi\server\resources" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\server\resources\*_zh_TW.properties" PackagePath="sun\rmi\server\resources" ResourceName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\javac\resources\*.properties" PackagePath="sun\tools\javac\resources" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jconsole\resources\*.properties" PackagePath="sun\tools\jconsole\resources" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\serialver\*.properties" PackagePath="sun\tools\serialver\resources" ResourceName="%(Filename)"  />
     </ItemGroup>
 
     <UsingTask TaskName="AddPropertiesToClean" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
@@ -1441,17 +1474,18 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </Task>
     </UsingTask>
 
-    <Target Name="CleanProperties" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(CleanProperties)" Outputs="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).properties')">
+    <Target Name="CleanProperties" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(CleanProperties)" Outputs="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ResourceName).properties')">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <ItemGroup>
             <CleanProperties Update="@(CleanProperties)">
-                <_Dest>$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).properties</_Dest>
+                <_Dest>$(IntermediateOutputPath)genprop\%(PackagePath)\%(ResourceName).properties</_Dest>
             </CleanProperties>
+            <_Args Remove="@(_Args)" />
         </ItemGroup>
-    
+
         <AddPropertiesToClean Item="@(CleanProperties)">
             <Output TaskParameter="Args" ItemName="_Args" />
         </AddPropertiesToClean>
@@ -1462,14 +1496,72 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
 
         <ItemGroup>
             <FileWrites Include="$(IntermediateOutputPath)genprop_clean.cmd" />
-            <FileWrites Include="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).properties')" />
-            <JavaResource Include="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).properties')" PackagePath="%(PackagePath)/%(ClassName).properties" />
+            <FileWrites Include="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ResourceName).properties')" />
+            <JavaResource Include="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ResourceName).properties')" ResourcePath="%(CleanProperties.PackagePath)/%(CleanProperties.ResourceName).properties" />
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
         <GenerateSourceDependsOn>
             CleanProperties;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <DuplicateProperties Include="$(OpenJdkDir)jdk\src\share\classes\**\*_zh_TW.java" PackagePath="%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" />
+    </ItemGroup>
+
+    <UsingTask TaskName="DuplicateProperties" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <SourceFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+            <DestinationFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                for (int i = 0; i < SourceFiles.Length; i++)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(DestinationFiles[i].ItemSpec));
+                
+                    string line;
+                    using var r = File.OpenText(SourceFiles[i].ItemSpec);
+                    using var w = new StreamWriter(File.Open(DestinationFiles[i].ItemSpec, FileMode.Create));
+                    
+                    while ((line = r.ReadLine()) != null)
+                    {
+                        if (line.Contains("class"))
+                            line = line.Replace(SourceFiles[i].GetMetadata("Filename"), SourceFiles[i].GetMetadata("ClassName"));
+                    
+                        w.WriteLine(line);
+                    }
+                }
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+    
+    <Target Name="FilterDuplicateProperties">
+        <ItemGroup>
+            <DuplicateProperties Remove="@(DuplicateProperties)" Condition="Exists('$(OpenJdkDir)jdk\src\share\classes\%(PackagePath)\%(ClassName).java')" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="DuplicateProperties" DependsOnTargets="OpenJdkBuildTools;ResolveJava;FilterDuplicateProperties" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(DuplicateProperties)" Outputs="@(DuplicateProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')">
+        <DuplicateProperties SourceFiles="@(DuplicateProperties)" DestinationFiles="@(DuplicateProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')" />
+
+        <ItemGroup>
+            <FileWrites Include="@(DuplicateProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')" />
+            <Compile Include="@(DuplicateProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            FilterDuplicateProperties;
+            DuplicateProperties;
             $(GenerateSourceDependsOn);
         </GenerateSourceDependsOn>
     </PropertyGroup>
