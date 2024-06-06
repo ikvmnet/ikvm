@@ -120,11 +120,6 @@ jobs:
       DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
-    - name: Free Disk Space (Linux)
-      if: runner.os == 'Linux'
-      uses: jlumbroso/free-disk-space@main
-      with:
-        swap-storage: false
     - name: Uninstall Packages
       run: |
         sudo apt-get remove -y \
@@ -140,6 +135,11 @@ jobs:
           apache2 && \
         sudo apt-get autoremove -y && \
         sudo rm -rf /usr/share/swift
+    - name: Free Disk Space (Linux)
+      if: runner.os == 'Linux'
+      uses: jlumbroso/free-disk-space@main
+      with:
+        swap-storage: false
     - name: Checkout Source
       uses: actions/checkout@v4
       with:
