@@ -117,6 +117,7 @@ jobs:
     timeout-minutes: 720
     runs-on: ubuntu-24.04
     env:
+      DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
     - name: Free Disk Space (Linux)
