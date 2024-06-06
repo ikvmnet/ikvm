@@ -19,7 +19,7 @@
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN" Value="TRUE" />
         <PreprocessorDefinitions Include="USE_PORTS" Value="TRUE" />
         <PreprocessorDefinitions Include="USE_DAUDIO" Value="TRUE" />
-        <Dependencies Include="dsound;winmm;User32;Ole32" />
+        <Dependencies Include="dsound;winmm;user32;ole32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x86'))">
         <PreprocessorDefinitions Include="X_ARCH" Value="X_I586" />
