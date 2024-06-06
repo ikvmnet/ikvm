@@ -124,6 +124,18 @@ jobs:
         dotnet: false
         swap-storage: false
         large-packages: false
+    - name: Uninstall Packages
+      run: |
+        sudo apt-get remove -y \
+          temurin-\* \
+          microsoft-edge-stable \
+          mono-complete \
+          nuget \
+          mssql-tools \
+          unixodbc-dev \
+          nginx && \
+          php\* \
+        sudo apt-get autoremove -y
     - name: Checkout Source
       uses: actions/checkout@v4
       with:
@@ -144,11 +156,13 @@ jobs:
     - name: Install Mono
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y mono-runtime mono-devel
+        sudo apt-get install -y \
+          mono-runtime
     - name: Install Java
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y openjdk-8-jdk-headless && \
+        sudo apt-get install -y \
+          openjdk-8-jdk-headless && \
         echo "JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> $GITHUB_ENV
     - name: Install LLVM and Clang
       run: |
