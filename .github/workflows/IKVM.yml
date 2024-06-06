@@ -273,7 +273,7 @@ jobs:
       run: rm /tmp/tools.tar.gz
     - name: Package Image
       run: tar czvf /tmp/image.tar.gz image
-      working-directory: ikvm/dist
+      working-directory: dist
     - name: Upload Image
       uses: actions/upload-artifact@v4
       with:
