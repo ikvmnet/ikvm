@@ -122,7 +122,7 @@ jobs:
     steps:
     - name: Uninstall Packages
       run: |
-        sudo apt-get remove -y \
+        sudo apt-get remove --purge -y \
           temurin-\* \
           mono-complete \
           unixodbc-dev \
@@ -195,14 +195,14 @@ jobs:
         name: openjdk-build-linux-x86_64-normal-server-release
         path: /tmp
     - name: Restore OpenJDK 8 Build
-      run: mkdir -p openjdk/build && cd openjdk/build && unzip /tmp/openjdk-build-linux-x86_64-normal-server-release.zip
+      run: mkdir -p openjdk/build && cd openjdk/build && unzip /tmp/openjdk-build-linux-x86_64-normal-server-release.zip && rm /tmp/openjdk-build-linux-x86_64-normal-server-release.zip
     - name: Download JTReg Build
       uses: actions/download-artifact@v4
       with:
         name: jtreg-build
         path: /tmp
     - name: Restore JTReg Build
-      run: mkdir -p jtreg && cd jtreg && unzip /tmp/jtreg-build.zip
+      run: mkdir -p jtreg && cd jtreg && unzip /tmp/jtreg-build.zip && rm /tmp/jtreg-build.zip
     - name: Download Native SDKs
       uses: robinraju/release-downloader@v1.9
       with:
