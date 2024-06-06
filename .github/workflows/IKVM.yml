@@ -128,9 +128,7 @@ jobs:
       run: |
         sudo apt-get remove -y \
           temurin-\* \
-          microsoft-edge-stable \
           mono-complete \
-          mssql-tools \
           unixodbc-dev \
           nginx \
           php\* \
