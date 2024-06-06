@@ -37,7 +37,7 @@
         <PropertyGroup>
             <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\java') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java'))</JavaPath>
             <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\java.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java.exe'))</JavaPath>
-            <JavaArgs>-Xmx1536M</JavaArgs>
+            <JavaArgs></JavaArgs>
             <JavaExec Condition=" '$(JavaPath)' != '' ">"$(JavaPath)" $(JavaArgs)</JavaExec>
         </PropertyGroup>
         <Message Text="Using java executable found in JAVA_HOME at '$(JavaPath)'." Importance="high" Condition=" '$(JavaPath)' != '' " />
@@ -48,7 +48,7 @@
         <PropertyGroup>
             <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac'))</JavaCompilerPath>
             <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac.exe'))</JavaCompilerPath>
-            <JavaCompilerArgs>-J-Xmx1536M</JavaCompilerArgs>
+            <JavaCompilerArgs></JavaCompilerArgs>
             <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
         </PropertyGroup>
         <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
