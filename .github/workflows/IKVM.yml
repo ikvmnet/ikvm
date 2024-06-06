@@ -174,7 +174,7 @@ jobs:
     - name: Install LLVM and Clang
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y clang-16 llvm-16 && \
+        sudo apt-get install -y clang-17 llvm-17 && \
         echo "PATH=/usr/lib/llvm-16/bin:$PATH" >> $GITHUB_ENV
     - name: Install apple-codesign
       uses: baptiste0928/cargo-install@v3
