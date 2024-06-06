@@ -175,7 +175,7 @@ jobs:
       run: |
         sudo apt-get update && \
         sudo apt-get install -y clang-17 llvm-17 && \
-        echo "PATH=/usr/lib/llvm-16/bin:$PATH" >> $GITHUB_ENV
+        echo "PATH=/usr/lib/llvm-17/bin:$PATH" >> $GITHUB_ENV
     - name: Install apple-codesign
       uses: baptiste0928/cargo-install@v3
       with:
