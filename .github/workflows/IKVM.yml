@@ -134,7 +134,8 @@ jobs:
           firefox \
           apache2 \
           ant && \
-        sudo apt-get autoremove -y && \
+        sudo apt-get --purge autoremove -y && \
+        sudo apt-get clean && \
         sudo rm -rf /usr/share/swift
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
