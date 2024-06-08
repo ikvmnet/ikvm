@@ -414,7 +414,7 @@
         <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\javax\swing\plaf\metal\sounds\*.wav" ResourcePath="javax\swing\plaf\metal\sounds\%(Filename).wav" />
     </ItemGroup>
 
-    <ItemGroup Condition="!$(IkvmJavaRuntimeIdentifier.StartsWith('win-'))">
+    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' != 'win' And '$(IkvmJavaRuntimeIdentifier)' != 'ref' ">
         <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\gtk\icons\*.gif" ResourcePath="com\sun\java\swing\plaf\gtk\icons\%(Filename).gif" />
         <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\gtk\icons\*.png" ResourcePath="com\sun\java\swing\plaf\gtk\icons\%(Filename).png" />
         <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\gtk\resources\metacity\SwingFallbackTheme\metacity-1\*.xml" ResourcePath="com\sun\java\swing\plaf\gtk\resources\metacity\SwingFallbackTheme\metacity-1\%(Filename).xml" />
