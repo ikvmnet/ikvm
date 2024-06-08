@@ -113,7 +113,7 @@
             $(CoreCompileDependsOn);
         </CoreCompileDependsOn>
     </PropertyGroup>
-    
+
     <!-- a few class files should not be converted to IL, but instead included as resources -->
     <Target Name="ClassAsResource" DependsOnTargets="CompileJava">
         <ItemGroup>
@@ -1325,41 +1325,41 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </PropertyGroup>
 
     <ItemGroup>
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\accessibility\internal\resources\*.properties" PackagePath="com\sun\accessibility\internal\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\accessibility\internal\resources\*_zh_TW.properties" PackagePath="com\sun\accessibility\internal\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\motif\resources\*.properties" PackagePath="com\sun\java\swing\plaf\motif\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\motif\resources\*_zh_TW.properties" PackagePath="com\sun\java\swing\plaf\motif\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\windows\resources\*.properties" PackagePath="com\sun\java\swing\plaf\windows\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\windows\resources\*_zh_TW.properties" PackagePath="com\sun\java\swing\plaf\windows\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\basic\resources\*.properties" PackagePath="com\sun\swing\internal\plaf\basic\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\basic\resources\*_zh_TW.properties" PackagePath="com\sun\swing\internal\plaf\basic\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\metal\resources\*.properties" PackagePath="com\sun\swing\internal\plaf\metal\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\metal\resources\*_zh_TW.properties" PackagePath="com\sun\swing\internal\plaf\metal\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\synth\resources\*.properties" PackagePath="com\sun\swing\internal\plaf\synth\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\synth\resources\*_zh_TW.properties" PackagePath="com\sun\swing\internal\plaf\synth\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\*.properties" PackagePath="sun\awt\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\*_zh_TW.properties" PackagePath="sun\awt\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\launcher\resources\*.properties" PackagePath="sun\launcher\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\launcher\resources\*_zh_TW.properties" PackagePath="sun\launcher\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\management\resources\*.properties" PackagePath="sun\management\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\management\resources\*_zh_TW.properties" PackagePath="sun\management\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\print\resources\*.properties" PackagePath="sun\print\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\print\resources\*_zh_TW.properties" PackagePath="sun\print\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jar\resources\*.properties" PackagePath="sun\tools\jar\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jar\resources\*_zh_TW.properties" PackagePath="sun\tools\jar\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\util\logging\resources\*.properties" PackagePath="sun\util\logging\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\util\logging\resources\*_zh_TW.properties" PackagePath="sun\util\logging\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\util\resources\*.properties" PackagePath="sun\util\resources" ClassName="%(Filename)" SuperName="sun.util.resources.LocaleNamesBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\accessibility\internal\resources\**\*.properties" PackagePath="com\sun\accessibility\internal\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\accessibility\internal\resources\**\*_zh_TW.properties" PackagePath="com\sun\accessibility\internal\resources\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\motif\resources\**\*.properties" PackagePath="com\sun\java\swing\plaf\motif\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\motif\resources\**\*_zh_TW.properties" PackagePath="com\sun\java\swing\plaf\motif\resources\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\windows\resources\**\*.properties" PackagePath="com\sun\java\swing\plaf\windows\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\windows\resources\**\*_zh_TW.properties" PackagePath="com\sun\java\swing\plaf\windows\resources\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\basic\resources\**\*.properties" PackagePath="com\sun\swing\internal\plaf\basic\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\basic\resources\**\*_zh_TW.properties" PackagePath="com\sun\swing\internal\plaf\basic\resources\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\metal\resources\**\*.properties" PackagePath="com\sun\swing\internal\plaf\metal\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\metal\resources\**\*_zh_TW.properties" PackagePath="com\sun\swing\internal\plaf\metal\resources\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\synth\resources\**\*.properties" PackagePath="com\sun\swing\internal\plaf\synth\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\swing\internal\plaf\synth\resources\**\*_zh_TW.properties" PackagePath="com\sun\swing\internal\plaf\synth\resources\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\**\*.properties" PackagePath="sun\awt\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\resources\**\*_zh_TW.properties" PackagePath="sun\awt\resources\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\launcher\resources\**\*.properties" PackagePath="sun\launcher\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\launcher\resources\**\*_zh_TW.properties" PackagePath="sun\launcher\resources\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\management\resources\**\*.properties" PackagePath="sun\management\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\management\resources\**\*_zh_TW.properties" PackagePath="sun\management\resources\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\print\resources\**\*.properties" PackagePath="sun\print\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\print\resources\**\*_zh_TW.properties" PackagePath="sun\print\resources\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jar\resources\**\*.properties" PackagePath="sun\tools\jar\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jar\resources\**\*_zh_TW.properties" PackagePath="sun\tools\jar\resources\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\util\logging\resources\**\*.properties" PackagePath="sun\util\logging\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\util\logging\resources\**\*_zh_TW.properties" PackagePath="sun\util\logging\resources\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\util\resources\**\*.properties" PackagePath="sun\util\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="sun.util.resources.LocaleNamesBundle" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' != 'win' And '$(IkvmJavaRuntimeIdentifier)' != 'ref' ">
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\gtk\resources\*.properties" PackagePath="com\sun\java\swing\plaf\gtk\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\gtk\resources\*_zh_TW.properties" PackagePath="com\sun\java\swing\plaf\gtk\resources" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\gtk\resources\**\*.properties" PackagePath="com\sun\java\swing\plaf\gtk\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\gtk\resources\**\*_zh_TW.properties" PackagePath="com\sun\java\swing\plaf\gtk\resources\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' Or '$(IkvmJavaRuntimeIdentifier)' == 'ref' ">
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\windows\classes\sun\awt\windows\awtLocalization*.properties" PackagePath="sun\awt\windows" ClassName="%(Filename)" SuperName="ListResourceBundle" />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\windows\classes\sun\awt\windows\awtLocalization*_zh_TW.properties" PackagePath="sun\awt\windows" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\windows\classes\sun\awt\windows\**\awtLocalization*.properties" PackagePath="sun\awt\windows\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\windows\classes\sun\awt\windows\**\awtLocalization*_zh_TW.properties" PackagePath="sun\awt\windows\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' ">
@@ -1367,8 +1367,8 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\macosx\classes\com\apple\laf\resources\*.properties" PackagePath="com\apple\laf\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' " />
-        <CompileProperties Include="$(OpenJdkDir)jdk\src\macosx\classes\sun\awt\resources\*.properties" PackagePath="sun\awt\resources" ClassName="%(Filename)" SuperName="ListResourceBundle" />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\macosx\classes\com\apple\laf\resources\**\*.properties" PackagePath="com\apple\laf\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' " />
+        <CompileProperties Include="$(OpenJdkDir)jdk\src\macosx\classes\sun\awt\resources\**\*.properties" PackagePath="sun\awt\resources\%(RecursiveDir)" ClassName="%(Filename)" SuperName="ListResourceBundle" />
     </ItemGroup>
 
     <UsingTask TaskName="AddPropertiesToCompile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
@@ -1432,22 +1432,22 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </PropertyGroup>
 
     <ItemGroup>
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\imageio\*.properties" PackagePath="com\sun\imageio" ResourceName="%(Filename)"  />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\util\jar\pack\intrinsic.properties" PackagePath="com\sun\java\util\jar\pack" ResourceName="%(Filename)"  />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\jndi\cosnaming\jndiprovider.properties" PackagePath="com\sun\jndi\cosnaming" ResourceName="%(Filename)"  />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\jndi\ldap\jndiprovider.properties" PackagePath="com\sun\jndi\ldap" ResourceName="%(Filename)"  />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\org\apache\xml\internal\security\resource\xmlsecurity*.properties" PackagePath="com\sun\org\apache\xml\internal\security\resource" ResourceName="%(Filename)"  />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\rowset\*.properties" PackagePath="com\sun\rowset" ResourceName="%(Filename)"  />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\rowset\*_zh_TW.properties" PackagePath="com\sun\rowset" ResourceName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\javax\sql\rowset\*.properties" PackagePath="javax\sql\rowset" ResourceName="%(Filename)"  />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\registry\resources\*.properties" PackagePath="sun\rmi\registry\resources" ResourceName="%(Filename)"  />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\registry\resources\*_zh_TW.properties" PackagePath="sun\rmi\registry\resources" ResourceName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\rmic\resources\*.properties" PackagePath="sun\rmi\rmic\resources" ResourceName="%(Filename)"  />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\server\resources\*.properties" PackagePath="sun\rmi\server\resources" ResourceName="%(Filename)"  />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\server\resources\*_zh_TW.properties" PackagePath="sun\rmi\server\resources" ResourceName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\javac\resources\*.properties" PackagePath="sun\tools\javac\resources" ResourceName="%(Filename)"  />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jconsole\resources\*.properties" PackagePath="sun\tools\jconsole\resources" ResourceName="%(Filename)"  />
-        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\serialver\*.properties" PackagePath="sun\tools\serialver\resources" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\imageio\**\*.properties" PackagePath="com\sun\imageio\%(RecursiveDir)" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\util\jar\pack\intrinsic.properties" PackagePath="com\sun\java\util\jar\pack\%(RecursiveDir)" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\jndi\cosnaming\jndiprovider.properties" PackagePath="com\sun\jndi\cosnaming\%(RecursiveDir)" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\jndi\ldap\jndiprovider.properties" PackagePath="com\sun\jndi\ldap\%(RecursiveDir)" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\org\apache\xml\internal\security\resource\**\xmlsecurity*.properties" PackagePath="com\sun\org\apache\xml\internal\security\resource\%(RecursiveDir)" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\rowset\**\*.properties" PackagePath="com\sun\rowset\%(RecursiveDir)" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\rowset\**\*_zh_TW.properties" PackagePath="com\sun\rowset\%(RecursiveDir)" ResourceName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\javax\sql\rowset\**\*.properties" PackagePath="javax\sql\rowset\%(RecursiveDir)" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\registry\resources\**\*.properties" PackagePath="sun\rmi\registry\resources\%(RecursiveDir)" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\registry\resources\**\*_zh_TW.properties" PackagePath="sun\rmi\registry\resources\%(RecursiveDir)" ResourceName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\rmic\resources\**\*.properties" PackagePath="sun\rmi\rmic\resources\%(RecursiveDir)" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\server\resources\**\*.properties" PackagePath="sun\rmi\server\resources\%(RecursiveDir)" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\rmi\server\resources\**\*_zh_TW.properties" PackagePath="sun\rmi\server\resources\%(RecursiveDir)" ResourceName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\javac\resources\**\*.properties" PackagePath="sun\tools\javac\resources\%(RecursiveDir)" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jconsole\resources\**\*.properties" PackagePath="sun\tools\jconsole\resources\%(RecursiveDir)" ResourceName="%(Filename)"  />
+        <CleanProperties Include="$(OpenJdkDir)jdk\src\share\classes\sun\tools\serialver\**\*.properties" PackagePath="sun\tools\serialver\resources\%(RecursiveDir)" ResourceName="%(Filename)"  />
     </ItemGroup>
 
     <UsingTask TaskName="AddPropertiesToClean" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
@@ -1542,14 +1542,14 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
             </Code>
         </Task>
     </UsingTask>
-    
+
     <Target Name="FilterDuplicateProperties">
         <ItemGroup>
             <DuplicateProperties Remove="@(DuplicateProperties)" Condition="Exists('$(OpenJdkDir)jdk\src\share\classes\%(PackagePath)\%(ClassName).java')" />
         </ItemGroup>
     </Target>
 
-    <Target Name="DuplicateProperties" DependsOnTargets="OpenJdkBuildTools;ResolveJava;FilterDuplicateProperties" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(DuplicateProperties)" Outputs="@(DuplicateProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')">
+    <Target Name="DuplicateProperties" DependsOnTargets="FilterDuplicateProperties" Inputs="$(MSBuildThisFileFullPath);@(DuplicateProperties)" Outputs="@(DuplicateProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')">
         <DuplicateProperties SourceFiles="@(DuplicateProperties)" DestinationFiles="@(DuplicateProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')" />
 
         <ItemGroup>
@@ -1562,6 +1562,94 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <GenerateSourceDependsOn>
             FilterDuplicateProperties;
             DuplicateProperties;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ServiceFileResources Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsDir)\classes\**\META-INF\services\*" ServiceName="%(Filename)%(Extension)" OutputPath="$(IntermediateOutputPath)gensvc\%(Filename)%(Extension)" />
+        <ServiceFileResources Include="$(OpenJdkDir)jdk\src\share\classes\**\META-INF\services\*" ServiceName="%(Filename)%(Extension)" OutputPath="$(IntermediateOutputPath)gensvc\%(Filename)%(Extension)" />
+        <ServiceFileResources Remove="$(OpenJdkDir)jdk\src\share\classes\sun\dc\META-INF\services\sun.java2d.pipe.RenderingEngine" />
+        <ServiceFileResources Include="$(OpenJdkDir)jdk\src\share\classes\sun\print\services\*" ServiceName="%(Filename)%(Extension)" OutputPath="$(IntermediateOutputPath)gensvc\%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <UsingTask TaskName="DistinctServiceFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <SourceFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+            <OutputFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Collections.Generic" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                OutputFiles = SourceFiles.GroupBy(i => i.GetMetadata("ServiceName")).Select(i => i.First()).ToArray();
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <UsingTask TaskName="GenerateServiceFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <OpenJdkTargetOs ParameterType="System.String" />
+            <SourceFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Collections.Generic" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                var p = "#[" + OpenJdkTargetOs + "]";
+                
+                foreach (var f in SourceFiles)
+                {
+                    var n = f.GetMetadata("ServiceName");
+                    var o = f.GetMetadata("OutputPath");
+                    Directory.CreateDirectory(Path.GetDirectoryName(o));
+                        
+                    using var r = File.OpenText(f.ItemSpec);
+                    using var w = new StreamWriter(File.Open(o, FileMode.Create));
+                        
+                    string line;
+                    while ((line = r.ReadLine()) != null)
+                    {
+                        if (line.StartsWith(p))
+                            line = line.Substring(p.Length);
+                            
+                        w.WriteLine(line);
+                    }
+                }
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+    
+    <Target Name="DistinctServiceFiles">
+        <DistinctServiceFiles SourceFiles="@(ServiceFileResources)">
+            <Output TaskParameter="OutputFiles" ItemName="_DistinctServiceFiles" />
+        </DistinctServiceFiles>
+    </Target>
+
+    <Target Name="GenerateServiceFiles" DependsOnTargets="DistinctServiceFiles" Inputs="@(_DistinctServiceFiles)" Outputs="@(_DistinctServiceFiles->'%(OutputPath)')">
+        <GenerateServiceFiles OpenJdkTargetOs="$(OpenJdkTargetOsDir)" SourceFiles="@(_DistinctServiceFiles)">
+            
+        </GenerateServiceFiles>
+    </Target>
+    
+    <Target Name="CollectServiceFiles" DependsOnTargets="GenerateServiceFiles">
+        <ItemGroup>
+            <FileWrites Include="@(_DistinctServiceFiles->'%(OutputPath)')" />
+            <JavaResource Include="@(_DistinctServiceFiles->'%(OutputPath)')" ResourcePath="META-INF/services/%(_DistinctServiceFiles.ServiceName)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            DistinctServiceFiles;
+            GenerateServiceFiles;
+            CollectServiceFiles;
             $(GenerateSourceDependsOn);
         </GenerateSourceDependsOn>
     </PropertyGroup>
