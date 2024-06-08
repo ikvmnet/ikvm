@@ -155,11 +155,11 @@ jobs:
       uses: actions/cache@v4
       with:
         path: C:/Program Files/LLVM
-        key: llvm-16.0
+        key: llvm-17.0
     - name: Install LLVM and Clang
       uses: KyleMayes/install-llvm-action@v1
       with:
-        version: "16.0"
+        version: "17.0"
         cached: ${{ steps.cache-llvm.outputs.cache-hit }}
     - name: Install apple-codesign
       uses: baptiste0928/cargo-install@v3
