@@ -225,6 +225,7 @@ demo/jvmti/mtrace/TraceJFrame.java                                              
 demo/jvmti/versionCheck/FailsWhenJvmtiVersionDiffers.java                                                               generic-all
 demo/jvmti/waiters/WaitersTest.java                                                                                     generic-all
 demo/zipfs/basic.sh                                                                                                     generic-all
+demo/zipfs/ZFSTests.java                                                                                                generic-all
 java/awt/Checkbox/SetStateExcessEvent/SetStateExcessEvent.java                                                          generic-all
 java/awt/Component/DimensionEncapsulation/DimensionEncapsulation.java                                                   generic-all
 java/awt/Component/InsetsEncapsulation/InsetsEncapsulation.java                                                         generic-all
@@ -3169,8 +3170,6 @@ com/sun/management/OperatingSystemMXBean/GetCommittedVirtualMemorySize.java     
 com/sun/management/OperatingSystemMXBean/GetFreePhysicalMemorySize.java                                                 linux-all,macosx-all
 com/sun/management/OperatingSystemMXBean/GetFreeSwapSpaceSize.java                                                      linux-all,macosx-all
 com/sun/management/OperatingSystemMXBean/GetTotalPhysicalMemorySize.java                                                linux-all,macosx-all
-
-demo/zipfs/ZFSTests.java                                                                                                linux-all,macosx-all
 
 java/io/FileDescriptor/Sharing.java                                                                                     linux-all,macosx-all
 java/io/FileInputStream/LargeFileAvailable.java                                                                         linux-all,macosx-all

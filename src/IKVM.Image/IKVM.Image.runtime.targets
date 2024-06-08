@@ -58,6 +58,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <IkvmImageItem Include="$(OpenJdkDir)corba\src\share\classes\com\sun\tools\corba\se\idl\orb.idl" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)corba\src\share\classes\com\sun\tools\corba\se\idl\ir.idl" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains(';net472;'))">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
