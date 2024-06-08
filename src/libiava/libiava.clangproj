@@ -22,7 +22,7 @@
         <PreprocessorDefinitions Include="RELEASE" Value="&quot;$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)_$(OpenJdkUpdateVersion)-$(OpenJdkBuildNumber)&quot;" />
         <PreprocessorDefinitions Include="VENDOR" Value="&quot;$(ProductName)&quot;" />
         <PreprocessorDefinitions Include="VENDOR_URL" Value="&quot;$(PackageProjectUrl)&quot;" />
-        <PreprocessorDefinitions Include="VENDOR_URL_BUG" Value="&quot;$(PackageProjectUrl)/issues/" />
+        <PreprocessorDefinitions Include="VENDOR_URL_BUG" Value="&quot;$(PackageProjectUrl)/issues/&quot;" />
         <PreprocessorDefinitions Include="ARCHPROPNAME" Value="&quot;$(OpenJdkTargetCpuOsArch)&quot;" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\share\native\java\lang" />
