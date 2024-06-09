@@ -1855,12 +1855,12 @@ java/util/stream/test/org/openjdk/tests/java/util/stream/TabulatorsTest.java    
 java/util/stream/test/org/openjdk/tests/java/util/stream/TeeOpTest.java                                                 generic-all
 java/util/stream/test/org/openjdk/tests/java/util/stream/ToArrayOpTest.java                                             generic-all
 #java/util/zip/DeInflate.java                                                                                            generic-all
-#java/util/zip/InterruptibleZip.java                                                                                     generic-all
+java/util/zip/InterruptibleZip.java                                                                                     generic-all
 #java/util/zip/TestZipError.java                                                                                         generic-all
 #java/util/zip/ZipFile/Comment.java                                                                                      generic-all
 #java/util/zip/ZipFile/CorruptedZipFiles.java                                                                            generic-all
-#java/util/zip/ZipFile/DeleteTempJar.java                                                                                generic-all
-#java/util/zip/ZipFile/FinalizeZipFile.java                                                                              generic-all
+java/util/zip/ZipFile/DeleteTempJar.java                                                                                generic-all
+java/util/zip/ZipFile/FinalizeZipFile.java                                                                              generic-all
 #java/util/zip/ZipFile/MultiThreadedReadTest.java                                                                        generic-all
 #java/util/zip/ZipFile/ReadLongZipFileName.java                                                                          generic-all
 #java/util/zip/ZipFile/StreamZipEntriesTest.java                                                                         generic-all
