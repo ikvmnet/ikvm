@@ -11,6 +11,10 @@
         <SupportedImageTargetFrameworks>net6.0;net8.0</SupportedImageTargetFrameworks>
     </PropertyGroup>
 
+    <ItemGroup>
+      <Folder Include="ikvm\any\lib\" />
+    </ItemGroup>
+
     <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Image\IKVM.Image.runtime.targets" />
 </Project>

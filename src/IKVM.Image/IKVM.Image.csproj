@@ -53,6 +53,12 @@
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\hijrah-config-umalqura.properties" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\%(Filename)%(Extension)" />
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\cmm\lcms\*.pf" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\cmm\%(Filename)%(Extension)" />
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\security\java.policy" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\java.policy" />
+        <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\blacklisted.certs" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\blacklisted.certs" />
+        <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\cacerts" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\cacerts" />
+        <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\policy\limited\local_policy.jar" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\policy\limited\local_policy.jar" />
+        <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\policy\limited\US_export_policy.jar" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\policy\limited\US_export_policy.jar" />
+        <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\policy\unlimited\local_policy.jar" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\policy\unlimited\local_policy.jar" />
+        <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\policy\unlimited\US_export_policy.jar" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\policy\unlimited\US_export_policy.jar" />
         <!--<IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\security\blacklisted.certs" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\blacklisted.certs" />-->
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\sound.properties" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\%(Filename)%(Extension)" />
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\net.properties" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\%(Filename)%(Extension)" />

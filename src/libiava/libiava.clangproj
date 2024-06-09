@@ -19,10 +19,10 @@
         <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common\*.h" />
         <Header Include="$(OpenJdkDir)jdk\src\share\native\java\io\*.h" />
         <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io\*.h" />
-        <PreprocessorDefinitions Include="RELEASE" Value="&quot;$(Version)&quot;" />
+        <PreprocessorDefinitions Include="RELEASE" Value="&quot;$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)_$(OpenJdkUpdateVersion)-$(OpenJdkBuildNumber)&quot;" />
         <PreprocessorDefinitions Include="VENDOR" Value="&quot;$(ProductName)&quot;" />
         <PreprocessorDefinitions Include="VENDOR_URL" Value="&quot;$(PackageProjectUrl)&quot;" />
-        <PreprocessorDefinitions Include="VENDOR_URL_BUG" Value="&quot;https://github.com/ikvmnet/ikvm/issues&quot;" />
+        <PreprocessorDefinitions Include="VENDOR_URL_BUG" Value="&quot;$(PackageProjectUrl)/issues/&quot;" />
         <PreprocessorDefinitions Include="ARCHPROPNAME" Value="&quot;$(OpenJdkTargetCpuOsArch)&quot;" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\lang" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\share\native\java\lang" />
