@@ -35,6 +35,7 @@
         <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('osx-'))">macosx</OpenJdkTargetOsDir>
     </PropertyGroup>
 
+
     <ItemGroup>
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\windows\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))"/>
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\solaris\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('linux-'))"/>
@@ -119,6 +120,32 @@
     <PropertyGroup>
         <GenerateDependsOn>
             GenerateFontConfig;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <JavaSecurityFileSrc>$(OpenJdkDir)jdk\src\share\lib\security\java.security-$(OpenJdkTargetOsDir)</JavaSecurityFileSrc>
+        <JavaSecurityFileDst>$(IntermediateOutputPath)java.security</JavaSecurityFileDst>
+    </PropertyGroup>
+
+    <Target Name="GenerateJavaSecurity" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(JavaSecurityFileSrc)" Outputs="$(JavaSecurityFileDst)">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.customizesecurityfile.CryptoLevel $(JavaSecurityFileSrc) $(JavaSecurityFileDst) unlimited" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.customizesecurityfile.CryptoLevel $(JavaSecurityFileSrc) $(JavaSecurityFileDst) unlimited" />
+
+        <ItemGroup>
+            <IkvmImageItem Include="$(JavaSecurityFileDst)" ImagePath="lib\security\java.security" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" />
+            <FileWrites Include="$(JavaSecurityFileDst)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            GenerateJavaSecurity;
             $(GenerateDependsOn);
         </GenerateDependsOn>
     </PropertyGroup>
