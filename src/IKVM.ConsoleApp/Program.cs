@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
+﻿using java.text;
 
 namespace IKVM.ConsoleApp
 {
@@ -8,16 +7,7 @@ namespace IKVM.ConsoleApp
     {
         public static void Main(string[] args)
         {
-            while (!Debugger.IsAttached)
-                System.Threading.Thread.Sleep(100);
-
-            new Program().New();
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        void New()
-        {
-            java.lang.System.@out.println("hi");
+            java.text.Normalizer.normalize("hi", Normalizer.Form.NFC);
             System.Console.ReadLine();
         }
 

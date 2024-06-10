@@ -2197,9 +2197,21 @@ namespace IKVM.Runtime.JNI
                 // we want to support (non-primitive) value types so we can't cast to object[]
                 ((Array)pEnv->UnwrapRef(array)).SetValue(pEnv->UnwrapRef(val), index);
             }
+            catch (NullReferenceException)
+            {
+                JVM.SetPendingException(new java.lang.NullPointerException());
+            }
+            catch (InvalidCastException)
+            {
+                JVM.SetPendingException(new java.lang.ArrayStoreException());
+            }
             catch (IndexOutOfRangeException)
             {
                 JVM.SetPendingException(new java.lang.ArrayIndexOutOfBoundsException());
+            }
+            catch (Exception e)
+            {
+                JVM.SetPendingException(e);
             }
         }
 

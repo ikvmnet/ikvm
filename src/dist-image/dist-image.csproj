@@ -34,10 +34,6 @@
         <ImageTarget Include="net8.0|osx-arm64" TargetFramework="net8.0" RuntimeIdentifier="osx-arm64" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))" />
     </ItemGroup>
 
-    <ItemGroup>
-        <_ContentFromProject Include="ikvm\**\*" />
-    </ItemGroup>
-
     <!-- Runs once per TFM/RID combination to generate individual output. -->
     <Target Name="GetCopyToOutputDirectoryItemsByImageTarget" BeforeTargets="BeforeBuild" Inputs="@(ImageTarget)" Outputs="%(Identity)\null">
 
@@ -49,20 +45,7 @@
 
         <!-- output for the TFM/RID -->
         <ItemGroup>
-            <PublishItems Include="@(_ContentFromProject)">
-                <TargetPath>$(_TargetFramework)\ikvm\$(_RuntimeIdentifier)\%(_ContentFromProject.RecursiveDir)%(_ContentFromProject.Filename)%(_ContentFromProject.Extension)</TargetPath>
-            </PublishItems>
-            <PublishProjectReference Include="..\IKVM.Image.runtime.$(_RuntimeIdentifier)\IKVM.Image.runtime.$(_RuntimeIdentifier).csproj">
-                <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
-                <PublishTargetPath>$(_TargetFramework)</PublishTargetPath>
-                <PublishItemGroup>PublishItems</PublishItemGroup>
-            </PublishProjectReference>
-            <PublishProjectReference Include="..\IKVM.Image.JRE.runtime.$(_RuntimeIdentifier)\IKVM.Image.JRE.runtime.$(_RuntimeIdentifier).csproj">
-                <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
-                <PublishTargetPath>$(_TargetFramework)</PublishTargetPath>
-                <PublishItemGroup>PublishItems</PublishItemGroup>
-            </PublishProjectReference>
-            <PublishProjectReference Include="..\IKVM.Image.JDK.runtime.$(_RuntimeIdentifier)\IKVM.Image.JDK.runtime.$(_RuntimeIdentifier).csproj">
+            <PublishProjectReference Include="..\IKVM.Image\IKVM.Image.csproj">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
                 <PublishTargetPath>$(_TargetFramework)</PublishTargetPath>
                 <PublishItemGroup>PublishItems</PublishItemGroup>
@@ -101,9 +84,12 @@ public class StripTargetPath : Task
                 {
                     var a = p.Split(Path.DirectorySeparatorChar).ToList();
                     a.RemoveAt(1);
-                    p = string.Join(Path.DirectorySeparatorChar.ToString(), a);
-                    item.SetMetadata("TargetPath", p);
-                    d[p] = item;
+                    if (a.Count > 1)
+                    {
+                        p = string.Join(Path.DirectorySeparatorChar.ToString(), a);
+                        item.SetMetadata("TargetPath", p);
+                        d[p] = item;
+                    }
                 }
             }
         }

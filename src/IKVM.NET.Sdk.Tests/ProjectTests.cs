@@ -230,7 +230,7 @@ namespace IKVM.NET.Sdk.Tests
             var manager = new AnalyzerManager();
             var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.msbuildproj"));
             analyzer.AddBuildLogger(new TargetLogger(TestContext));
-            analyzer.AddBinaryLogger(Path.Combine(WorkRoot, $"{tfm}-{rid}-msbuild.binlog"));
+            analyzer.AddBinaryLogger(Path.Combine(WorkRoot, $"{env}-{tfm}-{rid}-msbuild.binlog"));
             analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
             analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
             analyzer.SetGlobalProperty("IkvmCacheDir", IkvmCachePath + Path.DirectorySeparatorChar);
@@ -258,7 +258,7 @@ namespace IKVM.NET.Sdk.Tests
             options.Arguments.Add("/v:diag");
 
             var result = analyzer.Build(options);
-            TestContext.AddResultFile(Path.Combine(WorkRoot, $"{tfm}-{rid}-msbuild.binlog"));
+            TestContext.AddResultFile(Path.Combine(WorkRoot, $"{env}-{tfm}-{rid}-msbuild.binlog"));
             result.OverallSuccess.Should().Be(true);
 
             var binDir = Path.Combine("Project", "Exe", "bin", "Release", tfm, rid);
@@ -282,8 +282,13 @@ namespace IKVM.NET.Sdk.Tests
                 Directory.Exists(Path.Combine(outDir, "ikvm", rid)).Should().BeTrue();
                 Directory.Exists(Path.Combine(outDir, "ikvm", rid, "bin")).Should().BeTrue();
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "TRADEMARK")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", "IKVM.Runtime.dll")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", "IKVM.Java.dll")).Should().BeTrue();
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "tzdb.dat")).Should().BeTrue();
-                File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "tzmappings")).Should().BeTrue();
+
+                if (rid.StartsWith("win-"))
+                    File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "tzmappings")).Should().BeTrue();
+
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "currency.data")).Should().BeTrue();
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "security", "java.policy")).Should().BeTrue();
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "security", "java.security")).Should().BeTrue();
