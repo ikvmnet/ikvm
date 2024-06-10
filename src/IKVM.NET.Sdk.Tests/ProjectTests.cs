@@ -230,7 +230,7 @@ namespace IKVM.NET.Sdk.Tests
             var manager = new AnalyzerManager();
             var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.msbuildproj"));
             analyzer.AddBuildLogger(new TargetLogger(TestContext));
-            analyzer.AddBinaryLogger(Path.Combine(WorkRoot, $"{tfm}-{rid}-msbuild.binlog"));
+            analyzer.AddBinaryLogger(Path.Combine(WorkRoot, $"{env}-{tfm}-{rid}-msbuild.binlog"));
             analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
             analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
             analyzer.SetGlobalProperty("IkvmCacheDir", IkvmCachePath + Path.DirectorySeparatorChar);
@@ -258,7 +258,7 @@ namespace IKVM.NET.Sdk.Tests
             options.Arguments.Add("/v:diag");
 
             var result = analyzer.Build(options);
-            TestContext.AddResultFile(Path.Combine(WorkRoot, $"{tfm}-{rid}-msbuild.binlog"));
+            TestContext.AddResultFile(Path.Combine(WorkRoot, $"{env}-{tfm}-{rid}-msbuild.binlog"));
             result.OverallSuccess.Should().Be(true);
 
             var binDir = Path.Combine("Project", "Exe", "bin", "Release", tfm, rid);
