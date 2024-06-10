@@ -6,10 +6,5 @@
         <RootNamespace>project.lib</RootNamespace>
     </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="IKVM.Image.JRE" Version="$(PackageVersion)" />
-        <PackageReference Include="IKVM.Image.JDK" Version="$(PackageVersion)" />
-    </ItemGroup>
-
     <Import Sdk="IKVM.NET.Sdk" Version="$(PackageVersion)" Project="Sdk.targets" />
 </Project>
