@@ -282,8 +282,13 @@ namespace IKVM.NET.Sdk.Tests
                 Directory.Exists(Path.Combine(outDir, "ikvm", rid)).Should().BeTrue();
                 Directory.Exists(Path.Combine(outDir, "ikvm", rid, "bin")).Should().BeTrue();
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "TRADEMARK")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", "IKVM.Runtime.dll")).Should().BeTrue();
+                File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", "IKVM.Java.dll")).Should().BeTrue();
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "tzdb.dat")).Should().BeTrue();
-                File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "tzmappings")).Should().BeTrue();
+
+                if (rid.StartsWith("win-"))
+                    File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "tzmappings")).Should().BeTrue();
+
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "currency.data")).Should().BeTrue();
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "security", "java.policy")).Should().BeTrue();
                 File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "security", "java.security")).Should().BeTrue();
