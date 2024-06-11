@@ -646,7 +646,7 @@ jobs:
         }
 
         # scan and process test assemblies
-        $tests = $(gi .\tests\$tst\$tfm\*.Tests.dll)
+        $tests = gi (".\tests\$tst\$tfm\*.Tests.dll", ".\tests\$tst\$tfm\*.Tests.exe")
         if ($tests) {
             $argl = @(
                 "-f", $tfm,

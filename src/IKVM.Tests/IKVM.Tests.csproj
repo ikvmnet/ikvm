@@ -1,14 +1,15 @@
 ﻿<Project>
-    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
+    <Import Sdk="MSTest.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\IKVM.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.props" />
-    
+
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net7.0;net8.0</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <PreserveCompilationContext>true</PreserveCompilationContext>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
         <LangVersion>11</LangVersion>
+        <RunSettingsFilePath>$(MSBuildProjectDirectory)\IKVM.Tests.runsettings</RunSettingsFilePath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -30,9 +31,6 @@
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="6.12.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-        <PackageReference Include="MSTest.TestAdapter" Version="3.2.2" />
-        <PackageReference Include="MSTest.TestFramework" Version="3.2.2" />
         <PackageReference Include="System.Net.Http" Version="4.3.4" />
         <PackageReference Include="Mono.Posix" Version="7.1.0-final.1.21458.1" />
     </ItemGroup>
@@ -193,10 +191,16 @@
 
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="IKVM.Tests.runsettings">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
-    
-    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+
+    <Import Sdk="MSTest.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\IKVM.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.targets" />
 </Project>
