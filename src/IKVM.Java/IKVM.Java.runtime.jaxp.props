@@ -1,0 +1,22 @@
+<!--
+
+    IKVM.Java.runtime.jaxp.props
+    
+    Build properties for the OpenJDK jaxp distribution.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <OpenJdkSource Include="$(OpenJdkDir)\jaxp\src\**\*.java" PackagePath="" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxp\src\**\*" Exclude="$(OpenJdkDir)\jaxp\src\**\_*;$(OpenJdkDir)\jaxp\src\**\*.java;$(OpenJdkDir)\jaxp\src\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+</Project>
