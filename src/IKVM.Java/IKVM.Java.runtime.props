@@ -52,7 +52,7 @@
         <TransformValues Include="OpenJdkSpecificationVersion" Value="$(OpenJdkSpecificationVersion)" />
         <TransformValues Include="OpenJdkSpecificationVendor" Value="$(OpenJdkSpecificationVendor)" />
     </ItemGroup>
-    
+
     <ItemDefinitionGroup>
         <OpenJdkSource>
             <PackagePath></PackagePath>
@@ -61,6 +61,20 @@
 
     <ItemGroup>
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\corba\gensrc\**\*.java" PackagePath="" />
+        <OpenJdkSource Include="$(OpenJdkDir)\corba\src\share\classes\**\*.java" PackagePath="" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\corba\src\share\classes\sun\misc\**\*.java" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <OpenJdkSource Include="$(OpenJdkDir)\jaxp\src\**\*.java" PackagePath="" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <OpenJdkSource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.java" PackagePath="" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.java" PackagePath="" />
+    </ItemGroup>
+
+    <ItemGroup>
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\util\CoreResourceBundleControl.java" PackagePath="sun\util" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\util\locale\provider\LocaleDataMetaInfo.java" PackagePath="sun\util\locale\provider" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\ActivationSystemException.java" PackagePath="com\sun\corba\se\impl\logging" />
@@ -71,12 +85,6 @@
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\ORBUtilSystemException.java" PackagePath="com\sun\corba\se\impl\logging" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\POASystemException.java" PackagePath="com\sun\corba\se\impl\logging" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\UtilSystemException.java" PackagePath="com\sun\corba\se\impl\logging" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\langtools\gensrc\com\sun\tools\**\*.java" PackagePath="com\sun\tools" />
-
-        <OpenJdkSource Include="$(OpenJdkDir)\corba\src\share\classes\**\*.java" PackagePath="" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jaxp\src\**\*.java" PackagePath="" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.java" PackagePath="" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.java" PackagePath="" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\awt\**\*.java" PackagePath="com\sun\awt" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\beans\**\*.java" PackagePath="com\sun\beans" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\crypto\**\*.java" PackagePath="com\sun\crypto" />
@@ -133,6 +141,7 @@
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\lang\ref\Reference.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\lang\ref\ReferenceQueue.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\lang\ref\SoftReference.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\lang\ref\FinalizerHistogram.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\lang\reflect\**\*.java" PackagePath="java\lang\reflect" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\lang\reflect\Constructor.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\java\lang\reflect\Executable.java" />
@@ -203,8 +212,6 @@
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\tools\jstat\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\tools\jstatd\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\util\**\*.java" PackagePath="sun\util" />
-        <!--<OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\demo\nio\zipfs\src\com\sun\nio\zipfs\**\*.java" PackagePath="com\sun\nio\zipfs" />-->
-        <OpenJdkSource Include="$(OpenJdkDir)\langtools\src\share\classes\**\*.java" PackagePath="" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' Or '$(IkvmJavaRuntimeIdentifier)' == 'ref' ">
@@ -338,6 +345,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\langtools\gensrc\com\sun\tools\**\*.java" PackagePath="com\sun\tools" />
+        <OpenJdkSource Include="$(OpenJdkDir)\langtools\src\share\classes\**\*.java" PackagePath="" />
+    </ItemGroup>
+
+    <ItemGroup>
         <OpenJdkClass Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\nashorn\classes\**\*.class" />
     </ItemGroup>
 
@@ -373,7 +385,7 @@
         <!-- Copy icu and _dict files used by the text break iterator -->
         <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\**\*.icu" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
         <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\**\*_dict" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        
+
         <!-- Copy config files for com.sun.org.apache.xml.internal.security -->
         <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\org\apache\xml\internal\security\resource\config.dtd" ResourcePath="com\sun\org\apache\xml\internal\security\resource\config.dtd" />
         <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\org\apache\xml\internal\security\resource\config.xml" ResourcePath="com\sun\org\apache\xml\internal\security\resource\config.xml" />

@@ -205,33 +205,4 @@ public class ReferenceQueue<T>
             curr = curr.next;
         }
     }
-
-    /**
-     * Iterate queue and invoke given action with each Reference.
-     * Suitable for diagnostic purposes.
-     * WARNING: any use of this method should make sure to not
-     * retain the referents of iterated references (in case of
-     * FinalReference(s)) so that their life is not prolonged more
-     * than necessary.
-     */
-    void forEach(Consumer<? super Reference<? extends T>> action) {
-        for (Reference<? extends T> r = head; r != null;) {
-            action.accept(r);
-            @SuppressWarnings("unchecked")
-            Reference<? extends T> rn = r.next;
-            if (rn == r) {
-                if (r.queue == ENQUEUED) {
-                    // still enqueued -> we reached end of chain
-                    r = null;
-                } else {
-                    // already dequeued: r.queue == NULL; ->
-                    // restart from head when overtaken by queue poller(s)
-                    r = head;
-                }
-            } else {
-                // next in chain
-                r = rn;
-            }
-        }
-    }
 }
