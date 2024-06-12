@@ -1,8 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="MSTest.Sdk">
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <PreserveCompilationContext>true</PreserveCompilationContext>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+        <RunSettingsFilePath>$(MSBuildProjectDirectory)\IKVM.Tools.Importer.Tests.runsettings</RunSettingsFilePath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -16,7 +17,7 @@
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
         <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
     </ItemGroup>
-    
+
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Java.Tests.Util\IKVM.Java.Tests.Util.csproj" />
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
@@ -65,6 +66,12 @@
             <IncludeTargetPath>lib\net8.0\</IncludeTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </IncludeProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="IKVM.Tools.Importer.Tests.runsettings">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
