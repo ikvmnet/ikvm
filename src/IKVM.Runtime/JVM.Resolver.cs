@@ -71,7 +71,7 @@ namespace IKVM.Runtime
             /// <inheritdoc />
             public Type ResolveRuntimeType(string typeName)
             {
-                return typeof(JVM).Assembly.GetType(typeName);
+                return typeof(Resolver).Assembly.GetType(typeName);
             }
 
         }

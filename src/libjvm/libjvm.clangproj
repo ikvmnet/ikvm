@@ -6,9 +6,10 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>jvm</TargetName>
-        <AdditionalCompileOptions>$(AdditionalCompileOptions);-Wno-dll-attribute-on-redeclaration</AdditionalCompileOptions>
+        <OutputType>dll</OutputType>
     </PropertyGroup>
     <ItemGroup>
+        <AdditionalCompileOptions Include="-Wno-dll-attribute-on-redeclaration" />
         <IncludeDirectories Include="$(MSBuildThisFileDirectory)" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\share\vm" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\share\vm\prims" />
@@ -29,22 +30,37 @@
         <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_windows" />
+        <PreprocessorDefinitions Include="O_BINARY" Value="_O_BINARY" />
+        <PreprocessorDefinitions Include="O_DELETE" Value="_O_DELETE" />
+        <PreprocessorDefinitions Include="O_NOINHERIT" Value="_O_NOINHERIT" />
+        <PreprocessorDefinitions Include="close" Value="_close" />
+        <PreprocessorDefinitions Include="open" Value="_open" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\windows\vm" />
-        <Dependencies Include="ws2_32" />
+        <Dependencies Include="WS2_32" />
+        <AdditionalLinkOptions Include="-Wl,-export:JNI_GetDefaultJavaVMInitArgs" />
+        <AdditionalLinkOptions Include="-Wl,-export:JNI_CreateJavaVM" />
+        <AdditionalLinkOptions Include="-Wl,-export:JNI_GetCreatedJavaVMs" />
+        <AdditionalLinkOptions Include="-Wl,-export:jio_snprintf" />
+        <AdditionalLinkOptions Include="-Wl,-export:jio_printf" />
+        <AdditionalLinkOptions Include="-Wl,-export:jio_fprintf" />
+        <AdditionalLinkOptions Include="-Wl,-export:jio_vfprintf" />
+        <AdditionalLinkOptions Include="-Wl,-export:jio_vsnprintf" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_linux" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\linux\vm" />
         <Dependencies Include="c" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=mapfile-vers" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_bsd" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\bsd\vm" />
         <Dependencies Include="c" />
-        <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path/." />
-        <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path/.." />
+        <AdditionalLinkOptions Include="-Wl,-exported_symbols_list,mapfile-vers-product" />
+        <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f." />
+        <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f.." />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="**\*.c" LanguageStandard="c99" />
@@ -54,11 +70,14 @@
         <Header Include="$(OpenJdkDir)jdk\src\share\javavm\export\**\*.h">
             <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
         </Header>
-        <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\javavm\export\**\*.h" Condition=" '$(TargetTriple.Contains(&quot;-apple-&quot;))' == 'false' ">
+        <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\javavm\export\**\*.h" Condition="!$(TargetIdentifier.StartsWith('osx-'))">
             <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
         </Header>
-        <Header Include="$(OpenJdkDir)jdk\src\macosx\javavm\export\**\*.h" Condition="$(TargetTriple.Contains('-apple-'))">
+        <Header Include="$(OpenJdkDir)jdk\src\macosx\javavm\export\**\*.h" Condition="$(TargetIdentifier.StartsWith('osx-'))">
             <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
+        </Header>
+        <Header Include="ikvm.h">
+            <IncludePath>ikvm.h</IncludePath>
         </Header>
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />

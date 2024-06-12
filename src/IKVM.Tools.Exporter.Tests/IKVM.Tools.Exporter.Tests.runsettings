@@ -1,0 +1,8 @@
+﻿<RunSettings>
+    <RunConfiguration>
+        <DisableAppDomain>True</DisableAppDomain>
+    </RunConfiguration>
+    <MSTest>
+        <DisableAppDomain>True</DisableAppDomain>
+    </MSTest>
+</RunSettings>

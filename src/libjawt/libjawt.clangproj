@@ -1,0 +1,41 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>e289c57e-b65f-42c4-a84d-43e27cf4d34f</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>jawt</TargetName>
+        <OutputType>dll</OutputType>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+        <ProjectReference Include="..\libawt\libawt.clangproj" />
+        <ProjectReference Include="..\libawt_xawt\libawt_xawt.clangproj" Condition="$(TargetIdentifier.StartsWith('linux-'))" />
+        <ProjectReference Include="..\libawt_lwawt\libawt_lwawt.clangproj" Condition="$(TargetIdentifier.StartsWith('osx-'))" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\native\sun\java2d\windows" />
+        <PreprocessorDefinitions Include="UNICODE;_UNICODE" />
+        <Dependencies Include="AdvAPI32" />
+        <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\jawt.cpp" LanguageStandard="c++11" />
+        <Header Include="$(OpenJdkDir)jdk\src\windows\native\sun\windows\*.h" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\jawt.c" />
+        <Header Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt\*.h" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\sun\awt" />
+        <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\sun\awt\jawt.m" />
+        <Header Include="$(OpenJdkDir)jdk\src\macosx\native\sun\awt\*.h" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />   
+</Project>

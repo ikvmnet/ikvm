@@ -25,6 +25,7 @@ using System;
 using System.Runtime.InteropServices;
 
 using IKVM.ByteCode.Text;
+using IKVM.Runtime.Extensions;
 
 namespace IKVM.Runtime.JNI
 {
@@ -118,7 +119,7 @@ namespace IKVM.Runtime.JNI
                 }
             }
 
-            var env = TlsHack.ManagedJNIEnv;
+            var env = JNIEnvContext.Current;
             if (env != null)
             {
                 *penv = env.pJNIEnv;
@@ -135,7 +136,7 @@ namespace IKVM.Runtime.JNI
                 {
                     try
                     {
-                        var l = MUTF8.IndexOfNull(pAttachArgs->name);
+                        var l = MemoryMarshalExtensions.GetIndexOfNull(pAttachArgs->name);
                         if (l < 0)
                             return JNIEnv.JNI_ERR;
 
@@ -162,7 +163,7 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         internal static jint DetachCurrentThread(JavaVM* pJVM)
         {
-            if (TlsHack.ManagedJNIEnv == null)
+            if (JNIEnvContext.Current == null)
             {
                 // the JDK allows detaching from an already detached thread
                 return JNIEnv.JNI_OK;
@@ -178,7 +179,7 @@ namespace IKVM.Runtime.JNI
         {
             if (JNIVM.IsSupportedJNIVersion(version))
             {
-                var env = TlsHack.ManagedJNIEnv;
+                var env = JNIEnvContext.Current;
                 if (env != null)
                 {
                     *penv = env.pJNIEnv;

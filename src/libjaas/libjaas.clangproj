@@ -1,0 +1,33 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>2d69f3e3-d750-479b-975a-d8de7fa3f7ee</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>jaas</TargetName>
+        <TargetName>jaas_unix</TargetName>
+        <TargetName Condition="$(TargetIdentifier.StartsWith('win-'))">jaas_nt</TargetName>
+        <OutputType>dll</OutputType>
+        <LanguageStandard>c99</LanguageStandard>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\com\sun\security\auth\module" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\com\sun\security\auth\module\*.c" Exclude="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\com\sun\security\auth\module\Solaris.c" />
+        <Compile Include="*.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <Dependencies Include="NetAPI32" />
+        <Dependencies Include="User32" />
+        <Dependencies Include="Mpr" />
+        <Dependencies Include="AdvAPI32" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libjaas\mapfile-vers" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

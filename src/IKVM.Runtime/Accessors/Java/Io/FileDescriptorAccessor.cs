@@ -21,12 +21,10 @@ namespace IKVM.Runtime.Accessors.Java.Io
         FieldAccessor<object> @out;
         FieldAccessor<object> @err;
 
-        FieldAccessor<object, object> obj;
+        FieldAccessor<object, Stream> stream;
         FieldAccessor<object, long> ptr;
         PropertyAccessor<object, int> fd;
         PropertyAccessor<object, long> handle;
-        FieldAccessor<object, Task> task;
-        FieldAccessor<object, SemaphoreSlim> semaphore;
         MethodAccessor<Func<object>> init;
         MethodAccessor<Action<object>> sync;
 
@@ -64,12 +62,12 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// <summary>
         /// Gets the value for the 'obj' field.
         /// </summary>
-        public object GetObj(object self) => GetField(ref obj, nameof(obj)).GetValue(self);
+        public Stream GetStream(object self) => GetField(ref stream, nameof(stream)).GetValue(self);
 
         /// <summary>
         /// Sets the value for the 'obj' field.
         /// </summary>
-        public void SetObj(object self, object value) => GetField(ref obj, nameof(obj)).SetValue(self, value);
+        public void SetStream(object self, Stream value) => GetField(ref stream, nameof(stream)).SetValue(self, value);
 
         /// <summary>
         /// Gets the value for the 'ptr' field.
@@ -100,37 +98,6 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// Sets the value for the 'handle' property.
         /// </summary>
         public void SetHandle(object self, long value) => GetProperty(ref handle, nameof(handle)).SetValue(self, value);
-
-        /// <summary>
-        /// Gets the value of the 'task' field.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <returns></returns>
-        public Task GetTask(object self) => GetField(ref task, nameof(task)).GetValue(self);
-
-        /// <summary>
-        /// Sets the value of the 'task' field.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public void SetTask(object self, Task value) => GetField(ref task, nameof(task)).SetValue(self, value);
-
-        /// <summary>
-        /// Gets the value of the 'semaphore' field.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <returns></returns>
-        public SemaphoreSlim GetSemaphore(object self) => GetField(ref semaphore, nameof(semaphore)).GetValue(self);
-
-        /// <summary>
-        /// Compares and exchanges the value of the 'semaphore' field.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <param name="value"></param>
-        /// <param name="comparand"></param>
-        /// <returns></returns>
-        public SemaphoreSlim CompareExchangeSemaphore(object self, SemaphoreSlim value, SemaphoreSlim comparand) => GetField(ref semaphore, nameof(semaphore)).CompareExchangeValue(self, value, comparand);
 
         /// <summary>
         /// Invokes the 'sync' method.

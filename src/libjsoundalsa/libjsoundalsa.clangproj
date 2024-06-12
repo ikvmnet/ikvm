@@ -5,8 +5,9 @@
         <ProjectGuid>555CDB6E-84CE-4FE8-8945-47553C4D0A51</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
         <TargetName>jsoundalsa</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
@@ -34,6 +35,7 @@
         <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS" Value="&quot;&quot;" />
 
         <Dependencies Include="asound" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libjsoundalsa\mapfile-vers" />
 
         <!-- LIBJSOUND_SRC_DIRS -->
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound" />

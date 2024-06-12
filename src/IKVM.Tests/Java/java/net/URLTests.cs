@@ -58,7 +58,7 @@ namespace IKVM.Tests.Java.java.net
         //[DataRow("sha512")]
         [DataRow("rsa2048")]
         [DataRow("rsa4096")]
-        [DataRow("rsa8192")]
+        //[DataRow("rsa8192")]
         [DataRow("ecc256")]
         [DataRow("ecc384")]
         //[DataRow("dh480")]

@@ -127,6 +127,9 @@
         MapFileFieldNotFound = 5057,
         GhostInterfaceMethodMissing = 5058,
 
+        // ModuleInitializer attribute placed on inappropriate method
+        ModuleInitializerMethodRequirements = 5059,
+
     }
 
 }

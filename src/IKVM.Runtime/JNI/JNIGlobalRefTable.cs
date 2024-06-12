@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace IKVM.Runtime.JNI
@@ -11,14 +11,14 @@ namespace IKVM.Runtime.JNI
     static class JNIGlobalRefTable
     {
 
-        static ArrayList globalRefs = new ArrayList();
+        readonly static List<object> globalRefs = new List<object>();
         internal static readonly object weakRefLock = new object();
         internal static GCHandle[] weakRefs = new GCHandle[16];
 
         /// <summary>
         /// Returns the underlying object instance for the specified global reference.
         /// </summary>
-        /// <param name="i"></param>
+        /// <param name="z"></param>
         /// <returns></returns>
         internal static object Unwrap(nint z)
         {
@@ -42,9 +42,14 @@ namespace IKVM.Runtime.JNI
             {
                 int index = globalRefs.IndexOf(null);
                 if (index >= 0)
+                {
                     globalRefs[index] = o;
+                }
                 else
-                    index = globalRefs.Add(o);
+                {
+                    index = globalRefs.Count;
+                    globalRefs.Add(o);
+                }
 
                 return -(index + 1);
             }

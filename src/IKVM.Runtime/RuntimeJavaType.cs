@@ -828,12 +828,13 @@ namespace IKVM.Runtime
 
         internal RuntimeJavaMethod GetInterfaceMethod(string name, string sig)
         {
-            RuntimeJavaMethod method = GetMethodWrapper(name, sig, false);
+            var method = GetMethodWrapper(name, sig, false);
             if (method != null)
             {
                 return method;
             }
-            RuntimeJavaType[] interfaces = Interfaces;
+
+            var interfaces = Interfaces;
             for (int i = 0; i < interfaces.Length; i++)
             {
                 method = interfaces[i].GetInterfaceMethod(name, sig);
@@ -842,6 +843,7 @@ namespace IKVM.Runtime
                     return method;
                 }
             }
+
             return null;
         }
 

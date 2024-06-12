@@ -8,6 +8,9 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 namespace IKVM.JTReg.TestAdapter
 {
 
+    /// <summary>
+    /// Provides options from a RunSettings file.
+    /// </summary>
     public static class JTRegTestOptionsExtensions
     {
 

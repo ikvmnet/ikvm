@@ -1,30 +1,14 @@
-﻿using System;
-using System.Diagnostics;
+﻿using java.text;
 
 namespace IKVM.ConsoleApp
 {
-    public static class Program
-    {
 
+    public class Program
+    {
         public static void Main(string[] args)
         {
-            Foo();
-        }
-
-        public static void Foo()
-        {
-            new Bar();
-        }
-
-        class Bar
-        {
-
-            public Bar()
-            {
-                for (int i = 0; i < 19383; i++)
-                    System.Console.WriteLine(java.net.InetAddress.getLocalHost().getHostName());
-            }
-
+            java.text.Normalizer.normalize("hi", Normalizer.Form.NFC);
+            System.Console.ReadLine();
         }
 
     }

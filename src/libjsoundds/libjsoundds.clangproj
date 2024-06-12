@@ -5,8 +5,9 @@
         <ProjectGuid>30B763A2-A59A-4CE8-B11E-DD49527480CB</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>win-x64;win-x86;win-arm64</TargetIdentifiers>
         <TargetName>jsoundds</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>win-x64;win-x86;win-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
@@ -18,7 +19,7 @@
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN" Value="TRUE" />
         <PreprocessorDefinitions Include="USE_PORTS" Value="TRUE" />
         <PreprocessorDefinitions Include="USE_DAUDIO" Value="TRUE" />
-        <Dependencies Include="dsound;winmm;user32;ole32" />
+        <Dependencies Include="dsound;winmm;User32;Ole32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x86'))">
         <PreprocessorDefinitions Include="X_ARCH" Value="X_I586" />

@@ -17,7 +17,7 @@ namespace IKVM.Runtime.JNI
     /// Union type that represents 'jvalue'.
     /// </summary>
     [StructLayout(LayoutKind.Explicit)]
-    struct jvalue
+    struct JValue
     {
 
         [FieldOffset(0)]

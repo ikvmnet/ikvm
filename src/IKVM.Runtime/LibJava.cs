@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace IKVM.Runtime
 {
@@ -10,7 +11,7 @@ namespace IKVM.Runtime
     /// </summary>
     /// <remarks>
     /// OpenJDK's 'libjava' is named 'libiava' in IKVM due to the potential module name overlap on Windows, which loads
-    /// .NET assemblies using LoadLibrary. The 'java.dll' application ends up being a Module, which conflicts with libjava.
+    /// .NET assemblies using LoadLibrary. The 'java.exe' application ends up being a Module, which conflicts with libjava.
     /// </remarks>
     internal unsafe class LibJava
     {
@@ -40,11 +41,14 @@ namespace IKVM.Runtime
         /// </summary>
         ~LibJava()
         {
-            if (Handle != 0)
+            if (Environment.HasShutdownStarted == false)
             {
-                var h = Handle;
-                Handle = 0;
-                LibJvm.Instance.JVM_UnloadLibrary(h);
+                if (Handle != 0)
+                {
+                    var h = Handle;
+                    Handle = 0;
+                    LibJvm.Instance.JVM_UnloadLibrary(h);
+                }
             }
         }
 

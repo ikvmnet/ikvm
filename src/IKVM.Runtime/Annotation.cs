@@ -34,6 +34,7 @@ using Type = IKVM.Reflection.Type;
 
 using System.Collections;
 using System.Collections.Generic;
+
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -58,7 +59,8 @@ namespace IKVM.Runtime
             if (object.Equals(def[0], AnnotationDefaultAttribute.TAG_ANNOTATION) == false)
                 throw new InternalException("LoadAssemblyCustomAttribute did not receive AnnotationDefaultAttribute.TAG_ANNOTATION.");
 
-            string annotationClass = (string)def[1];
+            var annotationClass = (string)def[1];
+
             if (ClassFile.IsValidFieldSig(annotationClass))
             {
                 try
@@ -70,6 +72,7 @@ namespace IKVM.Runtime
 
                 }
             }
+
             return null;
         }
 
@@ -208,6 +211,7 @@ namespace IKVM.Runtime
                     }
                 }
             }
+
             return false;
         }
 
@@ -223,6 +227,7 @@ namespace IKVM.Runtime
                     }
                 }
             }
+
             return false;
         }
 

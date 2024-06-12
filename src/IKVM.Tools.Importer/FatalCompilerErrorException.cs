@@ -159,6 +159,8 @@ namespace IKVM.Tools.Importer
                     return "Field '{0}' referenced in remap file was not found in class '{1}'";
                 case IKVM.Tools.Importer.Message.GhostInterfaceMethodMissing:
                     return "Remapped class '{0}' does not implement ghost interface method\n\t({1}.{2}{3})";
+                case Importer.Message.ModuleInitializerMethodRequirements:
+                    return "Method '{1}.{2}{3}' does not meet the requirements of a module initializer.";
                 default:
                     return "Missing Error IKVM.Tools.Importer.Message. Please file a bug.";
             }

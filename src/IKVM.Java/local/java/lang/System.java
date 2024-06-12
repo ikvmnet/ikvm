@@ -726,7 +726,7 @@ public final class System {
      * @exception  NullPointerException if <code>key</code> is
      *             <code>null</code>.
      * @exception  IllegalArgumentException if <code>key</code> is empty.
-     * @see        #setPropertycheckKey
+     * @see        #setProperty
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see        java.lang.System#getProperties()
@@ -1215,7 +1215,7 @@ public final class System {
 
         // Load the zip library now in order to keep java.util.zip.ZipFile
         // from trying to use itself to load this library later.
-        // loadLibrary("zip");
+        loadLibrary("zip");
 
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();

@@ -19,7 +19,7 @@ on:
     - created
 
 env:
-  NATIVE_SDK_VERSION: "20240322.2"
+  NATIVE_SDK_VERSION: "20240413.1"
 
 jobs:
   build-openjdk:
@@ -155,11 +155,11 @@ jobs:
       uses: actions/cache@v4
       with:
         path: C:/Program Files/LLVM
-        key: llvm-16.0
+        key: llvm-17.0
     - name: Install LLVM and Clang
       uses: KyleMayes/install-llvm-action@v1
       with:
-        version: "16.0"
+        version: "17.0"
         cached: ${{ steps.cache-llvm.outputs.cache-hit }}
     - name: Install apple-codesign
       uses: baptiste0928/cargo-install@v3
@@ -598,7 +598,7 @@ jobs:
     - name: Setup Linux
       if: runner.os == 'Linux'
       shell: bash
-      run: sudo apt-get update && sudo apt-get install -y libasound2
+      run: sudo apt-get update && sudo apt-get install -y libasound2 xvfb
     - name: Get Test Name
       uses: actions/github-script@v7
       id: test-name
@@ -622,9 +622,14 @@ jobs:
       shell: pwsh
       run: ri tests--${{ steps.test-name.outputs.result }}.tar.gz
       working-directory: ${{ env.WORKPATH }}
+    - name: Start XVFB (Linux)
+      if: runner.os == 'Linux'
+      run: /usr/bin/Xvfb :99 & disown
     - name: Execute Tests
       timeout-minutes: 120
       shell: pwsh
+      env:
+        DISPLAY: ":99"
       run: |
         # assign powershell variables
         $run = "${{ matrix.run }}"
@@ -641,7 +646,7 @@ jobs:
         }
 
         # scan and process test assemblies
-        $tests = $(gi .\tests\$tst\$tfm\*.Tests.dll)
+        $tests = gi (".\tests\$tst\$tfm\*.Tests.dll", ".\tests\$tst\$tfm\*.Tests.exe")
         if ($tests) {
             $argl = @(
                 "-f", $tfm,
@@ -688,6 +693,12 @@ jobs:
     - test
     runs-on: ubuntu-latest
     steps:
+    - name: Free Disk Space (Linux)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        dotnet: false
+        swap-storage: false
+        large-packages: false
     - name: Checkout Source
       uses: actions/checkout@v4
       with:

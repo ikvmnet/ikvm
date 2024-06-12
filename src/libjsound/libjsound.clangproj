@@ -5,8 +5,9 @@
         <ProjectGuid>403E0642-B6ED-464E-8694-2E467CDA2C02</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
         <TargetName>jsound</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
@@ -16,7 +17,7 @@
         <!-- LIBJSOUND_SRC_DIRS -->
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\com\sun\media\sound" />
-        
+
         <!-- INCLUDE_FILES -->
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\Utilities.c" LanguageStandard="c99" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\Platform.c" LanguageStandard="c99" />
@@ -33,15 +34,15 @@
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm64'))">
         <PreprocessorDefinitions Include="X_ARCH" Value="X_AARCH64" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="X_PLATFORM" Value="X_WINDOWS" />
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT" Value="TRUE" />
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN" Value="TRUE" />
         <PreprocessorDefinitions Include="USE_PORTS" Value="TRUE" />
         <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS" Value="&quot;jsoundds&quot;" />
 
-        <Dependencies Include="msvcrt;advapi32;winmm" />
-        
+        <Dependencies Include="AdvAPI32;winmm" />
+
         <!-- LIBJSOUND_SRC_FILES -->
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\com\sun\media\sound\PLATFORM_API_WinOS_MidiIn.cpp" LanguageStandard="c++11" />
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\com\sun\media\sound\PLATFORM_API_WinOS_MidiOut.c" LanguageStandard="c99" />
@@ -59,20 +60,21 @@
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\PortMixerProvider.c" LanguageStandard="c99" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\PortMixer.c" LanguageStandard="c99" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <PreprocessorDefinitions Include="X_PLATFORM" Value="X_LINUX" />
         <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS" Value="&quot;jsoundalsa&quot;" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libjsound\mapfile-vers" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <PreprocessorDefinitions Include="X_PLATFORM" Value="X_MACOSX" />
         <PreprocessorDefinitions Include="USE_PORTS" Value="TRUE" />
         <PreprocessorDefinitions Include="USE_DAUDIO" Value="TRUE" />
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT" Value="TRUE" />
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN" Value="TRUE" />
         <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS" Value="&quot;&quot;" />
-        
+
         <Dependencies Include="c" />
-        
+
         <AdditionalLinkOptions Include="-framework" Value="CoreAudio" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="CoreServices" Separator=" " />
@@ -98,7 +100,7 @@
         <!-- LIBJSOUND_PORTFILES -->
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\PortMixerProvider.c" LanguageStandard="c99" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\PortMixer.c" LanguageStandard="c99" />
-        
+
         <!-- LIBJSOUND_DAUDIOFILES -->
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\DirectAudioDeviceProvider.c" LanguageStandard="c99" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound\DirectAudioDevice.c" LanguageStandard="c99" />

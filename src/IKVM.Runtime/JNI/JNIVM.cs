@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using IKVM.ByteCode.Text;
+using IKVM.Runtime.Extensions;
 
 namespace IKVM.Runtime.JNI
 {
@@ -34,7 +35,7 @@ namespace IKVM.Runtime.JNI
 
     using jsize = System.Int32;
 
-    public sealed unsafe partial class JNIVM
+    sealed unsafe partial class JNIVM
     {
 
         static readonly MUTF8Encoding MUTF8 = MUTF8Encoding.GetMUTF8(52);
@@ -47,20 +48,6 @@ namespace IKVM.Runtime.JNI
 #else
         static readonly Encoding platformEncoding = CodePagesEncodingProvider.Instance.GetEncoding(0);
 #endif
-
-        static readonly LibJvm.JNI_GetDefaultJavaVMInitArgsFunc JNI_GetDefaultJavaVMInitArgs = GetDefaultJavaVMInitArgs;
-        static readonly LibJvm.JNI_GetCreatedJavaVMsFunc JNI_GetCreatedJavaVMs = GetCreatedJavaVMs;
-        static readonly LibJvm.JNI_CreateJavaVMFunc JNI_CreateJavaVM = CreateJavaVM;
-
-        /// <summary>
-        /// Initializes the static instance.
-        /// </summary>
-        static JNIVM()
-        {
-            LibJvm.Instance.Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs);
-            LibJvm.Instance.Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs);
-            LibJvm.Instance.Set_JNI_CreateJavaVM(JNI_CreateJavaVM);
-        }
 
         internal static bool IsSupportedJNIVersion(int version)
         {
@@ -79,7 +66,7 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         static string DecodePlatformString(byte* psz)
         {
-            var p = psz is not null ? MUTF8.IndexOfNull(psz) : -1;
+            var p = psz is not null ? MemoryMarshalExtensions.GetIndexOfNull(psz) : -1;
             return p < 0 ? null : platformEncoding.GetString(psz, p);
         }
 
@@ -90,7 +77,7 @@ namespace IKVM.Runtime.JNI
         /// <param name="p_env"></param>
         /// <param name="vm_args"></param>
         /// <returns></returns>
-        static int CreateJavaVM(JavaVM** p_vm, void** p_env, void* vm_args)
+        public static int CreateJavaVM(JavaVM** p_vm, void** p_env, void* vm_args)
         {
             var pInitArgs = (JavaVMInitArgs*)vm_args;
 
@@ -143,7 +130,7 @@ namespace IKVM.Runtime.JNI
         /// </summary>
         /// <param name="vm_args"></param>
         /// <returns></returns>
-        static int GetDefaultJavaVMInitArgs(void* vm_args)
+        public static int GetDefaultJavaVMInitArgs(void* vm_args)
         {
             // This is only used for JDK 1.1 JavaVMInitArgs, and we don't support those.
             return JNIEnv.JNI_ERR;
@@ -156,7 +143,7 @@ namespace IKVM.Runtime.JNI
         /// <param name="bufLen"></param>
         /// <param name="nVMs"></param>
         /// <returns></returns>
-        static int GetCreatedJavaVMs(JavaVM** ppvmBuf, jsize bufLen, jsize* nVMs)
+        public static int GetCreatedJavaVMs(JavaVM** ppvmBuf, jsize bufLen, jsize* nVMs)
         {
             if (jvmCreated)
             {

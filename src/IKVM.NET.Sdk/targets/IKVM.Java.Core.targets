@@ -11,7 +11,7 @@
         <ClassOutputPath Condition=" '$(ClassOutputPath)' == '' ">$(IntermediateOutputPath)classes\</ClassOutputPath>
         <HeaderOutputPath Condition=" '$(HeaderOutputPath)' == '' ">$(IntermediateOutputPath)headers\</HeaderOutputPath>
     </PropertyGroup>
-    
+
     <PropertyGroup>
         <_IkvmReferenceExportItemPrepareStateFile Condition=" '$(_IkvmReferenceExportItemPrepareStateFile)' == '' ">$(IntermediateOutputPath)$(MSBuildProjectFile).IkvmReferenceExportItemPrepare.cache</_IkvmReferenceExportItemPrepareStateFile>
     </PropertyGroup>
@@ -26,9 +26,11 @@
     </Target>
 
     <!-- Makes the generated header files available to Clang project types. -->
-    <Target Name="GetClangIncludeDirectories" Returns="@(GetClangIncludeDirectories)">
+    <Target Name="GetOutputItem" Returns="@(GetOutputItem)">
         <ItemGroup>
-            <GetClangIncludeDirectories Include="$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))" />
+            <GetOutputItem Include="$([System.IO.Path]::GetFullPath('$(MSBuildProjectFile)'))">
+                <HeadersPath>$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))</HeadersPath>
+            </GetOutputItem>
         </ItemGroup>
     </Target>
 
@@ -41,11 +43,11 @@
                 <IncludeParameterNames>true</IncludeParameterNames>
             </_ReferenceExport>
         </ItemGroup>
-        
+
         <IkvmReferenceExportItemPrepare StateFile="$(_IkvmReferenceExportItemPrepareStateFile)" Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)">
             <Output TaskParameter="Items" ItemName="__ReferenceExport" />
         </IkvmReferenceExportItemPrepare>
-        
+
         <ItemGroup>
             <__ReferenceExport Update="@(__ReferenceExport)">
                 <StagePath>$(IkvmExportStageDir)%(IkvmIdentity)\%(Filename).jar</StagePath>
@@ -56,7 +58,7 @@
         <ItemGroup>
             <ReferenceExport Remove="@(ReferenceExport)" />
             <ReferenceExport Include="@(__ReferenceExport)" />
-            
+
             <_ReferenceExport Remove="@(_ReferenceExport)" />
             <__ReferenceExport Remove="@(__ReferenceExport)" />
         </ItemGroup>
@@ -142,6 +144,7 @@ Files = files.ToArray();
     <PropertyGroup>
         <CompileJavaDependsOn>
             $(CompileJavaDependsOn)
+            GenerateAssemblyInfo;
             GetReferenceClasspath;
             ExportReferences;
             _ResolveClasspathFiles;
@@ -180,7 +183,7 @@ Files = files.ToArray();
 
     <Target Name="_WriteExcludeFile" Outputs="$(_ExcludeFilePath)">
         <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" WriteOnlyWhenDifferent="true" />
-        
+
         <ItemGroup>
             <FileWrites Include="$(_ExcludeFilePath)" />
         </ItemGroup>

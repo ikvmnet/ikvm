@@ -12,13 +12,36 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 namespace IKVM.JTReg.TestAdapter
 {
 
+    /// <summary>
+    /// Implements the <see cref="ITestDiscoverer"/> portion of the adapter.
+    /// </summary>
     [DefaultExecutorUri(JTRegTestManager.URI)]
     [FileExtension(".dll")]
     [FileExtension(".exe")]
     public class JTRegTestDiscoverer : ITestDiscoverer
     {
 
+        /// <summary>
+        /// Discovers the tests available from the provided sources.
+        /// </summary>
+        /// <param name="sources"></param>
+        /// <param name="discoveryContext"></param>
+        /// <param name="logger"></param>
+        /// <param name="discoverySink"></param>
         public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
+        {
+            DiscoverTests(sources, discoveryContext, logger, discoverySink, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Discovers the tests available from the provided sources.
+        /// </summary>
+        /// <param name="sources"></param>
+        /// <param name="discoveryContext"></param>
+        /// <param name="logger"></param>
+        /// <param name="discoverySink"></param>
+        /// <param name="cancellationToken"></param>
+        public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink, CancellationToken cancellationToken)
         {
             foreach (var source in sources)
             {
@@ -27,9 +50,7 @@ namespace IKVM.JTReg.TestAdapter
 
                 try
                 {
-                    // setup isolation host for source
-                    var proxy = JTRegTestIsolationHost.Instance.CreateManager();
-                    proxy.DiscoverTests(source, new JTRegDiscoveryContextProxy(discoveryContext, logger, discoverySink), new CancellationTokenProxy(CancellationToken.None));
+                    JTRegTestManager.Instance.DiscoverTests(source, new JTRegDiscoveryContextProxy(discoveryContext, logger, discoverySink), cancellationToken);
                 }
                 catch (Exception e)
                 {

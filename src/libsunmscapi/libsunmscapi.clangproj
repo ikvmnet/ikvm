@@ -5,15 +5,16 @@
         <ProjectGuid>1658e7ac-0fc7-4527-a7cf-9e0ff752b368</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>win-x64;win-x86;win-arm64</TargetIdentifiers>
         <TargetName>sunmscapi</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>win-x64;win-x86;win-arm64</TargetIdentifiers>
         <LanguageStandard>c++11</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <Dependencies Include="crypt32;advapi32;ncrypt" />
+        <Dependencies Include="Crypt32;AdvAPI32;Ncrypt" />
         <AdditionalCompileOptions Include="-Wno-c++11-narrowing" />
         <AdditionalCompileOptions Include="-Wno-writable-strings" />
         <AdditionalCompileOptions Include="-Wno-pointer-to-int-cast" />

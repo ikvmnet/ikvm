@@ -108,10 +108,16 @@ namespace IKVM.Runtime
 
                     if (m.IsInternal)
                         flags |= MemberFlags.InternalAccess;
+
 #if IMPORTER
                     if (m.IsCallerSensitive && SupportsCallerID(m))
                         flags |= MemberFlags.CallerID;
+
+                    // set as module initializer
+                    if (m.IsModuleInitializer)
+                        flags |= MemberFlags.ModuleInitializer;
 #endif
+
                     if (wrapper.IsGhost && m.IsVirtual)
                     {
                         // note that a GhostMethodWrapper can also represent a default interface method
@@ -193,8 +199,7 @@ namespace IKVM.Runtime
 
             bool SupportsCallerID(ClassFile.Method method)
             {
-                if ((classFile.Name == "sun.reflect.Reflection" && method.Name == "getCallerClass")
-                    || (classFile.Name == "java.lang.SecurityManager" && method.Name == "checkMemberAccess"))
+                if ((classFile.Name == "sun.reflect.Reflection" && method.Name == "getCallerClass") || (classFile.Name == "java.lang.SecurityManager" && method.Name == "checkMemberAccess"))
                 {
                     // ignore CallerSensitive on methods that don't need CallerID parameter
                     return false;
@@ -203,9 +208,7 @@ namespace IKVM.Runtime
                 {
                     return true;
                 }
-                else if ((classFile.IsFinal || classFile.Name == "java.lang.Runtime" || classFile.Name == "java.io.ObjectStreamClass")
-                    && wrapper.BaseTypeWrapper.GetMethodWrapper(method.Name, method.Signature, true) == null
-                    && !HasInterfaceMethod(wrapper, method.Name, method.Signature))
+                else if ((classFile.IsFinal || classFile.Name == "java.lang.Runtime" || classFile.Name == "java.io.ObjectStreamClass") && wrapper.BaseTypeWrapper.GetMethodWrapper(method.Name, method.Signature, true) == null && !HasInterfaceMethod(wrapper, method.Name, method.Signature))
                 {
                     // We only support CallerID instance methods on final or effectively final types,
                     // because we don't support interface stubs with CallerID.
@@ -231,7 +234,7 @@ namespace IKVM.Runtime
             {
                 for (; tw != null; tw = tw.BaseTypeWrapper)
                 {
-                    foreach (RuntimeJavaType iface in tw.Interfaces)
+                    foreach (var iface in tw.Interfaces)
                     {
                         if (iface.GetMethodWrapper(name, signature, false) != null)
                         {
@@ -243,6 +246,7 @@ namespace IKVM.Runtime
                         }
                     }
                 }
+
                 return false;
             }
 #endif
@@ -259,26 +263,23 @@ namespace IKVM.Runtime
                     return;
                 }
 #endif
+
                 // this method is not allowed to throw exceptions (if it does, the runtime will abort)
                 var hasclinit = wrapper.HasStaticInitializer;
                 var mangledTypeName = wrapper.classLoader.GetTypeWrapperFactory().AllocMangledName(wrapper);
                 var f = classFile;
+
                 try
                 {
                     TypeAttributes typeAttribs = 0;
                     if (f.IsAbstract)
-                    {
                         typeAttribs |= TypeAttributes.Abstract;
-                    }
                     if (f.IsFinal)
-                    {
                         typeAttribs |= TypeAttributes.Sealed;
-                    }
                     if (!hasclinit)
-                    {
                         typeAttribs |= TypeAttributes.BeforeFieldInit;
-                    }
 #if IMPORTER
+
                     bool cantNest = false;
                     bool setModifiers = false;
                     TypeBuilder enclosing = null;
@@ -295,6 +296,7 @@ namespace IKVM.Runtime
                     {
                         enclosingClassName = f.EnclosingMethod[0];
                     }
+
                     if (enclosingClassName != null)
                     {
                         if (!CheckInnerOuterNames(f.Name, enclosingClassName))
@@ -311,24 +313,25 @@ namespace IKVM.Runtime
                             {
                                 Tracer.Warning(Tracer.Compiler, "Unable to load outer class {0} for inner class {1} ({2}: {3})", enclosingClassName, f.Name, x.GetType().Name, x.Message);
                             }
+
                             if (enclosingClassWrapper != null)
                             {
                                 // make sure the relationship is reciprocal (otherwise we run the risk of
                                 // baking the outer type before the inner type) and that the inner and outer
                                 // class live in the same class loader (when doing a multi target compilation,
                                 // it is possible to split the two classes across assemblies)
-                                JavaTypeImpl oimpl = enclosingClassWrapper.impl as JavaTypeImpl;
+                                var oimpl = enclosingClassWrapper.impl as JavaTypeImpl;
                                 if (oimpl != null && enclosingClassWrapper.GetClassLoader() == wrapper.GetClassLoader())
                                 {
-                                    ClassFile outerClassFile = oimpl.classFile;
-                                    ClassFile.InnerClass[] outerInnerClasses = outerClassFile.InnerClasses;
+                                    var outerClassFile = oimpl.classFile;
+                                    var outerInnerClasses = outerClassFile.InnerClasses;
                                     if (outerInnerClasses == null)
                                     {
                                         enclosingClassWrapper = null;
                                     }
                                     else
                                     {
-                                        bool ok = false;
+                                        var ok = false;
                                         for (int i = 0; i < outerInnerClasses.Length; i++)
                                         {
                                             if (((outerInnerClasses[i].outerClass != 0 && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].outerClass) == outerClassFile.Name)
@@ -340,6 +343,7 @@ namespace IKVM.Runtime
                                                 break;
                                             }
                                         }
+
                                         if (!ok)
                                         {
                                             enclosingClassWrapper = null;
@@ -350,6 +354,7 @@ namespace IKVM.Runtime
                                 {
                                     enclosingClassWrapper = null;
                                 }
+
                                 if (enclosingClassWrapper != null)
                                 {
                                     enclosingClassWrapper.CreateStep2();
@@ -367,6 +372,7 @@ namespace IKVM.Runtime
                             }
                         }
                     }
+
                     if (f.IsPublic)
                     {
                         if (enclosing != null)
@@ -414,6 +420,7 @@ namespace IKVM.Runtime
                                 // as inner classes
                                 throw new NotImplementedException();
                             }
+
                             // LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
                             // (and broken by J# as well), so we'll just ignore it too.
                             typeBuilder = enclosing.DefineNestedType(AllocNestedTypeName(enclosingClassWrapper.Name, f.Name), typeAttribs);
@@ -453,10 +460,12 @@ namespace IKVM.Runtime
                             typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
                         }
                     }
+
 #if IMPORTER
                     // When we're statically compiling, we associate the typeBuilder with the wrapper. This enables types in referenced assemblies to refer back to
                     // types that we're currently compiling (i.e. a cyclic dependency between the currently assembly we're compiling and a referenced assembly).
                     wrapper.Context.ClassLoaderFactory.SetWrapperForType(typeBuilder, wrapper);
+
                     if (outerClass.outerClass != 0)
                     {
                         if (enclosing != null && cantNest)
@@ -468,44 +477,54 @@ namespace IKVM.Runtime
                             wrapper.Context.AttributeHelper.SetNonNestedOuterClass(typeBuilder, enclosingClassName);
                         }
                     }
+
                     if (classFile.InnerClasses != null)
                     {
-                        foreach (ClassFile.InnerClass inner in classFile.InnerClasses)
+                        foreach (var inner in classFile.InnerClasses)
                         {
-                            string name = classFile.GetConstantPoolClass(inner.innerClass);
-                            bool exists = false;
+                            var name = classFile.GetConstantPoolClass(inner.innerClass);
+                            var exists = false;
+
                             try
                             {
                                 exists = wrapper.GetClassLoader().TryLoadClassByName(name) != null;
                             }
-                            catch (RetargetableJavaException) { }
+                            catch (RetargetableJavaException)
+                            {
+
+                            }
+
                             if (!exists)
                             {
                                 wrapper.Context.AttributeHelper.SetNonNestedInnerClass(typeBuilder, name);
                             }
                         }
                     }
-                    if (typeBuilder.FullName != wrapper.Name
-                        && wrapper.Name.Replace('$', '+') != typeBuilder.FullName)
+
+                    if (typeBuilder.FullName != wrapper.Name && wrapper.Name.Replace('$', '+') != typeBuilder.FullName)
                     {
                         wrapper.classLoader.AddNameMapping(wrapper.Name, typeBuilder.FullName);
                     }
+
                     if (f.IsAnnotation && Annotation.HasRetentionPolicyRuntime(f.Annotations))
                     {
                         annotationBuilder = new AnnotationBuilder(wrapper.Context, this, enclosing);
                         wrapper.SetAnnotation(annotationBuilder);
                     }
+
                     // For Java 5 Enum types, we generate a nested .NET enum.
                     // This is primarily to support annotations that take enum parameters.
                     if (f.IsEnum && f.IsPublic)
                     {
                         AddCliEnum();
                     }
+
                     AddInnerClassAttribute(enclosing != null, outerClass.innerClass != 0, mangledTypeName, outerClass.accessFlags);
                     if (classFile.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(classFile.Annotations))
                     {
                         wrapper.Context.AttributeHelper.SetDeprecatedAttribute(typeBuilder);
                     }
+
                     if (classFile.GenericSignature != null)
                     {
                         wrapper.Context.AttributeHelper.SetSignatureAttribute(typeBuilder, classFile.GenericSignature);
@@ -2358,16 +2377,18 @@ namespace IKVM.Runtime
             internal override MethodBase LinkMethod(RuntimeJavaMethod mw)
             {
                 Debug.Assert(mw != null);
+
                 if (mw is DelegateConstructorMethodWrapper dcmw)
                 {
                     dcmw.DoLink(typeBuilder);
                     return null;
                 }
 
-                if (mw is DelegateInvokeStubMethodWrapper)
+                if (mw is DelegateInvokeStubMethodWrapper stub)
                 {
-                    return ((DelegateInvokeStubMethodWrapper)mw).DoLink(typeBuilder);
+                    return stub.DoLink(typeBuilder);
                 }
+
                 if (mw.IsClassInitializer && mw.IsNoOp && (!wrapper.IsSerializable || HasSerialVersionUID))
                 {
                     // we don't need to emit the <clinit>, because it is empty and we're not serializable or have an explicit serialVersionUID
@@ -2375,30 +2396,38 @@ namespace IKVM.Runtime
                     // we cannot do this optimization if the class is serializable but doesn't have a serialVersionUID)
                     return null;
                 }
+
                 int index = GetMethodIndex(mw);
                 if (baseMethods[index] != null)
                 {
-                    foreach (RuntimeJavaMethod baseMethod in baseMethods[index])
+                    foreach (var baseMethod in baseMethods[index])
                     {
                         baseMethod.Link();
                         CheckLoaderConstraints(mw, baseMethod);
                     }
                 }
+
                 Debug.Assert(mw.GetMethod() == null);
                 methods[index].AssertLinked();
                 Profiler.Enter("JavaTypeImpl.GenerateMethod");
+
                 try
                 {
+                    // index is outside the range of methods declared on class file
                     if (index >= classFile.Methods.Length)
                     {
+                        // method is a miranda method
                         if (methods[index].IsMirandaMethod)
                         {
-                            // We're a Miranda method or we're an inherited default interface method
+                            // we're a Miranda method or we're an inherited default interface method
                             Debug.Assert(baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface);
-                            RuntimeMirandaJavaMethod mmw = (RuntimeMirandaJavaMethod)methods[index];
-                            MethodAttributes attr = MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
+
+                            var mmw = (RuntimeMirandaJavaMethod)methods[index];
+                            var attr = MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
+
                             RuntimeJavaMethod baseMiranda = null;
                             bool baseMirandaOverrideStub = false;
+
                             if (wrapper.BaseTypeWrapper == null || (baseMiranda = wrapper.BaseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true)) == null || !baseMiranda.IsMirandaMethod)
                             {
                                 // we're not overriding a miranda method in a base class, so can we set the newslot flag
@@ -2413,20 +2442,24 @@ namespace IKVM.Runtime
                                     attr |= MethodAttributes.NewSlot;
                                 }
                             }
+
                             if (wrapper.IsInterface || (wrapper.IsAbstract && mmw.BaseMethod.IsAbstract && mmw.Error == null))
                             {
                                 attr |= MethodAttributes.Abstract;
                             }
-                            MethodBuilder mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, methods[index].Name, attr);
+
+                            var mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, methods[index].Name, attr);
                             wrapper.Context.AttributeHelper.HideFromReflection(mb);
+
                             if (baseMirandaOverrideStub)
                             {
                                 wrapper.GenerateOverrideStub(typeBuilder, baseMiranda, mb, methods[index]);
                             }
+
                             if ((!wrapper.IsAbstract && mmw.BaseMethod.IsAbstract) || (!wrapper.IsInterface && mmw.Error != null))
                             {
-                                string message = mmw.Error ?? (wrapper.Name + "." + methods[index].Name + methods[index].Signature);
-                                CodeEmitter ilgen = wrapper.Context.CodeEmitterFactory.Create(mb);
+                                var message = mmw.Error ?? (wrapper.Name + "." + methods[index].Name + methods[index].Signature);
+                                var ilgen = wrapper.Context.CodeEmitterFactory.Create(mb);
                                 ilgen.EmitThrow(mmw.IsConflictError ? "java.lang.IncompatibleClassChangeError" : "java.lang.AbstractMethodError", message);
                                 ilgen.DoEmit();
                                 wrapper.EmitLevel4Warning(mmw.IsConflictError ? HardError.IncompatibleClassChangeError : HardError.AbstractMethodError, message);
@@ -2434,7 +2467,7 @@ namespace IKVM.Runtime
 #if IMPORTER
                             if (wrapper.IsInterface && !mmw.IsAbstract)
                             {
-                                // even though we're not visible to reflection., we need to record the fact that we have a default implementation
+                                // even though we're not visible to reflection we need to record the fact that we have a default implementation
                                 wrapper.Context.AttributeHelper.SetModifiers(mb, mmw.Modifiers, false);
                             }
 #endif
@@ -2445,23 +2478,25 @@ namespace IKVM.Runtime
                             throw new InvalidOperationException();
                         }
                     }
-                    ClassFile.Method m = classFile.Methods[index];
+
+                    var m = classFile.Methods[index];
                     MethodBuilder method;
                     bool setModifiers = false;
+
                     if (methods[index].HasCallerID && (m.Modifiers & Modifiers.VarArgs) != 0)
                     {
                         // the implicit callerID parameter was added at the end so that means we shouldn't use ParamArrayAttribute,
                         // so we need to explicitly record that the method is varargs
                         setModifiers = true;
                     }
+
                     if (m.IsConstructor)
                     {
                         method = GenerateConstructor(methods[index]);
+
                         // strictfp is the only modifier that a constructor can have
                         if (m.IsStrictfp)
-                        {
                             setModifiers = true;
-                        }
                     }
                     else if (m.IsClassInitializer)
                     {
@@ -2471,30 +2506,36 @@ namespace IKVM.Runtime
                     {
                         method = GenerateMethod(index, m, ref setModifiers);
                     }
-                    string[] exceptions = m.ExceptionsAttribute;
+
+                    // apply 'throws' Exceptions as attributes
+                    var exceptions = m.ExceptionsAttribute;
                     methods[index].SetDeclaredExceptions(exceptions);
+
 #if IMPORTER
                     wrapper.Context.AttributeHelper.SetThrowsAttribute(method, exceptions);
+
                     if (setModifiers || m.IsInternal || (m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0)
-                    {
                         wrapper.Context.AttributeHelper.SetModifiers(method, m.Modifiers, m.IsInternal);
-                    }
-                    if ((m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0
-                        && (m.IsPublic || m.IsProtected)
-                        && wrapper.IsPublic
-                        && !IsAccessBridge(classFile, m))
+
+                    // synthetic and bridge methods should not be visible to the user and set as compiler generated
+                    if ((m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic && !IsAccessBridge(classFile, m))
                     {
+                        wrapper.Context.AttributeHelper.SetCompilerGenerated(method);
                         wrapper.Context.AttributeHelper.SetEditorBrowsableNever(method);
-                        // TODO on WHIDBEY apply CompilerGeneratedAttribute
                     }
+
+                    // ensure deprecated attribute appears on method if obsolete not specified
                     if (m.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(m.Annotations))
                     {
                         wrapper.Context.AttributeHelper.SetDeprecatedAttribute(method);
                     }
+
+                    // apply .NET attribute to record Java generic signature
                     if (m.GenericSignature != null)
                     {
                         wrapper.Context.AttributeHelper.SetSignatureAttribute(method, m.GenericSignature);
                     }
+
                     if (wrapper.GetClassLoader().NoParameterReflection)
                     {
                         // ignore MethodParameters (except to extract parameter names)
@@ -2505,23 +2546,28 @@ namespace IKVM.Runtime
                     }
                     else if (m.MethodParameters != null)
                     {
-                        Modifiers[] modifiers = new Modifiers[m.MethodParameters.Length];
+                        var modifiers = new Modifiers[m.MethodParameters.Length];
                         for (int i = 0; i < modifiers.Length; i++)
-                        {
                             modifiers[i] = (Modifiers)m.MethodParameters[i].accessFlags;
-                        }
+
                         wrapper.Context.AttributeHelper.SetMethodParametersAttribute(method, modifiers);
                     }
+
+                    // copy runtime visible annotations as attributes
                     if (m.RuntimeVisibleTypeAnnotations != null)
                     {
                         wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(method, m.RuntimeVisibleTypeAnnotations);
                     }
+
 #else // IMPORTER
+
                     if (setModifiers)
                     {
                         // shut up the compiler
                     }
+
 #endif // IMPORTER
+
                     return method;
                 }
                 finally
