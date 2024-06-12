@@ -174,7 +174,6 @@
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\Ref.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\SharedSecrets.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\Version.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\VM.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\net\**\*.java" PackagePath="sun\net" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\**\*.java" PackagePath="sun\nio" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\**\*.java" PackagePath="sun\print" />
