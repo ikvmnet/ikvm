@@ -540,33 +540,40 @@ namespace IKVM.Java.Externs.java.io
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
+            try
             {
-                if (JVM.Vfs.GetEntry(((global::java.io.File)f).getPath()) is VfsDirectory vfs)
-                    return vfs.List();
+                if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
+                {
+                    if (JVM.Vfs.GetEntry(((global::java.io.File)f).getPath()) is VfsDirectory vfs)
+                        return vfs.List();
 
-                return null;
+                    return null;
+                }
+                else
+                {
+                    __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                    __jniPtr__list ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__list>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(list), "(Ljava/io/File;)[Ljava/lang/String;"));
+                    var jniFrm = new JNIFrame();
+                    var jniEnv = jniFrm.Enter(__callerID);
+                    try
+                    {
+                        return (string[])jniFrm.UnwrapLocalRef(__jniPtr__list(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f)));
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Console.WriteLine("*** exception in native code ***");
+                        System.Console.WriteLine(ex);
+                        throw;
+                    }
+                    finally
+                    {
+                        jniFrm.Leave();
+                    }
+                }
             }
-            else
+            catch (global::java.lang.NegativeArraySizeException e)
             {
-                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
-                __jniPtr__list ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__list>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(list), "(Ljava/io/File;)[Ljava/lang/String;"));
-                var jniFrm = new JNIFrame();
-                var jniEnv = jniFrm.Enter(__callerID);
-                try
-                {
-                    return (string[])jniFrm.UnwrapLocalRef(__jniPtr__list(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f)));
-                }
-                catch (Exception ex)
-                {
-                    System.Console.WriteLine("*** exception in native code ***");
-                    System.Console.WriteLine(ex);
-                    throw;
-                }
-                finally
-                {
-                    jniFrm.Leave();
-                }
+                throw new global::java.lang.NegativeArraySizeException("listing " + ((global::java.io.File)f).getPath());
             }
 #endif
         }

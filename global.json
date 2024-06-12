@@ -4,6 +4,7 @@
         "rollForward": "latestFeature"
     },
     "msbuild-sdks": {
+        "MSTest.Sdk": "3.3.1",
         "Microsoft.Build.NoTargets": "3.7.56",
         "IKVM.Clang.Sdk": "0.2.18"
     }
