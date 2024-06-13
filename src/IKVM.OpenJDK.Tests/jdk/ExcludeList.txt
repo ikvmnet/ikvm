@@ -2368,7 +2368,7 @@ javax/swing/JFrame/4962534/bug4962534.html                                      
 javax/swing/JFrame/8016356/bug8016356.java                                                                              generic-all
 javax/swing/JFrame/HangNonVolatileBuffer/HangNonVolatileBuffer.java                                                     generic-all
 javax/swing/JFrame/NSTexturedJFrame/NSTexturedJFrame.java                                                               generic-all
-javax/swing/JFrame/AlwaysOnTop/AlwaysOnTopImeTest.java                                                                  macosx-all
+javax/swing/JFrame/AlwaysOnTop/AlwaysOnTopImeTest.java                                                                  generic-all
 javax/swing/JInternalFrame/4193219/IconCoord.java                                                                       generic-all
 javax/swing/JInternalFrame/4251301/bug4251301.java                                                                      generic-all
 javax/swing/JInternalFrame/5066752/bug5066752.java                                                                      generic-all
@@ -3288,6 +3288,7 @@ sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java                            
 sun/security/pkcs11/KeyAgreement/TestDH.java                                                                            generic-all
 sun/security/pkcs11/KeyAgreement/TestInterop.java                                                                       generic-all
 sun/security/pkcs11/KeyAgreement/TestShort.java                                                                         generic-all
+sun/security/pkcs11/KeyAgreement/UnsupportedDHKeys.java                                                                 generic-all
 sun/security/pkcs11/KeyGenerator/DESParity.java                                                                         generic-all
 sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java                                                                  generic-all
 sun/security/pkcs11/KeyPairGenerator/TestDH2048.java                                                                    generic-all
