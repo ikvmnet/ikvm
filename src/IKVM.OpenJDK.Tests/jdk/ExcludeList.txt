@@ -227,6 +227,7 @@ demo/jvmti/waiters/WaitersTest.java                                             
 demo/zipfs/basic.sh                                                                                                     generic-all
 demo/zipfs/ZFSTests.java                                                                                                generic-all
 java/awt/Checkbox/SetStateExcessEvent/SetStateExcessEvent.java                                                          generic-all
+java/awt/BasicStroke/DashStrokeTest.java                                                                                generic-all
 java/awt/Component/DimensionEncapsulation/DimensionEncapsulation.java                                                   generic-all
 java/awt/Component/InsetsEncapsulation/InsetsEncapsulation.java                                                         generic-all
 java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java                                                     generic-all
@@ -235,6 +236,7 @@ java/awt/Desktop/8064934/bug8064934.java                                        
 java/awt/event/MouseWheelEvent/WheelModifier/WheelModifier.java                                                         generic-all
 java/awt/Focus/8073453/AWTFocusTransitionTest.java                                                                      generic-all
 java/awt/Focus/8073453/SwingFocusTransitionTest.java                                                                    generic-all
+java/awt/Focus/FocusTransitionTest/FocusTransitionTest.java                                                             generic-all
 java/awt/FontClass/DebugFonts.java                                                                                      generic-all
 java/awt/FullScreen/MultimonFullscreenTest/MultimonDeadlockTest.java                                                    generic-all
 java/awt/GraphicsEnvironment/TestDetectHeadless/TestDetectHeadless.sh                                                   generic-all
@@ -1357,6 +1359,7 @@ java/lang/ref/FinalizeOverride.java                                             
 java/lang/ref/NullQueue.java                                                                                            generic-all
 java/lang/ref/OOMEInReferenceHandler.java                                                                               generic-all
 java/lang/ref/SoftReference/Pin.java                                                                                    generic-all
+java/lang/ref/FinalizerHistogramTest.java                                                                               generic-all
 java/lang/reflect/Array/ExceedMaxDim.java                                                                               generic-all
 java/lang/reflect/DefaultMethodMembers/FilterNotMostSpecific.java                                                       generic-all
 java/lang/reflect/DefaultStaticTest/DefaultStaticInvokeTest.java                                                        generic-all
