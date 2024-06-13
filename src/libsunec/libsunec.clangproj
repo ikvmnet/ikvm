@@ -19,7 +19,7 @@
         <Compile Include="**\*.c" LanguageStandard="c99" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <Dependencies Include="ShLwApi" />
+        <Dependencies Include="shlwapi" />
         <PreprocessorDefinitions Include="strdup" Value="_strdup" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">

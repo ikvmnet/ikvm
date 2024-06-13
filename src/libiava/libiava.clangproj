@@ -70,7 +70,7 @@
         <LibJavaExclude Include="java_props_macosx.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <Dependencies Include="shell32;delayimp;AdvAPI32;version" />
+        <Dependencies Include="shell32;delayimp;advapi32;version" />
         <AdditionalLinkOptions Include="-Wl,/FORCE" />
         <AdditionalLinkOptions Include="-Wl,-export:winFileHandleOpen" />
         <AdditionalLinkOptions Include="-Wl,-export:handleLseek" />

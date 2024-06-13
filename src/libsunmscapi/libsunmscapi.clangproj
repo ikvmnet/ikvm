@@ -14,7 +14,9 @@
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <Dependencies Include="Crypt32;AdvAPI32;Ncrypt" />
+        <Dependencies Include="crypt32" />
+        <Dependencies Include="advapi32" />
+        <Dependencies Include="ncrypt" />
         <AdditionalCompileOptions Include="-Wno-c++11-narrowing" />
         <AdditionalCompileOptions Include="-Wno-writable-strings" />
         <AdditionalCompileOptions Include="-Wno-pointer-to-int-cast" />

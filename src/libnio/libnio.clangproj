@@ -42,7 +42,7 @@
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
-        <Dependencies Include="WS2_32;AdvAPI32;Mswsock" />
+        <Dependencies Include="ws2_32;advapi32;mswsock" />
         <AdditionalCompileOptions Include="-fms-extensions" />
         <LibNioFile Include="Iocp.c" />
         <LibNioFile Include="RegistryFileTypeDetector.c" />

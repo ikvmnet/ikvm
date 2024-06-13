@@ -39,9 +39,9 @@
         <PreprocessorDefinitions Include="stricmp" Value="_stricmp" />
         <PreprocessorDefinitions Include="wcsicmp" Value="_wcsicmp" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\windows" />
-        <Dependencies Include="AdvAPI32" />
-        <Dependencies Include="User32" />
-        <Dependencies Include="Gdi32" />
+        <Dependencies Include="advapi32" />
+        <Dependencies Include="user32" />
+        <Dependencies Include="gdi32" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <IncludeDirectories Include="$(LinuxSdkDir)\include\freetype2" />

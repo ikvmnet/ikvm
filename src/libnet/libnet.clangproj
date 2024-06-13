@@ -26,7 +26,7 @@
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <AdditionalCompileOptions Include="-Wno-implicit-function-declaration" />
         <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
-        <Dependencies Include="WS2_32;Secur32;iphlpapi;delayimp;AdvAPI32" />
+        <Dependencies Include="ws2_32;secur32;iphlpapi;delayimp;advapi32" />
         <LibNetDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\net\www\protocol\http\ntlm" />
     </ItemGroup>
     <ItemGroup Condition="!$(TargetIdentifier.StartsWith('win-'))">
