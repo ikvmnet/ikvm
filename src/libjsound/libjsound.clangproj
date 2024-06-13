@@ -41,7 +41,7 @@
         <PreprocessorDefinitions Include="USE_PORTS" Value="TRUE" />
         <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS" Value="&quot;jsoundds&quot;" />
 
-        <Dependencies Include="AdvAPI32;winmm" />
+        <Dependencies Include="advapi32;winmm" />
 
         <!-- LIBJSOUND_SRC_FILES -->
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\com\sun\media\sound\PLATFORM_API_WinOS_MidiIn.cpp" LanguageStandard="c++11" />

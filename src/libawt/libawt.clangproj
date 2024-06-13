@@ -194,20 +194,20 @@
         <AdditionalLinkOptions Include="-framework" Value="AudioToolbox" Separator=" " />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
-        <Dependencies Include="User32" />
-        <Dependencies Include="Gdi32" />
-        <Dependencies Include="WinSpool" />
-        <Dependencies Include="Imm32" />
-        <Dependencies Include="Ole32" />
-        <Dependencies Include="OleAut32" />
-        <Dependencies Include="Uuid" />
+        <Dependencies Include="user32" />
+        <Dependencies Include="gdi32" />
+        <Dependencies Include="winspool" />
+        <Dependencies Include="imm32" />
+        <Dependencies Include="ole32" />
+        <Dependencies Include="oleaut32" />
+        <Dependencies Include="uuid" />
         <Dependencies Include="shell32" />
-        <Dependencies Include="ComDlg32" />
+        <Dependencies Include="comdlg32" />
         <Dependencies Include="winmm" />
-        <Dependencies Include="ComCtl32" />
-        <Dependencies Include="ShLwApi" />
+        <Dependencies Include="comctl32" />
+        <Dependencies Include="shlwapi" />
         <Dependencies Include="delayimp" />
-        <Dependencies Include="AdvAPI32" />
+        <Dependencies Include="advapi32" />
         <Dependencies Include="comsuppw" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
