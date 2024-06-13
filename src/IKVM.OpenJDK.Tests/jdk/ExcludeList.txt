@@ -746,6 +746,8 @@ java/awt/font/TextLayout/TestTibetan.java                                       
 java/awt/font/TextLayout/TextLayoutBounds.java                                                                          generic-all
 java/awt/font/TextLayout/UnderlinePositionTest.java                                                                     generic-all
 java/awt/font/TextLayout/VisibleAdvance.java                                                                            generic-all
+java/awt/font/TextLayout/NegativeGlyphIDException.java                                                                  macosx-all
+java/awt/font/TextLayout/OSXLigatureTest.java                                                                           macosx-all
 java/awt/font/Threads/FontThread.java                                                                                   generic-all
 java/awt/font/TransformAttribute/TransformEqualityTest.java                                                             generic-all
 java/awt/geom/Arc2D/SerializationTest.java                                                                              generic-all
@@ -1791,6 +1793,7 @@ java/util/logging/TestLoggingWithMainAppContext.java                            
 java/util/logging/TestMainAppContext.java                                                                               generic-all
 java/util/logging/XMLFormatterDate.java                                                                                 generic-all
 java/util/logging/bundlesearch/ResourceBundleSearchTest.java                                                            generic-all
+java/util/logging/TestLoggerWeakRefLeak.java                                                                            generic-all
 java/util/prefs/CheckUserPrefsStorage.sh                                                                                generic-all
 java/util/prefs/PrefsSpi.sh                                                                                             generic-all
 java/util/prefs/SerializeExceptions.java                                                                                generic-all
@@ -2365,6 +2368,7 @@ javax/swing/JFrame/4962534/bug4962534.html                                      
 javax/swing/JFrame/8016356/bug8016356.java                                                                              generic-all
 javax/swing/JFrame/HangNonVolatileBuffer/HangNonVolatileBuffer.java                                                     generic-all
 javax/swing/JFrame/NSTexturedJFrame/NSTexturedJFrame.java                                                               generic-all
+javax/swing/JFrame/AlwaysOnTop/AlwaysOnTopImeTest.java                                                                  macosx-all
 javax/swing/JInternalFrame/4193219/IconCoord.java                                                                       generic-all
 javax/swing/JInternalFrame/4251301/bug4251301.java                                                                      generic-all
 javax/swing/JInternalFrame/5066752/bug5066752.java                                                                      generic-all

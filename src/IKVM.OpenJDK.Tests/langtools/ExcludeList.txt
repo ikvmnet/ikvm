@@ -39,6 +39,7 @@ tools/javac/defaultMethods/syntax/TestDefaultMethodsSyntax.java                 
 tools/javac/diags/CheckExamples.java                                                                                    generic-all
 tools/javac/diags/CheckResourceKeys.java                                                                                generic-all
 tools/javac/diags/RunExamples.java                                                                                      generic-all
+tools/javac/Diagnostics/6769027/T6769027.java                                                                           generic-all
 tools/javac/failover/CheckAttributedTree.java                                                                           generic-all
 tools/javac/fatalErrors/NoJavaLangTest.java                                                                             generic-all
 tools/javac/file/zip/T6865530.java                                                                                      generic-all
