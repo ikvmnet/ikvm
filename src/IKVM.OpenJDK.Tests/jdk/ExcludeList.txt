@@ -3062,8 +3062,10 @@ sun/security/tools/keytool/resource.sh                                          
 sun/security/tools/keytool/selfissued.sh                                                                                generic-all
 sun/security/tools/keytool/standard.sh                                                                                  generic-all
 sun/security/tools/keytool/trystore.sh                                                                                  generic-all
+sun/security/tools/jarsigner/weaksize.sh                                                                                generic-all
 sun/security/util/Debug/MultiOptions.java                                                                               generic-all
 sun/security/util/PropertyExpander/ExpandAndEncode.java                                                                 generic-all
+sun/security/util/Pem/encoding.sh                                                                                       generic-all
 sun/security/validator/certreplace.sh                                                                                   generic-all
 sun/security/validator/samedn.sh                                                                                        generic-all
 sun/security/x509/AlgorithmId/ExtensibleAlgorithmId.java                                                                generic-all
@@ -3271,6 +3273,7 @@ sun/java2d/cmm/ColorConvertOp/InvalidRenderIntentTest.java                      
 javax/print/PrintServiceLookup/CountPrintServices.java                                                                  linux-all
 
 # PKCS 11 has a few broken tests still
+sun/security/pkcs11/Config/ReadConfInUTF16Env.sh                                                                        generic-all
 sun/security/pkcs11/Cipher/ReinitCipher.java                                                                            generic-all
 sun/security/pkcs11/Cipher/TestPKCS5PaddingError.java                                                                   generic-all
 sun/security/pkcs11/Cipher/TestRSACipher.java                                                                           generic-all
@@ -3370,6 +3373,7 @@ java/awt/Toolkit/AutoShutdown/EventQueuePush/EventQueuePushAutoshutdown.sh      
 #javax/imageio/plugins/jpeg/JpegImageColorSpaceTest.java                                                                 generic-all
 javax/swing/JEditorPane/6882559/bug6882559.java                                                                         generic-all
 javax/swing/JEditorPane/8158734/bug8158734.java                                                                         generic-all
+javax/swing/JEditorPane/8195095/ImageViewTest.java                                                                      generic-all
 javax/swing/JScrollPane/HorizontalMouseWheelOnShiftPressed/HorizontalMouseWheelOnShiftPressed.java                      generic-all
 javax/swing/plaf/nimbus/8041642/ScrollBarThumbVisibleTest.java                                                          generic-all
 
