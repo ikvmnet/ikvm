@@ -343,7 +343,7 @@ File.WriteAllBytes(Path, Encoding.UTF8.GetBytes(Text));
         </Task>
     </UsingTask>
 
-    <Import Project="IKVM.Java.Runtime.jdk.targets" />
-    <Import Project="IKVM.Java.Runtime.langtools.targets" />
+    <Import Project="IKVM.Java.runtime.jdk.targets" />
+    <Import Project="IKVM.Java.runtime.langtools.targets" />
 
 </Project>
