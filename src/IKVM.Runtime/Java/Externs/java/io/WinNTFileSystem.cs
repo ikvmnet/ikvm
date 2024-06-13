@@ -540,40 +540,33 @@ namespace IKVM.Java.Externs.java.io
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            try
+            if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
             {
-                if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
-                {
-                    if (JVM.Vfs.GetEntry(((global::java.io.File)f).getPath()) is VfsDirectory vfs)
-                        return vfs.List();
+                if (JVM.Vfs.GetEntry(((global::java.io.File)f).getPath()) is VfsDirectory vfs)
+                    return vfs.List();
 
-                    return null;
-                }
-                else
-                {
-                    __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
-                    __jniPtr__list ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__list>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(list), "(Ljava/io/File;)[Ljava/lang/String;"));
-                    var jniFrm = new JNIFrame();
-                    var jniEnv = jniFrm.Enter(__callerID);
-                    try
-                    {
-                        return (string[])jniFrm.UnwrapLocalRef(__jniPtr__list(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f)));
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Console.WriteLine("*** exception in native code ***");
-                        System.Console.WriteLine(ex);
-                        throw;
-                    }
-                    finally
-                    {
-                        jniFrm.Leave();
-                    }
-                }
+                return null;
             }
-            catch (global::java.lang.NegativeArraySizeException e)
+            else
             {
-                throw new global::java.lang.NegativeArraySizeException("listing " + ((global::java.io.File)f).getPath());
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__list ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__list>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(list), "(Ljava/io/File;)[Ljava/lang/String;"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    return (string[])jniFrm.UnwrapLocalRef(__jniPtr__list(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f)));
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
             }
 #endif
         }
