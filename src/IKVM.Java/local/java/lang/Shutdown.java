@@ -47,7 +47,7 @@ class Shutdown {
     private static int state = RUNNING;
 
     /* Should we run all finalizers upon exit? */
-    private static boolean runFinalizersOnExit = false;
+    volatile static boolean runFinalizersOnExit = false;
 
     // The system shutdown hooks are registered with a predefined slot.
     // The list of shutdown hooks is as follows:
