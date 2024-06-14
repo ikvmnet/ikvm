@@ -1282,4 +1282,30 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </GenerateSourceDependsOn>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <LocaleEquivalentMapsSrc>$(OpenJdkDir)jdk\make\data\lsrdata\language-subtag-registry.txt</LocaleEquivalentMapsSrc>
+        <LocaleEquivalentMapsDst>$(IntermediateOutputPath)LocaleEquivalentMaps.java</LocaleEquivalentMapsDst>
+    </PropertyGroup>
+
+    <Target Name="GenerateLocaleEquivalentMaps" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);$(LocaleEquivalentMapsSrc)" Outputs="$(LocaleEquivalentMapsDst)">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.generatelsrequivmaps.EquivMapsGenerator $(LocaleEquivalentMapsSrc) $(LocaleEquivalentMapsDst)" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.generatelsrequivmaps.EquivMapsGenerator $(LocaleEquivalentMapsSrc) $(LocaleEquivalentMapsDst)" />
+
+        <ItemGroup>
+            <FileWrites Include="$(LocaleEquivalentMapsDst)" />
+            <Compile Include="$(LocaleEquivalentMapsDst)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateLocaleEquivalentMaps;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
 </Project>

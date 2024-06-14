@@ -33,7 +33,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\net\ssl\**\*.java" PackagePath="com\sun\net\ssl" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\nio\file\**\*.java" PackagePath="com\sun\nio\file" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\nio\sctp\**\*.java" PackagePath="com\sun\nio\sctp" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\org\apache\xml\**\*.java" PackagePath="com\sun\org\apache\xml" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\org\**\*.java" PackagePath="com\sun\org" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\pept\**\*.java" PackagePath="com\sun\pept" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\rmi\**\*.java" PackagePath="com\sun\rmi" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\rowset\**\*.java" PackagePath="com\sun\rowset" />

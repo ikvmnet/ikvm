@@ -20,8 +20,8 @@
         <OpenJdkMajorVersion>1</OpenJdkMajorVersion>
         <OpenJdkMinorVersion>8</OpenJdkMinorVersion>
         <OpenJdkMicroVersion>0</OpenJdkMicroVersion>
-        <OpenJdkUpdateVersion>192</OpenJdkUpdateVersion>
-        <OpenJdkBuildNumber>b26</OpenJdkBuildNumber>
+        <OpenJdkUpdateVersion>275</OpenJdkUpdateVersion>
+        <OpenJdkBuildNumber>ga</OpenJdkBuildNumber>
         <OpenJdkVersion>OpenJDK $(OpenJdkMinorVersion)u$(OpenJdkUpdateVersion) $(OpenJdkBuildNumber)</OpenJdkVersion>
         <OpenJdkFullVersion>$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)_$(OpenJdkUpdateVersion)-$(OpenJdkBuildNumber)</OpenJdkFullVersion>
         <OpenJdkVendor>Oracle</OpenJdkVendor>

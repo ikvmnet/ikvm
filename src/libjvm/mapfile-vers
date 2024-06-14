@@ -40,6 +40,7 @@ SUNWprivate_1.1 {
                 JVM_ArrayCopy;
                 JVM_AssertionStatusDirectives;
                 JVM_Available;
+                JVM_BeforeHalt;
                 JVM_Bind;
                 JVM_ClassDepth;
                 JVM_ClassLoaderDepth;
@@ -64,6 +65,7 @@ SUNWprivate_1.1 {
                 JVM_ConstantPoolGetSize;
                 JVM_ConstantPoolGetStringAt;
                 JVM_ConstantPoolGetUTF8At;
+                JVM_CopySwapMemory;
                 JVM_CountStackFrames;
                 JVM_CurrentClassLoader;
                 JVM_CurrentLoadedClass;
@@ -184,6 +186,7 @@ SUNWprivate_1.1 {
                 JVM_IsInterface;
                 JVM_IsInterrupted;
                 JVM_IsNaN;
+                JVM_IsUseContainerSupport;
                 JVM_IsPrimitiveClass;
                 JVM_IsSameClassPackage;
                 JVM_IsSilentCompiler;
