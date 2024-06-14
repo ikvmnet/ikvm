@@ -561,7 +561,7 @@ jobs:
     - name: Install Visual C++ Runtime
       if: runner.os == 'Windows'
       shell: pwsh
-      run: choco install vcredist2010 -y
+      run: choco install vcredist-all -y
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v4
       with:
