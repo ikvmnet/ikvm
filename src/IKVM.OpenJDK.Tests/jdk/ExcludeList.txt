@@ -237,6 +237,7 @@ java/awt/event/MouseWheelEvent/WheelModifier/WheelModifier.java                 
 java/awt/Focus/8073453/AWTFocusTransitionTest.java                                                                      generic-all
 java/awt/Focus/8073453/SwingFocusTransitionTest.java                                                                    generic-all
 java/awt/Focus/FocusTransitionTest/FocusTransitionTest.java                                                             generic-all
+java/awt/Focus/RollbackFocusFromAnotherWindowTest/RollbackFocusFromAnotherWindowTest.java                               macosx-all
 java/awt/FontClass/DebugFonts.java                                                                                      generic-all
 java/awt/FullScreen/MultimonFullscreenTest/MultimonDeadlockTest.java                                                    generic-all
 java/awt/GraphicsEnvironment/TestDetectHeadless/TestDetectHeadless.sh                                                   generic-all
@@ -246,6 +247,7 @@ java/awt/MenuBar/RemoveHelpMenu/RemoveHelpMenu.java                             
 java/awt/Mouse/MouseDragEvent/MouseDraggedTest.java                                                                     generic-all
 java/awt/Mouse/RemovedComponentMouseListener/RemovedComponentMouseListener.java                                         generic-all
 java/awt/ScrollPane/bug8077409Test.java                                                                                 generic-all
+java/awt/ScrollPane/ScrollPaneValidateTest.java                                                                         macosx-all
 java/awt/Toolkit/GetImage/bug8078165.java                                                                               generic-all
 java/awt/TrayIcon/8072769/bug8072769.java                                                                               generic-all
 java/awt/AlphaComposite/TestAlphaCompositeForNaN.java                                                                   generic-all
