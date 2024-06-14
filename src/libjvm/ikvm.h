@@ -18,6 +18,7 @@ typedef struct JVMInvokeInterface {
     void (*JVM_RawMonitorDestroy)(void *mon);
     jint (*JVM_RawMonitorEnter)(void *mon);
     void (*JVM_RawMonitorExit)(void *mon);
+    void (*JVM_CopySwapMemory)(JNIEnv *env, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size, jlong elemSize);
 } JVMInvokeInterface;
 
 extern JVMInvokeInterface *jvmii;

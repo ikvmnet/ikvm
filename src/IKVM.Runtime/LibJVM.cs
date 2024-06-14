@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 using IKVM.Runtime.Accessors.Java.Util;
 
@@ -44,6 +45,7 @@ namespace IKVM.Runtime
             public nint JVM_RawMonitorDestroy;
             public nint JVM_RawMonitorEnter;
             public nint JVM_RawMonitorExit;
+            public nint JVM_CopySwapMemory;
 
         }
 
@@ -86,6 +88,9 @@ namespace IKVM.Runtime
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate void JVM_RawMonitorExitDelegate(nint mon);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate void JVM_CopySwapMemoryDelegate(JNIEnv* env, nint srcObj, long srcOffset, nint dstObj, long dstOffset, long size, long elemSize);
+
         delegate void JVM_InitDelegate(JVMInvokeInterface* iface);
 
         delegate nint JVM_LoadLibraryDelegate([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
@@ -120,6 +125,7 @@ namespace IKVM.Runtime
         readonly JVM_RawMonitorDestroyDelegate _JVM_RawMonitorDestroy;
         readonly JVM_RawMonitorEnterDelegate _JVM_RawMonitorEnter;
         readonly JVM_RawMonitorExitDelegate _JVM_RawMonitorExit;
+        readonly JVM_CopySwapMemoryDelegate _JVM_CopySwapMemory;
 
         /// <summary>
         /// Initializes a new instance.
@@ -151,6 +157,7 @@ namespace IKVM.Runtime
             jvmii->JVM_RawMonitorDestroy = Marshal.GetFunctionPointerForDelegate(_JVM_RawMonitorDestroy = JVM_RawMonitorDestroy);
             jvmii->JVM_RawMonitorEnter = Marshal.GetFunctionPointerForDelegate(_JVM_RawMonitorEnter = JVM_RawMonitorEnter);
             jvmii->JVM_RawMonitorExit = Marshal.GetFunctionPointerForDelegate(_JVM_RawMonitorExit = JVM_RawMonitorExit);
+            jvmii->JVM_CopySwapMemory = Marshal.GetFunctionPointerForDelegate(_JVM_CopySwapMemory = JVM_CopySwapMemory);
             _JVM_Init(jvmii);
         }
 
@@ -382,6 +389,217 @@ namespace IKVM.Runtime
             {
                 JVM.SetPendingException(e);
             }
+        }
+
+        /// <summary>
+        /// Invoked by the native code to copy and swap memory.
+        /// </summary>
+        /// <param name="env"></param>
+        /// <param name="srcObj"></param>
+        /// <param name="srcOffset"></param>
+        /// <param name="dstObj"></param>
+        /// <param name="dstOffset"></param>
+        /// <param name="size"></param>
+        /// <param name="elemSize"></param>
+        unsafe void JVM_CopySwapMemory(JNIEnv* env, nint srcObj, long srcOffset, nint dstObj, long dstOffset, long size, long elemSize)
+        {
+            if (srcObj == 0 && dstObj == 0)
+            {
+                JVM_CopySwapMemory_Impl((void*)srcOffset, (void*)dstOffset, size, (int)elemSize);
+            }
+            else
+            {
+                var src = env->UnwrapRef(srcObj);
+                var dst = env->UnwrapRef(dstObj);
+                if (src == null || dst == null)
+                    throw new java.lang.InternalError();
+
+                var srcArray = src as Array;
+                var dstArray = dst as Array;
+                if (srcArray == null || dstArray == null)
+                    throw new java.lang.InternalError();
+
+                JVM_CopySwapMemory_Impl(srcArray, srcOffset, dstArray, dstOffset, size, (int)elemSize);
+            }
+
+            throw new java.lang.InternalError();
+        }
+
+        /// <summary>
+        /// Implements JVM_CopySwapMemory on a specific array type.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dst"></param>
+        /// <param name="size"></param>
+        unsafe void JVM_CopySwapMemory_Impl(void* src, void* dst, long size, int elemSize)
+        {
+            switch (elemSize)
+            {
+                case 2:
+                    JVM_CopySwapMemory_Impl((short*)src, (short*)dst, (int)(size / 2));
+                    break;
+                case 4:
+                    JVM_CopySwapMemory_Impl((int*)src, (int*)dst, (int)(size / 4));
+                    break;
+                case 8:
+                    JVM_CopySwapMemory_Impl((long*)src, (long*)dst, (int)(size / 8));
+                    break;
+                default:
+                    throw new java.lang.InternalError();
+            }
+        }
+
+        /// <summary>
+        /// Implements JVM_CopySwapMemory on a specific array type.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="srcOffset"></param>
+        /// <param name="dst"></param>
+        /// <param name="dstOffset"></param>
+        /// <param name="size"></param>
+        void JVM_CopySwapMemory_Impl(Array src, long srcOffset, Array dst, long dstOffset, long size, int elemSize)
+        {
+            try
+            {
+                switch (elemSize)
+                {
+                    case 2:
+                        JVM_CopySwapMemory_Impl((short[])src, (int)(srcOffset / 2), (short[])dst, (int)(dstOffset / 2), (int)(size / 2));
+                        break;
+                    case 4:
+                        JVM_CopySwapMemory_Impl((int[])src, (int)(srcOffset / 4), (int[])dst, (int)(dstOffset / 4), (int)(size / 4));
+                        break;
+                    case 8:
+                        JVM_CopySwapMemory_Impl((long[])src, (int)(srcOffset / 8), (long[])dst, (int)(dstOffset / 8), (int)(size / 8));
+                        break;
+                    default:
+                        throw new java.lang.InternalError();
+                }
+            }
+            catch (InvalidCastException)
+            {
+                throw new java.lang.InternalError();
+            }
+        }
+
+        /// <summary>
+        /// Implements JVM_CopySwapMemory on a short array.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="srcOffset"></param>
+        /// <param name="dst"></param>
+        /// <param name="dstOffset"></param>
+        /// <param name="size"></param>
+        void JVM_CopySwapMemory_Impl(short[] src, int srcOffset, short[] dst, int dstOffset, int size)
+        {
+            ReverseEndianness(new ReadOnlySpan<short>(src).Slice(srcOffset, size), new Span<short>(dst).Slice(dstOffset, size));
+        }
+
+        /// <summary>
+        /// Implements JVM_CopySwapMemory on a short pointer.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dst"></param>
+        /// <param name="size"></param>
+        unsafe void JVM_CopySwapMemory_Impl(short* src, short* dst, int size)
+        {
+            ReverseEndianness(new ReadOnlySpan<short>(src, size), new Span<short>(dst, size));
+        }
+
+        /// <summary>
+        /// Reverses the endianness of the given short items.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dst"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        void ReverseEndianness(ReadOnlySpan<short> src, Span<short> dst)
+        {
+#if NET7_0_OR_GREATER
+            BinaryPrimitives.ReverseEndianness(src, dst);
+#else
+            for (int i = 0; i < src.Length; i++)
+                dst[i] = BinaryPrimitives.ReverseEndianness(src[i]);
+#endif
+        }
+
+        /// <summary>
+        /// Implements JVM_CopySwapMemory on a int array.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="srcOffset"></param>
+        /// <param name="dst"></param>
+        /// <param name="dstOffset"></param>
+        /// <param name="size"></param>
+        void JVM_CopySwapMemory_Impl(int[] src, int srcOffset, int[] dst, int dstOffset, int size)
+        {
+            ReverseEndianness(new ReadOnlySpan<int>(src).Slice(srcOffset, size), new Span<int>(dst).Slice(dstOffset, size));
+        }
+
+        /// <summary>
+        /// Implements JVM_CopySwapMemory on a int pointer.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dst"></param>
+        /// <param name="size"></param>
+        unsafe void JVM_CopySwapMemory_Impl(int* src, int* dst, int size)
+        {
+            ReverseEndianness(new ReadOnlySpan<int>(src, size), new Span<int>(dst, size));
+        }
+
+        /// <summary>
+        /// Reverses the endianness of the given int items.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dst"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        void ReverseEndianness(ReadOnlySpan<int> src, Span<int> dst)
+        {
+#if NET7_0_OR_GREATER
+            BinaryPrimitives.ReverseEndianness(src, dst);
+#else
+            for (int i = 0; i < src.Length; i++)
+                dst[i] = BinaryPrimitives.ReverseEndianness(src[i]);
+#endif
+        }
+
+        /// <summary>
+        /// Implements JVM_CopySwapMemory on a long array.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="srcOffset"></param>
+        /// <param name="dst"></param>
+        /// <param name="dstOffset"></param>
+        /// <param name="size"></param>
+        void JVM_CopySwapMemory_Impl(long[] src, int srcOffset, long[] dst, int dstOffset, int size)
+        {
+            ReverseEndianness(new ReadOnlySpan<long>(src).Slice(srcOffset, size), new Span<long>(dst).Slice(dstOffset, size));
+        }
+
+        /// <summary>
+        /// Implements JVM_CopySwapMemory on a long pointer.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dst"></param>
+        /// <param name="size"></param>
+        unsafe void JVM_CopySwapMemory_Impl(long* src, long* dst, int size)
+        {
+            ReverseEndianness(new ReadOnlySpan<long>(src, size), new Span<long>(dst, size));
+        }
+
+        /// <summary>
+        /// Reverses the endianness of the given int items.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dst"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        void ReverseEndianness(ReadOnlySpan<long> src, Span<long> dst)
+        {
+#if NET7_0_OR_GREATER
+            BinaryPrimitives.ReverseEndianness(src, dst);
+#else
+            for (int i = 0; i < src.Length; i++)
+                dst[i] = BinaryPrimitives.ReverseEndianness(src[i]);
+#endif
         }
 
         /// <summary>

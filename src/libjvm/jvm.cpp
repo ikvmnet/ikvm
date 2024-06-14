@@ -190,6 +190,11 @@ void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_po
     jvmii->JVM_ArrayCopy(env, ignored, src, src_pos, dst, dst_pos, length);
 }
 
+void JNICALL JVM_CopySwapMemory(JNIEnv *env, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size, jlong elemSize)
+{
+    return jvmii->JVM_CopySwapMemory(env, srcObj, srcOffset, dstObj, dstOffset, size, elemSize);
+}
+
 jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject properties)
 {
     return jvmii->JVM_InitProperties(env, properties);
