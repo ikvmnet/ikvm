@@ -242,6 +242,7 @@ java/awt/FontClass/DebugFonts.java                                              
 java/awt/FullScreen/MultimonFullscreenTest/MultimonDeadlockTest.java                                                    generic-all
 java/awt/GraphicsEnvironment/TestDetectHeadless/TestDetectHeadless.sh                                                   generic-all
 java/awt/image/BufferedImage/GetPropertyNames.java                                                                      generic-all
+java/awt/image/BufferedImage/ICMColorDataTest/ICMColorDataTest.java                                                     macosx-all
 java/awt/image/DrawImage/IncorrectClipXorModeSurface2Surface.java                                                       generic-all
 java/awt/MenuBar/RemoveHelpMenu/RemoveHelpMenu.java                                                                     generic-all
 java/awt/Mouse/MouseDragEvent/MouseDraggedTest.java                                                                     generic-all
