@@ -3,12 +3,12 @@ using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 using IKVM.Runtime.Accessors.Java.Util;
 
 namespace IKVM.Runtime
 {
-    using System.Threading;
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
