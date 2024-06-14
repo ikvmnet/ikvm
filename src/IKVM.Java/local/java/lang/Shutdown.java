@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class Shutdown {
     private static int state = RUNNING;
 
     /* Should we run all finalizers upon exit? */
-    static volatile boolean runFinalizersOnExit = false;
+    private static boolean runFinalizersOnExit = false;
 
     // The system shutdown hooks are registered with a predefined slot.
     // The list of shutdown hooks is as follows:
@@ -172,6 +172,9 @@ class Shutdown {
         }
     }
 
+    /* Notify the VM that it's time to halt. */
+    static native void beforeHalt();
+
     /* The halt method is synchronized on the halt lock
      * to avoid corruption of the delete-on-shutdown file list.
      * It invokes the true native halt method.
@@ -182,12 +185,10 @@ class Shutdown {
         }
     }
 
-    static void halt0(int status) {
-        cli.System.Environment.Exit(status);
-    }
+    static native void halt0(int status);
 
     /* Wormhole for invoking java.lang.ref.Finalizer.runAllFinalizers */
-    private static void runAllFinalizers() { /* [IKVM] Don't need to do anything here */ }
+    private static native void runAllFinalizers();
 
 
     /* The actual shutdown sequence is defined here.
@@ -253,6 +254,7 @@ class Shutdown {
             /* Synchronize on the class object, causing any other thread
              * that attempts to initiate shutdown to stall indefinitely
              */
+            beforeHalt();
             sequence();
             halt(status);
         }
@@ -274,6 +276,7 @@ class Shutdown {
                 break;
             }
         }
+
         // [IKVM] We don't block here, because we're being called
         // from the AppDomain.ProcessExit event and we don't want to
         // deadlock with the thread that called exit.
