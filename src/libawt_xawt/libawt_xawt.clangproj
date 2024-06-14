@@ -101,6 +101,7 @@
         <Dependencies Include="Xrender" />
         <Dependencies Include="Xtst" />
         <Dependencies Include="Xi" />
+        <Dependencies Include="fontconfig" />
         <AdditionalCompileOptions Include="-Wno-implicit-function-declaration;-Wno-error=int-conversion" />
         <AdditionalCompileOptions Include="-fcommon" />
         <AdditionalLinkOptions Include="-fcommon" />

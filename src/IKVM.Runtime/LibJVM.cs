@@ -431,7 +431,7 @@ namespace IKVM.Runtime
         /// <param name="src"></param>
         /// <param name="dst"></param>
         /// <param name="size"></param>
-        unsafe void JVM_CopySwapMemory_Impl(void* src, void* dst, long size, int elemSize)
+        internal unsafe void JVM_CopySwapMemory_Impl(void* src, void* dst, long size, int elemSize)
         {
             switch (elemSize)
             {
@@ -457,7 +457,7 @@ namespace IKVM.Runtime
         /// <param name="dst"></param>
         /// <param name="dstOffset"></param>
         /// <param name="size"></param>
-        void JVM_CopySwapMemory_Impl(Array src, long srcOffset, Array dst, long dstOffset, long size, int elemSize)
+        internal static void JVM_CopySwapMemory_Impl(Array src, long srcOffset, Array dst, long dstOffset, long size, int elemSize)
         {
             try
             {
@@ -490,7 +490,7 @@ namespace IKVM.Runtime
         /// <param name="dst"></param>
         /// <param name="dstOffset"></param>
         /// <param name="size"></param>
-        void JVM_CopySwapMemory_Impl(short[] src, int srcOffset, short[] dst, int dstOffset, int size)
+        static void JVM_CopySwapMemory_Impl(short[] src, int srcOffset, short[] dst, int dstOffset, int size)
         {
             ReverseEndianness(new ReadOnlySpan<short>(src).Slice(srcOffset, size), new Span<short>(dst).Slice(dstOffset, size));
         }
@@ -501,7 +501,7 @@ namespace IKVM.Runtime
         /// <param name="src"></param>
         /// <param name="dst"></param>
         /// <param name="size"></param>
-        unsafe void JVM_CopySwapMemory_Impl(short* src, short* dst, int size)
+        static unsafe void JVM_CopySwapMemory_Impl(short* src, short* dst, int size)
         {
             ReverseEndianness(new ReadOnlySpan<short>(src, size), new Span<short>(dst, size));
         }
@@ -512,7 +512,7 @@ namespace IKVM.Runtime
         /// <param name="src"></param>
         /// <param name="dst"></param>
         /// <exception cref="NotImplementedException"></exception>
-        void ReverseEndianness(ReadOnlySpan<short> src, Span<short> dst)
+        static void ReverseEndianness(ReadOnlySpan<short> src, Span<short> dst)
         {
 #if NET7_0_OR_GREATER
             BinaryPrimitives.ReverseEndianness(src, dst);
@@ -530,7 +530,7 @@ namespace IKVM.Runtime
         /// <param name="dst"></param>
         /// <param name="dstOffset"></param>
         /// <param name="size"></param>
-        void JVM_CopySwapMemory_Impl(int[] src, int srcOffset, int[] dst, int dstOffset, int size)
+        static void JVM_CopySwapMemory_Impl(int[] src, int srcOffset, int[] dst, int dstOffset, int size)
         {
             ReverseEndianness(new ReadOnlySpan<int>(src).Slice(srcOffset, size), new Span<int>(dst).Slice(dstOffset, size));
         }
@@ -541,7 +541,7 @@ namespace IKVM.Runtime
         /// <param name="src"></param>
         /// <param name="dst"></param>
         /// <param name="size"></param>
-        unsafe void JVM_CopySwapMemory_Impl(int* src, int* dst, int size)
+        static unsafe void JVM_CopySwapMemory_Impl(int* src, int* dst, int size)
         {
             ReverseEndianness(new ReadOnlySpan<int>(src, size), new Span<int>(dst, size));
         }
@@ -552,7 +552,7 @@ namespace IKVM.Runtime
         /// <param name="src"></param>
         /// <param name="dst"></param>
         /// <exception cref="NotImplementedException"></exception>
-        void ReverseEndianness(ReadOnlySpan<int> src, Span<int> dst)
+        static void ReverseEndianness(ReadOnlySpan<int> src, Span<int> dst)
         {
 #if NET7_0_OR_GREATER
             BinaryPrimitives.ReverseEndianness(src, dst);
@@ -570,7 +570,7 @@ namespace IKVM.Runtime
         /// <param name="dst"></param>
         /// <param name="dstOffset"></param>
         /// <param name="size"></param>
-        void JVM_CopySwapMemory_Impl(long[] src, int srcOffset, long[] dst, int dstOffset, int size)
+        static void JVM_CopySwapMemory_Impl(long[] src, int srcOffset, long[] dst, int dstOffset, int size)
         {
             ReverseEndianness(new ReadOnlySpan<long>(src).Slice(srcOffset, size), new Span<long>(dst).Slice(dstOffset, size));
         }
@@ -581,7 +581,7 @@ namespace IKVM.Runtime
         /// <param name="src"></param>
         /// <param name="dst"></param>
         /// <param name="size"></param>
-        unsafe void JVM_CopySwapMemory_Impl(long* src, long* dst, int size)
+        static unsafe void JVM_CopySwapMemory_Impl(long* src, long* dst, int size)
         {
             ReverseEndianness(new ReadOnlySpan<long>(src, size), new Span<long>(dst, size));
         }
@@ -592,7 +592,7 @@ namespace IKVM.Runtime
         /// <param name="src"></param>
         /// <param name="dst"></param>
         /// <exception cref="NotImplementedException"></exception>
-        void ReverseEndianness(ReadOnlySpan<long> src, Span<long> dst)
+        static void ReverseEndianness(ReadOnlySpan<long> src, Span<long> dst)
         {
 #if NET7_0_OR_GREATER
             BinaryPrimitives.ReverseEndianness(src, dst);
