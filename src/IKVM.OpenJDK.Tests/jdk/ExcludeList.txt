@@ -1867,16 +1867,10 @@ java/util/stream/test/org/openjdk/tests/java/util/stream/SummaryStatisticsTest.j
 java/util/stream/test/org/openjdk/tests/java/util/stream/TabulatorsTest.java                                            generic-all
 java/util/stream/test/org/openjdk/tests/java/util/stream/TeeOpTest.java                                                 generic-all
 java/util/stream/test/org/openjdk/tests/java/util/stream/ToArrayOpTest.java                                             generic-all
-#java/util/zip/DeInflate.java                                                                                            generic-all
 java/util/zip/InterruptibleZip.java                                                                                     generic-all
 java/util/zip/TestZipError.java                                                                                         generic-all
-#java/util/zip/ZipFile/Comment.java                                                                                      generic-all
-#java/util/zip/ZipFile/CorruptedZipFiles.java                                                                            generic-all
 java/util/zip/ZipFile/DeleteTempJar.java                                                                                generic-all
 java/util/zip/ZipFile/FinalizeZipFile.java                                                                              generic-all
-#java/util/zip/ZipFile/MultiThreadedReadTest.java                                                                        generic-all
-#java/util/zip/ZipFile/ReadLongZipFileName.java                                                                          generic-all
-#java/util/zip/ZipFile/StreamZipEntriesTest.java                                                                         generic-all
 javax/accessibility/6986385/bug6986385.java                                                                             generic-all
 javax/accessibility/8069268/bug8069268.java                                                                             generic-all
 javax/accessibility/JList/AccessibleJListChildNPETest.java                                                              generic-all
@@ -1884,29 +1878,21 @@ javax/crypto/JceSecurity/SunJCE_BC_LoadOrdering.java                            
 javax/crypto/SecretKeyFactory/FailOverTest.sh                                                                           generic-all
 javax/crypto/sanity/CheckManifestForRelease.java                                                                        generic-all
 javax/imageio/metadata/BooleanAttributes.java                                                                           macosx-all
-#javax/imageio/metadata/IIOMetadataFormat/UserPluginMetadataFormatTest.java                                              generic-all
 javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatTest.sh                                                       generic-all
 javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatThreadTest.sh                                                 generic-all
-#javax/imageio/metadata/RegisteredFormatsTest.java                                                                       generic-all
 javax/imageio/plugins/bmp/BMPSubsamplingTest.java                                                                       macosx-all
 javax/imageio/plugins/bmp/TopDownTest.java                                                                              macosx-all
 javax/imageio/plugins/gif/EncodeSubImageTest.java                                                                       macosx-all
-#javax/imageio/plugins/gif/GIFPassListenerTest.java                                                                      generic-all
 javax/imageio/plugins/gif/GifTransparencyTest.java                                                                      macosx-all
 javax/imageio/plugins/jpeg/ConcurrentReadingTest.java                                                                   macosx-all
 javax/imageio/plugins/jpeg/ConcurrentWritingTest.java                                                                   macosx-all
 javax/imageio/plugins/jpeg/JpegWriterLeakTest.java                                                                      generic-all
 javax/imageio/plugins/jpeg/ReadAsGrayTest.java                                                                          linux-all,macosx-all
 javax/imageio/plugins/jpeg/ReadingInterruptionTest.java                                                                 macosx-all
-#javax/imageio/plugins/jpeg/TruncatedImageWarningTest.java                                                               generic-all
 javax/imageio/plugins/jpeg/WritingInterruptionTest.java                                                                 macosx-all
-#javax/imageio/plugins/png/GrayPngTest.java                                                                              generic-all
 javax/imageio/plugins/png/ITXtTest.java                                                                                 macosx-all
-#javax/imageio/plugins/png/ItxtUtf8Test.java                                                                             generic-all
-#javax/imageio/plugins/png/PngOutputTypeTest.java                                                                        generic-all
 javax/imageio/plugins/png/ShortHistogramTest.java                                                                       macosx-all
 javax/imageio/plugins/shared/BitDepth.java                                                                              macosx-all
-#javax/imageio/plugins/wbmp/CanDecodeTest.java                                                                           generic-all
 javax/imageio/plugins/shared/WriteAfterAbort.java                                                                       macosx-all
 javax/imageio/stream/StreamCloserLeak/run_test.sh                                                                       generic-all
 javax/management/ThreadMXBeanTest.java                                                                                  generic-all
@@ -3283,8 +3269,6 @@ sun/tools/native2ascii/Permission.java                                          
 tools/jar/UpdateJar.java                                                                                                linux-all,macosx-all
 
 # uses System.Drawing, not available on Linux
-#javax/imageio/plugins/png/MergeStdCommentTest.java                                                                      linux-all,macosx-all
-#javax/imageio/EmptyFileTest.java                                                                                        linux-all,macosx-all
 sun/java2d/cmm/ColorConvertOp/InvalidRenderIntentTest.java                                                              linux-all,macosx-all
 
 # uses Win32 specific stuff, not available on Linux
@@ -3389,7 +3373,6 @@ java/awt/Component/TreeLockDeadlock/TreeLockDeadlock.java                       
 java/awt/dnd/ImageTransferTest/ImageTransferTest.java                                                                   generic-all
 java/awt/dnd/MissingEventsOnModalDialog/MissingEventsOnModalDialogTest.java                                             generic-all
 java/awt/Toolkit/AutoShutdown/EventQueuePush/EventQueuePushAutoshutdown.sh                                              generic-all
-#javax/imageio/plugins/jpeg/JpegImageColorSpaceTest.java                                                                 generic-all
 javax/swing/JEditorPane/6882559/bug6882559.java                                                                         generic-all
 javax/swing/JEditorPane/8158734/bug8158734.java                                                                         generic-all
 javax/swing/JEditorPane/8195095/ImageViewTest.java                                                                      generic-all
@@ -3460,7 +3443,6 @@ java/util/prefs/RemoveNullKeyCheck.java                                         
 java/util/prefs/RemoveReadOnlyNode.java                                                                                 macosx-all
 java/util/prefs/RemoveUnregedListener.java                                                                              macosx-all
 jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
-#java/nio/channels/AsynchronousFileChannel/Basic.java                                                                    macosx-all
 sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java                                        macosx-all
 sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
 sun/security/krb5/auto/TicketSName.java                                                                                 macosx-all
