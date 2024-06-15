@@ -85,12 +85,13 @@ public class ObjectStreamField
      * @since   1.4
      */
     public ObjectStreamField(String name, Class<?> type, boolean unshared) {
-        if (name == null || type == null) {
+        if (name == null) {
             throw new NullPointerException();
         }
         this.name = name;
         this.type = type;
         this.unshared = unshared;
+        signature = getClassSignature(type).intern();
         field = null;
     }
     

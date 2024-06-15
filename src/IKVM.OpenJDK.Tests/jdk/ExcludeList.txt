@@ -227,6 +227,7 @@ demo/jvmti/waiters/WaitersTest.java                                             
 demo/zipfs/basic.sh                                                                                                     generic-all
 demo/zipfs/ZFSTests.java                                                                                                generic-all
 java/awt/Checkbox/SetStateExcessEvent/SetStateExcessEvent.java                                                          generic-all
+java/awt/BasicStroke/DashStrokeTest.java                                                                                generic-all
 java/awt/Component/DimensionEncapsulation/DimensionEncapsulation.java                                                   generic-all
 java/awt/Component/InsetsEncapsulation/InsetsEncapsulation.java                                                         generic-all
 java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java                                                     generic-all
@@ -235,15 +236,19 @@ java/awt/Desktop/8064934/bug8064934.java                                        
 java/awt/event/MouseWheelEvent/WheelModifier/WheelModifier.java                                                         generic-all
 java/awt/Focus/8073453/AWTFocusTransitionTest.java                                                                      generic-all
 java/awt/Focus/8073453/SwingFocusTransitionTest.java                                                                    generic-all
+java/awt/Focus/FocusTransitionTest/FocusTransitionTest.java                                                             generic-all
+java/awt/Focus/RollbackFocusFromAnotherWindowTest/RollbackFocusFromAnotherWindowTest.java                               macosx-all
 java/awt/FontClass/DebugFonts.java                                                                                      generic-all
 java/awt/FullScreen/MultimonFullscreenTest/MultimonDeadlockTest.java                                                    generic-all
 java/awt/GraphicsEnvironment/TestDetectHeadless/TestDetectHeadless.sh                                                   generic-all
 java/awt/image/BufferedImage/GetPropertyNames.java                                                                      generic-all
+java/awt/image/BufferedImage/ICMColorDataTest/ICMColorDataTest.java                                                     macosx-all
 java/awt/image/DrawImage/IncorrectClipXorModeSurface2Surface.java                                                       generic-all
 java/awt/MenuBar/RemoveHelpMenu/RemoveHelpMenu.java                                                                     generic-all
 java/awt/Mouse/MouseDragEvent/MouseDraggedTest.java                                                                     generic-all
 java/awt/Mouse/RemovedComponentMouseListener/RemovedComponentMouseListener.java                                         generic-all
 java/awt/ScrollPane/bug8077409Test.java                                                                                 generic-all
+java/awt/ScrollPane/ScrollPaneValidateTest.java                                                                         macosx-all
 java/awt/Toolkit/GetImage/bug8078165.java                                                                               generic-all
 java/awt/TrayIcon/8072769/bug8072769.java                                                                               generic-all
 java/awt/AlphaComposite/TestAlphaCompositeForNaN.java                                                                   generic-all
@@ -744,6 +749,8 @@ java/awt/font/TextLayout/TestTibetan.java                                       
 java/awt/font/TextLayout/TextLayoutBounds.java                                                                          generic-all
 java/awt/font/TextLayout/UnderlinePositionTest.java                                                                     generic-all
 java/awt/font/TextLayout/VisibleAdvance.java                                                                            generic-all
+java/awt/font/TextLayout/NegativeGlyphIDException.java                                                                  macosx-all
+java/awt/font/TextLayout/OSXLigatureTest.java                                                                           macosx-all
 java/awt/font/Threads/FontThread.java                                                                                   generic-all
 java/awt/font/TransformAttribute/TransformEqualityTest.java                                                             generic-all
 java/awt/geom/Arc2D/SerializationTest.java                                                                              generic-all
@@ -1357,6 +1364,7 @@ java/lang/ref/FinalizeOverride.java                                             
 java/lang/ref/NullQueue.java                                                                                            generic-all
 java/lang/ref/OOMEInReferenceHandler.java                                                                               generic-all
 java/lang/ref/SoftReference/Pin.java                                                                                    generic-all
+java/lang/ref/FinalizerHistogramTest.java                                                                               generic-all
 java/lang/reflect/Array/ExceedMaxDim.java                                                                               generic-all
 java/lang/reflect/DefaultMethodMembers/FilterNotMostSpecific.java                                                       generic-all
 java/lang/reflect/DefaultStaticTest/DefaultStaticInvokeTest.java                                                        generic-all
@@ -1788,6 +1796,7 @@ java/util/logging/TestLoggingWithMainAppContext.java                            
 java/util/logging/TestMainAppContext.java                                                                               generic-all
 java/util/logging/XMLFormatterDate.java                                                                                 generic-all
 java/util/logging/bundlesearch/ResourceBundleSearchTest.java                                                            generic-all
+java/util/logging/TestLoggerWeakRefLeak.java                                                                            generic-all
 java/util/prefs/CheckUserPrefsStorage.sh                                                                                generic-all
 java/util/prefs/PrefsSpi.sh                                                                                             generic-all
 java/util/prefs/SerializeExceptions.java                                                                                generic-all
@@ -2362,6 +2371,7 @@ javax/swing/JFrame/4962534/bug4962534.html                                      
 javax/swing/JFrame/8016356/bug8016356.java                                                                              generic-all
 javax/swing/JFrame/HangNonVolatileBuffer/HangNonVolatileBuffer.java                                                     generic-all
 javax/swing/JFrame/NSTexturedJFrame/NSTexturedJFrame.java                                                               generic-all
+javax/swing/JFrame/AlwaysOnTop/AlwaysOnTopImeTest.java                                                                  generic-all
 javax/swing/JInternalFrame/4193219/IconCoord.java                                                                       generic-all
 javax/swing/JInternalFrame/4251301/bug4251301.java                                                                      generic-all
 javax/swing/JInternalFrame/5066752/bug5066752.java                                                                      generic-all
@@ -3059,8 +3069,10 @@ sun/security/tools/keytool/resource.sh                                          
 sun/security/tools/keytool/selfissued.sh                                                                                generic-all
 sun/security/tools/keytool/standard.sh                                                                                  generic-all
 sun/security/tools/keytool/trystore.sh                                                                                  generic-all
+sun/security/tools/jarsigner/weaksize.sh                                                                                generic-all
 sun/security/util/Debug/MultiOptions.java                                                                               generic-all
 sun/security/util/PropertyExpander/ExpandAndEncode.java                                                                 generic-all
+sun/security/util/Pem/encoding.sh                                                                                       generic-all
 sun/security/validator/certreplace.sh                                                                                   generic-all
 sun/security/validator/samedn.sh                                                                                        generic-all
 sun/security/x509/AlgorithmId/ExtensibleAlgorithmId.java                                                                generic-all
@@ -3268,6 +3280,7 @@ sun/java2d/cmm/ColorConvertOp/InvalidRenderIntentTest.java                      
 javax/print/PrintServiceLookup/CountPrintServices.java                                                                  linux-all
 
 # PKCS 11 has a few broken tests still
+sun/security/pkcs11/Config/ReadConfInUTF16Env.sh                                                                        generic-all
 sun/security/pkcs11/Cipher/ReinitCipher.java                                                                            generic-all
 sun/security/pkcs11/Cipher/TestPKCS5PaddingError.java                                                                   generic-all
 sun/security/pkcs11/Cipher/TestRSACipher.java                                                                           generic-all
@@ -3278,6 +3291,7 @@ sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java                            
 sun/security/pkcs11/KeyAgreement/TestDH.java                                                                            generic-all
 sun/security/pkcs11/KeyAgreement/TestInterop.java                                                                       generic-all
 sun/security/pkcs11/KeyAgreement/TestShort.java                                                                         generic-all
+sun/security/pkcs11/KeyAgreement/UnsupportedDHKeys.java                                                                 generic-all
 sun/security/pkcs11/KeyGenerator/DESParity.java                                                                         generic-all
 sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java                                                                  generic-all
 sun/security/pkcs11/KeyPairGenerator/TestDH2048.java                                                                    generic-all
@@ -3367,6 +3381,7 @@ java/awt/Toolkit/AutoShutdown/EventQueuePush/EventQueuePushAutoshutdown.sh      
 #javax/imageio/plugins/jpeg/JpegImageColorSpaceTest.java                                                                 generic-all
 javax/swing/JEditorPane/6882559/bug6882559.java                                                                         generic-all
 javax/swing/JEditorPane/8158734/bug8158734.java                                                                         generic-all
+javax/swing/JEditorPane/8195095/ImageViewTest.java                                                                      generic-all
 javax/swing/JScrollPane/HorizontalMouseWheelOnShiftPressed/HorizontalMouseWheelOnShiftPressed.java                      generic-all
 javax/swing/plaf/nimbus/8041642/ScrollBarThumbVisibleTest.java                                                          generic-all
 

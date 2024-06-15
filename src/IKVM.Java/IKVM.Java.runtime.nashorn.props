@@ -1,0 +1,28 @@
+<!--
+
+    IKVM.Java.runtime.nashorn.props
+    
+    Build properties for the OpenJDK nashorn distribution.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <OpenJdkClass Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\nashorn\classes\**\*.class" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\**\*" Exclude="$(OpenJdkDir)\nashorn\src\**\_*;$(OpenJdkDir)\nashorn\src\**\*.java;$(OpenJdkDir)\nashorn\src\**\*.class;$(OpenJdkDir)\nashorn\src\**\*.htlm" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Remove="$(OpenJdkDir)\nashorn\src\META-INF\MANIFEST.MF" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Transform Include="$(MSBuildThisFileDirectory)\local\nashorn\version.properties.tt" TargetPath="$(IntermediateOutputPath)transform\local\nashorn\version.properties" />
+        <JavaResource Include="$(IntermediateOutputPath)transform\local\nashorn\version.properties" Visible="False" ResourcePath="nashorn/version.properties" Link="local\nashorn\version.properties" />
+    </ItemGroup>
+
+</Project>
