@@ -2719,6 +2719,7 @@ jdk/lambda/vm/DefaultMethodRegressionTests.java                                 
 jdk/lambda/vm/InterfaceAccessFlagsTest.java                                                                             generic-all
 jdk/lambda/vm/StrictfpDefault.java                                                                                      generic-all
 jdk/net/Sockets/Test.java                                                                                               generic-all
+jdk/tools/launcher/JliLaunchTest.sh                                                                                     generic-all
 lib/security/CheckBlacklistedCerts.java                                                                                 generic-all
 lib/security/java.policy/Ext_AllPolicy.sh                                                                               generic-all
 lib/testlibrary/AssertsTest.java                                                                                        generic-all
@@ -3033,6 +3034,11 @@ sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/PostThruProxy.sh 
 sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/PostThruProxyWithAuth.sh                                 generic-all
 sun/security/ssl/templates/SSLEngineTemplate.java                                                                       generic-all
 sun/security/ssl/templates/SSLSocketSSLEngineTemplate.java                                                              generic-all
+sun/security/ssl/EngineArgs/DebugReportsOneExtraByte.sh                                                                 generic-all
+sun/security/ssl/internal/TestRun.sh                                                                                    generic-all
+sun/security/ssl/SSLEngineImpl/SSLEngineDeadlock.java                                                                   generic-all
+sun/security/ssl/SSLSocketImpl/NotifyHandshakeTest.sh                                                                   generic-all
+sun/security/ssl/Stapling/StatusResponseManager.sh                                                                      generic-all
 sun/security/tools/jarsigner/AlgOptions.sh                                                                              generic-all
 sun/security/tools/jarsigner/PercentSign.sh                                                                             generic-all
 sun/security/tools/jarsigner/certpolicy.sh                                                                              generic-all
@@ -3081,6 +3087,7 @@ sun/security/validator/certreplace.sh                                           
 sun/security/validator/samedn.sh                                                                                        generic-all
 sun/security/x509/AlgorithmId/ExtensibleAlgorithmId.java                                                                generic-all
 sun/text/resources/LocaleDataTest.java                                                                                  generic-all
+sun/text/IntHashtable/Bug4170614Test.sh                                                                                 generic-all
 sun/tools/common/CommonTests.sh                                                                                         generic-all
 sun/tools/java/CFCTest.java                                                                                             generic-all
 sun/tools/jconsole/ResourceCheckTest.sh                                                                                 generic-all
@@ -3477,6 +3484,15 @@ sun/tools/jps/TestJpsSanity.java                                                
 sun/tools/jcmd/TestJcmdDefaults.java                                                                                    generic-all
 sun/tools/jcmd/TestJcmdSanity.java                                                                                      generic-all
 
+# jconsole
+sun/tools/jconsole/WorkerDeadlockTest.java                                                                              generic-all
+
+# clhsdb
+sun/tools/clhsdb/Basic.sh                                                                                               generic-all
+
+# hsdb
+sun/tools/hsdb/Basic.sh                                                                                                 generic-all
+
 # jdi
 com/sun/jdi/oom/OomDebugTest.java                                                                                       generic-all
 com/sun/jdi/EvalArraysAsList.sh                                                                                         generic-all
@@ -3516,8 +3532,10 @@ sun/nio/cs/Test4200310.sh                                                       
 
 # expired certificate
 sun/security/tools/jarsigner/warnings/BadNetscapeCertTypeTest.java                                                      generic-all
+sun/security/ssl/X509TrustManagerImpl/Symantec/Distrust.java                                                            generic-all
 
 # JFR is not supported
+jdk/jfr/api/consumer/TestFieldAccess.java                                                                               generic-all
 jdk/jfr/api/consumer/TestGetStackTrace.java                                                                             generic-all
 jdk/jfr/api/consumer/TestHiddenMethod.java                                                                              generic-all
 jdk/jfr/api/consumer/TestMethodGetModifiers.java                                                                        generic-all
@@ -3730,9 +3748,9 @@ jdk/jfr/event/gc/configuration/GCHeapConfigurationEventVerifier.java            
 jdk/jfr/event/gc/configuration/GCYoungGenerationConfigurationEventTester.java                                           generic-all
 jdk/jfr/event/gc/configuration/TestGCConfigurationEvent.java                                                            generic-all
 jdk/jfr/event/gc/configuration/TestGCConfigurationEventWithDefaultPauseTarget.java                                      generic-all
-jdk/jfr/event/gc/configuration/TestGCHeapConfigurationEventWith32BitOops.java                                           generic-all
-jdk/jfr/event/gc/configuration/TestGCHeapConfigurationEventWithHeapBasedOops.java                                       generic-all
-jdk/jfr/event/gc/configuration/TestGCHeapConfigurationEventWithZeroBasedOops.java                                       generic-all
+jdk/jfr/event/gc/configuration/TestGCHeapConfigurationEventWith32BitOops.sh                                             generic-all
+jdk/jfr/event/gc/configuration/TestGCHeapConfigurationEventWithHeapBasedOops.sh                                         generic-all
+jdk/jfr/event/gc/configuration/TestGCHeapConfigurationEventWithZeroBasedOops.sh                                         generic-all
 jdk/jfr/event/gc/configuration/TestGCSurvivorConfigurationEvent.java                                                    generic-all
 jdk/jfr/event/gc/configuration/TestGCTLABConfigurationEvent.java                                                        generic-all
 jdk/jfr/event/gc/configuration/TestGCYoungGenerationConfigurationEventWithMinAndMaxSize.java                            generic-all
@@ -3850,7 +3868,7 @@ jdk/jfr/event/oldobject/TestThreadLocalLeak.java                                
 jdk/jfr/event/os/TestCPUInformation.java                                                                                generic-all
 jdk/jfr/event/os/TestCPULoad.java                                                                                       generic-all
 jdk/jfr/event/os/TestCPUTimeStampCounter.java                                                                           generic-all
-jdk/jfr/event/os/TestInitialEnvironmentVariable.java                                                                    generic-all
+jdk/jfr/event/os/TestInitialEnvironmentVariable.sh                                                                      generic-all
 jdk/jfr/event/os/TestOSInfo.java                                                                                        generic-all
 jdk/jfr/event/os/TestPhysicalMemoryEvent.java                                                                           generic-all
 jdk/jfr/event/os/TestSystemProcess.java                                                                                 generic-all
@@ -3887,7 +3905,7 @@ jdk/jfr/event/runtime/TestThreadSleepEvent.java                                 
 jdk/jfr/event/runtime/TestThreadStartEndEvents.java                                                                     generic-all
 jdk/jfr/event/runtime/TestThrowableInstrumentation.java                                                                 generic-all
 jdk/jfr/event/runtime/TestVmFlagChangedEvent.java                                                                       generic-all
-jdk/jfr/event/runtime/TestVMInfoEvent.java                                                                              generic-all
+jdk/jfr/event/runtime/TestVMInfoEvent.sh                                                                                generic-all
 jdk/jfr/event/runtime/TestVMOperation.java                                                                              generic-all
 jdk/jfr/event/sampling/TestNative.java                                                                                  generic-all
 jdk/jfr/javaagent/EventEmitterAgent.java                                                                                generic-all
