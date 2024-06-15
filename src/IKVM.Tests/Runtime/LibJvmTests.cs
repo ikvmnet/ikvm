@@ -26,8 +26,11 @@ namespace IKVM.Tests.Runtime
         {
             var a = new short[4] { 1, 2, 3, 4 };
             var b = new short[4];
-            LibJvm.JVM_CopySwapMemory(a, 0, b, 0, 4, 2);
-            b.Should().Be(new short[] { BinaryPrimitives.ReverseEndianess(1), BinaryPrimitives.ReverseEndianess(2), BinaryPrimitives.ReverseEndianess(3), BinaryPrimitives.ReverseEndianess(4) });
+            LibJvm.JVM_CopySwapMemory(a, 0, b, 0, sizeof(short) * a.Length, sizeof(short));
+            b[0].Should().Be(BinaryPrimitives.ReverseEndianess((short)1));
+            b[1].Should().Be(BinaryPrimitives.ReverseEndianess((short)2));
+            b[2].Should().Be(BinaryPrimitives.ReverseEndianess((short)3));
+            b[3].Should().Be(BinaryPrimitives.ReverseEndianess((short)4));
         }
 
         [TestMethod]
@@ -35,8 +38,11 @@ namespace IKVM.Tests.Runtime
         {
             var a = new int[4] { 1, 2, 3, 4 };
             var b = new int[4];
-            LibJvm.JVM_CopySwapMemory(a, 0, b, 0, 4, 4);
-            b.Should().Be(new short[] { 256, 0, 0, 0 });
+            LibJvm.JVM_CopySwapMemory(a, 0, b, 0, sizeof(int) * a.Length, sizeof(int));
+            b[0].Should().Be(BinaryPrimitives.ReverseEndianess((long)1));
+            b[1].Should().Be(BinaryPrimitives.ReverseEndianess((long)2));
+            b[2].Should().Be(BinaryPrimitives.ReverseEndianess((long)3));
+            b[3].Should().Be(BinaryPrimitives.ReverseEndianess((long)4));
         }
 
         [TestMethod]
@@ -44,8 +50,11 @@ namespace IKVM.Tests.Runtime
         {
             var a = new long[4] { 1, 2, 3, 4 };
             var b = new long[4];
-            LibJvm.JVM_CopySwapMemory(a, 0, b, 0, 4, 8);
-            b.Should().Be(new short[] { 256, 0, 0, 0 });
+            LibJvm.JVM_CopySwapMemory(a, 0, b, 0, sizeof(long) * a.Length, sizeof(long));
+            b[0].Should().Be(BinaryPrimitives.ReverseEndianess((long)1));
+            b[1].Should().Be(BinaryPrimitives.ReverseEndianess((long)2));
+            b[2].Should().Be(BinaryPrimitives.ReverseEndianess((long)3));
+            b[3].Should().Be(BinaryPrimitives.ReverseEndianess((long)4));
         }
 
     }
