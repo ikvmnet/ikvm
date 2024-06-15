@@ -1820,6 +1820,9 @@ java/util/stream/boottest/java/util/stream/StreamFlagsTest.java                 
 java/util/stream/boottest/java/util/stream/StreamOpFlagsTest.java                                                       generic-all
 java/util/stream/boottest/java/util/stream/StreamReuseTest.java                                                         generic-all
 java/util/stream/boottest/java/util/stream/UnorderedTest.java                                                           generic-all
+java/util/stream/test/org/openjdk/tests/java/util/stream/CollectAndSummaryStatisticsTest.java                           generic-all
+java/util/stream/test/org/openjdk/tests/java/util/stream/CustomFJPoolTest.java                                          generic-all
+java/util/stream/test/org/openjdk/tests/java/util/stream/FlatMapOpTest.java                                             generic-all
 java/util/stream/test/org/openjdk/tests/java/lang/invoke/DeserializeMethodTest.java                                     generic-all
 java/util/stream/test/org/openjdk/tests/java/lang/invoke/MHProxiesTest.java                                             generic-all
 java/util/stream/test/org/openjdk/tests/java/lang/invoke/SerializedLambdaTest.java                                      generic-all
@@ -1909,6 +1912,8 @@ javax/imageio/plugins/shared/BitDepth.java                                      
 #javax/imageio/plugins/wbmp/CanDecodeTest.java                                                                           generic-all
 javax/imageio/plugins/shared/WriteAfterAbort.java                                                                       macosx-all
 javax/imageio/stream/StreamCloserLeak/run_test.sh                                                                       generic-all
+javax/imageio/spi/AppletContextTest/BadPluginConfigurationTest.sh                                                       generic-all
+javax/imageio/stream/DeleteOnExitTest.sh                                                                                generic-all
 javax/management/ThreadMXBeanTest.java                                                                                  generic-all
 javax/management/ImplementationVersion/ImplVersionTest.java                                                             generic-all
 javax/management/Introspector/AnnotationSecurityTest.java                                                               generic-all
