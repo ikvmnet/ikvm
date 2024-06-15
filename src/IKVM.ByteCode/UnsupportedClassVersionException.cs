@@ -5,7 +5,7 @@
     /// Describes an attempt to parse an unsupported class file version.
     /// </summary>
     internal sealed class UnsupportedClassVersionException :
-        ByteCodeException
+        InvalidClassException
     {
 
         readonly ClassFormatVersion version;
@@ -13,8 +13,7 @@
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="majorVersion"></param>
-        /// <param name="minorVersion"></param>
+        /// <param name="version"></param>
         internal UnsupportedClassVersionException(ClassFormatVersion version) :
             base($"Unsupported class version {version}.")
         {

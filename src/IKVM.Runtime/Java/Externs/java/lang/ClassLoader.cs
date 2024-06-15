@@ -25,6 +25,7 @@ using System;
 using System.Buffers;
 using System.Linq;
 
+using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
 using IKVM.Runtime;
 
@@ -59,7 +60,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return DefineClass(self, name, ClassReader.Read(new ReadOnlyMemory<byte>(b, off, len)), pd, null);
+            return DefineClass(self, name, ReadClass(new ReadOnlyMemory<byte>(b, off, len)), pd, null);
 #endif
         }
 
@@ -80,7 +81,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return DefineClass(self, name, ClassReader.Read(new ReadOnlyMemory<byte>(b, off, len)), pd, source);
+            return DefineClass(self, name, ReadClass(new ReadOnlyMemory<byte>(b, off, len)), pd, source);
 #endif
         }
 
@@ -102,11 +103,11 @@ namespace IKVM.Java.Externs.java.lang
 #else
             if (bb.hasArray())
             {
-                return DefineClass(self, name, ClassReader.Read(new ReadOnlyMemory<byte>(bb.array(), bb.arrayOffset() + bb.position(), bb.remaining())), pd, source);
+                return DefineClass(self, name, ReadClass(new ReadOnlyMemory<byte>(bb.array(), bb.arrayOffset() + bb.position(), bb.remaining())), pd, source);
             }
             else if (bb.isDirect())
             {
-                return DefineClass(self, name, ClassReader.Read((byte*)((DirectBuffer)bb).address() + bb.position(), bb.remaining()), pd, source);
+                return DefineClass(self, name, ReadClass((byte*)((DirectBuffer)bb).address() + bb.position(), bb.remaining()), pd, source);
             }
             else
             {
@@ -115,7 +116,7 @@ namespace IKVM.Java.Externs.java.lang
                 try
                 {
                     bb.get(buf);
-                    return DefineClass(self, name, ClassReader.Read(new ReadOnlyMemory<byte>(buf, 0, bb.remaining())), pd, source);
+                    return DefineClass(self, name, ReadClass(new ReadOnlyMemory<byte>(buf, 0, bb.remaining())), pd, source);
                 }
                 finally
                 {
@@ -126,6 +127,48 @@ namespace IKVM.Java.Externs.java.lang
         }
 
 #if FIRST_PASS == false
+
+        /// <summary>
+        /// Attempts to read the class, handling exceptions.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        static ClassReader ReadClass(ReadOnlyMemory<byte> buffer)
+        {
+            try
+            {
+                return ClassReader.Read(buffer);
+            }
+            catch (InvalidClassMagicException)
+            {
+                throw new global::java.lang.ClassFormatError("Incompatible magic value");
+            }
+            catch (ByteCodeException e)
+            {
+                throw new global::java.lang.ClassFormatError(e.Message);
+            }
+        }
+
+        /// <summary>
+        /// Attempts to read the class, handling exceptions.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        static unsafe ClassReader ReadClass(byte* buffer, int length)
+        {
+            try
+            {
+                return ClassReader.Read(buffer, length);
+            }
+            catch (InvalidClassMagicException)
+            {
+                throw new global::java.lang.ClassFormatError("Incompatible magic value");
+            }
+            catch (ByteCodeException e)
+            {
+                throw new global::java.lang.ClassFormatError(e.Message);
+            }
+        }
 
         /// <summary>
         /// Defines a new class with the specified information.
