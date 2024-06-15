@@ -3174,9 +3174,6 @@ vm/verifier/TestStaticIF.java                                                   
 vm/verifier/VerifyProtectedConstructor.java                                                                             generic-all
 vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java                                                         generic-all
 
-# JFR is not supported
-
-
 # these test try to fill up memory but catch an exception that isn't going to happen on .NET
 # the tests should be fixed
 java/beans/Introspector/Test7172865.java                                                                                generic-all
@@ -3517,7 +3514,7 @@ com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.j
 sun/nio/cs/Test4200310.sh                                                                                               generic-all
 
 # expired certificate
-sun/security/tools/jarsigner/warnings/BadNetscapeCertTypeTest.java                                                      generic-all./api/consumer/TestFieldAccess.java
+sun/security/tools/jarsigner/warnings/BadNetscapeCertTypeTest.java                                                      generic-all
 
 # JFR is not supported
 jdk/jfr/api/consumer/TestGetStackTrace.java                                                                             generic-all
