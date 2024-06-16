@@ -450,14 +450,6 @@ jobs:
           $run += @("IKVM.OpenJDK.Tests?TestPartition=$_")
         }
 
-        $include = @(
-          @{
-            "tfm" = "net8.0"
-            "sys" = "osx-arm64"
-            "run" = "IKVM.Tests"
-          }
-        )
-
         $exclude = @(
           @{
             "tfm" = "net472"
@@ -514,6 +506,14 @@ jobs:
             }
         }
 
+        $include = @(
+          @{
+            "run" = "IKVM.Tests"
+            "tfm" = "net8.0"
+            "sys" = "osx-arm64"
+          }
+        )
+
         "matrix=" + (@{
           sys = $sys
           tfm = $tfm
@@ -530,7 +530,7 @@ jobs:
       matrix: ${{ fromJSON(needs.test-vars.outputs.matrix) }}
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"],"osx-arm64":["macos-14"]}')[matrix.sys] }}
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
