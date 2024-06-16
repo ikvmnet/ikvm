@@ -472,6 +472,14 @@ jobs:
           $run += @("IKVM.OpenJDK.Tests?TestPartition=$_")
         }
 
+        $include = @(
+          @{
+            "tfm" = "net8.0"
+            "sys" = "osx-arm64"
+            "run" = "IKVM.Tests"
+          }
+        )
+
         $exclude = @(
           @{
             "tfm" = "net472"
@@ -532,6 +540,7 @@ jobs:
           sys = $sys
           tfm = $tfm
           run = $run
+          include = $include
           exclude = $exclude
         } | ConvertTo-Json -Compress).Replace('"', "'") >> $env:GITHUB_OUTPUT
   test:
