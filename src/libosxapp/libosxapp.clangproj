@@ -5,28 +5,95 @@
         <ProjectGuid>0E068B20-9C99-45C5-8D94-A1FF9EDD6739</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
         <TargetName>osxapp</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>osx-x64;osx-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libjnf\libjnf.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <AdditionalLinkOptions Include="-framework Accelerate" />
-        <AdditionalLinkOptions Include="-framework ApplicationServices" />
-        <AdditionalLinkOptions Include="-framework AudioToolbox" />
-        <AdditionalLinkOptions Include="-framework Carbon" />
-        <AdditionalLinkOptions Include="-framework Cocoa" />
-        <AdditionalLinkOptions Include="-framework Security" />
-        <AdditionalLinkOptions Include="-framework ExceptionHandling" />
-        <!--<AdditionalLinkOptions Include="-framework JavaNativeFoundation" />-->
-        <!--<AdditionalLinkOptions Include="-framework JavaRuntimeSupport" />-->
-        <AdditionalLinkOptions Include="-framework OpenGL" />
-        <AdditionalLinkOptions Include="-framework IOSurface" />
-        <AdditionalLinkOptions Include="-framework QuartzCore" />
-        <Compile Include="**\*.cpp" />
+        <AdditionalCompileOptions Include="-O1" />
+        <AdditionalLinkOptions Include="-framework" Value="Accelerate" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="ApplicationServices" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="AudioToolbox" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Carbon" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Cocoa" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="Security" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="ExceptionHandling" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="JavaRuntimeSupport" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="OpenGL" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="IOSurface" Separator=" " />
+        <AdditionalLinkOptions Include="-framework" Value="QuartzCore" Separator=" " />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\macosx\native\sun\osxapp" />
+        <IncludeDirectories Include="$(IntermediateOutputPath)\gensrc" />
+        <Header Include="$(OpenJdkDir)jdk\src\macosx\native\sun\osxapp\*.h" />
+        <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\sun\osxapp\*.m" Language="objective-c" />
         <Compile Include="**\*.c" />
     </ItemGroup>
+    
+    <Target Name="ResolveJava" Condition=" '$(JAVA_HOME)' != '' And '$(JavaPath)' == '' ">
+        <PropertyGroup>
+            <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\java') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java'))</JavaPath>
+            <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\java.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java.exe'))</JavaPath>
+            <JavaArgs></JavaArgs>
+            <JavaExec Condition=" '$(JavaPath)' != '' ">"$(JavaPath)" $(JavaArgs)</JavaExec>
+        </PropertyGroup>
+        <Message Text="Using java executable found in JAVA_HOME at '$(JavaPath)'." Importance="high" Condition=" '$(JavaPath)' != '' " />
+        <Error Text="Could not locate java executable in JAVA_HOME. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(JavaPath)' == '' " />
+    </Target>
+    
+    <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
+        <PropertyGroup>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac.exe'))</JavaCompilerPath>
+            <JavaCompilerArgs></JavaCompilerArgs>
+            <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
+    </Target>
+    
+    <ItemGroup>
+        <_GenIcon Include="$(OpenJdkDir)jdk\src\macosx\native\sun\osxapp\resource\icons\JavaApp.icns" Destination="$(IntermediateOutputPath)\gensrc\AWTIconData.h" />
+    </ItemGroup>
+
+    <Target Name="GenerateOSXIcons" DependsOnTargets="OpenJdkBuildTools;ResolveJava" BeforeTargets="CollectIkvmImageItemsOutputItems" Inputs="@(_GenIcon)" Outputs="%(_GenIcon.Destination)">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <_Src Remove="@(_Src)" />
+            <_Src Include="%(_GenIcon.Identity)" />
+            <_Tmp Remove="@(_Tmp)" />
+            <_Tmp Include="%(_GenIcon.Destination).tmp" />
+            <_Dst Remove="@(_Dst)" />
+            <_Dst Include="%(_GenIcon.Destination)" />
+        </ItemGroup>
+        
+        <WriteLinesToFile Lines="static unsigned char sAWTIconData[] = { " File="@(_Tmp)" />
+        <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.icondata.osxapp.ToBin &lt; @(_Src) &gt;&gt; @(_Tmp)" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.icondata.osxapp.ToBin &lt; @(_Src) &gt;&gt; @(_Tmp)" />
+        <WriteLinesToFile Lines="}%3b" File="@(_Tmp)" />
+
+        <Delete Files="@(_Dst)" Condition="Exists('@(_Dst)')" />
+        <Move SourceFiles="@(_Tmp)" DestinationFiles="@(_Dst)" OverwriteReadOnlyFiles="true" />
+        
+        <ItemGroup>
+            <FileWrites Include="@(_Tmp)" />
+            <FileWrites Include="@(_Dst)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <CompileDependsOn>
+            GenerateOSXIcons;
+            $(CompileDependsOn);
+        </CompileDependsOn>
+    </PropertyGroup>
+    
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.buildtools.targets" />
 </Project>

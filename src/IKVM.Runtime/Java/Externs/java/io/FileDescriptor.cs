@@ -1,6 +1,5 @@
 ﻿using System;
-using System.IO;
-using System.Net.Sockets;
+using System.Runtime.InteropServices;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
@@ -23,35 +22,7 @@ namespace IKVM.Java.Externs.java.io
 #endif
 
         /// <summary>
-        /// Implements the native method 'getStream'.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <returns></returns>
-        public static Stream getStream(object self)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return FileDescriptorAccessor.GetStream(self);
-#endif
-        }
-
-        /// <summary>
-        /// Implements the native method 'getSocket'.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <returns></returns>
-        public static Socket getSocket(object self)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return FileDescriptorAccessor.GetSocket(self);
-#endif
-        }
-
-        /// <summary>
-        /// Sets the underlying pointer object. If the pointer value changes, any existing cached object is removed.
+        /// Sets the underlying pointer object. Disposes any associated stream.
         /// </summary>
         /// <param name="self"></param>
         /// <param name="ptr"></param>
@@ -65,11 +36,11 @@ namespace IKVM.Java.Externs.java.io
                 var p = FileDescriptorAccessor.GetPtr(self);
                 if (p != ptr || ptr == -1)
                 {
-                    var obj = (IDisposable)FileDescriptorAccessor.GetObj(self);
-                    if (obj != null)
+                    var stream = (IDisposable)FileDescriptorAccessor.GetStream(self);
+                    if (stream != null)
                     {
-                        obj.Dispose();
-                        FileDescriptorAccessor.SetObj(self, null);
+                        stream.Dispose();
+                        FileDescriptorAccessor.SetStream(self, null);
                     }
                 }
 
@@ -138,21 +109,34 @@ namespace IKVM.Java.Externs.java.io
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var stream = fd switch
-            {
-                0 => System.Console.OpenStandardInput(),
-                1 => System.Console.OpenStandardOutput(),
-                2 => System.Console.OpenStandardError(),
-                _ => throw new NotImplementedException(),
-            };
-
             var fdo = FileDescriptorAccessor.Init();
-            FileDescriptorAccessor.SetPtr(fdo, fd);
-            FileDescriptorAccessor.SetObj(fdo, stream);
+            FileDescriptorAccessor.SetPtr(fdo, GetStandardHandle(fd));
             return fdo;
 #endif
         }
 
-    }
+        [DllImport("Kernel32")]
+        static extern IntPtr GetStdHandle(int nStdHandle);
 
+        /// <summary>
+        /// Gets the standard handle for the given fd index.
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <returns></returns>
+        static long GetStandardHandle(int fd)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                if (fd == 0)
+                    return (long)GetStdHandle(-10);
+                else if (fd == 1)
+                    return (long)GetStdHandle(-11);
+                else if (fd == 2)
+                    return (long)GetStdHandle(-12);
+            }
+
+            return fd;
+        }
+
+    }
 }

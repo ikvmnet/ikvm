@@ -5,35 +5,37 @@
         <ProjectGuid>555CDB6E-84CE-4FE8-8945-47553C4D0A51</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetIdentifiers>linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
         <TargetName>jsoundalsa</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
         <ProjectReference Include="..\libiava\libiava.clangproj" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x86'))">
-        <PreprocessorDefinitions Include="X_ARCH=X_I586" />
+        <PreprocessorDefinitions Include="X_ARCH" Value="X_I586" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x64'))">
-        <PreprocessorDefinitions Include="X_ARCH=X_AMD64" />
+        <PreprocessorDefinitions Include="X_ARCH" Value="X_AMD64" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm'))">
-        <PreprocessorDefinitions Include="X_ARCH=X_ARM" />
+        <PreprocessorDefinitions Include="X_ARCH" Value="X_ARM" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm64'))">
-        <PreprocessorDefinitions Include="X_ARCH=X_AARCH64" />
+        <PreprocessorDefinitions Include="X_ARCH" Value="X_AARCH64" />
     </ItemGroup>
     <ItemGroup>
         <!-- CFLAGS -->
-        <PreprocessorDefinitions Include="X_PLATFORM=X_LINUX" />
-        <PreprocessorDefinitions Include="USE_DAUDIO=TRUE" />
-        <PreprocessorDefinitions Include="USE_PORTS=TRUE" />
-        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT=TRUE" />
-        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN=TRUE" />
-        <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS=%5c&quot;%5c&quot;" />
+        <PreprocessorDefinitions Include="X_PLATFORM" Value="X_LINUX" />
+        <PreprocessorDefinitions Include="USE_DAUDIO" Value="TRUE" />
+        <PreprocessorDefinitions Include="USE_PORTS" Value="TRUE" />
+        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT" Value="TRUE" />
+        <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_IN" Value="TRUE" />
+        <PreprocessorDefinitions Include="EXTRA_SOUND_JNI_LIBS" Value="&quot;&quot;" />
 
         <Dependencies Include="asound" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libjsoundalsa\mapfile-vers" />
 
         <!-- LIBJSOUND_SRC_DIRS -->
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\com\sun\media\sound" />

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security.Policy;
 
 namespace IKVM.Tools.Exporter
 {
@@ -32,10 +31,19 @@ namespace IKVM.Tools.Exporter
         /// </summary>
         public List<string> Namespaces { get; set; } = new List<string>();
 
+        /// <summary>
+        /// Are we doing a shared export.
+        /// </summary>
         public bool Shared { get; set; }
 
+        /// <summary>
+        /// Whether to include the standard library references.
+        /// </summary>
         public bool NoStdLib { get; set; }
 
+        /// <summary>
+        /// Whether to include forwarder types.
+        /// </summary>
         public bool Forwarders { get; set; }
 
         /// <summary>
@@ -63,8 +71,14 @@ namespace IKVM.Tools.Exporter
         /// </summary>
         public bool SerialVersionUID { get; set; }
 
+        /// <summary>
+        /// Whether to continue execution on error.
+        /// </summary>
         public bool ContinueOnError { get; set; }
 
+        /// <summary>
+        /// Whether we are to run in bootstrap mode.
+        /// </summary>
         public bool Bootstrap { get; set; }
 
         /// <summary>

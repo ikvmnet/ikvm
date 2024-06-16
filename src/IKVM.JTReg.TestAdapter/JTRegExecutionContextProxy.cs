@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 using IKVM.JTReg.TestAdapter.Core;
 
@@ -13,11 +12,7 @@ namespace IKVM.JTReg.TestAdapter
     /// <summary>
     /// Proxies the <see cref="IJTRegExecutionContext"/> interface to the Visual Studio test adapter.
     /// </summary>
-    class JTRegExecutionContextProxy :
-#if NETFRAMEWORK
-        MarshalByRefObject,
-#endif
-        IJTRegExecutionContext
+    class JTRegExecutionContextProxy : IJTRegExecutionContext
     {
 
         static readonly Dictionary<string, TestProperty> properties = new Dictionary<string, TestProperty>(StringComparer.OrdinalIgnoreCase);
@@ -100,15 +95,6 @@ namespace IKVM.JTReg.TestAdapter
         {
             frameworkHandle.SendMessage(JTRegProxyUtil.Convert(level), message);
         }
-
-#if NETFRAMEWORK
-
-        public override object InitializeLifetimeService()
-        {
-            return null;
-        }
-
-#endif
 
     }
 

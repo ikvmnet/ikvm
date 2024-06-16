@@ -504,9 +504,12 @@ namespace IKVM.Reflection.Diagnostics
             metadata.GetOrAddString("");
             metadata.GetOrAddUserString("");
 
-            var documentCache = new Dictionary<Document, DocumentHandle>();
-            foreach (var method in methods)
-                WriteMethod(metadata, method, documentCache);
+            if (methods != null)
+            {
+                var documentCache = new Dictionary<Document, DocumentHandle>();
+                foreach (var method in methods)
+                    WriteMethod(metadata, method, documentCache);
+            }
 
             userEntryPoint = this.userEntryPoint;
         }

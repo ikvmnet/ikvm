@@ -13,7 +13,7 @@ namespace IKVM.Util.Jar
     public class Manifest
     {
 
-        static readonly char[] ManifestNameValueSeperatorChars = new[] { ':' };
+        static readonly char[] ManifestNameValueSeparatorChars = new[] { ':' };
 
         readonly Attributes mainAttributes = new();
         readonly Dictionary<string, Attributes> attributes = new(StringComparer.OrdinalIgnoreCase);
@@ -66,7 +66,7 @@ namespace IKVM.Util.Jar
 
             // read until we hit an empty line or the end of the file
             while (reader.ReadLine() is string s && s.Trim() != "")
-                if (s.Split(ManifestNameValueSeperatorChars, 2) is string[] p && p.Length == 2)
+                if (s.Split(ManifestNameValueSeparatorChars, 2) is string[] p && p.Length == 2)
                     attributes[p[0].Trim()] = p[1].Trim();
 
             // only return attributes if there is any

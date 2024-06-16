@@ -22,10 +22,13 @@
   
 */
 using System;
+using System.Buffers;
 using System.Linq;
 
 using IKVM.ByteCode.Reading;
 using IKVM.Runtime;
+
+using sun.nio.ch;
 
 namespace IKVM.Java.Externs.java.lang
 {
@@ -53,7 +56,11 @@ namespace IKVM.Java.Externs.java.lang
         /// <returns></returns>
         public static global::java.lang.Class defineClass0(global::java.lang.ClassLoader self, string name, byte[] b, int off, int len, global::java.security.ProtectionDomain pd)
         {
-            return defineClass1(self, name, b, off, len, pd, null);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return DefineClass(self, name, ClassReader.Read(new ReadOnlyMemory<byte>(b, off, len)), pd, null);
+#endif
         }
 
         /// <summary>
@@ -73,20 +80,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            try
-            {
-                var classLoaderWrapper = JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(self);
-                var classFile = new ClassFile(JVM.Context, ClassReader.Read(new ReadOnlyMemory<byte>(b, off, len)), name, classLoaderWrapper.ClassFileParseOptions, null);
-                if (name != null && classFile.Name != name)
-                    throw new global::java.lang.NoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");
-
-                var type = classLoaderWrapper.DefineClass(classFile, pd);
-                return type.ClassObject;
-            }
-            catch (RetargetableJavaException x)
-            {
-                throw x.ToJava();
-            }
+            return DefineClass(self, name, ClassReader.Read(new ReadOnlyMemory<byte>(b, off, len)), pd, source);
 #endif
         }
 
@@ -101,16 +95,69 @@ namespace IKVM.Java.Externs.java.lang
         /// <param name="pd"></param>
         /// <param name="source"></param>
         /// <returns></returns>
-        public static global::java.lang.Class defineClass2(global::java.lang.ClassLoader self, string name, global::java.nio.ByteBuffer bb, int off, int len, global::java.security.ProtectionDomain pd, string source)
+        public static unsafe global::java.lang.Class defineClass2(global::java.lang.ClassLoader self, string name, global::java.nio.ByteBuffer bb, int off, int len, global::java.security.ProtectionDomain pd, string source)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var buf = new byte[bb.remaining()];
-            bb.get(buf);
-            return defineClass1(self, name, buf, 0, buf.Length, pd, source);
+            if (bb.hasArray())
+            {
+                return DefineClass(self, name, ClassReader.Read(new ReadOnlyMemory<byte>(bb.array(), bb.arrayOffset() + bb.position(), bb.remaining())), pd, source);
+            }
+            else if (bb.isDirect())
+            {
+                return DefineClass(self, name, ClassReader.Read((byte*)((DirectBuffer)bb).address() + bb.position(), bb.remaining()), pd, source);
+            }
+            else
+            {
+                var buf = ArrayPool<byte>.Shared.Rent(bb.remaining());
+
+                try
+                {
+                    bb.get(buf);
+                    return DefineClass(self, name, ClassReader.Read(new ReadOnlyMemory<byte>(buf, 0, bb.remaining())), pd, source);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
+            }
 #endif
         }
+
+#if FIRST_PASS == false
+
+        /// <summary>
+        /// Defines a new class with the specified information.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="name"></param>
+        /// <param name="reader"></param>
+        /// <param name="pd"></param>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        static global::java.lang.Class DefineClass(global::java.lang.ClassLoader self, string name, ClassReader reader, global::java.security.ProtectionDomain pd, string source)
+        {
+            try
+            {
+                var runtimeClassLoader = JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(self);
+                var classFile = new ClassFile(JVM.Context, reader, name, runtimeClassLoader.ClassFileParseOptions, null);
+                if (name != null && classFile.Name != name)
+                    throw new global::java.lang.NoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");
+
+                var type = runtimeClassLoader.DefineClass(classFile, pd);
+                if (type == null)
+                    throw new InternalException();
+
+                return type.ClassObject;
+            }
+            catch (RetargetableJavaException x)
+            {
+                throw x.ToJava();
+            }
+        }
+
+#endif
 
         /// <summary>
         /// Implements the native method 'resolveClass0'.

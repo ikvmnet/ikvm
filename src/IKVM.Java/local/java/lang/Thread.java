@@ -139,6 +139,7 @@ import sun.security.util.SecurityConstants;
  */
 public
 class Thread implements Runnable {
+
     // [IKVM]
     static {
         // force the set/getContextClassLoader methods to be JIT compiled, because isCCLOverridden(Thread) depends on it
@@ -147,14 +148,17 @@ class Thread implements Runnable {
         dummy.getContextClassLoader();
         dummy.setContextClassLoader(ClassLoader.DUMMY);
     }
+
     private Thread(Void _) {
         // body replaced in map.xml
     }
+
     final class Cleanup {
         protected void finalize() {
             Thread.this.die();
         }
     }
+
     /* --- start IKVM specific state --- */
     static final int[] nonDaemonCount = new int[1];
     @cli.System.ThreadStaticAttribute.Annotation
@@ -166,6 +170,8 @@ class Thread implements Runnable {
     private Throwable stillborn;
     private boolean running;    // used only for coordination with stop0(), is never set to false
     private volatile boolean interruptPending;
+    @ikvm.lang.Internal // made available through libjvm as JVM_GetThreadInterruptEvent
+    public volatile cli.System.Threading.ManualResetEvent interruptEvent = new cli.System.Threading.ManualResetEvent(false);
     private volatile boolean nativeInterruptPending;
     private volatile boolean interruptableWait;
     private boolean timedWait;
@@ -322,8 +328,10 @@ class Thread implements Runnable {
         synchronized (lock) {
             if (interruptPending) {
                 interruptPending = false;
+                interruptEvent.Reset();
                 throw new InterruptedException();
             }
+
             interruptableWait = true;
             this.timedWait = timedWait;
         }
@@ -338,6 +346,7 @@ class Thread implements Runnable {
                 synchronized (lock) {
                     if (nativeInterruptPending) {
                         nativeInterruptPending = false;
+
                         // HACK if there is a pending Interrupt (on the .NET thread), we need to consume that
                         // (if there was no contention on "lock (this)" above the interrupted state isn't checked) 
                         try {
@@ -351,8 +360,10 @@ class Thread implements Runnable {
                         catch (cli.System.Threading.ThreadInterruptedException _) {
                         }
                     }
+
                     if (interruptPending) {
                         interruptPending = false;
+                        interruptEvent.Reset();
                         throw new InterruptedException();
                     }
                 }
@@ -363,6 +374,7 @@ class Thread implements Runnable {
                 nativeInterruptPending = false;
             }
         }
+
         if (dotnetInterrupt != null) {
             ikvm.runtime.Util.throwException(dotnetInterrupt);
         }
@@ -1219,10 +1231,12 @@ class Thread implements Runnable {
      */
     public static boolean interrupted() {
         Thread current = currentThread();
-        if (!current.interruptPending) {
+        if (current.interruptPending == false) {
             return false;
         }
+
         current.interruptPending = false;
+        current.interruptEvent.Reset();
         return true;
     }
 
@@ -2504,8 +2518,11 @@ class Thread implements Runnable {
             if (nativeThread == null) {
                 return;
             }
-            if (!interruptPending) {
+
+            if (interruptPending == false) {
                 interruptPending = true;
+                interruptEvent.Set();
+
                 if (interruptableWait) {
                     nativeInterruptPending = true;
                     nativeThread.Interrupt();

@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
         <RunSettingsFilePath>$(MSBuildProjectDirectory)\IKVM.OpenJDK.Tests.runsettings</RunSettingsFilePath>
     </PropertyGroup>
@@ -10,7 +9,8 @@
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="6.8.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-        <PackageReference Include="Moq" Version="4.18.2" />
+        <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.9.0" />
+        <PackageReference Include="MSTest" Version="3.3.1" />
     </ItemGroup>
 
     <ItemGroup>
@@ -31,19 +31,37 @@
 
     <ItemGroup>
         <None Update="IKVM.OpenJDK.Tests.runsettings">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="jdk\ExcludeList.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="jdk\ExcludeList.$(TargetFramework).txt" Condition=" '$(TargetFramework)' != '' And Exists('jdk\ExcludeList.$(TargetFramework).txt')">
+            <TargetPath>jdk\ExcludeList.tfm.txt</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="langtools\ExcludeList.txt">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="langtools\ExcludeList.$(TargetFramework).txt" Condition=" '$(TargetFramework)' != '' And Exists('langtools\ExcludeList.$(TargetFramework).txt')">
+            <TargetPath>langtools\ExcludeList.tfm.txt</TargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
         <None Update="nashorn\ExcludeList.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="nashorn\ExcludeList.$(TargetFramework).txt" Condition=" '$(TargetFramework)' != '' And Exists('nashorn\ExcludeList.$(TargetFramework).txt')">
+            <TargetPath>nashorn\ExcludeList.tfm.txt</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 
+    <Target Name="CopyConfigToTestHostConfig" AfterTargets="Build">
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll.config" DestinationFiles="$(OutputPath)testhost.dll.config" Condition="Exists('$(OutputPath)$(AssemblyName).dll.config')" />
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).exe.config" DestinationFiles="$(OutputPath)testhost.dll.config" Condition="Exists('$(OutputPath)$(AssemblyName).exe.config')" />
+    </Target>
+
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
+
 </Project>

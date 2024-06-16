@@ -1,34 +1,12 @@
-﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
 
 using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Runtime.JNI;
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.java.io
@@ -37,32 +15,43 @@ namespace IKVM.Java.Externs.java.io
     static class WinNTFileSystem
     {
 
-        internal const int ACCESS_READ = 0x04;
-        const int ACCESS_WRITE = 0x02;
-        const int ACCESS_EXECUTE = 0x01;
+#if FIRST_PASS == false
 
-        public static string getDriveDirectory(object _this, int drive)
-        {
-            try
-            {
-                string path = ((char)('A' + (drive - 1))) + ":";
-                return Path.GetFullPath(path).Substring(2);
-            }
-            catch (ArgumentException)
-            {
+        static WinNTFileSystemAccessor winNTFileSystemAccessor;
 
-            }
-            catch (SecurityException)
-            {
+        static WinNTFileSystemAccessor WinNTFileSystemAccessor => JVM.Internal.BaseAccessors.Get(ref winNTFileSystemAccessor);
 
-            }
-            catch (PathTooLongException)
-            {
+        static global::ikvm.@internal.CallerID __callerID;
+        delegate IntPtr __jniDelegate__canonicalize0(IntPtr jniEnv, IntPtr self, IntPtr path);
+        static __jniDelegate__canonicalize0 __jniPtr__canonicalize0;
+        delegate IntPtr __jniDelegate__canonicalizeWithPrefix0(IntPtr jniEnv, IntPtr self, IntPtr canonicalPrefix, IntPtr pathWithCanonicalPrefix);
+        static __jniDelegate__canonicalizeWithPrefix0 __jniPtr__canonicalizeWithPrefix0;
+        delegate byte __jniDelegate__delete0(IntPtr jniEnv, IntPtr self, IntPtr f);
+        static __jniDelegate__delete0 __jniPtr__delete0;
+        delegate byte __jniDelegate__rename0(IntPtr jniEnv, IntPtr self, IntPtr f1, IntPtr f2);
+        static __jniDelegate__rename0 __jniPtr__rename0;
+        delegate int __jniDelegate__getBooleanAttributes(IntPtr jniEnv, IntPtr self, IntPtr f);
+        static __jniDelegate__getBooleanAttributes __jniPtr__getBooleanAttributes;
+        delegate byte __jniDelegate__checkAccess(IntPtr jniEnv, IntPtr self, IntPtr f, int access);
+        static __jniDelegate__checkAccess __jniPtr__checkAccess;
+        delegate long __jniDelegate__getLastModifiedTime(IntPtr jniEnv, IntPtr self, IntPtr f);
+        static __jniDelegate__getLastModifiedTime __jniPtr__getLastModifiedTime;
+        delegate long __jniDelegate__getLength(IntPtr jniEnv, IntPtr self, IntPtr f);
+        static __jniDelegate__getLength __jniPtr__getLength;
+        delegate byte __jniDelegate__setPermission(IntPtr jniEnv, IntPtr self, IntPtr f, int access, byte enable, byte owneronly);
+        static __jniDelegate__setPermission __jniPtr__setPermission;
+        delegate byte __jniDelegate__createFileExclusively(IntPtr jniEnv, IntPtr self, IntPtr path);
+        static __jniDelegate__createFileExclusively __jniPtr__createFileExclusively;
+        delegate IntPtr __jniDelegate__list(IntPtr jniEnv, IntPtr self, IntPtr f);
+        static __jniDelegate__list __jniPtr__list;
+        delegate byte __jniDelegate__createDirectory(IntPtr jniEnv, IntPtr self, IntPtr f);
+        static __jniDelegate__createDirectory __jniPtr__createDirectory;
+        delegate byte __jniDelegate__setLastModifiedTime(IntPtr jniEnv, IntPtr self, IntPtr f, long time);
+        static __jniDelegate__setLastModifiedTime __jniPtr__setLastModifiedTime;
+        delegate byte __jniDelegate__setReadOnly(IntPtr jniEnv, IntPtr self, IntPtr f);
+        static __jniDelegate__setReadOnly __jniPtr__setReadOnly;
 
-            }
-
-            return "\\";
-        }
+#endif
 
         /// <summary>
         /// Attempts to canonicalize the given path.
@@ -134,621 +123,570 @@ namespace IKVM.Java.Externs.java.io
 #endif
         }
 
+        /// <summary>
+        /// Implements the native method 'canonicalize0'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
         public static string canonicalize0(object self, string path)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            try
+            if (JVM.Vfs.IsPath(path))
             {
                 return CanonicalizePath(Path.IsPathRooted(path) == false ? Path.GetFullPath(path) : path);
             }
-            catch (Exception e)
+            else
             {
-                throw new global::java.io.IOException(e);
-            }
-#endif
-        }
-
-        public static string canonicalizeWithPrefix0(object _this, string canonicalPrefix, string pathWithCanonicalPrefix)
-        {
-            return canonicalize0(_this, pathWithCanonicalPrefix);
-        }
-
-        private static string GetPathFromFile(global::java.io.File file)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return file.getPath();
-#endif
-        }
-
-        public static int getBooleanAttributes(object _this, global::java.io.File f)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            try
-            {
-                var path = GetPathFromFile(f);
-                if (JVM.Vfs.IsPath(path))
-                    return JVM.Vfs.GetBooleanAttributes(path);
-
-                FileAttributes attr = File.GetAttributes(path);
-                const int BA_EXISTS = 0x01;
-                const int BA_REGULAR = 0x02;
-                const int BA_DIRECTORY = 0x04;
-                const int BA_HIDDEN = 0x08;
-                int rv = BA_EXISTS;
-                if ((attr & FileAttributes.Directory) != 0)
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__canonicalize0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__canonicalize0>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(canonicalize0), "(Ljava/lang/String;)Ljava/lang/String;"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
                 {
-                    rv |= BA_DIRECTORY;
+                    return (string)jniFrm.UnwrapLocalRef(__jniPtr__canonicalize0(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(path)));
                 }
-                else
+                catch (Exception ex)
                 {
-                    rv |= BA_REGULAR;
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
                 }
-                if ((attr & FileAttributes.Hidden) != 0)
+                finally
                 {
-                    rv |= BA_HIDDEN;
+                    jniFrm.Leave();
                 }
-                return rv;
             }
-            catch (ArgumentException)
-            {
-
-            }
-            catch (UnauthorizedAccessException)
-            {
-
-            }
-            catch (SecurityException)
-            {
-
-            }
-            catch (NotSupportedException)
-            {
-
-            }
-            catch (IOException)
-            {
-
-            }
-
-            return 0;
 #endif
         }
 
         /// <summary>
-        /// Checks if the given access bits are allowed on the given file.
+        /// Implements the native method 'canonicalizeWithPrefix0'.
         /// </summary>
-        /// <param name="_this"></param>
-        /// <param name="f"></param>
-        /// <param name="access"></param>
+        /// <param name="self"></param>
+        /// <param name="canonicalPrefix"></param>
+        /// <param name="pathWithCanonicalPrefix"></param>
         /// <returns></returns>
-        public static bool checkAccess(object _this, global::java.io.File f, int access)
+        /// <exception cref="NotImplementedException"></exception>
+        public static string canonicalizeWithPrefix0(object self, string canonicalPrefix, string pathWithCanonicalPrefix)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var path = GetPathFromFile(f);
-
-            // check the VFS for the file
-            if (JVM.Vfs.IsPath(path))
+            if (JVM.Vfs.IsPath(pathWithCanonicalPrefix))
             {
-                return JVM.Vfs.GetEntry(path) switch
+                return CanonicalizePath(Path.IsPathRooted(pathWithCanonicalPrefix) == false ? Path.GetFullPath(pathWithCanonicalPrefix) : pathWithCanonicalPrefix);
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__canonicalizeWithPrefix0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__canonicalizeWithPrefix0>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(canonicalizeWithPrefix0), "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    return (string)jniFrm.UnwrapLocalRef(__jniPtr__canonicalizeWithPrefix0(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(canonicalPrefix), jniFrm.MakeLocalRef(pathWithCanonicalPrefix)));
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'delete0'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public static bool delete0(object self, object f)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
+            {
+                throw new NotImplementedException();
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__delete0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__delete0>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(delete0), "(Ljava/io/File;)Z"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    return __jniPtr__delete0(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f)) != 0;
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'rename0'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="f1"></param>
+        /// <param name="f2"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public static bool rename0(object self, object f1, object f2)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (JVM.Vfs.IsPath(((global::java.io.File)f1).getPath()) || JVM.Vfs.IsPath(((global::java.io.File)f2).getPath()))
+            {
+                throw new NotImplementedException();
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__rename0 ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__rename0>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(rename0), "(Ljava/io/File;Ljava/io/File;)Z"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    return __jniPtr__rename0(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f1), jniFrm.MakeLocalRef(f2)) != 0;
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'getBooleanAttributes'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        public static int getBooleanAttributes(object self, object f)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
+            {
+                return JVM.Vfs.GetBooleanAttributes(((global::java.io.File)f).getPath());
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__getBooleanAttributes ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__getBooleanAttributes>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(getBooleanAttributes), "(Ljava/io/File;)I"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    return __jniPtr__getBooleanAttributes(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f));
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'checkAccess'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="f"></param>
+        /// <param name="access"></param>
+        /// <returns></returns>
+        public static bool checkAccess(object self, object f, int access)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
+            {
+                const int ACCESS_READ = 0x04;
+                return JVM.Vfs.GetEntry(((global::java.io.File)f).getPath()) switch
                 {
                     VfsFile file => access == ACCESS_READ && file.CanOpen(FileMode.Open, FileAccess.Read),
                     VfsDirectory => true,
                     _ => false,
                 };
             }
-
-            var ok = true;
-            if ((access & (ACCESS_READ | ACCESS_EXECUTE)) != 0)
+            else
             {
-                ok = false;
-
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__checkAccess ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__checkAccess>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(checkAccess), "(Ljava/io/File;I)Z"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    // HACK if path refers to a directory, we always return true
-                    if (!Directory.Exists(path))
-                    {
-                        new FileInfo(path).Open(
-                            FileMode.Open,
-                            FileAccess.Read,
-                            FileShare.ReadWrite).Close();
-                    }
-
-                    ok = true;
+                    return __jniPtr__checkAccess(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f), access) != 0;
                 }
-                catch (SecurityException)
+                catch (Exception ex)
                 {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
                 }
-                catch (ArgumentException)
+                finally
                 {
-                }
-                catch (UnauthorizedAccessException)
-                {
-                }
-                catch (IOException)
-                {
-                }
-                catch (NotSupportedException)
-                {
+                    jniFrm.Leave();
                 }
             }
-            if (ok && ((access & ACCESS_WRITE) != 0))
-            {
-                ok = false;
-                try
-                {
-                    // HACK if path refers to a directory, we always return true
-                    if (Directory.Exists(path))
-                    {
-                        ok = true;
-                    }
-                    else
-                    {
-                        FileInfo fileInfo = new FileInfo(path);
-                        // Like the JDK we'll only look at the read-only attribute and not
-                        // the security permissions associated with the file or directory.
-                        ok = (fileInfo.Attributes & FileAttributes.ReadOnly) == 0;
-                    }
-                }
-                catch (SecurityException)
-                {
-
-                }
-                catch (ArgumentException)
-                {
-
-                }
-                catch (UnauthorizedAccessException)
-                {
-
-                }
-                catch (IOException)
-                {
-
-                }
-                catch (NotSupportedException)
-                {
-
-                }
-            }
-
-            return ok;
 #endif
         }
 
         /// <summary>
-        /// The .NET ticks representing January 1, 1970 0:00:00, also known as the "epoch".
+        /// Implements the native method 'getLastModifiedTime'.
         /// </summary>
-        private const long UnixEpochTicks = 621355968000000000L;
-
-        private const long UnixEpochMilliseconds = UnixEpochTicks / TimeSpan.TicksPerMillisecond; // 62,135,596,800,000
-
-        private static long DateTimeToJavaLongTime(DateTime datetime)
-        {
-            long milliseconds = datetime.ToUniversalTime().Ticks / TimeSpan.TicksPerMillisecond;
-            return milliseconds - UnixEpochMilliseconds;
-        }
-
-        private static DateTime JavaLongTimeToDateTime(long datetime)
-        {
-            return DateTimeOffset.FromUnixTimeMilliseconds(datetime).LocalDateTime;
-        }
-
-        public static long getLastModifiedTime(object _this, global::java.io.File f)
-        {
-            try
-            {
-                DateTime dt = File.GetLastWriteTime(GetPathFromFile(f));
-                if (dt.ToFileTime() == 0)
-                {
-                    return 0;
-                }
-                else
-                {
-                    return DateTimeToJavaLongTime(dt);
-                }
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (ArgumentException)
-            {
-            }
-            catch (IOException)
-            {
-            }
-            catch (NotSupportedException)
-            {
-            }
-            return 0;
-        }
-
-        public static long getLength(object _this, global::java.io.File f)
+        /// <param name="self"></param>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        public static long getLastModifiedTime(object self, object f)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            try
+            if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
             {
-                var path = GetPathFromFile(f);
-                if (JVM.Vfs.IsPath(path))
-                    return JVM.Vfs.GetEntry(path) is VfsFile file ? file.Size : 0;
-
-                return new FileInfo(path).Length;
+                return 0;
             }
-            catch (SecurityException)
+            else
             {
-
-            }
-            catch (ArgumentException)
-            {
-
-            }
-            catch (UnauthorizedAccessException)
-            {
-
-            }
-            catch (IOException)
-            {
-
-            }
-            catch (NotSupportedException)
-            {
-
-            }
-
-            return 0;
-#endif
-        }
-
-        public static bool setPermission(object _this, global::java.io.File f, int access, bool enable, bool owneronly)
-        {
-            if ((access & ACCESS_WRITE) != 0)
-            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__getLastModifiedTime ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__getLastModifiedTime>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(getLastModifiedTime), "(Ljava/io/File;)J"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
                 try
                 {
-                    FileInfo file = new FileInfo(GetPathFromFile(f));
-                    if (enable)
-                    {
-                        file.Attributes &= ~FileAttributes.ReadOnly;
-                    }
-                    else
-                    {
-                        file.Attributes |= FileAttributes.ReadOnly;
-                    }
-                    return true;
+                    return __jniPtr__getLastModifiedTime(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f));
                 }
-                catch (SecurityException)
+                catch (Exception ex)
                 {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
                 }
-                catch (ArgumentException)
+                finally
                 {
+                    jniFrm.Leave();
                 }
-                catch (UnauthorizedAccessException)
-                {
-                }
-                catch (IOException)
-                {
-                }
-                catch (NotSupportedException)
-                {
-                }
-                return false;
-            }
-            return enable;
-        }
-
-        public static bool createFileExclusively(object _this, string path)
-        {
-#if !FIRST_PASS
-            try
-            {
-                File.Open(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None).Close();
-                return true;
-            }
-            catch (ArgumentException x)
-            {
-                throw new global::java.io.IOException(x.Message);
-            }
-            catch (IOException x)
-            {
-                if (!File.Exists(path) && !Directory.Exists(path))
-                {
-                    throw new global::java.io.IOException(x.Message);
-                }
-            }
-            catch (UnauthorizedAccessException x)
-            {
-                if (!File.Exists(path) && !Directory.Exists(path))
-                {
-                    throw new global::java.io.IOException(x.Message);
-                }
-            }
-            catch (NotSupportedException x)
-            {
-                throw new global::java.io.IOException(x.Message);
             }
 #endif
-            return false;
         }
 
-        public static bool delete0(object _this, global::java.io.File f)
-        {
-            FileSystemInfo fileInfo = null;
-            try
-            {
-                string path = GetPathFromFile(f);
-                if (Directory.Exists(path))
-                {
-                    fileInfo = new DirectoryInfo(path);
-                }
-                else if (File.Exists(path))
-                {
-                    fileInfo = new FileInfo(path);
-                }
-                else
-                {
-                    return false;
-                }
-                // We need to be able to delete read-only files/dirs too, so we clear
-                // the read-only attribute, if set.
-                if ((fileInfo.Attributes & FileAttributes.ReadOnly) != 0)
-                {
-                    fileInfo.Attributes &= ~FileAttributes.ReadOnly;
-                }
-                fileInfo.Delete();
-                return true;
-            }
-            catch (SecurityException)
-            {
-
-            }
-            catch (ArgumentException)
-            {
-
-            }
-            catch (UnauthorizedAccessException)
-            {
-
-            }
-            catch (IOException)
-            {
-
-            }
-            catch (NotSupportedException)
-            {
-
-            }
-
-            return false;
-        }
-
-        public static string[] list(object _this, global::java.io.File f)
+        /// <summary>
+        /// Implements the native method 'getLength'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        public static long getLength(object self, object f)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            try
+            if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
             {
-                var path = GetPathFromFile(f);
-                if (JVM.Vfs.IsPath(path))
+                return JVM.Vfs.GetEntry(((global::java.io.File)f).getPath()) is VfsFile file ? file.Size : 0;
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__getLength ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__getLength>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(getLength), "(Ljava/io/File;)J"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
                 {
-                    if (JVM.Vfs.GetEntry(path) is VfsDirectory vfs)
-                        return vfs.List();
-
-                    throw new DirectoryNotFoundException();
+                    return __jniPtr__getLength(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f));
                 }
-
-                string[] l = Directory.GetFileSystemEntries(path);
-                for (int i = 0; i < l.Length; i++)
+                catch (Exception ex)
                 {
-                    int pos = l[i].LastIndexOf(Path.DirectorySeparatorChar);
-                    if (pos >= 0)
-                        l[i] = l[i].Substring(pos + 1);
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
                 }
-
-                return l;
-            }
-            catch (ArgumentException)
-            {
-
-            }
-            catch (IOException)
-            {
-
-            }
-            catch (UnauthorizedAccessException)
-            {
-
-            }
-            catch (NotSupportedException)
-            {
-
-            }
-
-            return null;
-#endif
-        }
-
-        public static bool createDirectory(object _this, global::java.io.File f)
-        {
-            try
-            {
-                string path = GetPathFromFile(f);
-                DirectoryInfo parent = Directory.GetParent(path);
-                if (parent == null ||
-                    !Directory.Exists(parent.FullName) ||
-                    Directory.Exists(path))
+                finally
                 {
-                    return false;
-                }
-                return Directory.CreateDirectory(path) != null;
-            }
-            catch (SecurityException)
-            {
-
-            }
-            catch (ArgumentException)
-            {
-
-            }
-            catch (UnauthorizedAccessException)
-            {
-
-            }
-            catch (IOException)
-            {
-
-            }
-            catch (NotSupportedException)
-            {
-
-            }
-
-            return false;
-        }
-
-        public static bool rename0(object _this, global::java.io.File f1, global::java.io.File f2)
-        {
-            try
-            {
-                new FileInfo(GetPathFromFile(f1)).MoveTo(GetPathFromFile(f2));
-                return true;
-            }
-            catch (SecurityException)
-            {
-            }
-            catch (ArgumentException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (IOException)
-            {
-            }
-            catch (NotSupportedException)
-            {
-            }
-            return false;
-        }
-
-        public static bool setLastModifiedTime(object _this, global::java.io.File f, long time)
-        {
-            try
-            {
-                new FileInfo(GetPathFromFile(f)).LastWriteTime = JavaLongTimeToDateTime(time);
-                return true;
-            }
-            catch (SecurityException)
-            {
-            }
-            catch (ArgumentException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (IOException)
-            {
-            }
-            catch (NotSupportedException)
-            {
-            }
-            return false;
-        }
-
-        public static bool setReadOnly(object _this, global::java.io.File f)
-        {
-            try
-            {
-                FileInfo fileInfo = new FileInfo(GetPathFromFile(f));
-                fileInfo.Attributes |= FileAttributes.ReadOnly;
-                return true;
-            }
-            catch (SecurityException)
-            {
-            }
-            catch (ArgumentException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (IOException)
-            {
-            }
-            catch (NotSupportedException)
-            {
-            }
-            return false;
-        }
-
-        public static int listRoots0()
-        {
-            try
-            {
-                int drives = 0;
-                foreach (string drive in Environment.GetLogicalDrives())
-                {
-                    char c = Char.ToUpper(drive[0]);
-                    drives |= 1 << (c - 'A');
-                }
-                return drives;
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (SecurityException)
-            {
-            }
-            return 0;
-        }
-
-        [SecuritySafeCritical]
-        public static long getSpace0(object _this, global::java.io.File f, int t)
-        {
-#if !FIRST_PASS
-            long freeAvailable;
-            long total;
-            long totalFree;
-            var volname = new System.Text.StringBuilder(256);
-            if (GetVolumePathName(GetPathFromFile(f), volname, volname.Capacity) != 0 && GetDiskFreeSpaceEx(volname.ToString(), out freeAvailable, out total, out totalFree) != 0)
-            {
-                switch (t)
-                {
-                    case global::java.io.FileSystem.SPACE_TOTAL:
-                        return total;
-                    case global::java.io.FileSystem.SPACE_FREE:
-                        return totalFree;
-                    case global::java.io.FileSystem.SPACE_USABLE:
-                        return freeAvailable;
+                    jniFrm.Leave();
                 }
             }
 #endif
-
-            return 0;
         }
 
-        [DllImport("kernel32")]
-        private static extern int GetDiskFreeSpaceEx(string directory, out long freeAvailable, out long total, out long totalFree);
-
-        [DllImport("kernel32")]
-        private static extern int GetVolumePathName(string lpszFileName, [In, Out] System.Text.StringBuilder lpszVolumePathName, int cchBufferLength);
-
-        public static void initIDs()
+        /// <summary>
+        /// Implements the native method 'setPermission'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="f"></param>
+        /// <param name="access"></param>
+        /// <param name="enable"></param>
+        /// <param name="owneronly"></param>
+        /// <returns></returns>
+        public static bool setPermission(object self, object f, int access, bool enable, bool owneronly)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
+            {
+                return false;
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__setPermission ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__setPermission>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(setPermission), "(Ljava/io/File;IZZ)Z"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    return __jniPtr__setPermission(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f), access, enable ? (byte)1 : (byte)0, owneronly ? (byte)1 : (byte)0) != 0;
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
+#endif
+        }
 
+        /// <summary>
+        /// Implements the native method 'createFileExclusively'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public static bool createFileExclusively(object self, string path)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (JVM.Vfs.IsPath(path))
+            {
+                return false;
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__createFileExclusively ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__createFileExclusively>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(createFileExclusively), "(Ljava/lang/String;)Z"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    return __jniPtr__createFileExclusively(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(path)) != 0;
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'list'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        public static string[] list(object self, object f)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
+            {
+                if (JVM.Vfs.GetEntry(((global::java.io.File)f).getPath()) is VfsDirectory vfs)
+                    return vfs.List();
+
+                return null;
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__list ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__list>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(list), "(Ljava/io/File;)[Ljava/lang/String;"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    return (string[])jniFrm.UnwrapLocalRef(__jniPtr__list(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f)));
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'createDirectory'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        public static bool createDirectory(object self, object f)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
+            {
+                return false;
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__createDirectory ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__createDirectory>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(createDirectory), "(Ljava/io/File;)Z"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    return __jniPtr__createDirectory(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f)) != 0;
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'setLastModifiedTime'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="f"></param>
+        /// <param name="time"></param>
+        /// <returns></returns>
+        public static bool setLastModifiedTime(object self, object f, long time)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
+            {
+                return false;
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__setLastModifiedTime ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__setLastModifiedTime>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(setLastModifiedTime), "(Ljava/io/File;J)Z"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    return __jniPtr__setLastModifiedTime(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f), time) != 0;
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'setReadOnly'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        public static bool setReadOnly(object self, object f)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (JVM.Vfs.IsPath(((global::java.io.File)f).getPath()))
+            {
+                return false;
+            }
+            else
+            {
+                __callerID ??= global::ikvm.@internal.CallerID.create(WinNTFileSystemAccessor.Type.TypeHandle);
+                __jniPtr__setReadOnly ??= Marshal.GetDelegateForFunctionPointer<__jniDelegate__setReadOnly>(JNIFrame.GetFuncPtr(__callerID, "java/io/WinNTFileSystem", nameof(setReadOnly), "(Ljava/io/File;)Z"));
+                var jniFrm = new JNIFrame();
+                var jniEnv = jniFrm.Enter(__callerID);
+                try
+                {
+                    return __jniPtr__setReadOnly(jniEnv, jniFrm.MakeLocalRef(self), jniFrm.MakeLocalRef(f)) != 0;
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("*** exception in native code ***");
+                    System.Console.WriteLine(ex);
+                    throw;
+                }
+                finally
+                {
+                    jniFrm.Leave();
+                }
+            }
+#endif
         }
 
     }

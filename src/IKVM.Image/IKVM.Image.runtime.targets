@@ -9,35 +9,82 @@
 <Project>
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-        <SupportedImageTargetFrameworks Condition=" '$(SupportedImageTargetFrameworks)' == '' ">;$(TargetFrameworks);</SupportedImageTargetFrameworks>
-        <IkvmImageItemToNone>true</IkvmImageItemToNone>
+        <SupportedImageTargetFrameworks Condition=" '$(SupportedImageTargetFrameworks)' == '' ">$(TargetFrameworks)</SupportedImageTargetFrameworks>
+        <SupportedImageTargetFrameworks>;$(SupportedImageTargetFrameworks);</SupportedImageTargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
-        <IkvmImageItem Include="ikvm\any\any\**\*" TargetFramework="any" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <IkvmImageItem Include="ikvm\any\$(ImageRuntimeIdentifier)\**\*" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <IkvmImageItem Include="ikvm\net472\any\**\*" TargetFramework="net472" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <IkvmImageItem Include="ikvm\net472\$(ImageRuntimeIdentifier)\**\*" TargetFramework="net472" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <IkvmImageItem Include="ikvm\net6.0\any\**\*" TargetFramework="net6.0" RuntimeIdentifier="any" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <IkvmImageItem Include="ikvm\net6.0\$(ImageRuntimeIdentifier)\**\*" TargetFramework="net6.0" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="README.md" Pack="true" PackagePath="." />
+        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
-        <PublishProjectReference Include="$(ImageBinProject)" Condition="$(SupportedImageTargetFrameworks.Contains('net472'))">
+        <IkvmImageItem Include="ikvm\any\**\*" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Condition=" '$(ImageRuntimeIdentifier)' != '' " />
+        <IkvmImageItem Include="ikvm\net472\**\*" TargetFramework="net472" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Condition=" '$(ImageRuntimeIdentifier)' != '' " />
+        <IkvmImageItem Include="ikvm\net6.0\**\*" TargetFramework="net6.0" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Condition=" '$(ImageRuntimeIdentifier)' != '' " />
+        <IkvmImageItem Include="ikvm\net8.0\**\*" TargetFramework="net8.0" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Condition=" '$(ImageRuntimeIdentifier)' != '' " />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <OpenJdkTargetOsApiDir Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">windows</OpenJdkTargetOsApiDir>
+        <OpenJdkTargetOsApiDir Condition="$(ImageRuntimeIdentifier.StartsWith('linux-')) Or $(ImageRuntimeIdentifier.StartsWith('osx-'))">solaris</OpenJdkTargetOsApiDir>
+        <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">windows</OpenJdkTargetOsDir>
+        <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('linux-'))">linux</OpenJdkTargetOsDir>
+        <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('osx-'))">macosx</OpenJdkTargetOsDir>
+    </PropertyGroup>
+
+
+    <ItemGroup>
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\windows\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))"/>
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\solaris\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('linux-'))"/>
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\macosx\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('osx-'))"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <CursorImagePrefix>motif</CursorImagePrefix>
+        <CursorImagePrefix Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">win32</CursorImagePrefix>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\images\cursors\$(CursorImagePrefix)_*.gif" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\images\cursors\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\lib\images\cursors\cursors.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\images\cursors\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\lib\content-types.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\windows\native\sun\bridge\accessibility.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsDir)\lib\tzmappings" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <IkvmImageItem Include="$(OpenJdkDir)corba\src\share\classes\com\sun\tools\corba\se\idl\orb.idl" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\%(Filename)%(Extension)" />
+        <IkvmImageItem Include="$(OpenJdkDir)corba\src\share\classes\com\sun\tools\corba\se\idl\ir.idl" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains(';net472;'))">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
             <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
             <PublishItemMetadata>TargetFramework=net472;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
         </PublishProjectReference>
-        <PublishProjectReference Include="$(ImageBinProject)" Condition="$(SupportedImageTargetFrameworks.Contains('net6.0'))">
+        <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains(';net6.0;'))">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
             <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
             <PublishItemMetadata>TargetFramework=net6.0;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
         </PublishProjectReference>
+        <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains(';net8.0;'))">
+            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
+            <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
+            <PublishItemMetadata>TargetFramework=net8.0;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
+        </PublishProjectReference>
     </ItemGroup>
 
-    <Target Name="CollectIkvmImageBinItems" BeforeTargets="ExpandIkvmImageItems" DependsOnTargets="CollectPublishProjectReferenceItems;GetPublishProjectReferenceOutputItems" Condition=" '$(UsingIkvmCoreMSBuild)' == 'true' ">
+    <Target Name="CollectIkvmImageBinItems" BeforeTargets="ExpandIkvmImageItems" DependsOnTargets="CollectPublishProjectReferenceItems;GetPublishProjectReferenceOutputItems">
         <ItemGroup>
             <IkvmImageItem Include="@(PublishIkvmImageBinItem)">
                 <ImagePath>bin\%(PublishIkvmImageBinItem.PublishItemPath)</ImagePath>
@@ -45,8 +92,66 @@
         </ItemGroup>
     </Target>
 
-    <Import Project="IKVM.Image.pack.targets" />
-    <Import Project="buildTransitive\IKVM.Image.targets" />
-    <Import Project="..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.NoTasks.targets" />
-    
+    <Import Project="IKVM.Image.project.targets" />
+
+    <PropertyGroup>
+        <FontConfigSrc Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">$(OpenJdkDir)jdk\src\windows\classes\sun\awt\windows\fontconfig.properties</FontConfigSrc>
+        <FontConfigSrc Condition="$(ImageRuntimeIdentifier.StartsWith('osx-'))">$(OpenJdkDir)jdk\src\macosx\classes\sun\awt\fontconfigs\macosx.fontconfig.properties</FontConfigSrc>
+        <FontConfigDst>$(IntermediateOutputPath)fontconfig.bfc</FontConfigDst>
+    </PropertyGroup>
+
+    <Target Name="GenerateFontConfig" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(FontConfigSrc)" Outputs="$(FontConfigDst);$(IntermediateOutputPath)fontconfig.properties.src" Condition="Exists('$(FontConfigSrc)')">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compilefontconfig.CompileFontConfig $(FontConfigSrc) $(FontConfigDst)" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compilefontconfig.CompileFontConfig $(FontConfigSrc) $(FontConfigDst)" />
+        <Copy SourceFiles="$(FontConfigSrc)" DestinationFiles="$(IntermediateOutputPath)fontconfig.properties.src" OverwriteReadOnlyFiles="true" />
+
+        <ItemGroup>
+            <IkvmImageItem Include="$(FontConfigDst)" ImagePath="lib\fontconfig.bfc" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" />
+            <IkvmImageItem Include="$(IntermediateOutputPath)fontconfig.properties.src" ImagePath="lib\fontconfig.properties.src" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" />
+            <FileWrites Include="$(FontConfigDst)" />
+            <FileWrites Include="$(IntermediateOutputPath)fontconfig.properties.src" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            GenerateFontConfig;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <JavaSecurityFileSrc>$(OpenJdkDir)jdk\src\share\lib\security\java.security-$(OpenJdkTargetOsDir)</JavaSecurityFileSrc>
+        <JavaSecurityFileDst>$(IntermediateOutputPath)java.security</JavaSecurityFileDst>
+    </PropertyGroup>
+
+    <Target Name="GenerateJavaSecurity" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(JavaSecurityFileSrc)" Outputs="$(JavaSecurityFileDst)">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.customizesecurityfile.CryptoLevel $(JavaSecurityFileSrc) $(JavaSecurityFileDst) unlimited" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.customizesecurityfile.CryptoLevel $(JavaSecurityFileSrc) $(JavaSecurityFileDst) unlimited" />
+
+        <ItemGroup>
+            <IkvmImageItem Include="$(JavaSecurityFileDst)" ImagePath="lib\security\java.security" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" />
+            <FileWrites Include="$(JavaSecurityFileDst)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            GenerateJavaSecurity;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <Target Name="Generate" BeforeTargets="ExpandIkvmImageItems" DependsOnTargets="$(GenerateDependsOn)" Condition=" '$(ImageRuntimeIdentifier)' != '' ">
+
+    </Target>
+
 </Project>

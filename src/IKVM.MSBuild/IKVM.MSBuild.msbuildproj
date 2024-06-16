@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM MSBuild Targets</Description>
@@ -33,6 +33,19 @@
             <PublishPackagePath>tasks\net6.0</PublishPackagePath>
             <Pack>true</Pack>
         </PublishProjectReference>
+        <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj">
+            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net8.0' ">tasks</PublishTargetPath>
+            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net8.0' ">PreserveNewest</CopyToOutputDirectory>
+            <PublishPackagePath>tasks\net8.0</PublishPackagePath>
+            <Pack>true</Pack>
+        </PublishProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="lib\net8.0\_._">
+        <PackagePath>lib\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      </None>
     </ItemGroup>
 
     <Target Name="MakeGeneratedPropsFile" Outputs="$(IntermediateOutputPath)generated.props" BeforeTargets="_GetPackageFiles">

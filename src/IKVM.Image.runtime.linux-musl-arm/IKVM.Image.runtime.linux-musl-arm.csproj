@@ -1,21 +1,16 @@
-﻿<Project Sdk="Microsoft.Build.NoTargets">
+﻿<Project>
+    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.props" />
+
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM Runtime Image</Description>
         <IncludeSymbols>false</IncludeSymbols>
         <ImageRuntimeIdentifier>linux-musl-arm</ImageRuntimeIdentifier>
-        <ImageBinProject>..\IKVM.Image-bin\IKVM.Image-bin.csproj</ImageBinProject>
     </PropertyGroup>
 
-    <ItemGroup>
-        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
-        <None Include="README.md" Pack="true" PackagePath="." />
-        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
-    </ItemGroup>
-
+    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Image\IKVM.Image.runtime.targets" />
-    
 </Project>
+

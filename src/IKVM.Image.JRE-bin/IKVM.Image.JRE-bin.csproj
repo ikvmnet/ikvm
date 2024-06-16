@@ -1,16 +1,17 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
-    
+
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+        <DisableCopyToOutputDirectory>true</DisableCopyToOutputDirectory>
     </PropertyGroup>
 
     <ItemGroup>
         <BinProject Include="..\java\java.csproj" />
-        <BinProject Include="..\keytool\keytool.msbuildproj" />
-        <BinProject Include="..\orbd\orbd.msbuildproj" />
-        <BinProject Include="..\policytool\policytool.msbuildproj" />
+        <BinProject Include="..\keytool\keytool.csproj" />
+        <BinProject Include="..\orbd\orbd.csproj" />
+        <BinProject Include="..\policytool\policytool.csproj" />
     </ItemGroup>
 
     <ItemGroup>

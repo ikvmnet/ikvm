@@ -6,91 +6,147 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>nio</TargetName>
+        <OutputType>dll</OutputType>
         <LanguageStandard>c99</LanguageStandard>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\nio\ch</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\io</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\net</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net</IncludeDirectories>
-        <AdditionalCompileOptions>$(AdditionalCompileOptions);-fms-extensions</AdditionalCompileOptions>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
         <ProjectReference Include="..\libiava\libiava.clangproj" />
         <ProjectReference Include="..\libnet\libnet.clangproj" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
-        <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
-        <Dependencies Include="ws2_32;advapi32" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        <Dependencies Include="c" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
-        <Dependencies Include="pthread" />
-        <AdditionalLinkOptions Include="-framework CoreFoundation" />
-    </ItemGroup>
     <ItemGroup>
-        <Compile Include="$(MSBuildThisFileDirectory)share\**\*.c" />
-        <Compile Include="$(MSBuildThisFileDirectory)share\**\*.cpp" />
-        <Compile Include="$(MSBuildThisFileDirectory)$(OpenJdkTargetOsApiDir)\**\*.c" />
-        <Compile Include="$(MSBuildThisFileDirectory)$(OpenJdkTargetOsApiDir)\**\*.cpp" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\DatagramChannelImpl.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\DatagramDispatcher.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\FileChannelImpl.c" />
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\FileDispatcherImpl.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\FileKey.c" />-->
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\IOUtil.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\nio\MappedByteBuffer.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\Net.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\ServerSocketChannelImpl.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\SocketChannelImpl.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\SocketDispatcher.c" />
+        <Header Include="$(OpenJdkDir)jdk\src\share\native\sun\nio\ch\*.h" />
+        <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\*.h" />
+        <PreprocessorDefinitions Include="_Included_java_lang_Long" />
+        <PreprocessorDefinitions Include="java_lang_Long_serialVersionUID" Value="4290774380558885855LL" />
+        <PreprocessorDefinitions Include="java_lang_Long_MIN_VALUE" Value="-9223372036854775808LL" />
+        <PreprocessorDefinitions Include="java_lang_Long_MAX_VALUE" Value="9223372036854775807LL" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\nio\ch" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\java\io" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\java\net" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net" />
+        <LibNioDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\nio" />
+        <LibNioDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch" />
+        <LibNioDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs" />
+        <LibNioFile Include="DatagramChannelImpl.c" />
+        <LibNioFile Include="DatagramDispatcher.c" />
+        <LibNioFile Include="FileChannelImpl.c" />
+        <LibNioFile Include="FileDispatcherImpl.c" />
+        <LibNioFile Include="FileKey.c" />
+        <LibNioFile Include="IOUtil.c" />
+        <LibNioFile Include="MappedByteBuffer.c" />
+        <LibNioFile Include="Net.c" />
+        <LibNioFile Include="ServerSocketChannelImpl.c" />
+        <LibNioFile Include="SocketChannelImpl.c" />
+        <LibNioFile Include="SocketDispatcher.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
-        <IncludeDirectories Include="windows" />
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\Iocp.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\RegistryFileTypeDetector.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\WindowsAsynchronousFileChannelImpl.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\WindowsAsynchronousServerSocketChannelImpl.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\WindowsAsynchronousSocketChannelImpl.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\WindowsNativeDispatcher.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\WindowsSelectorImpl.c" />-->
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
+        <Dependencies Include="ws2_32;advapi32;mswsock" />
+        <AdditionalCompileOptions Include="-fms-extensions" />
+        <LibNioFile Include="Iocp.c" />
+        <LibNioFile Include="RegistryFileTypeDetector.c" />
+        <LibNioFile Include="WindowsAsynchronousFileChannelImpl.c" />
+        <LibNioFile Include="WindowsAsynchronousServerSocketChannelImpl.c" />
+        <LibNioFile Include="WindowsAsynchronousSocketChannelImpl.c" />
+        <LibNioFile Include="WindowsNativeDispatcher.c" />
+        <LibNioFile Include="WindowsSelectorImpl.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        <IncludeDirectories Include="solaris" />
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\EPoll.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\EPollArrayWrapper.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\EPollPort.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\InheritedChannel.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\NativeThread.c" />-->
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\PollArrayWrapper.c" />
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\UnixAsynchronousServerSocketChannelImpl.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\UnixAsynchronousSocketChannelImpl.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\GnomeFileTypeDetector.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\MagicFileTypeDetector.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\LinuxNativeDispatcher.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\LinuxWatchService.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\UnixCopyFile.c" />-->
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\UnixNativeDispatcher.c" />
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <Dependencies Include="c" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libnio\mapfile-linux" />
+        <LibNioFile Include="EPoll.c" />
+        <LibNioFile Include="EPollArrayWrapper.c" />
+        <LibNioFile Include="EPollPort.c" />
+        <LibNioFile Include="InheritedChannel.c" />
+        <LibNioFile Include="NativeThread.c" />
+        <LibNioFile Include="PollArrayWrapper.c" />
+        <LibNioFile Include="UnixAsynchronousServerSocketChannelImpl.c" />
+        <LibNioFile Include="UnixAsynchronousSocketChannelImpl.c" />
+        <LibNioFile Include="GnomeFileTypeDetector.c" />
+        <LibNioFile Include="MagicFileTypeDetector.c" />
+        <LibNioFile Include="LinuxNativeDispatcher.c" />
+        <LibNioFile Include="LinuxWatchService.c" />
+        <LibNioFile Include="UnixCopyFile.c" />
+        <LibNioFile Include="UnixNativeDispatcher.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\macosx\native\sun\nio\ch" />
-        <IncludeDirectories Include="solaris" />
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\InheritedChannel.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\NativeThread.c" />-->
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\PollArrayWrapper.c" />
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\UnixAsynchronousServerSocketChannelImpl.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\UnixAsynchronousSocketChannelImpl.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\BsdNativeDispatcher.c" />-->
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\MacOSXNativeDispatcher.c" />
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\UnixCopyFile.c" />-->
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\fs\UnixNativeDispatcher.c" />
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\KQueue.c" />-->
-        <!--<Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\nio\ch\KQueuePort.c" />-->
-        <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\sun\nio\ch\KQueueArrayWrapper.c" />
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-musl-'))">
+        <PreprocessorDefinitions Include="__SIGRTMIN" Value="32" />
+        <PreprocessorDefinitions Include="__SIGRTMAX" Value="(_NSIG-1)" />
     </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <Dependencies Include="pthread" />
+        <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
+        <LibNioDirs Include="$(OpenJdkDir)jdk\src\macosx\native\sun\nio\ch" />
+        <LibNioFile Include="InheritedChannel.c" />
+        <LibNioFile Include="NativeThread.c" />
+        <LibNioFile Include="PollArrayWrapper.c" />
+        <LibNioFile Include="UnixAsynchronousServerSocketChannelImpl.c" />
+        <LibNioFile Include="UnixAsynchronousSocketChannelImpl.c" />
+        <LibNioFile Include="BsdNativeDispatcher.c" />
+        <LibNioFile Include="MacOSXNativeDispatcher.c" />
+        <LibNioFile Include="UnixCopyFile.c" />
+        <LibNioFile Include="UnixNativeDispatcher.c" />
+        <LibNioFile Include="KQueue.c" />
+        <LibNioFile Include="KQueuePort.c" />
+        <LibNioFile Include="KQueueArrayWrapper.c" />
+    </ItemGroup>
+
+    <UsingTask TaskName="JoinPathsAndFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+    
+public class JoinPathsAndFiles : Task
+{
+    
+    [Required]
+    public ITaskItem[] Paths { get; set; }
+    
+    [Required]
+    public ITaskItem[] Files { get; set; }
+    
+    [Output]
+    public ITaskItem[] Items { get; set; }
+    
+    public override bool Execute()
+    {
+        var items = new List<ITaskItem>();
+    
+        foreach (var path in Paths)
+            foreach (var file in Files)
+                if (File.Exists(Path.Combine(path.ItemSpec, file.ItemSpec)))
+                    items.Add(new TaskItem(Path.Combine(path.ItemSpec, file.ItemSpec)));
+             
+        Items = items.ToArray();
+        return true;
+    }
+    
+}
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GetLibNioItems">
+        <JoinPathsAndFiles Paths="@(LibNioDirs)" Files="@(LibNioFile)">
+            <Output TaskParameter="Items" ItemName="Compile" />
+        </JoinPathsAndFiles>
+    </Target>
+
+    <PropertyGroup>
+        <CompileDependsOn>
+            GetLibNioItems;
+            $(CompileDependsOn);
+        </CompileDependsOn>
+    </PropertyGroup>
+
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>

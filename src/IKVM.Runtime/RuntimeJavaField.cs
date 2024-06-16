@@ -46,7 +46,6 @@ namespace IKVM.Runtime
 
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
         volatile java.lang.reflect.Field reflectionField;
-        sun.reflect.FieldAccessor jniAccessor;
 #endif
         FieldInfo field;
         RuntimeJavaType fieldType;
@@ -73,15 +72,16 @@ namespace IKVM.Runtime
             this.field = field;
 
             UpdateNonPublicTypeInSignatureFlag();
+
 #if IMPORTER
-            if (IsFinal
-                && DeclaringType.IsPublic
-                && !DeclaringType.IsInterface
-                && (IsPublic || (IsProtected && !DeclaringType.IsFinal))
-                && !DeclaringType.GetClassLoader().StrictFinalFieldSemantics
-                && DeclaringType.IsDynamic
-                && !(this is RuntimeConstantJavaField)
-                && !(this is RuntimeByteCodePropertyJavaField))
+            if (IsFinal && 
+                DeclaringType.IsPublic && 
+                !DeclaringType.IsInterface && 
+                (IsPublic || (IsProtected && !DeclaringType.IsFinal)) &&
+                !DeclaringType.GetClassLoader().StrictFinalFieldSemantics && 
+                DeclaringType.IsDynamic && 
+                this is not RuntimeConstantJavaField && 
+                this is not RuntimeByteCodePropertyJavaField)
             {
                 SetType2FinalField();
             }

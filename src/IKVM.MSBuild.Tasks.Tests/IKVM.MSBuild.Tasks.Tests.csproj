@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net7.0;net8.0</TargetFrameworks>
         <PreserveCompilationContext>true</PreserveCompilationContext>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
@@ -21,8 +21,8 @@
         <PackageReference Include="Moq" Version="4.18.2" />
         <PackageReference Include="MSTest.TestAdapter" Version="3.2.2" />
         <PackageReference Include="MSTest.TestFramework" Version="3.2.2" />
-        <PackageReference Include="Microsoft.Build" Version="16.11.0" />
-        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.11.0" />
+        <PackageReference Include="Microsoft.Build" Version="17.3.2" />
+        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.3.2" />
     </ItemGroup>
 
     <ItemGroup>
@@ -53,6 +53,24 @@
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
             <PublishTargetPath>ikvmc\net6.0\osx-x64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win-x64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmc\net8.0\win-x64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmc\net8.0\linux-x64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmc\net8.0\osx-x64</PublishTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
     </ItemGroup>

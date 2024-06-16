@@ -1,21 +1,15 @@
-﻿<Project Sdk="Microsoft.Build.NoTargets">
+﻿<Project>
+    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.props" />
+
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM JDK Runtime Image</Description>
         <IncludeSymbols>false</IncludeSymbols>
         <ImageRuntimeIdentifier>win-x86</ImageRuntimeIdentifier>
-        <ImageBinProject>..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj</ImageBinProject>
     </PropertyGroup>
 
-    <ItemGroup>
-        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
-        <None Include="README.md" Pack="true" PackagePath="." />
-        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
-    </ItemGroup>
-
-    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Image\IKVM.Image.runtime.targets" />
-    
+    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Image.JDK\IKVM.Image.JDK.runtime.targets" />
 </Project>

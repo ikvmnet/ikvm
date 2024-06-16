@@ -64,6 +64,7 @@
             Classpath="@(Classpath)"
             Source="$(LangVersion)"
             Target="$(JavaVersion)"
+            Encoding="$(Encoding)"
             Destination="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))"
             HeaderDestination="$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))"
             Verbose="true"
@@ -87,12 +88,9 @@
     </Target>
 
     <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
-    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmRuntimeAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly)">
+    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmRuntimeAssembly;CompileJava;_WriteExcludeFile" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile);$(_ExcludeFilePath)" Outputs="@(IntermediateAssembly)">
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
-
-        <Delete Files="$(_ExcludeFilePath)" Condition=" '@(ExcludeRegex)' == '' And Exists('$(_ExcludeFilePath)')" />
-        <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " />
 
         <ItemGroup>
             <_Convert Include="@(Convert)" />
@@ -104,7 +102,7 @@
         </ItemGroup>
 
         <PropertyGroup>
-            <_IkvmCompilerExclude Condition="Exists('$(_ExcludeFilePath)')">$(_ExcludeFilePath)</_IkvmCompilerExclude>
+            <_IkvmCompilerExclude Condition="Exists('$(_ExcludeFilePath)') And '@(ExcludeRegex)' != '' ">$(_ExcludeFilePath)</_IkvmCompilerExclude>
             <_Target>$(OutputType.ToLowerInvariant())</_Target>
             <_Target Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">library</_Target>
         </PropertyGroup>
@@ -148,7 +146,6 @@
         <Move SourceFiles="$(_AssemblyTempPath)$(TargetName).pdb" DestinationFiles="@(_DebugSymbolsIntermediatePath)" OverwriteReadOnlyFiles="true" Condition="Exists('$(_AssemblyTempPath)$(TargetName).pdb')" />
 
         <ItemGroup>
-            <FileWrites Include="$(_ExcludeFilePath)" />
             <FileWrites Include="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
             <FileWrites Include="$(_AssemblyTempPath)$(TargetName).pdb" />
         </ItemGroup>

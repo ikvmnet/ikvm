@@ -1,0 +1,165 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>b3b01872-0000-4364-a0f2-a927f1658970</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>awt_xawt</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+        <ProjectReference Include="..\libawt\libawt.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <LibXAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
+        <LibXAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\utility" />
+        <LibXAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\font" />
+        <LibXAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font" />
+        <LibXAwtDirs Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\opengl" />
+        <LibXAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt" />
+        <LibXAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d\opengl" />
+        <LibXAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d\x11" />
+        <LibXAwtDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\xawt" />
+        <LibXAwtFile Include="XlibWrapper.c" />
+        <LibXAwtFile Include="XWindow.c" />
+        <LibXAwtFile Include="XToolkit.c" />
+        <LibXAwtFile Include="X11Color.c" />
+        <LibXAwtFile Include="X11SurfaceData.c" />
+        <LibXAwtFile Include="awt_GraphicsEnv.c" />
+        <LibXAwtFile Include="awt_InputMethod.c" />
+        <LibXAwtFile Include="robot_common.c" />
+        <LibXAwtFile Include="awt_Robot.c" />
+        <LibXAwtFile Include="list.c" />
+        <LibXAwtFile Include="multiVis.c" />
+        <LibXAwtFile Include="initIDs.c" />
+        <LibXAwtFile Include="awt_util.c" />
+        <LibXAwtFile Include="awt_Desktop.c" />
+        <LibXAwtFile Include="awt_UNIXToolkit.c" />
+        <LibXAwtFile Include="X11FontScaler_md.c" />
+        <LibXAwtFile Include="X11TextRenderer_md.c" />
+        <LibXAwtFile Include="fontpath.c" />
+        <LibXAwtFile Include="awt_Insets.c" />
+        <LibXAwtFile Include="awt_Event.c" />
+        <LibXAwtFile Include="X11Renderer.c" />
+        <LibXAwtFile Include="X11PMBlitLoops.c" />
+        <LibXAwtFile Include="OGLBlitLoops.c" />
+        <LibXAwtFile Include="OGLBufImgOps.c" />
+        <LibXAwtFile Include="OGLContext.c" />
+        <LibXAwtFile Include="OGLFuncs.c" />
+        <LibXAwtFile Include="OGLMaskBlit.c" />
+        <LibXAwtFile Include="OGLMaskFill.c" />
+        <LibXAwtFile Include="OGLPaints.c" />
+        <LibXAwtFile Include="OGLRenderQueue.c" />
+        <LibXAwtFile Include="OGLRenderer.c" />
+        <LibXAwtFile Include="OGLSurfaceData.c" />
+        <LibXAwtFile Include="OGLTextRenderer.c" />
+        <LibXAwtFile Include="OGLVertexCache.c" />
+        <LibXAwtFile Include="GLXGraphicsConfig.c" />
+        <LibXAwtFile Include="GLXSurfaceData.c" />
+        <LibXAwtFile Include="AccelGlyphCache.c" />
+        <LibXAwtFile Include="awt_Font.c" />
+        <LibXAwtFile Include="multi_font.c" />
+        <LibXAwtFile Include="awt_AWTEvent.c" />
+        <LibXAwtFile Include="awt_DrawingSurface.c" />
+        <LibXAwtFile Include="jawt.c" />
+        <LibXAwtFile Include="CUPSfuncs.c" />
+        <LibXAwtFile Include="debug_assert.c" />
+        <LibXAwtFile Include="debug_mem.c" />
+        <LibXAwtFile Include="debug_trace.c" />
+        <LibXAwtFile Include="debug_util.c" />
+        <LibXAwtFile Include="gnome_interface.c" />
+        <LibXAwtFile Include="gtk2_interface.c" />
+        <LibXAwtFile Include="swing_GTKEngine.c" />
+        <LibXAwtFile Include="swing_GTKStyle.c" />
+        <LibXAwtFile Include="rect.c" />
+        <LibXAwtFile Include="sun_awt_X11_GtkFileDialogPeer.c" />
+        <LibXAwtFile Include="XRSurfaceData.c" />
+        <LibXAwtFile Include="XRBackendNative.c" />
+    </ItemGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="@(LibXAwtDirs)" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\image\cvutils" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\jdga" />
+        <PreprocessorDefinitions Include="XAWT" />
+        <PreprocessorDefinitions Include="XAWT_HACK" />
+        <Dependencies Include="c" />
+        <Dependencies Include="m" />
+        <Dependencies Include="Xext" />
+        <Dependencies Include="X11" />
+        <Dependencies Include="Xrender" />
+        <Dependencies Include="Xtst" />
+        <Dependencies Include="Xi" />
+        <AdditionalCompileOptions Include="-Wno-implicit-function-declaration;-Wno-error=int-conversion" />
+        <AdditionalCompileOptions Include="-fcommon" />
+        <AdditionalLinkOptions Include="-fcommon" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libawt_xawt\mapfile-vers" />
+    </ItemGroup>
+
+    <UsingTask TaskName="JoinPathsAndFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+    
+public class JoinPathsAndFiles : Task
+{
+    
+    [Required]
+    public ITaskItem[] Paths { get; set; }
+    
+    [Required]
+    public ITaskItem[] Files { get; set; }
+    
+    [Output]
+    public ITaskItem[] Items { get; set; }
+    
+    public override bool Execute()
+    {
+        var items = new List<ITaskItem>();
+    
+        foreach (var path in Paths)
+            foreach (var file in Files)
+                if (File.Exists(Path.Combine(path.ItemSpec, file.ItemSpec)))
+                    items.Add(new TaskItem(Path.Combine(path.ItemSpec, file.ItemSpec)));
+             
+        Items = items.ToArray();
+        return true;
+    }
+    
+}
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GetLibXAwtItems">
+        <JoinPathsAndFiles Paths="@(LibXAwtDirs)" Files="@(LibXAwtFile)">
+            <Output TaskParameter="Items" ItemName="Compile" />
+        </JoinPathsAndFiles>
+    </Target>
+
+    <PropertyGroup>
+        <CompileDependsOn>
+            GetLibXAwtItems;
+            $(CompileDependsOn);
+        </CompileDependsOn>
+    </PropertyGroup>
+
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

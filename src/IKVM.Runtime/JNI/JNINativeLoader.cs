@@ -30,15 +30,13 @@ namespace IKVM.Runtime.JNI
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
-    using jint = System.Int32;
 
-    /// <summary>
     /// Manages the set of loaded native JNI libraries.
     /// </summary>
     static unsafe class JNINativeLoader
     {
 
-        delegate jint JNI_OnLoadFunc(JavaVM* vm, void* reserved);
+        delegate int JNI_OnLoadFunc(JavaVM* vm, void* reserved);
         delegate void JNI_OnUnloadFunc(JavaVM* vm, void* reserved);
 
         public static readonly object SyncRoot = new object();
@@ -48,11 +46,11 @@ namespace IKVM.Runtime.JNI
         /// Initiates a load of the given JNI library by the specified class loader.
         /// </summary>
         /// <param name="filename"></param>
-        /// <param name="loader"></param>
+        /// <param name="fromClass"></param>
         /// <returns></returns>
-        public static long LoadLibrary(string filename, RuntimeClassLoader loader)
+        public static long LoadLibrary(string filename, RuntimeJavaType fromClass)
         {
-            Tracer.Info(Tracer.Jni, "loadLibrary: {0}, class loader: {1}", filename, loader);
+            Tracer.Info(Tracer.Jni, "loadLibrary: '{0}' fromClass '{1}'", filename, fromClass);
 
             lock (SyncRoot)
             {
@@ -68,7 +66,7 @@ namespace IKVM.Runtime.JNI
                     }
 
                     // find whether the native library was already loaded
-                    foreach (var h in loader.GetNativeLibraries())
+                    foreach (var h in fromClass.GetClassLoader().GetNativeLibraries())
                     {
                         if (h == p)
                         {
@@ -96,7 +94,7 @@ namespace IKVM.Runtime.JNI
                             Tracer.Info(Tracer.Jni, "Calling JNI_OnLoad on: {0}", filename);
                             var f = new JNIFrame();
                             int v;
-                            var w = f.Enter(loader);
+                            var w = f.Enter(ikvm.@internal.CallerID.create(fromClass.ClassObject, fromClass.ClassObject.getClassLoader()));
                             try
                             {
                                 v = Marshal.GetDelegateForFunctionPointer<JNI_OnLoadFunc>(onload)(JavaVM.pJavaVM, null);
@@ -104,7 +102,7 @@ namespace IKVM.Runtime.JNI
                             }
                             finally
                             {
-                                f.Leave(w);
+                                f.Leave();
                             }
 
                             if (JNIVM.IsSupportedJNIVersion(v) == false)
@@ -122,7 +120,7 @@ namespace IKVM.Runtime.JNI
 
                     // record addition of native library
                     loaded.Add(p);
-                    loader.RegisterNativeLibrary(p);
+                    fromClass.GetClassLoader().RegisterNativeLibrary(p);
                     return p;
                 }
                 catch (DllNotFoundException e)
@@ -144,13 +142,13 @@ namespace IKVM.Runtime.JNI
         /// </summary>
         /// <param name="handle"></param>
         /// <param name="loader"></param>
-        public static void UnloadLibrary(long handle, RuntimeClassLoader loader)
+        public static void UnloadLibrary(long handle, RuntimeJavaType fromClass)
         {
             var p = (nint)handle;
 
             lock (SyncRoot)
             {
-                Tracer.Info(Tracer.Jni, "Unloading library: handle = 0x{0:X}, class loader = {1}", handle, loader);
+                Tracer.Info(Tracer.Jni, "Unloading library: handle = 0x{0:X}, class = {1}", handle, fromClass);
 
                 try
                 {
@@ -160,14 +158,14 @@ namespace IKVM.Runtime.JNI
                         Tracer.Info(Tracer.Jni, "Calling JNI_OnUnload on: handle = 0x{0:X}", handle);
 
                         var f = new JNIFrame();
-                        var w = f.Enter(loader);
+                        var w = f.Enter(ikvm.@internal.CallerID.create(fromClass.ClassObject, fromClass.ClassObject.getClassLoader()));
                         try
                         {
                             Marshal.GetDelegateForFunctionPointer<JNI_OnUnloadFunc>(onunload)(JavaVM.pJavaVM, null);
                         }
                         finally
                         {
-                            f.Leave(w);
+                            f.Leave();
                         }
                     }
                 }
@@ -178,7 +176,7 @@ namespace IKVM.Runtime.JNI
 
                 // remove record of native library
                 loaded.Remove(p);
-                loader.UnregisterNativeLibrary(p);
+                fromClass.GetClassLoader().UnregisterNativeLibrary(p);
                 LibJvm.Instance.JVM_UnloadLibrary(p);
             }
         }

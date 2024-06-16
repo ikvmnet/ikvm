@@ -1,7 +1,7 @@
 ﻿namespace IKVM.Runtime.JNI
 {
 
-    enum jobjectRefType : int
+    enum JObjectRefType : int
     {
 
         JNIInvalidRefType = 0,

@@ -1,0 +1,62 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>58889bef-043a-4401-996f-50326f3b78cb</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>fontmanager</TargetName>
+        <OutputType>dll</OutputType>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+        <ProjectReference Include="..\libawt\libawt.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\font" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\font\layout" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\awt\image\cvutils" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\loops" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\pipe" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\java2d" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
+        <PreprocessorDefinitions Include="LE_STANDALONE" />
+        <PreprocessorDefinitions Include="HEADLESS" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font\**\*.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font\**\*.cpp" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\font\**\*.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\font\**\*.cpp" />
+        <Compile Remove="$(OpenJdkDir)jdk\src\share\native\sun\font\AccelGlyphCache.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <ProjectReference Include="..\libfreetype\libfreetype.clangproj" />
+        <PreprocessorDefinitions Include="CC_NOEX" />
+        <PreprocessorDefinitions Include="stricmp" Value="_stricmp" />
+        <PreprocessorDefinitions Include="wcsicmp" Value="_wcsicmp" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\windows" />
+        <Dependencies Include="advapi32" />
+        <Dependencies Include="user32" />
+        <Dependencies Include="gdi32" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <IncludeDirectories Include="$(LinuxSdkDir)\include\freetype2" />
+        <Dependencies Include="c" />
+        <Dependencies Include="m" />
+        <Dependencies Include="freetype" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libfontmanager\mapfile-vers.openjdk" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <ProjectReference Include="..\libfreetype\libfreetype.clangproj" />
+        <Dependencies Include="m" />
+        <AdditionalLinkOptions Include="-Wl,-undefined,dynamic_lookup" />
+        <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font\X11TextRenderer.c" />
+        <Compile Remove="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\font\X11FontScaler.c" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

@@ -6,49 +6,128 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>net</TargetName>
+        <OutputType>dll</OutputType>
         <LanguageStandard>c99</LanguageStandard>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\net</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net</IncludeDirectories>
-        <AdditionalCompileOptions>$(AdditionalCompileOptions);-Wno-int-conversion</AdditionalCompileOptions>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
         <ProjectReference Include="..\libiava\libiava.clangproj" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
+    <ItemGroup>
+        <Header Include="$(OpenJdkDir)jdk\src\share\native\java\net\*.h" />
+        <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net\*.h" />
+        <AdditionalCompileOptions Include="-Wno-int-conversion" />
+        <LibNetDirs Include="$(OpenJdkDir)jdk\src\share\native\java\net" />
+        <LibNetDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net" />
+        <LibNetDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\net" />
+        <LibNetDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\net\dns" />
+        <LibNetDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\net\spi" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <AdditionalCompileOptions Include="-Wno-implicit-function-declaration" />
         <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
         <Dependencies Include="ws2_32;secur32;iphlpapi;delayimp;advapi32" />
+        <LibNetDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\net\www\protocol\http\ntlm" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
+    <ItemGroup Condition="!$(TargetIdentifier.StartsWith('win-'))">
+        <LibNetDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\net\sdp" />
+    </ItemGroup>
+    <ItemGroup Condition="!$(TargetIdentifier.StartsWith('linux-'))">
+        <LibNetExclude Include="linux_close.c" />
+    </ItemGroup>
+    <ItemGroup Condition="!$(TargetIdentifier.StartsWith('osx-'))">
+        <LibNetExclude Include="bsd_close.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <LibNetExclude Include="PlainSocketImpl.c" />
+        <LibNetExclude Include="PlainDatagramSocketImpl.c" />
+        <LibNetExclude Include="SdpSupport.c" />
+    </ItemGroup>
+    <ItemGroup Condition="!$(TargetIdentifier.StartsWith('win-'))">
+        <LibNetExclude Include="TwoStacksPlainSocketImpl.c" />
+        <LibNetExclude Include="DualStackPlainSocketImpl.c" />
+        <LibNetExclude Include="TwoStacksPlainDatagramSocketImpl.c" />
+        <LibNetExclude Include="DualStackPlainDatagramSocketImpl.c" />
+        <LibNetExclude Include="NTLMAuthSequence.c" />
+        <LibNetExclude Include="NetworkInterface_winXP.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <Dependencies Include="c" />
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libnet\mapfile-vers" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('musl'))">
-        <PreprocessorDefinitions Include="__SIGRTMIN=32" />
-        <PreprocessorDefinitions Include="__SIGRTMAX=(_NSIG-1)" />
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-musl-'))">
+        <PreprocessorDefinitions Include="__SIGRTMIN" Value="32" />
+        <PreprocessorDefinitions Include="__SIGRTMAX" Value="(_NSIG-1)" />
         <IncludeDirectories Include="musl" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="**\*.c" />
-        <Compile Include="**\*.cpp" />
+        <IncludeDirectories Include="@(LibNetDirs)" />
     </ItemGroup>
-    <ItemGroup>
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\net\**\*.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\net\**\*.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\net\**\*.c" />
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\net\**\*.c" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-'))">
-        <Compile Remove="$(OpenJdkDir)jdk\src\windows\native\java\net\DualStackPlainSocketImpl.c" />
-        <Compile Remove="$(OpenJdkDir)jdk\src\windows\native\java\net\DualStackPlainDatagramSocketImpl.c" />
-        <Compile Remove="$(OpenJdkDir)jdk\src\windows\native\java\net\TwoStacksPlainSocketImpl.c" />
-        <Compile Remove="$(OpenJdkDir)jdk\src\windows\native\java\net\TwoStacksPlainDatagramSocketImpl.c" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        <Compile Remove="$(OpenJdkDir)jdk\src\solaris\native\java\net\bsd_close.c" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
-        <Compile Remove="$(OpenJdkDir)jdk\src\solaris\native\java\net\linux_close.c" />
-    </ItemGroup>
+
+    <UsingTask TaskName="JoinPathsAndFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+    
+public class JoinPathsAndFiles : Task
+{
+    
+    [Required]
+    public ITaskItem[] Paths { get; set; }
+    
+    [Required]
+    public ITaskItem[] Excludes { get; set; }
+    
+    [Output]
+    public ITaskItem[] Items { get; set; }
+    
+    public override bool Execute()
+    {
+        var items = new List<ITaskItem>();
+        
+        foreach (var path in Paths)
+        {
+            if (Directory.Exists(path.ItemSpec))
+            {
+                foreach (var file in Directory.GetFiles(path.ItemSpec, "*.c"))
+                {
+                    var n = Path.GetFileName(file);
+                    if (Excludes.Any(i => i.ItemSpec == n) == false)
+                        items.Add(new TaskItem(file));
+                }
+            }
+        }
+        
+        Items = items.ToArray();
+        return true;
+    }
+    
+}
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GetLibNetItems">
+        <JoinPathsAndFiles Paths="@(LibNetDirs)" Excludes="@(LibNetExclude)">
+            <Output TaskParameter="Items" ItemName="Compile" />
+        </JoinPathsAndFiles>
+    </Target>
+
+    <PropertyGroup>
+        <CompileDependsOn>
+            GetLibNetItems;
+            $(CompileDependsOn);
+        </CompileDependsOn>
+    </PropertyGroup>
+
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
 </Project>

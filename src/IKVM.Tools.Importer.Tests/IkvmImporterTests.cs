@@ -7,16 +7,10 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
+using IKVM.Java.Tests.Util;
 using IKVM.Tests.Util;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using IKVM.Java.Tests.Util;
-
-
-#if NETCOREAPP
-using Microsoft.Extensions.DependencyModel;
-#endif
 
 namespace IKVM.Tools.Importer.Tests
 {
@@ -32,6 +26,8 @@ namespace IKVM.Tools.Importer.Tests
         [DataRow("net472", "net481", ".NETFramework", "4.8.1")]
         [DataRow("net6.0", "net6.0", ".NETCore", "6.0")]
         [DataRow("net6.0", "net7.0", ".NETCore", "7.0")]
+        [DataRow("net6.0", "net8.0", ".NETCore", "8.0")]
+        [DataRow("net8.0", "net8.0", ".NETCore", "8.0")]
         public async Task CanImportSimpleTest(string ikvmFramework, string targetFramework, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
             if (targetFrameworkIdentifier == ".NETFramework" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)

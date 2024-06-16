@@ -1,0 +1,24 @@
+<!--
+
+    IKVM.Java.runtime.jaxws.props
+    
+    Build properties for the OpenJDK jaxws distribution.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <OpenJdkSource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.java" PackagePath="" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.java" PackagePath="" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*" Exclude="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\_*;$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.java;$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*" Exclude="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\_*;$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.java;$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+</Project>

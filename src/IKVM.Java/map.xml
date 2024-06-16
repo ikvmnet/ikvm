@@ -32,6 +32,7 @@
                 <attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
                     <parameter>Never</parameter>
                 </attribute>
+                <attribute type="System.NonSerializedAttribute" sig="()V" />
             </field>
             <constructor sig="()V" modifiers="public">
                 <body>
@@ -2730,8 +2731,6 @@
                 </prologue>
             </method>
         </class>
-
-
         <class name="javax.swing.SwingUtilities">
             <method name="layoutCompoundLabelImpl" sig="(Ljavax.swing.JComponent;Ljava.awt.FontMetrics;Ljava.lang.String;Ljavax.swing.Icon;IIIILjava.awt.Rectangle;Ljava.awt.Rectangle;Ljava.awt.Rectangle;I)Ljava.lang.String;">
                 <!-- Only needed for OpenJDK 6, can removed in OpenJDK 7, prevent "..." on some buttons and labels -->

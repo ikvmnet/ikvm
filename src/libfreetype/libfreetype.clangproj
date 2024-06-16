@@ -1,0 +1,75 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>b57cfb23-3ec1-4501-acac-8b963ffeb7db</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>freetype</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>win-x86;win-x64;win-arm64;osx-x64;osx-arm64</TargetIdentifiers>
+        <FreeTypeDir>..\..\ext\freetype\</FreeTypeDir>
+        <LanguageStandard>c17</LanguageStandard>
+    </PropertyGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="$(FreeTypeDir)include" />
+        <PreprocessorDefinitions Include="FT2_BUILD_LIBRARY" />
+        <Compile Include="$(FreeTypeDir)src\autofit\autofit.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftbase.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftbbox.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftbdf.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftbitmap.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftcid.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftfstype.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftgasp.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftglyph.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftgxval.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftinit.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftmm.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftotval.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftpatent.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftpfr.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftstroke.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftsynth.c" />
+        <Compile Include="$(FreeTypeDir)src\base\fttype1.c" />
+        <Compile Include="$(FreeTypeDir)src\base\ftwinfnt.c" />
+        <Compile Include="$(FreeTypeDir)src\bdf\bdf.c" />
+        <Compile Include="$(FreeTypeDir)src\cache\ftcache.c" />
+        <Compile Include="$(FreeTypeDir)src\cff\cff.c" />
+        <Compile Include="$(FreeTypeDir)src\cid\type1cid.c" />
+        <Compile Include="$(FreeTypeDir)src\dlg\dlgwrap.c" />
+        <Compile Include="$(FreeTypeDir)src\gzip\ftgzip.c" />
+        <Compile Include="$(FreeTypeDir)src\lzw\ftlzw.c" />
+        <Compile Include="$(FreeTypeDir)src\pcf\pcf.c" />
+        <Compile Include="$(FreeTypeDir)src\pfr\pfr.c" />
+        <Compile Include="$(FreeTypeDir)src\psaux\psaux.c" />
+        <Compile Include="$(FreeTypeDir)src\pshinter\pshinter.c" />
+        <Compile Include="$(FreeTypeDir)src\psnames\psmodule.c" />
+        <Compile Include="$(FreeTypeDir)src\raster\raster.c" />
+        <Compile Include="$(FreeTypeDir)src\sfnt\sfnt.c" />
+        <Compile Include="$(FreeTypeDir)src\smooth\smooth.c" />
+        <Compile Include="$(FreeTypeDir)src\sdf\sdf.c" />
+        <Compile Include="$(FreeTypeDir)src\svg\svg.c" />
+        <Compile Include="$(FreeTypeDir)src\truetype\truetype.c" />
+        <Compile Include="$(FreeTypeDir)src\type1\type1.c" />
+        <Compile Include="$(FreeTypeDir)src\type42\type42.c" />
+        <Compile Include="$(FreeTypeDir)src\winfonts\winfnt.c" />
+        <Header Include="$(FreeTypeDir)include\**\*">
+            <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
+        </Header>
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <PreprocessorDefinitions Include="NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;DLL_EXPORT;_WINDLL" />
+        <Compile Include="$(FreeTypeDir)builds\windows\ftdebug.c" />
+        <Compile Include="$(FreeTypeDir)builds\windows\ftsystem.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <PreprocessorDefinitions Include="HAVE_UNISTD_H" />
+        <PreprocessorDefinitions Include="HAVE_FCNTL_H" />
+        <Dependencies Include="m" />
+        <Compile Include="$(FreeTypeDir)src\base\ftdebug.c" />
+        <Compile Include="$(FreeTypeDir)builds\unix\ftsystem.c" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\lib.targets" />
+</Project>

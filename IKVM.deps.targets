@@ -1,10 +1,5 @@
 <Project>
 
-    <ItemGroup>
-        <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" GeneratePathProperty="true" />
-        <PackageReference Include="Mono.Posix" Version="7.1.0-final.1.21458.1" GeneratePathProperty="true" />
-    </ItemGroup>
-
     <Choose>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
             <ItemGroup>
@@ -17,22 +12,24 @@
                 <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
                 <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
                 <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-                <PackageReference Include="System.Text.Json" Version="6.0.6" />
+                <PackageReference Include="System.Text.Json" Version="8.0.0" />
+            </ItemGroup>
+        </When>
+        <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+            <ItemGroup>
+                <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.0" />
+                <PackageReference Include="System.Data.Odbc" Version="8.0.0" />
             </ItemGroup>
         </When>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">
             <ItemGroup>
                 <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
-                <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-                <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
                 <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
             </ItemGroup>
         </When>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">
             <ItemGroup>
                 <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
-                <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-                <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
                 <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
                 <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
             </ItemGroup>

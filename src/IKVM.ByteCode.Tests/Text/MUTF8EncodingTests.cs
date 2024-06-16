@@ -54,17 +54,6 @@ namespace IKVM.ByteCode.Tests.Text
         }
 
         [TestMethod]
-        public unsafe void CanFindNullByte()
-        {
-            fixed (byte* ptr = new byte[] { 0x01, 0x00 })
-                MUTF8Encoding.GetMUTF8(48).IndexOfNull(ptr).Should().Be(1);
-            fixed (byte* ptr = new byte[] { 0x00, 0x00 })
-                MUTF8Encoding.GetMUTF8(48).IndexOfNull(ptr).Should().Be(0);
-            fixed (byte* ptr = new byte[] { 0x01, 0x01, 0x00 })
-                MUTF8Encoding.GetMUTF8(48).IndexOfNull(ptr).Should().Be(2);
-        }
-
-        [TestMethod]
         public void CanEncodeNull()
         {
             MUTF8Encoding.GetMUTF8(48).GetBytes("\0").Should().HaveCount(2);

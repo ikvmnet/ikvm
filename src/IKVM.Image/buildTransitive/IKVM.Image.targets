@@ -4,7 +4,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <IkvmImageAvailableTargetFrameworks Include="net472;net6.0" />
+        <IkvmImageAvailableTargetFrameworks Include="net472;net6.0;net8.0" />
         <IkvmImageAvailableRuntimeIdentifiers Include="win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64" />
     </ItemGroup>
 
@@ -12,6 +12,11 @@
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
             <PropertyGroup>
                 <_IkvmImageTargetFramework>net472</_IkvmImageTargetFramework>
+            </PropertyGroup>
+        </When>
+        <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+            <PropertyGroup>
+                <_IkvmImageTargetFramework>net8.0</_IkvmImageTargetFramework>
             </PropertyGroup>
         </When>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">

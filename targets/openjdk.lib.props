@@ -14,50 +14,50 @@
     <Import Project="$(MSBuildThisFileDirectory)lib.props" />
 
     <!-- common preprocessor declarations -->
-    <PropertyGroup Condition=" '$(TargetTriple)' != '' ">
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MAJOR_VERSION=%5c&quot;$(OpenJdkMajorVersion)%5c&quot;</PreprocessorDefinitions>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MINOR_VERSION=%5c&quot;$(OpenJdkMinorVersion)%5c&quot;</PreprocessorDefinitions>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MICRO_VERSION=%5c&quot;$(OpenJdkMicroVersion)%5c&quot;</PreprocessorDefinitions>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_UPDATE_VERSION=%5c&quot;$(OpenJdkUpdateVersion)%5c&quot;</PreprocessorDefinitions>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_BUILD_NUMBER=%5c&quot;$(OpenJdkBuildNumber)%5c&quot;</PreprocessorDefinitions>
-    </PropertyGroup>
+    <ItemGroup Condition=" '$(TargetIdentifier)' != '' ">
+        <PreprocessorDefinitions Include="JDK_MAJOR_VERSION" Value="&quot;$(OpenJdkMajorVersion)&quot;" />
+        <PreprocessorDefinitions Include="JDK_MINOR_VERSION" Value="&quot;$(OpenJdkMinorVersion)&quot;" />
+        <PreprocessorDefinitions Include="JDK_MICRO_VERSION" Value="&quot;$(OpenJdkMicroVersion)&quot;" />
+        <PreprocessorDefinitions Include="JDK_UPDATE_VERSION" Value="&quot;$(OpenJdkUpdateVersion)&quot;" />
+        <PreprocessorDefinitions Include="JDK_BUILD_NUMBER" Value="&quot;$(OpenJdkBuildNumber)&quot;" />
+    </ItemGroup>
 
     <!-- common/autoconf/flags.m4 -->
-    <PropertyGroup Condition="$(TargetTriple.Contains('-windows-')) ">
+    <PropertyGroup Condition="$(TargetIdentifier.StartsWith('win-')) ">
         <OpenJdkTargetOsApiDir>windows</OpenJdkTargetOsApiDir>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);_STATIC_CPPLIB;_DISABLE_DEPRECATE_STATIC_CPPLIB;WIN32_LEAN_AND_MEAN;IAL</PreprocessorDefinitions>
+        <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x86'))">x86</OpenJdkTargetCpuOsArch>
+        <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x64'))">amd64</OpenJdkTargetCpuOsArch>
     </PropertyGroup>
 
-    <ItemGroup Condition="$(TargetTriple.Contains('-windows-')) ">
-        <ProjectReference Include="..\IKVM.Java.runtime.win\IKVM.Java.runtime.win.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-')) ">
+        <ProjectReference Include="..\IKVM.Java.runtime.win\IKVM.Java.runtime.win.csproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
+        <PreprocessorDefinitions Include="_STATIC_CPPLIB;_DISABLE_DEPRECATE_STATIC_CPPLIB;WIN32_LEAN_AND_MEAN;IAL" />
     </ItemGroup>
 
     <!-- common/autoconf/flags.m4 -->
-    <PropertyGroup Condition="$(TargetTriple.Contains('-linux-'))">
+    <PropertyGroup Condition="$(TargetIdentifier.StartsWith('linux-')) ">
         <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
+        <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x86'))">i386</OpenJdkTargetCpuOsArch>
+        <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x64'))">amd64</OpenJdkTargetCpuOsArch>
         <PositionIndependentCode>true</PositionIndependentCode>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE</PreprocessorDefinitions>
     </PropertyGroup>
 
-    <ItemGroup Condition="$(TargetTriple.Contains('-linux-'))">
-        <ProjectReference Include="..\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <ProjectReference Include="..\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.csproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
+        <PreprocessorDefinitions Include="_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE" />
     </ItemGroup>
 
     <!-- common/autoconf/flags.m4 -->
-    <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
+    <PropertyGroup Condition="$(TargetIdentifier.StartsWith('osx-')) ">
         <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);_ALLBSD_SOURCE;_DARWIN_UNLIMITED_SELECT</PreprocessorDefinitions>
+        <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x86'))">x86</OpenJdkTargetCpuOsArch>
+        <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x64'))">x86_64</OpenJdkTargetCpuOsArch>
         <EnableOSXCodeSign Condition=" '$(EnableOSXCodeSign)' == '' ">true</EnableOSXCodeSign>
     </PropertyGroup>
 
-    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
-        <ProjectReference Include="..\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.msbuildproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <ProjectReference Include="..\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.csproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
+        <PreprocessorDefinitions Include="_ALLBSD_SOURCE;_DARWIN_UNLIMITED_SELECT" />
     </ItemGroup>
-
-    <!-- standard OpenJDK includes -->
-    <PropertyGroup Condition=" '$(TargetTriple)' != '' ">
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\common</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common</IncludeDirectories>
-    </PropertyGroup>
 
 </Project>

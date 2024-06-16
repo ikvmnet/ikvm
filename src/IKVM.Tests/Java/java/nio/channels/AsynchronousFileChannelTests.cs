@@ -426,37 +426,6 @@ namespace IKVM.Tests.Java.java.nio.channels
                 throw new System.Exception("", o);
         }
 
-        /// <summary>
-        /// Check that the asynchronous APIs can read from the VFS.
-        /// </summary>
-        /// <returns></returns>
-        [TestMethod]
-        public async Task CanReadVfsAssemblyClass()
-        {
-            var f = new File(System.IO.Path.Combine(VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, typeof(global::java.lang.Object).Assembly, JVM.Properties.HomePath), "java", "lang", "Object.class"));
-
-            using var c = AsynchronousFileChannel.open(f.toPath(), StandardOpenOption.READ);
-            var b = ByteBuffer.allocate(512);
-            b.capacity().Should().Be(512);
-            b.position().Should().Be(0);
-            b.limit().Should().Be(512);
-
-            var h = new AwaitableCompletionHandler<Integer>();
-            c.read(b, 0, null, h);
-            var n = await h;
-            n.intValue().Should().Be(512);
-            c.close();
-
-            b.position().Should().Be(512);
-            b.flip();
-            b.capacity().Should().Be(512);
-            b.position().Should().Be(0);
-            b.limit().Should().Be(512);
-            b.order(ByteOrder.BIG_ENDIAN);
-            var m = b.getInt();
-            m.Should().Be(unchecked((int)0xCAFEBABE));
-        }
-
         [TestMethod]
         public void ShouldThrowClosedChannelExceptionOnRead()
         {
