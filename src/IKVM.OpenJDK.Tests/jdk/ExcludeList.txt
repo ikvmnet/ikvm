@@ -620,6 +620,11 @@ java/awt/Window/WindowClosedEvents/WindowClosedEventOnDispose.java              
 java/awt/Window/WindowGCInFullScreen/WindowGCInFullScreen.java                                                          generic-all
 java/awt/Window/WindowType/WindowType.java                                                                              generic-all
 java/awt/Window/WindowsLeak/WindowsLeak.java                                                                            generic-all
+java/awt/Window/ShapedAndTranslucentWindows/FocusAWTTest.java                                                           generic-all
+java/awt/Window/ShapedAndTranslucentWindows/Shaped.java                                                                 generic-all
+java/awt/Window/ShapedAndTranslucentWindows/ShapedByAPI.java                                                            generic-all
+java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucent.java                                                      generic-all
+java/awt/Window/ShapedAndTranslucentWindows/StaticallyShaped.java                                                       generic-all
 java/awt/appletviewer/IOExceptionIfEncodedURLTest/IOExceptionIfEncodedURLTest.sh                                        generic-all
 java/awt/datatransfer/DataFlavor/EqualsHashCodeSymmetryTest/EqualsHashCodeSymmetryTest.java                             generic-all
 java/awt/datatransfer/DragUnicodeBetweenJVMTest/AbsoluteComponentCenterCalculator.java                                  generic-all
@@ -685,6 +690,7 @@ java/awt/dnd/URIListToFileListBetweenJVMsTest/TargetFileListFrame.java          
 java/awt/dnd/URIListToFileListBetweenJVMsTest/URIListToFileListBetweenJVMsTest.html                                     generic-all
 java/awt/dnd/URIListToFileListBetweenJVMsTest/URIListTransferable.java                                                  generic-all
 java/awt/dnd/URLDragTest/URLDragTest.java                                                                               generic-all
+java/awt/EmbeddedFrame/EmbeddedFrameGrabTest/EmbeddedFrameGrabTest.java                                                 generic-all
 java/awt/event/HierarchyEvent/AncestorResized/AncestorResized.java                                                      generic-all
 java/awt/event/InputEvent/ButtonArraysEquality/ButtonArraysEquality.java                                                generic-all
 java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java                                                              generic-all
@@ -1156,6 +1162,7 @@ java/lang/ClassLoader/deadlock/GetResource.java                                 
 java/lang/ClassLoader/deadlock/TestCrossDelegate.sh                                                                     generic-all
 java/lang/ClassLoader/deadlock/TestOneWayDelegate.sh                                                                    generic-all
 java/lang/ClassLoader/defineClass/DefineClassByteBuffer.java                                                            generic-all
+java/lang/ClassLoader/forNameLeak/ClassForNameLeak.java                                                                 generic-all
 java/lang/IntegralPrimitiveToString.java                                                                                generic-all
 java/lang/Math/WorstCaseTests.java                                                                                      generic-all
 java/lang/PrimitiveSumMinMaxTest.java                                                                                   generic-all
@@ -2973,6 +2980,7 @@ sun/security/provider/certpath/DisabledAlgorithms/CPValidatorTrustAnchor.java   
 sun/security/provider/certpath/ReverseBuilder/BuildPath.java                                                            generic-all
 sun/security/provider/certpath/SunCertPathBuilderExceptionTest.java                                                     generic-all
 sun/security/rsa/TestCACerts.java                                                                                       generic-all
+sun/security/lib/cacerts/VerifyCACerts.java                                                                             generic-all
 sun/security/ssl/com/sun/net/ssl/SSLSecurity/ProviderTest.java                                                          generic-all
 sun/security/ssl/com/sun/net/ssl/SSLSecurity/TruncateArray.java                                                         generic-all
 sun/security/ssl/com/sun/net/ssl/internal/ssl/DHKeyExchange/DHEKeySizing.java                                           generic-all
