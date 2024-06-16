@@ -9,39 +9,17 @@
         <IkvmKeyFile Condition=" '$(IkvmKeyFile)' == '' And Exists('$(MSBuildThisFileDirectory)..\ikvm.snk') ">$(MSBuildThisFileDirectory)..\ikvm.snk</IkvmKeyFile>
     </PropertyGroup>
 
-    <ItemDefinitionGroup>
-        <IkvmReference>
-            <AssemblyName></AssemblyName>
-            <AssemblyVersion></AssemblyVersion>
-            <AssemblyFileVersion></AssemblyFileVersion>
-            <DisableAutoAssemblyName></DisableAutoAssemblyName>
-            <DisableAutoAssemblyVersion></DisableAutoAssemblyVersion>
-            <FallbackAssemblyName></FallbackAssemblyName>
-            <FallbackAssemblyVersion></FallbackAssemblyVersion>
-            <Compile></Compile>
-            <Sources></Sources>
-            <References></References>
-            <ClassLoader></ClassLoader>
-            <Debug>$(DebugType)</Debug>
-            <KeyFile>$(IkvmKeyFile)</KeyFile>
-            <DelaySign></DelaySign>
-            <Aliases></Aliases>
-            <Private>true</Private>
-            <CopyLocal>true</CopyLocal>
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </IkvmReference>
-    </ItemDefinitionGroup>
+    <ItemGroup>
+        <IkvmAvailableRuntimeIdentifiers Include="win;linux;osx" />
+    </ItemGroup>
 
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
         <None Include="$(MSBuildThisFileDirectory)..\runtimes\**\*" LinkBase="runtimes">
+            <Visible>false</Visible>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>runtimes\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
-            <Visible>false</Visible>
         </None>
     </ItemGroup>
 
-    <!-- Targets to be overridden by IKVM.MSBuild package, but declaring them here reduces restore errors. -->
-    <Target Name="ResolveIkvmRuntimeAssembly" />
-    <Target Name="ResolveIkvmFrameworkReferences" />
-
+    <Import Project="IKVM.IkvmReference.props" />
 </Project>

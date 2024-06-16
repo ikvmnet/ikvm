@@ -6,7 +6,7 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <AssemblyName>javac</AssemblyName>
-        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net472;net6.0;</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <PublishReadyToRun>true</PublishReadyToRun>
         <SelfContained>true</SelfContained>
@@ -20,6 +20,7 @@
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
+    
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\IKVM.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.targets" />
@@ -29,7 +30,7 @@
         <PropertyGroup>
             <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac'))</JavaCompilerPath>
             <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac.exe'))</JavaCompilerPath>
-            <JavaCompilerArgs>-J-Xmx1536M</JavaCompilerArgs>
+            <JavaCompilerArgs></JavaCompilerArgs>
             <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
         </PropertyGroup>
         <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />

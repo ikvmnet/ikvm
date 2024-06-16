@@ -8,6 +8,11 @@ public final class Startup
         
     }
 
+    @ikvm.lang.ModuleInitializer
+    public static void init() {
+        cli.System.GC.KeepAlive(cli.IKVM.Runtime.JVM.class);
+    };
+
     /**
      * Ensures the given assembly is added to the boot class path of the running JVM instance.
      */

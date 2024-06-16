@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
@@ -106,34 +105,6 @@ namespace IKVM.Java.Externs.java.lang
         public static void arraycopy(object src, int srcPos, object dest, int destPos, int length)
         {
             ByteCodeHelper.arraycopy(src, srcPos, dest, destPos, length);
-        }
-
-        /// <summary>
-        /// Implements the native method 'identityHashCode'.
-        /// </summary>
-        /// <param name="x"></param>
-        /// <returns></returns>
-        public static int identityHashCode(object x)
-        {
-            return RuntimeHelpers.GetHashCode(x);
-        }
-
-        /// <summary>
-        /// Implements the native method 'initProperties'.
-        /// </summary>
-        /// <param name="props"></param>
-        /// <returns></returns>
-        public static object initProperties(object props)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            foreach (var kvp in JVM.Properties.Init)
-                if (kvp.Value is string v)
-                    PropertiesAccessor.InvokeSetProperty(props, kvp.Key, v);
-
-            return props;
-#endif
         }
 
         /// <summary>

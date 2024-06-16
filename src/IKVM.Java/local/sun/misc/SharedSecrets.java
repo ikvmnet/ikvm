@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package sun.misc;
 
-import java.io.ObjectInputStream;
+import javax.crypto.SealedObject;
 import java.util.jar.JarFile;
 import java.io.Console;
 import java.io.FileDescriptor;
@@ -58,6 +58,7 @@ public class SharedSecrets {
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaAWTAccess javaAWTAccess;
     private static JavaOISAccess javaOISAccess;
+    private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
     private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
 
     public static JavaUtilJarAccess javaUtilJarAccess() {
@@ -117,7 +118,7 @@ public class SharedSecrets {
             // this class initializes java.nio.Bits that provides the
             // shared secret.
             unsafe.ensureClassInitialized(java.nio.ByteOrder.class);
-            java.nio.ByteOrder.nativeOrder();
+            java.nio.ByteOrder.nativeOrder(); // IKVM or not
         }
         return javaNioAccess;
     }
@@ -154,6 +155,7 @@ public class SharedSecrets {
 
         return javaOISAccess;
     }
+
 
     public static void setJavaSecurityProtectionDomainAccess
         (JavaSecurityProtectionDomainAccess jspda) {
@@ -201,7 +203,8 @@ public class SharedSecrets {
         return javaAWTAccess;
     }
 
-    public static JavaObjectInputStreamAccess getJavaObjectInputStreamAccess() {
+
+   public static JavaObjectInputStreamAccess getJavaObjectInputStreamAccess() {
         if (javaObjectInputStreamAccess == null) {
             unsafe.ensureClassInitialized(ObjectInputStream.class);
         }
@@ -210,5 +213,16 @@ public class SharedSecrets {
 
     public static void setJavaObjectInputStreamAccess(JavaObjectInputStreamAccess access) {
         javaObjectInputStreamAccess = access;
+    }
+
+    public static void setJavaxCryptoSealedObjectAccess(JavaxCryptoSealedObjectAccess jcsoa) {
+        javaxCryptoSealedObjectAccess = jcsoa;
+    }
+
+    public static JavaxCryptoSealedObjectAccess getJavaxCryptoSealedObjectAccess() {
+        if (javaxCryptoSealedObjectAccess == null) {
+            unsafe.ensureClassInitialized(SealedObject.class);
+        }
+        return javaxCryptoSealedObjectAccess;
     }
 }

@@ -289,7 +289,7 @@ namespace IKVM.MSBuild.Tasks
 
             if (Resources is not null)
                 foreach (var resource in Resources)
-                    options.Resources.Add(new IkvmImporterResourceItem(resource.ItemSpec, resource.GetMetadata("ResourcePath")));
+                    options.Resources.Add(new IkvmImporterResourceItem(resource.ItemSpec, CleanResourcePath(resource.GetMetadata("ResourcePath"))));
 
             if (ExternalResources is not null)
                 foreach (var resource in ExternalResources)
@@ -305,7 +305,7 @@ namespace IKVM.MSBuild.Tasks
                 "embedded" => IkvmImporterDebugMode.Embedded,
                 _ => throw new NotImplementedException($"Unknown Debug option '{Debug}'.")
             };
-            
+
             options.NoAutoSerialization = NoAutoSerialization;
             options.NoGlobbing = NoGlobbing;
             options.NoJNI = NoJNI;
@@ -379,6 +379,22 @@ namespace IKVM.MSBuild.Tasks
 
             // kick off the launcher with the configured options
             return await new IkvmImporterLauncher(ToolPath, writer).ExecuteAsync(options, cancellationToken) == 0;
+        }
+
+        /// <summary>
+        /// Cleans up a resource path.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        string CleanResourcePath(string value)
+        {
+            value = value.Replace('\\', '/');
+            while (value.Contains("//"))
+                value = value.Replace("//", "/");
+
+            value = value.Trim('/');
+
+            return value;
         }
 
     }

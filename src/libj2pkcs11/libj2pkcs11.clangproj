@@ -6,20 +6,26 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>j2pkcs11</TargetName>
-        <LanguageStandard>c89</LanguageStandard>
-        <PreprocessorDefinitions Condition=" '$(Configuration)' == 'Debug' ">$(PreprocessorDefinitions);P11_DEBUG;SECMOD_DEBUG</PreprocessorDefinitions>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\wrapper</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11</IncludeDirectories>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11\wrapper</IncludeDirectories>
+        <OutputType>dll</OutputType>
+        <LanguageStandard>c99</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj" Properties="TargetFramework=net6.0" GlobalPropertiesToRemove="TargetIdentifier" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\**\*.c"/>
-        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11\**\*.c" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\wrapper" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11\wrapper" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\*.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11\*.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\wrapper\*.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11\wrapper\*.c" />
+        <Compile Include="*.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libj2pkcs11\mapfile-vers" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />

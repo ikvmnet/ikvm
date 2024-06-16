@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
-    
+
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+        <DisableCopyToOutputDirectory>true</DisableCopyToOutputDirectory>
     </PropertyGroup>
 
     <ItemGroup>

@@ -215,6 +215,17 @@ namespace IKVM.Runtime
                                         low ??= new LowFreqData();
                                         low.InterlockedCompareAndSetField = field;
                                     }
+                                } 
+                                else if (annot[1].Equals("Likvm/lang/ModuleInitializer;"))
+                                {
+                                    if (classFile.IsInterface || IsConstructor || IsClassInitializer || IsPrivate || IsStatic == false)
+                                    {
+                                        classFile.context.StaticCompiler.IssueMessage(Message.ModuleInitializerMethodRequirements, classFile.Name, Name, Signature);
+                                    }
+                                    else
+                                    {
+                                        flags |= FLAG_MODULE_INITIALIZER;
+                                    }
                                 }
                             }
 

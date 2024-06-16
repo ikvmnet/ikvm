@@ -1,0 +1,51 @@
+<!--
+
+    IKVM.Java.runtime.langtools.targets
+    
+    Build targets for the OpenJDK langtools distribution.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <Target Name="GenerateLangtoolsVersionProperties" BeforeTargets="GenerateResourceBundles">
+        <ItemGroup>
+            <_GenerateVersionPropertiesLines Include="jdk=$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)" />
+            <_GenerateVersionPropertiesLines Include="full=$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)_$(OpenJdkUpdateVersion)-$(OpenJdkBuildNumber)" />
+            <_GenerateVersionPropertiesLines Include="release=$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)_$(OpenJdkUpdateVersion)" />
+        </ItemGroup>
+        <MakeDir Directories="$(IntermediateOutputPath)langtools\classes\com\sun\tools\javah\resources\" />
+        <MakeDir Directories="$(IntermediateOutputPath)langtools\classes\com\sun\tools\javap\resources\" />
+        <MakeDir Directories="$(IntermediateOutputPath)langtools\classes\com\sun\tools\javac\resources\" />
+        <MakeDir Directories="$(IntermediateOutputPath)langtools\classes\com\sun\tools\jdeps\resources\" />
+        <MakeDir Directories="$(IntermediateOutputPath)langtools\classes\com\sun\tools\javadoc\resources\" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)langtools\classes\com\sun\tools\javah\resources\version.properties" Lines="@(_GenerateVersionPropertiesLines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)langtools\classes\com\sun\tools\javap\resources\version.properties" Lines="@(_GenerateVersionPropertiesLines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)langtools\classes\com\sun\tools\javac\resources\version.properties" Lines="@(_GenerateVersionPropertiesLines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)langtools\classes\com\sun\tools\jdeps\resources\version.properties" Lines="@(_GenerateVersionPropertiesLines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)langtools\classes\com\sun\tools\javadoc\resources\version.properties" Lines="@(_GenerateVersionPropertiesLines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)langtools\classes\com\sun\tools\javah\resources\version.properties" />
+            <FileWrites Include="$(IntermediateOutputPath)langtools\classes\com\sun\tools\javap\resources\version.properties" />
+            <FileWrites Include="$(IntermediateOutputPath)langtools\classes\com\sun\tools\javac\resources\version.properties" />
+            <FileWrites Include="$(IntermediateOutputPath)langtools\classes\com\sun\tools\jdeps\resources\version.properties" />
+            <FileWrites Include="$(IntermediateOutputPath)langtools\classes\com\sun\tools\javadoc\resources\version.properties" />
+            <GenerateResourceBundle Include="$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)langtools\classes\com\sun\tools\javah\resources\version.properties'))" PackagePath="com/sun/tools/javah/resources" ClassName="version" SuperName="java.util.ListResourceBundle" />
+            <GenerateResourceBundle Include="$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)langtools\classes\com\sun\tools\javap\resources\version.properties'))" PackagePath="com/sun/tools/javap/resources" ClassName="version" SuperName="java.util.ListResourceBundle" />
+            <GenerateResourceBundle Include="$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)langtools\classes\com\sun\tools\javac\resources\version.properties'))" PackagePath="com/sun/tools/javac/resources" ClassName="version" SuperName="java.util.ListResourceBundle" />
+            <GenerateResourceBundle Include="$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)langtools\classes\com\sun\tools\jdeps\resources\version.properties'))" PackagePath="com/sun/tools/jdeps/resources" ClassName="version" SuperName="java.util.ListResourceBundle" />
+            <GenerateResourceBundle Include="$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)langtools\classes\com\sun\tools\javadoc\resources\version.properties'))" PackagePath="com/sun/tools/javadoc/resources" ClassName="version" SuperName="java.util.ListResourceBundle" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateLangtoolsVersionProperties;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
+</Project>

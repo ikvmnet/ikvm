@@ -209,68 +209,12 @@ namespace IKVM.ByteCode.Text
             if (count < 0)
                 throw new ArgumentOutOfRangeException(nameof(count));
 
-            for (int j = 0; j < count; j++)
-            {
-                if (bytes[j] == 0)
-                    throw new DecoderFallbackException("Illegal value in modified UTF8.");
+            int n = count;
+            for (int i = 0; i < count; i++)
+                if ((bytes[i] & 0xC0) == 0x80)
+                    --n;
 
-                if (bytes[j] >= 128)
-                {
-                    int l = 0;
-                    for (int i = 0; i < count; i++)
-                    {
-                        uint c = bytes[i];
-                        uint char2, char3;
-
-                        if (c == 0)
-                            throw new DecoderFallbackException("Illegal value in modified UTF8.");
-
-                        switch (c >> 4)
-                        {
-                            case 0:
-                            case 1:
-                            case 2:
-                            case 3:
-                            case 4:
-                            case 5:
-                            case 6:
-                            case 7:
-                                // 0xxxxxxx
-                                break;
-                            case 12:
-                            case 13:
-                                // 110x xxxx   10xx xxxx
-                                char2 = bytes[++i];
-                                if ((char2 & 0xc0) != 0x80 || i >= count)
-                                    goto default;
-
-                                c = ((c & 0x1F) << 6) | (char2 & 0x3F);
-                                if (c < 0x80 && c != 0 && majorVersion >= 48)
-                                    goto default;
-                                break;
-                            case 14:
-                                // 1110 xxxx  10xx xxxx  10xx xxxx
-                                char2 = bytes[++i];
-                                char3 = bytes[++i];
-                                if ((char2 & 0xc0) != 0x80 || (char3 & 0xc0) != 0x80 || i >= count)
-                                    goto default;
-                                c = ((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0);
-                                if (c < 0x800 && majorVersion >= 48)
-                                    goto default;
-                                break;
-                            default:
-                                throw new DecoderFallbackException("Illegal value in modified UTF8.");
-                        }
-
-                        l++;
-                    }
-
-                    return l;
-                }
-            }
-
-            // fallback to ASCII (char count == byte count)
-            return count;
+            return n;
         }
 
         /// <inheritdoc />
@@ -295,6 +239,76 @@ namespace IKVM.ByteCode.Text
 
 #endif
 
+        /// <summary>
+        /// Copied from UTF8.cpp in OpenJDK.
+        /// 
+        /// Takes a pointer to a character of a given modified UTF8 string and decodes the character into the pointer
+        /// given by value. Returns a pointer to the next character.
+        /// </summary>
+        /// <param name="str"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        static unsafe byte* Next(byte* str, char* value)
+        {
+            var ptr = str;
+            int length = -1; // bad length
+            int result = 0;
+
+            byte ch, ch2, ch3;
+            switch ((ch = ptr[0]) >> 4)
+            {
+                default:
+                    result = ch;
+                    length = 1;
+                    break;
+                case 0x8:
+                case 0x9:
+                case 0xA:
+                case 0xB:
+                case 0xF:
+                    // shouldn't happen
+                    break;
+                case 0xC:
+                case 0xD:
+                    /* 110xxxxx  10xxxxxx */
+                    if (((ch2 = ptr[1]) & 0xC0) == 0x80)
+                    {
+                        var high_five = ch & 0x1F;
+                        var low_six = ch2 & 0x3F;
+                        result = (high_five << 6) + low_six;
+                        length = 2;
+                        break;
+                    }
+                    break;
+                case 0xE:
+                    /* 1110xxxx 10xxxxxx 10xxxxxx */
+                    if (((ch2 = ptr[1]) & 0xC0) == 0x80)
+                    {
+                        if (((ch3 = ptr[2]) & 0xC0) == 0x80)
+                        {
+                            var high_four = ch & 0x0f;
+                            var mid_six = ch2 & 0x3f;
+                            var low_six = ch3 & 0x3f;
+                            result = (((high_four << 6) + mid_six) << 6) + low_six;
+                            length = 3;
+                        }
+                    }
+                    break;
+            }
+
+            if (length <= 0)
+            {
+                *value = (char)ptr[0]; // default bad result
+                return ptr + 1; // make progress somehow
+            }
+
+            *value = (char)result;
+
+            // The assert is correct but the .class file is wrong
+            // assert(UNICODE::utf8_size(result) == length, "checking reverse computation");
+            return ptr + length;
+        }
+
         /// <inheritdoc />
         public override unsafe int GetChars(byte* bytes, int byteCount, char* chars, int charCount)
         {
@@ -307,68 +321,23 @@ namespace IKVM.ByteCode.Text
             if (charCount < 0)
                 throw new ArgumentOutOfRangeException(nameof(byteCount));
 
-            for (int j = 0; j < byteCount; j++)
+            var ptr = bytes;
+            int index = 0;
+
+            // ASCII case loop optimization
+            for (; index < charCount; index++)
             {
-                if (bytes[j] == 0)
-                    throw new DecoderFallbackException("Illegal value in modified UTF8.");
-
-                if (bytes[j] >= 128)
-                {
-                    int l = 0;
-                    for (int i = 0; i < byteCount; i++)
-                    {
-                        uint c = bytes[i];
-                        uint char2, char3;
-
-                        if (c == 0)
-                            throw new DecoderFallbackException("Illegal value in modified UTF8.");
-
-                        switch (c >> 4)
-                        {
-                            case 0:
-                            case 1:
-                            case 2:
-                            case 3:
-                            case 4:
-                            case 5:
-                            case 6:
-                            case 7:
-                                // 0xxxxxxx
-                                break;
-                            case 12:
-                            case 13:
-                                // 110x xxxx   10xx xxxx
-                                char2 = bytes[++i];
-                                if ((char2 & 0xc0) != 0x80 || i >= byteCount)
-                                    goto default;
-
-                                c = ((c & 0x1F) << 6) | (char2 & 0x3F);
-                                if (c < 0x80 && c != 0 && majorVersion >= 48)
-                                    goto default;
-                                break;
-                            case 14:
-                                // 1110 xxxx  10xx xxxx  10xx xxxx
-                                char2 = bytes[++i];
-                                char3 = bytes[++i];
-                                if ((char2 & 0xc0) != 0x80 || (char3 & 0xc0) != 0x80 || i >= byteCount)
-                                    goto default;
-                                c = ((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0);
-                                if (c < 0x800 && majorVersion >= 48)
-                                    goto default;
-                                break;
-                            default:
-                                throw new DecoderFallbackException("Illegal value in modified UTF8.");
-                        }
-
-                        chars[l++] = (char)c;
-                    }
-
-                    return l;
-                }
+                byte ch;
+                if ((ch = ptr[0]) > 0x7F) break;
+                chars[index] = (char)ch;
+                ptr++;
             }
 
-            // fallback to ASCII
-            return ASCII.GetChars(bytes, byteCount, chars, charCount);
+            // up until max char count is reached, advance over next character
+            for (; index < charCount; index++)
+                ptr = Next(ptr, &chars[index]);
+
+            return index;
         }
 
         /// <inheritdoc />

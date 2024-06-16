@@ -1,8 +1,0 @@
-{
-    "profiles": {
-        "IKVM.Tests": {
-            "commandName": "Project",
-            "nativeDebugging": true
-        }
-    }
-}

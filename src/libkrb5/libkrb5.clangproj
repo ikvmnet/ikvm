@@ -1,0 +1,46 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>78a745d7-706a-4b33-9d21-0eb7b5144c42</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>krb5</TargetName>
+        <TargetName Condition="$(TargetIdentifier.StartsWith('win-'))">w2k_lsa_auth</TargetName>
+        <TargetName Condition="$(TargetIdentifier.StartsWith('osx-'))">osxkrb5</TargetName>
+        <OutputType>dll</OutputType>
+        <TargetIdentifiers>win-x64;win-x86;win-arm64;osx-x64;osx-arm64</TargetIdentifiers>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\security\krb5" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\krb5" />
+        <Compile Include="*.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <Dependencies Include="advapi32" />
+        <Dependencies Include="secur32" />
+        <Dependencies Include="netapi32" />
+        <Dependencies Include="kernel32" />
+        <Dependencies Include="user32" />
+        <Dependencies Include="gdi32" />
+        <Dependencies Include="winspool" />
+        <Dependencies Include="comdlg32" />
+        <Dependencies Include="shell32" />
+        <Dependencies Include="ole32" />
+        <Dependencies Include="oleaut32" />
+        <Dependencies Include="uuid" />
+        <Dependencies Include="odbc32" />
+        <Dependencies Include="odbccp32" />
+        <Dependencies Include="wsock32" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\krb5\*.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <AdditionalLinkOptions Include="-framework" Value="Kerberos" Separator=" " />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\krb5\*.c" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

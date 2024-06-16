@@ -1,0 +1,171 @@
+﻿<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <_IkvmReferenceItemPrepareStateFile Condition=" '$(IkvmReferenceItemPrepareStateFile)' == '' ">$(IntermediateOutputPath)$(MSBuildProjectFile).IkvmReferenceItemPrepare.cache</_IkvmReferenceItemPrepareStateFile>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <ResolveIkvmFrameworkReferencesDependsOn>
+            $(ResolveIkvmFrameworkReferencesDependsOn);
+        </ResolveIkvmFrameworkReferencesDependsOn>
+    </PropertyGroup>
+
+    <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn);$(ResolveAssemblyReferencesDependsOn)">
+        <ItemGroup>
+            <_IkvmFrameworkAssemblyReference Include="@(Reference)" Condition=" '%(Reference.NuGetIsFrameworkReference)' == 'true' Or '%(Reference.FrameworkFile)' == 'true' Or '%(Reference.ResolvedFrom)' == '{TargetFrameworkDirectory}' Or '%(Reference.IsImplicitlyDefined)' == 'true' Or '%(Reference.FrameworkReferenceName)' != '' Or '%(Reference.FrameworkReferenceVersion)' != '' Or '%(Reference.Identity)' == 'mscorlib' "/>
+            <_IkvmFrameworkAssemblyReference Include="@(Reference)" Condition=" '%(Reference.Identity)' == 'IKVM.Runtime' Or '%(Reference.Filename)%(Reference.Extension)' == 'IKVM.Runtime.dll' " />
+            <_IkvmFrameworkAssemblyReference Include="@(Reference)" Condition=" '%(Reference.Identity)' == 'IKVM.Java' Or '%(Reference.Filename)%(Reference.Extension)' == 'IKVM.Java.dll' " />
+            <_IkvmReferenceInstalledAssemblyDirectory Include="$(TargetFrameworkDirectory)" />
+            <_IkvmReferenceInstalledAssemblySubsets Include="$(TargetFrameworkSubset)" />
+            <_IkvmResolveAssemblyReferencesApplicationConfigFileForExes Include="@(AppConfigWithTargetPath)" Condition=" '$(AutoGenerateBindingRedirects)' == 'true' Or '$(AutoUnifyAssemblyReferences)' == 'false' "/>
+        </ItemGroup>
+
+        <PropertyGroup>
+            <_ResolveIkvmFrameworkReferencesStateFile Condition=" '$(DisableRarCache)' != 'true' And '$(_ResolveIkvmFrameworkReferencesStateFile)' == '' ">$(IntermediateOutputPath)$(MSBuildProjectFile).IkvmFrameworkReference.cache</_ResolveIkvmFrameworkReferencesStateFile>
+            <_IkvmResolveFrameworkReferencesSilent Condition="'$(_IkvmResolveFrameworkReferencesSilent)' == '' ">false</_IkvmResolveFrameworkReferencesSilent>
+            <_IkvmResolveFrameworkWarnOrErrorOnTargetArchitectureMismatch Condition=" '$(_IkvmResolveFrameworkWarnOrErrorOnTargetArchitectureMismatch)' == '' ">Warning</_IkvmResolveFrameworkWarnOrErrorOnTargetArchitectureMismatch>
+        </PropertyGroup>
+
+        <ResolveAssemblyReference
+            Assemblies="@(_IkvmFrameworkAssemblyReference)"
+            AssemblyFiles="@(_ExplicitReference)"
+            TargetFrameworkDirectories="@(_IkvmReferenceInstalledAssemblyDirectory)"
+            InstalledAssemblyTables="@(InstalledAssemblyTables);@(RedistList)"
+            IgnoreDefaultInstalledAssemblyTables="$(IgnoreDefaultInstalledAssemblyTables)"
+            IgnoreDefaultInstalledAssemblySubsetTables="$(IgnoreInstalledAssemblySubsetTables)"
+            SearchPaths="$(AssemblySearchPaths)"
+            AllowedAssemblyExtensions="$(AllowedReferenceAssemblyFileExtensions)"
+            AllowedRelatedFileExtensions="$(AllowedReferenceRelatedFileExtensions)"
+            TargetProcessorArchitecture="$(ProcessorArchitecture)"
+            AppConfigFile="@(_IkvmResolveAssemblyReferencesApplicationConfigFileForExes)"
+            AutoUnify="$(AutoUnifyAssemblyReferences)"
+            SupportsBindingRedirectGeneration="$(GenerateBindingRedirectsOutputType)"
+            IgnoreVersionForFrameworkReferences="$(IgnoreVersionForFrameworkReferences)"
+            FindDependencies="true"
+            FindSatellites="false"
+            FindSerializationAssemblies="false"
+            FindRelatedFiles="false"
+            Silent="$(_IkvmResolveFrameworkReferencesSilent)"
+            TargetFrameworkVersion="$(TargetFrameworkVersion)"
+            TargetFrameworkMoniker="$(TargetFrameworkMoniker)"
+            TargetFrameworkMonikerDisplayName="$(TargetFrameworkMonikerDisplayName)"
+            TargetedRuntimeVersion="$(TargetedRuntimeVersion)"
+            StateFile="$(_ResolveIkvmFrameworkReferencesStateFile)"
+            AssemblyInformationCachePaths="$(AssemblyInformationCachePaths)"
+            AssemblyInformationCacheOutputPath="$(AssemblyInformationCacheOutputPath)"
+            InstalledAssemblySubsetTables="@(InstalledAssemblySubsetTables)"
+            TargetFrameworkSubsets="@(_ReferenceInstalledAssemblySubsets)"
+            FullTargetFrameworkSubsetNames="$(FullReferenceAssemblyNames)"
+            FullFrameworkFolders="$(_FullFrameworkReferenceAssemblyPaths)"
+            FullFrameworkAssemblyTables="@(FullFrameworkAssemblyTables)"
+            ProfileName="$(TargetFrameworkProfile)"
+            LatestTargetFrameworkDirectories="@(LatestTargetFrameworkDirectories)"
+            CopyLocalDependenciesWhenParentReferenceInGac="false"
+            DoNotCopyLocalIfInGac="true"
+            ResolvedSDKReferences="@(ResolvedSDKReference)"
+            WarnOrErrorOnTargetArchitectureMismatch="$(_IkvmResolveFrameworkWarnOrErrorOnTargetArchitectureMismatch)"
+            IgnoreTargetFrameworkAttributeVersionMismatch ="$(ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch)"
+            FindDependenciesOfExternallyResolvedReferences="false"
+            ContinueOnError="$(ContinueOnError)"
+            OutputUnresolvedAssemblyConflicts="false">
+            <Output TaskParameter="ResolvedFiles" ItemName="IkvmFrameworkReference" />
+            <Output TaskParameter="FilesWritten" ItemName="FileWrites" />
+        </ResolveAssemblyReference>
+    </Target>
+
+    <!-- Transforms the IkvmReference item group into IkvmReferenceItem items. -->
+    <Target Name="GetIkvmReferenceItemsFromIkvmReferences">
+        <ItemGroup>
+            <IkvmReferenceItem Include="@(IkvmReference)">
+
+            </IkvmReferenceItem>
+        </ItemGroup>
+    </Target>
+
+    <!-- Populates the IkvmReferenceItem set with required metadata. -->
+    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmRuntimeAssembly;ResolveIkvmFrameworkReferences" Condition=" '@(IkvmReferenceItem)' != '' ">
+        <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
+        <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
+
+        <ItemGroup>
+            <_IkvmReferenceReferences Include="@(IkvmFrameworkReference)" />
+        </ItemGroup>
+
+        <!-- Populates metadata, validates, resolves references, and emits in build order. -->
+        <IkvmReferenceItemPrepare StateFile="$(_IkvmReferenceItemPrepareStateFile)" Items="@(IkvmReferenceItem)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" RuntimeAssembly="$(IkvmRuntimeAssembly)" References="@(_IkvmReferenceReferences)" StageDir="$(IkvmStageDir)" CacheDir="$(IkvmCacheDir)">
+            <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithMetadata" />
+        </IkvmReferenceItemPrepare>
+
+        <!-- Assign newly discovered items. -->
+        <ItemGroup>
+            <IkvmReferenceItem Remove="@(IkvmReferenceItem)"/>
+            <IkvmReferenceItem Include="@(_IkvmReferenceItemWithMetadata)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GetIkvmReferenceItemsDependsOn>
+            $(GetIkvmReferenceItemsDependsOn);
+            ResolveIkvmFrameworkReferences;
+            GetIkvmReferenceItemsFromIkvmReferences;
+            _UpdateIkvmReferenceItemsMetadata;
+        </GetIkvmReferenceItemsDependsOn>
+    </PropertyGroup>
+
+    <!-- Assembles the set of IkvmReferenceItems from various sources. -->
+    <Target Name="GetIkvmReferenceItems" DependsOnTargets="$(GetIkvmReferenceItemsDependsOn)" Returns="@(IkvmReferenceItem)">
+
+    </Target>
+
+    <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
+    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmFrameworkReferences" Inputs="%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
+        <Error Text="_CompileIkvmReferences has no implementation." />
+    </Target>
+
+    <PropertyGroup>
+        <CompileIkvmReferencesDependsOn>
+            $(CompileIkvmReferenceAssemblies);
+            GetIkvmReferenceItems;
+            ResolveIkvmFrameworkReferences;
+            _CompileIkvmReferences;
+        </CompileIkvmReferencesDependsOn>
+    </PropertyGroup>
+
+    <Target Name="CompileIkvmReferences" DependsOnTargets="$(CompileIkvmReferencesDependsOn)">
+
+    </Target>
+
+    <!-- Adds the expected IkvmReferences to the Reference set. -->
+    <Target Name="_ResolveIkvmReferences" DependsOnTargets="GetIkvmReferenceItems">
+        <ItemGroup>
+            <Reference Include="@(IkvmReferenceItem->'%(CachePath)')">
+                <ReferenceSourceTarget>ResolveIkvmReferences</ReferenceSourceTarget>
+                <HintPath>%(IkvmReferenceItem.CachePath)</HintPath>
+                <Aliases>%(IkvmReferenceItem.Aliases)</Aliases>
+                <Private>%(IkvmReferenceItem.Private)</Private>
+                <ReferenceOutputAssembly>%(IkvmReferenceItem.ReferenceOutputAssembly)</ReferenceOutputAssembly>
+                <JavaClasspath>%(IkvmReferenceItem.Compile)</JavaClasspath>
+            </Reference>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <ResolveIkvmReferencesDependsOn>
+            $(ResolveIkvmReferencesDependsOn);
+            CompileIkvmReferences;
+            GetIkvmReferenceItems;
+            _ResolveIkvmReferences;
+        </ResolveIkvmReferencesDependsOn>
+    </PropertyGroup>
+
+    <Target Name="ResolveIkvmReferences" BeforeTargets="ResolveAssemblyReferences" DependsOnTargets="$(ResolveIkvmReferencesDependsOn)">
+
+    </Target>
+
+    <!-- Include Task or NoTask implementation of targets. -->
+    <Import Project="IKVM.IkvmReference.Tasks.targets" Condition=" '$(UseIkvmTasks)' != 'false' "/>
+    <Import Project="IKVM.IkvmReference.NoTasks.targets" Condition=" '$(UseIkvmTasks)' == 'false' "/>
+</Project>

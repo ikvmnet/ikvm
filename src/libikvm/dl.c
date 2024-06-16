@@ -2,7 +2,7 @@
 #define NETEXPORT __declspec(dllexport)
 #define NETCALL __stdcall
 #else
-#define NETEXPORT
+#define NETEXPORT __attribute__((visibility("default")))
 #define NETCALL
 #endif
 
@@ -23,7 +23,13 @@ static pthread_mutex_t dl_mutex;
 NETEXPORT void* NETCALL IKVM_dl_open(const char* name)
 {
 #ifdef WIN32
-    return LoadLibraryEx(name, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+    size_t sname = (size_t)MultiByteToWideChar(CP_UTF8, 0, name, -1, NULL, 0);
+    LPWSTR wname = (LPWSTR)malloc(sname * sizeof(WCHAR));
+    MultiByteToWideChar(CP_UTF8, 0, name, -1, wname, sname);
+
+    void* result = LoadLibraryExW(wname, 0, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+    free(wname);
+    return result;
 #else
     return dlopen(name, RTLD_LAZY | RTLD_GLOBAL);
 #endif

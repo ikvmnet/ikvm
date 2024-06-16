@@ -1,0 +1,52 @@
+<!--
+
+    IKVM.Image.project.targets
+    
+    Imported by the the Image projects to ensure we pack IkvmImageItems appropriately.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+        <IkvmImageItemToNone>true</IkvmImageItemToNone>
+    </PropertyGroup>
+
+    <Import Project="..\..\targets\openjdk.buildtools.targets" />
+    <Import Project="buildTransitive\IKVM.Image.targets" />
+    <Import Project="..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.NoTasks.targets" />
+
+    <!-- IKVM.Java uses the java executable from JAVA_HOME -->
+    <Target Name="ResolveJava" Condition=" '$(JAVA_HOME)' != '' And '$(JavaPath)' == '' ">
+        <PropertyGroup>
+            <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\java') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java'))</JavaPath>
+            <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\java.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\java.exe'))</JavaPath>
+            <JavaArgs></JavaArgs>
+            <JavaExec Condition=" '$(JavaPath)' != '' ">"$(JavaPath)" $(JavaArgs)</JavaExec>
+        </PropertyGroup>
+        <Message Text="Using java executable found in JAVA_HOME at '$(JavaPath)'." Importance="high" Condition=" '$(JavaPath)' != '' " />
+        <Error Text="Could not locate java executable in JAVA_HOME. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(JavaPath)' == '' " />
+    </Target>
+
+    <!-- IKVM.Java uses the javac executable from JAVA_HOME: bootstrap -->
+    <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
+        <PropertyGroup>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac.exe'))</JavaCompilerPath>
+            <JavaCompilerArgs></JavaCompilerArgs>
+            <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
+    </Target>
+
+    <Target Name="GetIkvmImageItemsToPack" DependsOnTargets="CollectIkvmImageItemsOutputItems" BeforeTargets="_GetPackageFiles" Condition=" '$(TargetFramework)' == '' ">
+        <ItemGroup>
+            <_PackageFiles Include="@(IkvmImageItem)">
+                <PackagePath Condition=" '%(IkvmImageItem.ImagePath)' != '' ">ikvm\%(IkvmImageItem.TargetFramework)\%(IkvmImageItem.RuntimeIdentifier)\%(IkvmImageItem.ImagePath)</PackagePath>
+                <PackagePath Condition=" '%(IkvmImageItem.ImagePath)' != '' And '$([System.IO.Path]::GetExtension(%(IkvmImageItem.ImagePath)))' == '' ">$([System.IO.Path]::GetDirectoryName('ikvm\%(IkvmImageItem.TargetFramework)\%(IkvmImageItem.RuntimeIdentifier)\%(IkvmImageItem.ImagePath)'))</PackagePath>
+                <Pack>true</Pack>
+            </_PackageFiles>
+        </ItemGroup>
+    </Target>
+
+</Project>

@@ -6,16 +6,24 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>sunec</TargetName>
-        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\ec\impl</IncludeDirectories>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);MP_API_COMPATIBLE;NSS_ECC_MORE_THAN_SUITE_B</PreprocessorDefinitions>
+        <OutputType>dll</OutputType>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
     </ItemGroup>
     <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\impl" />
+        <PreprocessorDefinitions Include="MP_API_COMPATIBLE;NSS_ECC_MORE_THAN_SUITE_B" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.cpp" LanguageStandard="c++11" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.c" LanguageStandard="c99" />
         <Compile Include="**\*.c" LanguageStandard="c99" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
+        <Dependencies Include="shlwapi" />
+        <PreprocessorDefinitions Include="strdup" Value="_strdup" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libsunec\mapfile-vers" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />

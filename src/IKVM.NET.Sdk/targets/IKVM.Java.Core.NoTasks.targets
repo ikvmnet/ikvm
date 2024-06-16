@@ -16,7 +16,7 @@
         <___IkvmReferenceExportItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemMetadata.cs'))'))</___IkvmReferenceExportItemMetadataCs>
         <___IkvmReferenceExportItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemPrepare.cs'))'))</___IkvmReferenceExportItemPrepareCs>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <___PkgSystem_Collections_Immutable Remove="@(___PkgSystem_Collections_Immutable)" />
         <___PkgSystem_Collections_Immutable Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" />
@@ -59,6 +59,32 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         </Task>
     </UsingTask>
 
+    <UsingTask TaskName="IkvmCleanupJavaResourceItemGroup" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Collections.Generic" />
+            <Code Language="cs" Type="Fragment">
+                <![CDATA[
+                
+                foreach (var i in Items)
+                {
+                    var m = i.GetMetadata("ResourcePath");
+                    m = m.Replace('\\', '/');
+                    while (m.Contains("//"))
+                        m = m.Replace("//", "/");
+                        
+                    m = m.Trim('/');
+                    i.SetMetadata("ResourcePath", m);
+                }
+                
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
     <UsingTask TaskName="IkvmGetBase36Hash" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <Value ParameterType="System.String" Required="true" Output="true" />
@@ -83,7 +109,7 @@ Value = b.ToString();
             </Code>
         </Task>
     </UsingTask>
-    
+
     <Target Name="_ExportReferenceGetTempSuffix">
         <IkvmGetBase36Hash Value="$(MSBuildThisFileFullPath)">
             <Output TaskParameter="Value" PropertyName="_ExportReferenceTempSuffix" />
@@ -182,7 +208,7 @@ Value = b.ToString();
     <!-- Override IKVM.NET.Sdk: directly invoke javac executable  -->
     <Target Name="_CompileJava" DependsOnTargets="_CompileJavaResponseFile;_ResolveClasspathFiles" Inputs="$(MSBuildThisFileFullPath);$(_CompileJavaResponseFile);@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
         <Delete Files="$(_CompileJavaStampFile)" />
-        
+
         <!-- Store initial time. Files that remain older than this will be removed. -->
         <PropertyGroup>
             <_CompileJavaStartTime>$([System.DateTime]::Now.Ticks)</_CompileJavaStartTime>
@@ -192,7 +218,7 @@ Value = b.ToString();
         <MakeDir Directories="$(ClassOutputPath)" />
         <RemoveDir Directories="$(HeaderOutputPath)" />
         <MakeDir Directories="$(HeaderOutputPath)" />
-        
+
         <Message Text="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
         <Exec Command="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" IgnoreStandardErrorWarningFormat="true" />
 
@@ -229,7 +255,11 @@ Value = b.ToString();
             <_Target Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">library</_Target>
         </PropertyGroup>
 
-        <IkvmSortItemGroup Items="@(JavaResource)">
+        <IkvmCleanupJavaResourceItemGroup Items="@(JavaResource)">
+            <Output TaskParameter="Items" ItemName="_IkvmCompilerJavaResourceClean" />
+        </IkvmCleanupJavaResourceItemGroup>
+
+        <IkvmSortItemGroup Items="@(_IkvmCompilerJavaResourceClean)">
             <Output TaskParameter="Items" ItemName="_IkvmCompilerJavaResource" />
         </IkvmSortItemGroup>
 
@@ -268,13 +298,13 @@ Value = b.ToString();
             <_IkvmCompilerReferencePath Include="@(_IkvmCompilerReferencePathWithRefAssemblies)" Condition=" '%(_IkvmCompilerReferencePathWithRefAssemblies.HideFromJava)' != 'true' " />
             <_IkvmCompilerArgs Include="@(_IkvmCompilerReferencePath->'-reference:%(FullPath)')" />
             <_IkvmCompilerResourceItem Remove="@(_IkvmCompilerResourceItem)" />
-            <_IkvmCompilerResourceItem Include="@(_IkvmCompilerJavaResource)" ResourcePath="$([System.String]::new('%(_IkvmCompilerJavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
+            <_IkvmCompilerResourceItem Include="@(_IkvmCompilerJavaResource)" ResourcePath="%(_IkvmCompilerJavaResource.ResourcePath)" Condition=" '%(Identity)' != '' And '%(_IkvmCompilerJavaResource.ResourcePath)' != '' " />
             <_IkvmCompilerArgs Include="@(_IkvmCompilerResourceItem->'-resource:%(ResourcePath)=%(FullPath)')" />
             <_IkvmCompilerArgs Include="-out:$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
             <_IkvmCompilerArgs Include="@(_IkvmCompilerConvert->'%(FullPath)')" />
         </ItemGroup>
         <WriteLinesToFile File="$(_IkvmCompilerResponseFile)" Lines="@(_IkvmCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
-        
+
         <ItemGroup>
             <FileWrites Include="$(_IkvmCompilerResponseFile)" />
         </ItemGroup>
@@ -291,7 +321,7 @@ Value = b.ToString();
         <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
         <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
         <Exec Command="chmod +x $(IkvmCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
-        
+
         <!-- Build Java assembly into temporary directory. -->
         <RemoveDir Directories="$(_AssemblyTempPath)" Condition="Exists('$(_AssemblyTempPath)')" />
         <MakeDir Directories="$(_AssemblyTempPath)" />
