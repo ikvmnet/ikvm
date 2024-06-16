@@ -417,6 +417,20 @@ namespace IKVM.Runtime
         /// <param name="elemSize"></param>
         unsafe void JVM_CopySwapMemory(JNIEnv* env, nint srcObj, long srcOffset, nint dstObj, long dstOffset, long size, long elemSize)
         {
+            JVM_CopySwapMemory((Array)env->UnwrapRef(srcObj), srcOffset, (Array)env->UnwrapRef(dstObj), dstOffset, size, elemSize);
+        }
+
+        /// <summary>
+        /// Invoked by the native code to copy and swap memory.
+        /// </summary>
+        /// <param name="srcObj"></param>
+        /// <param name="srcOffset"></param>
+        /// <param name="dstObj"></param>
+        /// <param name="dstOffset"></param>
+        /// <param name="size"></param>
+        /// <param name="elemSize"></param>
+        internal static unsafe void JVM_CopySwapMemory(Array srcObj, long srcOffset, Array dstObj, long dstOffset, long size, long elemSize)
+        {
             if (size == 0)
                 return;
 
@@ -425,10 +439,10 @@ namespace IKVM.Runtime
                 if (size % elemSize != 0)
                     throw new java.lang.InternalError($"size {size} must be multiple of element size {elemSize}");
 
-                static unsafe Span<T> AsSpan<T>(JNIEnv* env, nint obj, long off, long size) where T : unmanaged
+                static unsafe Span<T> AsSpan<T>(Array obj, long off, long size) where T : unmanaged
                 {
-                    if (obj != 0)
-                        return new Span<T>(Unsafe.As<T[]>((Array)env->UnwrapRef(obj))).Slice((int)(off / sizeof(T)), (int)(size / sizeof(T)));
+                    if (obj != null)
+                        return new Span<T>(Unsafe.As<T[]>(obj)).Slice((int)(off / sizeof(T)), (int)(size / sizeof(T)));
                     else if (off != 0)
                         return new Span<T>((void*)(nint)off, (int)(size / sizeof(T)));
                     else
@@ -438,13 +452,13 @@ namespace IKVM.Runtime
                 switch (elemSize)
                 {
                     case 2:
-                        ReverseEndianness(AsSpan<short>(env, srcObj, srcOffset, size), AsSpan<short>(env, dstObj, dstOffset, size));
+                        ReverseEndianness(AsSpan<short>(srcObj, srcOffset, size), AsSpan<short>(dstObj, dstOffset, size));
                         break;
                     case 4:
-                        ReverseEndianness(AsSpan<int>(env, srcObj, srcOffset, size), AsSpan<int>(env, dstObj, dstOffset, size));
+                        ReverseEndianness(AsSpan<int>(srcObj, srcOffset, size), AsSpan<int>(dstObj, dstOffset, size));
                         break;
                     case 8:
-                        ReverseEndianness(AsSpan<long>(env, srcObj, srcOffset, size), AsSpan<long>(env, dstObj, dstOffset, size));
+                        ReverseEndianness(AsSpan<long>(srcObj, srcOffset, size), AsSpan<long>(dstObj, dstOffset, size));
                         break;
                     default:
                         throw new java.lang.InternalError($"incorrect element size: {elemSize}");
