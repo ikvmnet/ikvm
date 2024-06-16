@@ -22,6 +22,8 @@
   
 */
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -122,6 +124,70 @@ namespace IKVM.Java.Externs.java.lang
                         return threads;
                 }
             }));
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'dumpThreads'.
+        /// </summary>
+        /// <param name="threads"></param>
+        /// <returns></returns>
+        public static object dumpThreads(object[] threads)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var stacks = new global::java.lang.StackTraceElement[threads.Length][];
+            for (int i = 0; i < threads.Length; i++)
+            {
+                var nativeThread = ThreadAccessor.GetNativeThread(threads[i]);
+                if (nativeThread == null)
+                {
+                    stacks[i] = Array.Empty<global::java.lang.StackTraceElement>();
+                }
+                else
+                {
+#if NETFRAMEWORK
+                    try
+                    {
+                        var suspended = false;
+                        if ((nativeThread.ThreadState & global::System.Threading.ThreadState.Suspended) == 0 && nativeThread != global::System.Threading.Thread.CurrentThread)
+                        {
+                            suspended = true;
+                            nativeThread.Suspend();
+                        }
+
+                        StackTrace stack;
+                        try
+                        {
+                            stack = new StackTrace(nativeThread, true);
+                        }
+                        finally
+                        {
+                            if (suspended)
+                                nativeThread.Resume();
+                        }
+
+                        stacks[i] = getStackTrace(stack);
+                    }
+                    catch (ThreadStateException)
+                    {
+                        stacks[i] = Array.Empty<global::java.lang.StackTraceElement>();
+                    }
+#else
+                    if (nativeThread == global::System.Threading.Thread.CurrentThread)
+                    {
+                        stacks[i] = getStackTrace(new StackTrace(true));
+                    }
+                    else
+                    {
+                        stacks[i] = Array.Empty<global::java.lang.StackTraceElement>();
+                    }
+#endif
+                }
+            }
+
+            return stacks;
 #endif
         }
 

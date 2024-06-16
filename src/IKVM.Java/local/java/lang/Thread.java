@@ -2011,51 +2011,9 @@ class Thread implements Runnable {
         );
         return result.booleanValue();
     }
-
-    private static StackTraceElement[][] dumpThreads(Thread[] threads) {
-        // Constructor StackTrace(Thread) is obsolete and does not exist in .net core.
-        // We only return a trace of the current thread until a reliable way for all
-        // threads is found.
-
-        StackTraceElement[][] stacks = new StackTraceElement[1][];
-        cli.System.Diagnostics.StackTrace stack;
-        stack = new cli.System.Diagnostics.StackTrace(true);
-        stacks[0] = getStackTrace(stack);
-        /*StackTraceElement[][] stacks = new StackTraceElement[threads.length][];
-        for (int i = 0; i < threads.length; i++) {
-            cli.System.Threading.Thread nativeThread = threads[i].nativeThread;
-            if (nativeThread == null) {
-                stacks[i] = new StackTraceElement[0];
-            } else {
-                try {
-                    if (false) throw new cli.System.Threading.ThreadStateException();
-                    boolean suspended = false;
-                    if ((nativeThread.get_ThreadState().Value & cli.System.Threading.ThreadState.Suspended) == 0 && nativeThread != cli.System.Threading.Thread.get_CurrentThread()) {
-                        suspended = true;
-                        nativeThread.Suspend();
-                    }
-                    cli.System.Diagnostics.StackTrace stack;
-                    try {
-                        stack = new cli.System.Diagnostics.StackTrace(nativeThread, true);
-                    }
-                    finally {
-                        if (suspended) {
-                            nativeThread.Resume();
-                        }
-                    }
-                    stacks[i] = getStackTrace(stack);
-                }
-                catch (cli.System.Threading.ThreadStateException _) {
-                    stacks[i] = new StackTraceElement[0];
-                }
-            }
-        }*/
-        return stacks;
-    }
     
-    private static native StackTraceElement[] getStackTrace(cli.System.Diagnostics.StackTrace stack);
-
-    private static native Thread[] getThreads();
+    private native static StackTraceElement[][] dumpThreads(Thread[] threads);
+    private native static Thread[] getThreads();
 
     /**
      * Returns the identifier of this Thread.  The thread ID is a positive
