@@ -506,11 +506,20 @@ jobs:
             }
         }
 
+        $include = @(
+          @{
+            "run" = "IKVM.Tests"
+            "tfm" = "net8.0"
+            "sys" = "win-x86"
+          }
+        )
+
         "matrix=" + (@{
           sys = $sys
           tfm = $tfm
           run = $run
           exclude = $exclude
+          include = $include
         } | ConvertTo-Json -Compress).Replace('"', "'") >> $env:GITHUB_OUTPUT
   test:
     needs:
