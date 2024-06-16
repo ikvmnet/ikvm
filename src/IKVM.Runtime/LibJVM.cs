@@ -223,10 +223,15 @@ namespace IKVM.Runtime
             {
                 return global::java.lang.Thread.currentThread().interruptEvent.SafeWaitHandle.DangerousGetHandle();
             }
+            catch (global::java.lang.Throwable t)
+            {
+                JVM.SetPendingException(t);
+                return 0;
+            }
             catch (Exception e)
             {
                 Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_GetThreadInterruptEvent)}: Exception occurred: {{0}}", e.Message);
-                JVM.SetPendingException(e);
+                JVM.SetPendingException(new global::java.lang.InternalError(e));
                 return 0;
             }
         }
@@ -284,13 +289,17 @@ namespace IKVM.Runtime
 
                 Array.Copy(s, src_pos, d, dst_pos, length);
             }
+            catch (java.lang.Throwable t)
+            {
+                JVM.SetPendingException(t);
+            }
             catch (ArrayTypeMismatchException)
             {
                 JVM.SetPendingException(new java.lang.ArrayStoreException());
             }
             catch (Exception e)
             {
-                JVM.SetPendingException(e);
+                JVM.SetPendingException(new java.lang.InternalError(e));
             }
         }
 
@@ -315,9 +324,14 @@ namespace IKVM.Runtime
 
                 return props;
             }
+            catch (java.lang.Throwable t)
+            {
+                JVM.SetPendingException(t);
+                return 0;
+            }
             catch (Exception e)
             {
-                JVM.SetPendingException(e);
+                JVM.SetPendingException(new java.lang.InternalError(e));
                 return 0;
             }
         }
@@ -334,7 +348,7 @@ namespace IKVM.Runtime
             }
             catch (Exception e)
             {
-                JVM.SetPendingException(e);
+                JVM.SetPendingException(new java.lang.InternalError(e));
                 return 0;
             }
         }
@@ -351,7 +365,7 @@ namespace IKVM.Runtime
             }
             catch (Exception e)
             {
-                JVM.SetPendingException(e);
+                JVM.SetPendingException(new java.lang.InternalError(e));
             }
         }
 
@@ -368,7 +382,7 @@ namespace IKVM.Runtime
             }
             catch (Exception e)
             {
-                JVM.SetPendingException(e);
+                JVM.SetPendingException(new java.lang.InternalError(e));
             }
 
             return 0;
@@ -387,7 +401,7 @@ namespace IKVM.Runtime
             }
             catch (Exception e)
             {
-                JVM.SetPendingException(e);
+                JVM.SetPendingException(new java.lang.InternalError(e));
             }
         }
 
@@ -414,7 +428,7 @@ namespace IKVM.Runtime
                 static unsafe Span<T> AsSpan<T>(JNIEnv* env, nint obj, long off, long size) where T : unmanaged
                 {
                     if (obj != 0)
-                        return new Span<T>(Unsafe.As<T[]>((Array)env->UnwrapRef(obj))).Slice((int)off, (int)(size / sizeof(T)));
+                        return new Span<T>(Unsafe.As<T[]>((Array)env->UnwrapRef(obj))).Slice((int)(off / sizeof(T)), (int)(size / sizeof(T)));
                     else if (off != 0)
                         return new Span<T>((void*)(nint)off, (int)(size / sizeof(T)));
                     else
@@ -436,7 +450,7 @@ namespace IKVM.Runtime
                         throw new java.lang.InternalError($"incorrect element size: {elemSize}");
                 }
             }
-            catch (java.lang.InternalError e)
+            catch (java.lang.Throwable e)
             {
                 JVM.SetPendingException(e);
             }
