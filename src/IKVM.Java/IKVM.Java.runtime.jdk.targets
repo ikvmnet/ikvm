@@ -1308,4 +1308,68 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </GenerateSourceDependsOn>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <BreakIteratorClasses>$(IntermediateOutputPath)break_iterator\classes\</BreakIteratorClasses>
+        <BreakIteratorDataDir>$(IntermediateOutputPath)break_iterator\gendata\</BreakIteratorDataDir>
+        <BreakIteratorPackage>sun\text\resources</BreakIteratorPackage>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <BreakIteratorSources Include="$(OpenJdkDir)jdk\src\share\classes\$(BreakIteratorPackage)\BreakIteratorRules.java" />
+        <BreakIteratorSources Include="$(OpenJdkDir)jdk\src\share\classes\$(BreakIteratorPackage)\BreakIteratorInfo.java" />
+        <BreakIteratorSources Include="$(OpenJdkDir)jdk\src\share\classes\$(BreakIteratorPackage)\th\BreakIteratorRules_th.java" />
+        <BreakIteratorSources Include="$(OpenJdkDir)jdk\src\share\classes\$(BreakIteratorPackage)\th\BreakIteratorInfo_th.java" />
+        <BreakIteratorOutputs Include="$(BreakIteratorClasses)$(BreakIteratorPackage)\BreakIteratorRules.class" />
+        <BreakIteratorOutputs Include="$(BreakIteratorClasses)$(BreakIteratorPackage)\BreakIteratorInfo.class" />
+        <BreakIteratorOutputs Include="$(BreakIteratorClasses)$(BreakIteratorPackage)\th\BreakIteratorRules_th.class" />
+        <BreakIteratorOutputs Include="$(BreakIteratorClasses)$(BreakIteratorPackage)\th\BreakIteratorInfo_th.class" />
+        <BreakIteratorData Include="$(BreakIteratorDataDir)CharacterBreakIteratorData" Language="" />
+        <BreakIteratorData Include="$(BreakIteratorDataDir)WordBreakIteratorData" Language="" />
+        <BreakIteratorData Include="$(BreakIteratorDataDir)LineBreakIteratorData" Language="" />
+        <BreakIteratorData Include="$(BreakIteratorDataDir)SentenceBreakIteratorData" Language="" />
+        <BreakIteratorData Include="$(BreakIteratorDataDir)th\WordBreakIteratorData_th" Language="th" />
+        <BreakIteratorData Include="$(BreakIteratorDataDir)th\LineBreakIteratorData_th" Language="th" />
+    </ItemGroup>
+
+    <Target Name="GenerateBreakIteratorClasses" DependsOnTargets="ResolveJavaCompiler" Inputs="$(MSBuildThisFileFullPath);@(BreakIteratorSources)" Outputs="@(BreakIteratorOutputs)">
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
+        <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
+        <Exec Command="chmod +x $(JavaCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <MakeDir Directories="$(BreakIteratorClasses)" />
+        <Message Text="$(JavaCompilerExec) @(BreakIteratorSources, ' ') -d $(BreakIteratorClasses)" />
+        <Exec Command="$(JavaCompilerExec) @(BreakIteratorSources, ' ') -d $(BreakIteratorClasses)" />
+
+        <ItemGroup>
+            <FileWrites Include="@(BreakIteratorOutputs)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GenerateBreakIteratorData" DependsOnTargets="OpenJdkBuildTools;ResolveJava;GenerateBreakIteratorClasses" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(BreakIteratorOutputs)" Outputs="@(BreakIteratorData)">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <MakeDir Directories="$(BreakIteratorDataDir)" />
+        <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) -Xbootclasspath/p:$(BreakIteratorClasses) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o $(BreakIteratorDataDir) -spec $(UnicodeDataDir)UnicodeData.txt" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) -Xbootclasspath/p:$(BreakIteratorClasses) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o $(BreakIteratorDataDir) -spec $(UnicodeDataDir)UnicodeData.txt" />
+        
+        <MakeDir Directories="$(BreakIteratorDataDir)\th" />
+        <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) -Xbootclasspath/p:$(BreakIteratorClasses) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o $(BreakIteratorDataDir) -spec $(UnicodeDataDir)UnicodeData.txt -language th" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) -Xbootclasspath/p:$(BreakIteratorClasses) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o $(BreakIteratorDataDir) -spec $(UnicodeDataDir)UnicodeData.txt -language th" />
+
+        <ItemGroup>
+            <FileWrites Include="@(BreakIteratorData)" />
+            <JavaResource Include="@(BreakIteratorData)" ResourcePath="$(BreakIteratorPackage)\%(BreakIteratorData.Language)\%(Filename)%(Extension)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateBreakIteratorClasses;
+            GenerateBreakIteratorData;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
 </Project>
