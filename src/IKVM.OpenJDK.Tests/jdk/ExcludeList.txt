@@ -4008,3 +4008,24 @@ jdk/jfr/tool/TestPrintDefault.java                                              
 jdk/jfr/tool/TestPrintJSON.java                                                                                         generic-all
 jdk/jfr/tool/TestPrintXML.java                                                                                          generic-all
 jdk/jfr/tool/TestSummary.java                                                                                           generic-all
+
+# needs JRE subfolder
+security/infra/java/security/cert/CertPathValidator/certification/AmazonCA.java                                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java                                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java                                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/DTrustCA.java                                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/EntrustCA.java                                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/GlobalSignR6CA.java                                   generic-all
+security/infra/java/security/cert/CertPathValidator/certification/GoDaddyCA.java                                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/LetsEncryptCA.java                                    generic-all
+security/infra/java/security/cert/CertPathValidator/certification/LuxTrustCA.java                                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java                                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/SSLCA.java                                            generic-all
+security/infra/java/security/cert/CertPathValidator/certification/TeliaSoneraCA.java                                    generic-all
+
+# Hotspot uses special detection to ensure native stack doesn't grow too far, which we can't do
+java/nio/channels/Selector/StackOverflowTest.java                                                                       generic-all
+
+# Checks System.exit permissions, even though JTReg disallows it
+javax/swing/JTextPane/JTextPaneDocumentAlignment.java                                                                   generic-all
+javax/swing/JTextPane/JTextPaneDocumentWrapping.java                                                                    generic-all
