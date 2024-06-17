@@ -18,7 +18,7 @@ namespace IKVM.ByteCode.Reading.Tests
     {
 
         [TestMethod]
-        [ExpectedException(typeof(ByteCodeException))]
+        [ExpectedException(typeof(InvalidClassMagicException))]
         public async Task ShouldThrowOnEmptyStream()
         {
             var stream = new MemoryStream();
@@ -26,7 +26,7 @@ namespace IKVM.ByteCode.Reading.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ByteCodeException))]
+        [ExpectedException(typeof(InvalidClassMagicException))]
         public async Task ShouldThrowOnSmallStream()
         {
             var stream = new MemoryStream(new byte[10]);
@@ -34,7 +34,7 @@ namespace IKVM.ByteCode.Reading.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ByteCodeException))]
+        [ExpectedException(typeof(InvalidClassMagicException))]
         public async Task ShouldThrowOnBadStream()
         {
             var stream = new MemoryStream(new byte[35]);
