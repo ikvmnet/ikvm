@@ -227,7 +227,7 @@ namespace IKVM.ByteCode.Reading
 
                     // we couldn't read a full class, and the pipe is at the end
                     if (result.IsCompleted)
-                        throw new ByteCodeException("End of stream reached before valid class.");
+                        throw new InvalidClassException("End of stream reached before valid class.");
 
                     continue;
                 }

@@ -18,7 +18,7 @@ namespace IKVM.ByteCode.Reading.Tests
     {
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidClassMagicException))]
+        [ExpectedException(typeof(InvalidClassException))]
         public async Task ShouldThrowOnEmptyStream()
         {
             var stream = new MemoryStream();
