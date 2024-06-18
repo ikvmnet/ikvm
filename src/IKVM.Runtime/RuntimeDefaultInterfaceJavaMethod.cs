@@ -81,7 +81,7 @@ namespace IKVM.Runtime
 
         protected override void CallImpl(CodeEmitter ilgen)
         {
-            ilgen.Emit(OpCodes.Call, impl);
+            ilgen.Emit(OpCodes.Call, GetMethod());
         }
 
         protected override void CallvirtImpl(CodeEmitter ilgen)
