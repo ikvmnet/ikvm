@@ -81,11 +81,13 @@ namespace IKVM.Runtime
 
         protected override void CallImpl(CodeEmitter ilgen)
         {
-            ilgen.Emit(OpCodes.Call, GetMethod());
+            // dispatch to default static method (impl)
+            ilgen.Emit(OpCodes.Call, impl);
         }
 
         protected override void CallvirtImpl(CodeEmitter ilgen)
         {
+            // virtual dispatch to interface method
             ilgen.Emit(OpCodes.Callvirt, GetMethod());
         }
 

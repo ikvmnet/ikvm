@@ -4031,3 +4031,6 @@ java/nio/channels/Selector/StackOverflowTest.java                               
 # Checks System.exit permissions, even though JTReg disallows it
 javax/swing/JTextPane/JTextPaneDocumentAlignment.java                                                                   generic-all
 javax/swing/JTextPane/JTextPaneDocumentWrapping.java                                                                    generic-all
+
+# Bug 538
+java/lang/invoke/MethodHandlesProxiesTest.java                                                                          generic-all
