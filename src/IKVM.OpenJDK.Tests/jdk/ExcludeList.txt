@@ -2271,6 +2271,8 @@ javax/sound/midi/Gervill/SoftTuning/NewSoftTuningPatch.java                     
 javax/sound/midi/Gervill/SoftTuning/NewSoftTuningPatchByteArray.java                                                    macosx-all
 javax/sound/midi/Gervill/SoftTuning/RealTimeTuning.java                                                                 macosx-all
 javax/sound/midi/MidiDeviceConnectors/TestAllDevices.java                                                               macosx-all
+javax/sound/midi/Sequencer/SeqStartRecording.java                                                                       generic-all
+javax/sound/midi/Sequencer/SeqRecordDoesNotCopy.java                                                                    generic-all
 javax/sound/sampled/AudioFormat/Matches_NOT_SPECIFIED.java                                                              macosx-all
 javax/sound/sampled/AudioFormat/PCM_FLOAT_support.java                                                                  macosx-all
 javax/sound/sampled/Clip/ClipSetPos.java                                                                                macosx-all
