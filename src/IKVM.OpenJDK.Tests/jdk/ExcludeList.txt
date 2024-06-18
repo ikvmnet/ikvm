@@ -1396,6 +1396,7 @@ java/net/URLClassLoader/closetest/GetResourceAsStream.java                      
 java/net/URLClassLoader/getresourceasstream/test.sh                                                                     generic-all
 java/net/URLClassLoader/sealing/CheckSealed.java                                                                        generic-all
 java/net/URLConnection/UNCTest.sh                                                                                       generic-all
+java/net/URLConnection/6212146/test.sh                                                                                  windows-i586
 java/net/URLPermission/OpenURL.java                                                                                     generic-all
 java/net/URLPermission/nstest/lookup.sh                                                                                 generic-all
 java/nio/Buffer/Chew.java                                                                                               generic-all
@@ -3245,6 +3246,7 @@ sun/net/sdp/sanity.sh                                                           
 
 sun/net/www/protocol/http/RetryUponTimeout.java                                                                         linux-all
 sun/nio/cs/TestCompoundTest.java                                                                                        linux-all
+sun/nio/cs/Test4200310.sh                                                                                               windows-i586
 
 sun/nio/ch/SelProvider.java                                                                                             linux-all,macosx-all
 
@@ -3280,6 +3282,7 @@ sun/security/pkcs11/KeyGenerator/DESParity.java                                 
 sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java                                                                  generic-all
 sun/security/pkcs11/KeyPairGenerator/TestDH2048.java                                                                    generic-all
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                                                                         generic-all
+sun/security/pkcs11/KeyStore/Basic.sh                                                                                   windows-i586
 sun/security/pkcs11/Mac/ReinitMac.java                                                                                  generic-all
 sun/security/pkcs11/Mac/MacKAT.java                                                                                     generic-all
 sun/security/pkcs11/Mac/MacSameTest.java                                                                                generic-all
@@ -3324,6 +3327,7 @@ sun/security/pkcs11/tls/TestLeadingZeroesP11.java                               
 sun/security/pkcs11/tls/TestMasterSecret.java                                                                           generic-all
 sun/security/pkcs11/tls/TestPRF.java                                                                                    generic-all
 sun/security/pkcs11/tls/TestPremaster.java                                                                              generic-all
+sun/security/pkcs11/KeyStore/Solaris.sh                                                                                 windows-i586
 
 # points NativePRNG at a specific file: our implementations don't support this
 sun/security/provider/SecureRandom/StrongSeedReader.java                                                                generic-all
