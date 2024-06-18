@@ -525,7 +525,6 @@ jobs:
           run = $run
           include = $include
           exclude = $exclude
-          include = $include
         } | ConvertTo-Json -Compress).Replace('"', "'") >> $env:GITHUB_OUTPUT
   test:
     needs:
