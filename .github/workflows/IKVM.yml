@@ -450,14 +450,6 @@ jobs:
           $run += @("IKVM.OpenJDK.Tests?TestPartition=$_")
         }
 
-        $include = @(
-          @{
-            "tfm" = "net8.0"
-            "sys" = "osx-arm64"
-            "run" = "IKVM.Tests"
-          }
-        )
-
         $exclude = @(
           @{
             "tfm" = "net472"
@@ -514,6 +506,19 @@ jobs:
             }
         }
 
+        $include = @(
+          @{
+            "run" = "IKVM.Tests"
+            "tfm" = "net8.0"
+            "sys" = "win-x86"
+          },
+          @{
+            "run" = "IKVM.Tests"
+            "tfm" = "net8.0"
+            "sys" = "osx-arm64"
+          }
+        )
+
         "matrix=" + (@{
           sys = $sys
           tfm = $tfm
@@ -530,7 +535,7 @@ jobs:
       matrix: ${{ fromJSON(needs.test-vars.outputs.matrix) }}
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"win-x86":["windows-2022"],"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-12"],"osx-arm64":["macos-14"]}')[matrix.sys] }}
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
@@ -575,17 +580,41 @@ jobs:
       if: runner.os == 'Linux'
       run: /usr/bin/Xvfb :99 & disown; echo DISPLAY=:99 >> $GITHUB_ENV
     - name: Setup .NET 6.0
+      if: matrix.sys != 'win-x86'
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.0.x
     - name: Setup .NET 7.0
+      if: matrix.sys != 'win-x86'
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 7.0.x
     - name: Setup .NET 8.0
+      if: matrix.sys != 'win-x86'
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+    - name: Setup .NET 6.0
+      if: matrix.sys == 'win-x86'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 6.0.x
+      env:
+        PROCESSOR_ARCHITECTURE: x86
+    - name: Setup .NET 7.0
+      if: matrix.sys == 'win-x86'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 7.0.x
+      env:
+        PROCESSOR_ARCHITECTURE: x86
+    - name: Setup .NET 8.0
+      if: matrix.sys == 'win-x86'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+      env:
+        PROCESSOR_ARCHITECTURE: x86
     - name: Setup WSL
       if: runner.os == 'Windows'
       uses: Vampire/setup-wsl@v3
@@ -650,6 +679,10 @@ jobs:
                 "--logger:trx"
                 # "--collect", "Code Coverage"
             )
+
+            if ($sys -eq "win-x86") {
+                $argl += @("-a", "x86")
+            }
             
             $runsettings = $(gi .\tests\$tst\$tfm\*.runsettings)
             if ($runsettings) {
