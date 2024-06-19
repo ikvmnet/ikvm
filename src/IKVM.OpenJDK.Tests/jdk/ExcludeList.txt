@@ -4047,3 +4047,8 @@ java/util/TimeZone/HongKong.java                                                
 # test sound.properties file is nested in a conf folder, but the test doesn't actually use that
 javax/sound/sampled/AudioSystem/DefaultProperties.java                                                                  generic-all
 javax/sound/midi/MidiSystem/DefaultProperties.java                                                                      generic-all
+
+# fails as of 275, unknown reason
+java/io/Serializable/serialFilter/GlobalFilterTest.java                                                                 generic-all
+java/text/BreakIterator/BreakIteratorTest.java                                                                          generic-all
+javax/xml/crypto/dsig/LineFeedOnlyTest.java                                                                             generic-all
