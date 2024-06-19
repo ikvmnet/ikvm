@@ -4043,3 +4043,7 @@ java/text/Format/NumberFormat/NumberRegression.java                             
 java/text/Format/NumberFormat/NumberTest.java                                                                           generic-all
 java/util/Calendar/JapaneseEraNameTest.java                                                                             generic-all
 java/util/TimeZone/HongKong.java                                                                                        generic-all
+
+# test sound.properties file is nested in a conf folder, but the test doesn't actually use that
+javax/sound/sampled/AudioSystem.java                                                                                    generic-all
+javax/sound/midi/MidiSystem/DefaultProperties.java                                                                      generic-all
