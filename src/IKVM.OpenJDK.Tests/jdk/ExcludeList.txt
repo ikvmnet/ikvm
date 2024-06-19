@@ -2521,6 +2521,8 @@ javax/swing/JViewport/6953396/bug6953396.java                                   
 javax/swing/JViewport/7107099/bug7107099.java                                                                           generic-all
 javax/swing/KeyboardManager/8013370/Test8013370.java                                                                    generic-all
 javax/swing/LookAndFeel/6474153/bug6474153.java                                                                         generic-all
+javax/swing/LookAndFeel/8145547/DemandGTK2.java                                                                         generic-all
+javax/swing/LookAndFeel/8145547/DemandGTK3.java                                                                         generic-all
 javax/swing/MultiUIDefaults/4300666/bug4300666.java                                                                     generic-all
 javax/swing/MultiUIDefaults/4331767/bug4331767.java                                                                     generic-all
 javax/swing/MultiUIDefaults/Test6860438.java                                                                            generic-all
@@ -4052,3 +4054,7 @@ javax/sound/midi/MidiSystem/DefaultProperties.java                              
 java/io/Serializable/serialFilter/GlobalFilterTest.java                                                                 generic-all
 java/text/BreakIterator/BreakIteratorTest.java                                                                          generic-all
 javax/xml/crypto/dsig/LineFeedOnlyTest.java                                                                             generic-all
+
+# doesn't run on CI/CD, but probably could be made to
+jdk/internal/platform/docker/TestDockerMemoryMetrics.java                                                               generic-all
+jdk/internal/platform/docker/TestUseContainerSupport.java                                                               generic-all
