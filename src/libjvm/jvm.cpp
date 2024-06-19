@@ -283,8 +283,14 @@ jint JNICALL JVM_GetLastErrorString(char* buf, int len)
     return (jint)os_lasterror(buf, len);
 }
 
-jint JNICALL JVM_ActiveProcessorCount() { 
+jint JNICALL JVM_ActiveProcessorCount()
+{
     return jvmii->JVM_ActiveProcessorCount();
+}
+
+jboolean JNICALL JVM_IsUseContainerSupport()
+{
+    return JNI_FALSE;
 }
 
 jclass JNICALL JVM_FindClassFromClass(JNIEnv* env, const char* name, jboolean init, jclass from)
