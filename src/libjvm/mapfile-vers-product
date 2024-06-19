@@ -183,7 +183,7 @@
                 _JVM_IsInterface
                 #_JVM_IsInterrupted
                 #_JVM_IsNaN
-                JVM_IsUseContainerSupport
+                _JVM_IsUseContainerSupport
                 #_JVM_IsPrimitiveClass
                 _JVM_IsSameClassPackage
                 #_JVM_IsSilentCompiler
