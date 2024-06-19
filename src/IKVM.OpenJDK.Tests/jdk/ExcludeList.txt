@@ -4045,5 +4045,5 @@ java/util/Calendar/JapaneseEraNameTest.java                                     
 java/util/TimeZone/HongKong.java                                                                                        generic-all
 
 # test sound.properties file is nested in a conf folder, but the test doesn't actually use that
-javax/sound/sampled/AudioSystem.java                                                                                    generic-all
+javax/sound/sampled/AudioSystem/DefaultProperties.java                                                                  generic-all
 javax/sound/midi/MidiSystem/DefaultProperties.java                                                                      generic-all
