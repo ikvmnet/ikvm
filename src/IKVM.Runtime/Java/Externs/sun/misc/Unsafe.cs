@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Threading;
 
+using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
 using IKVM.Runtime;
 
@@ -1673,22 +1674,46 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 var tw = RuntimeJavaType.FromClass(hostClass);
                 var cl = tw.GetClassLoader();
-                var cf = new ClassFile(JVM.Context, ClassReader.Read(data), "<Unknown>", cl.ClassFileParseOptions, cpPatches);
+                var cf = new ClassFile(JVM.Context, ReadClass(data), "<Unknown>", cl.ClassFileParseOptions, cpPatches);
+
+                // if this happens, the OpenJDK is probably trying to load an OpenJDK class file as a resource,
+                // make sure the build process includes the original class file as a resource in that case
                 if (cf.IKVMAssemblyAttribute != null)
-                {
-                    // if this happens, the OpenJDK is probably trying to load an OpenJDK class file as a resource,
-                    // make sure the build process includes the original class file as a resource in that case
                     throw new global::java.lang.ClassFormatError("Trying to define anonymous class based on stub class: " + cf.Name);
-                }
 
                 return cl.GetTypeWrapperFactory().DefineClassImpl(null, tw, cf, cl, hostClass.pd).ClassObject;
             }
-            catch (RetargetableJavaException x)
+            catch (RetargetableJavaException e)
             {
-                throw x.ToJava();
+                throw e.ToJava();
             }
 #endif
         }
+
+#if FIRST_PASS == false
+
+        /// <summary>
+        /// Attempts to read the class, handling exceptions.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        static ClassReader ReadClass(byte[] buffer)
+        {
+            try
+            {
+                return ClassReader.Read(buffer);
+            }
+            catch (InvalidClassMagicException)
+            {
+                throw new global::java.lang.ClassFormatError("Incompatible magic value");
+            }
+            catch (ByteCodeException e)
+            {
+                throw new global::java.lang.ClassFormatError(e.Message);
+            }
+        }
+
+#endif
 
         /// <summary>
         /// Implementation of native method 'allocateInstance'.

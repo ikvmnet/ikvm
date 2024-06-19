@@ -33,7 +33,7 @@ namespace IKVM.Runtime.Vfs
 
             var table = new VfsTable(context);
             table.AddMount(Path.Combine(ikvmHome, "assembly"), new VfsAssemblyDirectory(context));
-            table.AddMount(Path.Combine(ikvmHome, "lib", "security", "cacerts"), new VfsCacertsFile(context));
+            //table.AddMount(Path.Combine(ikvmHome, "lib", "security", "cacerts"), new VfsCacertsFile(context));
             return table;
 #endif
         }

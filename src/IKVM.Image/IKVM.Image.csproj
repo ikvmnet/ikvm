@@ -54,7 +54,6 @@
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\cmm\lcms\*.pf" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\cmm\%(Filename)%(Extension)" />
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\security\java.policy" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\java.policy" />
         <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\blacklisted.certs" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\blacklisted.certs" />
-        <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\cacerts" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\cacerts" />
         <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\policy\limited\local_policy.jar" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\policy\limited\local_policy.jar" />
         <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\policy\limited\US_export_policy.jar" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\policy\limited\US_export_policy.jar" />
         <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\policy\unlimited\local_policy.jar" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\policy\unlimited\local_policy.jar" />
@@ -109,13 +108,13 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GenerateCaCerts" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);$(OpenJdkDir)jdk\make\data\cacerts\**\*" Outputs="$(IntermediateOutputPath)cacerts">
-        <!--<Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+    <Target Name="GenerateCacerts" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);$(OpenJdkDir)jdk\make\data\cacerts\**\*" Outputs="$(IntermediateOutputPath)cacerts">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <Delete Files="$(IntermediateOutputPath)cacerts.tmp" />
-        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.generatecacerts.GenerateCacerts $(OpenJdkDir)jdk/make/data/cacerts/ $(CurrencyDataDst).tmp" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.generatecacerts.GenerateCacerts $(OpenJdkDir)jdk/make/data/cacerts/ $(IntermediateOutputPath)cacerts.tmp" />
         <Move SourceFiles="$(IntermediateOutputPath)cacerts.tmp" DestinationFiles="$(IntermediateOutputPath)cacerts" />
         <Touch Files="$(IntermediateOutputPath)cacerts" ForceTouch="true" AlwaysCreate="true" />
 
@@ -123,14 +122,14 @@
             <IkvmImageItem Include="$(IntermediateOutputPath)cacerts" ImagePath="lib\security\cacerts" TargetFramework="any" RuntimeIdentifier="any" />
             <FileWrites Include="$(IntermediateOutputPath)cacerts" />
             <FileWrites Include="$(IntermediateOutputPath)cacerts.tmp" />
-        </ItemGroup>-->
+        </ItemGroup>
     </Target>
 
     <PropertyGroup>
         <GenerateDependsOn>
             GenerateTZDB;
             GenerateCurrencyData;
-            GenerateCaCerts;
+            GenerateCacerts;
             $(GenerateDependsOn);
         </GenerateDependsOn>
     </PropertyGroup>

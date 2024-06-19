@@ -63,7 +63,7 @@
                 #_JVM_ConstantPoolGetSize
                 #_JVM_ConstantPoolGetStringAt
                 #_JVM_ConstantPoolGetUTF8At
-                #_JVM_CopySwapMemory
+                _JVM_CopySwapMemory
                 #_JVM_CountStackFrames
                 #_JVM_CurrentClassLoader
                 #_JVM_CurrentLoadedClass
@@ -183,6 +183,7 @@
                 _JVM_IsInterface
                 #_JVM_IsInterrupted
                 #_JVM_IsNaN
+                _JVM_IsUseContainerSupport
                 #_JVM_IsPrimitiveClass
                 _JVM_IsSameClassPackage
                 #_JVM_IsSilentCompiler

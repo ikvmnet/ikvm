@@ -70,16 +70,13 @@ namespace IKVM.Runtime
         internal sealed override void EmitCallvirt(CodeEmitter ilgen)
         {
             AssertLinked();
+
+            // callvirt isn't allowed on a value type
+            // (we don't need to check for a null reference, because we're always dealing with an unboxed value)
             if (DeclaringType.IsNonPrimitiveValueType)
-            {
-                // callvirt isn't allowed on a value type
-                // (we don't need to check for a null reference, because we're always dealing with an unboxed value)
                 CallImpl(ilgen);
-            }
             else
-            {
                 CallvirtImpl(ilgen);
-            }
         }
 
         protected virtual void CallvirtImpl(CodeEmitter ilgen)

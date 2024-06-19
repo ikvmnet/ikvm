@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace IKVM.Runtime.Accessors.Java.Lang
 {
@@ -15,6 +16,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         Type javaLangThreadGroup;
 
         FieldAccessor<object> current;
+        FieldAccessor<object, Thread> nativeThread;
         MethodAccessor<Func<object>> currentThread;
         MethodAccessor<Func<bool>> interrupted;
 
@@ -43,6 +45,12 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// </summary>
         /// <returns></returns>
         public object GetCurrent() => GetField(ref current, nameof(current)).GetValue();
+
+        /// <summary>
+        /// Gets the value of the 'nativeThread' field.
+        /// </summary>
+        /// <returns></returns>
+        public Thread GetNativeThread(object self) => GetField(ref nativeThread, nameof(nativeThread)).GetValue(self);
 
         /// <summary>
         /// Invokes the 'currentThread' method.

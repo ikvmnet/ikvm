@@ -19,7 +19,7 @@ on:
     - created
 
 env:
-  NATIVE_SDK_VERSION: "20240606.1"
+  NATIVE_SDK_VERSION: "20240614.1"
 
 jobs:
   build-openjdk:
@@ -548,9 +548,9 @@ jobs:
         mkdir $dir\temp
         mkdir $dir\dotnet
         mkdir $dir\work
-        Add-Content $env:GITHUB_ENV "`nWORKPATH=$dir\work"
-        Add-Content $env:GITHUB_ENV "`nTMP=$dir\temp`nTEMP=$dir\temp`nTMPDIR=$dir\temp"
-        Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir\dotnet"
+        Add-Content $env:GITHUB_ENV "`nWORKPATH=$dir\work`n"
+        Add-Content $env:GITHUB_ENV "`nTMP=$dir\temp`nTEMP=$dir\temp`nTMPDIR=$dir\temp`n"
+        Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir\dotnet`n"
     - name: Set Paths (Linux/OS X)
       if: runner.os == 'Linux' || runner.os == 'macOS'
       shell: pwsh
@@ -560,9 +560,9 @@ jobs:
         mkdir $dir/temp
         mkdir $dir/dotnet
         mkdir $dir/work
-        Add-Content $env:GITHUB_ENV "`nWORKPATH=$dir/work"
-        Add-Content $env:GITHUB_ENV "`nTMP=$dir/temp`nTEMP=$dir/temp`nTMPDIR=$dir/temp"
-        Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir/dotnet"
+        Add-Content $env:GITHUB_ENV "`nWORKPATH=$dir/work`n"
+        Add-Content $env:GITHUB_ENV "`nTMP=$dir/temp`nTEMP=$dir/temp`nTMPDIR=$dir/temp`n"
+        Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir/dotnet`n"
     - name: Install ProcDump
       if: runner.os == 'Windows'
       shell: pwsh
@@ -571,6 +571,9 @@ jobs:
       if: runner.os == 'Windows'
       shell: pwsh
       run: choco install vcredist-all -y
+    - name: Start XVFB (Linux)
+      if: runner.os == 'Linux'
+      run: /usr/bin/Xvfb :99 & disown; echo DISPLAY=:99 >> $GITHUB_ENV
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v4
       with:
@@ -613,14 +616,9 @@ jobs:
       shell: pwsh
       run: ri tests--${{ steps.test-name.outputs.result }}.tar.gz
       working-directory: ${{ env.WORKPATH }}
-    - name: Start XVFB (Linux)
-      if: runner.os == 'Linux'
-      run: /usr/bin/Xvfb :99 & disown
     - name: Execute Tests
       timeout-minutes: 120
       shell: pwsh
-      env:
-        DISPLAY: ":99"
       run: |
         # assign powershell variables
         $run = "${{ matrix.run }}"
