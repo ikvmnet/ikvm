@@ -281,10 +281,10 @@ namespace IKVM.Tools.Importer
             }
             else
             {
-                Jar.Item itemRef;
-                if (classes.TryGetValue(name, out itemRef))
+                if (classes.TryGetValue(name, out var itemRef))
                 {
                     classes.Remove(name);
+
                     ClassFile f;
                     try
                     {
@@ -362,21 +362,12 @@ namespace IKVM.Tools.Importer
                     try
                     {
                         var tw = DefineClass(f, null);
-
-                        // we successfully created the type, so we don't need to include the class as a resource
-                        if (options.nojarstubs)
-                        {
-                            itemRef.Remove();
-                        }
-                        else
-                        {
-                            itemRef.MarkAsStub();
-                        }
+                        itemRef.Remove();
 
                         int pos = f.Name.LastIndexOf('.');
                         if (pos != -1)
                         {
-                            string manifestJar = options.IsClassesJar(itemRef.Jar) ? null : itemRef.Jar.Name;
+                            var manifestJar = options.IsClassesJar(itemRef.Jar) ? null : itemRef.Jar.Name;
                             packages.DefinePackage(f.Name.Substring(0, pos), manifestJar);
                         }
 
@@ -561,7 +552,7 @@ namespace IKVM.Tools.Importer
 
         void Save()
         {
-            ModuleBuilder mb = GetTypeWrapperFactory().ModuleBuilder;
+            var mb = GetTypeWrapperFactory().ModuleBuilder;
             if (targetIsModule)
             {
                 // HACK force all referenced assemblies to end up as references in the assembly
@@ -704,8 +695,7 @@ namespace IKVM.Tools.Importer
                         ccl.AddWildcardExports(exportedNamesPerAssembly);
                         foreach (var jar in ccl.options.jars)
                             foreach (var item in jar)
-                                if (item.IsStub == false)
-                                    AddExportMapEntry(exportedNamesPerAssembly, ccl, item.Name);
+                                AddExportMapEntry(exportedNamesPerAssembly, ccl, item.Name);
 
                         if (ccl.options.externalResources != null)
                             foreach (string name in ccl.options.externalResources.Keys)
@@ -747,62 +737,39 @@ namespace IKVM.Tools.Importer
 
             for (int i = 0; i < options.jars.Count; i++)
             {
-                var hasEntries = false;
-                var mem = new MemoryStream();
+                using var mem = new MemoryStream();
+                var notEmpty = false;
+
+                // write each item to the ZIP
                 using (var zip = new ZipArchive(mem, ZipArchiveMode.Create))
                 {
-                    var stubs = new List<string>();
-                    foreach (Jar.Item item in options.jars[i])
+                    foreach (var item in options.jars[i])
                     {
-                        if (item.IsStub)
+                        var data = item.GetData();
+                        if (data != null)
                         {
-                            // we don't want stub class pseudo resources for classes loaded from the file system
-                            if (i != options.classesJar)
-                                stubs.Add(item.Name);
-
-                            continue;
+                            var zipEntry = zip.CreateEntry(item.Name, options.compressedResources ? CompressionLevel.Optimal : CompressionLevel.NoCompression);
+                            using Stream stream = zipEntry.Open();
+                            stream.Write(data, 0, data.Length);
+                            notEmpty = true;
                         }
-                        var zipEntry = zip.CreateEntry(item.Name, options.compressedResources ? CompressionLevel.Optimal : CompressionLevel.NoCompression);
-
-                        byte[] data = item.GetData();
-
-                        using Stream stream = zipEntry.Open();
-                        stream.Write(data, 0, data.Length);
-
-                        hasEntries = true;
-                    }
-
-                    if (stubs.Count != 0)
-                    {
-                        // generate the --ikvm-classes-- file in the jar
-                        var zipEntry = zip.CreateEntry(JVM.Internal.JarClassList);
-
-                        using Stream stream = zipEntry.Open();
-                        using BinaryWriter bw = new BinaryWriter(stream);
-
-                        bw.Write(stubs.Count);
-                        foreach (string classFile in stubs)
-                            bw.Write(classFile);
-
-                        hasEntries = true;
                     }
                 }
 
-                // don't include empty classes.jar
-                if (i != options.classesJar || hasEntries)
-                {
-                    mem = new MemoryStream(mem.ToArray());
-                    var name = options.jars[i].Name;
-                    if (options.targetIsModule)
-                        name = Path.GetFileNameWithoutExtension(name) + "-" + moduleBuilder.ModuleVersionId.ToString("N") + Path.GetExtension(name);
+                // if we're working on classes.jar, but it would be empty, exit
+                if (i == options.classesJar && notEmpty == false)
+                    continue;
 
-                    jarList.Add(name);
-                    moduleBuilder.DefineManifestResource(name, mem, ResourceAttributes.Public);
-                }
+                var name = options.jars[i].Name;
+                if (options.targetIsModule)
+                    name = Path.GetFileNameWithoutExtension(name) + "-" + moduleBuilder.ModuleVersionId.ToString("N") + Path.GetExtension(name);
+
+                jarList.Add(name);
+                moduleBuilder.DefineManifestResource(name, new MemoryStream(mem.ToArray()), ResourceAttributes.Public);
             }
         }
 
-        private static MethodAttributes MapMethodAccessModifiers(IKVM.Tools.Importer.MapXml.MapModifiers mod)
+        static MethodAttributes MapMethodAccessModifiers(IKVM.Tools.Importer.MapXml.MapModifiers mod)
         {
             const IKVM.Tools.Importer.MapXml.MapModifiers access = IKVM.Tools.Importer.MapXml.MapModifiers.Public | IKVM.Tools.Importer.MapXml.MapModifiers.Protected | IKVM.Tools.Importer.MapXml.MapModifiers.Private;
             switch (mod & access)
@@ -3303,15 +3270,6 @@ namespace IKVM.Tools.Importer
                 Jar.Items[Index] = new JarItem();
             }
 
-            internal void MarkAsStub()
-            {
-                Jar.Items[Index] = new JarItem(Jar.Items[Index].name, null, null);
-            }
-
-            internal bool IsStub
-            {
-                get { return Jar.Items[Index].data == null; }
-            }
         }
 
         internal struct JarEnumerator
@@ -3353,7 +3311,6 @@ namespace IKVM.Tools.Importer
         private Dictionary<string, int> jarMap = new Dictionary<string, int>();
         internal int classesJar = -1;
         internal int resourcesJar = -1;
-        internal bool nojarstubs;
         internal FileInfo path;
         internal FileInfo keyfile;
         internal string keycontainer;

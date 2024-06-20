@@ -287,7 +287,7 @@ namespace IKVM.Tools.Importer
             var desc = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyTitleAttribute>(asm);
             var copy = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyCopyrightAttribute>(asm);
             var info = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(asm);
-            return $"{desc.Title} ({info.InformationalVersion}){Environment.NewLine}{copy.Copyright}"; // TODO: Add domain once we get one {Environment.NewLine}http://www.ikvm.org/
+            return $"{desc.Title} ({info.InformationalVersion}){Environment.NewLine}{copy.Copyright}";
         }
 
         static void PrintHeader()
@@ -864,10 +864,6 @@ namespace IKVM.Tools.Importer
                         // we abuse -static to also enable support for NoRefEmit scenarios
                         options.codegenoptions |= CodeGenOptions.DisableDynamicBinding | CodeGenOptions.NoRefEmitHelpers;
                     }
-                    else if (s == "-nojarstubs")    // undocumented temporary option to mitigate risk
-                    {
-                        options.nojarstubs = true;
-                    }
                     else if (s.StartsWith("-assemblyattributes:", StringComparison.Ordinal))
                     {
                         ProcessAttributeAnnotationsClass(context, ref options.assemblyAttributeAnnotations, s.Substring(20));
@@ -893,6 +889,7 @@ namespace IKVM.Tools.Importer
                 {
                     fileNames.Add(s);
                 }
+
                 if (options.targetIsModule && options.sharedclassloader != null)
                 {
                     throw new FatalCompilerErrorException(Message.SharedClassLoaderCannotBeUsedOnModuleTarget);
@@ -940,7 +937,7 @@ namespace IKVM.Tools.Importer
         {
             try
             {
-                FileInfo fileInfo = new FileInfo(path);
+                var fileInfo = new FileInfo(path);
                 if (fileInfo.Directory == null)
                 {
                     // this happens with an incorrect unc path (e.g. "\\foo\bar")
@@ -967,9 +964,9 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private void ReadFiles(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, List<string> fileNames)
+        void ReadFiles(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, List<string> fileNames)
         {
-            foreach (string fileName in fileNames)
+            foreach (var fileName in fileNames)
             {
                 if (defaultAssemblyName == null)
                 {
@@ -984,18 +981,26 @@ namespace IKVM.Tools.Importer
                     }
                     catch (NotSupportedException)
                     {
+
                     }
                     catch (PathTooLongException)
                     {
+
                     }
                 }
+
                 string[] files = null;
                 try
                 {
-                    string path = Path.GetDirectoryName(fileName);
+                    var path = Path.GetDirectoryName(fileName);
                     files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(fileName));
                 }
-                catch { }
+                catch
+                {
+
+                }
+
+
                 if (files == null || files.Length == 0)
                 {
                     IssueMessage(compiler, Message.InputFileNotFound, fileName);
@@ -1016,10 +1021,11 @@ namespace IKVM.Tools.Importer
             {
                 str = str.Substring(0, str.Length - 1);
                 int count = str.Split('.').Length;
+
                 // NOTE this is the published algorithm for generating automatic build and revision numbers
                 // (see AssemblyVersionAttribute constructor docs), but it turns out that the revision
                 // number is off an hour (on my system)...
-                DateTime now = DateTime.Now;
+                var now = DateTime.Now;
                 int seconds = (int)(now.TimeOfDay.TotalSeconds / 2);
                 int days = (int)(now - new DateTime(2000, 1, 1)).TotalDays;
                 if (count == 3)
@@ -1072,7 +1078,8 @@ namespace IKVM.Tools.Importer
         static void ResolveReferences(StaticCompiler compiler, List<CompilerOptions> targets)
         {
             var cache = new Dictionary<string, IKVM.Reflection.Assembly>();
-            foreach (CompilerOptions target in targets)
+
+            foreach (var target in targets)
             {
                 if (target.unresolvedReferences != null)
                 {
@@ -1133,19 +1140,15 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private static void ArrayAppend<T>(ref T[] array, T element)
+        static void ArrayAppend<T>(ref T[] array, T element)
         {
             if (array == null)
-            {
                 array = new T[] { element };
-            }
             else
-            {
                 array = ArrayUtil.Concat(array, element);
-            }
         }
 
-        private static void ArrayAppend<T>(ref T[] array, T[] append)
+        static void ArrayAppend<T>(ref T[] array, T[] append)
         {
             if (array == null)
             {
@@ -1160,7 +1163,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private static byte[] ReadFromZip(ZipArchiveEntry ze)
+        static byte[] ReadFromZip(ZipArchiveEntry ze)
         {
             using MemoryStream ms = new MemoryStream();
 
@@ -1214,18 +1217,18 @@ namespace IKVM.Tools.Importer
             {
                 try
                 {
-                    bool stub;
-                    string name = ClassFile.GetClassName(data, 0, data.Length, out stub);
+                    var name = ClassFile.GetClassName(data, 0, data.Length, out var stub);
+
+                    // we use stubs to add references, but otherwise ignore them
                     if (options.IsExcludedClass(name) || (stub && EmitStubWarning(context, compiler, options, data)))
-                    {
-                        // we use stubs to add references, but otherwise ignore them
                         return true;
-                    }
                 }
                 catch (ClassFormatError)
                 {
+
                 }
             }
+
             return false;
         }
 
@@ -1237,6 +1240,7 @@ namespace IKVM.Tools.Importer
                 // TODO find out if we can use other information from manifest
                 using Stream stream = ze.Open();
                 using StreamReader rdr = new StreamReader(stream);
+
                 string line;
                 while ((line = rdr.ReadLine()) != null)
                 {
@@ -1244,11 +1248,9 @@ namespace IKVM.Tools.Importer
                     {
                         line = line.Substring(12);
                         string continuation;
-                        while ((continuation = rdr.ReadLine()) != null
-                            && continuation.StartsWith(" ", StringComparison.Ordinal))
-                        {
+                        while ((continuation = rdr.ReadLine()) != null && continuation.StartsWith(" ", StringComparison.Ordinal))
                             line += continuation.Substring(1);
-                        }
+
                         manifestMainClass = line.Replace('/', '.');
                         break;
                     }
@@ -1262,9 +1264,9 @@ namespace IKVM.Tools.Importer
             {
                 using ZipArchive zf = ZipFile.OpenRead(file);
 
-                bool found = false;
+                var found = false;
                 Jar jar = null;
-                foreach (ZipArchiveEntry ze in zf.Entries)
+                foreach (var ze in zf.Entries)
                 {
                     if (filter != null && !filter(ze))
                     {
@@ -1273,27 +1275,22 @@ namespace IKVM.Tools.Importer
                     else
                     {
                         found = true;
-                        byte[] data = ReadFromZip(ze);
+
+                        var data = ReadFromZip(ze);
                         if (IsExcludedOrStubLegacy(context, compiler, options, ze, data))
-                        {
                             continue;
-                        }
-                        if (jar == null)
-                        {
-                            jar = options.GetJar(file);
-                        }
+
+                        jar ??= options.GetJar(file);
                         jar.Add(ze.FullName, data);
                         if (string.Equals(ze.FullName, "META-INF/MANIFEST.MF", StringComparison.OrdinalIgnoreCase))
-                        {
                             ProcessManifest(compiler, options, ze);
-                        }
                     }
                 }
+
                 // include empty zip file
-                if (!found)
-                {
+                if (found == false)
                     options.GetJar(file);
-                }
+
                 return found;
             }
             catch (InvalidDataException x)
@@ -1304,7 +1301,7 @@ namespace IKVM.Tools.Importer
 
         void ProcessFile(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, DirectoryInfo baseDir, string file)
         {
-            FileInfo fileInfo = GetFileInfo(file);
+            var fileInfo = GetFileInfo(file);
             if (fileInfo.Extension.Equals(".jar", StringComparison.OrdinalIgnoreCase) || fileInfo.Extension.Equals(".zip", StringComparison.OrdinalIgnoreCase))
             {
                 ProcessZipFile(context, compiler, options, file, null);
@@ -1313,28 +1310,26 @@ namespace IKVM.Tools.Importer
             {
                 if (fileInfo.Extension.Equals(".class", StringComparison.OrdinalIgnoreCase))
                 {
-                    byte[] data = ReadAllBytes(fileInfo);
+                    var data = ReadAllBytes(fileInfo);
                     try
                     {
-                        bool stub;
-                        string name = ClassFile.GetClassName(data, 0, data.Length, out stub);
+                        var name = ClassFile.GetClassName(data, 0, data.Length, out var stub);
                         if (options.IsExcludedClass(name))
-                        {
                             return;
-                        }
+
+                        // we use stubs to add references, but otherwise ignore them
                         if (stub && EmitStubWarning(context, compiler, options, data))
-                        {
-                            // we use stubs to add references, but otherwise ignore them
                             return;
-                        }
+
                         options.GetClassesJar().Add(name.Replace('.', '/') + ".class", data, fileInfo);
                         return;
                     }
-                    catch (ClassFormatError x)
+                    catch (ClassFormatError e)
                     {
-                        IssueMessage(compiler, Message.ClassFormatError, file, x.Message);
+                        IssueMessage(compiler, Message.ClassFormatError, file, e.Message);
                     }
                 }
+
                 if (baseDir == null)
                 {
                     IssueMessage(compiler, Message.UnknownFileType, file);
@@ -1353,22 +1348,24 @@ namespace IKVM.Tools.Importer
 
         bool Recurse(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, DirectoryInfo baseDir, DirectoryInfo dir, string spec)
         {
-            bool found = false;
-            foreach (FileInfo file in dir.GetFiles(spec))
+            var found = false;
+
+            foreach (var file in dir.GetFiles(spec))
             {
                 found = true;
                 ProcessFile(context, compiler, options, baseDir, file.FullName);
             }
-            foreach (DirectoryInfo sub in dir.GetDirectories())
-            {
+
+            foreach (var sub in dir.GetDirectories())
                 found |= Recurse(context, compiler, options, baseDir, sub, spec);
-            }
+
             return found;
         }
 
         bool RecurseJar(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, string path)
         {
-            string file = "";
+            var file = "";
+
             for (; ; )
             {
                 file = Path.Combine(Path.GetFileName(path), file);
@@ -1379,21 +1376,21 @@ namespace IKVM.Tools.Importer
                 }
                 else if (File.Exists(path))
                 {
-                    string pathFilter = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
-                    string fileFilter = "^" + Regex.Escape(Path.GetFileName(file)).Replace("\\*", ".*").Replace("\\?", ".") + "$";
+                    var pathFilter = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
+                    var fileFilter = "^" + Regex.Escape(Path.GetFileName(file)).Replace("\\*", ".*").Replace("\\?", ".") + "$";
+
                     return ProcessZipFile(context, compiler, options, path, delegate (ZipArchiveEntry ze)
                     {
                         // MONOBUG Path.GetDirectoryName() doesn't normalize / to \ on Windows
-                        string name = ze.FullName.Replace('/', Path.DirectorySeparatorChar);
-                        return (Path.GetDirectoryName(name) + Path.DirectorySeparatorChar).StartsWith(pathFilter)
-                            && Regex.IsMatch(Path.GetFileName(ze.FullName), fileFilter);
+                        var name = ze.FullName.Replace('/', Path.DirectorySeparatorChar);
+                        return (Path.GetDirectoryName(name) + Path.DirectorySeparatorChar).StartsWith(pathFilter) && Regex.IsMatch(Path.GetFileName(ze.FullName), fileFilter);
                     });
                 }
             }
         }
 
         //This processes an exclusion file with a single regular expression per line
-        private static void ProcessExclusionFile(ref string[] classesToExclude, string filename)
+        static void ProcessExclusionFile(ref string[] classesToExclude, string filename)
         {
             try
             {
