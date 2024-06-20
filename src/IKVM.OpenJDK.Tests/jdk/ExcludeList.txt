@@ -238,10 +238,11 @@ java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java             
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java                                                       generic-all
 java/awt/Desktop/8064934/bug8064934.java                                                                                generic-all
 java/awt/event/MouseWheelEvent/WheelModifier/WheelModifier.java                                                         generic-all
+java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java                                                       macosx-all
 java/awt/Focus/8073453/AWTFocusTransitionTest.java                                                                      generic-all
 java/awt/Focus/8073453/SwingFocusTransitionTest.java                                                                    generic-all
 java/awt/Focus/FocusTransitionTest/FocusTransitionTest.java                                                             generic-all
-java/awt/Focus/RollbackFocusFromAnotherWindowTest/RollbackFocusFromAnotherWindowTest.java                               macosx-all
+java/awt/Focus/RollbackFocusFromAnotherWindowTest/RollbackFocusFromAnotherWindowTest.java                               generic-all
 java/awt/FontClass/DebugFonts.java                                                                                      generic-all
 java/awt/FullScreen/MultimonFullscreenTest/MultimonDeadlockTest.java                                                    generic-all
 java/awt/GraphicsEnvironment/TestDetectHeadless/TestDetectHeadless.sh                                                   generic-all
@@ -1890,10 +1891,16 @@ javax/crypto/sanity/CheckManifestForRelease.java                                
 javax/imageio/metadata/BooleanAttributes.java                                                                           macosx-all
 javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatTest.sh                                                       generic-all
 javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatThreadTest.sh                                                 generic-all
+javax/imageio/plugins/bmp/TestCompressionBI_BITFIELDS.java                                                              macosx-all
 javax/imageio/plugins/bmp/BMPSubsamplingTest.java                                                                       macosx-all
+javax/imageio/plugins/png/WriteProgressive.java                                                                         macosx-all
+javax/imageio/plugins/wbmp/ValidWbmpTest.java                                                                           macosx-all
+javax/imageio/AppletResourceTest.java                                                                                   macosx-all
 javax/imageio/plugins/bmp/TopDownTest.java                                                                              macosx-all
 javax/imageio/plugins/gif/EncodeSubImageTest.java                                                                       macosx-all
 javax/imageio/plugins/gif/GifTransparencyTest.java                                                                      macosx-all
+javax/imageio/plugins/gif/AnimationTest.java                                                                            macosx-all
+javax/imageio/plugins/gif/RGBAnimationTest.java                                                                         macosx-all
 javax/imageio/plugins/jpeg/ConcurrentReadingTest.java                                                                   macosx-all
 javax/imageio/plugins/jpeg/ConcurrentWritingTest.java                                                                   macosx-all
 javax/imageio/plugins/jpeg/JpegWriterLeakTest.java                                                                      generic-all
@@ -1904,6 +1911,7 @@ javax/imageio/plugins/png/ITXtTest.java                                         
 javax/imageio/plugins/png/ShortHistogramTest.java                                                                       macosx-all
 javax/imageio/plugins/shared/BitDepth.java                                                                              macosx-all
 javax/imageio/plugins/shared/WriteAfterAbort.java                                                                       macosx-all
+javax/imageio/plugins/bmp/BmpDefaultImageMetadataTest.java                                                              macosx-all
 javax/imageio/stream/StreamCloserLeak/run_test.sh                                                                       generic-all
 javax/imageio/spi/AppletContextTest/BadPluginConfigurationTest.sh                                                       generic-all
 javax/imageio/stream/DeleteOnExitTest.sh                                                                                generic-all
@@ -2018,6 +2026,8 @@ javax/security/auth/login/LoginContext/DefaultHandler.java                      
 javax/security/auth/login/LoginContext/ResetConfigModule.java                                                           generic-all
 javax/sound/midi/Devices/InitializationHang.java                                                                        generic-all
 javax/sound/midi/File/SMPTESequence.java                                                                                macosx-all
+javax/sound/midi/Synthesizer/bug4685396.java                                                                            linux-all
+javax/sound/midi/Sequencer/SeqRecordsRealTimeEvents.java                                                                linux-all
 javax/sound/midi/Gervill/AudioFloatConverter/GetFormat.java                                                             macosx-all
 javax/sound/midi/Gervill/AudioFloatConverter/ToFloatArray.java                                                          macosx-all
 javax/sound/midi/Gervill/AudioFloatFormatConverter/SkipTest.java                                                        macosx-all
@@ -2503,6 +2513,7 @@ javax/swing/JTextArea/7049024/bug7049024.java                                   
 javax/swing/JTextArea/Test6593649.java                                                                                  generic-all
 javax/swing/JTextArea/TextViewOOM/TextViewOOM.java                                                                      generic-all
 javax/swing/JTextField/8036819/bug8036819.java                                                                          generic-all
+javax/swing/JTextField/I18NViewNoWrapMinSpan/I18NViewNoWrapMinSpan.java                                                 macosx-all
 javax/swing/JToolBar/4247996/bug4247996.java                                                                            generic-all
 javax/swing/JToolTip/4846413/bug4846413.java                                                                            generic-all
 javax/swing/JTree/4314199/bug4314199.java                                                                               generic-all
@@ -2742,6 +2753,7 @@ sun/awt/image/ImageWatched/AddNoLeak.java                                       
 sun/awt/image/ImagingLib/SamePackingTypeTest.java                                                                       generic-all
 sun/awt/image/bug8038000.java                                                                                           generic-all
 sun/java2d/AcceleratedXORModeTest.java                                                                                  generic-all
+sun/java2d/marlin/CrashNaNTest.java                                                                                     macosx-all
 sun/java2d/DirectX/AccelPaintsTest/AccelPaintsTest.java                                                                 generic-all
 sun/java2d/DirectX/AcceleratedScaleTest/AcceleratedScaleTest.java                                                       generic-all
 sun/java2d/DirectX/DrawBitmaskToSurfaceTest.java                                                                        generic-all
@@ -3407,6 +3419,8 @@ com/sun/crypto/provider/Cipher/Blowfish/BlowfishTestVector.java                 
 com/sun/crypto/provider/Cipher/CTR/CounterMode.java                                                                     macosx-all
 com/sun/net/httpserver/bugs/B6393710.java                                                                               macosx-all
 java/awt/FontClass/HelvLtOblTest.java                                                                                   macosx-all
+java/awt/FontClass/FontSize1Test.java                                                                                   macosx-all
+java/awt/image/DrawImage/SimpleManagedImage.java                                                                        macosx-all
 java/net/DatagramPacket/ReuseBuf.java                                                                                   macosx-all
 java/net/DatagramSocket/PortUnreachable.java                                                                            macosx-all
 java/net/DatagramSocket/Send12k.java                                                                                    macosx-all
