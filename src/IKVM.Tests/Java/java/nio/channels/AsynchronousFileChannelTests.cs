@@ -541,6 +541,10 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public void CanCancelDuringWrite()
         {
+            // we allocate too much memory here
+            if (Environment.Is64BitProcess == false)
+                return;
+            
             var rng = RandomNumberGenerator.Create();
             var rnd = new System.Random();
 
