@@ -16,6 +16,7 @@
     <ItemGroup>
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\java\util\zip" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\util\zip\*.c" />
+        <Compile Remove="$(OpenJdkDir)jdk\src\share\native\java\util\zip\ZipFile.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="strdup" Value="_strdup" />
