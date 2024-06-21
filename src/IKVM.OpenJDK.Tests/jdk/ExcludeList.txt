@@ -3340,9 +3340,9 @@ sun/security/pkcs11/KeyAgreement/UnsupportedDHKeys.java                         
 sun/security/pkcs11/KeyGenerator/DESParity.java                                                                         generic-all
 sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java                                                                  generic-all
 sun/security/pkcs11/KeyPairGenerator/TestDH2048.java                                                                    generic-all
-sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                                                                         generic-all
 sun/security/pkcs11/KeyStore/Basic.sh                                                                                   windows-i586
-sun/security/pkcs11/Mac/ReinitMac.java                                                                                  generic-all
+sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                                                                         generic-all
+sun/security/pkcs11/KeyStore/Solaris.sh                                                                                 windows-i586
 sun/security/pkcs11/Mac/MacKAT.java                                                                                     generic-all
 sun/security/pkcs11/Mac/MacSameTest.java                                                                                generic-all
 sun/security/pkcs11/Mac/ReinitMac.java                                                                                  generic-all
@@ -3387,7 +3387,6 @@ sun/security/pkcs11/tls/TestLeadingZeroesP11.java                               
 sun/security/pkcs11/tls/TestMasterSecret.java                                                                           generic-all
 sun/security/pkcs11/tls/TestPRF.java                                                                                    generic-all
 sun/security/pkcs11/tls/TestPremaster.java                                                                              generic-all
-sun/security/pkcs11/KeyStore/Solaris.sh                                                                                 windows-i586
 
 # points NativePRNG at a specific file: our implementations don't support this
 sun/security/provider/SecureRandom/StrongSeedReader.java                                                                generic-all
@@ -3499,15 +3498,15 @@ java/util/prefs/RemoveReadOnlyNode.java                                         
 java/util/prefs/RemoveUnregedListener.java                                                                              macosx-all
 jdk/net/Sockets/SupportedOptions.java                                                                                   macosx-all
 sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java                                        macosx-all
-sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
-sun/security/krb5/auto/TicketSName.java                                                                                 macosx-all
-sun/security/krb5/auto/ForwardableCheck.java                                                                            macosx-all
-sun/security/krb5/auto/RefreshKrb5Config.java                                                                           macosx-all
-sun/security/krb5/auto/principalProperty/PrincipalSystemPropTest.java                                                   macosx-all
-sun/security/krb5/auto/BogusKDC.java                                                                                    macosx-all
-sun/security/krb5/auto/KrbTicket.java                                                                                   macosx-all
-sun/security/krb5/auto/UnboundSSL.java                                                                                  macosx-all
 sun/nio/ch/TestMaxCachedBufferSize.java                                                                                 macosx-all
+sun/security/krb5/auto/BogusKDC.java                                                                                    macosx-all
+sun/security/krb5/auto/ForwardableCheck.java                                                                            macosx-all
+sun/security/krb5/auto/KrbTicket.java                                                                                   macosx-all
+sun/security/krb5/auto/MSOID2.java                                                                                      macosx-all
+sun/security/krb5/auto/RefreshKrb5Config.java                                                                           macosx-all
+sun/security/krb5/auto/TicketSName.java                                                                                 macosx-all
+sun/security/krb5/auto/UnboundSSL.java                                                                                  macosx-all
+sun/security/krb5/auto/principalProperty/PrincipalSystemPropTest.java                                                   macosx-all
 
 # Windows-PRNG SecureRandom
 java/security/SecureRandom/DefaultProvider.java                                                                         generic-all
