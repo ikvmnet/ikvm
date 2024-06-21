@@ -255,6 +255,7 @@ java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java             
 java/awt/Component/UpdatingBootTime/UpdatingBootTime.java                                                               generic-all
 java/awt/Component/isLightweightCrash/IsLightweightCrash.java                                                           generic-all
 java/awt/Component/isLightweightCrash/StubPeerCrash.java                                                                generic-all
+java/awt/ComponentOrientation/BorderTest.java                                                                           macosx-all
 java/awt/ComponentOrientation/WindowTest.java                                                                           macosx-all
 java/awt/Container/CheckZOrderChange/CheckZOrderChange.java                                                             generic-all
 java/awt/Container/ContainerAIOOBE/ContainerAIOOBE.java                                                                 generic-all
@@ -371,6 +372,7 @@ java/awt/FontClass/LCDScale.java                                                
 java/awt/FontClass/SurrogateTest/SuppCharTest.java                                                                      generic-all
 java/awt/FontClass/SurrogateTest/SupplementaryCanDisplayUpToTest.java                                                   generic-all
 java/awt/FontClass/X11FontPathCrashTest.java                                                                            generic-all
+java/awt/FontMetrics/SpaceAdvance.java                                                                                  macosx-all
 java/awt/FontMetrics/StyledSpaceAdvance.java                                                                            generic-all
 java/awt/Frame/7024749/bug7024749.java                                                                                  generic-all
 java/awt/Frame/DisposeStressTest/DisposeStressTest.html                                                                 generic-all
@@ -581,6 +583,7 @@ java/awt/TextField/SelectionInvisibleTest/SelectionInvisibleTest.java           
 java/awt/TextField/SelectionVisible/SelectionVisible.java                                                               generic-all
 java/awt/Toolkit/AutoShutdown/ShowExitTest/ShowExitTest.sh                                                              generic-all
 java/awt/Toolkit/BadDisplayTest/BadDisplayTest.java                                                                     generic-all
+java/awt/Toolkit/DisplayChangesException/DisplayChangesException.java                                                   macosx-all
 java/awt/Toolkit/DynamicLayout/bug7172833.java                                                                          generic-all
 java/awt/Toolkit/GetImage/bug8078165.java                                                                               generic-all
 java/awt/Toolkit/Headless/AWTEventListener/AWTListener.java                                                             generic-all
@@ -661,6 +664,7 @@ java/awt/datatransfer/HTMLDataFlavors/PutSelectionAndFragmentHtmlFlavorsOnClipbo
 java/awt/datatransfer/MappingGenerationTest/MappingGenerationTest.java                                                  generic-all
 java/awt/dnd/AcceptDropMultipleTimes/AcceptDropMultipleTimes.java                                                       generic-all
 java/awt/dnd/BadSerializaionTest/BadSerializationTest.java                                                              generic-all
+java/awt/dnd/BadSerializationTest/BadSerializationTest.java                                                             macosx-all
 java/awt/dnd/Button2DragTest/Button2DragTest.html                                                                       generic-all
 java/awt/dnd/DisposeFrameOnDragCrash/DisposeFrameOnDragTest.java                                                        generic-all
 java/awt/dnd/DnDFileGroupDescriptor/DnDFileGroupDescriptor.java                                                         generic-all
@@ -761,6 +765,7 @@ java/awt/font/NumericShaper/EasternArabicTest.java                              
 java/awt/font/NumericShaper/EqualsTest.java                                                                             generic-all
 java/awt/font/NumericShaper/MTTest.java                                                                                 generic-all
 java/awt/font/NumericShaper/ShapingTest.java                                                                            generic-all
+java/awt/font/Rotate/RotatedFontMetricsTest.java                                                                        macosx-all
 java/awt/font/Rotate/Shear.java                                                                                         generic-all
 java/awt/font/Rotate/TestTransform.java                                                                                 generic-all
 java/awt/font/Rotate/TranslatedOutlineTest.java                                                                         generic-all
@@ -1411,8 +1416,8 @@ java/net/URLClassLoader/closetest/CloseTest.java                                
 java/net/URLClassLoader/closetest/GetResourceAsStream.java                                                              generic-all
 java/net/URLClassLoader/getresourceasstream/test.sh                                                                     generic-all
 java/net/URLClassLoader/sealing/CheckSealed.java                                                                        generic-all
-java/net/URLConnection/UNCTest.sh                                                                                       generic-all
 java/net/URLConnection/6212146/test.sh                                                                                  windows-i586
+java/net/URLConnection/UNCTest.sh                                                                                       generic-all
 java/net/URLPermission/OpenURL.java                                                                                     generic-all
 java/net/URLPermission/nstest/lookup.sh                                                                                 generic-all
 java/nio/Buffer/Chew.java                                                                                               generic-all
@@ -1900,12 +1905,17 @@ javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatThreadTest.sh         
 javax/imageio/plugins/bmp/BMPSubsamplingTest.java                                                                       macosx-all
 javax/imageio/plugins/bmp/BMPWriteParamTest.java                                                                        macosx-all
 javax/imageio/plugins/bmp/BmpDefaultImageMetadataTest.java                                                              macosx-all
+javax/imageio/plugins/bmp/ReaderListenersTest.java                                                                      macosx-all
 javax/imageio/plugins/bmp/TestCompressionBI_BITFIELDS.java                                                              macosx-all
 javax/imageio/plugins/bmp/TopDownTest.java                                                                              macosx-all
+javax/imageio/plugins/bmp/Write3ByteBgrTest.java                                                                        macosx-all
 javax/imageio/plugins/gif/AnimationTest.java                                                                            macosx-all
 javax/imageio/plugins/gif/EncodeSubImageTest.java                                                                       macosx-all
 javax/imageio/plugins/gif/GifTransparencyTest.java                                                                      macosx-all
 javax/imageio/plugins/gif/RGBAnimationTest.java                                                                         macosx-all
+javax/imageio/plugins/gif/UshortOutOfMemoryTest.java                                                                    macosx-all
+javax/imageio/plugins/gif/WriterReuseTest.java                                                                          macosx-all
+javax/imageio/plugins/jpeg/ByteBinaryTest.java                                                                          macosx-all
 javax/imageio/plugins/jpeg/CompressionBug.java                                                                          macosx-all
 javax/imageio/plugins/jpeg/ConcurrentReadingTest.java                                                                   macosx-all
 javax/imageio/plugins/jpeg/ConcurrentWritingTest.java                                                                   macosx-all
@@ -2807,6 +2817,7 @@ sun/java2d/cmm/ProfileOp/SetDataTest.java                                       
 sun/java2d/loops/Bug7049339.java                                                                                        generic-all
 sun/java2d/loops/RenderToCustomBufferTest.java                                                                          generic-all
 sun/java2d/marlin/CrashNaNTest.java                                                                                     macosx-all
+sun/java2d/marlin/TextClipErrorTest.java                                                                                macosx-all
 sun/java2d/pipe/InterpolationQualityTest.java                                                                           generic-all
 sun/java2d/pipe/MutableColorTest/MutableColorTest.java                                                                  generic-all
 sun/java2d/pipe/RegionOps.java                                                                                          generic-all
