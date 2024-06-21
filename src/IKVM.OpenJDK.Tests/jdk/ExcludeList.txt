@@ -4086,3 +4086,4 @@ javax/xml/crypto/dsig/LineFeedOnlyTest.java                                     
 jdk/internal/platform/docker/TestDockerMemoryMetrics.java                                                               generic-all
 jdk/internal/platform/docker/TestUseContainerSupport.java                                                               generic-all
 jdk/internal/platform/docker/TestDockerCpuMetrics.java                                                                  generic-all
+jdk/internal/platform/docker/TestSystemMetrics.java                                                                     generic-all
