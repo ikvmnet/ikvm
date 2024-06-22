@@ -1894,6 +1894,7 @@ java/util/zip/ZipFile/DeleteTempJar.java                                        
 java/util/zip/ZipFile/FinalizeZipFile.java                                                                              generic-all
 javax/accessibility/6986385/bug6986385.java                                                                             generic-all
 javax/accessibility/8069268/bug8069268.java                                                                             generic-all
+javax/accessibility/AccessibleName/GetAccessibleNameTest.java                                                           macosx-all
 javax/accessibility/JList/AccessibleJListChildNPETest.java                                                              generic-all
 javax/crypto/JceSecurity/SunJCE_BC_LoadOrdering.java                                                                    generic-all
 javax/crypto/SecretKeyFactory/FailOverTest.sh                                                                           generic-all
@@ -1912,7 +1913,11 @@ javax/imageio/plugins/bmp/Write3ByteBgrTest.java                                
 javax/imageio/plugins/gif/AnimationTest.java                                                                            macosx-all
 javax/imageio/plugins/gif/EncodeSubImageTest.java                                                                       macosx-all
 javax/imageio/plugins/gif/GifTransparencyTest.java                                                                      macosx-all
+javax/imageio/plugins/gif/IndexingTest.java                                                                             macosx-all
+javax/imageio/plugins/gif/LogicalScreenDimensionTest.java                                                               macosx-all
+javax/imageio/plugins/gif/OddPaletteTest.java                                                                           macosx-all
 javax/imageio/plugins/gif/RGBAnimationTest.java                                                                         macosx-all
+javax/imageio/plugins/gif/RGBImageTest.java                                                                             macosx-all
 javax/imageio/plugins/gif/UshortOutOfMemoryTest.java                                                                    macosx-all
 javax/imageio/plugins/gif/WriterReuseTest.java                                                                          macosx-all
 javax/imageio/plugins/jpeg/ByteBinaryTest.java                                                                          macosx-all
@@ -1924,6 +1929,7 @@ javax/imageio/plugins/jpeg/ReadAsGrayTest.java                                  
 javax/imageio/plugins/jpeg/ReadingInterruptionTest.java                                                                 macosx-all
 javax/imageio/plugins/jpeg/WritingInterruptionTest.java                                                                 macosx-all
 javax/imageio/plugins/png/ITXtTest.java                                                                                 macosx-all
+javax/imageio/plugins/png/PngPremultAlphaTest.java                                                                      macosx-all
 javax/imageio/plugins/png/ShortHistogramTest.java                                                                       macosx-all
 javax/imageio/plugins/png/WriteProgressive.java                                                                         macosx-all
 javax/imageio/plugins/shared/BitDepth.java                                                                              macosx-all
@@ -2539,6 +2545,7 @@ javax/swing/JToolBar/4247996/bug4247996.java                                    
 javax/swing/JToolTip/4846413/bug4846413.java                                                                            generic-all
 javax/swing/JTree/4314199/bug4314199.java                                                                               generic-all
 javax/swing/JTree/4330357/bug4330357.java                                                                               generic-all
+javax/swing/JTree/4633594/JTreeFocusTest.java                                                                           macosx-all
 javax/swing/JTree/4908142/bug4908142.java                                                                               generic-all
 javax/swing/JTree/4927934/bug4927934.java                                                                               generic-all
 javax/swing/JTree/6263446/bug6263446.java                                                                               generic-all
@@ -2679,6 +2686,7 @@ javax/swing/text/html/HTMLEditorKit/4242228/bug4242228.java                     
 javax/swing/text/html/HTMLEditorKit/5043626/bug5043626.java                                                             generic-all
 javax/swing/text/html/TableView/7030332/bug7030332.java                                                                 generic-all
 javax/swing/text/html/Test4783068.java                                                                                  generic-all
+javax/swing/text/html/TestJLabelWithHTMLText.java                                                                       macosx-all
 javax/swing/text/html/parser/Parser/6836089/bug6836089.java                                                             generic-all
 javax/swing/text/html/parser/Parser/6990651/bug6990651.java                                                             generic-all
 javax/swing/text/html/parser/Parser/7003777/bug7003777.java                                                             generic-all
