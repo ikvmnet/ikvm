@@ -376,6 +376,7 @@ java/awt/FontClass/X11FontPathCrashTest.java                                    
 java/awt/FontMetrics/SpaceAdvance.java                                                                                  macosx-all
 java/awt/FontMetrics/StyledSpaceAdvance.java                                                                            generic-all
 java/awt/Frame/7024749/bug7024749.java                                                                                  generic-all
+java/awt/Frame/DecoratedExceptions/DecoratedExceptions.java                                                             macosx-all
 java/awt/Frame/DisposeStressTest/DisposeStressTest.html                                                                 generic-all
 java/awt/Frame/DynamicLayout/DynamicLayout.java                                                                         generic-all
 java/awt/Frame/ExceptionOnSetExtendedStateTest/ExceptionOnSetExtendedStateTest.java                                     generic-all
@@ -776,6 +777,7 @@ java/awt/font/TextLayout/AttributeValuesCastTest.java                           
 java/awt/font/TextLayout/CombiningPerf.java                                                                             generic-all
 java/awt/font/TextLayout/DecorationBoundsTest.java                                                                      generic-all
 java/awt/font/TextLayout/DiacriticsDrawingTest.java                                                                     generic-all
+java/awt/font/TextLayout/HebrewIsRTLTest.java                                                                           macosx-all
 java/awt/font/TextLayout/KernCrash.java                                                                                 generic-all
 java/awt/font/TextLayout/KerningLeak.java                                                                               generic-all
 java/awt/font/TextLayout/NegativeGlyphIDException.java                                                                  macosx-all
@@ -825,6 +827,7 @@ java/awt/image/DrawImage/IncorrectOffset.java                                   
 java/awt/image/DrawImage/IncorrectSourceOffset.java                                                                     generic-all
 java/awt/image/DrawImage/IncorrectUnmanagedImageRotatedClip.java                                                        generic-all
 java/awt/image/DrawImage/IncorrectUnmanagedImageSourceOffset.java                                                       generic-all
+java/awt/image/DrawImage/SimpleUnmanagedImage.java                                                                      macosx-all
 java/awt/image/DrawImage/UnmanagedDrawImagePerformance.java                                                             generic-all
 java/awt/image/GetDataElementsTest.java                                                                                 generic-all
 java/awt/image/GetSamplesTest.java                                                                                      generic-all
@@ -1899,6 +1902,7 @@ javax/accessibility/6986385/bug6986385.java                                     
 javax/accessibility/8069268/bug8069268.java                                                                             generic-all
 javax/accessibility/AccessibleName/GetAccessibleNameTest.java                                                           macosx-all
 javax/accessibility/JList/AccessibleJListChildNPETest.java                                                              generic-all
+javax/accessibility/SlowPanelIteration/SlowPanelIteration.java                                                          macosx-all
 javax/crypto/JceSecurity/SunJCE_BC_LoadOrdering.java                                                                    generic-all
 javax/crypto/SecretKeyFactory/FailOverTest.sh                                                                           generic-all
 javax/crypto/sanity/CheckManifestForRelease.java                                                                        generic-all
@@ -1908,7 +1912,9 @@ javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatTest.sh               
 javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatThreadTest.sh                                                 generic-all
 javax/imageio/plugins/bmp/BMPSubsamplingTest.java                                                                       macosx-all
 javax/imageio/plugins/bmp/BMPWriteParamTest.java                                                                        macosx-all
+javax/imageio/plugins/bmp/BmpBigDestinationTest.java                                                                    macosx-all
 javax/imageio/plugins/bmp/BmpDefaultImageMetadataTest.java                                                              macosx-all
+javax/imageio/plugins/bmp/EmbeddedFormatTest.java                                                                       macosx-all
 javax/imageio/plugins/bmp/ReaderListenersTest.java                                                                      macosx-all
 javax/imageio/plugins/bmp/TestCompressionBI_BITFIELDS.java                                                              macosx-all
 javax/imageio/plugins/bmp/TopDownTest.java                                                                              macosx-all
@@ -2684,6 +2690,7 @@ javax/swing/text/WrappedPlainView/6857057/bug6857057.java                       
 javax/swing/text/html/7189299/bug7189299.java                                                                           generic-all
 javax/swing/text/html/8005391/bug8005391.java                                                                           generic-all
 javax/swing/text/html/8034955/bug8034955.java                                                                           generic-all
+javax/swing/text/html/8218674/TooltipImageTest.java                                                                     macosx-all
 javax/swing/text/html/CSS/4530474/bug4530474.java                                                                       generic-all
 javax/swing/text/html/HRuleView/Test5062055.java                                                                        generic-all
 javax/swing/text/html/HTMLDocument/8058120/bug8058120.java                                                              generic-all
@@ -3014,6 +3021,7 @@ sun/security/mscapi/SignUsingSHA2withRSA.sh                                     
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                                                                         generic-all
 sun/security/pkcs11/Provider/ConfigQuotedString.sh                                                                      generic-all
 sun/security/pkcs11/Provider/Login.sh                                                                                   generic-all
+sun/security/pkcs11/Secmod/TestNssDbSqlite.java                                                                         macosx-all
 sun/security/pkcs11/fips/TestTLS12.java                                                                                 linux-all
 sun/security/provider/DSA/TestAlgParameterGenerator.java                                                                generic-all
 sun/security/provider/KeyStore/DKSTest.sh                                                                               generic-all
