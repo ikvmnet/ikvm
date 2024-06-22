@@ -1921,6 +1921,7 @@ javax/imageio/plugins/bmp/BmpBigDestinationTest.java                            
 javax/imageio/plugins/bmp/BmpDefaultImageMetadataTest.java                                                              macosx-all
 javax/imageio/plugins/bmp/EmbeddedFormatTest.java                                                                       macosx-all
 javax/imageio/plugins/bmp/ReaderListenersTest.java                                                                      macosx-all
+javax/imageio/plugins/bmp/RleEncodingTest.java                                                                          macosx-all
 javax/imageio/plugins/bmp/TestCompressionBI_BITFIELDS.java                                                              macosx-all
 javax/imageio/plugins/bmp/TopDownTest.java                                                                              macosx-all
 javax/imageio/plugins/bmp/Write3ByteBgrTest.java                                                                        macosx-all
@@ -1940,6 +1941,7 @@ javax/imageio/plugins/jpeg/ByteBinaryTest.java                                  
 javax/imageio/plugins/jpeg/CompressionBug.java                                                                          macosx-all
 javax/imageio/plugins/jpeg/ConcurrentReadingTest.java                                                                   macosx-all
 javax/imageio/plugins/jpeg/ConcurrentWritingTest.java                                                                   macosx-all
+javax/imageio/plugins/jpeg/JPEGsNotAcceleratedTest.java                                                                 macosx-all
 javax/imageio/plugins/jpeg/JpegWriterLeakTest.java                                                                      generic-all
 javax/imageio/plugins/jpeg/ReadAsGrayTest.java                                                                          linux-all,macosx-all
 javax/imageio/plugins/jpeg/ReadingInterruptionTest.java                                                                 macosx-all
