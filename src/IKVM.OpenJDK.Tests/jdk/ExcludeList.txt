@@ -3012,6 +3012,7 @@ sun/security/mscapi/SignUsingSHA2withRSA.sh                                     
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                                                                         generic-all
 sun/security/pkcs11/Provider/ConfigQuotedString.sh                                                                      generic-all
 sun/security/pkcs11/Provider/Login.sh                                                                                   generic-all
+sun/security/pkcs11/fips/TestTLS12.java                                                                                 linux-all
 sun/security/provider/DSA/TestAlgParameterGenerator.java                                                                generic-all
 sun/security/provider/KeyStore/DKSTest.sh                                                                               generic-all
 sun/security/provider/KeyStore/WrongPassword.java                                                                       generic-all
