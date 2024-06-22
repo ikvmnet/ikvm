@@ -259,6 +259,7 @@ java/awt/Component/UpdatingBootTime/UpdatingBootTime.java                       
 java/awt/Component/isLightweightCrash/IsLightweightCrash.java                                                           generic-all
 java/awt/Component/isLightweightCrash/StubPeerCrash.java                                                                generic-all
 java/awt/ComponentOrientation/BorderTest.java                                                                           macosx-all
+java/awt/ComponentOrientation/FlowTest.java                                                                             macosx-all
 java/awt/ComponentOrientation/WindowTest.java                                                                           macosx-all
 java/awt/Container/CheckZOrderChange/CheckZOrderChange.java                                                             generic-all
 java/awt/Container/ContainerAIOOBE/ContainerAIOOBE.java                                                                 generic-all
@@ -1913,6 +1914,7 @@ javax/imageio/AppletResourceTest.java                                           
 javax/imageio/metadata/BooleanAttributes.java                                                                           macosx-all
 javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatTest.sh                                                       generic-all
 javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatThreadTest.sh                                                 generic-all
+javax/imageio/plugins/bmp/BMPPluginTest.java                                                                            macosx-all
 javax/imageio/plugins/bmp/BMPSubsamplingTest.java                                                                       macosx-all
 javax/imageio/plugins/bmp/BMPWriteParamTest.java                                                                        macosx-all
 javax/imageio/plugins/bmp/BmpBigDestinationTest.java                                                                    macosx-all
@@ -1949,6 +1951,7 @@ javax/imageio/plugins/png/WriteProgressive.java                                 
 javax/imageio/plugins/shared/BitDepth.java                                                                              macosx-all
 javax/imageio/plugins/shared/WriteAfterAbort.java                                                                       macosx-all
 javax/imageio/plugins/wbmp/ValidWbmpTest.java                                                                           macosx-all
+javax/imageio/plugins/wbmp/WbmpBigDestinationTest.java                                                                  macosx-all
 javax/imageio/plugins/wbmp/WbmpDefaultImageMetadataTest.java                                                            macosx-all
 javax/imageio/spi/AppletContextTest/BadPluginConfigurationTest.sh                                                       generic-all
 javax/imageio/stream/DeleteOnExitTest.sh                                                                                generic-all
