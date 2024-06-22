@@ -233,8 +233,10 @@ demo/zipfs/ZFSTests.java                                                        
 demo/zipfs/ZipFSPermissionsTest.java                                                                                    generic-all
 demo/zipfs/basic.sh                                                                                                     generic-all
 java/awt/AlphaComposite/TestAlphaCompositeForNaN.java                                                                   generic-all
+java/awt/BasicStroke/DashOffset.java                                                                                    macosx-all
 java/awt/BasicStroke/DashScaleMinWidth.java                                                                             macosx-all
 java/awt/BasicStroke/DashStrokeTest.java                                                                                generic-all
+java/awt/BasicStroke/DashZeroWidth.java                                                                                 macosx-all
 java/awt/Checkbox/SetStateExcessEvent/SetStateExcessEvent.java                                                          generic-all
 java/awt/Choice/ChoiceKeyEventReaction/ChoiceKeyEventReaction.html                                                      generic-all
 java/awt/Choice/ChoiceLocationTest/ChoiceLocationTest.java                                                              generic-all
@@ -823,6 +825,7 @@ java/awt/image/DrawImage/IncorrectClipSurface2SW.java                           
 java/awt/image/DrawImage/IncorrectClipXorModeSW2Surface.java                                                            generic-all
 java/awt/image/DrawImage/IncorrectClipXorModeSurface2Surface.java                                                       generic-all
 java/awt/image/DrawImage/IncorrectDestinationOffset.java                                                                generic-all
+java/awt/image/DrawImage/IncorrectManagedImageSourceOffset.java                                                         macosx-all
 java/awt/image/DrawImage/IncorrectOffset.java                                                                           generic-all
 java/awt/image/DrawImage/IncorrectSourceOffset.java                                                                     generic-all
 java/awt/image/DrawImage/IncorrectUnmanagedImageRotatedClip.java                                                        generic-all
@@ -2837,6 +2840,7 @@ sun/java2d/cmm/ProfileOp/SetDataTest.java                                       
 sun/java2d/loops/Bug7049339.java                                                                                        generic-all
 sun/java2d/loops/RenderToCustomBufferTest.java                                                                          generic-all
 sun/java2d/marlin/CrashNaNTest.java                                                                                     macosx-all
+sun/java2d/marlin/CrashPaintTest.java                                                                                   macosx-all
 sun/java2d/marlin/TextClipErrorTest.java                                                                                macosx-all
 sun/java2d/pipe/InterpolationQualityTest.java                                                                           generic-all
 sun/java2d/pipe/MutableColorTest/MutableColorTest.java                                                                  generic-all
