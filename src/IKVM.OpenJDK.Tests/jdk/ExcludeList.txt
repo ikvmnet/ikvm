@@ -230,6 +230,7 @@ demo/jvmti/mtrace/TraceJFrame.java                                              
 demo/jvmti/versionCheck/FailsWhenJvmtiVersionDiffers.java                                                               generic-all
 demo/jvmti/waiters/WaitersTest.java                                                                                     generic-all
 demo/zipfs/ZFSTests.java                                                                                                generic-all
+demo/zipfs/ZipFSPermissionsTest.java                                                                                    generic-all
 demo/zipfs/basic.sh                                                                                                     generic-all
 java/awt/AlphaComposite/TestAlphaCompositeForNaN.java                                                                   generic-all
 java/awt/BasicStroke/DashScaleMinWidth.java                                                                             macosx-all
@@ -416,6 +417,7 @@ java/awt/FullScreen/UninitializedDisplayModeChangeTest/UninitializedDisplayModeC
 java/awt/GradientPaint/GradientTransformTest.java                                                                       generic-all
 java/awt/GradientPaint/LinearColorSpaceGradientTest.java                                                                generic-all
 java/awt/Graphics/DrawImageBG/SystemBgColorTest.java                                                                    generic-all
+java/awt/Graphics/DrawLineTest.java                                                                                     macosx-all
 java/awt/Graphics/LCDTextAndGraphicsState.java                                                                          generic-all
 java/awt/Graphics/LineClipTest.java                                                                                     generic-all
 java/awt/Graphics/TextAAHintsTest.java                                                                                  generic-all
@@ -1919,6 +1921,7 @@ javax/imageio/plugins/gif/OddPaletteTest.java                                   
 javax/imageio/plugins/gif/RGBAnimationTest.java                                                                         macosx-all
 javax/imageio/plugins/gif/RGBImageTest.java                                                                             macosx-all
 javax/imageio/plugins/gif/UshortOutOfMemoryTest.java                                                                    macosx-all
+javax/imageio/plugins/gif/WriterResetTest.java                                                                          macosx-all
 javax/imageio/plugins/gif/WriterReuseTest.java                                                                          macosx-all
 javax/imageio/plugins/jpeg/ByteBinaryTest.java                                                                          macosx-all
 javax/imageio/plugins/jpeg/CompressionBug.java                                                                          macosx-all
@@ -2545,7 +2548,7 @@ javax/swing/JToolBar/4247996/bug4247996.java                                    
 javax/swing/JToolTip/4846413/bug4846413.java                                                                            generic-all
 javax/swing/JTree/4314199/bug4314199.java                                                                               generic-all
 javax/swing/JTree/4330357/bug4330357.java                                                                               generic-all
-javax/swing/JTree/4633594/JTreeFocusTest.java                                                                           macosx-all
+javax/swing/JTree/4633594/JTreeFocusTest.java                                                                           linux-all,macosx-all
 javax/swing/JTree/4908142/bug4908142.java                                                                               generic-all
 javax/swing/JTree/4927934/bug4927934.java                                                                               generic-all
 javax/swing/JTree/6263446/bug6263446.java                                                                               generic-all
