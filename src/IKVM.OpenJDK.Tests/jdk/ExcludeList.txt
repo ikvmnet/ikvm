@@ -1919,6 +1919,7 @@ javax/imageio/plugins/bmp/BMPSubsamplingTest.java                               
 javax/imageio/plugins/bmp/BMPWriteParamTest.java                                                                        macosx-all
 javax/imageio/plugins/bmp/BmpBigDestinationTest.java                                                                    macosx-all
 javax/imageio/plugins/bmp/BmpDefaultImageMetadataTest.java                                                              macosx-all
+javax/imageio/plugins/bmp/CompressionModeTest.java                                                                      macosx-all
 javax/imageio/plugins/bmp/EmbeddedFormatTest.java                                                                       macosx-all
 javax/imageio/plugins/bmp/ReaderListenersTest.java                                                                      macosx-all
 javax/imageio/plugins/bmp/RleEncodingTest.java                                                                          macosx-all
