@@ -783,6 +783,7 @@ java/awt/font/TextLayout/DiacriticsDrawingTest.java                             
 java/awt/font/TextLayout/HebrewIsRTLTest.java                                                                           macosx-all
 java/awt/font/TextLayout/KernCrash.java                                                                                 generic-all
 java/awt/font/TextLayout/KerningLeak.java                                                                               generic-all
+java/awt/font/TextLayout/HangulShapingTest.java                                                                         macosx-all
 java/awt/font/TextLayout/NegativeGlyphIDException.java                                                                  macosx-all
 java/awt/font/TextLayout/OSXLigatureTest.java                                                                           macosx-all
 java/awt/font/TextLayout/TestAATMorxFont.java                                                                           generic-all
