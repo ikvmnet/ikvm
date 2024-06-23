@@ -348,6 +348,7 @@ java/awt/Focus/NoAutotransferToDisabledCompTest/NoAutotransferToDisabledCompTest
 java/awt/Focus/NonFocusableResizableTooSmall/NonFocusableResizableTooSmall.java                                         generic-all
 java/awt/Focus/NonFocusableWindowTest/NoEventsTest.java                                                                 generic-all
 java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java                                                        generic-all
+java/awt/Focus/NullActiveWindowOnFocusLost/NullActiveWindowOnFocusLost.java                                             macosx-all
 java/awt/Focus/OwnedWindowFocusIMECrashTest/OwnedWindowFocusIMECrashTest.java                                           generic-all
 java/awt/Focus/RemoveAfterRequest/RemoveAfterRequest.java                                                               generic-all
 java/awt/Focus/RequestFocusAndHideTest/RequestFocusAndHideTest.java                                                     generic-all
@@ -373,6 +374,7 @@ java/awt/FontClass/DebugFonts.java                                              
 java/awt/FontClass/FontAccess.java                                                                                      generic-all
 java/awt/FontClass/FontPrivilege.java                                                                                   generic-all
 java/awt/FontClass/LCDScale.java                                                                                        generic-all
+java/awt/FontClass/MassiveMetricsTest.java                                                                              macosx-all
 java/awt/FontClass/SurrogateTest/SuppCharTest.java                                                                      generic-all
 java/awt/FontClass/SurrogateTest/SupplementaryCanDisplayUpToTest.java                                                   generic-all
 java/awt/FontClass/X11FontPathCrashTest.java                                                                            generic-all
@@ -780,10 +782,10 @@ java/awt/font/TextLayout/AttributeValuesCastTest.java                           
 java/awt/font/TextLayout/CombiningPerf.java                                                                             generic-all
 java/awt/font/TextLayout/DecorationBoundsTest.java                                                                      generic-all
 java/awt/font/TextLayout/DiacriticsDrawingTest.java                                                                     generic-all
+java/awt/font/TextLayout/HangulShapingTest.java                                                                         macosx-all
 java/awt/font/TextLayout/HebrewIsRTLTest.java                                                                           macosx-all
 java/awt/font/TextLayout/KernCrash.java                                                                                 generic-all
 java/awt/font/TextLayout/KerningLeak.java                                                                               generic-all
-java/awt/font/TextLayout/HangulShapingTest.java                                                                         macosx-all
 java/awt/font/TextLayout/NegativeGlyphIDException.java                                                                  macosx-all
 java/awt/font/TextLayout/OSXLigatureTest.java                                                                           macosx-all
 java/awt/font/TextLayout/TestAATMorxFont.java                                                                           generic-all
@@ -1915,6 +1917,7 @@ javax/imageio/AppletResourceTest.java                                           
 javax/imageio/metadata/BooleanAttributes.java                                                                           macosx-all
 javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatTest.sh                                                       generic-all
 javax/imageio/metadata/IIOMetadataFormat/runMetadataFormatThreadTest.sh                                                 generic-all
+javax/imageio/plugins/bmp/BMPCompressionTest.java                                                                       macosx-all
 javax/imageio/plugins/bmp/BMPPluginTest.java                                                                            macosx-all
 javax/imageio/plugins/bmp/BMPSubsamplingTest.java                                                                       macosx-all
 javax/imageio/plugins/bmp/BMPWriteParamTest.java                                                                        macosx-all
@@ -1922,9 +1925,10 @@ javax/imageio/plugins/bmp/BmpBigDestinationTest.java                            
 javax/imageio/plugins/bmp/BmpDefaultImageMetadataTest.java                                                              macosx-all
 javax/imageio/plugins/bmp/CompressionModeTest.java                                                                      macosx-all
 javax/imageio/plugins/bmp/EmbeddedFormatTest.java                                                                       macosx-all
+javax/imageio/plugins/bmp/NoExtraBytesTest.java                                                                         macosx-all
+javax/imageio/plugins/bmp/RLECompressionTest.java                                                                       macosx-all
 javax/imageio/plugins/bmp/ReaderListenersTest.java                                                                      macosx-all
 javax/imageio/plugins/bmp/RleEncodingTest.java                                                                          macosx-all
-javax/imageio/plugins/bmp/RLECompressionTest.java                                                                       macosx-all
 javax/imageio/plugins/bmp/TestCompressionBI_BITFIELDS.java                                                              macosx-all
 javax/imageio/plugins/bmp/TopDownTest.java                                                                              macosx-all
 javax/imageio/plugins/bmp/Write3ByteBgrTest.java                                                                        macosx-all
@@ -1958,6 +1962,7 @@ javax/imageio/plugins/png/WriteProgressive.java                                 
 javax/imageio/plugins/shared/BitDepth.java                                                                              macosx-all
 javax/imageio/plugins/shared/WriteAfterAbort.java                                                                       macosx-all
 javax/imageio/plugins/wbmp/ValidWbmpTest.java                                                                           macosx-all
+javax/imageio/plugins/wbmp/WBMPPluginTest.java                                                                          macosx-all
 javax/imageio/plugins/wbmp/WbmpBigDestinationTest.java                                                                  macosx-all
 javax/imageio/plugins/wbmp/WbmpDefaultImageMetadataTest.java                                                            macosx-all
 javax/imageio/spi/AppletContextTest/BadPluginConfigurationTest.sh                                                       generic-all
