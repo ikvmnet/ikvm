@@ -1924,9 +1924,11 @@ javax/imageio/plugins/bmp/CompressionModeTest.java                              
 javax/imageio/plugins/bmp/EmbeddedFormatTest.java                                                                       macosx-all
 javax/imageio/plugins/bmp/ReaderListenersTest.java                                                                      macosx-all
 javax/imageio/plugins/bmp/RleEncodingTest.java                                                                          macosx-all
+javax/imageio/plugins/bmp/RLECompressionTest.java                                                                       macosx-all
 javax/imageio/plugins/bmp/TestCompressionBI_BITFIELDS.java                                                              macosx-all
 javax/imageio/plugins/bmp/TopDownTest.java                                                                              macosx-all
 javax/imageio/plugins/bmp/Write3ByteBgrTest.java                                                                        macosx-all
+javax/imageio/plugins/bmp/WritingColorChangeTest.java                                                                   macosx-all
 javax/imageio/plugins/gif/AnimationTest.java                                                                            macosx-all
 javax/imageio/plugins/gif/EncodeSubImageTest.java                                                                       macosx-all
 javax/imageio/plugins/gif/GifTransparencyTest.java                                                                      macosx-all
@@ -1943,6 +1945,7 @@ javax/imageio/plugins/jpeg/ByteBinaryTest.java                                  
 javax/imageio/plugins/jpeg/CompressionBug.java                                                                          macosx-all
 javax/imageio/plugins/jpeg/ConcurrentReadingTest.java                                                                   macosx-all
 javax/imageio/plugins/jpeg/ConcurrentWritingTest.java                                                                   macosx-all
+javax/imageio/plugins/jpeg/DestTypeTest.java                                                                            macosx-all
 javax/imageio/plugins/jpeg/JPEGsNotAcceleratedTest.java                                                                 macosx-all
 javax/imageio/plugins/jpeg/JpegWriterLeakTest.java                                                                      generic-all
 javax/imageio/plugins/jpeg/ReadAsGrayTest.java                                                                          linux-all,macosx-all
@@ -2715,6 +2718,7 @@ javax/swing/text/html/parser/Parser/7003777/bug7003777.java                     
 javax/swing/text/html/parser/Parser/7011777/bug7011777.java                                                             generic-all
 javax/swing/text/html/parser/Parser/7165725/bug7165725.java                                                             generic-all
 javax/swing/text/html/parser/Parser/8028616/bug8028616.java                                                             generic-all
+javax/swing/text/html/parser/Parser/8078268/bug8078268.java                                                             macosx-all
 javax/swing/text/html/parser/Parser/HtmlCommentTagParseTest/HtmlCommentTagParseTest.java                                generic-all
 javax/swing/text/html/parser/Test8017492.java                                                                           generic-all
 javax/swing/tree/DefaultTreeCellRenderer/7142955/bug7142955.java                                                        generic-all
