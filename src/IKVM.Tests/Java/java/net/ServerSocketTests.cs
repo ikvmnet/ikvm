@@ -20,7 +20,7 @@ namespace IKVM.Tests.Java.java.net
         /// <summary>
         /// Accepts connections.
         /// </summary>
-        class EchoSocketServer : global::java.lang.Thread
+        class EchoSocketServerThread : global::java.lang.Thread
         {
 
             int port;
@@ -37,50 +37,48 @@ namespace IKVM.Tests.Java.java.net
             /// </summary>
             /// <param name="port"></param>
             /// <param name="onLine"></param>
-            public EchoSocketServer(int port)
+            public EchoSocketServerThread(int port)
             {
                 this.port = port;
             }
 
-            /// <summary>
-            /// Starts the server.
-            /// </summary>
             public void Start()
             {
-                serverSocket = new ServerSocket(port);
+                serverSocket = new ServerSocket(port, 1, InetAddress.getLocalHost());
                 port = serverSocket.getLocalPort();
                 serverSocket.setSoTimeout(15000);
+                running = true;
                 base.start();
             }
 
             public void Stop()
             {
                 running = false;
+                serverSocket.close();
                 base.interrupt();
             }
 
             public override void run()
             {
-                try
+                while (running)
                 {
-                    running = true;
-
-                    while (running)
+                    try
                     {
-                        new ClientHandler(serverSocket.accept()).start();
+                        new EchoSocketClientThread(serverSocket.accept()).start();
+                    }
+                    catch (SocketTimeoutException)
+                    {
+
                     }
                 }
-                finally
-                {
-                    serverSocket.close();
-                }
             }
+
         }
 
         /// <summary>
         /// Handles a single client.
         /// </summary>
-        class ClientHandler : global::java.lang.Thread
+        class EchoSocketClientThread : global::java.lang.Thread
         {
 
             readonly global::java.net.Socket socket;
@@ -90,7 +88,7 @@ namespace IKVM.Tests.Java.java.net
             /// </summary>
             /// <param name="socket"></param>
             /// <param name="onLine"></param>
-            public ClientHandler(global::java.net.Socket socket)
+            public EchoSocketClientThread(global::java.net.Socket socket)
             {
                 this.socket = socket ?? throw new ArgumentNullException(nameof(socket));
             }
@@ -100,19 +98,15 @@ namespace IKVM.Tests.Java.java.net
                 var rdr = new global::java.io.BufferedReader(new global::java.io.InputStreamReader(socket.getInputStream()));
                 var wrt = new global::java.io.PrintWriter(socket.getOutputStream());
 
-                wrt.println("HELLO");
-                wrt.flush();
-
-                var line = rdr.readLine();
-                while (line != null && line.Length > 0)
+                do
                 {
-                    wrt.println("RECEIVED " + line);
-                    wrt.flush();
-                    line = rdr.readLine();
-                }
+                    var line = rdr.readLine();
+                    if (line == null || line.Length == 0)
+                        break;
 
-                wrt.println("GOODBYE");
-                wrt.flush();
+                    wrt.println(line);
+                    wrt.flush();
+                } while (true);
 
                 rdr.close();
                 wrt.close();
@@ -125,10 +119,10 @@ namespace IKVM.Tests.Java.java.net
         {
             var l = new List<string>();
 
-            var server = new EchoSocketServer(0);
+            var server = new EchoSocketServerThread(0);
             server.Start();
 
-            var socket = new Socket("localhost", server.Port);
+            var socket = new Socket(InetAddress.getLocalHost(), server.Port);
             socket.setSoTimeout(15000);
             var wrt = new PrintStream(socket.getOutputStream());
             var rdr = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -137,14 +131,23 @@ namespace IKVM.Tests.Java.java.net
             wrt.println("MESSAGEA");
             wrt.println("MESSAGEB");
             wrt.println("MESSAGEC");
-            wrt.println("");
+            wrt.println();
+            wrt.flush();
 
-            // read responses
-            var line = rdr.readLine();
-            while (line != null)
+            try
             {
-                l.Add(line);
-                line = rdr.readLine();
+                do
+                {
+                    var line = rdr.readLine();
+                    if (line == null || line.Length == 0)
+                        break;
+
+                    l.Add(line);
+                } while (true);
+            }
+            catch (SocketTimeoutException)
+            {
+
             }
 
             rdr.close();
@@ -152,12 +155,10 @@ namespace IKVM.Tests.Java.java.net
             socket.close();
             server.Stop();
 
-            l.Should().HaveCount(5);
-            l[0].Should().Be("HELLO");
-            l[1].Should().Be("RECEIVED MESSAGEA");
-            l[2].Should().Be("RECEIVED MESSAGEB");
-            l[3].Should().Be("RECEIVED MESSAGEC");
-            l[4].Should().Be("GOODBYE");
+            l.Should().HaveCount(3);
+            l[0].Should().Be("MESSAGEA");
+            l[1].Should().Be("MESSAGEB");
+            l[2].Should().Be("MESSAGEC");
         }
 
         [TestMethod]
