@@ -25,7 +25,7 @@ namespace IKVM.Tests.Java.java.net
 
             int port;
             global::java.net.ServerSocket serverSocket;
-            bool running = false;
+            volatile bool running = false;
 
             /// <summary>
             /// Gets the current port.
@@ -46,7 +46,7 @@ namespace IKVM.Tests.Java.java.net
             {
                 serverSocket = new ServerSocket(port, 1, InetAddress.getLocalHost());
                 port = serverSocket.getLocalPort();
-                serverSocket.setSoTimeout(15000);
+                serverSocket.setSoTimeout(1000);
                 running = true;
                 base.start();
             }
