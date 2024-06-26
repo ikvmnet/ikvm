@@ -390,7 +390,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             rp.setTestJavaOptions(java.util.Collections.emptyList());
             rp.setFile((java.io.File)wd.getFile("config.jti"));
             rp.setEnvVars(GetEnvVars(debugUri));
-            rp.setConcurrency(Environment.ProcessorCount);
+            rp.setConcurrency(options.Concurrency > 0 ? options.Concurrency : Environment.ProcessorCount);
             rp.setTimeoutFactor(options.TimeoutFactor);
             rp.setRetainArgs(java.util.Collections.singletonList("all"));
             rp.setExcludeLists(excludeFileList.ToArray());
