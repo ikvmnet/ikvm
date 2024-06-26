@@ -17,6 +17,7 @@ namespace IKVM.JTReg.TestAdapter
         const string JTRegConfigurationElementName = "JTRegConfiguration";
         const string PartitionCountElementName = "PartitionCount";
         const string TimeoutFactorElementName = "TimeoutFactor";
+        const string ConcurrencyElementName = "Concurrency";
         const string ExcludeListFilesElementName = "ExcludeListFile";
         const string AdditionalExcludeListFilesElementName = "AdditionalExcludeListFile";
         const string IncludeListFilesElementName = "IncludeListFile";
@@ -38,6 +39,9 @@ namespace IKVM.JTReg.TestAdapter
 
                 if ((float?)x.Element(TimeoutFactorElementName) is float timeoutFactor)
                     o.TimeoutFactor = timeoutFactor;
+
+                if ((int?)x.Element(ConcurrencyElementName) is int concurrency)
+                    o.Concurrency = concurrency;
 
                 var excludeListFilesElements = x.Elements(ExcludeListFilesElementName);
                 if (excludeListFilesElements != null && excludeListFilesElements.Any())

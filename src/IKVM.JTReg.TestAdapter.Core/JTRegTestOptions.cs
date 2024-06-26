@@ -19,6 +19,11 @@ namespace IKVM.JTReg.TestAdapter.Core
         public float TimeoutFactor { get; set; } = 1.0f;
 
         /// <summary>
+        /// Gets or sets the number of concurrent tests to execute.
+        /// </summary>
+        public int Concurrency { get; set; } = 0;
+
+        /// <summary>
         /// Set of relative or absolute file names to add as exclude lists.
         /// </summary>
         public List<string> ExcludeListFiles { get; } = new List<string>()
