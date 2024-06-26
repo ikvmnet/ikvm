@@ -60,17 +60,26 @@ namespace IKVM.Tests.Java.java.net
 
             public override void run()
             {
-                while (running)
+                try
                 {
-                    try
+                    while (running)
                     {
-                        new EchoSocketClientThread(serverSocket.accept()).start();
-                    }
-                    catch (SocketTimeoutException)
-                    {
+                            try
+                            {
+                                new EchoSocketClientThread(serverSocket.accept()).start();
+                            }
+                            catch (SocketTimeoutException)
+                            {
 
+                            }
                     }
                 }
+                catch (System.Exception e)
+                {
+                    global::java.lang.System.err.println(e);
+                }
+
+                global::java.lang.System.@out.println("EchoSocketServerThread exited");
             }
 
         }
@@ -111,7 +120,10 @@ namespace IKVM.Tests.Java.java.net
                 rdr.close();
                 wrt.close();
                 socket.close();
+
+                global::java.lang.System.@out.println("EchoSocketClientThread exited");
             }
+
         }
 
         [TestMethod]
@@ -154,6 +166,7 @@ namespace IKVM.Tests.Java.java.net
             wrt.close();
             socket.close();
             server.Stop();
+            server.join();
 
             l.Should().HaveCount(3);
             l[0].Should().Be("MESSAGEA");
