@@ -50,8 +50,8 @@
     <!-- common/autoconf/flags.m4 -->
     <PropertyGroup Condition="$(TargetIdentifier.StartsWith('osx-')) ">
         <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
-        <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x86'))">x86</OpenJdkTargetCpuOsArch>
         <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x64'))">x86_64</OpenJdkTargetCpuOsArch>
+        <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-arm64'))">aarch64</OpenJdkTargetCpuOsArch>
         <EnableOSXCodeSign Condition=" '$(EnableOSXCodeSign)' == '' ">true</EnableOSXCodeSign>
     </PropertyGroup>
 
