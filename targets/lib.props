@@ -140,9 +140,9 @@
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <PreprocessorDefinitions Include="MACOSX;MACOS" />
         <Dependencies Include="c++" />
-        <AdditionalCompileOptions Include="-mmacosx-version-min" Value="10.15" Separator="=" />
+        <AdditionalCompileOptions Include="-mmacosx-version-min" Value="10.10" Separator="=" />
         <AdditionalLinkOptions Include="-t" />
-        <AdditionalLinkOptions Include="-mmacosx-version-min" Value="10.15" Separator="=" />
+        <AdditionalLinkOptions Include="-mmacosx-version-min" Value="10.10" Separator="=" />
         <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f." />
     </ItemGroup>
 
