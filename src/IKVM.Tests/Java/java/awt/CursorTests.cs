@@ -1,4 +1,6 @@
-﻿using FluentAssertions;
+﻿using System.Runtime.InteropServices;
+
+using FluentAssertions;
 
 using java.awt;
 
@@ -14,6 +16,10 @@ namespace IKVM.Tests.Java.java.awt
         [TestMethod]
         public void CanGetSystemCopyDropCursor()
         {
+            // skip due to hang on OS X
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return;
+
             Cursor.getSystemCustomCursor("CopyDrop.32x32").Should().NotBeNull();
         }
 
