@@ -1,6 +1,4 @@
-﻿using System.Runtime.InteropServices;
-
-using FluentAssertions;
+﻿using FluentAssertions;
 
 using java.lang.management;
 
