@@ -65,6 +65,7 @@
         <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libawt_headless\mapfile-vers" />
         <Dependencies Include="c" />
         <Dependencies Include="m" />
+        <Dependencies Include="fontconfig" />
     </ItemGroup>
 
     <UsingTask TaskName="JoinPathsAndFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">

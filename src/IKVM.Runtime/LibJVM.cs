@@ -1,13 +1,14 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Threading;
 
 using IKVM.Runtime.Accessors.Java.Util;
 
 namespace IKVM.Runtime
 {
-    using System.Threading;
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
@@ -44,6 +45,7 @@ namespace IKVM.Runtime
             public nint JVM_RawMonitorDestroy;
             public nint JVM_RawMonitorEnter;
             public nint JVM_RawMonitorExit;
+            public nint JVM_CopySwapMemory;
 
         }
 
@@ -86,6 +88,9 @@ namespace IKVM.Runtime
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate void JVM_RawMonitorExitDelegate(nint mon);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate void JVM_CopySwapMemoryDelegate(JNIEnv* env, nint srcObj, long srcOffset, nint dstObj, long dstOffset, long size, long elemSize);
+
         delegate void JVM_InitDelegate(JVMInvokeInterface* iface);
 
         delegate nint JVM_LoadLibraryDelegate([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
@@ -120,6 +125,7 @@ namespace IKVM.Runtime
         readonly JVM_RawMonitorDestroyDelegate _JVM_RawMonitorDestroy;
         readonly JVM_RawMonitorEnterDelegate _JVM_RawMonitorEnter;
         readonly JVM_RawMonitorExitDelegate _JVM_RawMonitorExit;
+        readonly JVM_CopySwapMemoryDelegate _JVM_CopySwapMemory;
 
         /// <summary>
         /// Initializes a new instance.
@@ -151,6 +157,7 @@ namespace IKVM.Runtime
             jvmii->JVM_RawMonitorDestroy = Marshal.GetFunctionPointerForDelegate(_JVM_RawMonitorDestroy = JVM_RawMonitorDestroy);
             jvmii->JVM_RawMonitorEnter = Marshal.GetFunctionPointerForDelegate(_JVM_RawMonitorEnter = JVM_RawMonitorEnter);
             jvmii->JVM_RawMonitorExit = Marshal.GetFunctionPointerForDelegate(_JVM_RawMonitorExit = JVM_RawMonitorExit);
+            jvmii->JVM_CopySwapMemory = Marshal.GetFunctionPointerForDelegate(_JVM_CopySwapMemory = JVM_CopySwapMemory);
             _JVM_Init(jvmii);
         }
 
@@ -216,10 +223,15 @@ namespace IKVM.Runtime
             {
                 return global::java.lang.Thread.currentThread().interruptEvent.SafeWaitHandle.DangerousGetHandle();
             }
+            catch (global::java.lang.Throwable t)
+            {
+                JVM.SetPendingException(t);
+                return 0;
+            }
             catch (Exception e)
             {
                 Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_GetThreadInterruptEvent)}: Exception occurred: {{0}}", e.Message);
-                JVM.SetPendingException(e);
+                JVM.SetPendingException(new global::java.lang.InternalError(e));
                 return 0;
             }
         }
@@ -277,13 +289,17 @@ namespace IKVM.Runtime
 
                 Array.Copy(s, src_pos, d, dst_pos, length);
             }
+            catch (java.lang.Throwable t)
+            {
+                JVM.SetPendingException(t);
+            }
             catch (ArrayTypeMismatchException)
             {
                 JVM.SetPendingException(new java.lang.ArrayStoreException());
             }
             catch (Exception e)
             {
-                JVM.SetPendingException(e);
+                JVM.SetPendingException(new java.lang.InternalError(e));
             }
         }
 
@@ -308,9 +324,14 @@ namespace IKVM.Runtime
 
                 return props;
             }
+            catch (java.lang.Throwable t)
+            {
+                JVM.SetPendingException(t);
+                return 0;
+            }
             catch (Exception e)
             {
-                JVM.SetPendingException(e);
+                JVM.SetPendingException(new java.lang.InternalError(e));
                 return 0;
             }
         }
@@ -327,7 +348,7 @@ namespace IKVM.Runtime
             }
             catch (Exception e)
             {
-                JVM.SetPendingException(e);
+                JVM.SetPendingException(new java.lang.InternalError(e));
                 return 0;
             }
         }
@@ -344,7 +365,7 @@ namespace IKVM.Runtime
             }
             catch (Exception e)
             {
-                JVM.SetPendingException(e);
+                JVM.SetPendingException(new java.lang.InternalError(e));
             }
         }
 
@@ -361,7 +382,7 @@ namespace IKVM.Runtime
             }
             catch (Exception e)
             {
-                JVM.SetPendingException(e);
+                JVM.SetPendingException(new java.lang.InternalError(e));
             }
 
             return 0;
@@ -380,8 +401,140 @@ namespace IKVM.Runtime
             }
             catch (Exception e)
             {
+                JVM.SetPendingException(new java.lang.InternalError(e));
+            }
+        }
+
+        /// <summary>
+        /// Invoked by the native code to copy and swap memory.
+        /// </summary>
+        /// <param name="env"></param>
+        /// <param name="srcObj"></param>
+        /// <param name="srcOffset"></param>
+        /// <param name="dstObj"></param>
+        /// <param name="dstOffset"></param>
+        /// <param name="size"></param>
+        /// <param name="elemSize"></param>
+        unsafe void JVM_CopySwapMemory(JNIEnv* env, nint srcObj, long srcOffset, nint dstObj, long dstOffset, long size, long elemSize)
+        {
+            JVM_CopySwapMemory((Array)env->UnwrapRef(srcObj), srcOffset, (Array)env->UnwrapRef(dstObj), dstOffset, size, elemSize);
+        }
+
+        /// <summary>
+        /// Invoked by the native code to copy and swap memory.
+        /// </summary>
+        /// <param name="srcObj"></param>
+        /// <param name="srcOffset"></param>
+        /// <param name="dstObj"></param>
+        /// <param name="dstOffset"></param>
+        /// <param name="size"></param>
+        /// <param name="elemSize"></param>
+        internal static unsafe void JVM_CopySwapMemory(Array srcObj, long srcOffset, Array dstObj, long dstOffset, long size, long elemSize)
+        {
+            if (size == 0)
+                return;
+
+            try
+            {
+                if (size % elemSize != 0)
+                    throw new java.lang.InternalError($"size {size} must be multiple of element size {elemSize}");
+
+                static unsafe Span<T> AsSpan<T>(Array obj, long off, long size) where T : unmanaged
+                {
+                    if (obj != null)
+                        return new Span<T>(Unsafe.As<T[]>(obj)).Slice((int)(off / sizeof(T)), (int)(size / sizeof(T)));
+                    else if (off != 0)
+                        return new Span<T>((void*)(nint)off, (int)(size / sizeof(T)));
+                    else
+                        throw new java.lang.InternalError($"address must not be NULL");
+                }
+
+                switch (elemSize)
+                {
+                    case 2:
+                        ReverseEndianness(AsSpan<short>(srcObj, srcOffset, size), AsSpan<short>(dstObj, dstOffset, size));
+                        break;
+                    case 4:
+                        ReverseEndianness(AsSpan<int>(srcObj, srcOffset, size), AsSpan<int>(dstObj, dstOffset, size));
+                        break;
+                    case 8:
+                        ReverseEndianness(AsSpan<long>(srcObj, srcOffset, size), AsSpan<long>(dstObj, dstOffset, size));
+                        break;
+                    default:
+                        throw new java.lang.InternalError($"incorrect element size: {elemSize}");
+                }
+            }
+            catch (java.lang.Throwable e)
+            {
                 JVM.SetPendingException(e);
             }
+            catch (Exception e)
+            {
+                JVM.SetPendingException(new java.lang.InternalError(e));
+            }
+        }
+
+        /// <summary>
+        /// Reverses the endianness of the given short items.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dst"></param>
+        static void ReverseEndianness(ReadOnlySpan<short> src, Span<short> dst)
+        {
+#if NET7_0_OR_GREATER
+            BinaryPrimitives.ReverseEndianness(src, dst);
+#else
+            ref short srcRef = ref MemoryMarshal.GetReference(src);
+            ref short dstRef = ref MemoryMarshal.GetReference(dst);
+            if (Unsafe.AreSame(ref srcRef, ref dstRef) || !src.Overlaps(dst, out int elementOffset) || elementOffset < 0)
+                for (int i = 0; i < src.Length; i++)
+                    dst[i] = BinaryPrimitives.ReverseEndianness(src[i]);
+            else
+                for (int i = src.Length - 1; i >= 0; i--)
+                    dst[i] = BinaryPrimitives.ReverseEndianness(src[i]);
+#endif
+        }
+
+        /// <summary>
+        /// Reverses the endianness of the given int items.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dst"></param>
+        static void ReverseEndianness(ReadOnlySpan<int> src, Span<int> dst)
+        {
+#if NET7_0_OR_GREATER
+            BinaryPrimitives.ReverseEndianness(src, dst);
+#else
+            ref int srcRef = ref MemoryMarshal.GetReference(src);
+            ref int dstRef = ref MemoryMarshal.GetReference(dst);
+            if (Unsafe.AreSame(ref srcRef, ref dstRef) || !src.Overlaps(dst, out int elementOffset) || elementOffset < 0)
+                for (int i = 0; i < src.Length; i++)
+                    dst[i] = BinaryPrimitives.ReverseEndianness(src[i]);
+            else
+                for (int i = src.Length - 1; i >= 0; i--)
+                    dst[i] = BinaryPrimitives.ReverseEndianness(src[i]);
+#endif
+        }
+
+        /// <summary>
+        /// Reverses the endianness of the given int items.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dst"></param>
+        static void ReverseEndianness(ReadOnlySpan<long> src, Span<long> dst)
+        {
+#if NET7_0_OR_GREATER
+            BinaryPrimitives.ReverseEndianness(src, dst);
+#else
+            ref long srcRef = ref MemoryMarshal.GetReference(src);
+            ref long dstRef = ref MemoryMarshal.GetReference(dst);
+            if (Unsafe.AreSame(ref srcRef, ref dstRef) || !src.Overlaps(dst, out int elementOffset) || elementOffset < 0)
+                for (int i = 0; i < src.Length; i++)
+                    dst[i] = BinaryPrimitives.ReverseEndianness(src[i]);
+            else
+                for (int i = src.Length - 1; i >= 0; i--)
+                    dst[i] = BinaryPrimitives.ReverseEndianness(src[i]);
+#endif
         }
 
         /// <summary>

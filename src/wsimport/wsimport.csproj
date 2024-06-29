@@ -10,6 +10,7 @@
         <SelfContained>true</SelfContained>
         <StartupObject>com.sun.tools.internal.ws.WsImport</StartupObject>
         <RootNamespace>ikvm.tools.wsimport</RootNamespace>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

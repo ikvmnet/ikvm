@@ -44,7 +44,7 @@ namespace IKVM.ByteCode.Reading
         /// <exception cref="ByteCodeException"></exception>
         public static unsafe ClassReader Read(byte* pointer, int length)
         {
-            return TryRead(pointer, length, out var clazz) ? clazz : throw new ByteCodeException("Failed to open ClassReader. Incomplete class data.");
+            return TryRead(pointer, length, out var clazz) ? clazz : throw new InvalidClassException("Failed to open ClassReader. Incomplete class data.");
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace IKVM.ByteCode.Reading
         /// <exception cref="ByteCodeException"></exception>
         public static unsafe ClassReader Read(string path)
         {
-            return TryRead(path, out var clazz) ? clazz : throw new ByteCodeException("Failed to open ClassReader. Incomplete class data.");
+            return TryRead(path, out var clazz) ? clazz : throw new InvalidClassException("Failed to open ClassReader. Incomplete class data.");
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace IKVM.ByteCode.Reading
         /// <exception cref="ByteCodeException"></exception>
         public static ClassReader Read(ReadOnlyMemory<byte> buffer)
         {
-            return TryRead(buffer, out var clazz) ? clazz : throw new ByteCodeException("Failed to open ClassReader. Incomplete class data.");
+            return TryRead(buffer, out var clazz) ? clazz : throw new InvalidClassException("Failed to open ClassReader. Incomplete class data.");
         }
 
         /// <summary>
@@ -152,7 +152,7 @@ namespace IKVM.ByteCode.Reading
         /// <exception cref="ByteCodeException"></exception>
         public static ClassReader Read(in ReadOnlySequence<byte> buffer)
         {
-            return TryRead(buffer, out var clazz) ? clazz : throw new ByteCodeException("Failed to open ClassReader. Incomplete class data.");
+            return TryRead(buffer, out var clazz) ? clazz : throw new InvalidClassException("Failed to open ClassReader. Incomplete class data.");
         }
 
         /// <summary>
@@ -227,7 +227,7 @@ namespace IKVM.ByteCode.Reading
 
                     // we couldn't read a full class, and the pipe is at the end
                     if (result.IsCompleted)
-                        throw new ByteCodeException("End of stream reached before valid class.");
+                        throw new InvalidClassException("End of stream reached before valid class.");
 
                     continue;
                 }

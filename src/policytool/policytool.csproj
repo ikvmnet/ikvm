@@ -10,6 +10,7 @@
         <SelfContained>true</SelfContained>
         <StartupObject>sun.security.tools.policytool.PolicyTool</StartupObject>
         <RootNamespace>ikvm.tools.policytool</RootNamespace>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

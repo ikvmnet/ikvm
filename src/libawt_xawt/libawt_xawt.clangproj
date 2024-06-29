@@ -72,7 +72,9 @@
         <LibXAwtFile Include="debug_trace.c" />
         <LibXAwtFile Include="debug_util.c" />
         <LibXAwtFile Include="gnome_interface.c" />
+        <LibXAwtFile Include="gtk_interface.c" />
         <LibXAwtFile Include="gtk2_interface.c" />
+        <LibXAwtFile Include="gtk3_interface.c" />
         <LibXAwtFile Include="swing_GTKEngine.c" />
         <LibXAwtFile Include="swing_GTKStyle.c" />
         <LibXAwtFile Include="rect.c" />
@@ -99,6 +101,7 @@
         <Dependencies Include="Xrender" />
         <Dependencies Include="Xtst" />
         <Dependencies Include="Xi" />
+        <Dependencies Include="fontconfig" />
         <AdditionalCompileOptions Include="-Wno-implicit-function-declaration;-Wno-error=int-conversion" />
         <AdditionalCompileOptions Include="-fcommon" />
         <AdditionalLinkOptions Include="-fcommon" />

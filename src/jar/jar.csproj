@@ -10,6 +10,7 @@
         <SelfContained>true</SelfContained>
         <StartupObject>sun.tools.jar.Main</StartupObject>
         <RootNamespace>ikvm.tools.jar</RootNamespace>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

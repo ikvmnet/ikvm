@@ -10,6 +10,7 @@
         <SelfContained>true</SelfContained>
         <StartupObject>sun.tools.native2ascii.Main</StartupObject>
         <RootNamespace>ikvm.tools.native2ascii</RootNamespace>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

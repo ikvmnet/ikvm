@@ -180,22 +180,27 @@ jlong os_javaTimeNanos()
 }
 #endif
 
-jlong JNICALL JVM_NanoTime(JNIEnv* env, jclass ignored)
+jlong JNICALL JVM_NanoTime(JNIEnv *env, jclass ignored)
 {
     return os_javaTimeNanos();
 }
 
-void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pos, jint length)
+void JNICALL JVM_ArrayCopy(JNIEnv *env, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pos, jint length)
 {
     jvmii->JVM_ArrayCopy(env, ignored, src, src_pos, dst, dst_pos, length);
 }
 
-jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject properties)
+void JNICALL JVM_CopySwapMemory(JNIEnv *env, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size, jlong elemSize)
+{
+    jvmii->JVM_CopySwapMemory(env, srcObj, srcOffset, dstObj, dstOffset, size, elemSize);
+}
+
+jobject JNICALL JVM_InitProperties(JNIEnv *env, jobject properties)
 {
     return jvmii->JVM_InitProperties(env, properties);
 }
 
-jstring JNICALL JVM_GetTemporaryDirectory(JNIEnv* env)
+jstring JNICALL JVM_GetTemporaryDirectory(JNIEnv *env)
 {
     JVM_ThrowException("java/lang/InternalError", "Unsupported JVM method: JVM_GetTemporaryDirectory");
     return 0;
@@ -278,8 +283,14 @@ jint JNICALL JVM_GetLastErrorString(char* buf, int len)
     return (jint)os_lasterror(buf, len);
 }
 
-jint JNICALL JVM_ActiveProcessorCount() { 
+jint JNICALL JVM_ActiveProcessorCount()
+{
     return jvmii->JVM_ActiveProcessorCount();
+}
+
+jboolean JNICALL JVM_IsUseContainerSupport()
+{
+    return JNI_FALSE;
 }
 
 jclass JNICALL JVM_FindClassFromClass(JNIEnv* env, const char* name, jboolean init, jclass from)

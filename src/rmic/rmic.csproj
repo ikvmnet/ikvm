@@ -10,6 +10,7 @@
         <SelfContained>true</SelfContained>
         <StartupObject>sun.rmi.rmic.Main</StartupObject>
         <RootNamespace>ikvm.tools.rmic</RootNamespace>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

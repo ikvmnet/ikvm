@@ -19,7 +19,7 @@
             if (reader.TryReadU4(out uint magic) == false)
                 return false;
             if (magic != MAGIC)
-                throw new ByteCodeException($"Unexpected magic value '{magic}'.");
+                throw new InvalidClassMagicException(magic);
 
             if (reader.TryReadU2(out ushort minorVersion) == false)
                 return false;
