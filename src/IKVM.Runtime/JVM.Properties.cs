@@ -58,10 +58,14 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static IEnumerable<string> GetSeachPaths()
             {
+                var hs = new HashSet<string>();
+
                 if (AppContext.BaseDirectory is string basePath && !string.IsNullOrEmpty(basePath))
-                    yield return basePath;
+                    if (hs.Add(basePath))
+                        yield return basePath;
                 if (typeof(Properties).Assembly.Location is string runtimePath && !string.IsNullOrEmpty(runtimePath))
-                    yield return Path.GetDirectoryName(runtimePath);
+                    if (hs.Add(runtimePath))
+                        yield return Path.GetDirectoryName(runtimePath);
             }
 
             /// <summary>
