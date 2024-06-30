@@ -20,8 +20,13 @@ namespace IKVM.Runtime
         public static class Properties
         {
 
+            /// <summary>
+            /// Represents an entry in the IKVM properties.
+            /// </summary>
+            internal record struct IkvmPropEntry(string BasePath, string Value);
+
             static readonly IDictionary<string, string> user = new Dictionary<string, string>();
-            static readonly Lazy<Dictionary<string, string>> ikvm = new Lazy<Dictionary<string, string>>(GetIkvmProperties);
+            static readonly Lazy<Dictionary<string, IkvmPropEntry>> ikvm = new Lazy<Dictionary<string, IkvmPropEntry>>(GetIkvmProperties);
             static readonly Lazy<Dictionary<string, string>> init = new Lazy<Dictionary<string, string>>(GetInitProperties);
             static readonly Lazy<string> homePath = new Lazy<string>(GetHomePath);
 
@@ -35,7 +40,7 @@ namespace IKVM.Runtime
             /// <summary>
             /// Gets the set of properties that are set in the 'ikvm.properties' file before initialization.
             /// </summary>
-            internal static IDictionary<string, string> Ikvm => ikvm.Value;
+            internal static IReadOnlyDictionary<string, IkvmPropEntry> Ikvm => ikvm.Value;
 
             /// <summary>
             /// Gets the set of properties that are initialized with the JVM and provided to the JDK.
@@ -51,10 +56,10 @@ namespace IKVM.Runtime
             /// Gets the search paths to examine for ikvm.properties. 
             /// </summary>
             /// <returns></returns>
-            static IEnumerable<string> GetIkvmSearchDirs()
+            static IEnumerable<string> GetSeachPaths()
             {
-                if (AppContext.BaseDirectory is string baseDir && !string.IsNullOrEmpty(baseDir))
-                    yield return baseDir;
+                if (AppContext.BaseDirectory is string basePath && !string.IsNullOrEmpty(basePath))
+                    yield return basePath;
                 if (typeof(Properties).Assembly.Location is string runtimePath && !string.IsNullOrEmpty(runtimePath))
                     yield return Path.GetDirectoryName(runtimePath);
             }
@@ -63,25 +68,15 @@ namespace IKVM.Runtime
             /// Gets the set of properties loaded from any companion 'ikvm.properties' file.
             /// </summary>
             /// <returns></returns>
-            static Dictionary<string, string> GetIkvmProperties()
+            static Dictionary<string, IkvmPropEntry> GetIkvmProperties()
             {
-                var props = new Dictionary<string, string>();
+                var props = new Dictionary<string, IkvmPropEntry>();
 
-                try
+                foreach (var basePath in GetSeachPaths())
                 {
-                    foreach (var searchDir in GetIkvmSearchDirs())
-                    {
-                        var ikvmPropertiesPath = Path.Combine(searchDir, "ikvm.properties");
-                        if (File.Exists(ikvmPropertiesPath))
-                        {
-                            LoadProperties(File.ReadAllLines(ikvmPropertiesPath), props);
-                            break;
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-
+                    var ikvmPropertiesPath = Path.Combine(basePath, "ikvm.properties");
+                    if (File.Exists(ikvmPropertiesPath))
+                        LoadProperties(basePath, File.ReadAllLines(ikvmPropertiesPath), props);
                 }
 
                 return props;
@@ -93,50 +88,65 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static string GetHomePath()
             {
-                foreach (var searchDir in GetIkvmSearchDirs())
-                {
-#if NETFRAMEWORK
-                    // attempt to find settings in legacy app.config
-                    try
-                    {
-                        // specified home directory
-                        if (ConfigurationManager.AppSettings["ikvm:ikvm.home"] is string confHome)
-                            if (Directory.Exists(Path.GetFullPath(Path.Combine(searchDir, confHome))))
-                                return Path.GetFullPath(Path.Combine(searchDir, confHome));
+                // user value takes priority
+                if (User.TryGetValue("ikvm.home", out var userHomePath) && !string.IsNullOrWhiteSpace(userHomePath))
+                    if (Directory.Exists(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, userHomePath))))
+                        return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, userHomePath));
 
-                        // specified home root directory
-                        if (ConfigurationManager.AppSettings["ikvm:ikvm.home.root"] is string confHomeRoot)
-                            if (ResolveHomePathFromRoot(Path.Combine(searchDir, confHomeRoot)) is string confHomePath)
-                                return confHomePath;
-                    }
-                    catch (ConfigurationException)
-                    {
-                        // app.config is invalid, ignore
-                    }
+                // ikvm properties value comes next
+                if (Ikvm.TryGetValue("ikvm.home", out var ikvmHomeEntry) && !string.IsNullOrWhiteSpace(ikvmHomeEntry.Value))
+                    if (Directory.Exists(Path.GetFullPath(Path.Combine(ikvmHomeEntry.BasePath, ikvmHomeEntry.Value))))
+                        return Path.GetFullPath(Path.Combine(ikvmHomeEntry.BasePath, ikvmHomeEntry.Value));
+
+#if NETFRAMEWORK
+                // attempt to find settings in legacy app.config
+                try
+                {
+                    // specified home directory in app.config relative to base directory
+                    if (ConfigurationManager.AppSettings["ikvm:ikvm.home"] is string confHome && !string.IsNullOrWhiteSpace(confHome))
+                        if (Directory.Exists(Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, confHome))))
+                            return Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, confHome));
+                }
+                catch (ConfigurationException)
+                {
+                    // app.config is invalid, ignore
+                }
 #endif
 
-                    // user value takes priority
-                    if (User.TryGetValue("ikvm.home", out var homePath1))
-                        if (Directory.Exists(Path.GetFullPath(Path.Combine(searchDir, homePath1))))
-                            return Path.GetFullPath(Path.Combine(searchDir, homePath1));
+                // find first occurance of home root
+                if (User.TryGetValue("ikvm.home.root", out var userHomeRoot) && !string.IsNullOrWhiteSpace(userHomeRoot))
+                    if (ResolveHomePathFromRoot(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, userHomeRoot))) is string userHomeRootPath)
+                        return userHomeRootPath;
 
-                    // ikvm properties value comes next
-                    if (Ikvm.TryGetValue("ikvm.home", out var homePath2))
-                        if (Directory.Exists(Path.GetFullPath(Path.Combine(searchDir, homePath2))))
-                            return Path.GetFullPath(Path.Combine(searchDir, homePath2));
+                // ikvm properties value comes next
+                if (Ikvm.TryGetValue("ikvm.home.root", out var ikvmHomeRootEntry) && !string.IsNullOrWhiteSpace(ikvmHomeRootEntry.Value))
+                    if (ResolveHomePathFromRoot(Path.GetFullPath(Path.Combine(ikvmHomeRootEntry.BasePath, ikvmHomeRootEntry.Value))) is string ikvmHomeRootPath)
+                        return ikvmHomeRootPath;
 
-                    // find first occurance of home root
-                    if (User.TryGetValue("ikvm.home.root", out var homePathRoot) == false)
-                        Ikvm.TryGetValue("ikvm.home.root", out homePathRoot);
-
-                    // attempt to resolve the path from the given root
-                    if (ResolveHomePathFromRoot(Path.GetFullPath(Path.Combine(searchDir, homePathRoot ?? "ikvm"))) is string resolvedHomePath)
-                        return resolvedHomePath;
-
-                    // fallback to local 'ikvm' directory
-                    if (Directory.Exists(Path.GetFullPath(Path.Combine(searchDir, "ikvm"))))
-                        return Path.GetFullPath(Path.Combine(searchDir, "ikvm"));
+#if NETFRAMEWORK
+                // attempt to find settings in legacy app.config
+                try
+                {
+                    // specified home root directory in app.config relative to base directory
+                    if (ConfigurationManager.AppSettings["ikvm:ikvm.home.root"] is string confHomeRoot && !string.IsNullOrWhiteSpace(confHomeRoot))
+                        if (ResolveHomePathFromRoot(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, confHomeRoot)) is string confHomeRootPath)
+                            return confHomeRootPath;
                 }
+                catch (ConfigurationException)
+                {
+                    // app.config is invalid, ignore
+                }
+#endif
+
+                // fallback to directory in base dir
+                if (string.IsNullOrWhiteSpace(AppContext.BaseDirectory) == false)
+                    if (ResolveHomePathFromRoot(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "ikvm"))) is string appHomeRootPath)
+                        return appHomeRootPath;
+
+                // fallback to directory in base dir
+                if (string.IsNullOrWhiteSpace(AppDomain.CurrentDomain.BaseDirectory) == false)
+                    if (ResolveHomePathFromRoot(Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ikvm"))) is string domainHomeRootPath)
+                        return domainHomeRootPath;
 
                 throw new InternalException("Could not locate ikvm home path.");
             }
@@ -167,13 +177,13 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="lines"></param>
             /// <param name="props"></param>
-            static void LoadProperties(IEnumerable<string> lines, IDictionary<string, string> props)
+            static void LoadProperties(string basePath, IEnumerable<string> lines, Dictionary<string, IkvmPropEntry> props)
             {
                 foreach (var l in lines)
                 {
                     var a = l.Split(new[] { '=' }, 2, StringSplitOptions.RemoveEmptyEntries);
                     if (a.Length >= 2)
-                        props[a[0].Trim()] = a[1]?.Trim() ?? "";
+                        props[a[0].Trim()] = new IkvmPropEntry(basePath, a[1]?.Trim() ?? "");
                 }
             }
 
@@ -337,7 +347,7 @@ namespace IKVM.Runtime
                 {
                     var l = new List<string>();
 
-                    foreach (var d in GetIkvmSearchDirs())
+                    foreach (var d in GetSeachPaths())
                     {
                         l.Add(d);
                         foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)

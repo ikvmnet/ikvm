@@ -1,10 +1,8 @@
 package ikvm.runtime;
 
-public final class Startup
-{
+public final class Startup {
 
-    private Startup()
-    {
+    private Startup() {
         
     }
 
