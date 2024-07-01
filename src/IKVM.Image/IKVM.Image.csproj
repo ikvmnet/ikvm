@@ -8,6 +8,7 @@
         <Description>IKVM Runtime Image</Description>
         <IncludeSymbols>false</IncludeSymbols>
         <IkvmImageItemToNone>true</IkvmImageItemToNone>
+        <DisableCopyToOutputDirectory>true</DisableCopyToOutputDirectory>
     </PropertyGroup>
 
     <ItemGroup>

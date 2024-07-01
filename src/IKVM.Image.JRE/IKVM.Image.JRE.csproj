@@ -5,6 +5,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM JRE Runtime Image</Description>
         <IncludeSymbols>false</IncludeSymbols>
+        <DisableCopyToOutputDirectory>true</DisableCopyToOutputDirectory>
     </PropertyGroup>
 
     <ItemGroup>
