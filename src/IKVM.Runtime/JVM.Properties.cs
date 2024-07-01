@@ -63,9 +63,17 @@ namespace IKVM.Runtime
                 if (AppContext.BaseDirectory is string basePath && !string.IsNullOrEmpty(basePath))
                     if (hs.Add(basePath))
                         yield return basePath;
-                if (typeof(Properties).Assembly.Location is string runtimePath && !string.IsNullOrEmpty(runtimePath))
+
+                if (AppDomain.CurrentDomain.BaseDirectory is string appBasePath && !string.IsNullOrEmpty(appBasePath))
+                    if (hs.Add(appBasePath))
+                        yield return appBasePath;
+
+                if (typeof(Properties).Assembly.Location is string runtimeAssemblyPath && !string.IsNullOrEmpty(runtimeAssemblyPath))
+                {
+                    var runtimePath = Path.GetDirectoryName(runtimeAssemblyPath);
                     if (hs.Add(runtimePath))
                         yield return Path.GetDirectoryName(runtimePath);
+                }
             }
 
             /// <summary>
