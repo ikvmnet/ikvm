@@ -4139,3 +4139,14 @@ jdk/internal/platform/docker/TestDockerMemoryMetrics.java                       
 jdk/internal/platform/docker/TestUseContainerSupport.java                                                               generic-all
 jdk/internal/platform/docker/TestDockerCpuMetrics.java                                                                  generic-all
 jdk/internal/platform/docker/TestSystemMetrics.java                                                                     generic-all
+
+# Fixed in 8u372-b01 (JDK-8295982)
+sun/security/tools/keytool/WeakAlg.java                                                                                 windows-all
+
+# Not working
+com/sun/management/ThreadMXBean/MaxDepthForThreadInfoTest.java                                                          generic-all
+demo/zipfs/ReleaseDeflater.java                                                                                         generic-all
+
+# OOM
+java/awt/Frame/DisposeParentGC/DisposeParentGC.java                                                                     generic-all
+java/awt/Frame/FramesGC/FramesGC.java                                                                                   generic-all

@@ -123,3 +123,6 @@ tools/javac/StringsInSwitch/OneCaseSwitches.java                                
 
 # unknown
 tools/javac/annotations/8218152/MalformedAnnotationProcessorTests.java                                                  generic-all
+
+# -Xverify:all
+tools/javac/lambda/T8145051.java                                                                                        generic-all
