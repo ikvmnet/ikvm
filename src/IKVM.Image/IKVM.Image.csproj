@@ -109,20 +109,28 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GenerateCacerts" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);$(OpenJdkDir)jdk\make\data\cacerts\**\*" Outputs="$(IntermediateOutputPath)cacerts">
+    <ItemGroup>
+        <CacertSrc Include="$(OpenJdkDir)jdk\make\data\cacerts\**\*" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <CacertDst>$(IntermediateOutputPath)cacerts</CacertDst>
+    </PropertyGroup>
+
+    <Target Name="GenerateCacerts" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(CacertSrc)" Outputs="$(CacertDst)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
-        <Delete Files="$(IntermediateOutputPath)cacerts.tmp" />
-        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.generatecacerts.GenerateCacerts $(OpenJdkDir)jdk/make/data/cacerts/ $(IntermediateOutputPath)cacerts.tmp" />
-        <Move SourceFiles="$(IntermediateOutputPath)cacerts.tmp" DestinationFiles="$(IntermediateOutputPath)cacerts" />
-        <Touch Files="$(IntermediateOutputPath)cacerts" ForceTouch="true" AlwaysCreate="true" />
+        <Delete Files="$(CacertDst).tmp" />
+        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.generatecacerts.GenerateCacerts $(OpenJdkDir)jdk/make/data/cacerts/ $(CacertDst).tmp" />
+        <Move SourceFiles="$(CacertDst).tmp" DestinationFiles="$(CacertDst)" />
+        <Touch Files="$(CacertDst)" ForceTouch="true" AlwaysCreate="true" />
 
         <ItemGroup>
-            <IkvmImageItem Include="$(IntermediateOutputPath)cacerts" ImagePath="lib\security\cacerts" TargetFramework="any" RuntimeIdentifier="any" />
-            <FileWrites Include="$(IntermediateOutputPath)cacerts" />
-            <FileWrites Include="$(IntermediateOutputPath)cacerts.tmp" />
+            <IkvmImageItem Include="$(CacertDst)" ImagePath="lib\security\cacerts" TargetFramework="any" RuntimeIdentifier="any" />
+            <FileWrites Include="$(CacertDst)" />
+            <FileWrites Include="$(CacertDst).tmp" />
         </ItemGroup>
     </Target>
 
