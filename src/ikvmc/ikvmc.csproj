@@ -3,7 +3,7 @@
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <RuntimeIdentifiers>$(_SupportedToolRuntimes)</RuntimeIdentifiers>
-        <PublishReadyToRun>true</PublishReadyToRun>
+        <!--<PublishReadyToRun>true</PublishReadyToRun>-->
         <SelfContained>true</SelfContained>
     </PropertyGroup>
 
