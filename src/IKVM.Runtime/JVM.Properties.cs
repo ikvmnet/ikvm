@@ -72,7 +72,7 @@ namespace IKVM.Runtime
                 {
                     var runtimePath = Path.GetDirectoryName(runtimeAssemblyPath);
                     if (hs.Add(runtimePath))
-                        yield return Path.GetDirectoryName(runtimePath);
+                        yield return runtimePath;
                 }
             }
 
