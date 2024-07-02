@@ -53,27 +53,28 @@ namespace IKVM.Runtime
             internal static string HomePath => homePath.Value;
 
             /// <summary>
-            /// Gets the search paths to examine for ikvm.properties. 
+            /// Gets the raw search paths to examine for ikvm.properties. 
+            /// </summary>
+            /// <returns></returns>
+            static IEnumerable<string> GetSeachPathsIter()
+            {
+                if (AppContext.BaseDirectory is string basePath && !string.IsNullOrEmpty(basePath))
+                    yield return basePath;
+
+                if (AppDomain.CurrentDomain.BaseDirectory is string appBasePath && !string.IsNullOrEmpty(appBasePath))
+                    yield return appBasePath;
+
+                if (typeof(Properties).Assembly.Location is string runtimeAssemblyPath && !string.IsNullOrEmpty(runtimeAssemblyPath))
+                    yield return Path.GetDirectoryName(runtimeAssemblyPath);
+            }
+
+            /// <summary>
+            /// Gets the unique search paths to examine for ikvm.properties. 
             /// </summary>
             /// <returns></returns>
             static IEnumerable<string> GetSeachPaths()
             {
-                var hs = new HashSet<string>();
-
-                if (AppContext.BaseDirectory is string basePath && !string.IsNullOrEmpty(basePath))
-                    if (hs.Add(basePath))
-                        yield return basePath;
-
-                if (AppDomain.CurrentDomain.BaseDirectory is string appBasePath && !string.IsNullOrEmpty(appBasePath))
-                    if (hs.Add(appBasePath))
-                        yield return appBasePath;
-
-                if (typeof(Properties).Assembly.Location is string runtimeAssemblyPath && !string.IsNullOrEmpty(runtimeAssemblyPath))
-                {
-                    var runtimePath = Path.GetDirectoryName(runtimeAssemblyPath);
-                    if (hs.Add(runtimePath))
-                        yield return runtimePath;
-                }
+                return GetSeachPathsIter().Distinct();
             }
 
             /// <summary>
