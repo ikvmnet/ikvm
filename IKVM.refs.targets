@@ -51,11 +51,26 @@
 
     <Target Name="GetIkvmLibsTfmSpecificContent" DependsOnTargets="ResolveProjectReferences">
         <ItemGroup>
-            <TfmSpecificPackageFile Include="@(IkvmLibsItem)" Condition="Exists('%(IkvmLibsItem.RootDir)%(IkvmLibsItem.Directory)%(IkvmLibsItem.Filename).dll')">
-                <PackagePath>lib\$(TargetFramework)\%(Filename)%(Extension)</PackagePath>
+            <TfmSpecificPackageFile Include="@(IkvmLibsItem)" Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmLibsItem.RootDir)%(IkvmLibsItem.Directory)%(IkvmLibsItem.Filename).dll')">
+                <PackagePath>lib\$(TargetFramework)\%(IkvmLibsItem.Filename)%(IkvmLibsItem.Extension)</PackagePath>
             </TfmSpecificPackageFile>
-            <TfmSpecificPackageFile Include="@(IkvmLibsItem->'%(RootDir)%(Directory)%(Filename).dll.config')" Condition="Exists('%(IkvmLibsItem.RootDir)%(IkvmLibsItem.Directory)%(IkvmLibsItem.Filename).dll.config')">
-                <PackagePath>lib\$(TargetFramework)\%(Filename).dll.config</PackagePath>
+            <TfmSpecificPackageFile Include="@(IkvmLibsItem->'%(RootDir)%(Directory)%(Filename).dll.config')" Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmLibsItem.RootDir)%(IkvmLibsItem.Directory)%(IkvmLibsItem.Filename).dll.config')">
+                <PackagePath>lib\$(TargetFramework)\%(IkvmLibsItem.Filename).dll.config</PackagePath>
+            </TfmSpecificPackageFile>
+            <TfmSpecificPackageFile Include="@(IkvmLibsItem->'%(ReferenceAssembly)')" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And '%(IkvmLibsItem.ReferenceAssembly)' != '' ">
+                <PackagePath>ref\$(TargetFramework)\%(IkvmLibsItem.Filename)%(IkvmLibsItem.Extension)</PackagePath>
+            </TfmSpecificPackageFile>
+            <TfmSpecificPackageFile Include="@(IkvmLibsItem)" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And '%(IkvmLibsItem.ReferenceAssembly)' == '' ">
+                <PackagePath>ref\$(TargetFramework)\%(IkvmLibsItem.Filename)%(IkvmLibsItem.Extension)</PackagePath>
+            </TfmSpecificPackageFile>
+            <TfmSpecificPackageFile Include="@(IkvmLibsItem)" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+                <PackagePath>runtimes\win\lib\$(TargetFramework)\%(IkvmLibsItem.Filename)%(IkvmLibsItem.Extension)</PackagePath>
+            </TfmSpecificPackageFile>
+            <TfmSpecificPackageFile Include="@(IkvmLibsItem)" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+                <PackagePath>runtimes\linux\lib\$(TargetFramework)\%(IkvmLibsItem.Filename)%(IkvmLibsItem.Extension)</PackagePath>
+            </TfmSpecificPackageFile>
+            <TfmSpecificPackageFile Include="@(IkvmLibsItem)" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+                <PackagePath>runtimes\osx\lib\$(TargetFramework)\%(IkvmLibsItem.Filename)%(IkvmLibsItem.Extension)</PackagePath>
             </TfmSpecificPackageFile>
         </ItemGroup>
     </Target>
@@ -64,7 +79,16 @@
         <ItemGroup>
             <TfmSpecificDebugSymbolsFile Include="@(IkvmLibsItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmLibsItem.RootDir)%(IkvmLibsItem.Directory)%(IkvmLibsItem.Filename).pdb')">
                 <TargetFramework>$(TargetFramework)</TargetFramework>
-                <PackagePath>lib\$(TargetFramework)\%(Filename).pdb</PackagePath>
+                <TargetPath>lib\$(TargetFramework)\%(IkvmLibsItem.Filename)%(IkvmLibsItem.Extension)</TargetPath>
+            </TfmSpecificDebugSymbolsFile>
+            <TfmSpecificDebugSymbolsFile Include="@(IkvmLibsItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmLibsItem.RootDir)%(IkvmLibsItem.Directory)%(IkvmLibsItem.Filename).pdb')">
+                <TargetPath>runtimes\win\lib\$(TargetFramework)\%(IkvmLibsItem.Filename).pdb</TargetPath>
+            </TfmSpecificDebugSymbolsFile>
+            <TfmSpecificDebugSymbolsFile Include="@(IkvmLibsItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmLibsItem.RootDir)%(IkvmLibsItem.Directory)%(IkvmLibsItem.Filename).pdb')">
+                <TargetPath>runtimes\linux\lib\$(TargetFramework)\%(IkvmLibsItem.Filename).pdb</TargetPath>
+            </TfmSpecificDebugSymbolsFile>
+            <TfmSpecificDebugSymbolsFile Include="@(IkvmLibsItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmLibsItem.RootDir)%(IkvmLibsItem.Directory)%(IkvmLibsItem.Filename).pdb')">
+                <TargetPath>runtimes\osx\lib\$(TargetFramework)\%(IkvmLibsItem.Filename).pdb</TargetPath>
             </TfmSpecificDebugSymbolsFile>
         </ItemGroup>
     </Target>
@@ -73,62 +97,55 @@
         <ItemGroup>
             <None Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'ref' And '$(PreserveCompilationContext)' == 'true' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>refs\%(Filename)%(Extension)</TargetPath>
+                <TargetPath>refs\%(IkvmJavaItem.Filename)%(IkvmJavaItem.Extension)</TargetPath>
             </None>
             <None Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And ('$(RuntimeIdentifier)' == '' Or $(RuntimeIdentifier.StartsWith('%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)-')))">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename)%(Extension)</TargetPath>
-                <TargetPath Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'win' ">%(Filename)%(Extension)</TargetPath>
-                <TargetPath Condition=" '$(RuntimeIdentifier)' != '' ">%(Filename)%(Extension)</TargetPath>
+                <TargetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(IkvmJavaItem.Filename)%(IkvmJavaItem.Extension)</TargetPath>
+                <TargetPath Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'win' ">%(IkvmJavaItem.Filename)%(IkvmJavaItem.Extension)</TargetPath>
+                <TargetPath Condition=" '$(RuntimeIdentifier)' != '' ">%(IkvmJavaItem.Filename)%(IkvmJavaItem.Extension)</TargetPath>
             </None>
             <None Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).pdb') And ('$(RuntimeIdentifier)' == '' Or $(RuntimeIdentifier.StartsWith('%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)-')))">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename).pdb</TargetPath>
-                <TargetPath Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'win' ">%(Filename).pdb</TargetPath>
-                <TargetPath Condition=" '$(RuntimeIdentifier)' != '' ">%(Filename).pdb</TargetPath>
+                <TargetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(IkvmJavaItem.Filename).pdb</TargetPath>
+                <TargetPath Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'win' ">%(IkvmJavaItem.Filename).pdb</TargetPath>
+                <TargetPath Condition=" '$(RuntimeIdentifier)' != '' ">%(IkvmJavaItem.Filename).pdb</TargetPath>
             </None>
             <None Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).dll.config')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).dll.config') And ('$(RuntimeIdentifier)' == '' Or $(RuntimeIdentifier.StartsWith('%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)-')))">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename).dll.config</TargetPath>
-                <TargetPath Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'win' ">%(Filename).dll.config</TargetPath>
-                <TargetPath Condition=" '$(RuntimeIdentifier)' != '' ">%(Filename).dll.config</TargetPath>
+                <TargetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(IkvmJavaItem.Filename).dll.config</TargetPath>
+                <TargetPath Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'win' ">%(IkvmJavaItem.Filename).dll.config</TargetPath>
+                <TargetPath Condition=" '$(RuntimeIdentifier)' != '' ">%(IkvmJavaItem.Filename).dll.config</TargetPath>
             </None>
         </ItemGroup>
     </Target>
 
     <Target Name="GetIkvmJavaTfmSpecificContent" DependsOnTargets="ResolveProjectReferences">
         <ItemGroup>
-            <TfmSpecificPackageFile Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'ref' And !$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
-                <PackagePath>ref\$(TargetFramework)\%(Filename)%(Extension)</PackagePath>
-            </TfmSpecificPackageFile>
-            <TfmSpecificPackageFile Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And !$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
-                <PackagePath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename)%(Extension)</PackagePath>
-            </TfmSpecificPackageFile>
-            <TfmSpecificPackageFile Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).dll.config')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And !$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).dll.config')">
-                <PackagePath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename).dll.config</PackagePath>
-            </TfmSpecificPackageFile>
             <TfmSpecificPackageFile Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'win' And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
-                <PackagePath>lib\$(TargetFramework)\%(Filename)%(Extension)</PackagePath>
+                <PackagePath>lib\$(TargetFramework)\%(IkvmJavaItem.Filename)%(IkvmJavaItem.Extension)</PackagePath>
             </TfmSpecificPackageFile>
             <TfmSpecificPackageFile Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).dll.config')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'win' And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).dll.config')">
-                <PackagePath>lib\$(TargetFramework)\%(Filename).dll.config</PackagePath>
+                <PackagePath>lib\$(TargetFramework)\%(IkvmJavaItem.Filename).dll.config</PackagePath>
+            </TfmSpecificPackageFile>
+            <TfmSpecificPackageFile Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'ref' And !$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+                <PackagePath>ref\$(TargetFramework)\%(IkvmJavaItem.Filename)%(IkvmJavaItem.Extension)</PackagePath>
+            </TfmSpecificPackageFile>
+            <TfmSpecificPackageFile Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And !$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+                <PackagePath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(IkvmJavaItem.Filename)%(IkvmJavaItem.Extension)</PackagePath>
             </TfmSpecificPackageFile>
         </ItemGroup>
     </Target>
 
     <Target Name="GetIkvmJavaTfmSpecificDebugSymbols" DependsOnTargets="ResolveProjectReferences">
         <ItemGroup>
-            <TfmSpecificDebugSymbolsFile Include="@(IkvmJavaItem)" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).pdb') ">
-                <TargetFramework>$(TargetFramework)</TargetFramework>
-                <PackagePath>ref\$(TargetFramework)\%(Filename).pdb</PackagePath>
-            </TfmSpecificDebugSymbolsFile>
-            <TfmSpecificDebugSymbolsFile Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).pdb')">
-                <TargetFramework>$(TargetFramework)</TargetFramework>
-                <PackagePath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(Filename).pdb</PackagePath>
-            </TfmSpecificDebugSymbolsFile>
             <TfmSpecificDebugSymbolsFile Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' == 'win' And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).pdb')">
                 <TargetFramework>$(TargetFramework)</TargetFramework>
-                <PackagePath>lib\$(TargetFramework)\%(Filename).pdb</PackagePath>
+                <TargetPath>lib\$(TargetFramework)\%(IkvmJavaItem.Filename).pdb</TargetPath>
+            </TfmSpecificDebugSymbolsFile>
+            <TfmSpecificDebugSymbolsFile Include="@(IkvmJavaItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition=" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And !$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmJavaItem.RootDir)%(IkvmJavaItem.Directory)%(IkvmJavaItem.Filename).pdb')">
+                <TargetFramework>$(TargetFramework)</TargetFramework>
+                <TargetPath>runtimes\%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)\lib\$(TargetFramework)\%(IkvmJavaItem.Filename).pdb</TargetPath>
             </TfmSpecificDebugSymbolsFile>
         </ItemGroup>
     </Target>
