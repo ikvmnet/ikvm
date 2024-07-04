@@ -40,7 +40,6 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <typeparam name="TReader"></typeparam>
         /// <param name="index"></param>
-        /// <param name="reader"></param>
         /// <returns></returns>
         public TReader Get<TReader>(int index)
             where TReader : class, IConstantReader

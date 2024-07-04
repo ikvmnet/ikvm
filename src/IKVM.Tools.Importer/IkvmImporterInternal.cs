@@ -28,6 +28,7 @@ using System.IO.Compression;
 using System.Text.RegularExpressions;
 using System.Threading;
 
+using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
