@@ -81,7 +81,18 @@ namespace IKVM.Runtime
         /// <returns></returns>
         internal static string GetClassName(byte[] bytes, int offset, int length, out bool isstub)
         {
-            return GetClassName(ClassReader.Read(bytes.AsMemory(offset, length)), out isstub);
+            try
+            {
+                return GetClassName(ClassReader.Read(bytes.AsMemory(offset, length)), out isstub);
+            }
+            catch (UnsupportedClassVersionException e)
+            {
+                throw new UnsupportedClassVersionError(e.Message);
+            }
+            catch (ByteCodeException e)
+            {
+                throw new ClassFormatError(e.Message);
+            }
         }
 
         /// <summary>
@@ -94,20 +105,12 @@ namespace IKVM.Runtime
         /// <exception cref="ClassFormatError"></exception>
         static string GetClassName(ClassReader reader, out bool isstub)
         {
-            try
-            {
-                if (reader.Version < new ClassFormatVersion(45, 3) || reader.Version > 52)
-                    throw new UnsupportedClassVersionError(reader.Version);
+            if (reader.Version < new ClassFormatVersion(45, 3) || reader.Version > 52)
+                throw new UnsupportedClassVersionError(reader.Version);
 
-                // this is a terrible way to go about encoding this information
-                isstub = reader.Constants.OfType<Utf8ConstantReader>().Any(i => i.Value == "IKVM.NET.Assembly");
-
-                return string.Intern(reader.This.Name.Value.Replace('/', '.'));
-            }
-            catch (ByteCodeException e)
-            {
-                throw new ClassFormatError(e.Message);
-            }
+            // this is a terrible way to go about encoding this information
+            isstub = reader.Constants.OfType<Utf8ConstantReader>().Any(i => i.Value == "IKVM.NET.Assembly");
+            return string.Intern(reader.This.Name.Value.Replace('/', '.'));
         }
 
 #endif
@@ -294,7 +297,7 @@ namespace IKVM.Runtime
                 for (int i = 0; i < reader.Attributes.Count; i++)
                 {
                     var attribute = reader.Attributes[i];
-                    
+
                     switch (GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.NameIndex))
                     {
                         case "Deprecated":

@@ -1160,12 +1160,10 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private static byte[] ReadFromZip(ZipArchiveEntry ze)
+        static byte[] ReadFromZip(ZipArchiveEntry ze)
         {
             using MemoryStream ms = new MemoryStream();
-
             using Stream s = ze.Open();
-
             s.CopyTo(ms);
 
             return ms.ToArray();
@@ -1180,6 +1178,10 @@ namespace IKVM.Tools.Importer
                 cf = new ClassFile(context, ClassReader.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
             }
             catch (ClassFormatError)
+            {
+                return false;
+            }
+            catch (ByteCodeException)
             {
                 return false;
             }
@@ -1214,8 +1216,7 @@ namespace IKVM.Tools.Importer
             {
                 try
                 {
-                    bool stub;
-                    string name = ClassFile.GetClassName(data, 0, data.Length, out stub);
+                    var name = ClassFile.GetClassName(data, 0, data.Length, out var stub);
                     if (options.IsExcludedClass(name) || (stub && EmitStubWarning(context, compiler, options, data)))
                     {
                         // we use stubs to add references, but otherwise ignore them
@@ -1224,8 +1225,10 @@ namespace IKVM.Tools.Importer
                 }
                 catch (ClassFormatError)
                 {
+
                 }
             }
+
             return false;
         }
 
