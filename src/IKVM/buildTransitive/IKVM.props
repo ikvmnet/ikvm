@@ -13,12 +13,5 @@
         <IkvmAvailableRuntimeIdentifiers Include="win;linux;osx" />
     </ItemGroup>
 
-    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
-        <None Include="$(MSBuildThisFileDirectory)..\runtimes\**\native\ikvm.dll" LinkBase="runtimes">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>runtimes\%(RecursiveDir)native\%(Filename)%(Extension)</TargetPath>
-        </None>
-    </ItemGroup>
-
     <Import Project="IKVM.IkvmReference.props" />
 </Project>
