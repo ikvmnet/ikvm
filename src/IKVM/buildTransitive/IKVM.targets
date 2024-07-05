@@ -13,12 +13,14 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="IncludeIkvmNativeLibraries" BeforeTargets="AssignTargetPaths">
-        <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
-            <_IkvmNativeLibraries Include="$(MSBuildThisFileDirectory)..\runtimes\**\native\*.dll" />
+    <Target Name="IncludeIkvmNativeLibraries" BeforeTargets="AssignTargetPaths" Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+        <ItemGroup>
+            <_IkvmNativeLibraries Include="$(MSBuildThisFileDirectory)..\runtimes\win-x86\native\*.dll" RuntimeIdentifier="win-x86" />
+            <_IkvmNativeLibraries Include="$(MSBuildThisFileDirectory)..\runtimes\win-x64\native\*.dll" RuntimeIdentifier="win-x64" />
+            <_IkvmNativeLibraries Include="$(MSBuildThisFileDirectory)..\runtimes\win-arm64\native\*.dll" RuntimeIdentifier="win-arm64" />
             <None Include="@(_IkvmNativeLibraries)">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>runtimes\%(RecursiveDir)native\%(Filename)%(Extension)</TargetPath>
+                <TargetPath>runtimes\%(RuntimeIdentifier)\native\%(Filename)%(Extension)</TargetPath>
             </None>
         </ItemGroup>
     </Target>
