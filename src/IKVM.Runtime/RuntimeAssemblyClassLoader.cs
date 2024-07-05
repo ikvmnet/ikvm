@@ -418,7 +418,7 @@ namespace IKVM.Runtime
                 if (urlClassPath == null)
                 {
                     if (jarList == null)
-                        return gnu.java.util.EmptyEnumeration.getInstance();
+                        return global::java.util.Collections.emptyEnumeration();
 
                     var urls = new List<java.net.URL>();
                     foreach (var jar in jarList)

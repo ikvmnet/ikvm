@@ -32,8 +32,6 @@ import java.util.Vector;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import gnu.java.util.EmptyEnumeration;
-
 import ikvm.lang.Internal;
 
 import cli.System.Reflection.Assembly;

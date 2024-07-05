@@ -25,7 +25,6 @@
 package ikvm.runtime;
 
 import cli.System.Reflection.Assembly;
-import gnu.java.util.EmptyEnumeration;
 import ikvm.lang.Internal;
 import java.io.IOException;
 import java.net.MalformedURLException;
