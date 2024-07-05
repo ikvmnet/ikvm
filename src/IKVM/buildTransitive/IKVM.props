@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
-        <None Include="$(MSBuildThisFileDirectory)..\runtimes\**\native\ikvm.dll">
+        <None Include="$(MSBuildThisFileDirectory)..\runtimes\**\native\ikvm.dll" LinkBase="runtimes">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>runtimes\%(RecursiveDir)native\%(Filename)%(Extension)</TargetPath>
         </None>
