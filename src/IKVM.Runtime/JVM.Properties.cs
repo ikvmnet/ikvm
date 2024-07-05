@@ -56,7 +56,7 @@ namespace IKVM.Runtime
             /// Gets the raw search paths to examine for ikvm.properties. 
             /// </summary>
             /// <returns></returns>
-            static IEnumerable<string> GetSeachPathsIter()
+            static IEnumerable<string> GetIkvmPropertiesSearchPathsIter()
             {
                 if (AppContext.BaseDirectory is string basePath && !string.IsNullOrEmpty(basePath))
                     yield return basePath;
@@ -64,17 +64,31 @@ namespace IKVM.Runtime
                 if (AppDomain.CurrentDomain.BaseDirectory is string appBasePath && !string.IsNullOrEmpty(appBasePath))
                     yield return appBasePath;
 
+                // search upwards from the location of IKVM.Runtime
+                // we do this because IKVM.Runtime may be in runtimes/{rid}/lib
                 if (typeof(Properties).Assembly.Location is string runtimeAssemblyPath && !string.IsNullOrEmpty(runtimeAssemblyPath))
-                    yield return Path.GetDirectoryName(runtimeAssemblyPath);
+                    foreach (var parent in GetParentDirs(runtimeAssemblyPath))
+                        yield return parent;
+            }
+
+            /// <summary>
+            /// Returns an iteration of each parent path of the given path until the root.
+            /// </summary>
+            /// <param name="path"></param>
+            /// <returns></returns>
+            static IEnumerable<string> GetParentDirs(string path)
+            {
+                while (string.IsNullOrWhiteSpace(path = Path.GetDirectoryName(path)) == false)
+                    yield return path;
             }
 
             /// <summary>
             /// Gets the unique search paths to examine for ikvm.properties. 
             /// </summary>
             /// <returns></returns>
-            static IEnumerable<string> GetSeachPaths()
+            static IEnumerable<string> GetIkvmPropertiesSearchPaths()
             {
-                return GetSeachPathsIter().Distinct();
+                return GetIkvmPropertiesSearchPathsIter().Distinct();
             }
 
             /// <summary>
@@ -83,16 +97,18 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static Dictionary<string, IkvmPropEntry> GetIkvmProperties()
             {
-                var props = new Dictionary<string, IkvmPropEntry>();
-
-                foreach (var basePath in GetSeachPaths())
+                foreach (var basePath in GetIkvmPropertiesSearchPaths())
                 {
                     var ikvmPropertiesPath = Path.Combine(basePath, "ikvm.properties");
                     if (File.Exists(ikvmPropertiesPath))
+                    {
+                        var props = new Dictionary<string, IkvmPropEntry>();
                         LoadProperties(basePath, File.ReadAllLines(ikvmPropertiesPath), props);
+                        return props;
+                    }
                 }
 
-                return props;
+                return null;
             }
 
             /// <summary>
@@ -360,7 +376,7 @@ namespace IKVM.Runtime
                 {
                     var l = new List<string>();
 
-                    foreach (var d in GetSeachPaths())
+                    foreach (var d in GetIkvmPropertiesSearchPaths())
                     {
                         l.Add(d);
                         foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
