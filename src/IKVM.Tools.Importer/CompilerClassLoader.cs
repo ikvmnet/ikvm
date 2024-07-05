@@ -34,6 +34,7 @@ using System.Threading;
 using System.Xml.Linq;
 
 using IKVM.Attributes;
+using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -274,26 +275,37 @@ namespace IKVM.Tools.Importer
 
         private RuntimeJavaType GetTypeWrapperCompilerHook(string name)
         {
-            RemapperTypeWrapper rtw;
-            if (remapped.TryGetValue(name, out rtw))
+            if (remapped.TryGetValue(name, out var rtw))
             {
                 return rtw;
             }
             else
             {
-                Jar.Item itemRef;
-                if (classes.TryGetValue(name, out itemRef))
+                if (classes.TryGetValue(name, out var itemRef))
                 {
                     classes.Remove(name);
+
                     ClassFile f;
                     try
                     {
                         f = new ClassFile(Context, ClassReader.Read(itemRef.GetData()), name, ClassFileParseOptions, null);
                     }
-                    catch (ClassFormatError x)
+                    catch (UnsupportedClassVersionException e)
                     {
                         Context.StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
-                        Context.StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, x.Message);
+                        Context.StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, e.Message);
+                        return null;
+                    }
+                    catch (ByteCodeException e)
+                    {
+                        Context.StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
+                        Context.StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, e.Message);
+                        return null;
+                    }
+                    catch (ClassFormatError e)
+                    {
+                        Context.StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
+                        Context.StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, e.Message);
                         return null;
                     }
 
