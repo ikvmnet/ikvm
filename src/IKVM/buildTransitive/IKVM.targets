@@ -20,7 +20,7 @@
             <_IkvmNativeLibraries Include="$(MSBuildThisFileDirectory)..\runtimes\win-arm64\native\*.dll" RuntimeIdentifier="win-arm64" />
             <None Include="@(_IkvmNativeLibraries)">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>runtimes\%(RuntimeIdentifier)\native\%(Filename)%(Extension)</TargetPath>
+                <TargetPath>runtimes\%(_IkvmNativeLibraries.RuntimeIdentifier)\native\%(_IkvmNativeLibraries.Filename)%(_IkvmNativeLibraries.Extension)</TargetPath>
             </None>
         </ItemGroup>
     </Target>
