@@ -77,7 +77,7 @@
     <Target Name="GetIkvmLibsTfmSpecificDebugSymbols" DependsOnTargets="ResolveProjectReferences">
         <ItemGroup>
             <TfmSpecificPackageFile Include="@(IkvmLibsItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmLibsItem.RootDir)%(IkvmLibsItem.Directory)%(IkvmLibsItem.Filename).pdb')">
-                <PackagePath>lib\$(TargetFramework)\%(IkvmLibsItem.Filename)%(IkvmLibsItem.Extension)</PackagePath>
+                <PackagePath>lib\$(TargetFramework)\%(IkvmLibsItem.Filename).pdb</PackagePath>
             </TfmSpecificPackageFile>
             <TfmSpecificPackageFile Include="@(IkvmLibsItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmLibsItem.RootDir)%(IkvmLibsItem.Directory)%(IkvmLibsItem.Filename).pdb')">
                 <PackagePath>runtimes\win\lib\$(TargetFramework)\%(IkvmLibsItem.Filename).pdb</PackagePath>
