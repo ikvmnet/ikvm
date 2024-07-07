@@ -1,0 +1,119 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ImageTarget Include="net472|win-x64" TargetFramework="net472" RuntimeIdentifier="win-x64" Condition="$(_EnabledImageRuntimes.Contains(';win-x64;'))" />
+        <ImageTarget Include="net472|win-x86" TargetFramework="net472" RuntimeIdentifier="win-x86" Condition="$(_EnabledImageRuntimes.Contains(';win-x86;'))" />
+        <ImageTarget Include="net472|win-arm64" TargetFramework="net472" RuntimeIdentifier="win-arm64" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))" />
+        <ImageTarget Include="net6.0|win-x64" TargetFramework="net6.0" RuntimeIdentifier="win-x64" Condition="$(_EnabledImageRuntimes.Contains(';win-x64;'))" />
+        <ImageTarget Include="net6.0|win-x86" TargetFramework="net6.0" RuntimeIdentifier="win-x86" Condition="$(_EnabledImageRuntimes.Contains(';win-x86;'))" />
+        <ImageTarget Include="net6.0|win-arm64" TargetFramework="net6.0" RuntimeIdentifier="win-arm64" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))" />
+        <ImageTarget Include="net6.0|linux-x64" TargetFramework="net6.0" RuntimeIdentifier="linux-x64" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))" />
+        <ImageTarget Include="net6.0|linux-arm" TargetFramework="net6.0" RuntimeIdentifier="linux-arm" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm;'))" />
+        <ImageTarget Include="net6.0|linux-arm64" TargetFramework="net6.0" RuntimeIdentifier="linux-arm64" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm64;'))" />
+        <ImageTarget Include="net6.0|linux-musl-x64" TargetFramework="net6.0" RuntimeIdentifier="linux-musl-x64" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-x64;'))" />
+        <ImageTarget Include="net6.0|linux-musl-arm" TargetFramework="net6.0" RuntimeIdentifier="linux-musl-arm" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm;'))" />
+        <ImageTarget Include="net6.0|linux-musl-arm64" TargetFramework="net6.0" RuntimeIdentifier="linux-musl-arm64" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm64;'))" />
+        <ImageTarget Include="net6.0|osx-x64" TargetFramework="net6.0" RuntimeIdentifier="osx-x64" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))" />
+        <ImageTarget Include="net6.0|osx-arm64" TargetFramework="net6.0" RuntimeIdentifier="osx-arm64" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))" />
+        <ImageTarget Include="net8.0|win-x64" TargetFramework="net8.0" RuntimeIdentifier="win-x64" Condition="$(_EnabledImageRuntimes.Contains(';win-x64;'))" />
+        <ImageTarget Include="net8.0|win-x86" TargetFramework="net8.0" RuntimeIdentifier="win-x86" Condition="$(_EnabledImageRuntimes.Contains(';win-x86;'))" />
+        <ImageTarget Include="net8.0|win-arm64" TargetFramework="net8.0" RuntimeIdentifier="win-arm64" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))" />
+        <ImageTarget Include="net8.0|linux-x64" TargetFramework="net8.0" RuntimeIdentifier="linux-x64" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))" />
+        <ImageTarget Include="net8.0|linux-arm" TargetFramework="net8.0" RuntimeIdentifier="linux-arm" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm;'))" />
+        <ImageTarget Include="net8.0|linux-arm64" TargetFramework="net8.0" RuntimeIdentifier="linux-arm64" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm64;'))" />
+        <ImageTarget Include="net8.0|linux-musl-x64" TargetFramework="net8.0" RuntimeIdentifier="linux-musl-x64" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-x64;'))" />
+        <ImageTarget Include="net8.0|linux-musl-arm" TargetFramework="net8.0" RuntimeIdentifier="linux-musl-arm" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm;'))" />
+        <ImageTarget Include="net8.0|linux-musl-arm64" TargetFramework="net8.0" RuntimeIdentifier="linux-musl-arm64" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm64;'))" />
+        <ImageTarget Include="net8.0|osx-x64" TargetFramework="net8.0" RuntimeIdentifier="osx-x64" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))" />
+        <ImageTarget Include="net8.0|osx-arm64" TargetFramework="net8.0" RuntimeIdentifier="osx-arm64" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))" />
+    </ItemGroup>
+
+    <!-- Runs once per TFM/RID combination to generate individual output. -->
+    <Target Name="GetCopyToOutputDirectoryItemsByImageTarget" BeforeTargets="BeforeBuild" Inputs="@(ImageTarget)" Outputs="%(Identity)\null">
+
+        <!-- batch values to properties -->
+        <PropertyGroup>
+            <_TargetFramework>%(ImageTarget.TargetFramework)</_TargetFramework>
+            <_RuntimeIdentifier>%(ImageTarget.RuntimeIdentifier)</_RuntimeIdentifier>
+        </PropertyGroup>
+
+        <!-- output for the TFM/RID -->
+        <ItemGroup>
+            <PublishProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.csproj">
+                <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
+                <PublishTargetPath>$(_TargetFramework)</PublishTargetPath>
+                <PublishItemGroup>PublishItems</PublishItemGroup>
+            </PublishProjectReference>
+        </ItemGroup>
+    </Target>
+
+    <UsingTask TaskName="StripTargetPath" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+    
+public class StripTargetPath : Task
+{
+    
+    [Output]
+    public ITaskItem[] Items { get; set; }
+    
+    public override bool Execute()
+    {
+        var d = new Dictionary<string, ITaskItem>();
+    
+        if (Items != null)
+        {
+            foreach (var item in Items)
+            {
+                var p = item.GetMetadata("TargetPath");
+                if (string.IsNullOrEmpty(p) == false)
+                {
+                    var a = p.Split(Path.DirectorySeparatorChar).ToList();
+                    a.RemoveAt(1);
+                    if (a.Count > 1)
+                    {
+                        p = string.Join(Path.DirectorySeparatorChar.ToString(), a);
+                        item.SetMetadata("TargetPath", p);
+                        d[p] = item;
+                    }
+                }
+            }
+        }
+        
+        Items = d.Values.ToArray();
+        return true;
+    }
+    
+}
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="AfterCollectPublishProjectReferenceItems" BeforeTargets="AssignTargetPaths" AfterTargets="CollectPublishProjectReferenceItems">
+        <StripTargetPath Items="@(PublishItems)">
+            <Output TaskParameter="Items" ItemName="_PublishItems" />
+        </StripTargetPath>
+        <ItemGroup>
+            <None Include="@(_PublishItems)">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+            </None>
+        </ItemGroup>
+    </Target>
+
+</Project>

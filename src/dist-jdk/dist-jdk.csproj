@@ -45,7 +45,7 @@
 
         <!-- output for the TFM/RID -->
         <ItemGroup>
-            <PublishProjectReference Include="..\IKVM.Image\IKVM.Image.csproj">
+            <PublishProjectReference Include="..\IKVM.Image.JDK\IKVM.Image.JDK.csproj">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
                 <PublishTargetPath>$(_TargetFramework)</PublishTargetPath>
                 <PublishItemGroup>PublishItems</PublishItemGroup>

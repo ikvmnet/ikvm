@@ -252,16 +252,6 @@ jobs:
         path: /tmp/nuget.tar.gz
     - name: Delete NuGet Packages
       run: rm /tmp/nuget.tar.gz
-    - name: Package Binaries
-      run: tar czvf /tmp/bin.tar.gz bin
-      working-directory: dist
-    - name: Upload Binaries
-      uses: actions/upload-artifact@v4
-      with:
-        name: bin
-        path: /tmp/bin.tar.gz
-    - name: Delete Binaries
-      run: rm /tmp/bin.tar.gz
     - name: Package Tools
       run: tar czvf /tmp/tools.tar.gz tools
       working-directory: dist
@@ -272,16 +262,26 @@ jobs:
         path: /tmp/tools.tar.gz
     - name: Delete Tools
       run: rm /tmp/tools.tar.gz
-    - name: Package Image
-      run: tar czvf /tmp/image.tar.gz image
+    - name: Package JRE
+      run: tar czvf /tmp/jre.tar.gz image
       working-directory: dist
-    - name: Upload Image
+    - name: Upload JRE
       uses: actions/upload-artifact@v4
       with:
         name: image
-        path: /tmp/image.tar.gz
-    - name: Delete Image
-      run: rm /tmp/image.tar.gz
+        path: /tmp/jre.tar.gz
+    - name: Delete JRE
+      run: rm /tmp/jre.tar.gz
+    - name: Package JDK
+      run: tar czvf /tmp/jdk.tar.gz image
+      working-directory: dist
+    - name: Upload JDK
+      uses: actions/upload-artifact@v4
+      with:
+        name: image
+        path: /tmp/jdk.tar.gz
+    - name: Delete JDK
+      run: rm /tmp/jdk.tar.gz
     - name: Package Tests (IKVM.ByteCode.Tests)
       run: tar czvf /tmp/tests--IKVM.ByteCode.Tests.tar.gz tests/IKVM.ByteCode.Tests
       working-directory: dist
@@ -745,17 +745,6 @@ jobs:
     - name: Restore NuGet Packages
       run: tar xzvf nuget.tar.gz
       working-directory: dist
-    - name: Download Binaries
-      uses: actions/download-artifact@v4
-      with:
-        name: bin
-        path: dist
-    - name: Restore Binaries
-      run: tar xzvf bin.tar.gz
-      working-directory: dist
-    - name: Compress Binaries
-      shell: pwsh
-      run: cd dist && gi bin/* | %{ $tfm = $_.Name; Push-Location "bin/$tfm"; zip -r "../IKVM-${env:GitVersion_SemVer}-bin-$tfm.zip" .; tar czvf "../IKVM-${env:GitVersion_SemVer}-bin-$tfm.tar.gz" .; Pop-Location }
     - name: Download Tools
       uses: actions/download-artifact@v4
       with:
@@ -767,17 +756,28 @@ jobs:
     - name: Compress Tools
       shell: pwsh
       run: cd dist && gi tools/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.tar.gz" .; Pop-Location }
-    - name: Download Image
+    - name: Download JRE
       uses: actions/download-artifact@v4
       with:
-        name: image
+        name: jre
         path: dist
-    - name: Restore Image
-      run: tar xzvf image.tar.gz
+    - name: Restore JRE
+      run: tar xzvf jre.tar.gz
       working-directory: dist
-    - name: Compress Image
+    - name: Compress JRE
       shell: pwsh
-      run: cd dist && gi image/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "image/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.tar.gz" .; Pop-Location }
+      run: cd dist && gi jre/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "jre/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-jre-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-jre-$tfm-$rid.tar.gz" .; Pop-Location }
+    - name: Download JDK
+      uses: actions/download-artifact@v4
+      with:
+        name: jdk
+        path: dist
+    - name: Restore JDK
+      run: tar xzvf jdk.tar.gz
+      working-directory: dist
+    - name: Compress JDK
+      shell: pwsh
+      run: cd dist && gi jdk/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "jdk/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-jdk-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-jdk-$tfm-$rid.tar.gz" .; Pop-Location }
     - name: Download Documentation
       uses: actions/download-artifact@v4
       with:
