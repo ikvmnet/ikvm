@@ -10,16 +10,16 @@
 
     <ItemGroup>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>dist%5Cdist-bin:Publish</Targets>
-            <Properties>PublishDir=$(DistDir)\bin</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
             <Targets>dist%5Cdist-tools:Publish</Targets>
             <Properties>PublishDir=$(DistDir)\tools</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>dist%5Cdist-image:Publish</Targets>
-            <Properties>PublishDir=$(DistDir)\image</Properties>
+            <Targets>dist%5Cdist-jre:Publish</Targets>
+            <Properties>PublishDir=$(DistDir)\jre</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>dist%5Cdist-jdk:Publish</Targets>
+            <Properties>PublishDir=$(DistDir)\jdk</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>dist%5Cdist-nuget:Publish</Targets>
