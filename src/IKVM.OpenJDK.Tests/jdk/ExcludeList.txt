@@ -754,7 +754,7 @@ java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_4.java       
 java/awt/event/MouseWheelEvent/WheelModifier/MouseWheelOnBackgroundComponent.java                                       macosx-all
 java/awt/event/MouseWheelEvent/WheelModifier/WheelModifier.java                                                         generic-all
 java/awt/event/OtherEvents/UngrabID/UngrabID.java                                                                       generic-all
-java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java                                                       macosx-all
+java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java                                                       linux-all,macosx-all
 java/awt/event/TextEvent/TextEventSequenceTest/TextEventSequenceTest.java                                               generic-all
 java/awt/font/FontNames/LocaleFamilyNames.java                                                                          generic-all
 java/awt/font/GlyphVector/VisualBounds.java                                                                             generic-all
@@ -4159,7 +4159,7 @@ java/awt/Choice/GrabLockTest/GrabLockTest.java                                  
 java/awt/Choice/PopdownGeneratesMouseEvents/PopdownGeneratesMouseEvents.html                                            macosx-all
 java/awt/Choice/PopupPosTest/PopupPosTest.html                                                                          macosx-all,windows-all
 java/awt/Choice/ResizeAutoClosesChoice/ResizeAutoClosesChoice.java                                                      macosx-all
-java/awt/Choice/SelectCurrentItemTest/SelectCurrentItemTest.html                                                        macosx-all,windows-all
+java/awt/Choice/SelectCurrentItemTest/SelectCurrentItemTest.html                                                        generic-all
 java/awt/Choice/UnfocusableCB_ERR/UnfocusableCB_ERR.java                                                                macosx-all
 java/awt/Color/HeadlessColor.java                                                                                       macosx-all
 java/awt/Component/CompEventOnHiddenComponent/CompEventOnHiddenComponent.java                                           macosx-all
@@ -4263,7 +4263,7 @@ java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java                   
 java/awt/Frame/MiscUndecorated/ActiveAWTWindowTest.java                                                                 linux-all,macosx-all
 java/awt/Frame/MiscUndecorated/ActiveSwingWindowTest.java                                                               macosx-all
 java/awt/Frame/MiscUndecorated/FrameCloseTest.java                                                                      linux-all,macosx-all
-java/awt/Frame/MiscUndecorated/RepaintTest.java                                                                         macosx-all,windows-all
+java/awt/Frame/MiscUndecorated/RepaintTest.java                                                                         generic-all
 java/awt/Frame/MiscUndecorated/UndecoratedInitiallyIconified.java                                                       macosx-all
 java/awt/Frame/NonEDT_GUI_DeadlockTest/NonEDT_GUI_Deadlock.html                                                         macosx-all
 java/awt/Frame/SetMaximizedBounds/SetMaximizedBounds.java                                                               macosx-all
@@ -4574,7 +4574,7 @@ java/awt/Modal/ToBack/ToBackTKModal2Test.java                                   
 java/awt/Modal/ToBack/ToBackTKModal3Test.java                                                                           macosx-all,windows-all
 java/awt/Modal/ToBack/ToBackTKModal4Test.java                                                                           generic-all
 java/awt/Modal/ToBack/ToBackTKModal5Test.java                                                                           generic-all
-java/awt/Modal/ToBack/ToBackTKModal6Test.java                                                                           linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackTKModal6Test.java                                                                           generic-all
 java/awt/Modal/ToFront/DialogToFrontAppModalTest.java                                                                   generic-all
 java/awt/Modal/ToFront/DialogToFrontDocModalTest.java                                                                   generic-all
 java/awt/Modal/ToFront/DialogToFrontModalTest.java                                                                      generic-all
@@ -4599,7 +4599,7 @@ java/awt/Modal/ToFront/FrameToFrontTKModal1Test.java                            
 java/awt/Modal/ToFront/FrameToFrontTKModal2Test.java                                                                    generic-all
 java/awt/Modal/ToFront/FrameToFrontTKModal3Test.java                                                                    generic-all
 java/awt/Modal/ToFront/FrameToFrontTKModal4Test.java                                                                    macosx-all,windows-all
-java/awt/Modal/ToFront/FrameToFrontTKModal5Test.java                                                                    macosx-all,windows-all
+java/awt/Modal/ToFront/FrameToFrontTKModal5Test.java                                                                    generic-all
 java/awt/Paint/RepaintOnAWTShutdown.java                                                                                macosx-all
 java/awt/print/Dialog/DestinationTest.java                                                                              macosx-all
 java/awt/print/Dialog/MediaInPrintable.java                                                                             macosx-all
