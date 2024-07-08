@@ -263,22 +263,22 @@ jobs:
     - name: Delete Tools
       run: rm /tmp/tools.tar.gz
     - name: Package JRE
-      run: tar czvf /tmp/jre.tar.gz image
+      run: tar czvf /tmp/jre.tar.gz jre
       working-directory: dist
     - name: Upload JRE
       uses: actions/upload-artifact@v4
       with:
-        name: image
+        name: jre
         path: /tmp/jre.tar.gz
     - name: Delete JRE
       run: rm /tmp/jre.tar.gz
     - name: Package JDK
-      run: tar czvf /tmp/jdk.tar.gz image
+      run: tar czvf /tmp/jdk.tar.gz jdk
       working-directory: dist
     - name: Upload JDK
       uses: actions/upload-artifact@v4
       with:
-        name: image
+        name: jdk
         path: /tmp/jdk.tar.gz
     - name: Delete JDK
       run: rm /tmp/jdk.tar.gz
