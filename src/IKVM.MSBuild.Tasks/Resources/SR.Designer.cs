@@ -79,6 +79,15 @@ namespace IKVM.MSBuild.Tasks.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to IKVMSDK0014: The IkvmReference {0} encountered an invalid archive &apos;{1}&apos;..
+        /// </summary>
+        internal static string Error_IkvmInvalidArchive {
+            get {
+                return ResourceManager.GetString("Error.IkvmInvalidArchive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to IKVMSDK0004: The IkvmReference {0} has invalid AssemblyName &apos;{1}&apos; or AssemblyVersion &apos;{2}&apos;..
         /// </summary>
         internal static string Error_IkvmInvalidAssemblyInfo {
@@ -102,6 +111,15 @@ namespace IKVM.MSBuild.Tasks.Resources {
         internal static string Error_IkvmInvalidAssemblyVersion {
             get {
                 return ResourceManager.GetString("Error.IkvmInvalidAssemblyVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IKVMSDK0015: The IkvmReference {0} encountered an error parsing class file &apos;{1}&apos;..
+        /// </summary>
+        internal static string Error_IkvmInvalidClassFile {
+            get {
+                return ResourceManager.GetString("Error.IkvmInvalidClassFile", resourceCulture);
             }
         }
         

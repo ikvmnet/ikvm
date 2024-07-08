@@ -123,6 +123,9 @@
   <data name="Error.IkvmDelaySignRequiresKey" xml:space="preserve">
     <value>IKVMSDK0012: The IkvmReference {0} has been configured to delay sign the assembly but is missing a key file.</value>
   </data>
+  <data name="Error.IkvmInvalidArchive" xml:space="preserve">
+    <value>IKVMSDK0014: The IkvmReference {0} encountered an invalid archive '{1}'.</value>
+  </data>
   <data name="Error.IkvmInvalidAssemblyInfo" xml:space="preserve">
     <value>IKVMSDK0004: The IkvmReference {0} has invalid AssemblyName '{1}' or AssemblyVersion '{2}'.</value>
   </data>
@@ -131,6 +134,9 @@
   </data>
   <data name="Error.IkvmInvalidAssemblyVersion" xml:space="preserve">
     <value>IKVMSDK0003: The IkvmReference {0} has invalid AssemblyVersion '{1}'.</value>
+  </data>
+  <data name="Error.IkvmInvalidClassFile" xml:space="preserve">
+    <value>IKVMSDK0015: The IkvmReference {0} encountered an error parsing class file '{1}'.</value>
   </data>
   <data name="Error.IkvmInvalidCompile" xml:space="preserve">
     <value>IKVMSDK0005: The IkvmReference {0} has an invalid Compile item '{1}'. Can only include jar or class files.</value>

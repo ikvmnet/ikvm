@@ -8,7 +8,7 @@ namespace IKVM.ByteCode
     /// Represents an error that occurred with manipulation of Java byte code or class formats.
     /// </summary>
     [Serializable]
-    internal class ByteCodeException : Exception
+    public class ByteCodeException : Exception
     {
 
         /// <summary>

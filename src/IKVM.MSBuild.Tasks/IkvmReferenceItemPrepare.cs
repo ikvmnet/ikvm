@@ -417,7 +417,7 @@
             {
                 if (string.IsNullOrWhiteSpace(item.AssemblyName) || string.IsNullOrWhiteSpace(item.AssemblyVersion))
                 {
-                    var info = TryGetAssemblyNameFromPath(path);
+                    var info = TryGetAssemblyNameFromPath(item, path);
                     if (info != null)
                     {
                         // attempt to derive a default assembly name from the compile item
@@ -464,10 +464,17 @@
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        static JarFileUtil.ModuleInfo TryGetAssemblyNameFromPath(string path)
+        static JarFileUtil.ModuleInfo TryGetAssemblyNameFromPath(IkvmReferenceItem item, string path)
         {
-            if (path.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) && File.Exists(path))
-                return JarFileUtil.GetModuleInfo(path);
+            try
+            {
+                if (path.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) && File.Exists(path))
+                    return JarFileUtil.GetModuleInfo(path);
+            }
+            catch (Exception e)
+            {
+                throw new IkvmTaskMessageException(e, Resources.SR.Error_IkvmInvalidArchive, item, path);
+            }
 
             return null;
         }
