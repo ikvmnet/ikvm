@@ -4180,7 +4180,7 @@ java/awt/Component/Headless/HeadlessScrollPane.java                             
 java/awt/Component/Headless/HeadlessTextArea.java                                                                       macosx-all
 java/awt/Component/Headless/HeadlessTextField.java                                                                      macosx-all
 java/awt/Component/Headless/HeadlessWindow.java                                                                         macosx-all
-java/awt/Component/NativeInLightShow/NativeInLightShow.java                                                             macosx-all
+java/awt/Component/NativeInLightShow/NativeInLightShow.java                                                             linux-all,macosx-all
 java/awt/Cursor/HeadlessCursor.java                                                                                     macosx-all
 java/awt/datatransfer/Clipboard/BasicClipboardTest.java                                                                 macosx-all
 java/awt/datatransfer/Clipboard/GetContentsInterruptedTest.java                                                         macosx-all
@@ -4695,7 +4695,7 @@ java/awt/Window/FullWindowContentTest/FullWindowContentTest.java                
 java/awt/Window/GetWindowsTest/GetWindowsTest.java                                                                      macosx-all
 java/awt/Window/HandleWindowDestroyTest/HandleWindowDestroyTest.html                                                    macosx-all
 java/awt/Window/setLocRelativeTo/SetLocationRelativeToTest.java                                                         macosx-all
-java/awt/Window/ShapedAndTranslucentWindows/SetShape.java                                                               macosx-all
+java/awt/Window/ShapedAndTranslucentWindows/SetShape.java                                                               linux-all,macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java                                                       linux-all,macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java                                            macosx-all,windows-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java                                           macosx-all,windows-all
