@@ -4268,7 +4268,7 @@ java/awt/Frame/MiscUndecorated/UndecoratedInitiallyIconified.java               
 java/awt/Frame/NonEDT_GUI_DeadlockTest/NonEDT_GUI_Deadlock.html                                                         macosx-all
 java/awt/Frame/SetMaximizedBounds/SetMaximizedBounds.java                                                               macosx-all
 java/awt/FullScreen/NonExistentDisplayModeTest/NonExistentDisplayModeTest.java                                          macosx-all
-java/awt/grab/MenuDragEvents/MenuDragEvents.html                                                                        macosx-all
+java/awt/grab/MenuDragEvents/MenuDragEvents.html                                                                        macosx-all,windows-all
 java/awt/GradientPaint/HeadlessGradientPaint.java                                                                       macosx-all
 java/awt/Graphics2D/Headless/HeadlessPoint.java                                                                         macosx-all
 java/awt/Graphics2D/Headless/HeadlessPolygon.java                                                                       macosx-all
