@@ -785,7 +785,7 @@ jobs:
         path: dist
     - name: Create Release
       if: github.ref_type == 'tag'
-      uses: ncipollo/release-action@v1.10.0
+      uses: ncipollo/release-action@v1.14.0
       with:
         tag: ${{ github.ref_name }}
         allowUpdates: true
