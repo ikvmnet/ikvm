@@ -4374,7 +4374,7 @@ java/awt/Modal/FileDialog/FileDialogDocModal7Test.java                          
 java/awt/Modal/FileDialog/FileDialogModal1Test.java                                                                     generic-all
 java/awt/Modal/FileDialog/FileDialogModal2Test.java                                                                     generic-all
 java/awt/Modal/FileDialog/FileDialogModal3Test.java                                                                     generic-all
-java/awt/Modal/FileDialog/FileDialogModal4Test.java                                                                     linux-all,macosx-all
+java/awt/Modal/FileDialog/FileDialogModal4Test.java                                                                     generic-all
 java/awt/Modal/FileDialog/FileDialogModal5Test.java                                                                     generic-all
 java/awt/Modal/FileDialog/FileDialogModal6Test.java                                                                     generic-all
 java/awt/Modal/FileDialog/FileDialogNonModal1Test.java                                                                  generic-all
