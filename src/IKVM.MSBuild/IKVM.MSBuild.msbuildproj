@@ -33,13 +33,6 @@
             <PublishPackagePath>tasks\net6.0</PublishPackagePath>
             <Pack>true</Pack>
         </PublishProjectReference>
-        <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj">
-            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
-            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net8.0' ">tasks</PublishTargetPath>
-            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net8.0' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>tasks\net8.0</PublishPackagePath>
-            <Pack>true</Pack>
-        </PublishProjectReference>
     </ItemGroup>
 
     <Target Name="MakeGeneratedPropsFile" Outputs="$(IntermediateOutputPath)generated.props" BeforeTargets="_GetPackageFiles">
@@ -49,6 +42,12 @@
         <WriteLinesToFile File="$(IntermediateOutputPath)generated.props" Lines="@(_GeneratedPropsFileLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
         <ItemGroup>
             <_PackageFiles Include="$(IntermediateOutputPath)generated.props" PackagePath="targets\generated.props" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="ExcludePdbFiles" AfterTargets="_GetPackageFiles">
+        <ItemGroup>
+            <_PackageFiles Remove="@(_PackageFiles->WithMetadataValue('Extension', '.pdb'))" />
         </ItemGroup>
     </Target>
 
