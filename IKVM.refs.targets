@@ -7,9 +7,10 @@
     <ItemGroup>
         <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.ByteCode\IKVM.ByteCode.csproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-            <PrivateAssets>all</PrivateAssets>
-            <OutputItemType>IkvmLibsItem</OutputItemType>
         </ProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Runtime\IKVM.Runtime.csproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>

@@ -785,12 +785,12 @@ jobs:
         path: dist
     - name: Create Release
       if: github.ref_type == 'tag'
-      uses: ncipollo/release-action@v1.10.0
+      uses: ncipollo/release-action@v1.14.0
       with:
         tag: ${{ github.ref_name }}
         allowUpdates: true
         omitBodyDuringUpdate: true
-        artifacts: dist/nuget/*.nupkg,dist/bin/*.zip,dist/bin/*.tar.gz,dist/image/*.zip,dist/image/*.tar.gz,dist/tools/*.zip,dist/tools/*.tar.gz,dist/doc.zip
+        artifacts: dist/nuget/*.nupkg,dist/jre/*.zip,dist/jre/*.tar.gz,dist/jdk/*.zip,dist/jdk/*.tar.gz,dist/tools/*.zip,dist/tools/*.tar.gz,dist/doc.zip
         draft: false
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)

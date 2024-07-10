@@ -22,6 +22,7 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
+        <PackageProjectReference Include="..\IKVM.ByteCode\IKVM.ByteCode.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.MSBuild.Tools\IKVM.MSBuild.Tools.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win-x64\IKVM.MSBuild.Tools.runtime.win-x64.csproj" PackageTargetPath="nuget" Condition="$(_EnabledToolRuntimes.Contains(';win-x64;'))" />
