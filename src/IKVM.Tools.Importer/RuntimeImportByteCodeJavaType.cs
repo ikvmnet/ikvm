@@ -51,7 +51,6 @@ namespace IKVM.Tools.Importer
         Annotation annotation;
         Type enumType;
         RuntimeJavaMethod[] replacedMethods;
-        WorkaroundBaseClass workaroundBaseClass;
 
         /// <summary>
         /// Initializes a new instance.
@@ -64,106 +63,12 @@ namespace IKVM.Tools.Importer
 
         }
 
-        protected override Type GetBaseTypeForDefineType()
-        {
-            var baseTypeWrapper = BaseTypeWrapper;
-
-            if (IsPublic && IsAbstract && baseTypeWrapper.IsPublic && baseTypeWrapper.IsAbstract && classLoader.WorkaroundAbstractMethodWidening)
-            {
-                // FXBUG
-                // if the current class widens access on an abstract base class method,
-                // we need to inject an artificial base class to workaround a C# compiler bug
-                List<RuntimeJavaMethod> methods = null;
-
-                foreach (var mw in GetMethods())
-                {
-                    if (!mw.IsStatic && mw.IsPublic)
-                    {
-                        var baseMethod = baseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
-                        if (baseMethod != null && baseMethod.IsAbstract && baseMethod.IsProtected)
-                        {
-                            methods ??= new List<RuntimeJavaMethod>();
-                            methods.Add(baseMethod);
-                        }
-                    }
-                }
-
-                if (methods != null)
-                {
-                    var name = "__WorkaroundBaseClass__." + UnicodeUtil.EscapeInvalidSurrogates(Name);
-                    while (!classLoader.ReserveName(name))
-                        name = "_" + name;
-
-                    var context = classLoader.GetTypeWrapperFactory();
-                    var typeBuilder = context.ModuleBuilder.DefineType(name, TypeAttributes.Public | TypeAttributes.Abstract, base.GetBaseTypeForDefineType());
-                    Context.AttributeHelper.HideFromJava(typeBuilder);
-                    Context.AttributeHelper.SetEditorBrowsableNever(typeBuilder);
-                    workaroundBaseClass = new WorkaroundBaseClass(this, typeBuilder, methods.ToArray());
-                    var constructors = new List<RuntimeJavaMethod>();
-                    foreach (var mw in baseTypeWrapper.GetMethods())
-                        if (ReferenceEquals(mw.Name, StringConstants.INIT) && mw.IsAccessibleFrom(baseTypeWrapper, this, this))
-                            constructors.Add(new ConstructorForwarder(context, typeBuilder, mw));
-                    replacedMethods = constructors.ToArray();
-                    return typeBuilder;
-                }
-            }
-
-            return base.GetBaseTypeForDefineType();
-        }
-
         internal override void Finish()
         {
             base.Finish();
-            workaroundBaseClass?.Finish();
         }
 
-        sealed class WorkaroundBaseClass
-        {
-
-            readonly RuntimeImportByteCodeJavaType wrapper;
-            readonly TypeBuilder typeBuilder;
-            readonly RuntimeJavaMethod[] methods;
-            MethodBuilder baseSerializationCtor;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="wrapper"></param>
-            /// <param name="typeBuilder"></param>
-            /// <param name="methods"></param>
-            internal WorkaroundBaseClass(RuntimeImportByteCodeJavaType wrapper, TypeBuilder typeBuilder, RuntimeJavaMethod[] methods)
-            {
-                this.wrapper = wrapper;
-                this.typeBuilder = typeBuilder;
-                this.methods = methods;
-            }
-
-            internal MethodBuilder GetSerializationConstructor()
-            {
-                if (baseSerializationCtor == null)
-                    baseSerializationCtor = wrapper.Context.Serialization.AddAutomagicSerializationToWorkaroundBaseClass(typeBuilder, wrapper.BaseTypeWrapper.GetSerializationConstructor());
-
-                return baseSerializationCtor;
-            }
-
-            internal void Finish()
-            {
-                if (!typeBuilder.IsCreated())
-                {
-                    foreach (var mw in methods)
-                    {
-                        var mb = mw.GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, mw.Name, MethodAttributes.FamORAssem | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.CheckAccessOnOverride);
-                        wrapper.Context.AttributeHelper.HideFromJava(mb);
-                        var ilgen = wrapper.Context.CodeEmitterFactory.Create(mb);
-                        ilgen.EmitThrow("java.lang.AbstractMethodError");
-                        ilgen.DoEmit();
-                    }
-                    typeBuilder.CreateType();
-                }
-            }
-        }
-
-        private sealed class ConstructorForwarder : RuntimeJavaMethod
+        sealed class ConstructorForwarder : RuntimeJavaMethod
         {
 
             readonly RuntimeJavaTypeFactory context;
