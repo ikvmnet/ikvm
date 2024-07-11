@@ -50,8 +50,6 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [DataTestMethod]
-        [DataRow("tls-v1-0")]
-        [DataRow("tls-v1-1")]
         [DataRow("tls-v1-2")]
         [DataRow("sha256")]
         //[DataRow("sha384")]

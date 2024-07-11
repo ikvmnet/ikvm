@@ -69,7 +69,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <TzFile Include="africa;antarctica;asia;australasia;europe;northamerica;pacificnew;southamerica;backward;etcetera;gmt;jdk11_backward" />
+        <TzFile Include="africa;antarctica;asia;australasia;europe;northamerica;southamerica;backward;etcetera;gmt;jdk11_backward" />
     </ItemGroup>
 
     <Target Name="GenerateTZDB" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(TzFile->'$(TzDataDir)\%(Identity)')" Outputs="$(TzDbDat)">

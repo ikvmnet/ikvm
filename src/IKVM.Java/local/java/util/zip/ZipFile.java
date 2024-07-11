@@ -51,6 +51,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.jar.JarFile;
 import java.util.stream.Stream;
 import static java.util.zip.ZipConstants64.*;
 
@@ -96,6 +97,7 @@ public class ZipFile implements ZipConstants, Closeable
   private LinkedHashMap<String, ZipEntry> entries;
 
   private boolean closed = false;
+  private int manifestNum = 0;       // number of META-INF/MANIFEST.MF, case insensitive
   final boolean hasLocHeader;
 
   /**
@@ -311,6 +313,10 @@ public class ZipFile implements ZipConstants, Closeable
         if (commentLen > 0)
           {
             entry.comment = inp.readString(commentLen, (flags & EFS) != 0);
+          }
+        if (isManifestName(entry.name))
+          {
+            manifestNum++;
           }
         entries.put(entry.name, entry);
       }
@@ -896,11 +902,23 @@ public class ZipFile implements ZipConstants, Closeable
     }
   }
 
+  private int getManifestNum() {
+    return manifestNum;
+  }
+
+  public static boolean isManifestName(String name)
+  {
+    return JarFile.MANIFEST_NAME.equalsIgnoreCase(name);
+  }
+
   static {
     sun.misc.SharedSecrets.setJavaUtilZipFileAccess(
       new sun.misc.JavaUtilZipFileAccess() {
         public boolean startsWithLocHeader(ZipFile zip) {
           return zip.hasLocHeader;
+        }
+        public int getManifestNum(JarFile jar) {
+          return ((ZipFile)jar).getManifestNum();
         }
       }
     );
