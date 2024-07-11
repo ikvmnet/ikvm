@@ -12,7 +12,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\util\locale\provider\LocaleDataMetaInfo.java" PackagePath="sun\util\locale\provider" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\awt\**\*.java" PackagePath="com\sun\awt" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\beans\**\*.java" PackagePath="com\sun\beans" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\crypto\**\*.java" PackagePath="com\sun\crypto" />

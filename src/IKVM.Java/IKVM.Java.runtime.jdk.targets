@@ -181,11 +181,11 @@
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateCharacterData;
             GenerateCharacterDataStatic;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <Target Name="GenerateCharsetDecoder" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);$(OpenJdkDir)jdk\src\share\classes\java\nio\charset\Charset-X-Coder.java.template" Outputs="$(IntermediateOutputPath)genchardec\java\nio\charset\CharsetDecoder.java">
@@ -288,11 +288,11 @@
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateCharsetDecoder;
             GenerateCharsetEncoder;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -607,11 +607,11 @@ public class WriteStandardCharsets : Task
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateCharsetMappings;
             GenerateStandardCharsets;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <Target Name="GenerateHtml32DTD" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(BuildScripts)" Outputs="$(IntermediateOutputPath)genhtml32dtd\javax\swing\text\html\parser\html32.bdtd">
@@ -638,10 +638,10 @@ public class WriteStandardCharsets : Task
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateHtml32DTD;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <!--
@@ -665,10 +665,10 @@ public class WriteStandardCharsets : Task
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateExceptions;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <!--
@@ -1065,11 +1065,11 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateBuffersSetup;
             GenerateBuffers;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -1100,10 +1100,10 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateCalendarData;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -1168,10 +1168,10 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateIcons;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -1199,10 +1199,10 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateNimbus;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -1247,10 +1247,10 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateX11Wrappers;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -1276,10 +1276,10 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateUniName;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -1302,10 +1302,10 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateLocaleEquivalentMaps;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -1365,11 +1365,11 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateBreakIteratorClasses;
             GenerateBreakIteratorData;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -1381,7 +1381,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <CoreResourceBundleControlNonExistLocales Include="en;en_US;de_DE;es_ES;fr_FR;it_IT;ja_JP;ko_KR;sv_SE;zh" />
     </ItemGroup>
 
-    <UsingTask TaskName="LocaleListTask" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <UsingTask TaskName="GenerateCoreResourceBundleControl" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <LocaleList ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
             <SourceFile ParameterType="System.String" Required="true" />
@@ -1431,7 +1431,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </UsingTask>
 
     <Target Name="GenerateCoreResourceBundleControl" Inputs="$(MSBuildThisFileFullPath);$(CoreResourceBundleControlSrc)" Outputs="$(CoreResourceBundleControlDst)">
-        <LocaleListTask
+        <GenerateCoreResourceBundleControl
             SourceFile="$(CoreResourceBundleControlSrc)"
             OutputFile="$(CoreResourceBundleControlDst)"
             LocaleList="@(CoreResourceBundleControlNonExistLocales)" />
@@ -1443,10 +1443,125 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateCoreResourceBundleControl;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <LocaleDataMetaInfoSrc>$(OpenJdkDir)jdk\src\share\classes\sun\util\locale\provider\LocaleDataMetaInfo-XLocales.java.template</LocaleDataMetaInfoSrc>
+        <LocaleDataMetaInfoDst>$(IntermediateOutputPath)LocaleDataMetaInfo.java</LocaleDataMetaInfoDst>
+    </PropertyGroup>
+
+    <UsingTask TaskName="GenerateLocaleDataMetaInfo" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <LocaleResourceList ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+            <SourceFile ParameterType="System.String" Required="true" />
+            <OutputFile ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Linq" />
+            <Using Namespace="System.Collections.Generic" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                var all_en = new HashSet<string>();
+                var all_non_en = new HashSet<string>() { "ja-JP-JP", "th-TH-TH" };
+                var resources = new HashSet<string>();
+                var locale_en = new Dictionary<string, HashSet<string>>();
+                var locale_non_en = new Dictionary<string, HashSet<string>>();
+                
+                // deconstruct Filename_LOCAL.ext into a list of en and non-en locales
+                foreach (var i in LocaleResourceList)
+                {
+                    var f = i.GetMetadata("Filename");
+                    var a = f.Split(new[] { '_' }, 2);
+                    var n = a[0];
+                    resources.Add(n);
+                    
+                    var l = a[1].Replace("_", "-");
+                    if (l.StartsWith("en"))
+                    {
+                        if (locale_en.TryGetValue(n, out var en) == false)
+                            locale_en[n] = en = new HashSet<string>();
+                        
+                        en.Add(l);
+                        all_en.Add(l);
+                    }
+                    else
+                    {
+                        if (locale_non_en.TryGetValue(n, out var non_en) == false)
+                            locale_non_en[n] = non_en = new HashSet<string>();
+                        
+                        non_en.Add(l);
+                        all_non_en.Add(l);
+                    }
+                }
+                
+                using var src = File.OpenText(SourceFile);
+                using var dst = new StreamWriter(File.Open(OutputFile, FileMode.Create));
+                
+                string line;
+                while ((line = src.ReadLine()) != null)
+                {
+                    if (line.StartsWith("#"))
+                        continue;
+                
+                    foreach (var resource in resources)
+                    {
+                        var en = locale_en.TryGetValue(resource, out var _en) ? _en.OrderBy(i => i) : Enumerable.Empty<string>();
+                        line = line.Replace($"#{resource}_ENLocales#", string.Join(" ", en));
+                        
+                        var non_en = locale_non_en.TryGetValue(resource, out var _non_en) ? _non_en.OrderBy(i => i) : Enumerable.Empty<string>();
+                        line = line.Replace($"#{resource}_NonENLocales#", string.Join(" ", non_en));
+                    }
+                   
+                    line = line.Replace("#AvailableLocales_ENLocales#", string.Join(" ", all_en.OrderBy(i => i)));
+                    line = line.Replace("#AvailableLocales_NonENLocales#", string.Join(" ", all_non_en.OrderBy(i => i)));
+                    dst.WriteLine(line);
+                }   
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GenerateLocaleDataMetaInfo" Inputs="$(MSBuildThisFileFullPath);$(LocaleDataMetaInfoSrc)" Outputs="$(LocaleDataMetaInfoDst)">
+        <ItemGroup>
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\FormatData_*.java" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\FormatData_*.properties" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\CollationData_*.java" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\CollationData_*.properties" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\TimeZoneNames_*.java" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\TimeZoneNames_*.properties" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\LocaleNames_*.java" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\LocaleNames_*.properties" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\CurrencyNames_*.java" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\CurrencyNames_*.properties" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\CalendarData_*.java" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\CalendarData_*.properties" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\BreakIteratorInfo_*.java" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\BreakIteratorInfo_*.properties" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\BreakIteratorRules_*.java" />
+            <LocaleResourceList Include="$(OpenJdkDir)jdk\src\share\classes\**\BreakIteratorRules_*.properties" />
+        </ItemGroup>
+
+        <GenerateLocaleDataMetaInfo
+            SourceFile="$(LocaleDataMetaInfoSrc)"
+            OutputFile="$(LocaleDataMetaInfoDst)"
+            LocaleResourceList="@(LocaleResourceList)" />
+
+        <ItemGroup>
+            <FileWrites Include="$(LocaleDataMetaInfoDst)" />
+            <Compile Include="$(LocaleDataMetaInfoDst)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            GenerateLocaleDataMetaInfo;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
 </Project>
