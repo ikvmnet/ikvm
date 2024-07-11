@@ -39,6 +39,18 @@
         <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
     </Target>
 
+    <!-- IKVM.Java uses the jar executable from JAVA_HOME -->
+    <Target Name="ResolveJar" Condition=" '$(JAVA_HOME)' != '' And '$(JarPath)' == '' ">
+        <PropertyGroup>
+            <JarPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\jar') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\jar'))</JarPath>
+            <JarPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\jar.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\jar.exe'))</JarPath>
+            <JarArgs></JarArgs>
+            <JarExec Condition=" '$(JarPath)' != '' ">"$(JarPath)" $(JarArgs)</JarExec>
+        </PropertyGroup>
+        <Message Text="Using jar executable found in JAVA_HOME at '$(JarPath)'." Importance="high" Condition=" '$(JarPath)' != '' " />
+        <Error Text="Could not locate jar executable in JAVA_HOME. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(JarPath)' == '' " />
+    </Target>
+
     <Target Name="GetIkvmImageItemsToPack" DependsOnTargets="CollectIkvmImageItemsOutputItems" BeforeTargets="_GetPackageFiles" Condition=" '$(TargetFramework)' == '' ">
         <ItemGroup>
             <_PackageFiles Include="@(IkvmImageItem)">
