@@ -20,7 +20,7 @@ namespace IKVM.Tools.Runner.Exporter
     public class IkvmExporterLauncher : IkvmToolLauncher
     {
 
-        static readonly string TOOLNAME = "ikvmstub";
+        static readonly string TOOLNAME = "ikvmexp";
 
         /// <summary>
         /// Initializes a new instance.

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 using IKVM.Tools.Exporter;
 
-namespace ikvmstub
+namespace ikvmexp
 {
 
     public static class Program

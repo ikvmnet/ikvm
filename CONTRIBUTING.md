@@ -47,10 +47,10 @@ Prerequisites for building the project:
   Outputs the files that make up the Java Runtime Image JDK. That is, the contents of the bin/ directory typically associated with a JDK (javac.exe, etc).
 + IKVM.Image.JDK.runtime.*
   Outputs the runtime-specific files that make up the Java Runtime Image JDK.
-+ ikvmc
-  `ikvmc` executable. Transforms Java class files or JAR files into .NET libraries or executables.
-+ ikvmstub
-  `ikvmstub` executable. Generates Java JAR files for .NET assemblies. When building Java code that depends on .NET code, these stubs can be used as references.
++ ikvmimp
+  `ikvmimp` executable. Transforms Java class files or JAR files into .NET libraries or executables.
++ ikvmexp
+  `ikvmexp` executable. Generates Java JAR files for .NET assemblies. When building Java code that depends on .NET code, these stubs can be used as references.
 + IKVM.Tests
   Various unit tests against IKVM functionality.
 + IKVM.Runtime-ref
@@ -70,7 +70,7 @@ Prerequisites for building the project:
 + dist-*
   Outputs content files that describe the summation of various directories to be produced when doing a distribution build.
 + IKVM.Tools.Runner
-  Various .NET libraries for executing the IKVM tools programatically. These are used by the MSBuild Tasks to launch ikvmc.exe and ikvmstub.exe.
+  Various .NET libraries for executing the IKVM tools programatically. These are used by the MSBuild Tasks to launch ikvmimp.exe and ikvmexp.exe.
 + IKVM.Java.Extensions
   Various extension methods and such for bridiging IKVM.Java with .NET patterns and practices.
 

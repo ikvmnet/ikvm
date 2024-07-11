@@ -84,13 +84,13 @@
             <Output TaskParameter="TargetOutputs" PropertyName="_IkvmCompilerPublishDir" />
         </MSBuild>
         <PropertyGroup>
-            <IkvmCompilerPath Condition=" $([MSBuild]::IsOSUnixLike()) And '$(IkvmCompilerPath)' == '' And Exists('$(_IkvmCompilerPublishDir)\ikvmc') ">$([System.IO.Path]::GetFullPath('$(_IkvmCompilerPublishDir)\ikvmc'))</IkvmCompilerPath>
-            <IkvmCompilerPath Condition=" '$(IkvmCompilerPath)' == '' And Exists('$(_IkvmCompilerPublishDir)\ikvmc.exe') ">$([System.IO.Path]::GetFullPath('$(_IkvmCompilerPublishDir)\ikvmc.exe'))</IkvmCompilerPath>
+            <IkvmCompilerPath Condition=" $([MSBuild]::IsOSUnixLike()) And '$(IkvmCompilerPath)' == '' And Exists('$(_IkvmCompilerPublishDir)\ikvmimp') ">$([System.IO.Path]::GetFullPath('$(_IkvmCompilerPublishDir)\ikvmimp'))</IkvmCompilerPath>
+            <IkvmCompilerPath Condition=" '$(IkvmCompilerPath)' == '' And Exists('$(_IkvmCompilerPublishDir)\ikvmc.exe') ">$([System.IO.Path]::GetFullPath('$(_IkvmCompilerPublishDir)\ikvmimp.exe'))</IkvmCompilerPath>
             <IkvmCompilerExec Condition=" '$(IkvmCompilerExec)' == '' And $([MSBuild]::IsOSUnixLike()) And '$([System.IO.Path]::GetExtension($(IkvmCompilerPath)))' == '.exe' ">mono $(IkvmCompilerPath)</IkvmCompilerExec>
             <IkvmCompilerExec Condition=" '$(IkvmCompilerExec)' == '' ">$(IkvmCompilerPath)</IkvmCompilerExec>
         </PropertyGroup>
-        <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
-        <Message Text="Using ikvmc executable from project at '$(IkvmCompilerPath)'." Importance="high" Condition=" '$(IkvmCompilerPath)' != '' " />
+        <Error Text="Could not locate ikvmimp executable." Condition=" '$(IkvmCompilerPath)' == '' " />
+        <Message Text="Using ikvmimp executable from project at '$(IkvmCompilerPath)'." Importance="high" Condition=" '$(IkvmCompilerPath)' != '' " />
     </Target>
 
     <PropertyGroup>
@@ -107,12 +107,12 @@
             <Output TaskParameter="TargetOutputs" PropertyName="_IkvmExporterPublishDir" />
         </MSBuild>
         <PropertyGroup>
-            <IkvmExporterPath Condition=" $([MSBuild]::IsOSUnixLike()) And '$(IkvmExporterPath)' == '' And Exists('$(_IkvmExporterPublishDir)ikvmstub')">$([System.IO.Path]::GetFullPath('$(_IkvmExporterPublishDir)ikvmstub'))</IkvmExporterPath>
-            <IkvmExporterPath Condition=" '$(IkvmExporterPath)' == '' And Exists('$(_IkvmExporterPublishDir)ikvmstub.exe')">$([System.IO.Path]::GetFullPath('$(_IkvmExporterPublishDir)ikvmstub.exe'))</IkvmExporterPath>
+            <IkvmExporterPath Condition=" $([MSBuild]::IsOSUnixLike()) And '$(IkvmExporterPath)' == '' And Exists('$(_IkvmExporterPublishDir)ikvmexp')">$([System.IO.Path]::GetFullPath('$(_IkvmExporterPublishDir)ikvmexp'))</IkvmExporterPath>
+            <IkvmExporterPath Condition=" '$(IkvmExporterPath)' == '' And Exists('$(_IkvmExporterPublishDir)ikvmexp.exe')">$([System.IO.Path]::GetFullPath('$(_IkvmExporterPublishDir)ikvmexp.exe'))</IkvmExporterPath>
             <IkvmExporterExec Condition=" '$(IkvmExporterExec)' == '' And $([MSBuild]::IsOSUnixLike()) And '$([System.IO.Path]::GetExtension($(IkvmExporterPath)))' == '.exe' ">mono $(IkvmExporterPath)</IkvmExporterExec>
             <IkvmExporterExec Condition=" '$(IkvmExporterExec)' == '' ">$(IkvmExporterPath)</IkvmExporterExec>
         </PropertyGroup>
-        <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
+        <Error Text="Could not locate ikvmexp executable." Condition=" '$(IkvmExporterPath)' == '' " />
         <Message Text="Using ikvmstub executable from project at '$(IkvmExporterPath)'." Importance="high" Condition=" '$(IkvmExporterPath)' != '' " />
     </Target>
 

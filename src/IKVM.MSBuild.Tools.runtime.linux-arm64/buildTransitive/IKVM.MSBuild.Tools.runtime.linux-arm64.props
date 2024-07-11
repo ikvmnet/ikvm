@@ -4,8 +4,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\ikvmc\net8.0\linux-arm64\" TargetFramework="net8.0" RuntimeIdentifier="linux-arm64" />
-        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\ikvmstub\net8.0\linux-arm64\" TargetFramework="net8.0" RuntimeIdentifier="linux-arm64" />
+        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\ikvmimp\net8.0\linux-arm64\" TargetFramework="net8.0" RuntimeIdentifier="linux-arm64" />
+        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\ikvmexp\net8.0\linux-arm64\" TargetFramework="net8.0" RuntimeIdentifier="linux-arm64" />
     </ItemGroup>
     
 </Project>

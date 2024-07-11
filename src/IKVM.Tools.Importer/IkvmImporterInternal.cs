@@ -300,7 +300,7 @@ namespace IKVM.Tools.Importer
         static void PrintHelp()
         {
             PrintHeader();
-            Console.Error.WriteLine("Usage: ikvmc [-options] <classOrJar1> ... <classOrJarN>");
+            Console.Error.WriteLine("Usage: ikvmimp [-options] <classOrJar1> ... <classOrJarN>");
             Console.Error.WriteLine();
             Console.Error.WriteLine("Compiler Options:");
             Console.Error.WriteLine();

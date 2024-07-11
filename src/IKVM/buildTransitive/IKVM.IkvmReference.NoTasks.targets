@@ -11,8 +11,8 @@
     <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;ResolveIkvmFrameworkReferences" Inputs="$(MSBuildThisFileFullPath);$(IkvmCompilerPath);@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
-        <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
-        <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
+        <Error Text="Could not locate ikvmimp executable." Condition=" '$(IkvmCompilerPath)' == '' " />
+        <Error Text="ikvmimp could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
 
         <!-- Output to stage path then copy to cache path to be atomic. -->
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.StagePath)'))" />

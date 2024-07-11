@@ -30,7 +30,7 @@ package ikvm.internal;
 // Note that because this class is abstract, getClass() on an intrinsified
 // ThreadLocal instance will return java.lang.ThreadLocal instead of this class.
 // We don't use HideFromJava for this, because that would make the life of
-// the runtime/ikvmc more difficult (because it needs a TypeWrapper for this class).
+// the runtime/ikvmimp more difficult (because it needs a TypeWrapper for this class).
 
 public abstract class IntrinsicThreadLocal extends ThreadLocal
 {

@@ -39,8 +39,8 @@ namespace IKVM.Attributes
 		internal string[] classes;
 		internal Type[] types;
 
-		// this constructor is used by ikvmc, the other constructors are for use in other .NET languages
-		public ThrowsAttribute(string[] classes)
+        // this constructor is used by ikvmimp, the other constructors are for use in other .NET languages
+        public ThrowsAttribute(string[] classes)
 		{
 			this.classes = UnicodeUtil.UnescapeInvalidSurrogates(classes);
 		}

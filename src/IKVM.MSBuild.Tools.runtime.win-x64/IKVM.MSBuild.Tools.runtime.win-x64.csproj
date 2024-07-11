@@ -15,36 +15,36 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+        <PublishProjectReference Include="..\ikvmimp\ikvmimp.csproj">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win-x64</SetRuntimeIdentifier>
-            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmc\net472\win-x64</PublishTargetPath>
+            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmimp\net472\win-x64</PublishTargetPath>
             <CopyToOutputDirectory Condition=" '$(TargetFramework)' != '' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>ikvmc\net472\win-x64</PublishPackagePath>
+            <PublishPackagePath>ikvmimp\net472\win-x64</PublishPackagePath>
             <Pack>true</Pack>
         </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+        <PublishProjectReference Include="..\ikvmexp\ikvmexp.csproj">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win-x64</SetRuntimeIdentifier>
-            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmstub\net472\win-x64</PublishTargetPath>
+            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmexp\net472\win-x64</PublishTargetPath>
             <CopyToOutputDirectory Condition=" '$(TargetFramework)' != '' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>ikvmstub\net472\win-x64</PublishPackagePath>
+            <PublishPackagePath>ikvmexp\net472\win-x64</PublishPackagePath>
             <Pack>true</Pack>
         </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+        <PublishProjectReference Include="..\ikvmimp\ikvmimp.csproj">
             <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win-x64</SetRuntimeIdentifier>
-            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmc\net8.0\win-x64</PublishTargetPath>
+            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmimp\net8.0\win-x64</PublishTargetPath>
             <CopyToOutputDirectory Condition=" '$(TargetFramework)' != '' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>ikvmc\net8.0\win-x64</PublishPackagePath>
+            <PublishPackagePath>ikvmimp\net8.0\win-x64</PublishPackagePath>
             <Pack>true</Pack>
         </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+        <PublishProjectReference Include="..\ikvmexp\ikvmexp.csproj">
             <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win-x64</SetRuntimeIdentifier>
-            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmstub\net8.0\win-x64</PublishTargetPath>
+            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmexp\net8.0\win-x64</PublishTargetPath>
             <CopyToOutputDirectory Condition=" '$(TargetFramework)' != '' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>ikvmstub\net8.0\win-x64</PublishPackagePath>
+            <PublishPackagePath>ikvmexp\net8.0\win-x64</PublishPackagePath>
             <Pack>true</Pack>
         </PublishProjectReference>
     </ItemGroup>

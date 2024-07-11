@@ -116,8 +116,8 @@ namespace IKVM.Runtime
 
             if (baseAssembly == assembly)
             {
-                // This cast is necessary for ikvmc and a no-op for the runtime.
-                // Note that the cast cannot fail, because ikvmc will only return a non AssemblyClassLoader
+                // This cast is necessary for ikvmimp and a no-op for the runtime.
+                // Note that the cast cannot fail, because ikvmimp will only return a non AssemblyClassLoader
                 // from GetBootstrapClassLoader() when compiling the core assembly and in that case JVM.CoreAssembly
                 // will be null.
                 return (RuntimeAssemblyClassLoader)context.ClassLoaderFactory.GetBootstrapClassLoader();

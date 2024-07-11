@@ -23,9 +23,9 @@ These tasks can be done **without porting source code** to .NET.
 
 ### Run Java Applications with .NET
 
-1. **Statically:** By compiling a Java application into a .NET assembly using `<MavenReference>`, `<IkvmReference>` or `ikvmc`.
+1. **Statically:** By compiling a Java application into a .NET assembly using `<MavenReference>`, `<IkvmReference>` or `ikvmimp`.
    - Library assemblies can be referenced by any .NET application with a compatible target framework and platform. Types can be referenced by using the Java package name like a .NET namespace.
-   - Executable assemblies can be launched by specifying the class containing the `main()` method to execute at runtime when building using `ikvmc`.
+   - Executable assemblies can be launched by specifying the class containing the `main()` method to execute at runtime when building using `ikvmimp`.
 2. **Dynamically:** By running a Java application using the `java` executable inside of the JDK Runtime Image. The Java bytecode is converted on-the-fly to CIL and executed. The experience should be identical to a normal JDK.
 
 ## What IKVM is Not

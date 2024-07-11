@@ -57,11 +57,11 @@ namespace IKVM.Tools.Tests.Runner.Importer
                 rid = "osx-arm64";
 
             var e = new List<IkvmToolDiagnosticEvent>();
-            var l = new IkvmImporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterLauncherTests).Assembly.Location), "ikvmc", toolFramework, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
+            var l = new IkvmImporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterLauncherTests).Assembly.Location), "ikvmimp", toolFramework, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
             var o = new IkvmImporterOptions()
             {
                 Runtime = Path.Combine(ikvmLibs, "IKVM.Runtime.dll"),
-                ResponseFile = Path.Combine(d, "ikvmc.rsp"),
+                ResponseFile = Path.Combine(d, "ikvmimp.rsp"),
                 Input = { Path.Combine(TESTBASE, "helloworld", "helloworld-2.0.jar") },
                 Assembly = "helloworld-2.0",
                 Version = "1.0.0.0",

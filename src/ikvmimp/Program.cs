@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 using IKVM.Tools.Importer;
 
-namespace ikvmc
+namespace ikvmimp
 {
 
     public static class Program

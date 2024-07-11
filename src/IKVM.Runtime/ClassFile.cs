@@ -1061,7 +1061,7 @@ namespace IKVM.Runtime
 
         internal bool IsInternal => (flags & FLAG_MASK_INTERNAL) != 0;
 
-        // for use by ikvmc (to implement the -privatepackage option)
+        // for use by ikvmimp (to implement the -privatepackage option)
         internal void SetInternal()
         {
             access_flags &= ~Modifiers.AccessMask;

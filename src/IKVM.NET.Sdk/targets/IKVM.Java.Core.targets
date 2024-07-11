@@ -178,7 +178,7 @@ Files = files.ToArray();
     <PropertyGroup>
         <_AssemblyTempPath>$(IntermediateOutputPath)java\</_AssemblyTempPath>
         <_ExcludeFilePath>$(IntermediateOutputPath)$(MSBuildProjectName).exclude</_ExcludeFilePath>
-        <_IkvmCompilerResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).ikvmc.rsp</_IkvmCompilerResponseFile>
+        <_IkvmCompilerResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).ikvmimp.rsp</_IkvmCompilerResponseFile>
     </PropertyGroup>
 
     <Target Name="_WriteExcludeFile" Outputs="$(_ExcludeFilePath)">

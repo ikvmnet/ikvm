@@ -122,7 +122,7 @@ namespace IKVM.StubGen
                         code.MaxLocals = (ushort)(mw.GetParameters().Length * 2 + 1);
                         code.MaxStack = 3;
                         var index1 = writer.AddClass("java/lang/UnsatisfiedLinkError");
-                        var index2 = writer.AddString("ikvmstub generated stubs can only be used on IKVM.NET");
+                        var index2 = writer.AddString("ikvmexp generated stubs can only be used on IKVM.NET");
                         var index3 = writer.AddMethodRef("java/lang/UnsatisfiedLinkError", "<init>", "(Ljava/lang/String;)V");
                         code.ByteCode = new byte[] {
                             187, (byte)(index1 >> 8), (byte)index1,	// new java/lang/UnsatisfiedLinkError
@@ -525,7 +525,7 @@ namespace IKVM.StubGen
         {
             if (arg.ArgumentType.IsEnum)
             {
-                // if GetWrapperFromType returns null, we've got an ikvmc synthesized .NET enum nested inside a Java enum
+                // if GetWrapperFromType returns null, we've got an ikvmimp synthesized .NET enum nested inside a Java enum
                 RuntimeJavaType tw = context.ClassLoaderFactory.GetJavaTypeFromType(arg.ArgumentType) ?? context.ClassLoaderFactory.GetJavaTypeFromType(arg.ArgumentType.DeclaringType);
                 return new object[] { AnnotationDefaultAttribute.TAG_ENUM, EncodeTypeName(tw), Enum.GetName(arg.ArgumentType, arg.Value) };
             }

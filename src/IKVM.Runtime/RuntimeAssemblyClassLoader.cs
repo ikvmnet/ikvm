@@ -579,7 +579,7 @@ namespace IKVM.Runtime
             {
                 // cache failure by clearing out the name the caller uses
                 name = null;
-                // should we issue a warning error (in ikvmc)?
+                // should we issue a warning error (in ikvmimp)?
                 return null;
             }
         }

@@ -86,7 +86,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
 
         // HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
-        // when we're compiling the core class libraries and by ikvmstub with the -bootstrap option
+        // when we're compiling the core class libraries and by ikvmexp with the -bootstrap option
         internal void SetBootstrapClassLoader(RuntimeClassLoader bootstrapClassLoader)
         {
             Debug.Assert(this.bootstrapClassLoader == null);

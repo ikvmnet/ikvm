@@ -18,7 +18,7 @@ namespace IKVM.Tools.Runner.Importer
     public class IkvmImporterLauncher : IkvmToolLauncher
     {
 
-        static readonly string TOOLNAME = "ikvmc";
+        static readonly string TOOLNAME = "ikvmimp";
 
         /// <summary>
         /// Initializes a new instance.

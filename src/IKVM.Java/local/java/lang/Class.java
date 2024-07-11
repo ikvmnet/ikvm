@@ -131,7 +131,7 @@ public final class Class<T> implements java.io.Serializable,
     java.security.ProtectionDomain pd;
     Object[] signers;
 
-    // For types that live in a static .NET assembly (i.e. ikvmc compiled or .NET types)
+    // For types that live in a static .NET assembly (i.e. ikvmimp compiled or .NET types)
     // this field contains the type (used for .NET serialization of Class objects).
     // This field is also used by fast class literals to remember the type that can then
     // lazily be resolved to the corresponding TypeWrapper.

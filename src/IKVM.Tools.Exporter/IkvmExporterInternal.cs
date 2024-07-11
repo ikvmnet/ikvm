@@ -115,7 +115,7 @@ namespace IKVM.Tools.Exporter
             if (File.Exists(options.Assembly) && options.NoStdLib)
             {
                 // Add the target assembly to the references list, to allow it to be considered as "mscorlib".
-                // This allows "ikvmstub -nostdlib \...\mscorlib.dll" to work.
+                // This allows "ikvmexp -nostdlib \...\mscorlib.dll" to work.
                 references.Add(options.Assembly);
             }
 
@@ -222,7 +222,7 @@ namespace IKVM.Tools.Exporter
                 }
 
                 if (context.AttributeHelper.IsJavaModule(assembly.ManifestModule))
-                    Console.Error.WriteLine("Warning: Running ikvmstub on ikvmc compiled assemblies is not supported.");
+                    Console.Error.WriteLine("Warning: Running ikvmexp on ikvmimp compiled assemblies is not supported.");
 
                 if (options.Output == null)
                     options.Output = assembly.GetName().Name + ".jar";
