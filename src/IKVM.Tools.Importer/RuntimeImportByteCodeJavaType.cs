@@ -286,6 +286,7 @@ namespace IKVM.Tools.Importer
                         Context.AttributeHelper.SetCustomAttribute(classLoader, propbuilder, attr);
                     }
                 }
+
                 RuntimeJavaMethod getter = null;
                 RuntimeJavaMethod setter = null;
                 if (prop.Getter != null)
@@ -296,30 +297,31 @@ namespace IKVM.Tools.Importer
                         Console.Error.WriteLine("Warning: getter not found for {0}::{1}", clazz.Name, prop.Name);
                     }
                 }
+
                 if (prop.Setter != null)
                 {
                     setter = GetMethodWrapper(prop.Setter.Name, prop.Setter.Sig, true);
                     if (setter == null)
-                    {
                         Console.Error.WriteLine("Warning: setter not found for {0}::{1}", clazz.Name, prop.Name);
-                    }
                 }
-                bool final = (getter != null && getter.IsFinal) || (setter != null && setter.IsFinal);
+
+                var final = (getter != null && getter.IsFinal) || (setter != null && setter.IsFinal);
                 if (getter != null)
                 {
-                    RuntimeJavaMethod mw = getter;
+                    var mw = getter;
+
                     if (!CheckPropertyArgs(mw.GetParametersForDefineMethod(), indexer) || mw.ReturnType != typeWrapper)
                     {
                         Console.Error.WriteLine("Warning: ignoring invalid property getter for {0}::{1}", clazz.Name, prop.Name);
                     }
                     else
                     {
-                        MethodBuilder mb = mw.GetMethod() as MethodBuilder;
+                        var mb = mw.GetMethod() as MethodBuilder;
                         if (mb == null || mb.DeclaringType != typeBuilder || (!mb.IsFinal && final))
                         {
                             mb = typeBuilder.DefineMethod("get_" + prop.Name, GetPropertyMethodAttributes(mw, final), typeWrapper.TypeAsSignatureType, indexer);
                             Context.AttributeHelper.HideFromJava(mb);
-                            CodeEmitter ilgen = Context.CodeEmitterFactory.Create(mb);
+                            var ilgen = Context.CodeEmitterFactory.Create(mb);
                             if (mw.IsStatic)
                             {
                                 for (int i = 0; i < indexer.Length; i++)
@@ -332,9 +334,7 @@ namespace IKVM.Tools.Importer
                             {
                                 ilgen.Emit(OpCodes.Ldarg_0);
                                 for (int i = 0; i < indexer.Length; i++)
-                                {
                                     ilgen.EmitLdarg(i + 1);
-                                }
                                 mw.EmitCallvirt(ilgen);
                             }
                             ilgen.Emit(OpCodes.Ret);
@@ -345,7 +345,7 @@ namespace IKVM.Tools.Importer
                 }
                 if (setter != null)
                 {
-                    RuntimeJavaMethod mw = setter;
+                    var mw = setter;
                     var args = ArrayUtil.Concat(indexer, typeWrapper.TypeAsSignatureType);
                     if (!CheckPropertyArgs(args, mw.GetParametersForDefineMethod()))
                     {
@@ -362,23 +362,20 @@ namespace IKVM.Tools.Importer
                             if (mw.IsStatic)
                             {
                                 for (int i = 0; i <= indexer.Length; i++)
-                                {
                                     ilgen.EmitLdarg(i);
-                                }
                                 mw.EmitCall(ilgen);
                             }
                             else
                             {
                                 ilgen.Emit(OpCodes.Ldarg_0);
                                 for (int i = 0; i <= indexer.Length; i++)
-                                {
                                     ilgen.EmitLdarg(i + 1);
-                                }
                                 mw.EmitCallvirt(ilgen);
                             }
                             ilgen.Emit(OpCodes.Ret);
                             ilgen.DoEmit();
                         }
+
                         propbuilder.SetSetMethod(mb);
                     }
                 }
@@ -388,7 +385,7 @@ namespace IKVM.Tools.Importer
         private static void MapModifiers(MapModifiers mapmods, bool isConstructor, out bool setmodifiers, ref MethodAttributes attribs, bool isNewSlot)
         {
             setmodifiers = false;
-            Modifiers modifiers = (Modifiers)mapmods;
+            var modifiers = (Modifiers)mapmods;
             if ((modifiers & Modifiers.Public) != 0)
             {
                 attribs |= MethodAttributes.Public;
@@ -405,6 +402,7 @@ namespace IKVM.Tools.Importer
             {
                 attribs |= MethodAttributes.Assembly;
             }
+
             if ((modifiers & Modifiers.Static) != 0)
             {
                 attribs |= MethodAttributes.Static;
@@ -441,6 +439,7 @@ namespace IKVM.Tools.Importer
                     }
                 }
             }
+
             if ((modifiers & Modifiers.Synchronized) != 0)
             {
                 throw new NotImplementedException();
@@ -460,33 +459,30 @@ namespace IKVM.Tools.Importer
 
         protected override void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, RuntimeJavaMethod[] methods)
         {
-            Dictionary<string, IKVM.Tools.Importer.MapXml.Class> mapxml = classLoader.GetMapXmlClasses();
+            var mapxml = classLoader.GetMapXmlClasses();
             if (mapxml != null)
             {
-                IKVM.Tools.Importer.MapXml.Class clazz;
-                if (mapxml.TryGetValue(classFile.Name, out clazz))
+                if (mapxml.TryGetValue(classFile.Name, out var clazz))
                 {
                     if (clazz.Attributes != null)
-                    {
                         PublishAttributes(typeBuilder, clazz);
-                    }
+
                     if (clazz.Properties != null)
-                    {
                         PublishProperties(typeBuilder, clazz);
-                    }
+
                     if (clazz.Fields != null)
                     {
-                        foreach (IKVM.Tools.Importer.MapXml.Field field in clazz.Fields)
+                        foreach (var field in clazz.Fields)
                         {
                             if (field.Attributes != null)
                             {
-                                foreach (RuntimeJavaField fw in fields)
+                                foreach (var fw in fields)
                                 {
                                     if (fw.Name == field.Name && fw.Signature == field.Sig)
                                     {
                                         var fb = fw.GetField() as FieldBuilder;
                                         if (fb != null)
-                                            foreach (IKVM.Tools.Importer.MapXml.Attribute attr in field.Attributes)
+                                            foreach (var attr in field.Attributes)
                                                 Context.AttributeHelper.SetCustomAttribute(classLoader, fb, attr);
                                     }
                                 }
@@ -496,7 +492,7 @@ namespace IKVM.Tools.Importer
                     if (clazz.Constructors != null)
                     {
                         // HACK this isn't the right place to do this, but for now it suffices
-                        foreach (IKVM.Tools.Importer.MapXml.Constructor constructor in clazz.Constructors)
+                        foreach (var constructor in clazz.Constructors)
                         {
                             // are we adding a new constructor?
                             if (GetMethodWrapper(StringConstants.INIT, constructor.Sig, false) == null)
@@ -507,27 +503,24 @@ namespace IKVM.Tools.Importer
                                     continue;
                                 }
 
-                                bool setmodifiers = false;
                                 MethodAttributes attribs = 0;
-                                MapModifiers(constructor.Modifiers, true, out setmodifiers, ref attribs, false);
-                                Type returnType;
-                                Type[] parameterTypes;
-                                MapSignature(constructor.Sig, out returnType, out parameterTypes);
-                                MethodBuilder cb = ReflectUtil.DefineConstructor(typeBuilder, attribs, parameterTypes);
+                                MapModifiers(constructor.Modifiers, true, out var setmodifiers, ref attribs, false);
+                                MapSignature(constructor.Sig, out var returnType, out var parameterTypes);
+                                var cb = ReflectUtil.DefineConstructor(typeBuilder, attribs, parameterTypes);
                                 if (setmodifiers)
-                                {
                                     Context.AttributeHelper.SetModifiers(cb, (Modifiers)constructor.Modifiers, false);
-                                }
+
                                 CompilerClassLoader.AddDeclaredExceptions(Context, cb, constructor.Throws);
                                 var ilgen = Context.CodeEmitterFactory.Create(cb);
                                 constructor.Emit(classLoader, ilgen);
                                 ilgen.DoEmit();
                                 if (constructor.Attributes != null)
-                                    foreach (IKVM.Tools.Importer.MapXml.Attribute attr in constructor.Attributes)
+                                    foreach (var attr in constructor.Attributes)
                                         Context.AttributeHelper.SetCustomAttribute(classLoader, cb, attr);
                             }
                         }
-                        foreach (IKVM.Tools.Importer.MapXml.Constructor constructor in clazz.Constructors)
+
+                        foreach (var constructor in clazz.Constructors)
                         {
                             if (constructor.Attributes != null)
                             {
@@ -537,7 +530,7 @@ namespace IKVM.Tools.Importer
                                     {
                                         var mb = mw.GetMethod() as MethodBuilder;
                                         if (mb != null)
-                                            foreach (IKVM.Tools.Importer.MapXml.Attribute attr in constructor.Attributes)
+                                            foreach (var attr in constructor.Attributes)
                                                 Context.AttributeHelper.SetCustomAttribute(classLoader, mb, attr);
                                     }
                                 }
@@ -547,33 +540,33 @@ namespace IKVM.Tools.Importer
                     if (clazz.Methods != null)
                     {
                         // HACK this isn't the right place to do this, but for now it suffices
-                        foreach (IKVM.Tools.Importer.MapXml.Method method in clazz.Methods)
+                        foreach (var method in clazz.Methods)
                         {
                             // are we adding a new method?
                             if (GetMethodWrapper(method.Name, method.Sig, false) == null)
                             {
-                                bool setmodifiers = false;
-                                MethodAttributes attribs = method.MethodAttributes;
-                                MapModifiers(method.Modifiers, false, out setmodifiers, ref attribs, BaseTypeWrapper == null || BaseTypeWrapper.GetMethodWrapper(method.Name, method.Sig, true) == null);
+                                var attribs = method.MethodAttributes;
+                                MapModifiers(method.Modifiers, false, out var setmodifiers, ref attribs, BaseTypeWrapper == null || BaseTypeWrapper.GetMethodWrapper(method.Name, method.Sig, true) == null);
                                 if (method.Body == null && (attribs & MethodAttributes.Abstract) == 0)
                                 {
                                     Console.Error.WriteLine("Error: Method {0}.{1}{2} in xml remap file doesn't have a body.", clazz.Name, method.Name, method.Sig);
                                     continue;
                                 }
-                                Type returnType;
-                                Type[] parameterTypes;
-                                MapSignature(method.Sig, out returnType, out parameterTypes);
-                                MethodBuilder mb = typeBuilder.DefineMethod(method.Name, attribs, returnType, parameterTypes);
+
+                                MapSignature(method.Sig, out var returnType, out var parameterTypes);
+                                var mb = typeBuilder.DefineMethod(method.Name, attribs, returnType, parameterTypes);
                                 if (setmodifiers)
                                 {
                                     Context.AttributeHelper.SetModifiers(mb, (Modifiers)method.Modifiers, false);
                                 }
+
                                 if (method.Override != null)
                                 {
                                     var mw = GetClassLoader().LoadClassByName(method.Override.Class).GetMethodWrapper(method.Override.Name, method.Sig, true);
                                     mw.Link();
                                     typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
                                 }
+
                                 CompilerClassLoader.AddDeclaredExceptions(Context, mb, method.Throws);
                                 if (method.Body != null)
                                 {
@@ -581,15 +574,13 @@ namespace IKVM.Tools.Importer
                                     method.Emit(classLoader, ilgen);
                                     ilgen.DoEmit();
                                 }
+
                                 if (method.Attributes != null)
-                                {
-                                    foreach (IKVM.Tools.Importer.MapXml.Attribute attr in method.Attributes)
-                                    {
+                                    foreach (var attr in method.Attributes)
                                         Context.AttributeHelper.SetCustomAttribute(classLoader, mb, attr);
-                                    }
-                                }
                             }
                         }
+
                         foreach (IKVM.Tools.Importer.MapXml.Method method in clazz.Methods)
                         {
                             if (method.Attributes != null)
@@ -1023,13 +1014,7 @@ namespace IKVM.Tools.Importer
             this.annotation = annotation;
         }
 
-        internal override Annotation Annotation
-        {
-            get
-            {
-                return annotation;
-            }
-        }
+        internal override Annotation Annotation => annotation;
 
         internal void SetEnumType(Type enumType)
         {
@@ -1038,7 +1023,7 @@ namespace IKVM.Tools.Importer
 
         internal override Type EnumType => enumType;
 
-        private sealed class ReplacedMethodWrapper : RuntimeJavaMethod
+        sealed class ReplacedMethodWrapper : RuntimeJavaMethod
         {
 
             readonly InstructionList code;
@@ -1074,12 +1059,10 @@ namespace IKVM.Tools.Importer
 
             private void DoEmit(CodeEmitter ilgen)
             {
-                IKVM.Tools.Importer.MapXml.CodeGenContext context = new IKVM.Tools.Importer.MapXml.CodeGenContext(this.DeclaringType.GetClassLoader());
+                var context = new IKVM.Tools.Importer.MapXml.CodeGenContext(this.DeclaringType.GetClassLoader());
                 // we don't want the line numbers from map.xml, so we have our own emit loop
                 for (int i = 0; i < code.Instructions.Length; i++)
-                {
                     code.Instructions[i].Generate(context, ilgen);
-                }
             }
 
             internal override void EmitCall(CodeEmitter ilgen)
@@ -1136,11 +1119,6 @@ namespace IKVM.Tools.Importer
                         return r;
 
             return mw;
-        }
-
-        internal override IKVM.Reflection.MethodBase GetBaseSerializationConstructor()
-        {
-            return workaroundBaseClass != null ? workaroundBaseClass.GetSerializationConstructor() : base.GetBaseSerializationConstructor();
         }
 
     }
