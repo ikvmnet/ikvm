@@ -1372,4 +1372,81 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </GenerateSourceDependsOn>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <CoreResourceBundleControlSrc>$(OpenJdkDir)jdk\src\share\classes\sun\util\CoreResourceBundleControl-XLocales.java.template</CoreResourceBundleControlSrc>
+        <CoreResourceBundleControlDst>$(IntermediateOutputPath)CoreResourceBundleControl.java</CoreResourceBundleControlDst>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CoreResourceBundleControlNonExistLocales Include="en;en_US;de_DE;es_ES;fr_FR;it_IT;ja_JP;ko_KR;sv_SE;zh" />
+    </ItemGroup>
+
+    <UsingTask TaskName="LocaleListTask" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <LocaleList ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+            <SourceFile ParameterType="System.String" Required="true" />
+            <OutputFile ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Collections.Generic" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                var l = new List<string>();
+                
+                var o = new Dictionary<string, string>();
+                o["en"] = "ENGLISH";
+                o["fr"] = "FRENCH";
+                o["de"] = "GERMAN";
+                o["it"] = "ITALIAN";
+                o["ja"] = "JAPANESE";
+                o["ko"] = "KOREAN";
+                o["zh"] = "CHINESE";
+                o["zh_CN"] = "SIMPLIFIED_CHINESE";
+                o["zh_TW"] = "TRADITIONAL_CHINESE";
+                o["fr_FR"] = "FRANCE";
+                o["de_DE"] = "GERMANY";
+                o["it_IT"] = "ITALY";
+                o["ja_JP"] = "JAPAN";
+                o["ko_KR"] = "KOREA";
+                o["en_GB"] = "UK";
+                o["en_US"] = "US";
+                o["en_CA"] = "CANADA";
+                o["fr_CA"] = "CANADA_FRENCH";
+                
+                foreach (var locale in LocaleList)
+                    l.Add(o.ContainsKey(locale.ItemSpec) ? "Locale." + o[locale.ItemSpec] : "new Locale(\"" + string.Join("\", \"", locale.ItemSpec.Split('_')) + "\")");
+                
+                using var src = File.OpenText(SourceFile);
+                using var dst = new StreamWriter(File.Open(OutputFile, FileMode.Create));
+                
+                string line;
+                while ((line = src.ReadLine()) != null)
+                    if (line.StartsWith("#warn") == false)
+                        dst.WriteLine(line.Replace("#LOCALE_LIST#", string.Join(", ", l)));
+                    
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GenerateCoreResourceBundleControl" Inputs="$(MSBuildThisFileFullPath);$(CoreResourceBundleControlSrc)" Outputs="$(CoreResourceBundleControlDst)">
+        <LocaleListTask
+            SourceFile="$(CoreResourceBundleControlSrc)"
+            OutputFile="$(CoreResourceBundleControlDst)"
+            LocaleList="@(CoreResourceBundleControlNonExistLocales)" />
+        
+        <ItemGroup>
+            <FileWrites Include="$(CoreResourceBundleControlDst)" />
+            <Compile Include="$(CoreResourceBundleControlDst)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateSourceDependsOn>
+            GenerateCoreResourceBundleControl;
+            $(GenerateSourceDependsOn);
+        </GenerateSourceDependsOn>
+    </PropertyGroup>
+
 </Project>
