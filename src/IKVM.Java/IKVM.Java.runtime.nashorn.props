@@ -12,10 +12,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <OpenJdkSource Include="$(OpenJdkDir)\nashorn\src\**\*.java" PackagePath="" />
-    </ItemGroup>
-
-    <ItemGroup>
         <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
         <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\**\*.js" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
