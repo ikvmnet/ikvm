@@ -46,10 +46,10 @@
 
     <PropertyGroup>
         <RmiStubsOutputPath>$(IntermediateOutputPath)rmistubs\</RmiStubsOutputPath>
-        <_BuildRmiStubsCoreStampFile>$(RmiStubsOutputPath)stamp</_BuildRmiStubsCoreStampFile>
+        <RmiStubsStampFile>$(RmiStubsOutputPath)stamp</RmiStubsStampFile>
     </PropertyGroup>
 
-    <Target Name="_BuildRmiStubs" DependsOnTargets="ResolveRmiCompiler;ResolveRmiStubInputItems" Inputs="@(RmiStubInputItem)" Outputs="$(_BuildRmiStubsCoreStampFile)">
+    <Target Name="_BuildRmiStubs" DependsOnTargets="ResolveRmiCompiler;ResolveRmiStubInputItems" Inputs="@(RmiStubInputItem)" Outputs="$(RmiStubsStampFile)">
         <ItemGroup>
             <_RmiCompilerClasspath Include="@(Classpath);$(ClassOutputPath)" />
             <_RmiCompilerArgs Include="@(RmiCompilerArgs)" />
@@ -59,14 +59,21 @@
             <_RmiCompilerArgs Include="-d" />
             <_RmiCompilerArgs Include="$(RmiStubsOutputPath)" />
         </ItemGroup>
+        
         <PropertyGroup>
             <_RmiCompilerArgs>@(_RmiCompilerArgs, ' ')</_RmiCompilerArgs>
         </PropertyGroup>
+        
         <Delete Files="$(RmiStubsOutputPath)**\*" />
         <MakeDir Directories="$(RmiStubsOutputPath)" />
         <Exec Command="$(RmiCompilerExec) $(_RmiCompilerArgs) %(OpenJdkRmiStub.Flags) $([System.String]::Copy('%(OpenJdkRmiStub.Identity)').Replace('$', '\$'))" Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' " />
         <Exec Command="$(RmiCompilerExec) $(_RmiCompilerArgs) %(OpenJdkRmiStub.Flags) $([System.String]::Copy('%(OpenJdkRmiStub.Identity)'))" Condition=" '$([MSBuild]::IsOSUnixLike())' == 'false' " />
-        <Touch Files="$(_BuildRmiStubsCoreStampFile)" AlwaysCreate="true" ForceTouch="true" />
+        <Touch Files="$(RmiStubsStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(RmiStubsStampFile)" />
+            <Convert Include="$(RmiStubsOutputPath)**\*.class" />
+        </ItemGroup>
     </Target>
 
     <PropertyGroup>
@@ -79,13 +86,11 @@
     </PropertyGroup>
 
     <Target Name="BuildRmiStubs" DependsOnTargets="$(BuildRmiStubsDependsOn)">
-        <ItemGroup>
-            <Convert Include="$(RmiStubsOutputPath)**\*.class" />
-        </ItemGroup>
+        
     </Target>
 
     <Target Name="CleanRmiStubs">
-        <Delete Files="$(_BuildRmiStubsCoreStampFile)" />
+        <Delete Files="$(RmiStubsStampFile)" />
         <RemoveDir Directories="$(RmiStubsOutputPath)" />
     </Target>
 
@@ -591,7 +596,7 @@ public class WriteStandardCharsets : Task
 
         <RemoveDir Directories="$(StandardCharsetsTempPath)" />
         <MakeDir Directories="$(StandardCharsetsTempPath)" />
-        
+
         <ReadStandardCharsets SourceFile="$(OpenJdkDir)jdk\src\share\classes\sun\nio\cs\standard-charsets" ClassesFile="$(StandardCharsetsTempPath)classes" AliasesFile="$(StandardCharsetsTempPath)aliases">
             <Output TaskParameter="Copyright" PropertyName="_Copyright" />
             <Output TaskParameter="Package" PropertyName="_Package" />
@@ -1390,11 +1395,11 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
             <_BreakIteratorOutputArg Remove="@(_BreakIteratorOutputArg)" />
             <_BreakIteratorOutputArg Include="$(BreakIteratorOutputPath)$(BreakIteratorPackage)" />
         </ItemGroup>
-        
+
         <MakeDir Directories="$(BreakIteratorOutputPath)$(BreakIteratorPackage)" />
         <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) -Xbootclasspath/p:@(_BreakIteratorClasspath) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o @(_BreakIteratorOutputArg) -spec $(UnicodeDataDir)UnicodeData.txt" />
         <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) -Xbootclasspath/p:@(_BreakIteratorClasspath) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o @(_BreakIteratorOutputArg) -spec $(UnicodeDataDir)UnicodeData.txt" />
-        
+
         <MakeDir Directories="$(BreakIteratorOutputPath)$(BreakIteratorPackage)\th" />
         <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) -Xbootclasspath/p:@(_BreakIteratorClasspath) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o @(_BreakIteratorOutputArg) -spec $(UnicodeDataDir)UnicodeData.txt -language th" />
         <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) -Xbootclasspath/p:@(_BreakIteratorClasspath) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o @(_BreakIteratorOutputArg) -spec $(UnicodeDataDir)UnicodeData.txt -language th" />
@@ -1477,7 +1482,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
             SourceFile="$(CoreResourceBundleControlSrc)"
             OutputFile="$(CoreResourceBundleControlDst)"
             LocaleList="@(CoreResourceBundleControlNonExistLocales)" />
-        
+
         <ItemGroup>
             <FileWrites Include="$(CoreResourceBundleControlDst)" />
             <Compile Include="$(CoreResourceBundleControlDst)" />
