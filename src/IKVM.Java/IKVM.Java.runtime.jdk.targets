@@ -1339,7 +1339,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
 
     <PropertyGroup>
         <BreakIteratorOutputPath>$(IntermediateOutputPath)jdk_breakiterator\</BreakIteratorOutputPath>
-        <BreakIteratorPackage>sun\text\resources</BreakIteratorPackage>
+        <BreakIteratorPackage>sun/text/resources</BreakIteratorPackage>
     </PropertyGroup>
 
     <ItemGroup>
@@ -1364,9 +1364,14 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
         <Exec Command="chmod +x $(JavaCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
+        <ItemGroup>
+            <_BreakIteratorOutputPath Remove="@(_BreakIteratorOutputPath)" />
+            <_BreakIteratorOutputPath Include="$(BreakIteratorOutputPath)" />
+        </ItemGroup>
+
         <MakeDir Directories="$(BreakIteratorOutputPath)" />
-        <Message Text="$(JavaCompilerExec) @(BreakIteratorSources, ' ') -d $(BreakIteratorOutputPath)" />
-        <Exec Command="$(JavaCompilerExec) @(BreakIteratorSources, ' ') -d $(BreakIteratorOutputPath)" />
+        <Message Text="$(JavaCompilerExec) @(BreakIteratorSources, ' ') -d @(_BreakIteratorOutputPath)" />
+        <Exec Command="$(JavaCompilerExec) @(BreakIteratorSources, ' ') -d @(_BreakIteratorOutputPath)" />
 
         <ItemGroup>
             <FileWrites Include="@(BreakIteratorOutputs)" />
@@ -1379,13 +1384,20 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
+        <ItemGroup>
+            <_BreakIteratorClasspath Remove="@(_BreakIteratorClasspath)" />
+            <_BreakIteratorClasspath Include="$(BreakIteratorOutputPath)" />
+            <_BreakIteratorOutputArg Remove="@(_BreakIteratorOutputArg)" />
+            <_BreakIteratorOutputArg Include="$(BreakIteratorOutputPath)$(BreakIteratorPackage)" />
+        </ItemGroup>
+        
         <MakeDir Directories="$(BreakIteratorOutputPath)$(BreakIteratorPackage)" />
-        <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) -Xbootclasspath/p:$(BreakIteratorOutputPath) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o $(BreakIteratorOutputPath)$(BreakIteratorPackage) -spec $(UnicodeDataDir)UnicodeData.txt" />
-        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) -Xbootclasspath/p:$(BreakIteratorOutputPath) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o $(BreakIteratorOutputPath)$(BreakIteratorPackage) -spec $(UnicodeDataDir)UnicodeData.txt" />
+        <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) -Xbootclasspath/p:@(_BreakIteratorClasspath) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o @(_BreakIteratorOutputArg) -spec $(UnicodeDataDir)UnicodeData.txt" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) -Xbootclasspath/p:@(_BreakIteratorClasspath) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o @(_BreakIteratorOutputArg) -spec $(UnicodeDataDir)UnicodeData.txt" />
         
         <MakeDir Directories="$(BreakIteratorOutputPath)$(BreakIteratorPackage)\th" />
-        <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) -Xbootclasspath/p:$(BreakIteratorOutputPath) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o $(BreakIteratorOutputPath)$(BreakIteratorPackage) -spec $(UnicodeDataDir)UnicodeData.txt -language th" />
-        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) -Xbootclasspath/p:$(BreakIteratorOutputPath) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o $(BreakIteratorOutputPath)$(BreakIteratorPackage) -spec $(UnicodeDataDir)UnicodeData.txt -language th" />
+        <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) -Xbootclasspath/p:@(_BreakIteratorClasspath) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o @(_BreakIteratorOutputArg) -spec $(UnicodeDataDir)UnicodeData.txt -language th" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) -Xbootclasspath/p:@(_BreakIteratorClasspath) build.tools.generatebreakiteratordata.GenerateBreakIteratorData -o @(_BreakIteratorOutputArg) -spec $(UnicodeDataDir)UnicodeData.txt -language th" />
 
         <ItemGroup>
             <FileWrites Include="@(BreakIteratorData)" />
