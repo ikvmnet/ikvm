@@ -195,42 +195,6 @@ namespace IKVM.Runtime
 
         internal bool EnableOptimizations => (codegenoptions & CodeGenOptions.DisableOptimizations) == 0;
 
-        internal bool WorkaroundAbstractMethodWidening
-        {
-            get
-            {
-                // pre-Roslyn C# compiler doesn't like widening access to abstract methods
-                return true;
-            }
-        }
-
-        internal bool WorkaroundInterfaceFields
-        {
-            get
-            {
-                // pre-Roslyn C# compiler doesn't allow access to interface fields
-                return true;
-            }
-        }
-
-        internal bool WorkaroundInterfacePrivateMethods
-        {
-            get
-            {
-                // pre-Roslyn C# compiler doesn't like interfaces that have non-public methods
-                return true;
-            }
-        }
-
-        internal bool WorkaroundInterfaceStaticMethods
-        {
-            get
-            {
-                // pre-Roslyn C# compiler doesn't allow access to interface static methods
-                return true;
-            }
-        }
-
 #if !IMPORTER && !EXPORTER
 #if FIRST_PASS == false
 

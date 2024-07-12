@@ -2784,17 +2784,6 @@ namespace IKVM.Runtime
                     if (classFile.IsInterface && !m.IsPublic && !wrapper.IsGhost)
                     {
                         var tb = typeBuilder;
-#if IMPORTER
-                        if (wrapper.IsPublic && wrapper.classLoader.WorkaroundInterfacePrivateMethods)
-                        {
-                            // FXBUG csc.exe doesn't like non-public methods in interfaces, so we put them in a nested type
-                            if (privateInterfaceMethods == null)
-                                privateInterfaceMethods = typeBuilder.DefineNestedType(NestedTypeName.PrivateInterfaceMethods, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
-                            tb = privateInterfaceMethods;
-                            attribs &= ~MethodAttributes.MemberAccessMask;
-                            attribs |= MethodAttributes.Assembly;
-                        }
-#endif
                         if (m.IsStatic)
                         {
                             mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, tb, name, attribs);
