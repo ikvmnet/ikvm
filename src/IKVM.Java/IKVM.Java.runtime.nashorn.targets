@@ -52,7 +52,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="BuildNashornTemp" DependsOnTargets="ResolveJavaCompiler;NashornTempResponseFile" Inputs="@(NashornSource);$(NashornTempResponseFile)" Outputs="$(NashornTempStampFile)">
+    <Target Name="BuildNashornTemp" DependsOnTargets="ResolveJavaCompiler;NashornTempResponseFile" Inputs="$(MSBuildThisFileFullPath);@(NashornSource);$(NashornTempResponseFile)" Outputs="$(NashornTempStampFile)">
         <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
         <Exec Command="chmod +x $(JavaCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
