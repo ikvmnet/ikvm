@@ -344,5 +344,6 @@ File.WriteAllBytes(Path, Encoding.UTF8.GetBytes(Text));
     <Import Project="IKVM.Java.runtime.jdk.targets" />
     <Import Project="IKVM.Java.runtime.langtools.targets" />
     <Import Project="IKVM.Java.runtime.nashorn.targets" />
+    <Import Project="IKVM.Java.runtime.corba.targets" />
 
 </Project>

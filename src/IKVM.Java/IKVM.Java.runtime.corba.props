@@ -12,26 +12,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\corba\gensrc\**\*.java" PackagePath="" />
-        <OpenJdkSource Include="$(OpenJdkDir)\corba\src\share\classes\**\*.java" PackagePath="" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\corba\src\share\classes\sun\misc\**\*.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)corba\src\share\classes\**\*.java" PackagePath="" />
+        <OpenJdkSource Remove="$(OpenJdkDir)corba\src\share\classes\com\sun\corba\se\PortableActivationIDL\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)corba\src\share\classes\com\sun\tools\corba\se\logutil\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)corba\src\share\classes\com\sun\corba\se\impl\presentation\rmi\JNDIStateFactoryImpl.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)corba\src\share\classes\com\sun\corba\se\spi\presentation\rmi\StubWrapper.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)corba\src\share\classes\com\sun\org\omg\CORBA\IDLTypeOperations.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)corba\src\share\classes\com\sun\org\omg\CORBA\IRObjectOperations.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)corba\src\share\classes\org\omg\PortableInterceptor\UNKNOWN.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)corba\src\share\classes\com\sun\tools\corba\se\idl\ResourceBundleUtil.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)corba\src\share\classes\sun\misc\**\*.java" />
     </ItemGroup>
 
     <ItemGroup>
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\ActivationSystemException.java" PackagePath="com\sun\corba\se\impl\logging" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\InterceptorsSystemException.java" PackagePath="com\sun\corba\se\impl\logging" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\IORSystemException.java" PackagePath="com\sun\corba\se\impl\logging" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\NamingSystemException.java" PackagePath="com\sun\corba\se\impl\logging" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\OMGSystemException.java" PackagePath="com\sun\corba\se\impl\logging" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\ORBUtilSystemException.java" PackagePath="com\sun\corba\se\impl\logging" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\POASystemException.java" PackagePath="com\sun\corba\se\impl\logging" />
-        <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\impsrc\com\sun\corba\se\impl\logging\UtilSystemException.java" PackagePath="com\sun\corba\se\impl\logging" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <OpenJdkResource Include="$(OpenJdkDir)\corba\src\share\classes\**\*" Exclude="$(OpenJdkDir)\corba\src\share\classes\**\_*;$(OpenJdkDir)\corba\src\share\classes\**\*.java;$(OpenJdkDir)\corba\src\share\classes\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\corba\classes\**\*.prp" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\corba\classes\**\LogStrings.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)corba\src\share\classes\**\*.prp" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
 </Project>
