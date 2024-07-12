@@ -67,13 +67,13 @@
         <TzFile Include="africa;antarctica;asia;australasia;europe;northamerica;southamerica;backward;etcetera;gmt;jdk11_backward" />
     </ItemGroup>
 
-    <Target Name="GenerateTZDB" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(TzFile->'$(TzDataDir)\%(Identity)')" Outputs="$(TzDbDat)">
+    <Target Name="GenerateTZDB" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(TzFile->'$(TzDataDir)\%(Identity)')" Outputs="$(TzDbDat)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <Delete Files="$(TzDbDat)" />
-        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.tzdb.TzdbZoneRulesCompiler -srcdir $(TzDataDir) -dstfile $(TzDbDat) @(TzFile, ' ')" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.tzdb.TzdbZoneRulesCompiler -srcdir $(TzDataDir) -dstfile $(TzDbDat) @(TzFile, ' ')" />
         <Touch Files="$(TzDbDat)" ForceTouch="true" AlwaysCreate="true" />
 
         <ItemGroup>
@@ -87,13 +87,13 @@
         <CurrencyDataDst>$(IntermediateOutputPath)currency.data</CurrencyDataDst>
     </PropertyGroup>
 
-    <Target Name="GenerateCurrencyData" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);$(CurrencyDataSrc)" Outputs="$(CurrencyDataDst)">
+    <Target Name="GenerateCurrencyData" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);$(CurrencyDataSrc)" Outputs="$(CurrencyDataDst)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <Delete Files="$(CurrencyDataDst).tmp" />
-        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.generatecurrencydata.GenerateCurrencyData -o $(CurrencyDataDst).tmp &lt; $(CurrencyDataSrc)" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.generatecurrencydata.GenerateCurrencyData -o $(CurrencyDataDst).tmp &lt; $(CurrencyDataSrc)" />
         <Move SourceFiles="$(CurrencyDataDst).tmp" DestinationFiles="$(CurrencyDataDst)" />
         <Touch Files="$(CurrencyDataDst)" ForceTouch="true" AlwaysCreate="true" />
 
@@ -112,13 +112,13 @@
         <CacertDst>$(IntermediateOutputPath)cacerts</CacertDst>
     </PropertyGroup>
 
-    <Target Name="GenerateCacerts" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(CacertSrc)" Outputs="$(CacertDst)">
+    <Target Name="GenerateCacerts" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(CacertSrc)" Outputs="$(CacertDst)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <Delete Files="$(CacertDst).tmp" />
-        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.generatecacerts.GenerateCacerts $(OpenJdkDir)jdk/make/data/cacerts/ $(CacertDst).tmp" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.generatecacerts.GenerateCacerts $(OpenJdkDir)jdk/make/data/cacerts/ $(CacertDst).tmp" />
         <Move SourceFiles="$(CacertDst).tmp" DestinationFiles="$(CacertDst)" />
         <Touch Files="$(CacertDst)" ForceTouch="true" AlwaysCreate="true" />
 

@@ -40,9 +40,13 @@
 
     <PropertyGroup>
         <GenerateDependsOn>
-            OpenJdkBuildTools;
+            BuildJdkBuildTools;
             $(GenerateDependsOn);
         </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <ResourceBundleOutputPath>$(IntermediateOutputPath)genprop\</ResourceBundleOutputPath>
     </PropertyGroup>
 
     <UsingTask TaskName="GetCompilePropertiesArgs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
@@ -70,14 +74,14 @@
         </Task>
     </UsingTask>
 
-    <Target Name="GenerateResourceBundles" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(GenerateResourceBundle)" Outputs="@(GenerateResourceBundle->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')">
+    <Target Name="GenerateResourceBundles" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(GenerateResourceBundle)" Outputs="@(GenerateResourceBundle->'$(ResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <ItemGroup>
             <GenerateResourceBundle Update="@(GenerateResourceBundle)">
-                <_Dest>$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java</_Dest>
+                <_Dest>$(ResourceBundleOutputPath)%(PackagePath)\%(ClassName).java</_Dest>
             </GenerateResourceBundle>
             <_Args Remove="@(_Args)" />
         </ItemGroup>
@@ -86,15 +90,15 @@
             <Output TaskParameter="Args" ItemName="_Args" />
         </GetCompilePropertiesArgs>
 
-        <WriteLinesToFile File="$(IntermediateOutputPath)genprop_compile.cmd" Lines="@(_Args)" Overwrite="true" />
-        <MakeDir Directories="@(GenerateResourceBundle->'$(IntermediateOutputPath)genprop\%(PackagePath)')" />
-        <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compileproperties.CompileProperties %40$(IntermediateOutputPath)genprop_compile.cmd" />
-        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.compileproperties.CompileProperties %40$(IntermediateOutputPath)genprop_compile.cmd" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)genprop.compile.rsp" Lines="@(_Args)" Overwrite="true" />
+        <MakeDir Directories="@(GenerateResourceBundle->'$(ResourceBundleOutputPath)%(PackagePath)')" />
+        <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.compileproperties.CompileProperties %40$(IntermediateOutputPath)genprop.compile.rsp" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.compileproperties.CompileProperties %40$(IntermediateOutputPath)genprop.compile.rsp" />
 
         <ItemGroup>
-            <FileWrites Include="$(IntermediateOutputPath)genprop_compile.cmd" />
-            <FileWrites Include="@(GenerateResourceBundle->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')" />
-            <Compile Include="@(GenerateResourceBundle->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')" />
+            <FileWrites Include="$(IntermediateOutputPath)genprop.compile.rsp" />
+            <FileWrites Include="@(GenerateResourceBundle->'$(ResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
+            <Compile Include="@(GenerateResourceBundle->'$(ResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
         </ItemGroup>
     </Target>
 
@@ -129,14 +133,14 @@
         </Task>
     </UsingTask>
 
-    <Target Name="CleanProperties" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(CleanProperties)" Outputs="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ResourceName).properties')">
+    <Target Name="CleanProperties" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(CleanProperties)" Outputs="@(CleanProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties')">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <ItemGroup>
             <CleanProperties Update="@(CleanProperties)">
-                <_Dest>$(IntermediateOutputPath)genprop\%(PackagePath)\%(ResourceName).properties</_Dest>
+                <_Dest>$(ResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties</_Dest>
             </CleanProperties>
             <_Args Remove="@(_Args)" />
         </ItemGroup>
@@ -145,14 +149,15 @@
             <Output TaskParameter="Args" ItemName="_Args" />
         </AddPropertiesToClean>
 
-        <WriteLinesToFile File="$(IntermediateOutputPath)genprop_clean.cmd" Lines="@(_Args)" Overwrite="true" />
-        <MakeDir Directories="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)')" />
-        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.stripproperties.StripProperties %40$(IntermediateOutputPath)genprop_clean.cmd" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)genprop.clean.rsp" Lines="@(_Args)" Overwrite="true" />
+        <MakeDir Directories="@(CleanProperties->'$(ResourceBundleOutputPath)%(PackagePath)')" />
+        <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.stripproperties.StripProperties %40$(IntermediateOutputPath)genprop.clean.rsp" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.stripproperties.StripProperties %40$(IntermediateOutputPath)genprop.clean.rsp" />
 
         <ItemGroup>
-            <FileWrites Include="$(IntermediateOutputPath)genprop_clean.cmd" />
-            <FileWrites Include="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ResourceName).properties')" />
-            <JavaResource Include="@(CleanProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ResourceName).properties')" ResourcePath="%(CleanProperties.PackagePath)/%(CleanProperties.ResourceName).properties" />
+            <FileWrites Include="$(IntermediateOutputPath)genprop.clean.rsp" />
+            <FileWrites Include="@(CleanProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties')" />
+            <JavaResource Include="@(CleanProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties')" ResourcePath="%(CleanProperties.PackagePath)/%(CleanProperties.ResourceName).properties" />
         </ItemGroup>
     </Target>
 
@@ -200,12 +205,12 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="DuplicateProperties" DependsOnTargets="FilterDuplicateProperties" Inputs="$(MSBuildThisFileFullPath);@(DuplicateProperties)" Outputs="@(DuplicateProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')">
-        <DuplicateProperties SourceFiles="@(DuplicateProperties)" DestinationFiles="@(DuplicateProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')" />
+    <Target Name="DuplicateProperties" DependsOnTargets="FilterDuplicateProperties" Inputs="$(MSBuildThisFileFullPath);@(DuplicateProperties)" Outputs="@(DuplicateProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')">
+        <DuplicateProperties SourceFiles="@(DuplicateProperties)" DestinationFiles="@(DuplicateProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
 
         <ItemGroup>
-            <FileWrites Include="@(DuplicateProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')" />
-            <Compile Include="@(DuplicateProperties->'$(IntermediateOutputPath)genprop\%(PackagePath)\%(ClassName).java')" />
+            <FileWrites Include="@(DuplicateProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
+            <Compile Include="@(DuplicateProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
         </ItemGroup>
     </Target>
 
@@ -338,5 +343,6 @@ File.WriteAllBytes(Path, Encoding.UTF8.GetBytes(Text));
 
     <Import Project="IKVM.Java.runtime.jdk.targets" />
     <Import Project="IKVM.Java.runtime.langtools.targets" />
+    <Import Project="IKVM.Java.runtime.nashorn.targets" />
 
 </Project>

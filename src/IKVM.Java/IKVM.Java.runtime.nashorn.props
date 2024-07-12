@@ -12,12 +12,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <OpenJdkClass Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\nashorn\classes\**\*.class" />
+        <OpenJdkSource Include="$(OpenJdkDir)\nashorn\src\**\*.java" PackagePath="" />
     </ItemGroup>
 
     <ItemGroup>
-        <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\**\*" Exclude="$(OpenJdkDir)\nashorn\src\**\_*;$(OpenJdkDir)\nashorn\src\**\*.java;$(OpenJdkDir)\nashorn\src\**\*.class;$(OpenJdkDir)\nashorn\src\**\*.htlm" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Remove="$(OpenJdkDir)\nashorn\src\META-INF\MANIFEST.MF" />
+        <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\**\*.js" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>

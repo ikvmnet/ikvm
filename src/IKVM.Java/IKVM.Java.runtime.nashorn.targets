@@ -1,0 +1,14 @@
+<!--
+
+    IKVM.Java.runtime.nashorn.targets
+    
+    Build targets for the OpenJDK nashorn distribution.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+</Project>

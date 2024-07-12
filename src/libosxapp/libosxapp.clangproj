@@ -55,28 +55,28 @@
     </Target>
     
     <ItemGroup>
-        <_GenIcon Include="$(OpenJdkDir)jdk\src\macosx\native\sun\osxapp\resource\icons\JavaApp.icns" Destination="$(IntermediateOutputPath)\gensrc\AWTIconData.h" />
+        <OSXIcon Include="$(OpenJdkDir)jdk\src\macosx\native\sun\osxapp\resource\icons\JavaApp.icns" Destination="$(IntermediateOutputPath)\gensrc\AWTIconData.h" />
     </ItemGroup>
-
-    <Target Name="GenerateOSXIcons" DependsOnTargets="OpenJdkBuildTools;ResolveJava" BeforeTargets="CollectIkvmImageItemsOutputItems" Inputs="@(_GenIcon)" Outputs="%(_GenIcon.Destination)">
+    
+    <Target Name="GenerateOSXIcons" DependsOnTargets="BuildJdkBuildTools;ResolveJava" BeforeTargets="CollectIkvmImageItemsOutputItems" Inputs="@(OSXIcon)" Outputs="%(OSXIcon.Destination)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
-
+        
         <ItemGroup>
             <_Src Remove="@(_Src)" />
-            <_Src Include="%(_GenIcon.Identity)" />
+            <_Src Include="%(OSXIcon.Identity)" />
             <_Tmp Remove="@(_Tmp)" />
-            <_Tmp Include="%(_GenIcon.Destination).tmp" />
+            <_Tmp Include="%(OSXIcon.Destination).tmp" />
             <_Dst Remove="@(_Dst)" />
-            <_Dst Include="%(_GenIcon.Destination)" />
+            <_Dst Include="%(OSXIcon.Destination)" />
         </ItemGroup>
         
         <WriteLinesToFile Lines="static unsigned char sAWTIconData[] = { " File="@(_Tmp)" />
-        <Message Text="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.icondata.osxapp.ToBin &lt; @(_Src) &gt;&gt; @(_Tmp)" />
-        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.icondata.osxapp.ToBin &lt; @(_Src) &gt;&gt; @(_Tmp)" />
+        <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.icondata.osxapp.ToBin &lt; @(_Src) &gt;&gt; @(_Tmp)" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.icondata.osxapp.ToBin &lt; @(_Src) &gt;&gt; @(_Tmp)" />
         <WriteLinesToFile Lines="}%3b" File="@(_Tmp)" />
-
+        
         <Delete Files="@(_Dst)" Condition="Exists('@(_Dst)')" />
         <Move SourceFiles="@(_Tmp)" DestinationFiles="@(_Dst)" OverwriteReadOnlyFiles="true" />
         
@@ -85,7 +85,7 @@
             <FileWrites Include="@(_Dst)" />
         </ItemGroup>
     </Target>
-
+    
     <PropertyGroup>
         <CompileDependsOn>
             GenerateOSXIcons;
