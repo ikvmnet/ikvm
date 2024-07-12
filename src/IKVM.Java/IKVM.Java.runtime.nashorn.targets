@@ -23,10 +23,9 @@
         <NashornSource Include="$(OpenJdkDir)nashorn\src\**\*.java" />
     </ItemGroup>
 
-    <Target Name="NashornTempResponseFile" Inputs="$(MSBuildThisFileFullPath);@(NashornSource)" Outputs="$(NashornTempResponseFile)">
+    <Target Name="NashornTempResponseFile" DependsOnTargets="CompileJava" Inputs="$(MSBuildThisFileFullPath);@(NashornSource)" Outputs="$(NashornTempResponseFile)">
         <ItemGroup>
             <_NashornTempJavaCompilerClasspath Include="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />
-            <_NashornTempJavaCompilerClasspath Include="$([System.IO.Path]::GetFullPath('$(NashornOutputPath)'))" />
         </ItemGroup>
         <PropertyGroup>
             <_NashornTempJavaCompilerClasspathArg>@(_NashornTempJavaCompilerClasspath, '$([System.IO.Path]::PathSeparator)')</_NashornTempJavaCompilerClasspathArg>
