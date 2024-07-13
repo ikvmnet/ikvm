@@ -336,6 +336,8 @@ Value = b.ToString();
             <FileWrites Include="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
             <FileWrites Include="$(_AssemblyTempPath)$(TargetName).pdb" />
         </ItemGroup>
+
+        <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition=" '$(TargetsTriggeredByCompilation)' != '' " />
     </Target>
 
 </Project>
