@@ -893,7 +893,7 @@ namespace IKVM.Runtime
                 {
                     return false;
                 }
-                
+
                 var fieldType = parameters[firstValueIndex];
                 if (fieldType != parameters[firstValueIndex + 1])
                 {
@@ -1070,71 +1070,14 @@ namespace IKVM.Runtime
                 return tb;
             }
 
-            private void AddInterfaceFieldsInterop(RuntimeJavaField[] fields)
+            void AddInterfaceFieldsInterop(RuntimeJavaField[] fields)
             {
-                if (classFile.IsInterface && classFile.IsPublic && !wrapper.IsGhost && classFile.Fields.Length > 0 && wrapper.classLoader.WorkaroundInterfaceFields)
-                {
-                    TypeBuilder tbFields = DefineNestedInteropType(NestedTypeName.Fields);
-                    CodeEmitter ilgenClinit = null;
-                    for (int i = 0; i < classFile.Fields.Length; i++)
-                    {
-                        ClassFile.Field f = classFile.Fields[i];
-                        if (f.ConstantValue != null)
-                        {
-                            FieldAttributes attribs = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal;
-                            FieldBuilder fb = tbFields.DefineField(f.Name, fields[i].FieldTypeWrapper.TypeAsSignatureType, attribs);
-                            fb.SetConstant(f.ConstantValue);
-                        }
-                        else
-                        {
-                            FieldAttributes attribs = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly;
-                            FieldBuilder fb = tbFields.DefineField(f.Name, fields[i].FieldTypeWrapper.TypeAsPublicSignatureType, attribs);
-                            if (ilgenClinit == null)
-                            {
-                                ilgenClinit = context.CodeEmitterFactory.Create(ReflectUtil.DefineTypeInitializer(tbFields, wrapper.classLoader));
-                            }
-                            wrapper.GetFieldWrapper(f.Name, f.Signature).EmitGet(ilgenClinit);
-                            ilgenClinit.Emit(OpCodes.Stsfld, fb);
-                        }
-                    }
-                    if (ilgenClinit != null)
-                    {
-                        ilgenClinit.Emit(OpCodes.Ret);
-                        ilgenClinit.DoEmit();
-                    }
-                }
+
             }
 
-            private void AddInterfaceMethodsInterop(RuntimeJavaMethod[] methods)
+            void AddInterfaceMethodsInterop(RuntimeJavaMethod[] methods)
             {
-                if (classFile.IsInterface && classFile.IsPublic && classFile.MajorVersion >= 52 && !wrapper.IsGhost && methods.Length > 0 && wrapper.classLoader.WorkaroundInterfaceStaticMethods)
-                {
-                    TypeBuilder tbMethods = null;
-                    foreach (var mw in methods)
-                    {
-                        if (mw.IsStatic && mw.IsPublic && mw.Name != StringConstants.CLINIT && ParametersAreAccessible(mw))
-                        {
-                            if (tbMethods == null)
-                            {
-                                tbMethods = DefineNestedInteropType(NestedTypeName.Methods);
-                            }
-                            var mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), tbMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, null, true);
-                            var ilgen = context.CodeEmitterFactory.Create(mb);
-                            var parameters = mw.GetParameters();
-                            for (int i = 0; i < parameters.Length; i++)
-                            {
-                                ilgen.EmitLdarg(i);
-                                if (!parameters[i].IsUnloadable && !parameters[i].IsPublic)
-                                {
-                                    parameters[i].EmitCheckcast(ilgen);
-                                }
-                            }
-                            mw.EmitCall(ilgen);
-                            ilgen.Emit(OpCodes.Ret);
-                            ilgen.DoEmit();
-                        }
-                    }
-                }
+
             }
 
             private void CreateDefaultMethodInterop(ref TypeBuilder tbDefaultMethods, MethodBuilder defaultMethod, RuntimeJavaMethod mw)
@@ -2336,20 +2279,6 @@ namespace IKVM.Runtime
 
             MethodBuilder DefineHelperMethod(string name, Type returnType, Type[] parameterTypes)
             {
-#if IMPORTER
-                // FXBUG csc.exe doesn't like non-public methods in interfaces, so for public interfaces we move
-                // the helper methods into a nested type.
-                if (wrapper.IsPublic && wrapper.IsInterface && wrapper.classLoader.WorkaroundInterfacePrivateMethods)
-                {
-                    if (interfaceHelperMethodsTypeBuilder == null)
-                    {
-                        interfaceHelperMethodsTypeBuilder = typeBuilder.DefineNestedType(NestedTypeName.InterfaceHelperMethods, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
-                        RegisterNestedTypeBuilder(interfaceHelperMethodsTypeBuilder);
-                    }
-                    return interfaceHelperMethodsTypeBuilder.DefineMethod(name, MethodAttributes.PrivateScope | MethodAttributes.Static, returnType, parameterTypes);
-                }
-#endif
-
                 return typeBuilder.DefineMethod(name, MethodAttributes.PrivateScope | MethodAttributes.Static, returnType, parameterTypes);
             }
 
