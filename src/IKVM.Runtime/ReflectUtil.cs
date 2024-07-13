@@ -26,6 +26,7 @@ using System;
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
@@ -56,7 +57,7 @@ namespace IKVM.Runtime
         internal static bool IsDynamicAssembly(Assembly asm)
         {
 #if IMPORTER || EXPORTER
-			return false;
+            return false;
 #else
             return asm.IsDynamic;
 #endif
@@ -100,7 +101,7 @@ namespace IKVM.Runtime
         internal static bool IsVector(Type type)
         {
 #if IMPORTER || EXPORTER
-			return type.__IsVector;
+            return type.__IsVector;
 #else
             // there's no API to distinguish an array of rank 1 from a vector,
             // so we check if the type name ends in [], which indicates it's a vector
@@ -126,20 +127,7 @@ namespace IKVM.Runtime
 
         internal static MethodBuilder DefineTypeInitializer(TypeBuilder typeBuilder, RuntimeClassLoader loader)
         {
-            MethodAttributes attr = MethodAttributes.Static | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName;
-            if (typeBuilder.IsInterface && loader.WorkaroundInterfacePrivateMethods)
-            {
-                // LAMESPEC the ECMA spec says (part. I, sect. 8.5.3.2) that all interface members must be public, so we make
-                // the class constructor public.
-                // NOTE it turns out that on .NET 2.0 this isn't necessary anymore (neither Ref.Emit nor the CLR verifier complain about it),
-                // but the C# compiler still considers interfaces with non-public methods to be invalid, so to keep interop with C# we have
-                // to keep making the .cctor method public.
-                attr |= MethodAttributes.Public;
-            }
-            else
-            {
-                attr |= MethodAttributes.Private;
-            }
+            var attr = MethodAttributes.Static | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName | MethodAttributes.Private;
             return typeBuilder.DefineMethod(ConstructorInfo.TypeConstructorName, attr, null, Type.EmptyTypes);
         }
 
@@ -217,36 +205,36 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-		internal static Type GetMissingType(Type type)
-		{
-			while (type.HasElementType)
-			{
-				type = type.GetElementType();
-			}
-			if (type.__IsMissing)
-			{
-				return type;
-			}
-			else if (type.__ContainsMissingType)
-			{
-				if (type.IsGenericType)
-				{
-					foreach (Type arg in type.GetGenericArguments())
-					{
-						Type t1 = GetMissingType(arg);
-						if (t1.__IsMissing)
-						{
-							return t1;
-						}
-					}
-				}
-				throw new NotImplementedException(type.FullName);
-			}
-			else
-			{
-				return type;
-			}
-		}
+        internal static Type GetMissingType(Type type)
+        {
+            while (type.HasElementType)
+            {
+                type = type.GetElementType();
+            }
+            if (type.__IsMissing)
+            {
+                return type;
+            }
+            else if (type.__ContainsMissingType)
+            {
+                if (type.IsGenericType)
+                {
+                    foreach (Type arg in type.GetGenericArguments())
+                    {
+                        Type t1 = GetMissingType(arg);
+                        if (t1.__IsMissing)
+                        {
+                            return t1;
+                        }
+                    }
+                }
+                throw new NotImplementedException(type.FullName);
+            }
+            else
+            {
+                return type;
+            }
+        }
 
 #endif
 
