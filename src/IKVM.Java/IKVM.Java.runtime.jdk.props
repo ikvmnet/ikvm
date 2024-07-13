@@ -126,8 +126,11 @@
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\smartcardio\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\swing\**\*.java" PackagePath="sun\swing" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\text\**\*.java" PackagePath="sun\text" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\text\resources\BreakIteratorInfo.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\text\resources\BreakIteratorRules.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\text\resources\BreakIteratorRules_th.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\text\resources\th\BreakIteratorInfo_th.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\text\resources\th\BreakIteratorRules_th.java" />
+
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\tools\**\*.java" PackagePath="sun\tools" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\tools\attach\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\tools\jcmd\**\*.java" />
