@@ -162,7 +162,7 @@ namespace IKVM.Runtime
                 return Externs.IKVM_dl_open(nameOrPath);
             }
 #else
-            return System.Runtime.InteropServices.NativeLibrary.TryLoad(nameOrPath, out var h) ? h : 0;
+            return System.Runtime.InteropServices.NativeLibrary.TryLoad(nameOrPath, typeof(LibIkvm).Assembly, null, out var h) ? h : 0;
 #endif
         }
 
