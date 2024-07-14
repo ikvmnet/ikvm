@@ -5,18 +5,6 @@
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <PackageId>IKVM.Java</PackageId>
         <IkvmJavaRuntimeIdentifier>ref</IkvmJavaRuntimeIdentifier>
-        <DebugSymbols>none</DebugSymbols>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="JetBrains.Refasmer.CliTool" Version="1.0.33">
-            <PrivateAssets>all</PrivateAssets>
-            <ExcludeAssets>all</ExcludeAssets>
-            <GeneratePathProperty>true</GeneratePathProperty>
-        </PackageReference>
-    </ItemGroup>
-
-    <PropertyGroup>
         <DebugSymbols>false</DebugSymbols>
         <DebugType>none</DebugType>
         <TargetsTriggeredByCompilation>$(TargetsTriggeredByCompilation);ConvertRefAssembly</TargetsTriggeredByCompilation>
