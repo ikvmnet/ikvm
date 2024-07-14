@@ -40,9 +40,4 @@
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.targets" />
-
-    <Target Name="ConvertRefAssembly">
-        <Exec Command="dotnet exec $(PkgJetBrains_Refasmer_CliTool)\tools\net6.0\any\RefasmerCliTool.dll -r -w &quot;@(IntermediateAssembly)&quot; " />
-    </Target>
-
 </Project>
