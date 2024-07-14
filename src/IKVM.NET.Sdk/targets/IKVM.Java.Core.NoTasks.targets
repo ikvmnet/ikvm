@@ -152,6 +152,7 @@ Value = b.ToString();
         <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" IgnoreStandardErrorWarningFormat="true" />
         <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath).$(_ExportReferenceTempSuffix)" OverwriteReadOnlyFiles="true" UseHardlinksIfPossible="true" Retries="$(CopyRetryCount)" RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)" Condition="!Exists('%(ReferenceExport.CachePath)')" />
         <Move SourceFiles="%(ReferenceExport.CachePath).$(_ExportReferenceTempSuffix)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="!Exists('%(ReferenceExport.CachePath)')" />
+        <Touch Files="%(ReferenceExport.CachePath)" ForceTouch="true" />
 
         <ItemGroup>
             <FileWrites Include="%(ReferenceExport.StagePath)" />
