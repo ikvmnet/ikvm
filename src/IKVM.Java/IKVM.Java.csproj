@@ -5,7 +5,8 @@
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <PackageId>IKVM.Java</PackageId>
         <IkvmJavaRuntimeIdentifier>ref</IkvmJavaRuntimeIdentifier>
-        <DebugSymbols>none</DebugSymbols>
+        <DebugSymbols>false</DebugSymbols>
+        <DebugType>none</DebugType>
         <TargetsTriggeredByCompilation>$(TargetsTriggeredByCompilation);ConvertRefAssembly</TargetsTriggeredByCompilation>
     </PropertyGroup>
 

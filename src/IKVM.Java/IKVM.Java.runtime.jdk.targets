@@ -1342,6 +1342,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
 
         <ItemGroup>
             <FileWrites Include="@(BreakIteratorOutputs)" />
+            <Compile Include="@(BreakIteratorOutputs)" />
         </ItemGroup>
     </Target>
 
