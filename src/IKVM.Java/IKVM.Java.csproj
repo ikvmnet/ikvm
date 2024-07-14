@@ -22,7 +22,7 @@
         <ItemGroup>
             <RefasmerCliTool Include="$(PkgJetBrains_Refasmer_CliTool)\tools\net6.0\any\RefasmerCliTool.dll" />
         </ItemGroup>
-        <Exec Command="dotnet exec @(RefasmerCliTool) -r -w &quot;@(IntermediateAssembly)&quot; " />
+        <Exec Command="dotnet exec @(RefasmerCliTool) --refasm --overwrite --noattr --all &quot;@(IntermediateAssembly)&quot; " />
     </Target>
 
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
