@@ -1637,14 +1637,14 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </Task>
     </UsingTask>
 
-    <Target Name="CleanJdkProperties" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(CleanJdkProperties)" Outputs="@(CleanJdkProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties')">
+    <Target Name="CleanJdkProperties" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(CleanJdkProperties)" Outputs="@(CleanJdkProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties')">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <ItemGroup>
             <CleanJdkProperties Update="@(CleanJdkProperties)">
-                <_Dest>$(ResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties</_Dest>
+                <_Dest>$(JdkResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties</_Dest>
             </CleanJdkProperties>
             <_Args Remove="@(_Args)" />
         </ItemGroup>
@@ -1654,14 +1654,14 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </AddJdkCleanPropertiesArgs>
 
         <WriteLinesToFile File="$(IntermediateOutputPath)genprop.clean.rsp" Lines="@(_Args)" Overwrite="true" />
-        <MakeDir Directories="@(CleanJdkProperties->'$(ResourceBundleOutputPath)%(PackagePath)')" />
+        <MakeDir Directories="@(CleanJdkProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)')" />
         <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.stripproperties.StripProperties %40$(IntermediateOutputPath)genprop.clean.rsp" />
         <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.stripproperties.StripProperties %40$(IntermediateOutputPath)genprop.clean.rsp" />
 
         <ItemGroup>
             <FileWrites Include="$(IntermediateOutputPath)genprop.clean.rsp" />
-            <FileWrites Include="@(CleanJdkProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties')" />
-            <JavaResource Include="@(CleanJdkProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties')" ResourcePath="%(CleanJdkProperties.PackagePath)/%(CleanJdkProperties.ResourceName).properties" />
+            <FileWrites Include="@(CleanJdkProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties')" />
+            <JavaResource Include="@(CleanJdkProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties')" ResourcePath="%(CleanJdkProperties.PackagePath)/%(CleanJdkProperties.ResourceName).properties" />
         </ItemGroup>
     </Target>
 
@@ -1709,12 +1709,12 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </ItemGroup>
     </Target>
 
-    <Target Name="DuplicateProperties" DependsOnTargets="FilterDuplicateProperties" Inputs="$(MSBuildThisFileFullPath);@(DuplicateProperties)" Outputs="@(DuplicateProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')">
-        <DuplicateProperties SourceFiles="@(DuplicateProperties)" DestinationFiles="@(DuplicateProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
+    <Target Name="DuplicateProperties" DependsOnTargets="FilterDuplicateProperties" Inputs="$(MSBuildThisFileFullPath);@(DuplicateProperties)" Outputs="@(DuplicateProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')">
+        <DuplicateProperties SourceFiles="@(DuplicateProperties)" DestinationFiles="@(DuplicateProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
 
         <ItemGroup>
-            <FileWrites Include="@(DuplicateProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
-            <Compile Include="@(DuplicateProperties->'$(ResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
+            <FileWrites Include="@(DuplicateProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
+            <Compile Include="@(DuplicateProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
         </ItemGroup>
     </Target>
 
