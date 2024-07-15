@@ -1213,7 +1213,7 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         <XLibSizes64>$(OpenJdkDir)jdk\src\solaris\classes\sun\awt\X11\generator\sizes.64</XLibSizes64>
     </PropertyGroup>
 
-    <Target Name="GenerateX11Wrappers" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);$(XLibSizes32);$(XLibSizes64);$(XLibTypes)" Outputs="$(X11WrapperTempPath)sizes.32;$(X11WrapperTempPath)sizes.64;$(IntermediateOutputPath)genx11.stamp" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' ">
+    <Target Name="GenerateX11Wrappers" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);$(XLibSizes32);$(XLibSizes64);$(XLibTypes)" Outputs="$(IntermediateOutputPath)genx11.stamp" Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' ">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
