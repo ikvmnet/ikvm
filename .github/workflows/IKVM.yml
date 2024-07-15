@@ -424,15 +424,21 @@ jobs:
       run: |
         $sys = @(
           "win-x64",
-          "linux-x64",
-          "osx-x64"
+          "linux-x64"
         )
+
+        if ($env:FULL_TEST -eq "true") {
+          $sys += @( "osx-x64", "osx-arm64" )
+        }
         
         $tfm = @(
           "net472",
-          "net6.0",
           "net8.0"
         )
+
+        if ($env:FULL_TEST -eq "true") {
+          $tfm += @( "net6.0" )
+        }
 
         $run = @(
           "IKVM.ByteCode.Tests",
@@ -496,15 +502,6 @@ jobs:
             "tfm" = "net7.0"
           }
         )
-
-        if ($env:FULL_TEST -ne "true") {
-            foreach ($_ in (0..15)) {
-              $exclude += @(@{
-                "run" = "IKVM.OpenJDK.Tests?TestPartition=$_"
-                "tfm" = "net8.0"
-              })
-            }
-        }
 
         $include = @(
           @{
