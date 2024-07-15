@@ -40,7 +40,7 @@ using java.lang.invoke;
 using BasicType = global::java.lang.invoke.LambdaForm.BasicType;
 using Class = global::java.lang.Class;
 using Name = global::java.lang.invoke.LambdaForm.Name;
-using Opcodes = jdk.@internal.org.objectweb.asm.Opcodes.__Fields;
+using Opcodes = jdk.@internal.org.objectweb.asm.Opcodes;
 using VerifyType = global::sun.invoke.util.VerifyType;
 using Wrapper = global::sun.invoke.util.Wrapper;
 #endif

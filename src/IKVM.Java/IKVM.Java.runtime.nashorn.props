@@ -14,11 +14,12 @@
     <ItemGroup>
         <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
         <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\**\*.js" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\**\*Factory" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
-        <Transform Include="$(MSBuildThisFileDirectory)\local\nashorn\version.properties.tt" TargetPath="$(IntermediateOutputPath)transform\local\nashorn\version.properties" />
-        <JavaResource Include="$(IntermediateOutputPath)transform\local\nashorn\version.properties" Visible="False" ResourcePath="nashorn/version.properties" Link="local\nashorn\version.properties" />
+        <Transform Include="$(MSBuildThisFileDirectory)\local\jdk\nashorn\internal\runtime\resources\version.properties.tt" TargetPath="$(IntermediateOutputPath)transform\local\jdk\nashorn\internal\runtime\resources\version.properties" />
+        <JavaResource Include="$(IntermediateOutputPath)transform\local\jdk\nashorn\internal\runtime\resources\version.properties" Visible="False" ResourcePath="jdk/nashorn/internal/runtime/resources/version.properties" Link="local\jdk\nashorn\internal\runtime\resources\version.properties" />
     </ItemGroup>
 
 </Project>

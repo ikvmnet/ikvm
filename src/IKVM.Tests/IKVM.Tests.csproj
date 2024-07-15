@@ -8,7 +8,7 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <PreserveCompilationContext>true</PreserveCompilationContext>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
-        <LangVersion>11</LangVersion>
+        <LangVersion>12</LangVersion>
         <RunSettingsFilePath>$(MSBuildProjectDirectory)\IKVM.Tests.runsettings</RunSettingsFilePath>
     </PropertyGroup>
 

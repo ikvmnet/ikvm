@@ -108,6 +108,7 @@ namespace IKVM.NET.Sdk.Tests
             var analyzer = manager.GetProject(Path.Combine(TestRoot, "Exe", "ProjectExe.msbuildproj"));
             analyzer.AddBuildLogger(new TargetLogger(context));
             analyzer.AddBinaryLogger(Path.Combine(WorkRoot, "msbuild.binlog"));
+            analyzer.SetEnvironmentVariable("NUGET_PACKAGES", "");
             analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
             analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
             analyzer.SetGlobalProperty("IkvmCacheDir", IkvmCachePath + Path.DirectorySeparatorChar);
@@ -231,6 +232,7 @@ namespace IKVM.NET.Sdk.Tests
             var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.msbuildproj"));
             analyzer.AddBuildLogger(new TargetLogger(TestContext));
             analyzer.AddBinaryLogger(Path.Combine(WorkRoot, $"{env}-{tfm}-{rid}-msbuild.binlog"));
+            analyzer.SetEnvironmentVariable("NUGET_PACKAGES", "");
             analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
             analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
             analyzer.SetGlobalProperty("IkvmCacheDir", IkvmCachePath + Path.DirectorySeparatorChar);
