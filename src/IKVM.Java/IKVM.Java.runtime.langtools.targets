@@ -42,10 +42,10 @@
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateLangtoolsVersionProperties;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
 </Project>

@@ -2,7 +2,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
         <PackageId>IKVM.Java.runtime.linux</PackageId>
         <IkvmJavaRuntimeIdentifier>linux</IkvmJavaRuntimeIdentifier>
     </PropertyGroup>

@@ -671,7 +671,7 @@ jobs:
                 "--blame",
                 "--blame-crash",
                 "--blame-hang",
-                "--blame-hang-timeout", "60m",
+                "--blame-hang-timeout", "120m",
                 "--blame-hang-dump-type", "full",
                 "-v:diag",
                 "--results-directory", "TestResults",

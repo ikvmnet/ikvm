@@ -39,10 +39,10 @@
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             OpenJdkBuildTools;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <UsingTask TaskName="GetCompilePropertiesArgs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
@@ -99,10 +99,10 @@
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             GenerateResourceBundles;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <UsingTask TaskName="AddPropertiesToClean" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
@@ -157,10 +157,10 @@
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             CleanProperties;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <UsingTask TaskName="DuplicateProperties" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
@@ -210,11 +210,11 @@
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             FilterDuplicateProperties;
             DuplicateProperties;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <UsingTask TaskName="DistinctServiceFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
@@ -295,36 +295,29 @@
     </Target>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
+        <GenerateDependsOn>
             UpdateServiceFiles;
             GenerateServiceFiles;
             CollectServiceFiles;
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
-        <GenerateSourceDependsOn>
-            $(GenerateSourceDependsOn);
-        </GenerateSourceDependsOn>
+        <GenerateDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
-    <Target Name="GenerateSource" DependsOnTargets="$(GenerateSourceDependsOn)">
+    <Target Name="Generate" DependsOnTargets="$(GenerateDependsOn)">
 
     </Target>
 
     <PropertyGroup>
         <CompileJavaDependsOn>
-            GenerateSource;
+            Generate;
             $(CompileJavaDependsOn);
         </CompileJavaDependsOn>
-    </PropertyGroup>
-
-    <PropertyGroup>
-        <CoreCleanDependsOn>
-            $(CoreCleanDependsOn);
-            CleanGenerateSource;
-        </CoreCleanDependsOn>
     </PropertyGroup>
 
     <UsingTask TaskName="WriteTextToFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
