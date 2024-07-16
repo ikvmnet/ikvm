@@ -301,8 +301,9 @@
 
         <ItemGroup>
             <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)DYNANYDELETEFILES" />
-            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\*.java" Condition="$([System.String]::Copy('%(Identity)').EndsWith('POA.java'))" />
-            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\*.java" Condition="$([System.String]::Copy('%(Identity)').EndsWith('Holder.java'))" />
+            <__CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\*.java" />
+            <_CorbaIDLsDelete Include="@(__CorbaIDLsDelete)" Condition="$([System.String]::Copy('%(Filename)').Contains('POA'))" />
+            <_CorbaIDLsDelete Include="@(__CorbaIDLsDelete)" Condition="$([System.String]::Copy('%(Filename)').Contains('Holder'))" />
             <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\DynValueBoxHelper.java" />
             <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\DynValueCommonHelper.java" />
             <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\_DynValueCommonStub.java" />
