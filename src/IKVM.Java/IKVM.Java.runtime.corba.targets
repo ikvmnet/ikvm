@@ -55,13 +55,6 @@
     </Target>
 
     <PropertyGroup>
-        <GenerateDependsOn>
-            BuildCorbaBuildTools;
-            $(GenerateDependsOn);
-        </GenerateDependsOn>
-    </PropertyGroup>
-
-    <PropertyGroup>
         <CorbaIDLJOutputPath>$(IntermediateOutputPath)corba_idlj\</CorbaIDLJOutputPath>
         <CorbaIDLJResponseFile>$(IntermediateOutputPath)corba_idlj.javac.rsp</CorbaIDLJResponseFile>
         <CorbaIDLJStampFile>$(CorbaIDLJOutputPath)stamp</CorbaIDLJStampFile>
