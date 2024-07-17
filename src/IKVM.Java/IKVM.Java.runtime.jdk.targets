@@ -59,11 +59,11 @@
             <_RmiCompilerArgs Include="-d" />
             <_RmiCompilerArgs Include="$(RmiStubsOutputPath)" />
         </ItemGroup>
-        
+
         <PropertyGroup>
             <_RmiCompilerArgs>@(_RmiCompilerArgs, ' ')</_RmiCompilerArgs>
         </PropertyGroup>
-        
+
         <Delete Files="$(RmiStubsOutputPath)**\*" />
         <MakeDir Directories="$(RmiStubsOutputPath)" />
         <Exec Command="$(RmiCompilerExec) $(_RmiCompilerArgs) %(OpenJdkRmiStub.Flags) $([System.String]::Copy('%(OpenJdkRmiStub.Identity)').Replace('$', '\$'))" Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' " />
@@ -86,7 +86,7 @@
     </PropertyGroup>
 
     <Target Name="BuildRmiStubs" DependsOnTargets="$(BuildRmiStubsDependsOn)">
-        
+
     </Target>
 
     <Target Name="CleanRmiStubs">
@@ -1613,7 +1613,11 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </GenerateDependsOn>
     </PropertyGroup>
 
-    <UsingTask TaskName="AddJdkCleanPropertiesArgs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <PropertyGroup>
+        <JdkCleanPropertiesFilesOutputPath>$(IntermediateOutputPath)jdk_cleanprop\</JdkCleanPropertiesFilesOutputPath>
+    </PropertyGroup>
+
+    <UsingTask TaskName="GetCleanJdkPropertiesFilesArgs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <Item ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
             <Args ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
@@ -1637,42 +1641,46 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </Task>
     </UsingTask>
 
-    <Target Name="CleanJdkProperties" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(CleanJdkProperties)" Outputs="@(CleanJdkProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties')">
+    <Target Name="CleanJdkPropertiesFiles" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(JdkCleanPropertiesFile)" Outputs="@(JdkCleanPropertiesFile->'$(JdkCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties')">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <ItemGroup>
-            <CleanJdkProperties Update="@(CleanJdkProperties)">
-                <_Dest>$(JdkResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties</_Dest>
-            </CleanJdkProperties>
-            <_Args Remove="@(_Args)" />
+            <JdkCleanPropertiesFile Update="@(JdkCleanPropertiesFile)">
+                <_Dest>$(JdkCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties</_Dest>
+            </JdkCleanPropertiesFile>
+            <_CleanJdkPropertiesFilesArgs Remove="@(_CleanJdkPropertiesFilesArgs)" />
         </ItemGroup>
 
-        <AddJdkCleanPropertiesArgs Item="@(CleanJdkProperties)">
-            <Output TaskParameter="Args" ItemName="_Args" />
-        </AddJdkCleanPropertiesArgs>
+        <GetCleanJdkPropertiesFilesArgs Item="@(JdkCleanPropertiesFile)">
+            <Output TaskParameter="Args" ItemName="_CleanJdkPropertiesFilesArgs" />
+        </GetCleanJdkPropertiesFilesArgs>
 
-        <WriteLinesToFile File="$(IntermediateOutputPath)genprop.clean.rsp" Lines="@(_Args)" Overwrite="true" />
-        <MakeDir Directories="@(CleanJdkProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)')" />
-        <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.stripproperties.StripProperties %40$(IntermediateOutputPath)genprop.clean.rsp" />
-        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.stripproperties.StripProperties %40$(IntermediateOutputPath)genprop.clean.rsp" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)jdk_cleanprop.rsp" Lines="@(_CleanJdkPropertiesFilesArgs)" Overwrite="true" />
+        <MakeDir Directories="@(JdkCleanPropertiesFile->'$(JdkCleanPropertiesFilesOutputPath)%(PackagePath)')" />
+        <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.stripproperties.StripProperties %40$(IntermediateOutputPath)jdk_cleanprop.rsp" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.stripproperties.StripProperties %40$(IntermediateOutputPath)jdk_cleanprop.rsp" />
 
         <ItemGroup>
-            <FileWrites Include="$(IntermediateOutputPath)genprop.clean.rsp" />
-            <FileWrites Include="@(CleanJdkProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties')" />
-            <JavaResource Include="@(CleanJdkProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ResourceName).properties')" ResourcePath="%(CleanJdkProperties.PackagePath)/%(CleanJdkProperties.ResourceName).properties" />
+            <FileWrites Include="$(IntermediateOutputPath)jdk_cleanprop.rsp" />
+            <FileWrites Include="@(JdkCleanPropertiesFile->'$(JdkCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties')" />
+            <JavaResource Include="@(JdkCleanPropertiesFile->'$(JdkCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties')" ResourcePath="%(JdkCleanPropertiesFile.PackagePath)/%(JdkCleanPropertiesFile.ResourceName).properties" />
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
         <GenerateDependsOn>
-            CleanJdkProperties;
+            CleanJdkPropertiesFiles;
             $(GenerateDependsOn);
         </GenerateDependsOn>
     </PropertyGroup>
 
-    <UsingTask TaskName="DuplicateProperties" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <PropertyGroup>
+        <JdkDuplicatePropertiesFilesOutputPath>$(IntermediateOutputPath)jdk_duplicateprop\</JdkDuplicatePropertiesFilesOutputPath>
+    </PropertyGroup>
+
+    <UsingTask TaskName="DuplicateJdkPropertiesFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <SourceFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
             <DestinationFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
@@ -1703,34 +1711,36 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </Task>
     </UsingTask>
 
-    <Target Name="FilterDuplicateProperties">
+    <Target Name="RemoveExistingDuplicateJdkPropertiesFiles">
         <ItemGroup>
-            <DuplicateProperties Remove="@(DuplicateProperties)" Condition="Exists('$(OpenJdkDir)jdk\src\share\classes\%(PackagePath)\%(ClassName).java')" />
+            <JdkDuplicatePropertiesFile Remove="@(JdkDuplicatePropertiesFile)" Condition="Exists('$(OpenJdkDir)jdk\src\share\classes\%(PackagePath)\%(ClassName).java')" />
         </ItemGroup>
     </Target>
 
-    <Target Name="DuplicateProperties" DependsOnTargets="FilterDuplicateProperties" Inputs="$(MSBuildThisFileFullPath);@(DuplicateProperties)" Outputs="@(DuplicateProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')">
-        <DuplicateProperties SourceFiles="@(DuplicateProperties)" DestinationFiles="@(DuplicateProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
+    <Target Name="DuplicateJdkPropertiesFiles" DependsOnTargets="RemoveExistingDuplicateJdkPropertiesFiles" Inputs="$(MSBuildThisFileFullPath);@(JdkDuplicatePropertiesFile)" Outputs="@(JdkDuplicatePropertiesFile->'$(JdkDuplicatePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')">
+        <DuplicateJdkPropertiesFiles
+            SourceFiles="@(JdkDuplicatePropertiesFile)"
+            DestinationFiles="@(JdkDuplicatePropertiesFile->'$(JdkDuplicatePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')" />
 
         <ItemGroup>
-            <FileWrites Include="@(DuplicateProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
-            <Compile Include="@(DuplicateProperties->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
+            <FileWrites Include="@(JdkDuplicatePropertiesFile->'$(JdkDuplicatePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')" />
+            <Compile Include="@(JdkDuplicatePropertiesFile->'$(JdkDuplicatePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')" />
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
         <GenerateDependsOn>
-            FilterDuplicateProperties;
-            DuplicateProperties;
+            RemoveExistingDuplicateJdkPropertiesFiles;
+            DuplicateJdkPropertiesFiles;
             $(GenerateDependsOn);
         </GenerateDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
-        <JdkResourceBundleOutputPath>$(IntermediateOutputPath)jdk_genprop\</JdkResourceBundleOutputPath>
+        <JdkCompilePropertiesFilesOutputPath>$(IntermediateOutputPath)jdk_compileprop\</JdkCompilePropertiesFilesOutputPath>
     </PropertyGroup>
 
-    <UsingTask TaskName="GetCompilePropertiesArgs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <UsingTask TaskName="GetCompileJdkPropertiesFilesArgs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <Item ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
             <Args ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
@@ -1755,37 +1765,37 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
         </Task>
     </UsingTask>
 
-    <Target Name="GenerateJdkResourceBundles" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(GenerateResourceBundle)" Outputs="@(GenerateResourceBundle->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')">
+    <Target Name="CompileJdkPropertiesFiles" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(JdkCompilePropertiesFile)" Outputs="@(JdkCompilePropertiesFile->'$(JdkCompilePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <ItemGroup>
-            <GenerateResourceBundle Update="@(GenerateResourceBundle)">
-                <_Dest>$(JdkResourceBundleOutputPath)%(PackagePath)\%(ClassName).java</_Dest>
-            </GenerateResourceBundle>
-            <_Args Remove="@(_Args)" />
+            <JdkCompilePropertiesFile Update="@(JdkCompilePropertiesFile)">
+                <_Dest>$(JdkCompilePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java</_Dest>
+            </JdkCompilePropertiesFile>
+            <_CompileJdkPropertiesFilesArgs Remove="@(_CompileJdkPropertiesFilesArgs)" />
         </ItemGroup>
 
-        <GetCompilePropertiesArgs Item="@(GenerateResourceBundle)">
-            <Output TaskParameter="Args" ItemName="_Args" />
-        </GetCompilePropertiesArgs>
+        <GetCompileJdkPropertiesFilesArgs Item="@(JdkCompilePropertiesFile)">
+            <Output TaskParameter="Args" ItemName="_CompileJdkPropertiesFilesArgs" />
+        </GetCompileJdkPropertiesFilesArgs>
 
-        <WriteLinesToFile File="$(IntermediateOutputPath)genprop.compile.rsp" Lines="@(_Args)" Overwrite="true" />
-        <MakeDir Directories="@(GenerateResourceBundle->'$(JdkResourceBundleOutputPath)%(PackagePath)')" />
-        <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.compileproperties.CompileProperties %40$(IntermediateOutputPath)genprop.compile.rsp" />
-        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.compileproperties.CompileProperties %40$(IntermediateOutputPath)genprop.compile.rsp" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)jdk_compileprop.rsp" Lines="@(_CompileJdkPropertiesFilesArgs)" Overwrite="true" />
+        <MakeDir Directories="@(JdkCompilePropertiesFile->'$(JdkCompilePropertiesFilesOutputPath)%(PackagePath)')" />
+        <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.compileproperties.CompileProperties %40$(IntermediateOutputPath)jdk_compileprop.rsp" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.compileproperties.CompileProperties %40$(IntermediateOutputPath)jdk_compileprop.rsp" />
 
         <ItemGroup>
-            <FileWrites Include="$(IntermediateOutputPath)genprop.compile.rsp" />
-            <FileWrites Include="@(GenerateResourceBundle->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
-            <Compile Include="@(GenerateResourceBundle->'$(JdkResourceBundleOutputPath)%(PackagePath)\%(ClassName).java')" />
+            <FileWrites Include="$(IntermediateOutputPath)jdk_compileprop.rsp" />
+            <FileWrites Include="@(JdkCompilePropertiesFile->'$(JdkCompilePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')" />
+            <Compile Include="@(JdkCompilePropertiesFile->'$(JdkCompilePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')" />
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
         <GenerateDependsOn>
-            GenerateJdkResourceBundles;
+            CompileJdkPropertiesFiles;
             $(GenerateDependsOn);
         </GenerateDependsOn>
     </PropertyGroup>
