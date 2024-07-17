@@ -34,7 +34,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: jtreg/build
-        key: jtreg-build--${{ runner.os }}--${{ hashFiles('jtreg/**', '!jtreg/build') }}-7
+        key: jtreg-build--${{ runner.os }}--${{ hashFiles('jtreg/**') }}-8
     - name: Check OpenJDK Test Harness Build Stamp
       id: jtreg-build-stamp
       uses: andstor/file-existence-action@v3
