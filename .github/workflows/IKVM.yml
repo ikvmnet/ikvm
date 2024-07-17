@@ -22,8 +22,46 @@ env:
   NATIVE_SDK_VERSION: "20240614.1"
 
 jobs:
+  build-jtreg:
+    name: Build OpenJDK Test Harness
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Source
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: Cache OpenJDK Test Harness Build
+      uses: actions/cache@v4
+      with:
+        path: jtreg/build
+        key: jtreg-build--${{ runner.os }}--${{ hashFiles('jtreg/**', '!jtreg/build') }}-6
+    - name: Check OpenJDK Test Harness Build Stamp
+      id: jtreg-build-stamp
+      uses: andstor/file-existence-action@v3
+      with:
+        files: jtreg/build/stamp
+    - name: Install Java
+      run: |
+        sudo apt-get update && \
+        sudo apt-get install -y \
+          openjdk-8-jdk-headless && \
+        echo "JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> $GITHUB_ENV
+    - name: Build OpenJDK Test Harness
+      if: steps.jtreg-build-stamp.outputs.files_exists != 'true'
+      run: WGET_OPTS='-U Mozilla/5.0' bash make/build-all.sh $JAVA_HOME && touch build/stamp
+      working-directory: jtreg
+    - name: Package OpenJDK Test Harness
+      run: zip -r /tmp/jtreg-build.zip build
+      working-directory: jtreg
+    - name: Upload OpenJDK Test Harness
+      uses: actions/upload-artifact@v4
+      with:
+        name: jtreg-build
+        path: /tmp/jtreg-build.zip
   build-ikvm:
     name: Build IKVM
+    needs:
+    - build-jtreg
     timeout-minutes: 720
     runs-on: ubuntu-24.04
     env:
@@ -100,6 +138,13 @@ jobs:
       with:
         useConfigFile: true
         configFilePath: GitVersion.yml
+    - name: Download OpenJDK 8 Build
+      uses: actions/download-artifact@v4
+      with:
+        name: openjdk-build-linux-x86_64-normal-server-release
+        path: /tmp
+    - name: Restore OpenJDK 8 Build
+      run: mkdir -p openjdk/build && cd openjdk/build && unzip /tmp/openjdk-build-linux-x86_64-normal-server-release.zip && rm /tmp/openjdk-build-linux-x86_64-normal-server-release.zip
     - name: Download JTReg Build
       uses: actions/download-artifact@v4
       with:
