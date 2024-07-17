@@ -172,7 +172,7 @@
     <PropertyGroup>
         <GenerateDependsOn>
             GenerateCorbaLogWrapperSources;
-            $(CoreCompileDependsOn);
+            $(GenerateDependsOn);
         </GenerateDependsOn>
     </PropertyGroup>
 
@@ -237,11 +237,11 @@
     </Target>
 
     <PropertyGroup>
-        <CoreCompileDependsOn>
+        <GenerateDependsOn>
             GenerateCorbaLogWrapperResources;
             GenerateCorbaLogWrapperProperties;
-            $(CoreCompileDependsOn);
-        </CoreCompileDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
