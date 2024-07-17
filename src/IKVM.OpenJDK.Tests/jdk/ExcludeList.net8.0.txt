@@ -7,4 +7,3 @@ java/util/logging/ClassLoaderLeakTest.java                                      
 
 java/net/ipv6tests/UdpTest.java                                                                                         linux-all
 java/net/PortUnreachableException/Test.java                                                                             linux-all
-javax/swing/JFrame/8255880/RepaintOnFrameIconifiedStateChangeTest.java                                                  linux-all
