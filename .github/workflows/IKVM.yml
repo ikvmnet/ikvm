@@ -138,13 +138,6 @@ jobs:
       with:
         useConfigFile: true
         configFilePath: GitVersion.yml
-    - name: Download OpenJDK 8 Build
-      uses: actions/download-artifact@v4
-      with:
-        name: openjdk-build-linux-x86_64-normal-server-release
-        path: /tmp
-    - name: Restore OpenJDK 8 Build
-      run: mkdir -p openjdk/build && cd openjdk/build && unzip /tmp/openjdk-build-linux-x86_64-normal-server-release.zip && rm /tmp/openjdk-build-linux-x86_64-normal-server-release.zip
     - name: Download JTReg Build
       uses: actions/download-artifact@v4
       with:
