@@ -23,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <JdkCompileProperty Include="$(OpenJdkDir)langtools\src\share\classes\**\*.properties" PackagePath="%(RecursiveDir)" ClassName="%(Filename)" SuperName="java.util.ListResourceBundle" />
+        <JdkCompilePropertiesFile Include="$(OpenJdkDir)langtools\src\share\classes\**\*.properties" PackagePath="%(RecursiveDir)" ClassName="%(Filename)" SuperName="java.util.ListResourceBundle" />
     </ItemGroup>
 
     <ItemGroup>
