@@ -55,10 +55,10 @@
     </Target>
 
     <PropertyGroup>
-        <CoreCompileDependsOn>
+        <GenerateDependsOn>
             BuildCorbaBuildTools;
-            $(CoreCompileDependsOn);
-        </CoreCompileDependsOn>
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -155,7 +155,7 @@
         <CorbaLogWrappersSource Include="$(OpenJdkDir)corba\src\share\classes\com\sun\corba\se\spi\logging\data\*.mc" />
     </ItemGroup>
 
-    <Target Name="BuildCorbaLogWrapperSources" DependsOnTargets="ResolveJava;BuildCorbaLogUtil" Inputs="$(MSBuildThisFileFullPath);@(CorbaLogUtilClasses);@(CorbaLogWrappersSource)" Outputs="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging\%(CorbaLogWrappersSource.Filename)SystemException.java">
+    <Target Name="GenerateCorbaLogWrapperSources" DependsOnTargets="ResolveJava;BuildCorbaLogUtil" Inputs="$(MSBuildThisFileFullPath);@(CorbaLogUtilClasses);@(CorbaLogWrappersSource)" Outputs="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging\%(CorbaLogWrappersSource.Filename)SystemException.java">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -177,13 +177,13 @@
     </Target>
 
     <PropertyGroup>
-        <CoreCompileDependsOn>
-            BuildCorbaLogWrapperSources;
+        <GenerateDependsOn>
+            GenerateCorbaLogWrapperSources;
             $(CoreCompileDependsOn);
-        </CoreCompileDependsOn>
+        </GenerateDependsOn>
     </PropertyGroup>
 
-    <Target Name="BuildCorbaLogWrapperResources" DependsOnTargets="ResolveJava;BuildCorbaLogUtil" Inputs="$(MSBuildThisFileFullPath);@(CorbaLogUtilClasses);@(CorbaLogWrappersSource)" Outputs="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging\%(CorbaLogWrappersSource.Filename)SystemException.resource">
+    <Target Name="GenerateCorbaLogWrapperResources" DependsOnTargets="ResolveJava;BuildCorbaLogUtil" Inputs="$(MSBuildThisFileFullPath);@(CorbaLogUtilClasses);@(CorbaLogWrappersSource)" Outputs="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging\%(CorbaLogWrappersSource.Filename)SystemException.resource">
         <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
         <Exec Command="chmod +x $(JavaCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -235,7 +235,7 @@
         </Task>
     </UsingTask>
 
-    <Target Name="GenerateCorbaLogWrapperProperties" DependsOnTargets="BuildCorbaLogWrapperResources" Inputs="$(MSBuildThisFileFullPath);@(CorbaLogWrapperResourceFile)" Outputs="$(CorbaLogWrapperPropertiesOutputPath)">
+    <Target Name="GenerateCorbaLogWrapperProperties" DependsOnTargets="GenerateCorbaLogWrapperResources" Inputs="$(MSBuildThisFileFullPath);@(CorbaLogWrapperResourceFile)" Outputs="$(CorbaLogWrapperPropertiesOutputPath)">
         <ConcatTextFiles SourceFiles="@(CorbaLogWrapperResourceFile)" OutputFile="$(CorbaLogWrapperPropertiesOutputPath)" />
         <ItemGroup>
             <FileWrites Include="$(CorbaLogWrapperPropertiesOutputPath)" />
@@ -245,7 +245,7 @@
 
     <PropertyGroup>
         <CoreCompileDependsOn>
-            BuildCorbaLogWrapperResources;
+            GenerateCorbaLogWrapperResources;
             GenerateCorbaLogWrapperProperties;
             $(CoreCompileDependsOn);
         </CoreCompileDependsOn>
@@ -289,7 +289,7 @@
         <CorbaIDLPrefix Include="messages" Prefix="com.sun.corba.se" />
     </ItemGroup>
 
-    <Target Name="BuildCorbaIDLs" DependsOnTargets="ResolveJava;BuildCorbaIDLJ" Inputs="$(MSBuildThisFileFullPath);@(CorbaIDLSourceFile)" Outputs="$(CorbaIDLStampFile)">
+    <Target Name="GenerateCorbaIDLs" DependsOnTargets="ResolveJava;BuildCorbaIDLJ" Inputs="$(MSBuildThisFileFullPath);@(CorbaIDLSourceFile)" Outputs="$(CorbaIDLStampFile)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
@@ -426,10 +426,10 @@
     </Target>
 
     <PropertyGroup>
-        <CoreCompileDependsOn>
-            BuildCorbaIDLs;
-            $(CoreCompileDependsOn);
-        </CoreCompileDependsOn>
+        <GenerateDependsOn>
+            GenerateCorbaIDLs;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
     </PropertyGroup>
 
 </Project>
