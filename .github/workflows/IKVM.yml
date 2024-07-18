@@ -34,12 +34,12 @@ jobs:
       uses: actions/cache@v4
       with:
         path: jtreg/build
-        key: jtreg-build--${{ runner.os }}--${{ hashFiles('jtreg/**') }}-8
+        key: jtreg-build--${{ runner.os }}--${{ hashFiles('ext/jtreg/**') }}-8
     - name: Check OpenJDK Test Harness Build Stamp
       id: jtreg-build-stamp
       uses: andstor/file-existence-action@v3
       with:
-        files: jtreg/build/stamp
+        files: ext/jtreg/build/stamp
     - name: Install Java
       run: |
         sudo apt-get update && \
@@ -49,10 +49,10 @@ jobs:
     - name: Build OpenJDK Test Harness
       if: steps.jtreg-build-stamp.outputs.files_exists != 'true'
       run: WGET_OPTS='-U Mozilla/5.0' bash make/build-all.sh $JAVA_HOME && touch build/stamp
-      working-directory: jtreg
+      working-directory: ext/jtreg
     - name: Package OpenJDK Test Harness
       run: zip -r /tmp/jtreg-build.zip build
-      working-directory: jtreg
+      working-directory: ext/jtreg
     - name: Upload OpenJDK Test Harness
       uses: actions/upload-artifact@v4
       with:
@@ -144,7 +144,7 @@ jobs:
         name: jtreg-build
         path: /tmp
     - name: Restore JTReg Build
-      run: mkdir -p jtreg && cd jtreg && unzip /tmp/jtreg-build.zip && rm /tmp/jtreg-build.zip
+      run: mkdir -p ext/jtreg && cd ext/jtreg && unzip /tmp/jtreg-build.zip && rm /tmp/jtreg-build.zip
     - name: Download Native SDKs
       uses: robinraju/release-downloader@v1.9
       with:
