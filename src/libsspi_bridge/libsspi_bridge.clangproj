@@ -8,7 +8,6 @@
         <TargetName>sspi_bridge</TargetName>
         <OutputType>dll</OutputType>
         <TargetIdentifiers>win-x64;win-x86;win-arm64</TargetIdentifiers>
-        <LanguageStandard>c99</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
@@ -16,8 +15,10 @@
         <ProjectReference Include="..\libj2gss\libj2gss.clangproj" />
     </ItemGroup>
     <ItemGroup>
+        <PreprocessorDefinitions Include="UNICODE;_UNICODE" />
+        <Dependencies Include="secur32" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\jgss\sspi_bridge" />
-        <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\jgss\sspi_bridge\*.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\jgss\sspi_bridge\*.cpp" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
