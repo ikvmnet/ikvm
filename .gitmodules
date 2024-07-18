@@ -1,10 +1,10 @@
-[submodule "openjdk"]
-	path = openjdk
+[submodule "ext/openjdk"]
+	path = ext/openjdk
 	url = https://github.com/ikvmnet/jdk8u.git
 	ignore = dirty
 	shallow = true
-[submodule "jtreg"]
-	path = jtreg
+[submodule "ext/jtreg"]
+	path = ext/jtreg
 	url = https://github.com/ikvmnet/jtreg.git
 	ignore = dirty
 	shallow = true
