@@ -28,4 +28,9 @@
         <OpenJdkResource Include="$(OpenJdkDir)corba\src\share\classes\**\*.prp" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
+    <ItemGroup>
+        <CorbaCleanPropertiesFile Include="$(OpenJdkDir)corba\src\share\classes\**\sunorb*.properties" PackagePath="%(RecursiveDir)" ResourceName="%(Filename)"  />
+        <CorbaCleanPropertiesFile Include="$(OpenJdkDir)corba\src\share\classes\**\sunorb_zh_TW.properties" PackagePath="%(RecursiveDir)" ResourceName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" />
+    </ItemGroup>
+
 </Project>

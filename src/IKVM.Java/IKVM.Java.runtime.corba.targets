@@ -425,4 +425,67 @@
         </GenerateDependsOn>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <CorbaCleanPropertiesFilesOutputPath>$(IntermediateOutputPath)corba_cleanprop\</CorbaCleanPropertiesFilesOutputPath>
+    </PropertyGroup>
+
+    <UsingTask TaskName="GetCleanCorbaPropertiesFilesArgs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Item ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+            <Args ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                    var args = new TaskItem[Item.Length * 3];
+                    for (int i = 0; i < Item.Length; i++)
+                    {
+                        args[i * 3 + 0] = new TaskItem("-clean");
+                        args[i * 3 + 1] = new TaskItem(Item[i].ItemSpec);
+                        args[i * 3 + 2] = new TaskItem(Path.GetFullPath(Item[i].GetMetadata("_Dest")));
+                    }
+                    
+                    Args = args;
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="CleanCorbaPropertiesFiles" DependsOnTargets="BuildCorbaBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(CorbaBuildToolsStampFile);@(CorbaCleanPropertiesFile)" Outputs="@(CorbaCleanPropertiesFile->'$(JdkCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties')">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <CorbaCleanPropertiesFile Update="@(CorbaCleanPropertiesFile)">
+                <_Dest>$(CorbaCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties</_Dest>
+            </CorbaCleanPropertiesFile>
+            <_CleanCorbaPropertiesFilesArgs Remove="@(_CleanCorbaPropertiesFilesArgs)" />
+        </ItemGroup>
+
+        <GetCleanCorbaPropertiesFilesArgs Item="@(CorbaCleanPropertiesFile)">
+            <Output TaskParameter="Args" ItemName="_CleanCorbaPropertiesFilesArgs" />
+        </GetCleanCorbaPropertiesFilesArgs>
+
+        <WriteLinesToFile File="$(IntermediateOutputPath)corba_cleanprop.rsp" Lines="@(_CleanCorbaPropertiesFilesArgs)" Overwrite="true" />
+        <MakeDir Directories="@(CorbaCleanPropertiesFile->'$(CorbaCleanPropertiesFilesOutputPath)%(PackagePath)')" />
+        <Message Text="$(JavaExec) -cp $(CorbaBuildToolsOutputPath) build.tools.stripproperties.StripPropertiesCorba %40$(IntermediateOutputPath)corba_cleanprop.rsp" />
+        <Exec Command="$(JavaExec) -cp $(CorbaBuildToolsOutputPath) build.tools.stripproperties.StripPropertiesCorba %40$(IntermediateOutputPath)corba_cleanprop.rsp" />
+
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)corba_cleanprop.rsp" />
+            <FileWrites Include="@(CorbaCleanPropertiesFile->'$(CorbaCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties')" />
+            <JavaResource Include="@(CorbaCleanPropertiesFile->'$(CorbaCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties')" ResourcePath="%(CorbaCleanPropertiesFile.PackagePath)/%(CorbaCleanPropertiesFile.ResourceName).properties" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            CleanCorbaPropertiesFiles;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
 </Project>
