@@ -11,6 +11,8 @@
         <LanguageStandard>c99</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
         <ProjectReference Include="..\libj2gss\libj2gss.clangproj" />
     </ItemGroup>
     <ItemGroup>
