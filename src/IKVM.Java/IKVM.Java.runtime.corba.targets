@@ -232,7 +232,7 @@
         <ConcatTextFiles SourceFiles="@(CorbaLogWrapperResourceFile)" OutputFile="$(CorbaLogWrapperPropertiesOutputPath)" />
         <ItemGroup>
             <FileWrites Include="$(CorbaLogWrapperPropertiesOutputPath)" />
-            <JavaResource Include="$(CorbaLogWrapperPropertiesOutputPath)" PackagePath="com/sun/corba/se/impl/logging" />
+            <JavaResource Include="$(CorbaLogWrapperPropertiesOutputPath)" ResourcePath="com/sun/corba/se/impl/logging/LogStrings.properties" />
         </ItemGroup>
     </Target>
 
