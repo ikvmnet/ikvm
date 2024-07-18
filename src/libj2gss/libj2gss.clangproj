@@ -15,7 +15,8 @@
     </ItemGroup>
     <ItemGroup>
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\security\jgss\wrapper" />
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\jgss\wrapper\**\*.c" />
+        <Header Include="$(OpenJdkDir)jdk\src\share\native\sun\security\jgss\wrapper\*.h" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\jgss\wrapper\*.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libj2gss\mapfile-vers" />
