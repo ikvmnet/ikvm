@@ -33,7 +33,7 @@ jobs:
     - name: Cache OpenJDK Test Harness Build
       uses: actions/cache@v4
       with:
-        path: jtreg/build
+        path: ext/jtreg/build
         key: jtreg-build--${{ runner.os }}--${{ hashFiles('ext/jtreg/**') }}-8
     - name: Check OpenJDK Test Harness Build Stamp
       id: jtreg-build-stamp
