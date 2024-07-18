@@ -4,3 +4,6 @@ java/util/concurrent/Executors/AutoShutdown.java                                
 java/lang/ref/ReferenceEnqueuePending.java                                                                              generic-all
 java/util/HashMap/HashMapCloneLeak.java                                                                                 generic-all
 java/util/logging/ClassLoaderLeakTest.java                                                                              generic-all
+
+java/net/ipv6tests/UdpTest.java                                                                                         linux-all
+java/net/PortUnreachableException/Test.java                                                                             linux-all

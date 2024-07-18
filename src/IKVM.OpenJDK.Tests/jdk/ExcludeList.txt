@@ -4774,7 +4774,7 @@ javax/swing/JComboBox/4523758/bug4523758.java                                   
 javax/swing/JComboBox/6406264/bug6406264.java                                                                           generic-all
 javax/swing/JComboBox/6559152/bug6559152.java                                                                           generic-all
 javax/swing/JComboBox/8072767/bug8072767.java                                                                           generic-all
-javax/swing/JFrame/8255880/RepaintOnFrameIconifiedStateChangeTest.java                                                  linux-all,macosx-all
+javax/swing/JFrame/8255880/RepaintOnFrameIconifiedStateChangeTest.java                                                  generic-all
 javax/swing/JList/6510999/bug6510999.java                                                                               generic-all
 javax/swing/JMenu/4417601/bug4417601.java                                                                               generic-all
 javax/swing/JMenu/6359669/bug6359669.java                                                                               generic-all
