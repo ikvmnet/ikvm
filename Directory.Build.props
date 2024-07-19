@@ -16,7 +16,7 @@
     </PropertyGroup>
 
     <PropertyGroup Label="OpenJDK Info">
-        <OpenJdkDir>$(MSBuildThisFileDirectory)openjdk\</OpenJdkDir>
+        <OpenJdkDir>$(MSBuildThisFileDirectory)ext\openjdk\</OpenJdkDir>
         <OpenJdkMajorVersion>1</OpenJdkMajorVersion>
         <OpenJdkMinorVersion>8</OpenJdkMinorVersion>
         <OpenJdkMicroVersion>0</OpenJdkMicroVersion>
