@@ -15,7 +15,6 @@
         <ProjectReference Include="..\libj2gss\libj2gss.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <PreprocessorDefinitions Include="UNICODE;_UNICODE" />
         <Dependencies Include="secur32" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\jgss\sspi_bridge" />
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\jgss\sspi_bridge\*.cpp" />
