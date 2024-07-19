@@ -12,18 +12,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <OpenJdkSource Include="$(OpenJdkDir)\langtools\src\share\classes\**\*.java" PackagePath="" />
+        <OpenJdkSource Include="$(OpenJdkDir)langtools\src\share\classes\**\*.java" PackagePath="" />
     </ItemGroup>
 
     <ItemGroup>
-        <OpenJdkResource Include="$(OpenJdkDir)\langtools\src\share\classes\**\*.gif" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\langtools\src\share\classes\**\*.xml" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\langtools\src\share\classes\**\*.css" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\langtools\src\share\classes\**\*.js" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)"/>
+        <OpenJdkResource Include="$(OpenJdkDir)langtools\src\share\classes\**\*.gif" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)langtools\src\share\classes\**\*.xml" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)langtools\src\share\classes\**\*.css" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)langtools\src\share\classes\**\*.js" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)"/>
     </ItemGroup>
 
     <ItemGroup>
-        <GenerateResourceBundle Include="$(OpenJdkDir)langtools\src\share\classes\**\*.properties" PackagePath="%(RecursiveDir)" ClassName="%(Filename)" SuperName="java.util.ListResourceBundle" />
+        <JdkCompilePropertiesFile Include="$(OpenJdkDir)langtools\src\share\classes\**\*.properties" PackagePath="%(RecursiveDir)" ClassName="%(Filename)" SuperName="java.util.ListResourceBundle" />
     </ItemGroup>
 
     <ItemGroup>

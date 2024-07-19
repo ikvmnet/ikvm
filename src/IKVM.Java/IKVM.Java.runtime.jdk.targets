@@ -59,11 +59,11 @@
             <_RmiCompilerArgs Include="-d" />
             <_RmiCompilerArgs Include="$(RmiStubsOutputPath)" />
         </ItemGroup>
-        
+
         <PropertyGroup>
             <_RmiCompilerArgs>@(_RmiCompilerArgs, ' ')</_RmiCompilerArgs>
         </PropertyGroup>
-        
+
         <Delete Files="$(RmiStubsOutputPath)**\*" />
         <MakeDir Directories="$(RmiStubsOutputPath)" />
         <Exec Command="$(RmiCompilerExec) $(_RmiCompilerArgs) %(OpenJdkRmiStub.Flags) $([System.String]::Copy('%(OpenJdkRmiStub.Identity)').Replace('$', '\$'))" Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' " />
@@ -86,7 +86,7 @@
     </PropertyGroup>
 
     <Target Name="BuildRmiStubs" DependsOnTargets="$(BuildRmiStubsDependsOn)">
-        
+
     </Target>
 
     <Target Name="CleanRmiStubs">
@@ -1609,6 +1609,193 @@ File.WriteAllLines(Path, File.ReadAllLines(Path).TakeWhile(i => i.Contains("#BIN
     <PropertyGroup>
         <GenerateDependsOn>
             GenerateLocaleDataMetaInfo;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <JdkCleanPropertiesFilesOutputPath>$(IntermediateOutputPath)jdk_cleanprop\</JdkCleanPropertiesFilesOutputPath>
+    </PropertyGroup>
+
+    <UsingTask TaskName="GetCleanJdkPropertiesFilesArgs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Item ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+            <Args ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                    var args = new TaskItem[Item.Length * 3];
+                    for (int i = 0; i < Item.Length; i++)
+                    {
+                        args[i * 3 + 0] = new TaskItem("-clean");
+                        args[i * 3 + 1] = new TaskItem(Item[i].ItemSpec);
+                        args[i * 3 + 2] = new TaskItem(Path.GetFullPath(Item[i].GetMetadata("_Dest")));
+                    }
+                    
+                    Args = args;
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="CleanJdkPropertiesFiles" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(JdkCleanPropertiesFile)" Outputs="@(JdkCleanPropertiesFile->'$(JdkCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties')">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <JdkCleanPropertiesFile Update="@(JdkCleanPropertiesFile)">
+                <_Dest>$(JdkCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties</_Dest>
+            </JdkCleanPropertiesFile>
+            <_CleanJdkPropertiesFilesArgs Remove="@(_CleanJdkPropertiesFilesArgs)" />
+        </ItemGroup>
+
+        <GetCleanJdkPropertiesFilesArgs Item="@(JdkCleanPropertiesFile)">
+            <Output TaskParameter="Args" ItemName="_CleanJdkPropertiesFilesArgs" />
+        </GetCleanJdkPropertiesFilesArgs>
+
+        <WriteLinesToFile File="$(IntermediateOutputPath)jdk_cleanprop.rsp" Lines="@(_CleanJdkPropertiesFilesArgs)" Overwrite="true" />
+        <MakeDir Directories="@(JdkCleanPropertiesFile->'$(JdkCleanPropertiesFilesOutputPath)%(PackagePath)')" />
+        <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.stripproperties.StripProperties %40$(IntermediateOutputPath)jdk_cleanprop.rsp" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.stripproperties.StripProperties %40$(IntermediateOutputPath)jdk_cleanprop.rsp" />
+
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)jdk_cleanprop.rsp" />
+            <FileWrites Include="@(JdkCleanPropertiesFile->'$(JdkCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties')" />
+            <JavaResource Include="@(JdkCleanPropertiesFile->'$(JdkCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties')" ResourcePath="%(JdkCleanPropertiesFile.PackagePath)/%(JdkCleanPropertiesFile.ResourceName).properties" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            CleanJdkPropertiesFiles;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <JdkDuplicatePropertiesFilesOutputPath>$(IntermediateOutputPath)jdk_duplicateprop\</JdkDuplicatePropertiesFilesOutputPath>
+    </PropertyGroup>
+
+    <UsingTask TaskName="DuplicateJdkPropertiesFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <SourceFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+            <DestinationFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                for (int i = 0; i < SourceFiles.Length; i++)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(DestinationFiles[i].ItemSpec));
+                
+                    string line;
+                    using var r = File.OpenText(SourceFiles[i].ItemSpec);
+                    using var w = new StreamWriter(File.Open(DestinationFiles[i].ItemSpec, FileMode.Create));
+                    
+                    while ((line = r.ReadLine()) != null)
+                    {
+                        if (line.Contains("class"))
+                            line = line.Replace(SourceFiles[i].GetMetadata("Filename"), SourceFiles[i].GetMetadata("ClassName"));
+                    
+                        w.WriteLine(line);
+                    }
+                }
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="RemoveExistingDuplicateJdkPropertiesFiles">
+        <ItemGroup>
+            <JdkDuplicatePropertiesFile Remove="@(JdkDuplicatePropertiesFile)" Condition="Exists('$(OpenJdkDir)jdk\src\share\classes\%(PackagePath)\%(ClassName).java')" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="DuplicateJdkPropertiesFiles" DependsOnTargets="RemoveExistingDuplicateJdkPropertiesFiles" Inputs="$(MSBuildThisFileFullPath);@(JdkDuplicatePropertiesFile)" Outputs="@(JdkDuplicatePropertiesFile->'$(JdkDuplicatePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')">
+        <DuplicateJdkPropertiesFiles
+            SourceFiles="@(JdkDuplicatePropertiesFile)"
+            DestinationFiles="@(JdkDuplicatePropertiesFile->'$(JdkDuplicatePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')" />
+
+        <ItemGroup>
+            <FileWrites Include="@(JdkDuplicatePropertiesFile->'$(JdkDuplicatePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')" />
+            <Compile Include="@(JdkDuplicatePropertiesFile->'$(JdkDuplicatePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            RemoveExistingDuplicateJdkPropertiesFiles;
+            DuplicateJdkPropertiesFiles;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <JdkCompilePropertiesFilesOutputPath>$(IntermediateOutputPath)jdk_compileprop\</JdkCompilePropertiesFilesOutputPath>
+    </PropertyGroup>
+
+    <UsingTask TaskName="GetCompileJdkPropertiesFilesArgs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Item ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+            <Args ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                    var args = new TaskItem[Item.Length * 4];
+                    for (int i = 0; i < Item.Length; i++)
+                    {
+                        args[i * 4 + 0] = new TaskItem("-compile");
+                        args[i * 4 + 1] = new TaskItem(Item[i].ItemSpec);
+                        args[i * 4 + 2] = new TaskItem(Path.GetFullPath(Item[i].GetMetadata("_Dest")));
+                        args[i * 4 + 3] = new TaskItem(Item[i].GetMetadata("SuperName"));
+                    }
+                    
+                    Args = args;
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="CompileJdkPropertiesFiles" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(JdkCompilePropertiesFile)" Outputs="@(JdkCompilePropertiesFile->'$(JdkCompilePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <JdkCompilePropertiesFile Update="@(JdkCompilePropertiesFile)">
+                <_Dest>$(JdkCompilePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java</_Dest>
+            </JdkCompilePropertiesFile>
+            <_CompileJdkPropertiesFilesArgs Remove="@(_CompileJdkPropertiesFilesArgs)" />
+        </ItemGroup>
+
+        <GetCompileJdkPropertiesFilesArgs Item="@(JdkCompilePropertiesFile)">
+            <Output TaskParameter="Args" ItemName="_CompileJdkPropertiesFilesArgs" />
+        </GetCompileJdkPropertiesFilesArgs>
+
+        <WriteLinesToFile File="$(IntermediateOutputPath)jdk_compileprop.rsp" Lines="@(_CompileJdkPropertiesFilesArgs)" Overwrite="true" />
+        <MakeDir Directories="@(JdkCompilePropertiesFile->'$(JdkCompilePropertiesFilesOutputPath)%(PackagePath)')" />
+        <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.compileproperties.CompileProperties %40$(IntermediateOutputPath)jdk_compileprop.rsp" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.compileproperties.CompileProperties %40$(IntermediateOutputPath)jdk_compileprop.rsp" />
+
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)jdk_compileprop.rsp" />
+            <FileWrites Include="@(JdkCompilePropertiesFile->'$(JdkCompilePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')" />
+            <Compile Include="@(JdkCompilePropertiesFile->'$(JdkCompilePropertiesFilesOutputPath)%(PackagePath)\%(ClassName).java')" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            CompileJdkPropertiesFiles;
             $(GenerateDependsOn);
         </GenerateDependsOn>
     </PropertyGroup>

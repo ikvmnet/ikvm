@@ -1,0 +1,491 @@
+<!--
+
+    IKVM.Java.runtime.corba.targets
+    
+    Build targets for the OpenJDK corba distribution.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <CorbaBuildToolsOutputPath>$(IntermediateOutputPath)corba_btclasses\</CorbaBuildToolsOutputPath>
+        <CorbaBuildToolsResponseFile>$(IntermediateOutputPath)corba_btclasses.javac.rsp</CorbaBuildToolsResponseFile>
+        <CorbaBuildToolsStampFile>$(CorbaBuildToolsOutputPath)stamp</CorbaBuildToolsStampFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CorbaBuildToolsSource Include="$(OpenJdkDir)corba\make\tools\src\**\*.java" />
+    </ItemGroup>
+
+    <Target Name="CorbaBuildToolsResponseFile" Inputs="$(MSBuildThisFileFullPath);@(CorbaBuildToolsSource)" Outputs="$(CorbaBuildToolsResponseFile)">
+        <ItemGroup>
+            <_CorbaBuildToolsJavaCompilerArgs Include="-nowarn" />
+            <_CorbaBuildToolsJavaCompilerArgs Include="-d" />
+            <_CorbaBuildToolsJavaCompilerArgs Include="$(CorbaBuildToolsOutputPath)" />
+            <_CorbaBuildToolsJavaCompilerArgs Include="@(CorbaBuildToolsSource->'%(FullPath)')" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(CorbaBuildToolsResponseFile)" Lines="@(_CorbaBuildToolsJavaCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(CorbaBuildToolsResponseFile)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildCorbaBuildTools" DependsOnTargets="ResolveJavaCompiler;CorbaBuildToolsResponseFile" Inputs="$(MSBuildThisFileFullPath);@(CorbaBuildToolsSource);$(CorbaBuildToolsResponseFile)" Outputs="$(CorbaBuildToolsStampFile)">
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
+        <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
+        <Exec Command="chmod +x $(JavaCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Delete Files="$(CorbaBuildToolsStampFile)" />
+        <RemoveDir Directories="$(CorbaBuildToolsOutputPath)" />
+        <MakeDir Directories="$(CorbaBuildToolsOutputPath)" />
+        <Message Text="$(JavaCompilerExec) @$(CorbaBuildToolsResponseFile)" />
+        <Exec Command="$(JavaCompilerExec) @$(CorbaBuildToolsResponseFile)" />
+        <Touch Files="$(CorbaBuildToolsStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(CorbaBuildToolsStampFile)" />
+            <FileWrites Include="$(CorbaBuildToolsOutputPath)**\*.class" />
+            <CorbaBuildToolsClasses Include="$(CorbaBuildToolsOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <CorbaIDLJOutputPath>$(IntermediateOutputPath)corba_idlj\</CorbaIDLJOutputPath>
+        <CorbaIDLJResponseFile>$(IntermediateOutputPath)corba_idlj.javac.rsp</CorbaIDLJResponseFile>
+        <CorbaIDLJStampFile>$(CorbaIDLJOutputPath)stamp</CorbaIDLJStampFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CorbaIDLJSource Include="$(OpenJdkDir)corba\src\share\classes\com\sun\tools\corba\se\idl\**\*.java" />
+    </ItemGroup>
+
+    <Target Name="CorbaIDLJResponseFile" Inputs="$(MSBuildThisFileFullPath);@(CorbaIDLJSource)" Outputs="$(CorbaIDLJResponseFile)">
+        <ItemGroup>
+            <_CorbaIDLJJavaCompilerArgs Include="-nowarn" />
+            <_CorbaIDLJJavaCompilerArgs Include="-d" />
+            <_CorbaIDLJJavaCompilerArgs Include="$(CorbaIDLJOutputPath)" />
+            <_CorbaIDLJJavaCompilerArgs Include="@(CorbaIDLJSource->'%(FullPath)')" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(CorbaIDLJResponseFile)" Lines="@(_CorbaIDLJJavaCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(CorbaIDLJResponseFile)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildCorbaIDLJ" DependsOnTargets="ResolveJavaCompiler;CorbaIDLJResponseFile" Inputs="$(MSBuildThisFileFullPath);@(CorbaIDLJSource);$(CorbaIDLJResponseFile)" Outputs="$(CorbaIDLJStampFile)">
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
+        <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
+        <Exec Command="chmod +x $(JavaCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Delete Files="$(CorbaIDLJStampFile)" />
+        <RemoveDir Directories="$(CorbaIDLJOutputPath)" />
+        <MakeDir Directories="$(CorbaIDLJOutputPath)" />
+        <Message Text="$(JavaCompilerExec) @$(CorbaIDLJResponseFile)" />
+        <Exec Command="$(JavaCompilerExec) @$(CorbaIDLJResponseFile)" />
+        <Touch Files="$(CorbaIDLJStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(CorbaIDLJStampFile)" />
+            <FileWrites Include="$(CorbaIDLJOutputPath)**\*.class" />
+            <CorbaIDLJClasses Include="$(CorbaIDLJOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <CorbaLogUtilOutputPath>$(IntermediateOutputPath)corba_logutil\</CorbaLogUtilOutputPath>
+        <CorbaLogUtilResponseFile>$(IntermediateOutputPath)corba_logutil.javac.rsp</CorbaLogUtilResponseFile>
+        <CorbaLogUtilStampFile>$(CorbaLogUtilOutputPath)stamp</CorbaLogUtilStampFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CorbaLogUtilSource Include="$(OpenJdkDir)corba\src\share\classes\com\sun\tools\corba\se\logutil\**\*.java" />
+    </ItemGroup>
+
+    <Target Name="CorbaLogUtilResponseFile" Inputs="$(MSBuildThisFileFullPath);@(CorbaLogUtilSource)" Outputs="$(CorbaLogUtilResponseFile)">
+        <ItemGroup>
+            <_CorbaIDLJJavaCompilerArgs Include="-nowarn" />
+            <_CorbaIDLJJavaCompilerArgs Include="-d" />
+            <_CorbaIDLJJavaCompilerArgs Include="$(CorbaLogUtilOutputPath)" />
+            <_CorbaIDLJJavaCompilerArgs Include="@(CorbaLogUtilSource->'%(FullPath)')" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(CorbaLogUtilResponseFile)" Lines="@(_CorbaIDLJJavaCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(CorbaLogUtilResponseFile)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildCorbaLogUtil" DependsOnTargets="ResolveJavaCompiler;CorbaLogUtilResponseFile" Inputs="$(MSBuildThisFileFullPath);@(CorbaLogUtilSource);$(CorbaLogUtilResponseFile)" Outputs="$(CorbaLogUtilStampFile)">
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
+        <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
+        <Exec Command="chmod +x $(JavaCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Delete Files="$(CorbaLogUtilStampFile)" />
+        <RemoveDir Directories="$(CorbaLogUtilOutputPath)" />
+        <MakeDir Directories="$(CorbaLogUtilOutputPath)" />
+        <Message Text="$(JavaCompilerExec) @$(CorbaLogUtilResponseFile)" />
+        <Exec Command="$(JavaCompilerExec) @$(CorbaLogUtilResponseFile)" />
+        <Touch Files="$(CorbaLogUtilStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(CorbaLogUtilStampFile)" />
+            <FileWrites Include="$(CorbaLogUtilOutputPath)**\*.class" />
+            <CorbaLogUtilClasses Include="$(CorbaLogUtilOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <CorbaLogWrappersOutputPath>$(IntermediateOutputPath)corba_logwrappers\</CorbaLogWrappersOutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CorbaLogWrappersSource Include="$(OpenJdkDir)corba\src\share\classes\com\sun\corba\se\spi\logging\data\*.mc" />
+    </ItemGroup>
+
+    <Target Name="GenerateCorbaLogWrapperSources" DependsOnTargets="ResolveJava;BuildCorbaLogUtil" Inputs="$(MSBuildThisFileFullPath);@(CorbaLogUtilClasses);@(CorbaLogWrappersSource)" Outputs="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging\%(CorbaLogWrappersSource.Filename)SystemException.java">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <_BuildCorbaLogWrappersDir Remove="@(_BuildCorbaLogWrappersDir)" />
+            <_BuildCorbaLogWrappersDir Include="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging" />
+        </ItemGroup>
+
+        <Delete Files="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging\%(CorbaLogWrappersSource.Filename)SystemException.java" />
+        <MakeDir Directories="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging" />
+        <Message Text="$(JavaExec) -cp $(CorbaLogUtilOutputPath) com.sun.tools.corba.se.logutil.MC make-class %(CorbaLogWrappersSource.FullPath) @(_BuildCorbaLogWrappersDir)" />
+        <Exec Command="$(JavaExec) -cp $(CorbaLogUtilOutputPath) com.sun.tools.corba.se.logutil.MC make-class %(CorbaLogWrappersSource.FullPath) @(_BuildCorbaLogWrappersDir)" />
+
+        <ItemGroup>
+            <FileWrites Include="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging\%(CorbaLogWrappersSource.Filename)SystemException.java" />
+            <Compile Include="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging\%(CorbaLogWrappersSource.Filename)SystemException.java" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            GenerateCorbaLogWrapperSources;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GenerateCorbaLogWrapperResources" DependsOnTargets="ResolveJava;BuildCorbaLogUtil" Inputs="$(MSBuildThisFileFullPath);@(CorbaLogUtilClasses);@(CorbaLogWrappersSource)" Outputs="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging\%(CorbaLogWrappersSource.Filename)SystemException.resource">
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
+        <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
+        <Exec Command="chmod +x $(JavaCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <_BuildCorbaLogWrappersDir Remove="@(_BuildCorbaLogWrappersDir)" />
+            <_BuildCorbaLogWrappersDir Include="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging" />
+        </ItemGroup>
+
+        <Delete Files="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging\%(CorbaLogWrappersSource.Filename)SystemException.java" />
+        <MakeDir Directories="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging" />
+        <Message Text="$(JavaExec) -cp $(CorbaLogUtilOutputPath) com.sun.tools.corba.se.logutil.MC make-resource %(CorbaLogWrappersSource.FullPath) @(_BuildCorbaLogWrappersDir)" />
+        <Exec Command="$(JavaExec) -cp $(CorbaLogUtilOutputPath) com.sun.tools.corba.se.logutil.MC make-resource %(CorbaLogWrappersSource.FullPath) @(_BuildCorbaLogWrappersDir)" />
+
+        <ItemGroup>
+            <FileWrites Include="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging\%(CorbaLogWrappersSource.Filename)SystemException.resource" />
+            <CorbaLogWrapperResourceFile Include="$(CorbaLogWrappersOutputPath)com\sun\corba\se\impl\logging\%(CorbaLogWrappersSource.Filename)SystemException.resource" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <CorbaLogWrapperPropertiesOutputPath>$(CorbaLogWrappersOutputPath)com/sun/corba/se/impl/logging/LogStrings.properties</CorbaLogWrapperPropertiesOutputPath>
+    </PropertyGroup>
+
+    <UsingTask TaskName="ConcatTextFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <SourceFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]"  Required="true" />
+            <OutputFile ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Linq" />
+            <Using Namespace="System.Collections.Generic" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                Directory.CreateDirectory(Path.GetDirectoryName(OutputFile));
+                using var dst = new StreamWriter(File.Open(OutputFile, FileMode.Create));
+                
+                foreach (var file in SourceFiles)
+                {
+                    using var src = File.OpenText(file.ItemSpec);
+                
+                    string line;
+                    while ((line = src.ReadLine()) != null)
+                        dst.WriteLine(line);
+                }
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GenerateCorbaLogWrapperProperties" DependsOnTargets="GenerateCorbaLogWrapperResources" Inputs="$(MSBuildThisFileFullPath);@(CorbaLogWrapperResourceFile)" Outputs="$(CorbaLogWrapperPropertiesOutputPath)">
+        <ConcatTextFiles SourceFiles="@(CorbaLogWrapperResourceFile)" OutputFile="$(CorbaLogWrapperPropertiesOutputPath)" />
+        <ItemGroup>
+            <FileWrites Include="$(CorbaLogWrapperPropertiesOutputPath)" />
+            <JavaResource Include="$(CorbaLogWrapperPropertiesOutputPath)" ResourcePath="com/sun/corba/se/impl/logging/LogStrings.properties" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            GenerateCorbaLogWrapperResources;
+            GenerateCorbaLogWrapperProperties;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <CorbaIDLOutputPath>$(IntermediateOutputPath)corba_idls\</CorbaIDLOutputPath>
+        <CorbaIDLSourcePath>$(OpenJdkDir)corba\src\share\classes\</CorbaIDLSourcePath>
+        <CorbaIDLTempPath>$(IntermediateOutputPath)corba_idls_tmp\</CorbaIDLTempPath>
+        <CorbaIDLStampFile>$(CorbaIDLOutputPath)stamp</CorbaIDLStampFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <CorbaIDLSourceFile Include="$(CorbaIDLSourcePath)**\*.idl" />
+        <CorbaIDLSourceFile Update="@(CorbaIDLSourceFile)" PackagePath="%(RecursiveDir)" />
+        <CorbaIDLSourceFile Update="$(CorbaIDLSourcePath)com\sun\corba\se\PortalActivationIDL\activation.idl" Args="-oldImplBase" />
+        <CorbaIDLSourceFile Update="$(CorbaIDLSourcePath)com\sun\corba\se\spi\activation\activation.idl" Args="-oldImplBase" />
+        <CorbaIDLSourceFile Remove="$(CorbaIDLSourcePath)com\sun\tools\corba\se\idl\**\*.idl" />
+        <CorbaIDLSourceFile Remove="$(CorbaIDLSourcePath)org\omg\CORBA\**\*.idl" />
+        <CorbaIDLSourceFile Remove="$(CorbaIDLSourcePath)com\sun\corba\se\GiopIDL\**\*.idl" />
+        <CorbaIDLSourceFile Remove="$(CorbaIDLSourcePath)org\omg\PortableServer\corba.idl" />
+        <CorbaIDLIncludePath Include="$(CorbaIDLSourcePath)org\omg\CORBA" />
+        <CorbaIDLIncludePath Include="$(CorbaIDLSourcePath)org\omg\PortableInterceptor" />
+        <CorbaIDLIncludePath Include="$(CorbaIDLSourcePath)org\omg\PortableServer" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <CorbaIDLPrefix Include="CORBA" Prefix="org.omg" />
+        <CorbaIDLPrefix Include="CosNaming" Prefix="org.omg" />
+        <CorbaIDLPrefix Include="CosTransactions" Prefix="org.omg" />
+        <CorbaIDLPrefix Include="CosTSInteroperation" Prefix="org.omg" />
+        <CorbaIDLPrefix Include="DynamicAny" Prefix="org.omg" />
+        <CorbaIDLPrefix Include="Dynamic" Prefix="org.omg" />
+        <CorbaIDLPrefix Include="IOP" Prefix="org.omg" />
+        <CorbaIDLPrefix Include="Messaging" Prefix="org.omg" />
+        <CorbaIDLPrefix Include="PortableInterceptor" Prefix="org.omg" />
+        <CorbaIDLPrefix Include="PortableServer" Prefix="org.omg" />
+        <CorbaIDLPrefix Include="activation" Prefix="com.sun.corba.se.spi" />
+        <CorbaIDLPrefix Include="GIOP" Prefix="com.sun.corba.se" />
+        <CorbaIDLPrefix Include="PortableActivationIDL" Prefix="com.sun.corba.se" />
+        <CorbaIDLPrefix Include="messages" Prefix="com.sun.corba.se" />
+    </ItemGroup>
+
+    <Target Name="GenerateCorbaIDLs" DependsOnTargets="ResolveJava;BuildCorbaIDLJ" Inputs="$(MSBuildThisFileFullPath);@(CorbaIDLSourceFile)" Outputs="$(CorbaIDLStampFile)">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <RemoveDir Directories="$(CorbaIDLOutputPath)" />
+        <MakeDir Directories="$(CorbaIDLOutputPath)" />
+        <Message Text="$(JavaExec) -cp $(CorbaIDLJOutputPath) com.sun.tools.corba.se.idl.toJavaPortable.Compile -td $(CorbaIDLOutputPath) @(CorbaIDLIncludePath->'-i %(Identity)', ' ') -D CORBA3 -corba 3.0 -fall %(CorbaIDLSourceFile.Args) @(CorbaIDLPrefix->'-pkgPrefix %(Identity) %(Prefix)', ' ') %(CorbaIDLSourceFile.FullPath)" />
+        <Exec Command="$(JavaExec) -cp $(CorbaIDLJOutputPath) com.sun.tools.corba.se.idl.toJavaPortable.Compile -td $(CorbaIDLOutputPath) @(CorbaIDLIncludePath->'-i %(Identity)', ' ') -D CORBA3 -corba 3.0 -fall %(CorbaIDLSourceFile.Args) @(CorbaIDLPrefix->'-pkgPrefix %(Identity) %(Prefix)', ' ') %(CorbaIDLSourceFile.FullPath)" />
+
+        <ItemGroup>
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)DYNANYDELETEFILES" />
+            <__CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\*.java" />
+            <_CorbaIDLsDelete Include="@(__CorbaIDLsDelete)" Condition="$([System.String]::Copy('%(Filename)').Contains('POA'))" />
+            <_CorbaIDLsDelete Include="@(__CorbaIDLsDelete)" Condition="$([System.String]::Copy('%(Filename)').Contains('Holder'))" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\DynValueBoxHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\DynValueCommonHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\_DynValueCommonStub.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\_DynValueBoxStub.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\DynAnyPackage\TypeMismatchHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\DynAnyPackage\InvalidValueHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\DynamicAny\DynAnyFactoryPackage\InconsistentTypeCodeHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)IOPDELETEFILES" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\BI_DIR_IIOP.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\ChainBypassCheck.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\ChainBypassInfo.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\FORWARDED_IDENTITY.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\INVOCATION_POLICIES.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\LogicalThreadId.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\SendingContextRunTime.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\UnknownExceptionInfo.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\TaggedComponentSeqHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)POAHELHOLFILES" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\CurrentPackage\NoContextHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\ForwardRequestHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\IdAssignmentPolicyValueHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\IdAssignmentPolicyValueHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\IdUniquenessPolicyValueHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\IdUniquenessPolicyValueHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\ImplicitActivationPolicyValueHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\ImplicitActivationPolicyValueHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\LifespanPolicyValueHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\LifespanPolicyValueHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\ServantRetentionPolicyValueHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\ServantRetentionPolicyValueHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\ObjectIdHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\ObjectIdHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAListHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAListHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAManagerPackage\AdapterInactiveHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAManagerPackage\StateHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAManagerPackage\StateHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAPackage\AdapterAlreadyExistsHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAPackage\AdapterNonExistentHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAPackage\InvalidPolicyHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAPackage\NoServantHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAPackage\ObjectAlreadyActiveHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAPackage\ObjectNotActiveHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAPackage\ServantAlreadyActiveHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAPackage\ServantNotActiveHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAPackage\WrongAdapterHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\POAPackage\WrongPolicyHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\RequestProcessingPolicyValueHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\RequestProcessingPolicyValueHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\ServantActivatorHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\ServantLocatorHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\ThreadPolicyValueHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableServer\ThreadPolicyValueHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)PIHELHOLFILES" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ClientRequestInfoHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ClientRequestInterceptorHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\IORInfoHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\IORInterceptorHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\InterceptorHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ORBInitInfoHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ORBInitializerHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\PolicyFactoryHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ReplyStatusHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\RequestInfoHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ServerRequestInfoHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ServerRequestInterceptorHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\SlotIdHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ClientRequestInfoHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ClientRequestInterceptorHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\CurrentHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ForwardRequestHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\IORInfoHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\IORInterceptorHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\InterceptorHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\InvalidSlotHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ORBInitInfoHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ORBInitializerHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\PolicyFactoryHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\RequestInfoHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ServerRequestInfoHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ServerRequestInterceptorHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\TaggedComponentSeqHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ORBInitInfoPackage\DuplicateNameHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\PortableInterceptor\ORBInitInfoPackage\InvalidNameHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\CodecPackage\FormatMismatchHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\CodecPackage\InvalidTypeForEncodingHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\CodecPackage\TypeMismatchHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\CodecHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\EncodingFormatHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\EncodingHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\CodecFactoryPackage\UnknownEncodingHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\CodecFactoryHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\CodecHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\EncodingHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\IOP\TaggedComponentSeqHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\Dynamic\ContextListHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\Dynamic\ExceptionListHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\Dynamic\ParameterHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\Dynamic\ParameterListHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\Dynamic\ExceptionListHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\Dynamic\ParameterHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\Dynamic\ParameterListHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\Dynamic\RequestContextHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)CORBAX" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\CORBA\OctetSeqHelper.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\CORBA\OctetSeqHolder.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\CORBA\PolicyError.java" />
+            <_CorbaIDLsDelete Include="$(CorbaIDLOutputPath)org\omg\CORBA\RepositoryIdHelper.java" />
+        </ItemGroup>
+
+        <Delete Files="@(_CorbaIDLsDelete)" />
+
+        <Touch Files="$(CorbaIDLStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(CorbaIDLOutputPath)**\*.java" />
+            <FileWrites Include="$(CorbaIDLStampFile)" />
+            <Compile Include="$(CorbaIDLOutputPath)**\*.java" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            GenerateCorbaIDLs;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <CorbaCleanPropertiesFilesOutputPath>$(IntermediateOutputPath)corba_cleanprop\</CorbaCleanPropertiesFilesOutputPath>
+    </PropertyGroup>
+
+    <UsingTask TaskName="GetCleanCorbaPropertiesFilesArgs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Item ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+            <Args ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                    var args = new TaskItem[Item.Length * 3];
+                    for (int i = 0; i < Item.Length; i++)
+                    {
+                        args[i * 3 + 0] = new TaskItem("-clean");
+                        args[i * 3 + 1] = new TaskItem(Item[i].ItemSpec);
+                        args[i * 3 + 2] = new TaskItem(Path.GetFullPath(Item[i].GetMetadata("_Dest")));
+                    }
+                    
+                    Args = args;
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="CleanCorbaPropertiesFiles" DependsOnTargets="BuildCorbaBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(CorbaBuildToolsStampFile);@(CorbaCleanPropertiesFile)" Outputs="@(CorbaCleanPropertiesFile->'$(CorbaCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties')">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <CorbaCleanPropertiesFile Update="@(CorbaCleanPropertiesFile)">
+                <_Dest>$(CorbaCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties</_Dest>
+            </CorbaCleanPropertiesFile>
+            <_CleanCorbaPropertiesFilesArgs Remove="@(_CleanCorbaPropertiesFilesArgs)" />
+        </ItemGroup>
+
+        <GetCleanCorbaPropertiesFilesArgs Item="@(CorbaCleanPropertiesFile)">
+            <Output TaskParameter="Args" ItemName="_CleanCorbaPropertiesFilesArgs" />
+        </GetCleanCorbaPropertiesFilesArgs>
+
+        <WriteLinesToFile File="$(IntermediateOutputPath)corba_cleanprop.rsp" Lines="@(_CleanCorbaPropertiesFilesArgs)" Overwrite="true" />
+        <MakeDir Directories="@(CorbaCleanPropertiesFile->'$(CorbaCleanPropertiesFilesOutputPath)%(PackagePath)')" />
+        <Message Text="$(JavaExec) -cp $(CorbaBuildToolsOutputPath) build.tools.stripproperties.StripPropertiesCorba %40$(IntermediateOutputPath)corba_cleanprop.rsp" />
+        <Exec Command="$(JavaExec) -cp $(CorbaBuildToolsOutputPath) build.tools.stripproperties.StripPropertiesCorba %40$(IntermediateOutputPath)corba_cleanprop.rsp" />
+
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)corba_cleanprop.rsp" />
+            <FileWrites Include="@(CorbaCleanPropertiesFile->'$(CorbaCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties')" />
+            <JavaResource Include="@(CorbaCleanPropertiesFile->'$(CorbaCleanPropertiesFilesOutputPath)%(PackagePath)\%(ResourceName).properties')" ResourcePath="%(CorbaCleanPropertiesFile.PackagePath)/%(CorbaCleanPropertiesFile.ResourceName).properties" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            CleanCorbaPropertiesFiles;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+</Project>
