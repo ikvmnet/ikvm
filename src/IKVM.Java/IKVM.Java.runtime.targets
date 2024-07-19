@@ -104,7 +104,7 @@
                     var path = Path.Combine(TargetPath, kvp.Key);
                     var orig = File.Exists(path) ? File.ReadAllText(path) : "";
                     var curr = text.ToString();
-                    if (curr != orig)
+                    if (curr != orig || File.Exists(path) == false)
                         File.WriteAllText(path, curr);
                     
                     o.Add(new TaskItem(path));
