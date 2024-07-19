@@ -27,7 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ServiceFileResource Include="$(OpenJdkDir)langtools\src\share\classes\com\sun\tools\javac\services\javax.tools.JavaCompilerTool" ServiceName="javax.tools.JavaCompilerTool" />
+        <ServiceFile Include="$(OpenJdkDir)langtools\src\share\classes\com\sun\tools\javac\services\javax.tools.JavaCompilerTool" ServiceName="javax.tools.JavaCompilerTool" />
     </ItemGroup>
 
 </Project>

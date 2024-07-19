@@ -44,91 +44,94 @@
             $(GenerateDependsOn);
         </GenerateDependsOn>
     </PropertyGroup>
-
-    <UsingTask TaskName="DistinctServiceFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <ParameterGroup>
-            <SourceFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
-            <OutputFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System" />
-            <Using Namespace="System.Collections.Generic" />
-            <Using Namespace="System.IO" />
-            <Code Type="Fragment" Language="cs">
-                <![CDATA[
-                OutputFiles = SourceFiles.GroupBy(i => i.GetMetadata("ServiceName")).Select(i => i.First()).ToArray();
-                ]]>
-            </Code>
-        </Task>
-    </UsingTask>
+    
+    <PropertyGroup>
+        <ServiceFileOutputPath>$(IntermediateOutputPath)gensvc\</ServiceFileOutputPath>
+    </PropertyGroup>
 
     <UsingTask TaskName="GenerateServiceFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
-            <OpenJdkTargetOs ParameterType="System.String" />
-            <SourceFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+            <OpenJdkTargetOs ParameterType="System.String" Required="true" />
+            <SourceFile ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+            <TargetPath ParameterType="System.String" Required="true" />
+            <OutputFile ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
         </ParameterGroup>
         <Task>
             <Using Namespace="System" />
+            <Using Namespace="System.Collections.Concurrent" />
             <Using Namespace="System.Collections.Generic" />
             <Using Namespace="System.IO" />
+            <Using Namespace="System.Text" />
             <Code Type="Fragment" Language="cs">
                 <![CDATA[
-                var p = "#[" + OpenJdkTargetOs + "]";
+                Directory.CreateDirectory(TargetPath);
                 
-                foreach (var f in SourceFiles)
+                var keep = "#[" + OpenJdkTargetOs + "]";
+                var svcs = new ConcurrentDictionary<string, List<string>>();
+                
+                foreach (var file in SourceFile)
                 {
-                    var n = f.GetMetadata("ServiceName");
-                    var o = f.GetMetadata("OutputPath");
-                    Directory.CreateDirectory(Path.GetDirectoryName(o));
-                        
-                    using var r = File.OpenText(f.ItemSpec);
-                    using var w = new StreamWriter(File.Open(o, FileMode.Create));
-                        
+                    var name = file.GetMetadata("ServiceName");
+                    if (string.IsNullOrEmpty(name))
+                        name = file.GetMetadata("Filename") + file.GetMetadata("Extension");
+                    
+                    var list = svcs.GetOrAdd(name, _ => new List<string>());
+                    
+                    using var r = File.OpenText(file.ItemSpec);
                     string line;
                     while ((line = r.ReadLine()) != null)
                     {
-                        if (line.StartsWith(p))
-                            line = line.Substring(p.Length);
-                            
-                        w.WriteLine(line);
+                        if (line.StartsWith(keep))
+                            line = line.Substring(keep.Length);
+                        if (line.StartsWith("#"))
+                            continue;
+                        if (string.IsNullOrWhiteSpace(line))
+                            continue;
+                        
+                        list.Add(line);
                     }
                 }
+                
+                var o = new List<TaskItem>();
+                
+                foreach (var kvp in svcs)
+                {
+                    // assemble new version of file
+                    var text = new StringBuilder();
+                    foreach (var line in kvp.Value)
+                        text.AppendLine(line);
+                    
+                    var path = Path.Combine(TargetPath, kvp.Key);
+                    var orig = File.Exists(path) ? File.ReadAllText(path) : "";
+                    var curr = text.ToString();
+                    if (curr != orig)
+                        File.WriteAllText(path, curr);
+                    
+                    o.Add(new TaskItem(path));
+                }
+                
+                OutputFile = o.ToArray();
                 ]]>
             </Code>
         </Task>
     </UsingTask>
-    
-    <Target Name="UpdateServiceFiles">
-        <ItemGroup>
-            <ServiceFileResource Update="@(ServiceFileResource)">
-                <OutputPath>$(IntermediateOutputPath)gensvc\%(ServiceName)</OutputPath>
-            </ServiceFileResource>
-        </ItemGroup>
-        <DistinctServiceFiles SourceFiles="@(ServiceFileResource)">
-            <Output TaskParameter="OutputFiles" ItemName="_DistinctServiceFile" />
-        </DistinctServiceFiles>
-    </Target>
 
-    <Target Name="GenerateServiceFiles" DependsOnTargets="UpdateServiceFiles" Inputs="@(_DistinctServiceFile)" Outputs="@(_DistinctServiceFile->'%(OutputPath)')">
-        <GenerateServiceFiles OpenJdkTargetOs="$(OpenJdkTargetOsDir)" SourceFiles="@(_DistinctServiceFile)">
-            
+    <Target Name="GenerateServiceFiles">
+        <GenerateServiceFiles OpenJdkTargetOs="$(OpenJdkTargetOsDir)" SourceFile="@(ServiceFile)" TargetPath="$(ServiceFileOutputPath)">
+            <Output TaskParameter="OutputFile" ItemName="_GeneratedServiceFiles" />
         </GenerateServiceFiles>
-    </Target>
     
-    <Target Name="CollectServiceFiles" DependsOnTargets="GenerateServiceFiles">
         <ItemGroup>
-            <FileWrites Include="@(_DistinctServiceFile->'%(OutputPath)')" />
-            <JavaResource Include="@(_DistinctServiceFile->'%(OutputPath)')" ResourcePath="META-INF/services/%(_DistinctServiceFile.ServiceName)" />
+            <FileWrites Include="@(_GeneratedServiceFiles)" />
+            <JavaResource Include="@(_GeneratedServiceFiles)" ResourcePath="META-INF/services/%(Filename)%(Extension)" />
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
-        <GenerateDependsOn>
-            UpdateServiceFiles;
+        <CompileJavaDependsOn>
             GenerateServiceFiles;
-            CollectServiceFiles;
-            $(GenerateDependsOn);
-        </GenerateDependsOn>
+            $(CompileJavaDependsOn);
+        </CompileJavaDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
