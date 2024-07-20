@@ -18,48 +18,38 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="$(OpenJdkDir)\jdk\test\**\*" LinkBase="jdk">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Include="$(OpenJdkDir)\langtools\test\**\*" LinkBase="langtools">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Include="$(OpenJdkDir)\nashorn\test\**\*" LinkBase="nashorn">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
+        <None Include="$(OpenJdkDir)test\lib\**\*" LinkBase="test\lib" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="$(OpenJdkDir)jdk\test\**\*" LinkBase="jdk\test" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="$(OpenJdkDir)langtools\test\**\*" LinkBase="langtools\test" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="$(OpenJdkDir)nashorn\test\**\*" LinkBase="nashorn\test" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
     <ItemGroup>
         <None Update="IKVM.OpenJDK.Tests.runsettings">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="jdk\ExcludeList.txt">
+        <None Update="jdk\test\ExcludeList.txt">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="jdk\ExcludeList.$(TargetFramework).txt" Condition=" '$(TargetFramework)' != '' And Exists('jdk\ExcludeList.$(TargetFramework).txt')">
-            <TargetPath>jdk\ExcludeList.tfm.txt</TargetPath>
+        <None Update="jdk\test\ExcludeList.$(TargetFramework).txt" Condition=" '$(TargetFramework)' != '' And Exists('jdk\test\ExcludeList.$(TargetFramework).txt')">
+            <TargetPath>jdk\test\ExcludeList.tfm.txt</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="langtools\ExcludeList.txt">
+        <None Update="langtools\test\ExcludeList.txt">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="langtools\ExcludeList.$(TargetFramework).txt" Condition=" '$(TargetFramework)' != '' And Exists('langtools\ExcludeList.$(TargetFramework).txt')">
-            <TargetPath>langtools\ExcludeList.tfm.txt</TargetPath>
+        <None Update="langtools\test\ExcludeList.$(TargetFramework).txt" Condition=" '$(TargetFramework)' != '' And Exists('langtools\test\ExcludeList.$(TargetFramework).txt')">
+            <TargetPath>langtools\test\ExcludeList.tfm.txt</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="nashorn\ExcludeList.txt">
+        <None Update="nashorn\test\ExcludeList.txt">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="nashorn\ExcludeList.$(TargetFramework).txt" Condition=" '$(TargetFramework)' != '' And Exists('nashorn\ExcludeList.$(TargetFramework).txt')">
-            <TargetPath>nashorn\ExcludeList.tfm.txt</TargetPath>
+        <None Update="nashorn\test\ExcludeList.$(TargetFramework).txt" Condition=" '$(TargetFramework)' != '' And Exists('nashorn\test\ExcludeList.$(TargetFramework).txt')">
+            <TargetPath>nashorn\test\ExcludeList.tfm.txt</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
-
-    <Target Name="CopyConfigToTestHostConfig" AfterTargets="Build">
-        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll.config" DestinationFiles="$(OutputPath)testhost.dll.config" Condition="Exists('$(OutputPath)$(AssemblyName).dll.config')" />
-        <Copy SourceFiles="$(OutputPath)$(AssemblyName).exe.config" DestinationFiles="$(OutputPath)testhost.dll.config" Condition="Exists('$(OutputPath)$(AssemblyName).exe.config')" />
-    </Target>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
