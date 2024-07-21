@@ -2907,6 +2907,7 @@ sun/net/www/http/HttpClient/ProxyTest.java                                      
 sun/net/www/http/HttpClient/RetryPost.sh                                                                                generic-all
 sun/net/www/http/KeepAliveCache/KeepAliveTimerThread.java                                                               generic-all
 sun/net/www/http/KeepAliveStream/InfiniteLoop.java                                                                      generic-all
+sun/net/www/http/RequestMethodCheck/RequestMethodEquality.java                                                          generic-all
 sun/net/www/protocol/file/DirPermissionDenied.sh                                                                        generic-all
 sun/net/www/protocol/file/EncodedMultiByteChar.java                                                                     generic-all
 sun/net/www/protocol/file/FileURLTest.java                                                                              generic-all
@@ -4009,6 +4010,7 @@ jdk/jfr/jvm/TestLargeJavaEvent512k.java                                         
 jdk/jfr/jvm/TestLargeJavaEvent64k.java                                                                                  generic-all
 jdk/jfr/jvm/TestLogImplementation.java                                                                                  generic-all
 jdk/jfr/jvm/TestPid.java                                                                                                generic-all
+jdk/jfr/jvm/TestPrimitiveClasses.java                                                                                   generic-all
 jdk/jfr/jvm/TestUnloadEventClassCount.java                                                                              generic-all
 jdk/jfr/jvm/TestUnsupportedVM.java                                                                                      generic-all
 jdk/jfr/security/JFRSecurityTestSuite.java                                                                              generic-all
@@ -4041,7 +4043,7 @@ jdk/jfr/tool/TestPrintXML.java                                                  
 jdk/jfr/tool/TestSummary.java                                                                                           generic-all
 
 # needs JRE subfolder
-jdk/security/infra/java/security/cert/CertPathValidator/certification/HaricaCA.java                                     generic-all
+security/infra/java/security/cert/CertPathValidator/certification/HaricaCA.java                                         generic-all
 security/infra/java/security/cert/CertPathValidator/certification/AmazonCA.java                                         generic-all
 security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java                                        generic-all
 security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java                                         generic-all
@@ -4055,6 +4057,50 @@ security/infra/java/security/cert/CertPathValidator/certification/LuxTrustCA.jav
 security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java                                       generic-all
 security/infra/java/security/cert/CertPathValidator/certification/SSLCA.java                                            generic-all
 security/infra/java/security/cert/CertPathValidator/certification/TeliaSoneraCA.java                                    generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_actalisauthenticationrootca.java            generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_amazonrootca1.java                          generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_amazonrootca2.java                          generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_amazonrootca3.java                          generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_amazonrootca4.java                          generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_buypassclass2ca.java                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_buypassclass3ca.java                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_certainlyroote1.java                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_certainlyrootr1.java                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_certignarootca.java                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_comodoeccca.java                            generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_comodorsaca.java                            generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_digicerttlseccrootg5.java                   generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_digicerttlsrsarootg5.java                   generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_emsigneccrootcag3.java                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_emsignrootcag1.java                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_entrustrootcaec1.java                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_entrustrootcag4.java                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_globalsigneccrootcar4.java                  generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_globalsignrootcar6.java                     generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_godaddyrootg2ca.java                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_gtsrootcar1.java                            generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_gtsrootcar2.java                            generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_gtsrootecccar3.java                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_gtsrootecccar4.java                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_letsencryptisrgx1.java                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_letsencryptisrgx2.java                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_microsoftecc2017.java                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_microsoftrsa2017.java                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_quovadisrootca1g3.java                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_quovadisrootca2g3.java                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_quovadisrootca3g3.java                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_sslrooteccca.java                           generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_sslrootevrsaca.java                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_sslrootrsaca.java                           generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_starfieldrootg2ca.java                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_teliarootcav2.java                          generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_teliasonerarootcav1.java                    generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_twcaglobalrootca.java                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_usertrusteccca.java                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop_usertrustrsaca.java                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CertignaCA.java                                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/DigicertCSRootG5.java                                 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/EmSignRootG2CA.java                                   generic-all
 
 # Hotspot uses special detection to ensure native stack doesn't grow too far, which we can't do
 java/nio/channels/Selector/StackOverflowTest.java                                                                       generic-all
