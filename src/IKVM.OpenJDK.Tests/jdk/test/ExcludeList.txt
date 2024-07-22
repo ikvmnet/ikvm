@@ -3000,6 +3000,7 @@ sun/security/krb5/auto/RRC.java                                                 
 sun/security/krb5/auto/ReplayCacheExpunge.java                                                                          generic-all
 sun/security/krb5/auto/ReplayCacheTest.java                                                                             generic-all
 sun/security/krb5/auto/ReplayCacheTestProc.java                                                                         generic-all
+sun/security/krb5/auto/rcache_usemd5.sh                                                                                 linux-all
 sun/security/krb5/auto/S4U2proxy.java                                                                                   generic-all
 sun/security/krb5/auto/S4U2proxyGSS.java                                                                                generic-all
 sun/security/krb5/auto/S4U2self.java                                                                                    generic-all
