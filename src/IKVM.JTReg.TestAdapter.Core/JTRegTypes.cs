@@ -51,8 +51,8 @@ namespace IKVM.JTReg.TestAdapter.Core
                 public static readonly Class Class = Class.forName("com.sun.javatest.regtest.exec.Agent$Pool", true, ClassLoader);
                 public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
 
-                public static readonly Method InstanceMethod = Class.getMethod("instance");
-                public static dynamic Instance() => InstanceMethod.invoke(null);
+                public static readonly Method InstanceMethod = Class.getMethod("instance", new Class[] { RegressionParameters.Class });
+                public static dynamic Instance(object @params) => InstanceMethod.invoke(null, @params);
 
             }
 
