@@ -3205,6 +3205,7 @@ tools/launcher/VersionCheck.java                                                
 vm/verifier/TestStaticIF.java                                                                                           generic-all
 vm/verifier/VerifyProtectedConstructor.java                                                                             generic-all
 vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java                                                         generic-all
+jdk/internal/platform/cgroup/TestCgroupMetrics.java                                                                     generic-all
 
 # these test try to fill up memory but catch an exception that isn't going to happen on .NET
 # the tests should be fixed
