@@ -3698,6 +3698,7 @@ jdk/jfr/api/recording/destination/TestDestToDiskFalse.java                      
 jdk/jfr/api/recording/destination/TestDestToDiskTrue.java                                                               generic-all
 jdk/jfr/api/recording/destination/TestDestWithDuration.java                                                             generic-all
 jdk/jfr/api/recording/dump/TestDump.java                                                                                generic-all
+jdk/jfr/api/recording/dump/TestDumpDevNull.java                                                                         generic-all
 jdk/jfr/api/recording/dump/TestDumpInvalid.java                                                                         generic-all
 jdk/jfr/api/recording/dump/TestDumpLongPath.java                                                                        generic-all
 jdk/jfr/api/recording/dump/TestDumpMultiple.java                                                                        generic-all
