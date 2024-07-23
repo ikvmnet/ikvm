@@ -139,7 +139,8 @@
             RemoveAssertions="$(RemoveAssertions)"
             Resources="@(_IkvmCompilerResource)"
             Remap="@(MapFile)"
-            Input="@(_Convert)" />
+            Input="@(_Convert)"
+            Static="$(CompileStatically)" />
 
         <!-- Move temporary files in place of permanent files. -->
         <Move SourceFiles="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" DestinationFiles="@(IntermediateAssembly)" OverwriteReadOnlyFiles="true" />
