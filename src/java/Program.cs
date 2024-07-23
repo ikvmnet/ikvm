@@ -8,7 +8,7 @@ namespace IKVM.Tools.Java
     {
 
         [HideFromJava]
-        public static int Main(string[] args) => Launcher.Run(null, false, args, "", null);
+        public static int Main(string[] args) => Launcher.Run(null, null, false, args, "", null);
 
     }
 

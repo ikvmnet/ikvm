@@ -256,8 +256,9 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
-        /// Launches a Java application.
+        /// Services as the managed entry point jump for a Java executable.
         /// </summary>
+        /// <param name="assembly"></param>
         /// <param name="main"></param>
         /// <param name="jar"></param>
         /// <param name="args"></param>
@@ -265,7 +266,7 @@ namespace IKVM.Runtime
         /// <param name="properties"></param>
         /// <returns></returns>
         [HideFromJava(HideFromJavaFlags.StackTrace)]
-        public static int Run(string main, bool jar, string[] args, string rarg, IDictionary<string, string> properties)
+        public static int Run(Assembly assembly, string main, bool jar, string[] args, string rarg, IDictionary<string, string> properties)
         {
             if (args is null)
                 throw new ArgumentNullException(nameof(args));
@@ -275,6 +276,11 @@ namespace IKVM.Runtime
 #else
             HandleDebugTrace();
 
+            // ensure the entry assembly is added to the classpath
+            if (assembly != null)
+                AddBootClassPathAssembly(assembly);
+
+            // initialize attribute parsing
             var initialize = properties != null ? new Dictionary<string, string>(properties) : new Dictionary<string, string>();
             var showversion = false;
             var exit = false;
