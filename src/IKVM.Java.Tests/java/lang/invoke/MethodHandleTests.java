@@ -3,6 +3,7 @@ package ikvm.tests.java.java.lang.invoke;
 import java.lang.*;
 import java.lang.invoke.*;
 import java.util.*;
+import java.util.function.*;
 
 @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute.Annotation()
 public class MethodHandleTests {
@@ -88,6 +89,21 @@ public class MethodHandleTests {
         if (!list.get(2).equals("you")) {
             throw new Exception(list.get(2));
         };
+    }
+
+    @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
+    public void canInvokeThroughSupplier() throws Throwable { // Issue #509
+        Class<?> effectiveAnchor = MethodHandleTests.class;
+        final Supplier<ClassLoader> supplier = new Supplier() {
+            private final Supplier<? extends ClassLoader> supplier = effectiveAnchor::getClassLoader;
+
+            @Override
+            public ClassLoader get() {
+                return supplier.get();
+            }
+        };
+
+        final ClassLoader classLoader = supplier.get();
     }
 
 }
