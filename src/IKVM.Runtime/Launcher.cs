@@ -276,10 +276,6 @@ namespace IKVM.Runtime
 #else
             HandleDebugTrace();
 
-            // ensure the entry assembly is added to the classpath
-            if (assembly != null)
-                AddBootClassPathAssembly(assembly);
-
             // initialize attribute parsing
             var initialize = properties != null ? new Dictionary<string, string>(properties) : new Dictionary<string, string>();
             var showversion = false;
@@ -509,6 +505,11 @@ namespace IKVM.Runtime
 
                 // VM initialization, configures system properties, done before any static initializers
                 JVM.Init();
+
+                // ensure the entry assembly is added to the classpath
+                // we do this after Init since it triggers the VFS
+                if (assembly != null)
+                    AddBootClassPathAssembly(assembly);
 
                 // first entry into base assembly
                 EnterMainThread();
