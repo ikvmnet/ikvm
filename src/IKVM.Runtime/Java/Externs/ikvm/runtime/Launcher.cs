@@ -40,13 +40,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
                 foreach (global::java.util.Map.Entry entry in (IEnumerable)properties.entrySet())
                     p.Add((string)entry.getKey(), (string)entry.getValue());
 
-            return IKVM.Runtime.Launcher.Run(
-                main?.Assembly,
-                ((global::java.lang.Class)main)?.getName(),
-                jar: false,
-                args,
-                jvmArgPrefix,
-                p);
+            return IKVM.Runtime.Launcher.Run(main != null ? ((global::java.lang.Class)main).getName() : null, false, args, jvmArgPrefix, p);
 #endif
         }
 

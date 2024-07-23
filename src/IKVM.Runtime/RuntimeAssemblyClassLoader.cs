@@ -1129,9 +1129,10 @@ namespace IKVM.Runtime
         internal void AddDelegate(RuntimeAssemblyClassLoader acl)
         {
             LazyInitExports();
-
             lock (this)
+            {
                 delegates = ArrayUtil.Concat(delegates, acl);
+            }
         }
 
 #if !IMPORTER && !EXPORTER
