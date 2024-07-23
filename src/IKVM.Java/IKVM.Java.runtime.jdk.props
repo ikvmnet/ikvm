@@ -12,38 +12,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\awt\**\*.java" PackagePath="com\sun\awt" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\beans\**\*.java" PackagePath="com\sun\beans" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\crypto\**\*.java" PackagePath="com\sun\crypto" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\imageio\**\*.java" PackagePath="com\sun\imageio" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\jarsigner\**\*.java" PackagePath="com\sun\jarsigner" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\accessibility\**\*.java" PackagePath="com\sun\java\accessibility" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\browser\**\*.java" PackagePath="com\sun\java\browser" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\**\*.java" PackagePath="com\sun\java\swing" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\util\**\*.java" PackagePath="java\util" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\jmx\**\*.java" PackagePath="com\sun\jmx"/>
+        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\**\*.java" PackagePath="com" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\jdi\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\jmx\snmp\**\*.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\jndi\**\*.java" PackagePath="com\sun\jndi" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\management\**\*.java" PackagePath="com\sun\management" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\**\*.java" PackagePath="com\sun\media\sound" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\naming\**\*.java" PackagePath="com\sun\naming" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\net\httpserver\**\*.java" PackagePath="com\sun\net\httpserver" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\net\ssl\**\*.java" PackagePath="com\sun\net\ssl" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\nio\file\**\*.java" PackagePath="com\sun\nio\file" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\nio\sctp\**\*.java" PackagePath="com\sun\nio\sctp" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\org\**\*.java" PackagePath="com\sun\org" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\pept\**\*.java" PackagePath="com\sun\pept" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\rmi\**\*.java" PackagePath="com\sun\rmi" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\rowset\**\*.java" PackagePath="com\sun\rowset" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\**\*.java" PackagePath="com\sun\security\auth" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\SolarisLoginModule.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\SolarisSystem.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\cert\**\*.java" PackagePath="com\sun\security\cert" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\jgss\**\*.java" PackagePath="com\sun\security\jgss" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\ntlm\**\*.java" PackagePath="com\sun\security\ntlm" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\sasl\**\*.java" PackagePath="com\sun\security\sasl" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\tools\attach\**\*.java" PackagePath="com\sun\tools\attach" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\tools\script\**\*.java" PackagePath="com\sun\tools\script" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\tools\attach\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\tools\example\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\tools\jdi\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\java\applet\**\*.java" PackagePath="java\applet" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\java\awt\**\*.java" PackagePath="java\awt" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\java\beans\**\*.java" PackagePath="java\beans" />
@@ -74,7 +50,6 @@
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\java\lang\reflect\Executable.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\java\lang\reflect\Field.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\java\lang\reflect\Method.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\java\lang\reflect\Proxy.java" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\java\math\**\*.java" PackagePath="java\math" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\java\net\**\*.java" PackagePath="java\net" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\**\*.java" PackagePath="java\nio" />
@@ -89,10 +64,8 @@
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\java\util\zip\ZipEntry.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\java\util\zip\ZipFile.java" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\javax\**\*.java" PackagePath="javax" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\jdk\internal\**\*.java" PackagePath="jdk\internal" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\jdk\net\**\*.java" PackagePath="jdk\net"/>
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\org\ietf\**\*.java" PackagePath="org\ietf" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\org\jcp\**\*.java" PackagePath="org\jcp" />
+        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\jdk\**\*.java" PackagePath="jdk" />
+        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\org\**\*.java" PackagePath="org" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\sun\applet\**\*.java" PackagePath="sun\applet" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\sun\awt\**\*.java" PackagePath="sun\awt" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\sun\font\**\*.java" PackagePath="sun\font" />
@@ -134,58 +107,40 @@
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\tools\attach\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jcmd\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jconsole\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jdi\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jinfo\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jmap\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jps\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jstack\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jstat\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\tools\jstatd\**\*.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\sun\tracing\**\*.java" PackagePath="sun\tracing" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\sun\util\**\*.java" PackagePath="sun\util" />
+        
+        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\demo\nio\zipfs\src\**\*.java" PackagePath="" />
+        <ServiceFile Include="$(OpenJdkDir)jdk\src\share\demo\nio\zipfs\src\**\META-INF\services\*" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' Or '$(IkvmJavaRuntimeIdentifier)' == 'ref' ">
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\java\io\**\*.java" PackagePath="java\io" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\java\lang\**\*.java" PackagePath="java\lang" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\java\net\**\*.java" PackagePath="java\net" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\java\util\**\*.java" PackagePath="java\util" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\sun\awt\**\*.java" PackagePath="sun\awt" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\sun\font\**\*.java" PackagePath="sun\font" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\sun\io\**\*.java" PackagePath="sun\io" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\sun\java2d\**\*.java" PackagePath="sun\java2d" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\sun\management\**\*.java" PackagePath="sun\management" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\sun\misc\**\*.java" PackagePath="sun\misc" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\sun\net\**\*.java" PackagePath="sun\net" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\sun\nio\**\*.java" PackagePath="sun\nio" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\sun\print\**\*.java" PackagePath="sun\print" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\sun\util\**\*.java" PackagePath="sun\util" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\sun\security\**\*.java" PackagePath="sun\security" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\gtk\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\UnixLoginModule.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\UnixSystem.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\nio\ch\AbstractPollSelectorImpl.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\nio\ch\PollSelectorProvider.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\nio\ch\SimpleAsynchronousFileChannelImpl.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\windows\classes\**\*.java" PackagePath="" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\windows\classes\com\sun\java\accessibility\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\windows\classes\com\sun\tools\jdi\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\windows\classes\java\io\FileDescriptor.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\windows\classes\sun\misc\OSEnvironment.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\windows\classes\sun\tools\attach\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\windows\classes\sun\tools\jdi\**\*.java" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\java\io\**\*.java" PackagePath="java\io" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\java\lang\**\*.java" PackagePath="java\lang" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\java\net\**\*.java" PackagePath="java\net" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\java\util\**\*.java" PackagePath="java\util" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\sun\awt\**\*.java" PackagePath="sun\awt" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\sun\font\**\*.java" PackagePath="sun\font" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\sun\java2d\**\*.java" PackagePath="sun\java2d" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\sun\management\**\*.java" PackagePath="sun\management" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\sun\misc\**\*.java" PackagePath="sun\misc" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\sun\net\**\*.java" PackagePath="sun\net" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\sun\nio\**\*.java" PackagePath="sun\nio" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\sun\print\**\*.java" PackagePath="sun\print"/>
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\sun\util\**\*.java" PackagePath="sun\util" />
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\sun\security\**\*.java" PackagePath="sun\security" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\NTLoginModule.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\NTSystem.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\**\*.java" PackagePath="" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\java\io\FileDescriptor.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\awt\X11\generator\WrapperGenerator.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\misc\OSEnvironment.java" />
@@ -206,6 +161,7 @@
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\nio\fs\SolarisSystem.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\nio\fs\SolarisUserDefinedFileAttributeView.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\nio\fs\SolarisWatchService.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\tools\attach\**\*.java" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' ">
@@ -214,7 +170,6 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' " >
-        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\macosx\classes\**\*.java" PackagePath="" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\java\lang\ClassLoaderHelper.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\java\net\DefaultInterface.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\awt\X11\**\*.java" />
@@ -225,6 +180,7 @@
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\nio\ch\sctp\SctpServerChannelImpl.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\nio\fs\GnomeFileTypeDetector.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\util\locale\provider\HostLocaleProviderAdapterImpl.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)jdk\src\macosx\classes\**\*.java" PackagePath="" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' != 'linux' ">
@@ -343,14 +299,14 @@
         <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\javax\swing\text\rtf\charsets\*.txt" ResourcePath="javax\swing\text\ref\charsets\%(Filename).txt" />
 
         <!-- JAVAX_SOUND_SRC_FILES -->
-        <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiDeviceProvider" ResourcePath="META-INF/services/javax.sound.midi.spi.MidiDeviceProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileReader" ResourcePath="META-INF/services/javax.sound.midi.spi.MidiFileReader" />
-        <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileWriter" ResourcePath="META-INF/services/javax.sound.midi.spi.MidiFileWriter" />
-        <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.SoundbankReader" ResourcePath="META-INF/services/javax.sound.midi.spi.SoundbankReader" />
-        <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileReader" ResourcePath="META-INF/services/javax.sound.sampled.spi.AudioFileReader" />
-        <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileWriter" ResourcePath="META-INF/services/javax.sound.sampled.spi.AudioFileWriter" />
-        <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.FormatConversionProvider" ResourcePath="META-INF/services/javax.sound.sampled.spi.FormatConversionProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.MixerProvider" ResourcePath="META-INF/services/javax.sound.sampled.spi.MixerProvider" />
+        <ServiceFile Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiDeviceProvider" />
+        <ServiceFile Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileReader" />
+        <ServiceFile Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileWriter" />
+        <ServiceFile Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.SoundbankReader" />
+        <ServiceFile Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileReader" />
+        <ServiceFile Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileWriter" />
+        <ServiceFile Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.FormatConversionProvider" />
+        <ServiceFile Include="$(OpenJdkDir)jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.MixerProvider" />
     </ItemGroup>
 
     <ItemGroup>
@@ -440,10 +396,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ServiceFileResource Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsDir)\classes\**\META-INF\services\*" ServiceName="%(Filename)%(Extension)" />
-        <ServiceFileResource Include="$(OpenJdkDir)jdk\src\share\classes\**\META-INF\services\*" ServiceName="%(Filename)%(Extension)" />
-        <ServiceFileResource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\dc\META-INF\services\sun.java2d.pipe.RenderingEngine" />
-        <ServiceFileResource Include="$(OpenJdkDir)jdk\src\share\classes\sun\print\services\*" ServiceName="%(Filename)%(Extension)" />
+        <ServiceFile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsDir)\classes\**\META-INF\services\*" />
+        <ServiceFile Include="$(OpenJdkDir)jdk\src\share\classes\**\META-INF\services\*" />
+        <ServiceFile Remove="$(OpenJdkDir)jdk\src\share\classes\sun\dc\META-INF\services\sun.java2d.pipe.RenderingEngine" />
+        <ServiceFile Include="$(OpenJdkDir)jdk\src\share\classes\sun\print\services\*" />
     </ItemGroup>
 
 </Project>

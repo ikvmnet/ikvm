@@ -1,5 +1,5 @@
 ﻿using IKVM.JTReg.TestAdapter;
 
-[assembly: JTRegTestSuite("jdk")]
-[assembly: JTRegTestSuite("langtools")]
-[assembly: JTRegTestSuite("nashorn")]
+[assembly: JTRegTestSuite("jdk/test")]
+[assembly: JTRegTestSuite("langtools/test")]
+[assembly: JTRegTestSuite("nashorn/test")]

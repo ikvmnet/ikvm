@@ -35,6 +35,7 @@ tools/javac/failover/CheckAttributedTree.java                                   
 tools/javac/file/zip/T6836682.java                                                                                      linux-all
 tools/javac/file/zip/T6865530.java                                                                                      generic-all
 tools/javac/generics/rawOverride/7062745/GenericOverrideTest.java                                                       generic-all
+tools/javac/generics/inference/7086601/T7086601b.java                                                                   windows-all
 tools/javac/inheritedAccess/MethodReferenceQualification_1.java                                                         generic-all
 tools/javac/jvm/T7024096.java                                                                                           generic-all
 tools/javac/jvm/T8020689.java                                                                                           generic-all
