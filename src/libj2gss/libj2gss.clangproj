@@ -1,0 +1,26 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>723f8d26-f3cb-430d-b142-4ab89dbf1298</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>j2gss</TargetName>
+        <OutputType>dll</OutputType>
+        <LanguageStandard>c99</LanguageStandard>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+        <ProjectReference Include="..\libiava\libiava.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\security\jgss\wrapper" />
+        <Header Include="$(OpenJdkDir)jdk\src\share\native\sun\security\jgss\wrapper\*.h" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\jgss\wrapper\*.c" />
+    </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+        <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libj2gss\mapfile-vers" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

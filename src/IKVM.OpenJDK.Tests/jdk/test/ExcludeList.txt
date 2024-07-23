@@ -503,6 +503,7 @@ java/awt/Modal/ModalDialogOrderingTest/ModalDialogOrderingTest.java             
 java/awt/Modal/ModalInternalFrameTest/ModalInternalFrameTest.java                                                       generic-all
 java/awt/Modal/NpeOnClose/NpeOnCloseTest.java                                                                           generic-all
 java/awt/Modal/SupportedTest/SupportedTest.java                                                                         generic-all
+java/awt/Modal/ToFront/DialogToFrontNonModalTest.java                                                                   generic-all
 java/awt/Modal/WsDisabledStyle/CloseBlocker/CloseBlocker.java                                                           generic-all
 java/awt/Modal/WsDisabledStyle/OverBlocker/OverBlocker.java                                                             generic-all
 java/awt/Modal/WsDisabledStyle/Winkey/Winkey.java                                                                       generic-all
@@ -576,7 +577,7 @@ java/awt/TextArea/TextAreaCaretVisibilityTest/bug7129742.java                   
 java/awt/TextArea/TextAreaCursorTest/HoveringAndDraggingTest.java                                                       generic-all
 java/awt/TextArea/TextAreaEditing/TextAreaEditing.java                                                                  generic-all
 java/awt/TextArea/TextAreaTwicePack/TextAreaTwicePack.java                                                              generic-all
-java/awt/TextArea/UsingWithMouse/SelectionAutoscrollTest.html                                                           generic-all
+java/awt/TextArea/UsingWithMouse/SelectionAutoscrollTest.java                                                           generic-all
 java/awt/TextField/DisposeTest/TestDispose.java                                                                         generic-all
 java/awt/TextField/ScrollSelectionTest/ScrollSelectionTest.java                                                         generic-all
 java/awt/TextField/SelectionInvisibleTest/SelectionInvisibleTest.java                                                   generic-all
@@ -666,6 +667,7 @@ java/awt/dnd/AcceptDropMultipleTimes/AcceptDropMultipleTimes.java               
 java/awt/dnd/BadSerializaionTest/BadSerializationTest.java                                                              generic-all
 java/awt/dnd/BadSerializationTest/BadSerializationTest.java                                                             macosx-all
 java/awt/dnd/Button2DragTest/Button2DragTest.html                                                                       generic-all
+java/awt/dnd/Button2DragTest/Button2DragTest.java                                                                       generic-all
 java/awt/dnd/DisposeFrameOnDragCrash/DisposeFrameOnDragTest.java                                                        generic-all
 java/awt/dnd/DnDFileGroupDescriptor/DnDFileGroupDescriptor.java                                                         generic-all
 java/awt/dnd/DnDFileGroupDescriptor/DnDTarget.java                                                                      generic-all
@@ -853,6 +855,7 @@ java/awt/print/PrinterJob/Collate2DPrintingTest.java                            
 java/awt/print/PrinterJob/CustomPrintService/PrintDialog.java                                                           generic-all
 java/awt/print/PrinterJob/CustomPrintService/PrintServiceStub.java                                                      generic-all
 java/awt/print/PrinterJob/CustomPrintService/SetPrintServiceTest.java                                                   generic-all
+java/awt/print/PrinterJob/ExceptionFromPrintableIsIgnoredTest.java                                                      generic-all
 java/awt/print/PrinterJob/ExceptionTest.java                                                                            generic-all
 java/awt/print/PrinterJob/GetMediasTest.java                                                                            generic-all
 java/awt/print/PrinterJob/ImagePrinting/ClippedImages.java                                                              generic-all
@@ -2426,6 +2429,7 @@ javax/swing/JFileChooser/8021253/bug8021253.java                                
 javax/swing/JFileChooser/8046391/bug8046391.java                                                                        generic-all
 javax/swing/JFileChooser/8062561/bug8062561.java                                                                        generic-all
 javax/swing/JFileChooser/8080628/bug8080628.java                                                                        generic-all
+javax/swing/JFileChooser/FileChooserListenerLeak.java                                                                   generic-all
 javax/swing/JFileChooser/FileFilterDescription/FileFilterDescription.java                                               generic-all
 javax/swing/JFormattedTextField/Test6462562.java                                                                        generic-all
 javax/swing/JFrame/4962534/bug4962534.html                                                                              generic-all
@@ -2477,6 +2481,7 @@ javax/swing/JOptionPane/8024926/bug8024926.java                                 
 javax/swing/JPopupMenu/4458079/bug4458079.java                                                                          generic-all
 javax/swing/JPopupMenu/4966112/bug4966112.java                                                                          generic-all
 javax/swing/JPopupMenu/6495920/bug6495920.java                                                                          generic-all
+javax/swing/JPopupMenu/6544309/bug6544309.java                                                                          generic-all
 javax/swing/JPopupMenu/6675802/bug6675802.java                                                                          generic-all
 javax/swing/JPopupMenu/6690791/bug6690791.java                                                                          generic-all
 javax/swing/JPopupMenu/6691503/bug6691503.java                                                                          generic-all
@@ -2548,6 +2553,7 @@ javax/swing/JTable/6937798/bug6937798.java                                      
 javax/swing/JTable/7027139/bug7027139.java                                                                              generic-all
 javax/swing/JTable/7055065/bug7055065.java                                                                              generic-all
 javax/swing/JTable/7068740/bug7068740.java                                                                              generic-all
+javax/swing/JTable/7124218/SelectEditTableCell.java                                                                     generic-all
 javax/swing/JTable/7188612/JTableAccessibleGetLocationOnScreen.java                                                     generic-all
 javax/swing/JTable/8005019/bug8005019.java                                                                              generic-all
 javax/swing/JTable/8031971/bug8031971.java                                                                              generic-all
@@ -2637,10 +2643,12 @@ javax/swing/border/Test7034614.java                                             
 javax/swing/border/Test7149090.java                                                                                     generic-all
 javax/swing/dnd/7171812/JListWithScroll.java                                                                            generic-all
 javax/swing/dnd/7171812/bug7171812.java                                                                                 generic-all
+javax/swing/event/RightAltKeyTest.java                                                                                  generic-all
 javax/swing/plaf/aqua/CustomComboBoxFocusTest.java                                                                      generic-all
 javax/swing/plaf/basic/BasicComboBoxEditor/Test8015336.java                                                             generic-all
 javax/swing/plaf/basic/BasicComboPopup/8154069/Bug8154069.java                                                          generic-all
 javax/swing/plaf/basic/BasicHTML/4251579/bug4251579.java                                                                generic-all
+javax/swing/plaf/basic/BasicHTML/4960629/bug4960629.java                                                                generic-all
 javax/swing/plaf/basic/BasicLabelUI/bug7172652.java                                                                     generic-all
 javax/swing/plaf/basic/BasicMenuUI/4983388/bug4983388.java                                                              generic-all
 javax/swing/plaf/basic/BasicScrollPaneUI/Test6632810.java                                                               generic-all
@@ -2724,6 +2732,7 @@ javax/xml/bind/marshal/8036981/Test.java                                        
 javax/xml/crypto/dsig/GenerationTests.java                                                                              generic-all
 javax/xml/crypto/dsig/SecurityManager/XMLDSigWithSecMgr.java                                                            generic-all
 javax/xml/crypto/dsig/ValidationTests.java                                                                              generic-all
+javax/xml/jaxp/common/8035437/run.sh                                                                                    generic-all
 javax/xml/jaxp/Encodings/CheckEncodingPropertiesFile.java                                                               generic-all
 javax/xml/jaxp/XPath/8009579/XPathExceptionInitCause.java                                                               generic-all
 javax/xml/ws/8033113/WsImportTest.java                                                                                  generic-all
@@ -2732,6 +2741,7 @@ javax/xml/ws/clientjar/TestWsImport.java                                        
 javax/xml/ws/ebcdic/WsImportTest.java                                                                                   generic-all
 javax/xml/ws/xsanymixed/Test.java                                                                                       generic-all
 jdk/asm/AsmSanity.java                                                                                                  generic-all
+jdk/internal/platform/cgroup/TestCgroupMetrics.java                                                                     generic-all
 jdk/lambda/ArrayCtorRefTest.java                                                                                        generic-all
 jdk/lambda/FDTest.java                                                                                                  generic-all
 jdk/lambda/LambdaTranslationCompoundSamTest.java                                                                        generic-all
@@ -2906,6 +2916,7 @@ sun/net/www/http/HttpClient/ProxyTest.java                                      
 sun/net/www/http/HttpClient/RetryPost.sh                                                                                generic-all
 sun/net/www/http/KeepAliveCache/KeepAliveTimerThread.java                                                               generic-all
 sun/net/www/http/KeepAliveStream/InfiniteLoop.java                                                                      generic-all
+sun/net/www/http/RequestMethodCheck/RequestMethodEquality.java                                                          generic-all
 sun/net/www/protocol/file/DirPermissionDenied.sh                                                                        generic-all
 sun/net/www/protocol/file/EncodedMultiByteChar.java                                                                     generic-all
 sun/net/www/protocol/file/FileURLTest.java                                                                              generic-all
@@ -2940,8 +2951,8 @@ sun/rmi/runtime/Log/checkLogging/CheckLogStreams.java                           
 sun/rmi/runtime/Log/checkLogging/CheckLogging.java                                                                      generic-all
 sun/rmi/server/MarshalOutputStream/marshalForeignStub/MarshalForeignStub.java                                           generic-all
 sun/rmi/transport/tcp/DeadCachedConnection.java                                                                         generic-all
-sun/rmi/transport/tcp/blockAccept/BlockAcceptTest.java                                                                  generic-all
 sun/rmi/transport/tcp/DisableRMIOverHttp/DisableRMIOverHTTPTest.java                                                    generic-all
+sun/rmi/transport/tcp/blockAccept/BlockAcceptTest.java                                                                  generic-all
 sun/security/ec/TestEC.java                                                                                             generic-all
 sun/security/jgss/DefaultGssConfig.java                                                                                 generic-all
 sun/security/jgss/spnego/NegTokenTargFields.java                                                                        generic-all
@@ -2990,6 +3001,7 @@ sun/security/krb5/auto/RRC.java                                                 
 sun/security/krb5/auto/ReplayCacheExpunge.java                                                                          generic-all
 sun/security/krb5/auto/ReplayCacheTest.java                                                                             generic-all
 sun/security/krb5/auto/ReplayCacheTestProc.java                                                                         generic-all
+sun/security/krb5/auto/rcache_usemd5.sh                                                                                 linux-all
 sun/security/krb5/auto/S4U2proxy.java                                                                                   generic-all
 sun/security/krb5/auto/S4U2proxyGSS.java                                                                                generic-all
 sun/security/krb5/auto/S4U2self.java                                                                                    generic-all
@@ -3057,57 +3069,8 @@ sun/security/ssl/EngineArgs/DebugReportsOneExtraByte.sh                         
 sun/security/ssl/SSLEngineImpl/SSLEngineDeadlock.java                                                                   generic-all
 sun/security/ssl/SSLSocketImpl/NotifyHandshakeTest.sh                                                                   generic-all
 sun/security/ssl/Stapling/StatusResponseManager.sh                                                                      generic-all
-sun/security/ssl/com/sun/net/ssl/SSLSecurity/ProviderTest.java                                                          generic-all
-sun/security/ssl/com/sun/net/ssl/SSLSecurity/TruncateArray.java                                                         generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/DHKeyExchange/DHEKeySizing.java                                           generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/EngineArgs/DebugReportsOneExtraByte.sh                                    generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLContextImpl/CustomizedDefaultProtocols.java                            generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLContextImpl/IllegalProtocolProperty.java                               generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLContextImpl/MD2InTrustAnchor.java                                      generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLContextImpl/NoOldVersionContext.java                                   generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLContextImpl/TrustTrustedCert.java                                      generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/CloseEngineException.java                                   generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/CloseInboundException.java                                  generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/DelegatedTaskWrongException.java                            generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/EmptyExtensionData.java                                     generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/EngineEnforceUseClientMode.java                             generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/RehandshakeFinished.java                                    generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/SSLEngineBadBufferArrayAccess.java                          generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/SSLEngineDeadlock.java                                      generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/NotifyHandshakeTest.sh                                      generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/X509TrustManagerImpl/BasicConstraints.java                                generic-all
-sun/security/ssl/com/sun/net/ssl/internal/ssl/X509TrustManagerImpl/SelfIssuedCert.java                                  generic-all
-sun/security/ssl/com/sun/net/ssl/internal/www/protocol/https/HttpsClient/ProxyAuthTest.java                             generic-all
 sun/security/ssl/internal/TestRun.sh                                                                                    generic-all
-sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/AcceptLargeFragments.java                                              generic-all
-sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/ArgCheck.java                                                          generic-all
-sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/Arrays.java                                                            generic-all
-sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/CheckStatus.java                                                       generic-all
-sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/ConnectionTest.java                                                    generic-all
-sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/ExtendedKeyEngine.java                                                 generic-all
-sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/LargeBufs.java                                                         generic-all
-sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/LargePacket.java                                                       generic-all
-sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/NoAuthClientAuth.java                                                  generic-all
-sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/SSLEngineResultArgs.java                                               generic-all
-sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngineResult/Deserialize.java                                                 generic-all
-sun/security/ssl/javax/net/ssl/NewAPIs/testEnabledProtocols.java                                                        generic-all
-sun/security/ssl/javax/net/ssl/ServerName/SSLEngineExplorer.java                                                        generic-all
-sun/security/ssl/javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                                              generic-all
-sun/security/ssl/javax/net/ssl/ServerName/SSLEngineExplorerUnmatchedSNI.java                                            generic-all
-sun/security/ssl/javax/net/ssl/ServerName/SSLEngineExplorerWithCli.java                                                 generic-all
-sun/security/ssl/javax/net/ssl/ServerName/SSLEngineExplorerWithSrv.java                                                 generic-all
-sun/security/ssl/javax/net/ssl/ServerName/SSLSocketExplorerMatchedSNI.java                                              generic-all
-sun/security/ssl/javax/net/ssl/ServerName/SSLSocketSNISensitive.java                                                    generic-all
-sun/security/ssl/javax/net/ssl/TLSv12/DisabledShortRSAKeys.java                                                         generic-all
-sun/security/ssl/javax/net/ssl/TLSv12/ShortRSAKey512.java                                                               generic-all
-sun/security/ssl/javax/net/ssl/TLSv12/ShortRSAKeyGCM.java                                                               generic-all
 sun/security/ssl/sanity/pluggability/CheckSSLContextExport.java                                                         generic-all
-sun/security/ssl/sun/net/www/http/ChunkedOutputStream/Test.java                                                         generic-all
-sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/B6216082.java                                            generic-all
-sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/B6226610.java                                            generic-all
-sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/HttpsProxyStackOverflow.java                             generic-all
-sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/PostThruProxy.sh                                         generic-all
-sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/PostThruProxyWithAuth.sh                                 generic-all
 sun/security/ssl/templates/SSLEngineTemplate.java                                                                       generic-all
 sun/security/ssl/templates/SSLSocketSSLEngineTemplate.java                                                              generic-all
 sun/security/tools/jarsigner/AlgOptions.sh                                                                              generic-all
@@ -3491,6 +3454,7 @@ java/net/MulticastSocket/B6427403.java                                          
 java/net/MulticastSocket/JoinGroup.java                                                                                 macosx-all
 java/net/MulticastSocket/Leave.java                                                                                     macosx-all
 java/net/MulticastSocket/Promiscuous.java                                                                               macosx-all
+java/net/MulticastSocket/SetGetNetworkInterfaceTest.java                                                                generic-all
 java/net/MulticastSocket/SetOutgoingIf.java                                                                             macosx-all
 java/net/PlainSocketImpl/SetBufferSize.java                                                                             macosx-all
 java/net/Socket/LinkLocal.java                                                                                          macosx-all
@@ -3735,6 +3699,7 @@ jdk/jfr/api/recording/destination/TestDestToDiskFalse.java                      
 jdk/jfr/api/recording/destination/TestDestToDiskTrue.java                                                               generic-all
 jdk/jfr/api/recording/destination/TestDestWithDuration.java                                                             generic-all
 jdk/jfr/api/recording/dump/TestDump.java                                                                                generic-all
+jdk/jfr/api/recording/dump/TestDumpDevNull.java                                                                         generic-all
 jdk/jfr/api/recording/dump/TestDumpInvalid.java                                                                         generic-all
 jdk/jfr/api/recording/dump/TestDumpLongPath.java                                                                        generic-all
 jdk/jfr/api/recording/dump/TestDumpMultiple.java                                                                        generic-all
@@ -4057,6 +4022,7 @@ jdk/jfr/jvm/TestLargeJavaEvent512k.java                                         
 jdk/jfr/jvm/TestLargeJavaEvent64k.java                                                                                  generic-all
 jdk/jfr/jvm/TestLogImplementation.java                                                                                  generic-all
 jdk/jfr/jvm/TestPid.java                                                                                                generic-all
+jdk/jfr/jvm/TestPrimitiveClasses.java                                                                                   generic-all
 jdk/jfr/jvm/TestUnloadEventClassCount.java                                                                              generic-all
 jdk/jfr/jvm/TestUnsupportedVM.java                                                                                      generic-all
 jdk/jfr/security/JFRSecurityTestSuite.java                                                                              generic-all
@@ -4089,7 +4055,7 @@ jdk/jfr/tool/TestPrintXML.java                                                  
 jdk/jfr/tool/TestSummary.java                                                                                           generic-all
 
 # needs JRE subfolder
-jdk/security/infra/java/security/cert/CertPathValidator/certification/HaricaCA.java                                     generic-all
+security/infra/java/security/cert/CertPathValidator/certification/HaricaCA.java                                         generic-all
 security/infra/java/security/cert/CertPathValidator/certification/AmazonCA.java                                         generic-all
 security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java                                        generic-all
 security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java                                         generic-all
@@ -4103,6 +4069,51 @@ security/infra/java/security/cert/CertPathValidator/certification/LuxTrustCA.jav
 security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java                                       generic-all
 security/infra/java/security/cert/CertPathValidator/certification/SSLCA.java                                            generic-all
 security/infra/java/security/cert/CertPathValidator/certification/TeliaSoneraCA.java                                    generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#actalisauthenticationrootca            generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#amazonrootca1                          generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#amazonrootca2                          generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#amazonrootca3                          generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#amazonrootca4                          generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#buypassclass2ca                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#buypassclass3ca                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#certainlyroote1                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#certainlyrootr1                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#certignarootca                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#comodoeccca                            generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#comodorsaca                            generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#digicerttlseccrootg5                   generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#digicerttlsrsarootg5                   generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#emsigneccrootcag3                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#emsignrootcag1                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#entrustrootcaec1                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#entrustrootcag4                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#globalsigneccrootcar4                  generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#globalsignrootcar6                     generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#godaddyrootg2ca                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#gtsrootcar1                            generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#gtsrootcar2                            generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#gtsrootecccar3                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#gtsrootecccar4                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#letsencryptisrgx1                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#letsencryptisrgx2                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#microsoftecc2017                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#microsoftrsa2017                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#quovadisrootca1g3                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#quovadisrootca2g3                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#quovadisrootca3g3                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrooteccca                           generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrootevrsaca                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrootrsaca                           generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#starfieldrootg2ca                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#teliarootcav2                          generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#teliasonerarootcav1                    generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#twcaglobalrootca                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#usertrusteccca                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#usertrustrsaca                         generic-all
+
+security/infra/java/security/cert/CertPathValidator/certification/CertignaCA.java                                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/DigicertCSRootG5.java                                 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/EmSignRootG2CA.java                                   generic-all
 
 # Hotspot uses special detection to ensure native stack doesn't grow too far, which we can't do
 java/nio/channels/Selector/StackOverflowTest.java                                                                       generic-all
@@ -4133,6 +4144,7 @@ java/text/BreakIterator/BreakIteratorTest.java                                  
 javax/xml/crypto/dsig/LineFeedOnlyTest.java                                                                             generic-all
 
 # doesn't run on CI/CD, but probably could be made to
+jdk/internal/platform/docker/TestDockerBasic.java                                                                       generic-all
 jdk/internal/platform/docker/TestDockerCpuMetrics.java                                                                  generic-all
 jdk/internal/platform/docker/TestDockerMemoryMetrics.java                                                               generic-all
 jdk/internal/platform/docker/TestGetFreeSwapSpaceSize.java                                                              generic-all
@@ -4663,6 +4675,7 @@ java/awt/print/PrinterJob/SetCopies/Test.java                                   
 java/awt/print/PrinterJob/SwingUIText.java                                                                              macosx-all
 java/awt/print/PrinterJob/ThinLines.java                                                                                macosx-all
 java/awt/print/PrintServicesSecurityManager.java                                                                        macosx-all
+java/awt/Robot/CheckCommonColors/CheckCommonColors.java                                                                 generic-all
 java/awt/Robot/ModifierRobotKey/ModifierRobotKeyTest.java                                                               generic-all
 java/awt/Robot/WaitForIdleSyncroizedOnString/WaitForIdleSyncroizedOnString.java                                         macosx-all
 java/awt/TextArea/ScrollbarIntersectionTest/ScrollbarIntersectionTest.java                                              generic-all

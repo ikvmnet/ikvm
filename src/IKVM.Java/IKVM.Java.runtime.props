@@ -65,7 +65,7 @@
         <None Include="$(MSBuildThisFileDirectory)local\**\*" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
         <Compile Include="$(MSBuildThisFileDirectory)icedtea_jce\**\*.java" Link="icedtea_jce\%(RecursiveDir)%(Filename)%(Extension)" />
         <Compile Include="$(MSBuildThisFileDirectory)local\**\*.java" Link="local\%(RecursiveDir)%(Filename)%(Extension)" />
-        <JavaResource Include="$(MSBuildThisFileDirectory)local\**\*" Exclude="$(MSBuildThisFileDirectory)local\**\.gitignore;$(MSBuildThisFileDirectory)local\**\*.java;$(MSBuildThisFileDirectory)**\*.tt" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <ServiceFile Include="$(MSBuildThisFileDirectory)local\META-INF\services\*" />
         <Transform Include="$(MSBuildThisFileDirectory)\local\META-INF\MANIFEST.MF.tt" TargetPath="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" />
         <JavaResource Include="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" Visible="False" ResourcePath="META-INF/MANIFEST.MF" Link="local\META-INF\MANIFEST.MF" />
     </ItemGroup>
