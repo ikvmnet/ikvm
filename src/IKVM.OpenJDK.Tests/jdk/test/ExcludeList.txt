@@ -577,7 +577,7 @@ java/awt/TextArea/TextAreaCaretVisibilityTest/bug7129742.java                   
 java/awt/TextArea/TextAreaCursorTest/HoveringAndDraggingTest.java                                                       generic-all
 java/awt/TextArea/TextAreaEditing/TextAreaEditing.java                                                                  generic-all
 java/awt/TextArea/TextAreaTwicePack/TextAreaTwicePack.java                                                              generic-all
-java/awt/TextArea/UsingWithMouse/SelectionAutoscrollTest.html                                                           generic-all
+java/awt/TextArea/UsingWithMouse/SelectionAutoscrollTest.java                                                           generic-all
 java/awt/TextField/DisposeTest/TestDispose.java                                                                         generic-all
 java/awt/TextField/ScrollSelectionTest/ScrollSelectionTest.java                                                         generic-all
 java/awt/TextField/SelectionInvisibleTest/SelectionInvisibleTest.java                                                   generic-all
@@ -2648,6 +2648,7 @@ javax/swing/plaf/aqua/CustomComboBoxFocusTest.java                              
 javax/swing/plaf/basic/BasicComboBoxEditor/Test8015336.java                                                             generic-all
 javax/swing/plaf/basic/BasicComboPopup/8154069/Bug8154069.java                                                          generic-all
 javax/swing/plaf/basic/BasicHTML/4251579/bug4251579.java                                                                generic-all
+javax/swing/plaf/basic/BasicHTML/4960629/bug4960629.java                                                                generic-all
 javax/swing/plaf/basic/BasicLabelUI/bug7172652.java                                                                     generic-all
 javax/swing/plaf/basic/BasicMenuUI/4983388/bug4983388.java                                                              generic-all
 javax/swing/plaf/basic/BasicScrollPaneUI/Test6632810.java                                                               generic-all
