@@ -4055,21 +4055,13 @@ jdk/jfr/tool/TestPrintXML.java                                                  
 jdk/jfr/tool/TestSummary.java                                                                                           generic-all
 
 # needs JRE subfolder
-security/infra/java/security/cert/CertPathValidator/certification/HaricaCA.java                                         generic-all
 security/infra/java/security/cert/CertPathValidator/certification/AmazonCA.java                                         generic-all
 security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java                                        generic-all
-security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java                                         generic-all
-security/infra/java/security/cert/CertPathValidator/certification/DTrustCA.java                                         generic-all
-security/infra/java/security/cert/CertPathValidator/certification/EntrustCA.java                                        generic-all
-security/infra/java/security/cert/CertPathValidator/certification/GlobalSignR6CA.java                                   generic-all
-security/infra/java/security/cert/CertPathValidator/certification/GoDaddyCA.java                                        generic-all
-security/infra/java/security/cert/CertPathValidator/certification/HaricaCA.java                                         generic-all
-security/infra/java/security/cert/CertPathValidator/certification/LetsEncryptCA.java                                    generic-all
-security/infra/java/security/cert/CertPathValidator/certification/LuxTrustCA.java                                       generic-all
-security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java                                       generic-all
-security/infra/java/security/cert/CertPathValidator/certification/SSLCA.java                                            generic-all
-security/infra/java/security/cert/CertPathValidator/certification/TeliaSoneraCA.java                                    generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#actalisauthenticationrootca            generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#affirmtrustcommercialca                generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#affirmtrustnetworkingca                generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#affirmtrustpremiumca                   generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#affirmtrustpremiumeccca                generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#amazonrootca1                          generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#amazonrootca2                          generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#amazonrootca3                          generic-all
@@ -4087,7 +4079,9 @@ security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#emsignrootcag1                         generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#entrustrootcaec1                       generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#entrustrootcag4                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#globalsigne46                          generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#globalsigneccrootcar4                  generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#globalsignr46                          generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#globalsignrootcar6                     generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#godaddyrootg2ca                        generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#gtsrootcar1                            generic-all
@@ -4110,7 +4104,18 @@ security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#twcaglobalrootca                       generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#usertrusteccca                         generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#usertrustrsaca                         generic-all
-
+security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java                                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/DTrustCA.java                                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/EntrustCA.java                                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/GlobalSignR6CA.java                                   generic-all
+security/infra/java/security/cert/CertPathValidator/certification/GoDaddyCA.java                                        generic-all
+security/infra/java/security/cert/CertPathValidator/certification/HaricaCA.java                                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/HaricaCA.java                                         generic-all
+security/infra/java/security/cert/CertPathValidator/certification/LetsEncryptCA.java                                    generic-all
+security/infra/java/security/cert/CertPathValidator/certification/LuxTrustCA.java                                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java                                       generic-all
+security/infra/java/security/cert/CertPathValidator/certification/SSLCA.java                                            generic-all
+security/infra/java/security/cert/CertPathValidator/certification/TeliaSoneraCA.java                                    generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CertignaCA.java                                       generic-all
 security/infra/java/security/cert/CertPathValidator/certification/DigicertCSRootG5.java                                 generic-all
 security/infra/java/security/cert/CertPathValidator/certification/EmSignRootG2CA.java                                   generic-all
