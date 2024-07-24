@@ -97,18 +97,19 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static Dictionary<string, IkvmPropEntry> GetIkvmProperties()
             {
+                var props = new Dictionary<string, IkvmPropEntry>();
+
                 foreach (var basePath in GetIkvmPropertiesSearchPaths())
                 {
                     var ikvmPropertiesPath = Path.Combine(basePath, "ikvm.properties");
                     if (File.Exists(ikvmPropertiesPath))
                     {
-                        var props = new Dictionary<string, IkvmPropEntry>();
                         LoadProperties(basePath, File.ReadAllLines(ikvmPropertiesPath), props);
-                        return props;
+                        break;
                     }
                 }
 
-                return null;
+                return props;
             }
 
             /// <summary>

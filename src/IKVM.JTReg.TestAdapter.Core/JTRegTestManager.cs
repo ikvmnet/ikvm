@@ -496,7 +496,7 @@ namespace IKVM.JTReg.TestAdapter.Core
 
             // set parameters on pool
             var opts = context.Options;
-            var pool = JTRegTypes.Agent.Pool.Instance();
+            var pool = JTRegTypes.Agent.Pool.Instance(parameters);
             pool.setTimeoutFactor(opts.TimeoutFactor);
             pool.setSecurityPolicy(policyFile);
 
