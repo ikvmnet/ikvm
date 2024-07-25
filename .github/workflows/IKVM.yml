@@ -223,16 +223,6 @@ jobs:
         path: /tmp/jdk.tar.gz
     - name: Delete JDK
       run: rm /tmp/jdk.tar.gz
-    - name: Package Tests (IKVM.ByteCode.Tests)
-      run: tar czvf /tmp/tests--IKVM.ByteCode.Tests.tar.gz tests/IKVM.ByteCode.Tests
-      working-directory: dist
-    - name: Upload Tests (IKVM.ByteCode.Tests)
-      uses: actions/upload-artifact@v4
-      with:
-        name: tests--IKVM.ByteCode.Tests
-        path: /tmp/tests--IKVM.ByteCode.Tests.tar.gz
-    - name: Delete Tests (IKVM.ByteCode.Tests)
-      run: rm /tmp/tests--IKVM.ByteCode.Tests.tar.gz
     - name: Package Tests (IKVM.Reflection.Tests)
       run: tar czvf /tmp/tests--IKVM.Reflection.Tests.tar.gz tests/IKVM.Reflection.Tests
       working-directory: dist
@@ -382,7 +372,6 @@ jobs:
         }
 
         $run = @(
-          "IKVM.ByteCode.Tests",
           "IKVM.Reflection.Tests",
           "IKVM.Tests",
           "IKVM.Java.Tests",
