@@ -4412,7 +4412,7 @@ java/awt/Modal/ModalBlockingTests/BlockingDDAppModalTest.java                   
 java/awt/Modal/ModalBlockingTests/BlockingDDDocModalTest.java                                                           linux-all,macosx-all
 java/awt/Modal/ModalBlockingTests/BlockingDDModelessTest.java                                                           generic-all
 java/awt/Modal/ModalBlockingTests/BlockingDDNonModalTest.java                                                           generic-all
-java/awt/Modal/ModalBlockingTests/BlockingDDSetModalTest.java                                                           linux-all,macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDDSetModalTest.java                                                           generic-all
 java/awt/Modal/ModalBlockingTests/BlockingDDToolkitModalTest.java                                                       generic-all
 java/awt/Modal/ModalBlockingTests/BlockingDFAppModalTest.java                                                           generic-all
 java/awt/Modal/ModalBlockingTests/BlockingDFSetModalTest.java                                                           generic-all
