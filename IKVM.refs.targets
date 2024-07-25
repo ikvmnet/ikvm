@@ -5,12 +5,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.ByteCode\IKVM.ByteCode.csproj">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
-    </ItemGroup>
-
-    <ItemGroup>
         <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Runtime\IKVM.Runtime.csproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>

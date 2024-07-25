@@ -82,7 +82,7 @@ Increases in the major and minor version are accomplished manually by introducin
 
 # Package Layout
 
-The main IKVM package is 'IKVM'. This package contains the IKVM.ByteCode, IKVM.Runtime, IKVM.Java assemblies, and the
+The main IKVM package is 'IKVM'. This package contains the IKVM.Runtime, IKVM.Java assemblies, and the
 libikvm native library. This is the minimal set of files required to begin bootstrapping the JVM. However, the JVM
 itself requires additional files which are present in the IKVM.Image package hierarchy.
 

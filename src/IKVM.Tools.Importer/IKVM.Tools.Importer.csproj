@@ -17,7 +17,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.ByteCode\IKVM.ByteCode.csproj" />
         <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
     </ItemGroup>
 
