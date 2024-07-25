@@ -514,19 +514,24 @@ namespace IKVM.Tools.Importer
 
             var ilgen = Context.CodeEmitterFactory.Create(mainMethodProxy);
 
-            // first argument to Launch (type name)
+            // first argument to Launch (assembly)
+            ilgen.Emit(OpCodes.Ldtoken, type.TypeAsTBD);
+            ilgen.Emit(OpCodes.Call, Context.CompilerFactory.GetTypeFromHandleMethod);
+            ilgen.Emit(OpCodes.Callvirt, Context.Types.Type.GetProperty(nameof(System.Type.Assembly)).GetGetMethod());
+
+            // second argument to Launch (type name)
             ilgen.Emit(OpCodes.Ldstr, type.Name);
 
-            // second argument: is this a jar
+            // third argument: is this a jar
             ilgen.Emit(OpCodes.Ldc_I4_0);
 
-            // third argument: args
+            // fourth argument: args
             ilgen.Emit(OpCodes.Ldarg_0);
 
-            // fourth argument, runtime prefix
+            // fifth argument, runtime prefix
             ilgen.Emit(OpCodes.Ldstr, DEFAULT_RUNTIME_ARGS_PREFIX);
 
-            // fifth argument, property set to initialize JVM
+            // sixth argument, property set to initialize JVM
             if (properties.Count > 0)
             {
                 var environmentType = Context.Resolver.ResolveCoreType(typeof(Environment).FullName);
@@ -557,7 +562,7 @@ namespace IKVM.Tools.Importer
             }
 
             // invoke the launcher main method
-            var launchMethod = Context.Resolver.ResolveRuntimeType("IKVM.Runtime.Launcher").GetMethod("Run");
+            var launchMethod = Context.Resolver.ResolveRuntimeType(typeof(IKVM.Runtime.Launcher).FullName).GetMethod(nameof(IKVM.Runtime.Launcher.Run));
             ilgen.Emit(OpCodes.Call, launchMethod);
             ilgen.Emit(OpCodes.Ret);
 
