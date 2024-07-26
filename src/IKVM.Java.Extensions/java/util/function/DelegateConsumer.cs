@@ -11,39 +11,6 @@ namespace java.util.function
     public class DelegateConsumer<T> : Consumer
     {
 
-        /// <summary>
-        /// Joins two consumers into one.
-        /// </summary>
-        sealed class JoinConsumer : Consumer
-        {
-
-            readonly Consumer arg1;
-            readonly Consumer arg2;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="arg1"></param>
-            /// <param name="arg2"></param>
-            internal JoinConsumer(Consumer arg1, Consumer arg2)
-            {
-                this.arg1 = arg1 ?? throw new ArgumentNullException(nameof(arg1));
-                this.arg2 = arg2 ?? throw new ArgumentNullException(nameof(arg2));
-            }
-
-            public void accept(object obj0)
-            {
-                arg1.accept(obj0);
-                arg2.accept(obj0);
-            }
-
-            public Consumer andThen(Consumer other)
-            {
-                return new JoinConsumer(this, other);
-            }
-
-        }
-
         readonly Action<T> action;
 
         /// <summary>
@@ -63,7 +30,7 @@ namespace java.util.function
 
         public Consumer andThen(Consumer other)
         {
-            return new JoinConsumer(this, other);
+            return Consumer.__DefaultMethods.andThen(this, other);
         }
 
     }
