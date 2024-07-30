@@ -132,6 +132,7 @@
             SharedClassLoader="$(SharedClassLoader)"
             NoStdLib="$(NoCompilerStandardLib)"
             NoParameterReflection="$(NoParameterReflection)"
+            Static="$(Static)"
             WarningLevel="$(WarningLevel)"
             References="@(_IkvmCompilerReferencePath)"
             StrictFinalFieldSemantics="$(StrictFinalFieldSemantics)"
@@ -139,8 +140,7 @@
             RemoveAssertions="$(RemoveAssertions)"
             Resources="@(_IkvmCompilerResource)"
             Remap="@(MapFile)"
-            Input="@(_Convert)"
-            Static="$(CompileStatically)" />
+            Input="@(_Convert)" />
 
         <!-- Move temporary files in place of permanent files. -->
         <Move SourceFiles="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" DestinationFiles="@(IntermediateAssembly)" OverwriteReadOnlyFiles="true" />
