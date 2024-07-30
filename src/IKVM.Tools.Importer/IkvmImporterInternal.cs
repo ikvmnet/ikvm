@@ -1435,14 +1435,17 @@ namespace IKVM.Tools.Importer
 
             var msgIdKey = $"{(int)msgId}";
             string key = msgIdKey;
-            foreach (var item in values)
+            for (int i = 0; ; i++)
             {
                 if (options.suppressWarnings.Contains(key))
                 {
                     return;
                 }
-
-                key = $"{key}:{item}";
+                if (i == values.Length)
+                {
+                    break;
+                }
+                key = $"{key}:{values[i]}";
             }
             options.suppressWarnings.Add(key);
             if (options.writeSuppressWarningsFile != null)
