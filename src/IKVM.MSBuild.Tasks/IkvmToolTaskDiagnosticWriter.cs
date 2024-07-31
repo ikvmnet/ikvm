@@ -59,7 +59,7 @@ namespace IKVM.MSBuild.Tasks
                         writer?.WriteLine("ERROR: " + @event.Message, @event.MessageArgs);
                         break;
 
-                    case 0: // Unknown Level, passthrough message
+                    case IkvmToolDiagnosticEventLevel.Unknown: // Unknown Level, passthrough message
                         logger.LogMessage(@event.Message, @event.MessageArgs);
                         break;
                 }

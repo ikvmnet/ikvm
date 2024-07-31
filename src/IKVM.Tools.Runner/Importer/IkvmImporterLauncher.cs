@@ -299,7 +299,7 @@ namespace IKVM.Tools.Runner.Importer
                 await LogEvent(IkvmToolDiagnosticEventLevel.Debug, "Executing {0} {1}", cli.TargetFilePath, cli.Arguments);
 
                 // send output to MSBuild
-                var logUnknown = PipeTarget.ToDelegate(i => LogEvent(0, i));
+                var logUnknown = PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Unknown, i));
                 cli = cli.WithStandardErrorPipe(logUnknown);
                 cli = cli.WithStandardOutputPipe(logUnknown);
 

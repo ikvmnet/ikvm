@@ -11,6 +11,7 @@
         Information,
         Warning,
         Error,
+        Unknown = -1
 
     }
 
