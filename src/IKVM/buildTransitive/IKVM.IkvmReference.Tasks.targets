@@ -44,6 +44,7 @@
             CompressResources="true"
             ClassLoader="%(IkvmReferenceItem.ClassLoader)"
             NoStdLib="true"
+            Static="%(IkvmReferenceItem.Static)"
             References="@(_IkvmCompilerReferencePath->'%(FullPath)')"
             Input="%(IkvmReferenceItem.Compile)"
             Condition=" '%(IkvmReferenceItem.Compile)' != '' "/>
