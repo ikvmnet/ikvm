@@ -58,6 +58,10 @@ namespace IKVM.MSBuild.Tasks
                         logger.LogWarning(@event.Message, @event.MessageArgs);
                         writer?.WriteLine("ERROR: " + @event.Message, @event.MessageArgs);
                         break;
+
+                    case 0: // Unknown Level, passthrough message
+                        logger.LogMessage(@event.Message, @event.MessageArgs);
+                        break;
                 }
             }
             catch
