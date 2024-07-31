@@ -756,7 +756,7 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s.StartsWith("-warnaserror:"))
                     {
-                        HandleWarnArg(options.errorWarnings, s.Substring(8));
+                        HandleWarnArg(options.errorWarnings, s.Substring(13));
                     }
                     else if (s.StartsWith("-runtime:"))
                     {
