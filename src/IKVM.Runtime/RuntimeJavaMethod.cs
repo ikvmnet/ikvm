@@ -153,6 +153,7 @@ namespace IKVM.Runtime
         }
 
 #if !IMPORTER && !EXPORTER
+
         internal java.lang.reflect.Executable ToMethodOrConstructor(bool copy)
         {
 #if FIRST_PASS
@@ -162,6 +163,7 @@ namespace IKVM.Runtime
             if (method == null)
             {
                 Link();
+
                 var loader = this.DeclaringType.GetClassLoader();
                 var argTypes = GetParameters();
                 var parameterTypes = new java.lang.Class[argTypes.Length];
@@ -272,6 +274,7 @@ namespace IKVM.Runtime
             return RuntimeJavaType.FromClass(executable.getDeclaringClass()).GetMethods()[executable._slot()];
 #endif
         }
+
 #endif
 
         /// <summary>
@@ -346,9 +349,7 @@ namespace IKVM.Runtime
         internal void AssertLinked()
         {
             if (!(parameterTypes != null && returnType != null))
-            {
                 Tracer.Error(Tracer.Runtime, "AssertLinked failed: " + this.DeclaringType.Name + "::" + this.Name + this.Signature);
-            }
 
             Debug.Assert(parameterTypes != null && returnType != null, this.DeclaringType.Name + "::" + this.Name + this.Signature);
         }

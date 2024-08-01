@@ -30,7 +30,7 @@ namespace IKVM.Runtime
 
         Call,
         Callvirt,
-        Newobj
+        Newobj,
 
     }
 

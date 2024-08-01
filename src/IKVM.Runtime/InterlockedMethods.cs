@@ -23,29 +23,30 @@
 */
 
 using System;
+using System.Linq;
 
 #if IMPORTER
 using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 #endif
 
-
 namespace IKVM.Runtime
 {
+
     class InterlockedMethods
     {
 
         readonly RuntimeContext context;
 
-        internal readonly MethodInfo AddInt32;
-        internal readonly MethodInfo CompareExchangeInt32;
-        internal readonly MethodInfo CompareExchangeInt64;
-        internal readonly MethodInfo CompareExchangeOfT;
-        internal readonly MethodInfo ExchangeOfT;
+        Type typeofInterlocked;
+        MethodInfo addInt32;
+        MethodInfo compareExchangeInt32;
+        MethodInfo compareExchangeInt64;
+        MethodInfo compareExchangeOfT;
+        MethodInfo exchangeOfT;
 
         /// <summary>
         /// Initializes a new instance.
@@ -53,29 +54,21 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         public InterlockedMethods(RuntimeContext context)
         {
-            this.context = context;
-
-            var type = context.Resolver.ResolveCoreType(typeof(System.Threading.Interlocked).FullName);
-            AddInt32 = type.GetMethod("Add", new Type[] { context.Types.Int32.MakeByRefType(), context.Types.Int32 });
-            CompareExchangeInt32 = type.GetMethod("CompareExchange", new Type[] { context.Types.Int32.MakeByRefType(), context.Types.Int32, context.Types.Int32 });
-            CompareExchangeInt64 = type.GetMethod("CompareExchange", new Type[] { context.Types.Int64.MakeByRefType(), context.Types.Int64, context.Types.Int64 });
-            foreach (MethodInfo m in type.GetMethods())
-            {
-                if (m.IsGenericMethodDefinition)
-                {
-                    switch (m.Name)
-                    {
-                        case "CompareExchange":
-                            CompareExchangeOfT = m;
-                            break;
-                        case "Exchange":
-                            ExchangeOfT = m;
-                            break;
-                    }
-                }
-            }
-
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
+
+        Type TypeOfInterlocked => typeofInterlocked ??= context.Resolver.ResolveCoreType(typeof(System.Threading.Interlocked).FullName);
+
+        public MethodInfo AddInt32 => addInt32 ??= TypeOfInterlocked.GetMethod("Add", new[] { context.Types.Int32.MakeByRefType(), context.Types.Int32 });
+
+        public MethodInfo CompareExchangeInt32 => compareExchangeInt32 ??= TypeOfInterlocked.GetMethod("CompareExchange", new[] { context.Types.Int32.MakeByRefType(), context.Types.Int32, context.Types.Int32 });
+
+        public MethodInfo CompareExchangeInt64 => compareExchangeInt64 ??= TypeOfInterlocked.GetMethod("CompareExchange", new[] { context.Types.Int64.MakeByRefType(), context.Types.Int64, context.Types.Int64 });
+
+        public MethodInfo CompareExchangeOfT => compareExchangeOfT ??= TypeOfInterlocked.GetMethods().First(i => i is { IsGenericMethodDefinition: true, Name: "CompareExchange" });
+
+        public MethodInfo ExchangeOfT => exchangeOfT ??= TypeOfInterlocked.GetMethods().First(i => i is { IsGenericMethodDefinition: true, Name: "Exchange" });
+
     }
 
 }
