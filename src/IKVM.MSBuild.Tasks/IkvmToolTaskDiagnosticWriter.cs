@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 
 using IKVM.Tools.Runner;
+using Microsoft.Build.Framework;
 
 namespace IKVM.MSBuild.Tasks
 {
@@ -43,11 +44,11 @@ namespace IKVM.MSBuild.Tasks
                 switch (@event.Level)
                 {
                     case IkvmToolDiagnosticEventLevel.Debug:
-                        logger.LogMessage(Microsoft.Build.Framework.MessageImportance.Low, @event.Message, @event.MessageArgs);
+                        logger.LogMessage(MessageImportance.Low, @event.Message, @event.MessageArgs);
                         writer?.WriteLine("DEBUG: " + @event.Message, @event.MessageArgs);
                         break;
                     case IkvmToolDiagnosticEventLevel.Information:
-                        logger.LogMessage(Microsoft.Build.Framework.MessageImportance.Normal, @event.Message, @event.MessageArgs);
+                        logger.LogMessage(MessageImportance.Normal, @event.Message, @event.MessageArgs);
                         writer?.WriteLine("INFO: " + @event.Message, @event.MessageArgs);
                         break;
                     case IkvmToolDiagnosticEventLevel.Warning:
@@ -60,7 +61,9 @@ namespace IKVM.MSBuild.Tasks
                         break;
 
                     case IkvmToolDiagnosticEventLevel.Unknown: // Unknown Level, passthrough message
-                        logger.LogMessage(@event.Message, @event.MessageArgs);
+                        var message = string.Format(@event.Message, @event.MessageArgs);
+                        logger.LogMessageFromText(message, MessageImportance.Normal);
+                        writer?.WriteLine(message);
                         break;
                 }
             }
