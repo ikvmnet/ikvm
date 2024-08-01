@@ -1094,13 +1094,13 @@ namespace IKVM.Runtime
 			 */
             ConstantPoolItemFieldref fieldref;
             Field field;
-            if (m.Instructions[0].NormalizedOpCode == NormalizedByteCode.__ldc && SafeIsConstantPoolClass(new((ushort)m.Instructions[0].Arg1))
-                && m.Instructions[1].NormalizedOpCode == NormalizedByteCode.__invokevirtual && IsDesiredAssertionStatusMethodref(new MethodrefConstantHandle((ushort)m.Instructions[1].Arg1))
-                && m.Instructions[2].NormalizedOpCode == NormalizedByteCode.__ifne && m.Instructions[2].TargetIndex == 5
+            if (m.Instructions[0].NormalizedOpCode == NormalizedByteCode._ldc && SafeIsConstantPoolClass(new((ushort)m.Instructions[0].Arg1))
+                && m.Instructions[1].NormalizedOpCode == NormalizedByteCode._invokevirtual && IsDesiredAssertionStatusMethodref(new MethodrefConstantHandle((ushort)m.Instructions[1].Arg1))
+                && m.Instructions[2].NormalizedOpCode == NormalizedByteCode._ifne && m.Instructions[2].TargetIndex == 5
                 && m.Instructions[3].NormalizedOpCode == NormalizedByteCode.__iconst && m.Instructions[3].Arg1 == 1
-                && m.Instructions[4].NormalizedOpCode == NormalizedByteCode.__goto && m.Instructions[4].TargetIndex == 6
+                && m.Instructions[4].NormalizedOpCode == NormalizedByteCode._goto && m.Instructions[4].TargetIndex == 6
                 && m.Instructions[5].NormalizedOpCode == NormalizedByteCode.__iconst && m.Instructions[5].Arg1 == 0
-                && m.Instructions[6].NormalizedOpCode == NormalizedByteCode.__putstatic && (fieldref = SafeGetFieldref(m.Instructions[6].Arg1)) != null
+                && m.Instructions[6].NormalizedOpCode == NormalizedByteCode._putstatic && (fieldref = SafeGetFieldref(m.Instructions[6].Arg1)) != null
                 && fieldref.Class == Name && fieldref.Signature == "Z"
                 && (field = GetField(fieldref.Name, fieldref.Signature)) != null
                 && field.IsStatic && field.IsFinal
@@ -1109,7 +1109,7 @@ namespace IKVM.Runtime
                 && !HasExceptionHandlerInRegion(m.ExceptionTable, 0, 7))
             {
                 field.PatchConstantValue(true);
-                m.Instructions[0].PatchOpCode(NormalizedByteCode.__goto, 7);
+                m.Instructions[0].PatchOpCode(NormalizedByteCode._goto, 7);
                 flags |= FLAG_HAS_ASSERTIONS;
             }
         }
@@ -1129,31 +1129,31 @@ namespace IKVM.Runtime
             {
                 switch (instructions[i].NormalizedOpCode)
                 {
-                    case NormalizedByteCode.__ifeq:
-                    case NormalizedByteCode.__ifne:
-                    case NormalizedByteCode.__iflt:
-                    case NormalizedByteCode.__ifge:
-                    case NormalizedByteCode.__ifgt:
-                    case NormalizedByteCode.__ifle:
-                    case NormalizedByteCode.__if_icmpeq:
-                    case NormalizedByteCode.__if_icmpne:
-                    case NormalizedByteCode.__if_icmplt:
-                    case NormalizedByteCode.__if_icmpge:
-                    case NormalizedByteCode.__if_icmpgt:
-                    case NormalizedByteCode.__if_icmple:
-                    case NormalizedByteCode.__if_acmpeq:
-                    case NormalizedByteCode.__if_acmpne:
-                    case NormalizedByteCode.__ifnull:
-                    case NormalizedByteCode.__ifnonnull:
-                    case NormalizedByteCode.__goto:
-                    case NormalizedByteCode.__jsr:
+                    case NormalizedByteCode._ifeq:
+                    case NormalizedByteCode._ifne:
+                    case NormalizedByteCode._iflt:
+                    case NormalizedByteCode._ifge:
+                    case NormalizedByteCode._ifgt:
+                    case NormalizedByteCode._ifle:
+                    case NormalizedByteCode._if_icmpeq:
+                    case NormalizedByteCode._if_icmpne:
+                    case NormalizedByteCode._if_icmplt:
+                    case NormalizedByteCode._if_icmpge:
+                    case NormalizedByteCode._if_icmpgt:
+                    case NormalizedByteCode._if_icmple:
+                    case NormalizedByteCode._if_acmpeq:
+                    case NormalizedByteCode._if_acmpne:
+                    case NormalizedByteCode._ifnull:
+                    case NormalizedByteCode._ifnonnull:
+                    case NormalizedByteCode._goto:
+                    case NormalizedByteCode._jsr:
                         if (instructions[i].TargetIndex > regionStart && instructions[i].TargetIndex < regionEnd)
                         {
                             return true;
                         }
                         break;
-                    case NormalizedByteCode.__tableswitch:
-                    case NormalizedByteCode.__lookupswitch:
+                    case NormalizedByteCode._tableswitch:
+                    case NormalizedByteCode._lookupswitch:
                         if (instructions[i].DefaultTarget > regionStart && instructions[i].DefaultTarget < regionEnd)
                         {
                             return true;
@@ -1175,7 +1175,7 @@ namespace IKVM.Runtime
         {
             for (int i = checkStart; i < checkEnd; i++)
             {
-                if (instructions[i].NormalizedOpCode == NormalizedByteCode.__putstatic)
+                if (instructions[i].NormalizedOpCode == NormalizedByteCode._putstatic)
                 {
                     ConstantPoolItemFieldref fieldref = SafeGetFieldref(instructions[i].Arg1);
                     if (fieldref != null && fieldref.Class == Name && fieldref.Name == field.Name && fieldref.Signature == field.Signature)
@@ -1198,6 +1198,7 @@ namespace IKVM.Runtime
             }
             return false;
         }
+
     }
 
 }

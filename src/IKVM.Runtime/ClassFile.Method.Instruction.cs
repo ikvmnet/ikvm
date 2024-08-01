@@ -36,17 +36,19 @@ namespace IKVM.Runtime
             internal struct Instruction
             {
 
-                private ushort pc;
-                private NormalizedByteCode normopcode;
-                private int arg1;
-                private short arg2;
-                private SwitchEntry[] switch_entries;
-
                 struct SwitchEntry
                 {
+
                     internal int value;
                     internal int target;
+
                 }
+
+                ushort pc;
+                NormalizedByteCode normopcode;
+                int arg1;
+                short arg2;
+                SwitchEntry[] switch_entries;
 
                 internal void SetHardError(HardError error, int messageId)
                 {
@@ -55,38 +57,38 @@ namespace IKVM.Runtime
                     arg1 = messageId;
                 }
 
-                internal HardError HardError
-                {
-                    get
-                    {
-                        return (HardError)arg2;
-                    }
-                }
+                internal HardError HardError => (HardError)arg2;
 
-                internal int HandlerIndex
-                {
-                    get { return (ushort)arg2; }
-                }
+                internal int HandlerIndex => (ushort)arg2;
 
-                internal int HardErrorMessageId
-                {
-                    get
-                    {
-                        return arg1;
-                    }
-                }
+                internal int HardErrorMessageId => arg1;
 
+                /// <summary>
+                /// Replaces the opcode with a new opcode.
+                /// </summary>
+                /// <param name="bc"></param>
                 internal void PatchOpCode(NormalizedByteCode bc)
                 {
                     this.normopcode = bc;
                 }
 
+                /// <summary>
+                /// Replaces the opcode and its first argument with a new opcode and first argument.
+                /// </summary>
+                /// <param name="bc"></param>
+                /// <param name="arg1"></param>
                 internal void PatchOpCode(NormalizedByteCode bc, int arg1)
                 {
                     this.normopcode = bc;
                     this.arg1 = arg1;
                 }
 
+                /// <summary>
+                /// Replaces the opcode and its arguments with a new opcode and its arguments.
+                /// </summary>
+                /// <param name="bc"></param>
+                /// <param name="arg1"></param>
+                /// <param name="arg2"></param>
                 internal void PatchOpCode(NormalizedByteCode bc, int arg1, short arg2)
                 {
                     this.normopcode = bc;
@@ -108,16 +110,14 @@ namespace IKVM.Runtime
                 {
                     // TODO what happens if we already have exactly the maximum number of instructions?
                     this.pc = pc;
-                    this.normopcode = NormalizedByteCode.__nop;
+                    this.normopcode = NormalizedByteCode._nop;
                 }
 
                 internal void MapSwitchTargets(int[] pcIndexMap)
                 {
                     arg1 = pcIndexMap[arg1 + pc];
                     for (int i = 0; i < switch_entries.Length; i++)
-                    {
                         switch_entries[i].target = pcIndexMap[switch_entries[i].target + pc];
-                    }
                 }
 
                 internal void Read(ushort pc, BigEndianBinaryReader br, ClassFile classFile)
