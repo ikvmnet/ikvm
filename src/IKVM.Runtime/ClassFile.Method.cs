@@ -53,7 +53,7 @@ namespace IKVM.Runtime
             /// <param name="reader"></param>
             /// <exception cref="ClassFormatError"></exception>
             internal Method(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options, MethodReader reader) :
-                base(classFile, utf8_cp, reader.AccessFlags, reader.Record.NameIndex, reader.Record.DescriptorIndex)
+                base(classFile, utf8_cp, reader.AccessFlags, reader.Record.Name, reader.Record.Descriptor)
             {
                 // vmspec 4.6 says that all flags, except ACC_STRICT are ignored on <clinit>
                 // however, since Java 7 it does need to be marked static
@@ -80,7 +80,7 @@ namespace IKVM.Runtime
                 {
                     var attribute = reader.Attributes[i];
 
-                    switch (classFile.GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.NameIndex))
+                    switch (classFile.GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.Name))
                     {
                         case "Deprecated":
                             if (attribute is not DeprecatedAttributeReader deprecatedAttribute)
@@ -105,9 +105,9 @@ namespace IKVM.Runtime
                                 if (exceptions != null)
                                     throw new ClassFormatError("{0} (Duplicate Exceptions attribute)", classFile.Name);
 
-                                exceptions = new string[exceptionsAttribute.Record.ExceptionsIndexes.Length];
-                                for (int j = 0; j < exceptionsAttribute.Record.ExceptionsIndexes.Length; j++)
-                                    exceptions[j] = classFile.GetConstantPoolClass(exceptionsAttribute.Record.ExceptionsIndexes[j]);
+                                exceptions = new string[exceptionsAttribute.Record.Exceptions.Length];
+                                for (int j = 0; j < exceptionsAttribute.Record.Exceptions.Length; j++)
+                                    exceptions[j] = classFile.GetConstantPoolClass(exceptionsAttribute.Record.Exceptions[j]);
 
                                 break;
                             }
@@ -118,7 +118,7 @@ namespace IKVM.Runtime
                             if (attribute is not SignatureAttributeReader signatureAttribute)
                                 throw new ClassFormatError("Invalid Signature attribute type.");
 
-                            signature = classFile.GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Record.SignatureIndex);
+                            signature = classFile.GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Record.Signature);
                             break;
                         case "RuntimeVisibleAnnotations":
                             if (classFile.MajorVersion < 49)
@@ -285,11 +285,11 @@ namespace IKVM.Runtime
 
                 for (int i = 0; i < parameters.Count; i++)
                 {
-                    var name = parameters[i].Record.NameIndex;
-                    if (name >= utf8_cp.Length || (name != 0 && utf8_cp[name] == null))
+                    var name = parameters[i].Record.Name;
+                    if (name.Index >= utf8_cp.Length || (name.Index != 0 && utf8_cp[name.Index] == null))
                         return MethodParametersEntry.Malformed;
 
-                    l[i].name = utf8_cp[name];
+                    l[i].name = utf8_cp[name.Index];
                     l[i].accessFlags = parameters[i].AccessFlags;
                 }
 

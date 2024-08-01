@@ -22,38 +22,64 @@
   
 */
 
+using IKVM.ByteCode;
+
 namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile
     {
+
         internal sealed partial class Method
         {
+
             internal sealed class ExceptionTableEntry
             {
-                internal readonly int startIndex;
-                internal readonly int endIndex;
-                internal readonly int handlerIndex;
-                internal readonly ushort catch_type;
-                internal readonly int ordinal;
-                internal readonly bool isFinally;
 
-                internal ExceptionTableEntry(int startIndex, int endIndex, int handlerIndex, ushort catch_type, int ordinal)
-                    : this(startIndex, endIndex, handlerIndex, catch_type, ordinal, false)
+                internal readonly int StartIndex;
+                internal readonly int EndIndex;
+                internal readonly int HandlerIndex;
+                internal readonly ClassConstantHandle CatchType;
+                internal readonly int Ordinal;
+                internal readonly bool IsFinally;
+
+                /// <summary>
+                /// Initializes a new instance.
+                /// </summary>
+                /// <param name="startIndex"></param>
+                /// <param name="endIndex"></param>
+                /// <param name="handlerIndex"></param>
+                /// <param name="catchType"></param>
+                /// <param name="ordinal"></param>
+                internal ExceptionTableEntry(int startIndex, int endIndex, int handlerIndex, ClassConstantHandle catchType, int ordinal) :
+                    this(startIndex, endIndex, handlerIndex, catchType, ordinal, false)
                 {
+
                 }
 
-                internal ExceptionTableEntry(int startIndex, int endIndex, int handlerIndex, ushort catch_type, int ordinal, bool isFinally)
+                /// <summary>
+                /// Initializes a new instance.
+                /// </summary>
+                /// <param name="startIndex"></param>
+                /// <param name="endIndex"></param>
+                /// <param name="handlerIndex"></param>
+                /// <param name="catchType"></param>
+                /// <param name="ordinal"></param>
+                /// <param name="isFinally"></param>
+                internal ExceptionTableEntry(int startIndex, int endIndex, int handlerIndex, ClassConstantHandle catchType, int ordinal, bool isFinally)
                 {
-                    this.startIndex = startIndex;
-                    this.endIndex = endIndex;
-                    this.handlerIndex = handlerIndex;
-                    this.catch_type = catch_type;
-                    this.ordinal = ordinal;
-                    this.isFinally = isFinally;
+                    this.StartIndex = startIndex;
+                    this.EndIndex = endIndex;
+                    this.HandlerIndex = handlerIndex;
+                    this.CatchType = catchType;
+                    this.Ordinal = ordinal;
+                    this.IsFinally = isFinally;
                 }
+
             }
+
         }
+
     }
 
 }

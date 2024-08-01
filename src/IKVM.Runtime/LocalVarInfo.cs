@@ -382,9 +382,9 @@ namespace IKVM.Runtime
 
                         for (int j = 0; j < exceptions.Length; j++)
                         {
-                            if (exceptions[j].startIndex <= i && i < exceptions[j].endIndex)
+                            if (exceptions[j].StartIndex <= i && i < exceptions[j].EndIndex)
                             {
-                                state[exceptions[j].handlerIndex].Merge(curr);
+                                state[exceptions[j].HandlerIndex].Merge(curr);
                             }
                         }
 
@@ -409,9 +409,9 @@ namespace IKVM.Runtime
                             // we need to propagate the new state to the exception handler
                             for (int j = 0; j < exceptions.Length; j++)
                             {
-                                if (exceptions[j].endIndex == i + 1)
+                                if (exceptions[j].EndIndex == i + 1)
                                 {
-                                    state[exceptions[j].handlerIndex].Merge(curr);
+                                    state[exceptions[j].HandlerIndex].Merge(curr);
                                 }
                             }
                         }

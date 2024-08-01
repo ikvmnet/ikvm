@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
 
 namespace IKVM.Runtime
@@ -31,8 +32,8 @@ namespace IKVM.Runtime
         internal sealed class ConstantPoolItemInvokeDynamic : ConstantPoolItem
         {
 
-            readonly ushort bootstrap_specifier_index;
-            readonly ushort name_and_type_index;
+            readonly ushort bootstrapSpecifierIndex;
+            readonly NameAndTypeConstantHandle nameAndTypeHandle;
 
             string name;
             string descriptor;
@@ -47,19 +48,19 @@ namespace IKVM.Runtime
             internal ConstantPoolItemInvokeDynamic(RuntimeContext context, InvokeDynamicConstantReader reader) :
                 base(context)
             {
-                bootstrap_specifier_index = reader.Record.BootstrapMethodAttributeIndex;
-                name_and_type_index = reader.Record.NameAndTypeIndex;
+                bootstrapSpecifierIndex = reader.Record.BootstrapMethodAttributeIndex;
+                nameAndTypeHandle = reader.Record.NameAndType;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                var name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(name_and_type_index);
+                var nameAndType = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(nameAndTypeHandle);
                 // if the constant pool items referred to were strings, GetConstantPoolItem returns null
-                if (name_and_type == null)
+                if (nameAndType == null)
                     throw new ClassFormatError("Bad index in constant pool");
 
-                name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.nameIndex));
-                descriptor = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.descriptorIndex).Replace('/', '.'));
+                name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameAndType.Name));
+                descriptor = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameAndType.Descriptor).Replace('/', '.'));
             }
 
             internal override void Link(RuntimeJavaType thisType, LoadMode mode)
@@ -108,7 +109,7 @@ namespace IKVM.Runtime
 
             internal ushort BootstrapMethod
             {
-                get { return bootstrap_specifier_index; }
+                get { return bootstrapSpecifierIndex; }
             }
 
         }

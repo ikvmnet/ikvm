@@ -924,15 +924,15 @@ namespace IKVM.Runtime
 
                     exceptionIndex = block.ExceptionIndex + 1;
                     // skip over exception handlers that are no longer relevant
-                    for (; exceptionIndex < exceptions.Length && exceptions[exceptionIndex].endIndex <= i; exceptionIndex++)
+                    for (; exceptionIndex < exceptions.Length && exceptions[exceptionIndex].EndIndex <= i; exceptionIndex++)
                     {
                     }
 
-                    int handlerIndex = exc.handlerIndex;
+                    int handlerIndex = exc.HandlerIndex;
 
-                    if (exc.catch_type == 0 && RuntimeVerifierJavaType.IsFaultBlockException(ma.GetRawStackTypeWrapper(handlerIndex, 0)))
+                    if (exc.CatchType.IsNil && RuntimeVerifierJavaType.IsFaultBlockException(ma.GetRawStackTypeWrapper(handlerIndex, 0)))
                     {
-                        if (exc.isFinally)
+                        if (exc.IsFinally)
                         {
                             ilGenerator.BeginFinallyBlock();
                         }
@@ -949,14 +949,14 @@ namespace IKVM.Runtime
                     {
                         RuntimeJavaType exceptionTypeWrapper;
                         bool remap;
-                        if (exc.catch_type == 0)
+                        if (exc.CatchType.IsNil)
                         {
                             exceptionTypeWrapper = finish.Context.JavaBase.TypeOfjavaLangThrowable;
                             remap = true;
                         }
                         else
                         {
-                            exceptionTypeWrapper = classFile.GetConstantPoolClassType(exc.catch_type);
+                            exceptionTypeWrapper = classFile.GetConstantPoolClassType(exc.CatchType);
                             remap = exceptionTypeWrapper.IsUnloadable || !exceptionTypeWrapper.IsSubTypeOf(finish.Context.JavaBase.TypeOfCliSystemException);
                         }
                         Type excType = exceptionTypeWrapper.TypeAsExceptionType;
@@ -969,7 +969,7 @@ namespace IKVM.Runtime
                         {
                             ilGenerator.BeginCatchBlock(finish.Context.Types.Exception);
                         }
-                        BranchCookie bc = new BranchCookie(this, 1, exc.handlerIndex);
+                        BranchCookie bc = new BranchCookie(this, 1, exc.HandlerIndex);
                         prevBlock.AddExitHack(bc);
                         Instruction handlerInstr = code[handlerIndex];
                         bool unusedException = (handlerInstr.NormalizedOpCode == NormalizedByteCode.__pop ||
@@ -1065,7 +1065,7 @@ namespace IKVM.Runtime
                 // transfer the stack into it
                 // Note that an exception block that *starts* at an unreachable instruction,
                 // is completely unreachable, because it is impossible to branch into an exception block.
-                for (; exceptionIndex < exceptions.Length && exceptions[exceptionIndex].startIndex == i; exceptionIndex++)
+                for (; exceptionIndex < exceptions.Length && exceptions[exceptionIndex].StartIndex == i; exceptionIndex++)
                 {
                     int stackHeight = ma.GetStackHeight(i);
                     if (stackHeight != 0)
@@ -1088,7 +1088,7 @@ namespace IKVM.Runtime
                     }
 
                     blockStack.Push(block);
-                    block = new Block(this, exceptions[exceptionIndex].startIndex, exceptions[exceptionIndex].endIndex, exceptionIndex, new List<object>(), true);
+                    block = new Block(this, exceptions[exceptionIndex].StartIndex, exceptions[exceptionIndex].EndIndex, exceptionIndex, new List<object>(), true);
                     block.MarkLabel(i);
                 }
 
@@ -1258,11 +1258,11 @@ namespace IKVM.Runtime
                         break;
                     case NormalizedByteCode.__ldc_nothrow:
                     case NormalizedByteCode.__ldc:
-                        EmitLoadConstant(ilGenerator, instr.Arg1);
+                        EmitLoadConstant(ilGenerator, new ConstantHandle((ushort)instr.Arg1));
                         break;
                     case NormalizedByteCode.__invokedynamic:
                         {
-                            var cpi = classFile.GetInvokeDynamic(instr.Arg1);
+                            var cpi = classFile.GetInvokeDynamic(new IKVM.ByteCode.Writing.InvokeDynamicConstantHandle((ushort)instr.Arg1));
                             CastInterfaceArgs(null, cpi.GetArgTypes(), i, false);
                             if (!LambdaMetafactory.Emit(finish, classFile, instr.Arg1, cpi, ilGenerator))
                             {
@@ -1721,7 +1721,7 @@ namespace IKVM.Runtime
                         break;
                     case NormalizedByteCode.__new:
                         {
-                            var wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
+                            var wrapper = classFile.GetConstantPoolClassType(new ClassConstantHandle((ushort)instr.Arg1));
                             if (wrapper.IsUnloadable)
                             {
                                 Profiler.Count("EmitDynamicNewCheckOnly");
@@ -1754,7 +1754,7 @@ namespace IKVM.Runtime
                                 ilGenerator.Emit(OpCodes.Ldloc, localInt);
                                 ilGenerator.Emit(OpCodes.Stelem_I4);
                             }
-                            var wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
+                            var wrapper = classFile.GetConstantPoolClassType(new ClassConstantHandle((ushort)instr.Arg1));
                             if (wrapper.IsUnloadable)
                             {
                                 Profiler.Count("EmitDynamicMultianewarray");
@@ -1785,7 +1785,7 @@ namespace IKVM.Runtime
                         }
                     case NormalizedByteCode.__anewarray:
                         {
-                            var wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
+                            var wrapper = classFile.GetConstantPoolClassType(new ClassConstantHandle((ushort)instr.Arg1));
                             if (wrapper.IsUnloadable)
                             {
                                 Profiler.Count("EmitDynamicNewarray");
@@ -1852,7 +1852,7 @@ namespace IKVM.Runtime
                         break;
                     case NormalizedByteCode.__checkcast:
                         {
-                            var wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
+                            var wrapper = classFile.GetConstantPoolClassType(new ClassConstantHandle((ushort)instr.Arg1));
                             if (wrapper.IsUnloadable)
                                 EmitDynamicCast(wrapper);
                             else
@@ -1862,7 +1862,7 @@ namespace IKVM.Runtime
                         }
                     case NormalizedByteCode.__instanceof:
                         {
-                            var wrapper = classFile.GetConstantPoolClassType(instr.Arg1);
+                            var wrapper = classFile.GetConstantPoolClassType(new ClassConstantHandle((ushort)instr.Arg1));
                             if (wrapper.IsUnloadable)
                                 EmitDynamicInstanceOf(wrapper);
                             else
@@ -2618,33 +2618,33 @@ namespace IKVM.Runtime
             }
         }
 
-        void EmitLoadConstant(CodeEmitter ilgen, int constant)
+        void EmitLoadConstant(CodeEmitter ilgen, ConstantHandle constant)
         {
             switch (classFile.GetConstantPoolConstantType(constant))
             {
                 case ClassFile.ConstantType.Double:
-                    ilgen.EmitLdc_R8(classFile.GetConstantPoolConstantDouble(constant));
+                    ilgen.EmitLdc_R8(classFile.GetConstantPoolConstantDouble((DoubleConstantHandle)constant));
                     break;
                 case ClassFile.ConstantType.Float:
-                    ilgen.EmitLdc_R4(classFile.GetConstantPoolConstantFloat(constant));
+                    ilgen.EmitLdc_R4(classFile.GetConstantPoolConstantFloat((FloatConstantHandle)constant));
                     break;
                 case ClassFile.ConstantType.Integer:
-                    ilgen.EmitLdc_I4(classFile.GetConstantPoolConstantInteger(constant));
+                    ilgen.EmitLdc_I4(classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)constant));
                     break;
                 case ClassFile.ConstantType.Long:
-                    ilgen.EmitLdc_I8(classFile.GetConstantPoolConstantLong(constant));
+                    ilgen.EmitLdc_I8(classFile.GetConstantPoolConstantLong((LongConstantHandle)constant));
                     break;
                 case ClassFile.ConstantType.String:
-                    ilgen.Emit(OpCodes.Ldstr, classFile.GetConstantPoolConstantString(constant));
+                    ilgen.Emit(OpCodes.Ldstr, classFile.GetConstantPoolConstantString((StringConstantHandle)constant));
                     break;
                 case ClassFile.ConstantType.Class:
-                    EmitLoadClass(ilgen, classFile.GetConstantPoolClassType(constant));
+                    EmitLoadClass(ilgen, classFile.GetConstantPoolClassType((ClassConstantHandle)constant));
                     break;
                 case ClassFile.ConstantType.MethodHandle:
-                    finish.GetValue<MethodHandleConstant>(constant).Emit(this, ilgen, constant);
+                    finish.GetValue<MethodHandleConstant>(constant.Index).Emit(this, ilgen, (MethodHandleConstantHandle)constant);
                     break;
                 case ClassFile.ConstantType.MethodType:
-                    finish.GetValue<MethodTypeConstant>(constant).Emit(this, ilgen, constant);
+                    finish.GetValue<MethodTypeConstant>(constant.Index).Emit(this, ilgen, (MethodTypeConstantHandle)constant);
                     break;
 #if !IMPORTER
                 case ClassFile.ConstantType.LiveObject:
@@ -2828,7 +2828,7 @@ namespace IKVM.Runtime
                     return false;
                 }
 
-                var mh = compiler.classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex);
+                var mh = compiler.classFile.GetConstantPoolConstantMethodHandle(bsm.MethodReference);
                 var mw = mh.Member as RuntimeJavaMethod;
                 switch (mh.Kind)
                 {
@@ -2842,7 +2842,7 @@ namespace IKVM.Runtime
                         break;
                     default:
                         // to throw the right exception, we have to resolve the MH constant here
-                        compiler.finish.GetValue<MethodHandleConstant>(bsm.BootstrapMethodIndex).Emit(compiler, ilgen, bsm.BootstrapMethodIndex);
+                        compiler.finish.GetValue<MethodHandleConstant>(bsm.MethodReference.Index).Emit(compiler, ilgen, bsm.MethodReference);
                         ilgen.Emit(OpCodes.Pop);
                         ilgen.EmitLdc_I4(1);
                         ilgen.Emit(OpCodes.Stloc, ok);
@@ -2853,7 +2853,7 @@ namespace IKVM.Runtime
                 if (mw == null)
                 {
                     // to throw the right exception (i.e. without wrapping it in a BootstrapMethodError), we have to resolve the MH constant here
-                    compiler.finish.GetValue<MethodHandleConstant>(bsm.BootstrapMethodIndex).Emit(compiler, ilgen, bsm.BootstrapMethodIndex);
+                    compiler.finish.GetValue<MethodHandleConstant>(bsm.MethodReference.Index).Emit(compiler, ilgen, bsm.MethodReference);
                     ilgen.Emit(OpCodes.Pop);
                     if (mh.MemberConstantPoolItem is ClassFile.ConstantPoolItemMI cpiMI)
                     {
@@ -2939,7 +2939,7 @@ namespace IKVM.Runtime
 
             static void EmitExtraArg(Compiler compiler, CodeEmitter ilgen, ClassFile.BootstrapMethod bsm, int index, RuntimeJavaType targetType, CodeEmitterLocal wrapException)
             {
-                int constant = bsm.GetArgument(index);
+                var constant = bsm.GetArgument(index);
                 compiler.EmitLoadConstant(ilgen, constant);
 
                 var constType = compiler.classFile.GetConstantPoolConstantType(constant) switch
@@ -3041,12 +3041,12 @@ namespace IKVM.Runtime
 
             FieldBuilder field;
 
-            internal void Emit(Compiler compiler, CodeEmitter ilgen, int index)
+            internal void Emit(Compiler compiler, CodeEmitter ilgen, MethodHandleConstantHandle handle)
             {
                 if (field == null)
                     field = compiler.finish.DefineDynamicMethodHandleCacheField();
 
-                var mh = compiler.classFile.GetConstantPoolConstantMethodHandle(index);
+                var mh = compiler.classFile.GetConstantPoolConstantMethodHandle(handle);
                 ilgen.Emit(OpCodes.Ldsflda, field);
                 ilgen.EmitLdc_I4((int)mh.Kind);
                 ilgen.Emit(OpCodes.Ldstr, mh.Class);
@@ -3064,15 +3064,15 @@ namespace IKVM.Runtime
             FieldBuilder field;
             bool dynamic;
 
-            internal void Emit(Compiler compiler, CodeEmitter ilgen, int index)
+            internal void Emit(Compiler compiler, CodeEmitter ilgen, MethodTypeConstantHandle handle)
             {
                 if (field == null)
-                    field = CreateField(compiler, index, ref dynamic);
+                    field = CreateField(compiler, handle, ref dynamic);
 
                 if (dynamic)
                 {
                     ilgen.Emit(OpCodes.Ldsflda, field);
-                    ilgen.Emit(OpCodes.Ldstr, compiler.classFile.GetConstantPoolConstantMethodType(index).Signature);
+                    ilgen.Emit(OpCodes.Ldstr, compiler.classFile.GetConstantPoolConstantMethodType(handle).Signature);
                     compiler.finish.EmitCallerID(ilgen, compiler.m.IsLambdaFormCompiled);
                     ilgen.Emit(OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.DynamicLoadMethodType);
                 }
@@ -3082,9 +3082,9 @@ namespace IKVM.Runtime
                 }
             }
 
-            static FieldBuilder CreateField(Compiler compiler, int index, ref bool dynamic)
+            static FieldBuilder CreateField(Compiler compiler, MethodTypeConstantHandle handle, ref bool dynamic)
             {
-                var cpi = compiler.classFile.GetConstantPoolConstantMethodType(index);
+                var cpi = compiler.classFile.GetConstantPoolConstantMethodType(handle);
                 var args = cpi.GetArgTypes();
                 var ret = cpi.GetRetType();
 
@@ -3095,7 +3095,7 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    var tb = compiler.finish.DefineMethodTypeConstantType(index);
+                    var tb = compiler.finish.DefineMethodTypeConstantType(handle);
                     var field = tb.DefineField("value", compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodType.TypeAsSignatureType, FieldAttributes.Assembly | FieldAttributes.Static | FieldAttributes.InitOnly);
                     var ilgen = compiler.finish.Context.CodeEmitterFactory.Create(ReflectUtil.DefineTypeInitializer(tb, compiler.clazz.GetClassLoader()));
                     var delegateType = compiler.finish.Context.MethodHandleUtil.CreateDelegateTypeForLoadConstant(args, ret);
@@ -3843,6 +3843,7 @@ namespace IKVM.Runtime
                 default:
                     throw new InvalidOperationException();
             }
+
             bool privileged;
             switch (invoke)
             {
@@ -3855,6 +3856,7 @@ namespace IKVM.Runtime
                     privileged = false;
                     break;
             }
+
             return finish.GetValue<DynamicBinder>(index | ((byte)kind << 24)).Get(this, kind, cpi, privileged);
         }
 
@@ -3940,6 +3942,7 @@ namespace IKVM.Runtime
                     if (debug && v.name != null)
                         v.builder.SetLocalSymInfo(v.name);
                 }
+
                 ilGenerator.Emit(OpCodes.Stloc, v.builder);
             }
 
@@ -3965,7 +3968,7 @@ namespace IKVM.Runtime
             {
                 // if the first instruction is unreachable, the entire block is unreachable,
                 // because you can't jump into a block (we've just split the blocks to ensure that)
-                if ((flags[exceptions[i].startIndex] & InstructionFlags.Reachable) != 0)
+                if ((flags[exceptions[i].StartIndex] & InstructionFlags.Reachable) != 0)
                 {
                     list.Add(exceptions[i]);
                 }

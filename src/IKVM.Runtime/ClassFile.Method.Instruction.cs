@@ -27,10 +27,13 @@ namespace IKVM.Runtime
 
     sealed partial class ClassFile
     {
+
         internal sealed partial class Method
         {
+
             internal struct Instruction
             {
+
                 private ushort pc;
                 private NormalizedByteCode normopcode;
                 private int arg1;
@@ -125,14 +128,14 @@ namespace IKVM.Runtime
                             break;
                         case ByteCodeMode.Constant_1:
                             arg1 = br.ReadByte();
-                            classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                            classFile.MarkLinkRequiredConstantPoolItem(new((ushort)arg1));
                             break;
                         case ByteCodeMode.Local_1:
                             arg1 = br.ReadByte();
                             break;
                         case ByteCodeMode.Constant_2:
                             arg1 = br.ReadUInt16();
-                            classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                            classFile.MarkLinkRequiredConstantPoolItem(new((ushort)arg1));
                             break;
                         case ByteCodeMode.Branch_2:
                             arg1 = br.ReadInt16();
@@ -142,7 +145,7 @@ namespace IKVM.Runtime
                             break;
                         case ByteCodeMode.Constant_2_1_1:
                             arg1 = br.ReadUInt16();
-                            classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                            classFile.MarkLinkRequiredConstantPoolItem(new ((ushort)arg1));
                             arg2 = br.ReadByte();
                             if (br.ReadByte() != 0)
                             {
@@ -161,7 +164,7 @@ namespace IKVM.Runtime
                             break;
                         case ByteCodeMode.Constant_2_Immediate_1:
                             arg1 = br.ReadUInt16();
-                            classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                            classFile.MarkLinkRequiredConstantPoolItem(new((ushort)arg1));
                             arg2 = br.ReadSByte();
                             break;
                         case ByteCodeMode.Tableswitch:

@@ -54,9 +54,9 @@ namespace IKVM.Runtime
                 && code[i - 3].NormalizedOpCode == NormalizedByteCode.__ldc)
             {
                 // we now have a structural match, now we need to make sure that the argument values are what we expect
-                RuntimeJavaType tclass = classFile.GetConstantPoolClassType(code[i - 3].Arg1);
-                RuntimeJavaType vclass = classFile.GetConstantPoolClassType(code[i - 2].Arg1);
-                string fieldName = classFile.GetConstantPoolConstantString(code[i - 1].Arg1);
+                var tclass = classFile.GetConstantPoolClassType(new((ushort)code[i - 3].Arg1));
+                var vclass = classFile.GetConstantPoolClassType(new((ushort)code[i - 2].Arg1));
+                string fieldName = classFile.GetConstantPoolConstantString(new((ushort)code[i - 1].Arg1));
                 if (tclass == wrapper && !vclass.IsUnloadable && !vclass.IsPrimitive && !vclass.IsNonPrimitiveValueType)
                 {
                     RuntimeJavaField field = wrapper.GetFieldWrapper(fieldName, vclass.SigName);

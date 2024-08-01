@@ -614,7 +614,7 @@ namespace IKVM.Runtime
                 eic.Emitter.Emit(OpCodes.Ldind_Ref);
 
                 // remove the redundant checkcast that usually follows
-                if (eic.Code[eic.OpcodeIndex + 1].NormalizedOpCode == NormalizedByteCode.__checkcast && tw.ElementTypeWrapper.IsAssignableTo(eic.ClassFile.GetConstantPoolClassType(eic.Code[eic.OpcodeIndex + 1].Arg1)))
+                if (eic.Code[eic.OpcodeIndex + 1].NormalizedOpCode == NormalizedByteCode.__checkcast && tw.ElementTypeWrapper.IsAssignableTo(eic.ClassFile.GetConstantPoolClassType(new((ushort)eic.Code[eic.OpcodeIndex + 1].Arg1))))
                     eic.PatchOpCode(1, NormalizedByteCode.__nop);
 
                 eic.Emitter.ReleaseTempLocal(target);
@@ -1072,9 +1072,9 @@ namespace IKVM.Runtime
                                 {
                                     if (method.Instructions[i - 4].NormalizedOpCode == NormalizedByteCode.__ldc)
                                     {
-                                        if (eic.ClassFile.GetConstantPoolClassType(method.Instructions[i - 4].Arg1) == eic.Caller.DeclaringType)
+                                        if (eic.ClassFile.GetConstantPoolClassType(new((ushort)method.Instructions[i - 4].Arg1)) == eic.Caller.DeclaringType)
                                         {
-                                            var fieldName = eic.ClassFile.GetConstantPoolConstantString(method.Instructions[i - 3].Arg1);
+                                            var fieldName = eic.ClassFile.GetConstantPoolConstantString(new((ushort)method.Instructions[i - 3].Arg1));
                                             RuntimeJavaField fw = null;
                                             foreach (var fw1 in eic.Caller.DeclaringType.GetFields())
                                             {
@@ -1104,9 +1104,9 @@ namespace IKVM.Runtime
                                         if (method.Instructions[j].NormalizedOpCode == NormalizedByteCode.__astore &&
                                             method.Instructions[j].Arg1 == method.Instructions[i - 4].Arg1 &&
                                             MatchLdc(eic, ref method.Instructions[j - 1], ClassFile.ConstantType.Class) &&
-                                            eic.ClassFile.GetConstantPoolClassType(method.Instructions[j - 1].Arg1) == eic.Caller.DeclaringType)
+                                            eic.ClassFile.GetConstantPoolClassType(new((ushort)method.Instructions[j - 1].Arg1)) == eic.Caller.DeclaringType)
                                         {
-                                            var fieldName = eic.ClassFile.GetConstantPoolConstantString(method.Instructions[i - 3].Arg1);
+                                            var fieldName = eic.ClassFile.GetConstantPoolConstantString(new((ushort)method.Instructions[i - 3].Arg1));
                                             RuntimeJavaField fw = null;
                                             foreach (var fw1 in eic.Caller.DeclaringType.GetFields())
                                             {
@@ -1164,7 +1164,7 @@ namespace IKVM.Runtime
 
         static bool MatchLdc(EmitIntrinsicContext eic, ref Instruction instr, ClassFile.ConstantType constantType)
         {
-            return (instr.NormalizedOpCode == NormalizedByteCode.__ldc || instr.NormalizedOpCode == NormalizedByteCode.__ldc_nothrow) && eic.ClassFile.GetConstantPoolConstantType(instr.NormalizedArg1) == constantType;
+            return (instr.NormalizedOpCode == NormalizedByteCode.__ldc || instr.NormalizedOpCode == NormalizedByteCode.__ldc_nothrow) && eic.ClassFile.GetConstantPoolConstantType(new((ushort)instr.NormalizedArg1)) == constantType;
         }
 
     }

@@ -22,6 +22,7 @@
   
 */
 
+using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
 
 namespace IKVM.Runtime
@@ -33,7 +34,7 @@ namespace IKVM.Runtime
         sealed class ConstantPoolItemString : ConstantPoolItem
         {
 
-            readonly ushort valueIndex;
+            readonly Utf8ConstantHandle value;
             string s;
 
             /// <summary>
@@ -44,12 +45,12 @@ namespace IKVM.Runtime
             internal ConstantPoolItemString(RuntimeContext context, StringConstantReader reader) :
                 base(context)
             {
-                valueIndex = reader.Record.ValueIndex;
+                value = reader.Record.Value;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                s = classFile.GetConstantPoolUtf8String(utf8_cp, valueIndex);
+                s = classFile.GetConstantPoolUtf8String(utf8_cp, value);
             }
 
             internal override ConstantType GetConstantType() => ConstantType.String;

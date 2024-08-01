@@ -52,16 +52,16 @@ namespace IKVM.Runtime
             /// <param name="classFile"></param>
             /// <param name="utf8_cp"></param>
             /// <param name="accessFlags"></param>
-            /// <param name="nameIndex"></param>
-            /// <param name="descriptorIndex"></param>
-            internal FieldOrMethod(ClassFile classFile, string[] utf8_cp, AccessFlag accessFlags, ushort nameIndex, ushort descriptorIndex)
+            /// <param name="name"></param>
+            /// <param name="descriptor"></param>
+            internal FieldOrMethod(ClassFile classFile, string[] utf8_cp, AccessFlag accessFlags, Utf8ConstantHandle name, Utf8ConstantHandle descriptor)
             {
                 this.accessFlags = (Modifiers)accessFlags;
-                this.name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameIndex));
-                this.descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, descriptorIndex);
+                this.name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name));
+                this.descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, descriptor);
 
-                ValidateSig(classFile, descriptor);
-                this.descriptor = string.Intern(descriptor.Replace('/', '.'));
+                ValidateSig(classFile, this.descriptor);
+                this.descriptor = string.Intern(this.descriptor.Replace('/', '.'));
             }
 
             protected abstract void ValidateSig(ClassFile classFile, string descriptor);

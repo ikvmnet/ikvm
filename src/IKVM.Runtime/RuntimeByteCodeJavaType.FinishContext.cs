@@ -27,6 +27,8 @@ using System.Diagnostics;
 
 using IKVM.ByteCode.Reading;
 using IKVM.Attributes;
+using IKVM.ByteCode;
+
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -817,24 +819,24 @@ namespace IKVM.Runtime
 
             static void MarkConstantPoolUsageForAnnotation(AnnotationReader annotation, bool[] inUse)
             {
-                ushort type_index = annotation.Record.TypeIndex;
-                inUse[type_index] = true;
+                var typeHandle = annotation.Record.Type;
+                inUse[typeHandle.Index] = true;
 
                 for (int i = 0; i < annotation.Record.Elements.Length; i++)
                 {
-                    inUse[annotation.Record.Elements[i].NameIndex] = true;
+                    inUse[annotation.Record.Elements[i].Name.Index] = true;
                     MarkConstantPoolUsageForAnnotationComponentValue(annotation.Elements[i], inUse);
                 }
             }
 
             static void MarkConstantPoolUsageForTypeAnnotation(TypeAnnotationReader annotation, bool[] inUse)
             {
-                ushort type_index = annotation.Record.TypeIndex;
-                inUse[type_index] = true;
+                var typeHandle = annotation.Record.Type;
+                inUse[typeHandle.Index] = true;
 
                 for (int i = 0; i < annotation.Record.Elements.Length; i++)
                 {
-                    inUse[annotation.Record.Elements[i].NameIndex] = true;
+                    inUse[annotation.Record.Elements[i].Name.Index] = true;
                     MarkConstantPoolUsageForAnnotationComponentValue(annotation.Elements[i], inUse);
                 }
             }
@@ -844,14 +846,14 @@ namespace IKVM.Runtime
                 switch (element)
                 {
                     case ElementValueConstantReader constant:
-                        inUse[constant.ValueRecord.Index] = true;
+                        inUse[constant.ValueRecord.Handle.Index] = true;
                         break;
                     case ElementValueClassReader classInfo:
-                        inUse[classInfo.ValueRecord.ClassIndex] = true;
+                        inUse[classInfo.ValueRecord.Class.Index] = true;
                         break;
                     case ElementValueEnumConstantReader enumConstant:
-                        inUse[enumConstant.ValueRecord.TypeNameIndex] = true;
-                        inUse[enumConstant.ValueRecord.ConstantNameIndex] = true;
+                        inUse[enumConstant.ValueRecord.TypeName.Index] = true;
+                        inUse[enumConstant.ValueRecord.ConstantName.Index] = true;
                         break;
                     case ElementValueAnnotationReader annotation:
                         MarkConstantPoolUsageForAnnotation(annotation.Annotation, inUse);
@@ -2254,16 +2256,16 @@ namespace IKVM.Runtime
                 return tb;
             }
 
-            internal TypeBuilder DefineMethodHandleConstantType(int index)
+            internal TypeBuilder DefineMethodHandleConstantType(MethodHandleConstantHandle handle)
             {
-                var tb = typeBuilder.DefineNestedType(NestedTypeName.MethodHandleConstant + index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit); ;
+                var tb = typeBuilder.DefineNestedType(NestedTypeName.MethodHandleConstant + handle.Index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit); ;
                 RegisterNestedTypeBuilder(tb);
                 return tb;
             }
 
-            internal TypeBuilder DefineMethodTypeConstantType(int index)
+            internal TypeBuilder DefineMethodTypeConstantType(MethodTypeConstantHandle handle)
             {
-                var tb = typeBuilder.DefineNestedType(NestedTypeName.MethodTypeConstant + index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
+                var tb = typeBuilder.DefineNestedType(NestedTypeName.MethodTypeConstant + handle.Index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
                 RegisterNestedTypeBuilder(tb);
                 return tb;
             }

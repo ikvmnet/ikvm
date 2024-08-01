@@ -26,6 +26,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.ByteCode;
+using IKVM.ByteCode.Writing;
+
 
 #if IMPORTER
 using IKVM.Tools.Importer;
@@ -154,9 +156,9 @@ namespace IKVM.Runtime
                 // ensure that exception blocks and handlers start and end at instruction boundaries
                 for (int i = 0; i < method.ExceptionTable.Length; i++)
                 {
-                    int start = method.ExceptionTable[i].startIndex;
-                    int end = method.ExceptionTable[i].endIndex;
-                    int handler = method.ExceptionTable[i].handlerIndex;
+                    int start = method.ExceptionTable[i].StartIndex;
+                    int end = method.ExceptionTable[i].EndIndex;
+                    int handler = method.ExceptionTable[i].HandlerIndex;
                     if (start >= end || start == -1 || end == -1 || handler <= 0)
                     {
                         throw new IndexOutOfRangeException();
@@ -211,7 +213,7 @@ namespace IKVM.Runtime
 
         private void PatchLoadConstants()
         {
-            ClassFile.Method.Instruction[] code = method.Instructions;
+            var code = method.Instructions;
             for (int i = 0; i < code.Length; i++)
             {
                 if (state[i] != null)
@@ -219,7 +221,7 @@ namespace IKVM.Runtime
                     switch (code[i].NormalizedOpCode)
                     {
                         case NormalizedByteCode.__ldc:
-                            switch (GetConstantPoolConstantType(code[i].Arg1))
+                            switch (GetConstantPoolConstantType(new((ushort)code[i].Arg1)))
                             {
                                 case ClassFile.ConstantType.Double:
                                 case ClassFile.ConstantType.Float:
@@ -270,7 +272,7 @@ namespace IKVM.Runtime
                             // mark the exception handlers reachable from this instruction
                             for (int j = 0; j < method.ExceptionTable.Length; j++)
                             {
-                                if (method.ExceptionTable[j].startIndex <= i && i < method.ExceptionTable[j].endIndex)
+                                if (method.ExceptionTable[j].StartIndex <= i && i < method.ExceptionTable[j].EndIndex)
                                 {
                                     MergeExceptionHandler(j, state[i]);
                                 }
@@ -574,7 +576,7 @@ namespace IKVM.Runtime
                                 case NormalizedByteCode.__ldc_nothrow:
                                 case NormalizedByteCode.__ldc:
                                     {
-                                        switch (GetConstantPoolConstantType(instr.Arg1))
+                                        switch (GetConstantPoolConstantType(new((ushort)instr.Arg1)))
                                         {
                                             case ClassFile.ConstantType.Double:
                                                 s.PushDouble();
@@ -693,9 +695,9 @@ namespace IKVM.Runtime
                                     }
                                 case NormalizedByteCode.__invokedynamic:
                                     {
-                                        ClassFile.ConstantPoolItemInvokeDynamic cpi = GetInvokeDynamic(instr.Arg1);
+                                        var cpi = GetInvokeDynamic(new((ushort)instr.Arg1));
                                         s.MultiPopAnyType(cpi.GetArgTypes().Length);
-                                        RuntimeJavaType retType = cpi.GetRetType();
+                                        var retType = cpi.GetRetType();
                                         if (retType != context.PrimitiveJavaTypeFactory.VOID)
                                         {
                                             if (retType == context.PrimitiveJavaTypeFactory.DOUBLE)
@@ -809,7 +811,7 @@ namespace IKVM.Runtime
                                         RuntimeJavaType type;
                                         if (!newTypes.TryGetValue(i, out type))
                                         {
-                                            type = GetConstantPoolClassType(instr.Arg1);
+                                            type = GetConstantPoolClassType(new((ushort)instr.Arg1));
                                             if (type.IsArray)
                                             {
                                                 throw new VerifyError("Illegal use of array type");
@@ -830,7 +832,7 @@ namespace IKVM.Runtime
                                         {
                                             s.PopInt();
                                         }
-                                        RuntimeJavaType type = GetConstantPoolClassType(instr.Arg1);
+                                        RuntimeJavaType type = GetConstantPoolClassType(new((ushort)instr.Arg1));
                                         if (type.ArrayRank < instr.Arg2)
                                         {
                                             throw new VerifyError("Illegal dimension argument");
@@ -841,7 +843,7 @@ namespace IKVM.Runtime
                                 case NormalizedByteCode.__anewarray:
                                     {
                                         s.PopInt();
-                                        RuntimeJavaType type = GetConstantPoolClassType(instr.Arg1);
+                                        RuntimeJavaType type = GetConstantPoolClassType(new((ushort)instr.Arg1));
                                         if (type.IsUnloadable)
                                         {
                                             s.PushType(new RuntimeUnloadableJavaType(context, "[" + type.SigName));
@@ -1137,7 +1139,7 @@ namespace IKVM.Runtime
                                     break;
                                 case NormalizedByteCode.__checkcast:
                                     s.PopObjectType();
-                                    s.PushType(GetConstantPoolClassType(instr.Arg1));
+                                    s.PushType(GetConstantPoolClassType(new((ushort)instr.Arg1)));
                                     break;
                                 case NormalizedByteCode.__instanceof:
                                     s.PopObjectType();
@@ -1240,7 +1242,7 @@ namespace IKVM.Runtime
                             }
                             for (int j = 0; j < method.ExceptionTable.Length; j++)
                             {
-                                if (method.ExceptionTable[j].endIndex == i + 1)
+                                if (method.ExceptionTable[j].EndIndex == i + 1)
                                 {
                                     MergeExceptionHandler(j, s);
                                 }
@@ -1299,17 +1301,17 @@ namespace IKVM.Runtime
 
         private void MergeExceptionHandler(int exceptionIndex, InstructionState curr)
         {
-            int idx = method.ExceptionTable[exceptionIndex].handlerIndex;
+            int idx = method.ExceptionTable[exceptionIndex].HandlerIndex;
             InstructionState ex = curr.CopyLocals();
-            int catch_type = method.ExceptionTable[exceptionIndex].catch_type;
-            if (catch_type == 0)
+            var catch_type = method.ExceptionTable[exceptionIndex].CatchType;
+            if (catch_type.IsNil)
             {
-                RuntimeJavaType tw;
-                if (!faultTypes.TryGetValue(idx, out tw))
+                if (!faultTypes.TryGetValue(idx, out var tw))
                 {
                     tw = RuntimeVerifierJavaType.MakeFaultBlockException(this, idx);
                     faultTypes.Add(idx, tw);
                 }
+
                 ex.PushType(tw);
             }
             else
@@ -1318,6 +1320,7 @@ namespace IKVM.Runtime
                 // Throwable as the type and recording a loader constraint
                 ex.PushType(GetConstantPoolClassType(catch_type));
             }
+
             state[idx] += ex;
         }
 
@@ -1507,7 +1510,7 @@ namespace IKVM.Runtime
         private void VerifyInvokeDynamic(int index)
         {
             StackState stack = new StackState(state[index]);
-            ClassFile.ConstantPoolItemInvokeDynamic cpi = GetInvokeDynamic(method.Instructions[index].Arg1);
+            ClassFile.ConstantPoolItemInvokeDynamic cpi = GetInvokeDynamic(new((ushort)method.Instructions[index].Arg1));
             RuntimeJavaType[] args = cpi.GetArgTypes();
             for (int j = args.Length - 1; j >= 0; j--)
             {
@@ -1572,11 +1575,11 @@ namespace IKVM.Runtime
                                 PatchFieldAccess(wrapper, mw, ref instructions[i], stack);
                                 break;
                             case NormalizedByteCode.__ldc:
-                                switch (classFile.GetConstantPoolConstantType(instructions[i].Arg1))
+                                switch (classFile.GetConstantPoolConstantType(new((ushort)instructions[i].Arg1)))
                                 {
                                     case ClassFile.ConstantType.Class:
                                         {
-                                            RuntimeJavaType tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+                                            RuntimeJavaType tw = classFile.GetConstantPoolClassType(new((ushort)instructions[i].Arg1));
                                             if (tw.IsUnloadable)
                                             {
                                                 ConditionalPatchNoClassDefFoundError(ref instructions[i], tw);
@@ -1585,7 +1588,7 @@ namespace IKVM.Runtime
                                         }
                                     case ClassFile.ConstantType.MethodType:
                                         {
-                                            ClassFile.ConstantPoolItemMethodType cpi = classFile.GetConstantPoolConstantMethodType(instructions[i].Arg1);
+                                            ClassFile.ConstantPoolItemMethodType cpi = classFile.GetConstantPoolConstantMethodType(new((ushort)instructions[i].Arg1));
                                             RuntimeJavaType[] args = cpi.GetArgTypes();
                                             RuntimeJavaType tw = cpi.GetRetType();
                                             for (int j = 0; !tw.IsUnloadable && j < args.Length; j++)
@@ -1605,7 +1608,7 @@ namespace IKVM.Runtime
                                 break;
                             case NormalizedByteCode.__new:
                                 {
-                                    RuntimeJavaType tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+                                    RuntimeJavaType tw = classFile.GetConstantPoolClassType(new((ushort)instructions[i].Arg1));
                                     if (tw.IsUnloadable)
                                     {
                                         ConditionalPatchNoClassDefFoundError(ref instructions[i], tw);
@@ -1623,7 +1626,7 @@ namespace IKVM.Runtime
                             case NormalizedByteCode.__multianewarray:
                             case NormalizedByteCode.__anewarray:
                                 {
-                                    RuntimeJavaType tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+                                    RuntimeJavaType tw = classFile.GetConstantPoolClassType(new((ushort)instructions[i].Arg1));
                                     if (tw.IsUnloadable)
                                     {
                                         ConditionalPatchNoClassDefFoundError(ref instructions[i], tw);
@@ -1637,7 +1640,7 @@ namespace IKVM.Runtime
                             case NormalizedByteCode.__checkcast:
                             case NormalizedByteCode.__instanceof:
                                 {
-                                    RuntimeJavaType tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+                                    RuntimeJavaType tw = classFile.GetConstantPoolClassType(new((ushort)instructions[i].Arg1));
                                     if (tw.IsUnloadable)
                                     {
                                         // If the type is unloadable, we always generate the dynamic code
@@ -1682,7 +1685,7 @@ namespace IKVM.Runtime
 
         private void PatchLdcMethodHandle(ref ClassFile.Method.Instruction instr)
         {
-            ClassFile.ConstantPoolItemMethodHandle cpi = classFile.GetConstantPoolConstantMethodHandle(instr.Arg1);
+            ClassFile.ConstantPoolItemMethodHandle cpi = classFile.GetConstantPoolConstantMethodHandle(new((ushort)instr.Arg1));
             if (cpi.GetClassType().IsUnloadable)
             {
                 ConditionalPatchNoClassDefFoundError(ref instr, cpi.GetClassType());
@@ -1815,9 +1818,9 @@ namespace IKVM.Runtime
                         // mark the exception handlers reachable from this instruction
                         for (int j = 0; j < exceptions.Length; j++)
                         {
-                            if (exceptions[j].startIndex <= i && i < exceptions[j].endIndex)
+                            if (exceptions[j].StartIndex <= i && i < exceptions[j].EndIndex)
                             {
-                                int idx = exceptions[j].handlerIndex;
+                                int idx = exceptions[j].HandlerIndex;
                                 if (!skipFaultBlocks || !RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(idx, 0)))
                                 {
                                     flags[idx] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
@@ -1880,11 +1883,11 @@ namespace IKVM.Runtime
             for (int i = 0; i < ar.Count; i++)
             {
                 ExceptionTableEntry ei = ar[i];
-                if (ei.startIndex == ei.handlerIndex && ei.catch_type == 0)
+                if (ei.StartIndex == ei.HandlerIndex && ei.CatchType.IsNil)
                 {
-                    int index = ei.startIndex;
+                    int index = ei.StartIndex;
                     if (index + 2 < instructions.Length
-                        && ei.endIndex == index + 2
+                        && ei.EndIndex == index + 2
                         && instructions[index].NormalizedOpCode == NormalizedByteCode.__aload
                         && instructions[index + 1].NormalizedOpCode == NormalizedByteCode.__monitorexit
                         && instructions[index + 2].NormalizedOpCode == NormalizedByteCode.__athrow)
@@ -1894,7 +1897,7 @@ namespace IKVM.Runtime
                         i--;
                     }
                     else if (index + 4 < instructions.Length
-                        && ei.endIndex == index + 3
+                        && ei.EndIndex == index + 3
                         && instructions[index].NormalizedOpCode == NormalizedByteCode.__astore
                         && instructions[index + 1].NormalizedOpCode == NormalizedByteCode.__aload
                         && instructions[index + 2].NormalizedOpCode == NormalizedByteCode.__monitorexit
@@ -1907,7 +1910,7 @@ namespace IKVM.Runtime
                         i--;
                     }
                     else if (index + 1 < instructions.Length
-                        && ei.endIndex == index + 1
+                        && ei.EndIndex == index + 1
                         && instructions[index].NormalizedOpCode == NormalizedByteCode.__astore)
                     {
                         // this is the finally guard that javac produces
@@ -1921,12 +1924,12 @@ namespace IKVM.Runtime
             // Here we merge these exception blocks again, because it allows us to generate more efficient code.
             for (int i = 0; i < ar.Count - 1; i++)
             {
-                if (ar[i].endIndex + 1 == ar[i + 1].startIndex
-                    && ar[i].handlerIndex == ar[i + 1].handlerIndex
-                    && ar[i].catch_type == ar[i + 1].catch_type
-                    && IsReturn(instructions[ar[i].endIndex].NormalizedOpCode))
+                if (ar[i].EndIndex + 1 == ar[i + 1].StartIndex
+                    && ar[i].HandlerIndex == ar[i + 1].HandlerIndex
+                    && ar[i].CatchType == ar[i + 1].CatchType
+                    && IsReturn(instructions[ar[i].EndIndex].NormalizedOpCode))
                 {
-                    ar[i] = new ExceptionTableEntry(ar[i].startIndex, ar[i + 1].endIndex, ar[i].handlerIndex, ar[i].catch_type, ar[i].ordinal);
+                    ar[i] = new ExceptionTableEntry(ar[i].StartIndex, ar[i + 1].EndIndex, ar[i].HandlerIndex, ar[i].CatchType, ar[i].Ordinal);
                     ar.RemoveAt(i + 1);
                     i--;
                 }
@@ -1939,15 +1942,15 @@ namespace IKVM.Runtime
                 for (int j = 0; j < ar.Count; j++)
                 {
                     ExceptionTableEntry ej = ar[j];
-                    if (ei.startIndex <= ej.startIndex && ej.startIndex < ei.endIndex)
+                    if (ei.StartIndex <= ej.StartIndex && ej.StartIndex < ei.EndIndex)
                     {
                         // 0006/test.j
-                        if (ej.endIndex > ei.endIndex)
+                        if (ej.EndIndex > ei.EndIndex)
                         {
-                            ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                            ExceptionTableEntry emj = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ej.handlerIndex, ej.catch_type, ej.ordinal);
-                            ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                            ej = new ExceptionTableEntry(emj.endIndex, ej.endIndex, ej.handlerIndex, ej.catch_type, ej.ordinal);
+                            ExceptionTableEntry emi = new ExceptionTableEntry(ej.StartIndex, ei.EndIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                            ExceptionTableEntry emj = new ExceptionTableEntry(ej.StartIndex, ei.EndIndex, ej.HandlerIndex, ej.CatchType, ej.Ordinal);
+                            ei = new ExceptionTableEntry(ei.StartIndex, emi.StartIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                            ej = new ExceptionTableEntry(emj.EndIndex, ej.EndIndex, ej.HandlerIndex, ej.CatchType, ej.Ordinal);
                             ar[i] = ei;
                             ar[j] = ej;
                             ar.Insert(j, emj);
@@ -1955,11 +1958,11 @@ namespace IKVM.Runtime
                             goto restart;
                         }
                         // 0007/test.j
-                        else if (j > i && ej.endIndex < ei.endIndex)
+                        else if (j > i && ej.EndIndex < ei.EndIndex)
                         {
-                            ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ej.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                            ExceptionTableEntry eei = new ExceptionTableEntry(ej.endIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                            ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+                            ExceptionTableEntry emi = new ExceptionTableEntry(ej.StartIndex, ej.EndIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                            ExceptionTableEntry eei = new ExceptionTableEntry(ej.EndIndex, ei.EndIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                            ei = new ExceptionTableEntry(ei.StartIndex, emi.StartIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
                             ar[i] = ei;
                             ar.Insert(i + 1, eei);
                             ar.Insert(i + 1, emi);
@@ -1973,8 +1976,8 @@ namespace IKVM.Runtime
             for (int i = 0; i < ar.Count; i++)
             {
                 ExceptionTableEntry ei = ar[i];
-                int start = ei.startIndex;
-                int end = ei.endIndex;
+                int start = ei.StartIndex;
+                int end = ei.EndIndex;
                 for (int j = 0; j < instructions.Length; j++)
                 {
                     if (j < start || j >= end)
@@ -1987,10 +1990,10 @@ namespace IKVM.Runtime
                                 for (int k = -1; k < instructions[j].SwitchEntryCount; k++)
                                 {
                                     int targetIndex = (k == -1 ? instructions[j].DefaultTarget : instructions[j].GetSwitchTargetIndex(k));
-                                    if (ei.startIndex < targetIndex && targetIndex < ei.endIndex)
+                                    if (ei.StartIndex < targetIndex && targetIndex < ei.EndIndex)
                                     {
-                                        ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                                        ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+                                        ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.EndIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                                        ei = new ExceptionTableEntry(ei.StartIndex, targetIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
                                         ar[i] = ei;
                                         ar.Insert(i + 1, en);
                                         goto restart_split;
@@ -2016,10 +2019,10 @@ namespace IKVM.Runtime
                             case NormalizedByteCode.__goto:
                                 {
                                     int targetIndex = instructions[j].Arg1;
-                                    if (ei.startIndex < targetIndex && targetIndex < ei.endIndex)
+                                    if (ei.StartIndex < targetIndex && targetIndex < ei.EndIndex)
                                     {
-                                        ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                                        ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+                                        ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.EndIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                                        ei = new ExceptionTableEntry(ei.StartIndex, targetIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
                                         ar[i] = ei;
                                         ar.Insert(i + 1, en);
                                         goto restart_split;
@@ -2037,10 +2040,10 @@ namespace IKVM.Runtime
                 for (int j = 0; j < ar.Count; j++)
                 {
                     ExceptionTableEntry ej = ar[j];
-                    if (ei.startIndex < ej.handlerIndex && ej.handlerIndex < ei.endIndex)
+                    if (ei.StartIndex < ej.HandlerIndex && ej.HandlerIndex < ei.EndIndex)
                     {
-                        ExceptionTableEntry en = new ExceptionTableEntry(ej.handlerIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                        ei = new ExceptionTableEntry(ei.startIndex, ej.handlerIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+                        ExceptionTableEntry en = new ExceptionTableEntry(ej.HandlerIndex, ei.EndIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                        ei = new ExceptionTableEntry(ei.StartIndex, ej.HandlerIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
                         ar[i] = ei;
                         ar.Insert(i + 1, en);
                         goto restart_split;
@@ -2050,8 +2053,8 @@ namespace IKVM.Runtime
             // filter out zero length try blocks
             for (int i = 0; i < ar.Count; i++)
             {
-                ExceptionTableEntry ei = ar[i];
-                if (ei.startIndex == ei.endIndex)
+                var ei = ar[i];
+                if (ei.StartIndex == ei.EndIndex)
                 {
                     ar.RemoveAt(i);
                     i--;
@@ -2060,7 +2063,7 @@ namespace IKVM.Runtime
                 {
                     // exception blocks that only contain harmless instructions (i.e. instructions that will *never* throw an exception)
                     // are also filtered out (to improve the quality of the generated code)
-                    RuntimeJavaType exceptionType = ei.catch_type == 0 ? context.JavaBase.TypeOfjavaLangThrowable : classFile.GetConstantPoolClassType(ei.catch_type);
+                    var exceptionType = ei.CatchType.IsNil ? context.JavaBase.TypeOfjavaLangThrowable : classFile.GetConstantPoolClassType(ei.CatchType);
                     if (exceptionType.IsUnloadable)
                     {
                         // we can't remove handlers for unloadable types
@@ -2071,8 +2074,8 @@ namespace IKVM.Runtime
                         // asynchronously (and thus appear on any instruction). This is particularly important to ensure that
                         // we run finally blocks when a thread is killed.
                         // Note that even so, we aren't remotely async exception safe.
-                        int start = ei.startIndex;
-                        int end = ei.endIndex;
+                        int start = ei.StartIndex;
+                        int end = ei.EndIndex;
                         for (int j = start; j < end; j++)
                         {
                             switch (instructions[j].NormalizedOpCode)
@@ -2118,8 +2121,8 @@ namespace IKVM.Runtime
                     }
                     else
                     {
-                        int start = ei.startIndex;
-                        int end = ei.endIndex;
+                        int start = ei.StartIndex;
+                        int end = ei.EndIndex;
                         for (int j = start; j < end; j++)
                         {
                             if (ByteCodeMetaData.CanThrowException(instructions[j].NormalizedOpCode))
@@ -2150,29 +2153,30 @@ namespace IKVM.Runtime
                 || bc == NormalizedByteCode.__lreturn;
         }
 
-        private static bool AnalyzePotentialFaultBlocks(CodeInfo codeInfo, ClassFile.Method method, UntangledExceptionTable exceptions)
+        static bool AnalyzePotentialFaultBlocks(CodeInfo codeInfo, ClassFile.Method method, UntangledExceptionTable exceptions)
         {
-            ClassFile.Method.Instruction[] code = method.Instructions;
-            bool changed = false;
-            bool done = false;
-            while (!done)
+            var code = method.Instructions;
+            var changed = false;
+
+            var done = false;
+            while (done == false)
             {
                 done = true;
-                Stack<ExceptionTableEntry> stack = new Stack<ExceptionTableEntry>();
-                ExceptionTableEntry current = new ExceptionTableEntry(0, code.Length, -1, ushort.MaxValue, -1);
+
+                var stack = new Stack<ExceptionTableEntry>();
+                var current = new ExceptionTableEntry(0, code.Length, -1, new(ushort.MaxValue), -1);
                 stack.Push(current);
+
                 for (int i = 0; i < exceptions.Length; i++)
                 {
-                    while (exceptions[i].startIndex >= current.endIndex)
-                    {
+                    while (exceptions[i].StartIndex >= current.EndIndex)
                         current = stack.Pop();
-                    }
-                    Debug.Assert(exceptions[i].startIndex >= current.startIndex && exceptions[i].endIndex <= current.endIndex);
-                    if (exceptions[i].catch_type == 0
-                        && codeInfo.HasState(exceptions[i].handlerIndex)
-                        && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
+
+                    Debug.Assert(exceptions[i].StartIndex >= current.StartIndex && exceptions[i].EndIndex <= current.EndIndex);
+
+                    if (exceptions[i].CatchType.IsNil && codeInfo.HasState(exceptions[i].HandlerIndex) && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].HandlerIndex, 0)))
                     {
-                        InstructionFlags[] flags = MethodAnalyzer.ComputePartialReachability(codeInfo, method.Instructions, exceptions, exceptions[i].handlerIndex, true);
+                        var flags = MethodAnalyzer.ComputePartialReachability(codeInfo, method.Instructions, exceptions, exceptions[i].HandlerIndex, true);
                         for (int j = 0; j < code.Length; j++)
                         {
                             if ((flags[j] & InstructionFlags.Reachable) != 0)
@@ -2186,26 +2190,28 @@ namespace IKVM.Runtime
                                     case NormalizedByteCode.__freturn:
                                     case NormalizedByteCode.__dreturn:
                                         goto not_fault_block;
+
                                     case NormalizedByteCode.__athrow:
                                         for (int k = i + 1; k < exceptions.Length; k++)
                                         {
-                                            if (exceptions[k].startIndex <= j && j < exceptions[k].endIndex)
+                                            if (exceptions[k].StartIndex <= j && j < exceptions[k].EndIndex)
                                             {
                                                 goto not_fault_block;
                                             }
                                         }
-                                        if (RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(j, 0))
-                                            && codeInfo.GetRawStackTypeWrapper(j, 0) != codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0))
+
+                                        if (RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(j, 0)) && codeInfo.GetRawStackTypeWrapper(j, 0) != codeInfo.GetRawStackTypeWrapper(exceptions[i].HandlerIndex, 0))
                                         {
                                             goto not_fault_block;
                                         }
+
                                         break;
                                 }
-                                if (j < current.startIndex || j >= current.endIndex)
+                                if (j < current.StartIndex || j >= current.EndIndex)
                                 {
                                     goto not_fault_block;
                                 }
-                                else if (exceptions[i].startIndex <= j && j < exceptions[i].endIndex)
+                                else if (exceptions[i].StartIndex <= j && j < exceptions[i].EndIndex)
                                 {
                                     goto not_fault_block;
                                 }
@@ -2214,17 +2220,19 @@ namespace IKVM.Runtime
                                     continue;
                                 }
                             not_fault_block:
-                                RuntimeVerifierJavaType.ClearFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0));
+                                RuntimeVerifierJavaType.ClearFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].HandlerIndex, 0));
                                 done = false;
                                 changed = true;
                                 break;
                             }
                         }
                     }
+
                     stack.Push(current);
                     current = exceptions[i];
                 }
             }
+
             return changed;
         }
 
@@ -2234,22 +2242,19 @@ namespace IKVM.Runtime
             InstructionFlags[] flags = ComputePartialReachability(codeInfo, code, exceptions, 0, false);
             for (int i = 0; i < exceptions.Length; i++)
             {
-                if (exceptions[i].catch_type == 0
-                    && codeInfo.HasState(exceptions[i].handlerIndex)
-                    && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
+                if (exceptions[i].CatchType.IsNil && codeInfo.HasState(exceptions[i].HandlerIndex) && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].HandlerIndex, 0)))
                 {
-                    int exit;
-                    if (IsSynchronizedBlockHandler(code, exceptions[i].handlerIndex)
-                        && exceptions[i].endIndex - 2 >= exceptions[i].startIndex
-                        && TryFindSingleTryBlockExit(code, flags, exceptions, new ExceptionTableEntry(exceptions[i].startIndex, exceptions[i].endIndex - 2, exceptions[i].handlerIndex, 0, exceptions[i].ordinal), i, out exit)
-                        && exit == exceptions[i].endIndex - 2
+                    if (IsSynchronizedBlockHandler(code, exceptions[i].HandlerIndex)
+                        && exceptions[i].EndIndex - 2 >= exceptions[i].StartIndex
+                        && TryFindSingleTryBlockExit(code, flags, exceptions, new ExceptionTableEntry(exceptions[i].StartIndex, exceptions[i].EndIndex - 2, exceptions[i].HandlerIndex, new(0), exceptions[i].Ordinal), i, out var exit)
+                        && exit == exceptions[i].EndIndex - 2
                         && (flags[exit + 1] & InstructionFlags.BranchTarget) == 0
-                        && MatchInstructions(code, exit, exceptions[i].handlerIndex + 1)
-                        && MatchInstructions(code, exit + 1, exceptions[i].handlerIndex + 2)
-                        && MatchExceptionCoverage(exceptions, i, exceptions[i].handlerIndex + 1, exceptions[i].handlerIndex + 3, exit, exit + 2)
-                        && exceptions[i].handlerIndex <= ushort.MaxValue)
+                        && MatchInstructions(code, exit, exceptions[i].HandlerIndex + 1)
+                        && MatchInstructions(code, exit + 1, exceptions[i].HandlerIndex + 2)
+                        && MatchExceptionCoverage(exceptions, i, exceptions[i].HandlerIndex + 1, exceptions[i].HandlerIndex + 3, exit, exit + 2)
+                        && exceptions[i].HandlerIndex <= ushort.MaxValue)
                     {
-                        code[exit].PatchOpCode(NormalizedByteCode.__goto_finally, exceptions[i].endIndex, (short)exceptions[i].handlerIndex);
+                        code[exit].PatchOpCode(NormalizedByteCode.__goto_finally, exceptions[i].EndIndex, (short)exceptions[i].HandlerIndex);
                         exceptions.SetFinally(i);
                     }
                     else if (TryFindSingleTryBlockExit(code, flags, exceptions, exceptions[i], i, out exit)
@@ -2261,17 +2266,17 @@ namespace IKVM.Runtime
                     {
                         int exitHandlerEnd;
                         int faultHandlerEnd;
-                        if (MatchFinallyBlock(codeInfo, code, exceptions, exceptions[i].handlerIndex, exit, out exitHandlerEnd, out faultHandlerEnd))
+                        if (MatchFinallyBlock(codeInfo, code, exceptions, exceptions[i].HandlerIndex, exit, out exitHandlerEnd, out faultHandlerEnd))
                         {
                             if (exit != exitHandlerEnd
                                 && codeInfo.GetStackHeight(exitHandlerEnd) == 0
-                                && MatchExceptionCoverage(exceptions, -1, exceptions[i].handlerIndex, faultHandlerEnd, exit, exitHandlerEnd))
+                                && MatchExceptionCoverage(exceptions, -1, exceptions[i].HandlerIndex, faultHandlerEnd, exit, exitHandlerEnd))
                             {
                                 // We use Arg2 (which is a short) to store the handler in the __goto_finally pseudo-opcode,
                                 // so we can only do that if handlerIndex fits in a short (note that we can use the sign bit too).
-                                if (exceptions[i].handlerIndex <= ushort.MaxValue)
+                                if (exceptions[i].HandlerIndex <= ushort.MaxValue)
                                 {
-                                    code[exit].PatchOpCode(NormalizedByteCode.__goto_finally, exitHandlerEnd, (short)exceptions[i].handlerIndex);
+                                    code[exit].PatchOpCode(NormalizedByteCode.__goto_finally, exitHandlerEnd, (short)exceptions[i].HandlerIndex);
                                     exceptions.SetFinally(i);
                                 }
                             }
@@ -2304,7 +2309,7 @@ namespace IKVM.Runtime
 
         private static bool ExceptionCovers(ExceptionTableEntry exception, int start, int end)
         {
-            return exception.startIndex < end && exception.endIndex > start;
+            return exception.StartIndex < end && exception.EndIndex > start;
         }
 
         private static bool MatchFinallyBlock(CodeInfo codeInfo, ClassFile.Method.Instruction[] code, UntangledExceptionTable exceptions, int faultHandler, int exitHandler, out int exitHandlerEnd, out int faultHandlerEnd)
@@ -2397,7 +2402,7 @@ namespace IKVM.Runtime
             flags[0] |= InstructionFlags.Reachable;
             // We mark the first instruction of the try-block as already processed, so that UpdatePartialReachability will skip the try-block.
             // Note that we can do this, because it is not possible to jump into the middle of a try-block (after the exceptions have been untangled).
-            flags[tryBlock.startIndex] = InstructionFlags.Processed;
+            flags[tryBlock.StartIndex] = InstructionFlags.Processed;
             // We mark the successor instructions of the instruction we're examinining as reachable,
             // to figure out if the code following the handler somehow branches back to it.
             MarkSuccessors(code, flags, instructionIndex);
@@ -2410,16 +2415,16 @@ namespace IKVM.Runtime
             exit = -1;
             bool fail = false;
             bool nextIsReachable = false;
-            for (int i = exception.startIndex; !fail && i < exception.endIndex; i++)
+            for (int i = exception.StartIndex; !fail && i < exception.EndIndex; i++)
             {
                 if ((flags[i] & InstructionFlags.Reachable) != 0)
                 {
                     nextIsReachable = false;
                     for (int j = 0; j < exceptions.Length; j++)
                     {
-                        if (j != exceptionIndex && exceptions[j].startIndex >= exception.startIndex && exception.endIndex <= exceptions[j].endIndex)
+                        if (j != exceptionIndex && exceptions[j].StartIndex >= exception.StartIndex && exception.EndIndex <= exceptions[j].EndIndex)
                         {
-                            UpdateTryBlockExit(exception, exceptions[j].handlerIndex, ref exit, ref fail);
+                            UpdateTryBlockExit(exception, exceptions[j].HandlerIndex, ref exit, ref fail);
                         }
                     }
                     switch (ByteCodeMetaData.GetFlowControl(code[i].NormalizedOpCode))
@@ -2455,14 +2460,14 @@ namespace IKVM.Runtime
             }
             if (nextIsReachable)
             {
-                UpdateTryBlockExit(exception, exception.endIndex, ref exit, ref fail);
+                UpdateTryBlockExit(exception, exception.EndIndex, ref exit, ref fail);
             }
             return !fail && exit != -1;
         }
 
         private static void UpdateTryBlockExit(ExceptionTableEntry exception, int targetIndex, ref int exitIndex, ref bool fail)
         {
-            if (exception.startIndex <= targetIndex && targetIndex < exception.endIndex)
+            if (exception.StartIndex <= targetIndex && targetIndex < exception.EndIndex)
             {
                 // branch stays inside try block
             }
@@ -2873,7 +2878,7 @@ namespace IKVM.Runtime
 #if NETFRAMEWORK
             if (cpi.GetRetType() != mw.ReturnType && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
 #else
-        if (cpi.GetRetType() != mw.ReturnType && cpi.GetRetType().Name != mw.ReturnType.Name && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
+            if (cpi.GetRetType() != mw.ReturnType && cpi.GetRetType().Name != mw.ReturnType.Name && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
 #endif
             {
 #if IMPORTER
@@ -2888,7 +2893,7 @@ namespace IKVM.Runtime
 #if NETFRAMEWORK
                 if (here[i] != there[i] && !here[i].IsUnloadable && !there[i].IsUnloadable)
 #else
-            if (here[i] != there[i] && here[i].Name != there[i].Name && !here[i].IsUnloadable && !there[i].IsUnloadable)
+                if (here[i] != there[i] && here[i].Name != there[i].Name && !here[i].IsUnloadable && !there[i].IsUnloadable)
 #endif
                 {
 #if IMPORTER
@@ -2900,22 +2905,23 @@ namespace IKVM.Runtime
             return null;
         }
 
-        private ClassFile.ConstantPoolItemInvokeDynamic GetInvokeDynamic(int index)
+        ClassFile.ConstantPoolItemInvokeDynamic GetInvokeDynamic(InvokeDynamicConstantHandle handle)
         {
             try
             {
-                ClassFile.ConstantPoolItemInvokeDynamic item = classFile.GetInvokeDynamic(index);
+                var item = classFile.GetInvokeDynamic(handle);
                 if (item != null)
-                {
                     return item;
-                }
             }
             catch (InvalidCastException)
             {
+
             }
             catch (IndexOutOfRangeException)
             {
+
             }
+
             throw new VerifyError("Illegal constant pool index");
         }
 
@@ -2957,11 +2963,11 @@ namespace IKVM.Runtime
             throw new VerifyError("Illegal constant pool index");
         }
 
-        private ClassFile.ConstantType GetConstantPoolConstantType(int index)
+        private ClassFile.ConstantType GetConstantPoolConstantType(ConstantHandle handle)
         {
             try
             {
-                return classFile.GetConstantPoolConstantType(index);
+                return classFile.GetConstantPoolConstantType(handle);
             }
             catch (IndexOutOfRangeException)
             {
@@ -2975,24 +2981,29 @@ namespace IKVM.Runtime
             {
                 // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
             }
+
             throw new VerifyError("Illegal constant pool index");
         }
 
-        private RuntimeJavaType GetConstantPoolClassType(int index)
+        private RuntimeJavaType GetConstantPoolClassType(ClassConstantHandle handle)
         {
             try
             {
-                return classFile.GetConstantPoolClassType(index);
+                return classFile.GetConstantPoolClassType(handle);
             }
             catch (InvalidCastException)
             {
+
             }
             catch (IndexOutOfRangeException)
             {
+
             }
             catch (NullReferenceException)
             {
+
             }
+
             throw new VerifyError("Illegal constant pool index");
         }
 
@@ -3013,9 +3024,9 @@ namespace IKVM.Runtime
                 {
                     for (int j = 0; j < exceptions.Length; j++)
                     {
-                        if (exceptions[j].startIndex == i
-                            || exceptions[j].endIndex == i
-                            || exceptions[j].handlerIndex == i)
+                        if (exceptions[j].StartIndex == i
+                            || exceptions[j].EndIndex == i
+                            || exceptions[j].HandlerIndex == i)
                         {
                             label = true;
                             break;
@@ -3070,7 +3081,7 @@ namespace IKVM.Runtime
             }
             for (int i = 0; i < exceptions.Length; i++)
             {
-                Console.WriteLine(".catch #{0} from label{1} to label{2} using label{3}", exceptions[i].catch_type, exceptions[i].startIndex, exceptions[i].endIndex, exceptions[i].handlerIndex);
+                Console.WriteLine(".catch #{0} from label{1} to label{2} using label{3}", exceptions[i].CatchType, exceptions[i].StartIndex, exceptions[i].EndIndex, exceptions[i].HandlerIndex);
             }
         }
     }

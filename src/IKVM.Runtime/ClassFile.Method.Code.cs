@@ -129,12 +129,12 @@ namespace IKVM.Runtime
                         var start_pc = handler.StartOffset;
                         var end_pc = handler.EndOffset;
                         var handler_pc = handler.HandlerOffset;
-                        var catch_type = handler.CatchTypeIndex;
+                        var catchType = handler.CatchType;
 
-                        if (start_pc >= end_pc || end_pc > code_length || handler_pc >= code_length || (catch_type != 0 && !classFile.SafeIsConstantPoolClass(catch_type)))
+                        if (start_pc >= end_pc || end_pc > code_length || handler_pc >= code_length || (catchType.IsNil == false && !classFile.SafeIsConstantPoolClass(catchType)))
                             throw new ClassFormatError("Illegal exception table: {0}.{1}{2}", classFile.Name, method.Name, method.Signature);
 
-                        classFile.MarkLinkRequiredConstantPoolItem(catch_type);
+                        classFile.MarkLinkRequiredConstantPoolItem(catchType);
 
                         // if start_pc, end_pc or handler_pc is invalid (i.e. doesn't point to the start of an instruction),
                         // the index will be -1 and this will be handled by the verifier
@@ -153,14 +153,14 @@ namespace IKVM.Runtime
                         }
 
                         var handlerIndex = pcIndexMap[handler_pc];
-                        exception_table[i] = new ExceptionTableEntry(startIndex, endIndex, handlerIndex, catch_type, i);
+                        exception_table[i] = new ExceptionTableEntry(startIndex, endIndex, handlerIndex, catchType, i);
                     }
 
                     for (int i = 0; i < reader.Attributes.Count; i++)
                     {
                         var attribute = reader.Attributes[i];
 
-                        switch (classFile.GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.NameIndex))
+                        switch (classFile.GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.Name))
                         {
                             case "LineNumberTable":
                                 if (attribute is not LineNumberTableAttributeReader lnt)
@@ -191,8 +191,8 @@ namespace IKVM.Runtime
                                         var item = lvt.Record.Items[j];
                                         localVariableTable[j].start_pc = item.CodeOffset;
                                         localVariableTable[j].length = item.CodeLength;
-                                        localVariableTable[j].name = classFile.GetConstantPoolUtf8String(utf8_cp, item.NameIndex);
-                                        localVariableTable[j].descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, item.DescriptorIndex).Replace('/', '.');
+                                        localVariableTable[j].name = classFile.GetConstantPoolUtf8String(utf8_cp, item.Name);
+                                        localVariableTable[j].descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, item.Descriptor).Replace('/', '.');
                                         localVariableTable[j].index = item.Index;
                                     }
                                 }

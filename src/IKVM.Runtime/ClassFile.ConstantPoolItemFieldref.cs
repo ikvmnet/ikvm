@@ -22,6 +22,7 @@
   
 */
 
+using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
 
 namespace IKVM.Runtime
@@ -42,16 +43,16 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             /// <param name="reader"></param>
             internal ConstantPoolItemFieldref(RuntimeContext context, FieldrefConstantReader reader) :
-                base(context, reader.Record.ClassIndex, reader.Record.NameAndTypeIndex)
+                base(context, reader.Record.Class, reader.Record.NameAndType)
             {
 
             }
 
-            protected override void Validate(string name, string descriptor, int majorVersion)
+            protected override void Validate(string name, string descriptor, ClassFormatVersion version)
             {
                 if (!IsValidFieldSig(descriptor))
                     throw new ClassFormatError("Invalid field signature \"{0}\"", descriptor);
-                if (!IsValidFieldName(name, majorVersion))
+                if (!IsValidFieldName(name, version))
                     throw new ClassFormatError("Invalid field name \"{0}\"", name);
             }
 
@@ -63,29 +64,26 @@ namespace IKVM.Runtime
             internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 base.Link(thisType, mode);
+
                 lock (this)
-                {
                     if (fieldTypeWrapper != null)
-                    {
                         return;
-                    }
-                }
+
                 RuntimeJavaField fw = null;
-                RuntimeJavaType wrapper = GetClassType();
+
+                var wrapper = GetClassType();
                 if (wrapper == null)
-                {
                     return;
-                }
+
                 if (!wrapper.IsUnloadable)
                 {
                     fw = wrapper.GetFieldWrapper(Name, Signature);
-                    if (fw != null)
-                    {
-                        fw.Link(mode);
-                    }
+                    fw?.Link(mode);
                 }
-                RuntimeClassLoader classLoader = thisType.GetClassLoader();
-                RuntimeJavaType fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
+
+                var classLoader = thisType.GetClassLoader();
+                var fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
+
                 lock (this)
                 {
                     if (fieldTypeWrapper == null)

@@ -40,16 +40,16 @@ namespace IKVM.Runtime
                 for (int j = i + 1; j < exceptions.Length; j++)
                 {
                     // check for partially overlapping try blocks (which is legal for the JVM, but not the CLR)
-                    if (exceptions[i].startIndex < exceptions[j].startIndex &&
-                        exceptions[j].startIndex < exceptions[i].endIndex &&
-                        exceptions[i].endIndex < exceptions[j].endIndex)
+                    if (exceptions[i].StartIndex < exceptions[j].StartIndex &&
+                        exceptions[j].StartIndex < exceptions[i].EndIndex &&
+                        exceptions[i].EndIndex < exceptions[j].EndIndex)
                     {
                         throw new InvalidOperationException("Partially overlapping try blocks is broken");
                     }
                     // check that we didn't destroy the ordering, when sorting
-                    if (exceptions[i].startIndex <= exceptions[j].startIndex &&
-                        exceptions[i].endIndex >= exceptions[j].endIndex &&
-                        exceptions[i].ordinal < exceptions[j].ordinal)
+                    if (exceptions[i].StartIndex <= exceptions[j].StartIndex &&
+                        exceptions[i].EndIndex >= exceptions[j].EndIndex &&
+                        exceptions[i].Ordinal < exceptions[j].Ordinal)
                     {
                         throw new InvalidOperationException("Non recursive try blocks is broken");
                     }
@@ -71,7 +71,7 @@ namespace IKVM.Runtime
 
         internal void SetFinally(int index)
         {
-            exceptions[index] = new ExceptionTableEntry(exceptions[index].startIndex, exceptions[index].endIndex, exceptions[index].handlerIndex, exceptions[index].catch_type, exceptions[index].ordinal, true);
+            exceptions[index] = new ExceptionTableEntry(exceptions[index].StartIndex, exceptions[index].EndIndex, exceptions[index].HandlerIndex, exceptions[index].CatchType, exceptions[index].Ordinal, true);
         }
     }
 
