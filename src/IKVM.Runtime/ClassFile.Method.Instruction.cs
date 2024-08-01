@@ -22,67 +22,74 @@
   
 */
 
+using IKVM.ByteCode;
+
 namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile
     {
+
         internal sealed partial class Method
         {
+
             internal struct Instruction
             {
-                private ushort pc;
-                private NormalizedByteCode normopcode;
-                private int arg1;
-                private short arg2;
-                private SwitchEntry[] switch_entries;
 
                 struct SwitchEntry
                 {
+
                     internal int value;
                     internal int target;
+
                 }
+
+                ushort pc;
+                NormalizedOpCode normopcode;
+                int arg1;
+                short arg2;
+                SwitchEntry[] switch_entries;
 
                 internal void SetHardError(HardError error, int messageId)
                 {
-                    normopcode = NormalizedByteCode.__static_error;
+                    normopcode = NormalizedOpCode.__static_error;
                     arg2 = (short)error;
                     arg1 = messageId;
                 }
 
-                internal HardError HardError
-                {
-                    get
-                    {
-                        return (HardError)arg2;
-                    }
-                }
+                internal HardError HardError => (HardError)arg2;
 
-                internal int HandlerIndex
-                {
-                    get { return (ushort)arg2; }
-                }
+                internal int HandlerIndex => (ushort)arg2;
 
-                internal int HardErrorMessageId
-                {
-                    get
-                    {
-                        return arg1;
-                    }
-                }
+                internal int HardErrorMessageId => arg1;
 
-                internal void PatchOpCode(NormalizedByteCode bc)
+                /// <summary>
+                /// Replaces the opcode with a new opcode.
+                /// </summary>
+                /// <param name="bc"></param>
+                internal void PatchOpCode(NormalizedOpCode bc)
                 {
                     this.normopcode = bc;
                 }
 
-                internal void PatchOpCode(NormalizedByteCode bc, int arg1)
+                /// <summary>
+                /// Replaces the opcode and its first argument with a new opcode and first argument.
+                /// </summary>
+                /// <param name="bc"></param>
+                /// <param name="arg1"></param>
+                internal void PatchOpCode(NormalizedOpCode bc, int arg1)
                 {
                     this.normopcode = bc;
                     this.arg1 = arg1;
                 }
 
-                internal void PatchOpCode(NormalizedByteCode bc, int arg1, short arg2)
+                /// <summary>
+                /// Replaces the opcode and its arguments with a new opcode and its arguments.
+                /// </summary>
+                /// <param name="bc"></param>
+                /// <param name="arg1"></param>
+                /// <param name="arg2"></param>
+                internal void PatchOpCode(NormalizedOpCode bc, int arg1, short arg2)
                 {
                     this.normopcode = bc;
                     this.arg1 = arg1;
@@ -103,36 +110,34 @@ namespace IKVM.Runtime
                 {
                     // TODO what happens if we already have exactly the maximum number of instructions?
                     this.pc = pc;
-                    this.normopcode = NormalizedByteCode.__nop;
+                    this.normopcode = NormalizedOpCode._nop;
                 }
 
                 internal void MapSwitchTargets(int[] pcIndexMap)
                 {
                     arg1 = pcIndexMap[arg1 + pc];
                     for (int i = 0; i < switch_entries.Length; i++)
-                    {
                         switch_entries[i].target = pcIndexMap[switch_entries[i].target + pc];
-                    }
                 }
 
                 internal void Read(ushort pc, BigEndianBinaryReader br, ClassFile classFile)
                 {
                     this.pc = pc;
-                    var bc = (ByteCode)br.ReadByte();
-                    switch (ByteCodeMetaData.GetMode(bc))
+                    var bc = (OpCode)br.ReadByte();
+                    switch (OpCodeMetaData.GetMode(bc))
                     {
                         case ByteCodeMode.Simple:
                             break;
                         case ByteCodeMode.Constant_1:
                             arg1 = br.ReadByte();
-                            classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                            classFile.MarkLinkRequiredConstantPoolItem(new((ushort)arg1));
                             break;
                         case ByteCodeMode.Local_1:
                             arg1 = br.ReadByte();
                             break;
                         case ByteCodeMode.Constant_2:
                             arg1 = br.ReadUInt16();
-                            classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                            classFile.MarkLinkRequiredConstantPoolItem(new((ushort)arg1));
                             break;
                         case ByteCodeMode.Branch_2:
                             arg1 = br.ReadInt16();
@@ -142,7 +147,7 @@ namespace IKVM.Runtime
                             break;
                         case ByteCodeMode.Constant_2_1_1:
                             arg1 = br.ReadUInt16();
-                            classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                            classFile.MarkLinkRequiredConstantPoolItem(new ((ushort)arg1));
                             arg2 = br.ReadByte();
                             if (br.ReadByte() != 0)
                             {
@@ -161,7 +166,7 @@ namespace IKVM.Runtime
                             break;
                         case ByteCodeMode.Constant_2_Immediate_1:
                             arg1 = br.ReadUInt16();
-                            classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                            classFile.MarkLinkRequiredConstantPoolItem(new((ushort)arg1));
                             arg2 = br.ReadSByte();
                             break;
                         case ByteCodeMode.Tableswitch:
@@ -213,10 +218,10 @@ namespace IKVM.Runtime
                                 break;
                             }
                         case ByteCodeMode.WidePrefix:
-                            bc = (ByteCode)br.ReadByte();
+                            bc = (OpCode)br.ReadByte();
                             // NOTE the PC of a wide instruction is actually the PC of the
                             // wide prefix, not the following instruction (vmspec 4.9.2)
-                            switch (ByteCodeMetaData.GetWideMode(bc))
+                            switch (OpCodeMetaData.GetWideMode(bc))
                             {
                                 case ByteCodeModeWide.Local_2:
                                     arg1 = br.ReadUInt16();
@@ -232,8 +237,8 @@ namespace IKVM.Runtime
                         default:
                             throw new ClassFormatError("Invalid opcode: {0}", bc);
                     }
-                    this.normopcode = ByteCodeMetaData.GetNormalizedByteCode(bc);
-                    arg1 = ByteCodeMetaData.GetArg(bc, arg1);
+                    this.normopcode = OpCodeMetaData.GetNormalizedByteCode(bc);
+                    arg1 = OpCodeMetaData.GetArg(bc, arg1);
                 }
 
                 internal int PC
@@ -244,7 +249,7 @@ namespace IKVM.Runtime
                     }
                 }
 
-                internal NormalizedByteCode NormalizedOpCode
+                internal NormalizedOpCode NormalizedOpCode
                 {
                     get
                     {
@@ -320,15 +325,17 @@ namespace IKVM.Runtime
 
                 internal void SetSwitchTargets(int[] targets)
                 {
-                    SwitchEntry[] newEntries = (SwitchEntry[])switch_entries.Clone();
+                    var newEntries = (SwitchEntry[])switch_entries.Clone();
                     for (int i = 0; i < newEntries.Length; i++)
-                    {
                         newEntries[i].target = targets[i];
-                    }
+
                     switch_entries = newEntries;
                 }
+
             }
+
         }
+
     }
 
 }

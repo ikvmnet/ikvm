@@ -66,7 +66,7 @@ namespace IKVM.Runtime
                         while (rdr.IsAtEnd == false)
                         {
                             instructions[instructionIndex].Read((ushort)(rdr.Position - basePosition), rdr, classFile);
-                            hasJsr |= instructions[instructionIndex].NormalizedOpCode == NormalizedByteCode.__jsr;
+                            hasJsr |= instructions[instructionIndex].NormalizedOpCode == NormalizedOpCode._jsr;
                             instructionIndex++;
                         }
 
@@ -94,28 +94,28 @@ namespace IKVM.Runtime
                     {
                         switch (this.instructions[i].NormalizedOpCode)
                         {
-                            case NormalizedByteCode.__ifeq:
-                            case NormalizedByteCode.__ifne:
-                            case NormalizedByteCode.__iflt:
-                            case NormalizedByteCode.__ifge:
-                            case NormalizedByteCode.__ifgt:
-                            case NormalizedByteCode.__ifle:
-                            case NormalizedByteCode.__if_icmpeq:
-                            case NormalizedByteCode.__if_icmpne:
-                            case NormalizedByteCode.__if_icmplt:
-                            case NormalizedByteCode.__if_icmpge:
-                            case NormalizedByteCode.__if_icmpgt:
-                            case NormalizedByteCode.__if_icmple:
-                            case NormalizedByteCode.__if_acmpeq:
-                            case NormalizedByteCode.__if_acmpne:
-                            case NormalizedByteCode.__ifnull:
-                            case NormalizedByteCode.__ifnonnull:
-                            case NormalizedByteCode.__goto:
-                            case NormalizedByteCode.__jsr:
+                            case NormalizedOpCode._ifeq:
+                            case NormalizedOpCode._ifne:
+                            case NormalizedOpCode._iflt:
+                            case NormalizedOpCode._ifge:
+                            case NormalizedOpCode._ifgt:
+                            case NormalizedOpCode._ifle:
+                            case NormalizedOpCode._if_icmpeq:
+                            case NormalizedOpCode._if_icmpne:
+                            case NormalizedOpCode._if_icmplt:
+                            case NormalizedOpCode._if_icmpge:
+                            case NormalizedOpCode._if_icmpgt:
+                            case NormalizedOpCode._if_icmple:
+                            case NormalizedOpCode._if_acmpeq:
+                            case NormalizedOpCode._if_acmpne:
+                            case NormalizedOpCode._ifnull:
+                            case NormalizedOpCode._ifnonnull:
+                            case NormalizedOpCode._goto:
+                            case NormalizedOpCode._jsr:
                                 this.instructions[i].SetTargetIndex(pcIndexMap[this.instructions[i].Arg1 + this.instructions[i].PC]);
                                 break;
-                            case NormalizedByteCode.__tableswitch:
-                            case NormalizedByteCode.__lookupswitch:
+                            case NormalizedOpCode._tableswitch:
+                            case NormalizedOpCode._lookupswitch:
                                 this.instructions[i].MapSwitchTargets(pcIndexMap);
                                 break;
                         }
@@ -129,12 +129,12 @@ namespace IKVM.Runtime
                         var start_pc = handler.StartOffset;
                         var end_pc = handler.EndOffset;
                         var handler_pc = handler.HandlerOffset;
-                        var catch_type = handler.CatchTypeIndex;
+                        var catchType = handler.CatchType;
 
-                        if (start_pc >= end_pc || end_pc > code_length || handler_pc >= code_length || (catch_type != 0 && !classFile.SafeIsConstantPoolClass(catch_type)))
+                        if (start_pc >= end_pc || end_pc > code_length || handler_pc >= code_length || (catchType.IsNil == false && !classFile.SafeIsConstantPoolClass(catchType)))
                             throw new ClassFormatError("Illegal exception table: {0}.{1}{2}", classFile.Name, method.Name, method.Signature);
 
-                        classFile.MarkLinkRequiredConstantPoolItem(catch_type);
+                        classFile.MarkLinkRequiredConstantPoolItem(catchType);
 
                         // if start_pc, end_pc or handler_pc is invalid (i.e. doesn't point to the start of an instruction),
                         // the index will be -1 and this will be handled by the verifier
@@ -153,14 +153,14 @@ namespace IKVM.Runtime
                         }
 
                         var handlerIndex = pcIndexMap[handler_pc];
-                        exception_table[i] = new ExceptionTableEntry(startIndex, endIndex, handlerIndex, catch_type, i);
+                        exception_table[i] = new ExceptionTableEntry(startIndex, endIndex, handlerIndex, catchType, i);
                     }
 
                     for (int i = 0; i < reader.Attributes.Count; i++)
                     {
                         var attribute = reader.Attributes[i];
 
-                        switch (classFile.GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.NameIndex))
+                        switch (classFile.GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.Name))
                         {
                             case "LineNumberTable":
                                 if (attribute is not LineNumberTableAttributeReader lnt)
@@ -191,8 +191,8 @@ namespace IKVM.Runtime
                                         var item = lvt.Record.Items[j];
                                         localVariableTable[j].start_pc = item.CodeOffset;
                                         localVariableTable[j].length = item.CodeLength;
-                                        localVariableTable[j].name = classFile.GetConstantPoolUtf8String(utf8_cp, item.NameIndex);
-                                        localVariableTable[j].descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, item.DescriptorIndex).Replace('/', '.');
+                                        localVariableTable[j].name = classFile.GetConstantPoolUtf8String(utf8_cp, item.Name);
+                                        localVariableTable[j].descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, item.Descriptor).Replace('/', '.');
                                         localVariableTable[j].index = item.Index;
                                     }
                                 }

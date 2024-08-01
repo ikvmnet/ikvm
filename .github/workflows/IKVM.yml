@@ -153,6 +153,12 @@ jobs:
         fileName: "*.tar.gz"
         out-file-path: ext/ikvm-native-sdk
         extract: true
+    - name: Add NuGet Source (GitHub)
+      shell: pwsh
+      run: dotnet nuget add source --username USERNAME --password $env:GITHUB_TOKEN --store-password-in-clear-text --name ikvm $env:GITHUB_REPOS
+      env:
+        GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
     - name: Build Artifacts

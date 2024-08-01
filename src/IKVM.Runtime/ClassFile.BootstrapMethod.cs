@@ -22,36 +22,39 @@
   
 */
 
+using IKVM.ByteCode;
+
 namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile
     {
+
         internal struct BootstrapMethod
         {
 
-            private ushort bsm_index;
-            private ushort[] args;
+            readonly MethodHandleConstantHandle methodReference;
+            readonly ConstantHandle[] arguments;
 
-            internal BootstrapMethod(ushort bsm_index, ushort[] args)
+            internal BootstrapMethod(MethodHandleConstantHandle methodref, ConstantHandle[] arguments)
             {
-                this.bsm_index = bsm_index;
-                this.args = args;
+                this.methodReference = methodref;
+                this.arguments = arguments;
             }
 
-            internal int BootstrapMethodIndex
+            internal MethodHandleConstantHandle MethodReference
             {
-                get { return bsm_index; }
+                get { return methodReference; }
             }
 
             internal int ArgumentCount
             {
-                get { return args.Length; }
+                get { return arguments.Length; }
             }
 
-            internal int GetArgument(int index)
+            internal ConstantHandle GetArgument(int index)
             {
-                return args[index];
+                return arguments[index];
             }
 
         }

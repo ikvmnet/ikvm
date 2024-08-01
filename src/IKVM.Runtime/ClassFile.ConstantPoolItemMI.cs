@@ -22,6 +22,8 @@
   
 */
 
+using IKVM.ByteCode;
+
 namespace IKVM.Runtime
 {
 
@@ -40,20 +42,19 @@ namespace IKVM.Runtime
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
-            /// <param name="classIndex"></param>
-            /// <param name="nameAndTypeIndex"></param>
-            internal ConstantPoolItemMI(RuntimeContext context, ushort classIndex, ushort nameAndTypeIndex) :
-                base(context, classIndex, nameAndTypeIndex)
+            /// <param name="clazz"></param>
+            /// <param name="nameAndType"></param>
+            internal ConstantPoolItemMI(RuntimeContext context, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndType) :
+                base(context, clazz, nameAndType)
             {
 
             }
 
-            protected override void Validate(string name, string descriptor, int majorVersion)
+            protected override void Validate(string name, string descriptor, ClassFormatVersion majorVersion)
             {
                 if (!IsValidMethodSig(descriptor))
-                {
                     throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
-                }
+
                 if (!IsValidMethodName(name, majorVersion))
                 {
                     if (!ReferenceEquals(name, StringConstants.INIT))

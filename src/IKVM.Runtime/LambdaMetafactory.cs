@@ -81,15 +81,15 @@ namespace IKVM.Runtime
             ClassFile.ConstantPoolItemMethodType[] bridges = null;
             if (bsm.ArgumentCount > 3)
             {
-                AltFlags flags = (AltFlags)classFile.GetConstantPoolConstantInteger(bsm.GetArgument(3));
+                AltFlags flags = (AltFlags)classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(3));
                 serializable = (flags & AltFlags.Serializable) != 0;
                 int argpos = 4;
                 if ((flags & AltFlags.Markers) != 0)
                 {
-                    markers = new RuntimeJavaType[classFile.GetConstantPoolConstantInteger(bsm.GetArgument(argpos++))];
+                    markers = new RuntimeJavaType[classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(argpos++))];
                     for (int i = 0; i < markers.Length; i++)
                     {
-                        if ((markers[i] = classFile.GetConstantPoolClassType(bsm.GetArgument(argpos++))).IsUnloadable)
+                        if ((markers[i] = classFile.GetConstantPoolClassType((ClassConstantHandle)bsm.GetArgument(argpos++))).IsUnloadable)
                         {
                             Fail("unloadable marker");
                             return false;
@@ -98,10 +98,10 @@ namespace IKVM.Runtime
                 }
                 if ((flags & AltFlags.Bridges) != 0)
                 {
-                    bridges = new ClassFile.ConstantPoolItemMethodType[classFile.GetConstantPoolConstantInteger(bsm.GetArgument(argpos++))];
+                    bridges = new ClassFile.ConstantPoolItemMethodType[classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(argpos++))];
                     for (int i = 0; i < bridges.Length; i++)
                     {
-                        bridges[i] = classFile.GetConstantPoolConstantMethodType(bsm.GetArgument(argpos++));
+                        bridges[i] = classFile.GetConstantPoolConstantMethodType((MethodTypeConstantHandle)bsm.GetArgument(argpos++));
                         if (HasUnloadable(bridges[i]))
                         {
                             Fail("unloadable bridge");
@@ -110,23 +110,23 @@ namespace IKVM.Runtime
                     }
                 }
             }
-            ClassFile.ConstantPoolItemMethodType samMethodType = classFile.GetConstantPoolConstantMethodType(bsm.GetArgument(0));
-            ClassFile.ConstantPoolItemMethodHandle implMethod = classFile.GetConstantPoolConstantMethodHandle(bsm.GetArgument(1));
-            ClassFile.ConstantPoolItemMethodType instantiatedMethodType = classFile.GetConstantPoolConstantMethodType(bsm.GetArgument(2));
-            if (HasUnloadable(samMethodType)
-                || HasUnloadable((ClassFile.ConstantPoolItemMI)implMethod.MemberConstantPoolItem)
-                || HasUnloadable(instantiatedMethodType))
+
+            var samMethodType = classFile.GetConstantPoolConstantMethodType((MethodTypeConstantHandle)bsm.GetArgument(0));
+            var implMethod = classFile.GetConstantPoolConstantMethodHandle((MethodHandleConstantHandle)bsm.GetArgument(1));
+            var instantiatedMethodType = classFile.GetConstantPoolConstantMethodType((MethodTypeConstantHandle)bsm.GetArgument(2));
+            if (HasUnloadable(samMethodType) || HasUnloadable((ClassFile.ConstantPoolItemMI)implMethod.MemberConstantPoolItem) || HasUnloadable(instantiatedMethodType))
             {
                 Fail("bsm args has unloadable");
                 return false;
             }
-            RuntimeJavaType interfaceType = cpi.GetRetType();
-            RuntimeJavaMethod[] methodList;
-            if (!CheckSupportedInterfaces(context.TypeWrapper, interfaceType, markers, bridges, out methodList))
+
+            var interfaceType = cpi.GetRetType();
+            if (!CheckSupportedInterfaces(context.TypeWrapper, interfaceType, markers, bridges, out var methodList))
             {
                 Fail("unsupported interface");
                 return false;
             }
+
             if (serializable && Array.Exists(methodList, delegate (RuntimeJavaMethod mw) { return mw.Name == "writeReplace" && mw.Signature == "()Ljava.lang.Object;"; }))
             {
                 Fail("writeReplace");
@@ -534,7 +534,8 @@ namespace IKVM.Runtime
             for (int i = 0; i < capturedFields.Length; i++)
             {
                 ilgen.EmitLdarg(0);
-                OpCode opc = OpCodes.Ldfld;
+
+                var opc = OpCodes.Ldfld;
                 if (i == 0 && args[0].IsGhost)
                 {
                     switch (implMethod.Kind)
@@ -973,7 +974,7 @@ namespace IKVM.Runtime
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(0)) == ClassFile.ConstantType.MethodType
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(1)) == ClassFile.ConstantType.MethodHandle
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(2)) == ClassFile.ConstantType.MethodType
-                && (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex)).Kind == ReferenceKind.InvokeStatic
+                && (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.MethodReference)).Kind == ReferenceKind.InvokeStatic
                 && mh.Member != null
                 && IsLambdaMetafactory(mh.Member);
         }
@@ -1000,14 +1001,14 @@ namespace IKVM.Runtime
             AltFlags flags;
             int argpos = 4;
             return bsm.ArgumentCount >= 4
-                && (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex)).Kind == ReferenceKind.InvokeStatic
+                && (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.MethodReference)).Kind == ReferenceKind.InvokeStatic
                 && mh.Member != null
                 && IsLambdaAltMetafactory(mh.Member)
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(0)) == ClassFile.ConstantType.MethodType
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(1)) == ClassFile.ConstantType.MethodHandle
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(2)) == ClassFile.ConstantType.MethodType
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(3)) == ClassFile.ConstantType.Integer
-                && ((flags = (AltFlags)classFile.GetConstantPoolConstantInteger(bsm.GetArgument(3))) & ~AltFlags.Mask) == 0
+                && ((flags = (AltFlags)classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(3))) & ~AltFlags.Mask) == 0
                 && ((flags & AltFlags.Markers) == 0 || CheckOptionalArgs(classFile, bsm, ClassFile.ConstantType.Class, ref argpos))
                 && ((flags & AltFlags.Bridges) == 0 || CheckOptionalArgs(classFile, bsm, ClassFile.ConstantType.MethodType, ref argpos))
                 && argpos == bsm.ArgumentCount;
@@ -1030,7 +1031,7 @@ namespace IKVM.Runtime
             {
                 return false;
             }
-            int count = classFile.GetConstantPoolConstantInteger(bsm.GetArgument(argpos++));
+            int count = classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(argpos++));
             if (count < 0 || bsm.ArgumentCount - argpos < count)
             {
                 return false;

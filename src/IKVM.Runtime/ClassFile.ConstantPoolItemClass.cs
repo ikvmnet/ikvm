@@ -72,7 +72,7 @@ namespace IKVM.Runtime
                 if (name != null)
                     return;
 
-                name = classFile.GetConstantPoolUtf8String(utf8_cp, reader.Record.NameIndex);
+                name = classFile.GetConstantPoolUtf8String(utf8_cp, reader.Record.Name);
                 if (name.Length > 0)
                 {
                     // We don't enforce the strict class name rules in the static compiler, since HotSpot doesn't enforce *any* rules on

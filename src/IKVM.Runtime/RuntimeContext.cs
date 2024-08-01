@@ -51,7 +51,7 @@ namespace IKVM.Runtime
         ByteCodeHelperMethods byteCodeHelperMethods;
         Serialization serialization;
         InterlockedMethods interlockedMethods;
-        CompilerFactory compilerFactory;
+        CodeCompilerFactory compilerFactory;
         MethodAnalyzerFactory methodAnalyzerFactory;
         MethodHandleUtil methodHandleUtil;
         Boxer boxer;
@@ -197,7 +197,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Gets the <see cref="CompilerFactory"/> associated with this instance of the runtime.
         /// </summary>
-        public CompilerFactory CompilerFactory => GetOrCreateSingleton(ref compilerFactory, () => new CompilerFactory(this, bootstrap));
+        public CodeCompilerFactory CompilerFactory => GetOrCreateSingleton(ref compilerFactory, () => new CodeCompilerFactory(this, bootstrap));
 
         /// <summary>
         /// Gets the <see cref="InterlockedMethods"/> associated with this instance of the runtime.

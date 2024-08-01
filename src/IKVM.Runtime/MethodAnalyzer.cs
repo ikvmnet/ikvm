@@ -26,6 +26,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.ByteCode;
+using IKVM.ByteCode.Writing;
+
 
 #if IMPORTER
 using IKVM.Tools.Importer;
@@ -36,59 +38,6 @@ using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 
 namespace IKVM.Runtime
 {
-
-    /// <summary>
-    /// Provides instances of <see cref="MethodAnalyzer"/>.
-    /// </summary>
-    class MethodAnalyzerFactory
-    {
-
-        readonly RuntimeContext context;
-
-        public readonly RuntimeJavaType ByteArrayType;
-        public readonly RuntimeJavaType BooleanArrayType;
-        public readonly RuntimeJavaType ShortArrayType;
-        public readonly RuntimeJavaType CharArrayType;
-        public readonly RuntimeJavaType IntArrayType;
-        public readonly RuntimeJavaType FloatArrayType;
-        public readonly RuntimeJavaType DoubleArrayType;
-        public readonly RuntimeJavaType LongArrayType;
-        public readonly RuntimeJavaType javaLangThreadDeath;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="context"></param>
-        public MethodAnalyzerFactory(RuntimeContext context)
-        {
-            this.context = context ?? throw new ArgumentNullException(nameof(context));
-            ByteArrayType = context.PrimitiveJavaTypeFactory.BYTE.MakeArrayType(1);
-            BooleanArrayType = context.PrimitiveJavaTypeFactory.BOOLEAN.MakeArrayType(1);
-            ShortArrayType = context.PrimitiveJavaTypeFactory.SHORT.MakeArrayType(1);
-            CharArrayType = context.PrimitiveJavaTypeFactory.CHAR.MakeArrayType(1);
-            IntArrayType = context.PrimitiveJavaTypeFactory.INT.MakeArrayType(1);
-            FloatArrayType = context.PrimitiveJavaTypeFactory.FLOAT.MakeArrayType(1);
-            DoubleArrayType = context.PrimitiveJavaTypeFactory.DOUBLE.MakeArrayType(1);
-            LongArrayType = context.PrimitiveJavaTypeFactory.LONG.MakeArrayType(1);
-            javaLangThreadDeath = context.ClassLoaderFactory.LoadClassCritical("java.lang.ThreadDeath");
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="MethodAnalyzer"/>.
-        /// </summary>
-        /// <param name="host"></param>
-        /// <param name="wrapper"></param>
-        /// <param name="mw"></param>
-        /// <param name="classFile"></param>
-        /// <param name="method"></param>
-        /// <param name="classLoader"></param>
-        /// <returns></returns>
-        public MethodAnalyzer Create(RuntimeJavaType host, RuntimeJavaType wrapper, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method, RuntimeClassLoader classLoader)
-        {
-            return new MethodAnalyzer(context, host, wrapper, mw, classFile, method, classLoader);
-        }
-
-    }
 
     sealed class MethodAnalyzer
     {
@@ -113,7 +62,6 @@ namespace IKVM.Runtime
         MethodAnalyzer(RuntimeContext context)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
-
         }
 
         /// <summary>
@@ -154,9 +102,9 @@ namespace IKVM.Runtime
                 // ensure that exception blocks and handlers start and end at instruction boundaries
                 for (int i = 0; i < method.ExceptionTable.Length; i++)
                 {
-                    int start = method.ExceptionTable[i].startIndex;
-                    int end = method.ExceptionTable[i].endIndex;
-                    int handler = method.ExceptionTable[i].handlerIndex;
+                    int start = method.ExceptionTable[i].StartIndex;
+                    int end = method.ExceptionTable[i].EndIndex;
+                    int handler = method.ExceptionTable[i].HandlerIndex;
                     if (start >= end || start == -1 || end == -1 || handler <= 0)
                     {
                         throw new IndexOutOfRangeException();
@@ -211,15 +159,15 @@ namespace IKVM.Runtime
 
         private void PatchLoadConstants()
         {
-            ClassFile.Method.Instruction[] code = method.Instructions;
+            var code = method.Instructions;
             for (int i = 0; i < code.Length; i++)
             {
                 if (state[i] != null)
                 {
                     switch (code[i].NormalizedOpCode)
                     {
-                        case NormalizedByteCode.__ldc:
-                            switch (GetConstantPoolConstantType(code[i].Arg1))
+                        case NormalizedOpCode._ldc:
+                            switch (VerifyGetConstantPoolConstantType(new((ushort)code[i].Arg1)))
                             {
                                 case ClassFile.ConstantType.Double:
                                 case ClassFile.ConstantType.Float:
@@ -227,7 +175,7 @@ namespace IKVM.Runtime
                                 case ClassFile.ConstantType.Long:
                                 case ClassFile.ConstantType.String:
                                 case ClassFile.ConstantType.LiveObject:
-                                    code[i].PatchOpCode(NormalizedByteCode.__ldc_nothrow);
+                                    code[i].PatchOpCode(NormalizedOpCode.__ldc_nothrow);
                                     break;
                             }
                             break;
@@ -270,7 +218,7 @@ namespace IKVM.Runtime
                             // mark the exception handlers reachable from this instruction
                             for (int j = 0; j < method.ExceptionTable.Length; j++)
                             {
-                                if (method.ExceptionTable[j].startIndex <= i && i < method.ExceptionTable[j].endIndex)
+                                if (method.ExceptionTable[j].StartIndex <= i && i < method.ExceptionTable[j].EndIndex)
                                 {
                                     MergeExceptionHandler(j, state[i]);
                                 }
@@ -279,7 +227,7 @@ namespace IKVM.Runtime
                             ClassFile.Method.Instruction instr = instructions[i];
                             switch (instr.NormalizedOpCode)
                             {
-                                case NormalizedByteCode.__aload:
+                                case NormalizedOpCode._aload:
                                     {
                                         RuntimeJavaType type = s.GetLocalType(instr.NormalizedArg1);
                                         if (type == context.VerifierJavaTypeFactory.Invalid || type.IsPrimitive)
@@ -289,7 +237,7 @@ namespace IKVM.Runtime
                                         s.PushType(type);
                                         break;
                                     }
-                                case NormalizedByteCode.__astore:
+                                case NormalizedOpCode._astore:
                                     {
                                         if (RuntimeVerifierJavaType.IsFaultBlockException(s.PeekType()))
                                         {
@@ -305,10 +253,10 @@ namespace IKVM.Runtime
                                         s.SetLocalType(instr.NormalizedArg1, type, i);
                                         break;
                                     }
-                                case NormalizedByteCode.__aconst_null:
+                                case NormalizedOpCode._aconst_null:
                                     s.PushType(context.VerifierJavaTypeFactory.Null);
                                     break;
-                                case NormalizedByteCode.__aaload:
+                                case NormalizedOpCode._aaload:
                                     {
                                         s.PopInt();
                                         RuntimeJavaType type = s.PopArrayType();
@@ -333,13 +281,13 @@ namespace IKVM.Runtime
                                         }
                                         break;
                                     }
-                                case NormalizedByteCode.__aastore:
+                                case NormalizedOpCode._aastore:
                                     s.PopObjectType();
                                     s.PopInt();
                                     s.PopArrayType();
                                     // TODO check that elem is assignable to the array
                                     break;
-                                case NormalizedByteCode.__baload:
+                                case NormalizedOpCode._baload:
                                     {
                                         s.PopInt();
                                         RuntimeJavaType type = s.PopArrayType();
@@ -352,7 +300,7 @@ namespace IKVM.Runtime
                                         s.PushInt();
                                         break;
                                     }
-                                case NormalizedByteCode.__bastore:
+                                case NormalizedOpCode._bastore:
                                     {
                                         s.PopInt();
                                         s.PopInt();
@@ -365,107 +313,107 @@ namespace IKVM.Runtime
                                         }
                                         break;
                                     }
-                                case NormalizedByteCode.__caload:
+                                case NormalizedOpCode._caload:
                                     s.PopInt();
                                     s.PopObjectType(context.MethodAnalyzerFactory.CharArrayType);
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__castore:
+                                case NormalizedOpCode._castore:
                                     s.PopInt();
                                     s.PopInt();
                                     s.PopObjectType(context.MethodAnalyzerFactory.CharArrayType);
                                     break;
-                                case NormalizedByteCode.__saload:
+                                case NormalizedOpCode._saload:
                                     s.PopInt();
                                     s.PopObjectType(context.MethodAnalyzerFactory.ShortArrayType);
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__sastore:
+                                case NormalizedOpCode._sastore:
                                     s.PopInt();
                                     s.PopInt();
                                     s.PopObjectType(context.MethodAnalyzerFactory.ShortArrayType);
                                     break;
-                                case NormalizedByteCode.__iaload:
+                                case NormalizedOpCode._iaload:
                                     s.PopInt();
                                     s.PopObjectType(context.MethodAnalyzerFactory.IntArrayType);
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__iastore:
+                                case NormalizedOpCode._iastore:
                                     s.PopInt();
                                     s.PopInt();
                                     s.PopObjectType(context.MethodAnalyzerFactory.IntArrayType);
                                     break;
-                                case NormalizedByteCode.__laload:
+                                case NormalizedOpCode._laload:
                                     s.PopInt();
                                     s.PopObjectType(context.MethodAnalyzerFactory.LongArrayType);
                                     s.PushLong();
                                     break;
-                                case NormalizedByteCode.__lastore:
+                                case NormalizedOpCode._lastore:
                                     s.PopLong();
                                     s.PopInt();
                                     s.PopObjectType(context.MethodAnalyzerFactory.LongArrayType);
                                     break;
-                                case NormalizedByteCode.__daload:
+                                case NormalizedOpCode._daload:
                                     s.PopInt();
                                     s.PopObjectType(context.MethodAnalyzerFactory.DoubleArrayType);
                                     s.PushDouble();
                                     break;
-                                case NormalizedByteCode.__dastore:
+                                case NormalizedOpCode._dastore:
                                     s.PopDouble();
                                     s.PopInt();
                                     s.PopObjectType(context.MethodAnalyzerFactory.DoubleArrayType);
                                     break;
-                                case NormalizedByteCode.__faload:
+                                case NormalizedOpCode._faload:
                                     s.PopInt();
                                     s.PopObjectType(context.MethodAnalyzerFactory.FloatArrayType);
                                     s.PushFloat();
                                     break;
-                                case NormalizedByteCode.__fastore:
+                                case NormalizedOpCode._fastore:
                                     s.PopFloat();
                                     s.PopInt();
                                     s.PopObjectType(context.MethodAnalyzerFactory.FloatArrayType);
                                     break;
-                                case NormalizedByteCode.__arraylength:
+                                case NormalizedOpCode._arraylength:
                                     s.PopArrayType();
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__iconst:
+                                case NormalizedOpCode.__iconst:
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__if_icmpeq:
-                                case NormalizedByteCode.__if_icmpne:
-                                case NormalizedByteCode.__if_icmplt:
-                                case NormalizedByteCode.__if_icmpge:
-                                case NormalizedByteCode.__if_icmpgt:
-                                case NormalizedByteCode.__if_icmple:
+                                case NormalizedOpCode._if_icmpeq:
+                                case NormalizedOpCode._if_icmpne:
+                                case NormalizedOpCode._if_icmplt:
+                                case NormalizedOpCode._if_icmpge:
+                                case NormalizedOpCode._if_icmpgt:
+                                case NormalizedOpCode._if_icmple:
                                     s.PopInt();
                                     s.PopInt();
                                     break;
-                                case NormalizedByteCode.__ifeq:
-                                case NormalizedByteCode.__ifge:
-                                case NormalizedByteCode.__ifgt:
-                                case NormalizedByteCode.__ifle:
-                                case NormalizedByteCode.__iflt:
-                                case NormalizedByteCode.__ifne:
+                                case NormalizedOpCode._ifeq:
+                                case NormalizedOpCode._ifge:
+                                case NormalizedOpCode._ifgt:
+                                case NormalizedOpCode._ifle:
+                                case NormalizedOpCode._iflt:
+                                case NormalizedOpCode._ifne:
                                     s.PopInt();
                                     break;
-                                case NormalizedByteCode.__ifnonnull:
-                                case NormalizedByteCode.__ifnull:
+                                case NormalizedOpCode._ifnonnull:
+                                case NormalizedOpCode._ifnull:
                                     // TODO it might be legal to use an unitialized ref here
                                     s.PopObjectType();
                                     break;
-                                case NormalizedByteCode.__if_acmpeq:
-                                case NormalizedByteCode.__if_acmpne:
+                                case NormalizedOpCode._if_acmpeq:
+                                case NormalizedOpCode._if_acmpne:
                                     // TODO it might be legal to use an unitialized ref here
                                     s.PopObjectType();
                                     s.PopObjectType();
                                     break;
-                                case NormalizedByteCode.__getstatic:
-                                case NormalizedByteCode.__dynamic_getstatic:
+                                case NormalizedOpCode._getstatic:
+                                case NormalizedOpCode.__dynamic_getstatic:
                                     // special support for when we're being called from IsSideEffectFreeStaticInitializer
                                     if (mw == null)
                                     {
-                                        switch (GetFieldref(instr.Arg1).Signature[0])
+                                        switch (VerifyGetFieldref(instr.Arg1).Signature[0])
                                         {
                                             case 'B':
                                             case 'Z':
@@ -492,7 +440,7 @@ namespace IKVM.Runtime
                                     }
                                     else
                                     {
-                                        ClassFile.ConstantPoolItemFieldref cpi = GetFieldref(instr.Arg1);
+                                        ClassFile.ConstantPoolItemFieldref cpi = VerifyGetFieldref(instr.Arg1);
                                         if (cpi.GetField() != null && cpi.GetField().FieldTypeWrapper.IsUnloadable)
                                         {
                                             s.PushType(cpi.GetField().FieldTypeWrapper);
@@ -503,12 +451,12 @@ namespace IKVM.Runtime
                                         }
                                     }
                                     break;
-                                case NormalizedByteCode.__putstatic:
-                                case NormalizedByteCode.__dynamic_putstatic:
+                                case NormalizedOpCode._putstatic:
+                                case NormalizedOpCode.__dynamic_putstatic:
                                     // special support for when we're being called from IsSideEffectFreeStaticInitializer
                                     if (mw == null)
                                     {
-                                        switch (GetFieldref(instr.Arg1).Signature[0])
+                                        switch (VerifyGetFieldref(instr.Arg1).Signature[0])
                                         {
                                             case 'B':
                                             case 'Z':
@@ -539,14 +487,14 @@ namespace IKVM.Runtime
                                     }
                                     else
                                     {
-                                        s.PopType(GetFieldref(instr.Arg1).GetFieldType());
+                                        s.PopType(VerifyGetFieldref(instr.Arg1).GetFieldType());
                                     }
                                     break;
-                                case NormalizedByteCode.__getfield:
-                                case NormalizedByteCode.__dynamic_getfield:
+                                case NormalizedOpCode._getfield:
+                                case NormalizedOpCode.__dynamic_getfield:
                                     {
-                                        s.PopObjectType(GetFieldref(instr.Arg1).GetClassType());
-                                        ClassFile.ConstantPoolItemFieldref cpi = GetFieldref(instr.Arg1);
+                                        s.PopObjectType(VerifyGetFieldref(instr.Arg1).GetClassType());
+                                        ClassFile.ConstantPoolItemFieldref cpi = VerifyGetFieldref(instr.Arg1);
                                         if (cpi.GetField() != null && cpi.GetField().FieldTypeWrapper.IsUnloadable)
                                         {
                                             s.PushType(cpi.GetField().FieldTypeWrapper);
@@ -557,24 +505,24 @@ namespace IKVM.Runtime
                                         }
                                         break;
                                     }
-                                case NormalizedByteCode.__putfield:
-                                case NormalizedByteCode.__dynamic_putfield:
-                                    s.PopType(GetFieldref(instr.Arg1).GetFieldType());
+                                case NormalizedOpCode._putfield:
+                                case NormalizedOpCode.__dynamic_putfield:
+                                    s.PopType(VerifyGetFieldref(instr.Arg1).GetFieldType());
                                     // putfield is allowed to access the uninitialized this
                                     if (s.PeekType() == context.VerifierJavaTypeFactory.UninitializedThis
-                                        && wrapper.IsAssignableTo(GetFieldref(instr.Arg1).GetClassType()))
+                                        && wrapper.IsAssignableTo(VerifyGetFieldref(instr.Arg1).GetClassType()))
                                     {
                                         s.PopType();
                                     }
                                     else
                                     {
-                                        s.PopObjectType(GetFieldref(instr.Arg1).GetClassType());
+                                        s.PopObjectType(VerifyGetFieldref(instr.Arg1).GetClassType());
                                     }
                                     break;
-                                case NormalizedByteCode.__ldc_nothrow:
-                                case NormalizedByteCode.__ldc:
+                                case NormalizedOpCode.__ldc_nothrow:
+                                case NormalizedOpCode._ldc:
                                     {
-                                        switch (GetConstantPoolConstantType(instr.Arg1))
+                                        switch (VerifyGetConstantPoolConstantType(new((ushort)instr.Arg1)))
                                         {
                                             case ClassFile.ConstantType.Double:
                                                 s.PushDouble();
@@ -614,22 +562,22 @@ namespace IKVM.Runtime
                                         }
                                         break;
                                     }
-                                case NormalizedByteCode.__clone_array:
-                                case NormalizedByteCode.__invokevirtual:
-                                case NormalizedByteCode.__invokespecial:
-                                case NormalizedByteCode.__invokeinterface:
-                                case NormalizedByteCode.__invokestatic:
-                                case NormalizedByteCode.__dynamic_invokevirtual:
-                                case NormalizedByteCode.__dynamic_invokespecial:
-                                case NormalizedByteCode.__dynamic_invokeinterface:
-                                case NormalizedByteCode.__dynamic_invokestatic:
-                                case NormalizedByteCode.__privileged_invokevirtual:
-                                case NormalizedByteCode.__privileged_invokespecial:
-                                case NormalizedByteCode.__privileged_invokestatic:
-                                case NormalizedByteCode.__methodhandle_invoke:
-                                case NormalizedByteCode.__methodhandle_link:
+                                case NormalizedOpCode.__clone_array:
+                                case NormalizedOpCode._invokevirtual:
+                                case NormalizedOpCode._invokespecial:
+                                case NormalizedOpCode._invokeinterface:
+                                case NormalizedOpCode._invokestatic:
+                                case NormalizedOpCode.__dynamic_invokevirtual:
+                                case NormalizedOpCode.__dynamic_invokespecial:
+                                case NormalizedOpCode.__dynamic_invokeinterface:
+                                case NormalizedOpCode.__dynamic_invokestatic:
+                                case NormalizedOpCode.__privileged_invokevirtual:
+                                case NormalizedOpCode.__privileged_invokespecial:
+                                case NormalizedOpCode.__privileged_invokestatic:
+                                case NormalizedOpCode.__methodhandle_invoke:
+                                case NormalizedOpCode.__methodhandle_link:
                                     {
-                                        ClassFile.ConstantPoolItemMI cpi = GetMethodref(instr.Arg1);
+                                        ClassFile.ConstantPoolItemMI cpi = VerifyGetMethodref(instr.Arg1);
                                         RuntimeJavaType retType = cpi.GetRetType();
                                         // HACK to allow the result of Unsafe.getObjectVolatile() (on an array)
                                         // to be used with Unsafe.putObject() we need to propagate the
@@ -638,13 +586,13 @@ namespace IKVM.Runtime
                                             && cpi.GetMethod().IsIntrinsic
                                             && cpi.Class == "sun.misc.Unsafe"
                                             && cpi.Name == "getObjectVolatile"
-                                            && Intrinsics.IsSupportedArrayTypeForUnsafeOperation(s.GetStackSlot(1)))
+                                            && CodeIntrinsics.IsSupportedArrayTypeForUnsafeOperation(s.GetStackSlot(1)))
                                         {
                                             retType = s.GetStackSlot(1).ElementTypeWrapper;
                                         }
                                         s.MultiPopAnyType(cpi.GetArgTypes().Length);
-                                        if (instr.NormalizedOpCode != NormalizedByteCode.__invokestatic
-                                            && instr.NormalizedOpCode != NormalizedByteCode.__dynamic_invokestatic)
+                                        if (instr.NormalizedOpCode != NormalizedOpCode._invokestatic
+                                            && instr.NormalizedOpCode != NormalizedOpCode.__dynamic_invokestatic)
                                         {
                                             RuntimeJavaType type = s.PopType();
                                             if (ReferenceEquals(cpi.Name, StringConstants.INIT))
@@ -691,11 +639,11 @@ namespace IKVM.Runtime
                                         }
                                         break;
                                     }
-                                case NormalizedByteCode.__invokedynamic:
+                                case NormalizedOpCode._invokedynamic:
                                     {
-                                        ClassFile.ConstantPoolItemInvokeDynamic cpi = GetInvokeDynamic(instr.Arg1);
+                                        var cpi = VerifyGetInvokeDynamic(new((ushort)instr.Arg1));
                                         s.MultiPopAnyType(cpi.GetArgTypes().Length);
-                                        RuntimeJavaType retType = cpi.GetRetType();
+                                        var retType = cpi.GetRetType();
                                         if (retType != context.PrimitiveJavaTypeFactory.VOID)
                                         {
                                             if (retType == context.PrimitiveJavaTypeFactory.DOUBLE)
@@ -713,59 +661,59 @@ namespace IKVM.Runtime
                                         }
                                         break;
                                     }
-                                case NormalizedByteCode.__goto:
+                                case NormalizedOpCode._goto:
                                     break;
-                                case NormalizedByteCode.__istore:
+                                case NormalizedOpCode._istore:
                                     s.PopInt();
                                     s.SetLocalInt(instr.NormalizedArg1, i);
                                     break;
-                                case NormalizedByteCode.__iload:
+                                case NormalizedOpCode._iload:
                                     s.GetLocalInt(instr.NormalizedArg1);
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__ineg:
+                                case NormalizedOpCode._ineg:
                                     s.PopInt();
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__iadd:
-                                case NormalizedByteCode.__isub:
-                                case NormalizedByteCode.__imul:
-                                case NormalizedByteCode.__idiv:
-                                case NormalizedByteCode.__irem:
-                                case NormalizedByteCode.__iand:
-                                case NormalizedByteCode.__ior:
-                                case NormalizedByteCode.__ixor:
-                                case NormalizedByteCode.__ishl:
-                                case NormalizedByteCode.__ishr:
-                                case NormalizedByteCode.__iushr:
+                                case NormalizedOpCode._iadd:
+                                case NormalizedOpCode._isub:
+                                case NormalizedOpCode._imul:
+                                case NormalizedOpCode._idiv:
+                                case NormalizedOpCode._irem:
+                                case NormalizedOpCode._iand:
+                                case NormalizedOpCode._ior:
+                                case NormalizedOpCode._ixor:
+                                case NormalizedOpCode._ishl:
+                                case NormalizedOpCode._ishr:
+                                case NormalizedOpCode._iushr:
                                     s.PopInt();
                                     s.PopInt();
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__lneg:
+                                case NormalizedOpCode._lneg:
                                     s.PopLong();
                                     s.PushLong();
                                     break;
-                                case NormalizedByteCode.__ladd:
-                                case NormalizedByteCode.__lsub:
-                                case NormalizedByteCode.__lmul:
-                                case NormalizedByteCode.__ldiv:
-                                case NormalizedByteCode.__lrem:
-                                case NormalizedByteCode.__land:
-                                case NormalizedByteCode.__lor:
-                                case NormalizedByteCode.__lxor:
+                                case NormalizedOpCode._ladd:
+                                case NormalizedOpCode._lsub:
+                                case NormalizedOpCode._lmul:
+                                case NormalizedOpCode._ldiv:
+                                case NormalizedOpCode._lrem:
+                                case NormalizedOpCode._land:
+                                case NormalizedOpCode._lor:
+                                case NormalizedOpCode._lxor:
                                     s.PopLong();
                                     s.PopLong();
                                     s.PushLong();
                                     break;
-                                case NormalizedByteCode.__lshl:
-                                case NormalizedByteCode.__lshr:
-                                case NormalizedByteCode.__lushr:
+                                case NormalizedOpCode._lshl:
+                                case NormalizedOpCode._lshr:
+                                case NormalizedOpCode._lushr:
                                     s.PopInt();
                                     s.PopLong();
                                     s.PushLong();
                                     break;
-                                case NormalizedByteCode.__fneg:
+                                case NormalizedOpCode._fneg:
                                     if (s.PopFloat())
                                     {
                                         s.PushExtendedFloat();
@@ -775,16 +723,16 @@ namespace IKVM.Runtime
                                         s.PushFloat();
                                     }
                                     break;
-                                case NormalizedByteCode.__fadd:
-                                case NormalizedByteCode.__fsub:
-                                case NormalizedByteCode.__fmul:
-                                case NormalizedByteCode.__fdiv:
-                                case NormalizedByteCode.__frem:
+                                case NormalizedOpCode._fadd:
+                                case NormalizedOpCode._fsub:
+                                case NormalizedOpCode._fmul:
+                                case NormalizedOpCode._fdiv:
+                                case NormalizedOpCode._frem:
                                     s.PopFloat();
                                     s.PopFloat();
                                     s.PushExtendedFloat();
                                     break;
-                                case NormalizedByteCode.__dneg:
+                                case NormalizedOpCode._dneg:
                                     if (s.PopDouble())
                                     {
                                         s.PushExtendedDouble();
@@ -794,22 +742,22 @@ namespace IKVM.Runtime
                                         s.PushDouble();
                                     }
                                     break;
-                                case NormalizedByteCode.__dadd:
-                                case NormalizedByteCode.__dsub:
-                                case NormalizedByteCode.__dmul:
-                                case NormalizedByteCode.__ddiv:
-                                case NormalizedByteCode.__drem:
+                                case NormalizedOpCode._dadd:
+                                case NormalizedOpCode._dsub:
+                                case NormalizedOpCode._dmul:
+                                case NormalizedOpCode._ddiv:
+                                case NormalizedOpCode._drem:
                                     s.PopDouble();
                                     s.PopDouble();
                                     s.PushExtendedDouble();
                                     break;
-                                case NormalizedByteCode.__new:
+                                case NormalizedOpCode._new:
                                     {
                                         // mark the type, so that we can ascertain that it is a "new object"
                                         RuntimeJavaType type;
                                         if (!newTypes.TryGetValue(i, out type))
                                         {
-                                            type = GetConstantPoolClassType(instr.Arg1);
+                                            type = VerifyGetConstantPoolClassType(new((ushort)instr.Arg1));
                                             if (type.IsArray)
                                             {
                                                 throw new VerifyError("Illegal use of array type");
@@ -820,7 +768,7 @@ namespace IKVM.Runtime
                                         s.PushType(type);
                                         break;
                                     }
-                                case NormalizedByteCode.__multianewarray:
+                                case NormalizedOpCode._multianewarray:
                                     {
                                         if (instr.Arg2 < 1)
                                         {
@@ -830,7 +778,7 @@ namespace IKVM.Runtime
                                         {
                                             s.PopInt();
                                         }
-                                        RuntimeJavaType type = GetConstantPoolClassType(instr.Arg1);
+                                        RuntimeJavaType type = VerifyGetConstantPoolClassType(new((ushort)instr.Arg1));
                                         if (type.ArrayRank < instr.Arg2)
                                         {
                                             throw new VerifyError("Illegal dimension argument");
@@ -838,10 +786,10 @@ namespace IKVM.Runtime
                                         s.PushType(type);
                                         break;
                                     }
-                                case NormalizedByteCode.__anewarray:
+                                case NormalizedOpCode._anewarray:
                                     {
                                         s.PopInt();
-                                        RuntimeJavaType type = GetConstantPoolClassType(instr.Arg1);
+                                        RuntimeJavaType type = VerifyGetConstantPoolClassType(new((ushort)instr.Arg1));
                                         if (type.IsUnloadable)
                                         {
                                             s.PushType(new RuntimeUnloadableJavaType(context, "[" + type.SigName));
@@ -852,7 +800,7 @@ namespace IKVM.Runtime
                                         }
                                         break;
                                     }
-                                case NormalizedByteCode.__newarray:
+                                case NormalizedOpCode._newarray:
                                     s.PopInt();
                                     switch (instr.Arg1)
                                     {
@@ -884,7 +832,7 @@ namespace IKVM.Runtime
                                             throw new VerifyError("Bad type");
                                     }
                                     break;
-                                case NormalizedByteCode.__swap:
+                                case NormalizedOpCode._swap:
                                     {
                                         RuntimeJavaType t1 = s.PopType();
                                         RuntimeJavaType t2 = s.PopType();
@@ -892,14 +840,14 @@ namespace IKVM.Runtime
                                         s.PushType(t2);
                                         break;
                                     }
-                                case NormalizedByteCode.__dup:
+                                case NormalizedOpCode._dup:
                                     {
                                         RuntimeJavaType t = s.PopType();
                                         s.PushType(t);
                                         s.PushType(t);
                                         break;
                                     }
-                                case NormalizedByteCode.__dup2:
+                                case NormalizedOpCode._dup2:
                                     {
                                         RuntimeJavaType t = s.PopAnyType();
                                         if (t.IsWidePrimitive || t == context.VerifierJavaTypeFactory.ExtendedDouble)
@@ -917,7 +865,7 @@ namespace IKVM.Runtime
                                         }
                                         break;
                                     }
-                                case NormalizedByteCode.__dup_x1:
+                                case NormalizedOpCode._dup_x1:
                                     {
                                         RuntimeJavaType value1 = s.PopType();
                                         RuntimeJavaType value2 = s.PopType();
@@ -926,7 +874,7 @@ namespace IKVM.Runtime
                                         s.PushType(value1);
                                         break;
                                     }
-                                case NormalizedByteCode.__dup2_x1:
+                                case NormalizedOpCode._dup2_x1:
                                     {
                                         RuntimeJavaType value1 = s.PopAnyType();
                                         if (value1.IsWidePrimitive || value1 == context.VerifierJavaTypeFactory.ExtendedDouble)
@@ -948,7 +896,7 @@ namespace IKVM.Runtime
                                         }
                                         break;
                                     }
-                                case NormalizedByteCode.__dup_x2:
+                                case NormalizedOpCode._dup_x2:
                                     {
                                         RuntimeJavaType value1 = s.PopType();
                                         RuntimeJavaType value2 = s.PopAnyType();
@@ -968,7 +916,7 @@ namespace IKVM.Runtime
                                         }
                                         break;
                                     }
-                                case NormalizedByteCode.__dup2_x2:
+                                case NormalizedOpCode._dup2_x2:
                                     {
                                         RuntimeJavaType value1 = s.PopAnyType();
                                         if (value1.IsWidePrimitive || value1 == context.VerifierJavaTypeFactory.ExtendedDouble)
@@ -1018,10 +966,10 @@ namespace IKVM.Runtime
                                         }
                                         break;
                                     }
-                                case NormalizedByteCode.__pop:
+                                case NormalizedOpCode._pop:
                                     s.PopType();
                                     break;
-                                case NormalizedByteCode.__pop2:
+                                case NormalizedOpCode._pop2:
                                     {
                                         RuntimeJavaType type = s.PopAnyType();
                                         if (!type.IsWidePrimitive && type != context.VerifierJavaTypeFactory.ExtendedDouble)
@@ -1030,13 +978,13 @@ namespace IKVM.Runtime
                                         }
                                         break;
                                     }
-                                case NormalizedByteCode.__monitorenter:
-                                case NormalizedByteCode.__monitorexit:
+                                case NormalizedOpCode._monitorenter:
+                                case NormalizedOpCode._monitorexit:
                                     // TODO these bytecodes are allowed on an uninitialized object, but
                                     // we don't support that at the moment...
                                     s.PopObjectType();
                                     break;
-                                case NormalizedByteCode.__return:
+                                case NormalizedOpCode._return:
                                     // mw is null if we're called from IsSideEffectFreeStaticInitializer
                                     if (mw != null)
                                     {
@@ -1048,10 +996,10 @@ namespace IKVM.Runtime
                                         s.CheckUninitializedThis();
                                     }
                                     break;
-                                case NormalizedByteCode.__areturn:
+                                case NormalizedOpCode._areturn:
                                     s.PopObjectType(mw.ReturnType);
                                     break;
-                                case NormalizedByteCode.__ireturn:
+                                case NormalizedOpCode._ireturn:
                                     {
                                         s.PopInt();
                                         if (!mw.ReturnType.IsIntOnStackPrimitive)
@@ -1060,93 +1008,93 @@ namespace IKVM.Runtime
                                         }
                                         break;
                                     }
-                                case NormalizedByteCode.__lreturn:
+                                case NormalizedOpCode._lreturn:
                                     s.PopLong();
                                     if (mw.ReturnType != context.PrimitiveJavaTypeFactory.LONG)
                                     {
                                         throw new VerifyError("Wrong return type in function");
                                     }
                                     break;
-                                case NormalizedByteCode.__freturn:
+                                case NormalizedOpCode._freturn:
                                     s.PopFloat();
                                     if (mw.ReturnType != context.PrimitiveJavaTypeFactory.FLOAT)
                                     {
                                         throw new VerifyError("Wrong return type in function");
                                     }
                                     break;
-                                case NormalizedByteCode.__dreturn:
+                                case NormalizedOpCode._dreturn:
                                     s.PopDouble();
                                     if (mw.ReturnType != context.PrimitiveJavaTypeFactory.DOUBLE)
                                     {
                                         throw new VerifyError("Wrong return type in function");
                                     }
                                     break;
-                                case NormalizedByteCode.__fload:
+                                case NormalizedOpCode._fload:
                                     s.GetLocalFloat(instr.NormalizedArg1);
                                     s.PushFloat();
                                     break;
-                                case NormalizedByteCode.__fstore:
+                                case NormalizedOpCode._fstore:
                                     s.PopFloat();
                                     s.SetLocalFloat(instr.NormalizedArg1, i);
                                     break;
-                                case NormalizedByteCode.__dload:
+                                case NormalizedOpCode._dload:
                                     s.GetLocalDouble(instr.NormalizedArg1);
                                     s.PushDouble();
                                     break;
-                                case NormalizedByteCode.__dstore:
+                                case NormalizedOpCode._dstore:
                                     s.PopDouble();
                                     s.SetLocalDouble(instr.NormalizedArg1, i);
                                     break;
-                                case NormalizedByteCode.__lload:
+                                case NormalizedOpCode._lload:
                                     s.GetLocalLong(instr.NormalizedArg1);
                                     s.PushLong();
                                     break;
-                                case NormalizedByteCode.__lstore:
+                                case NormalizedOpCode._lstore:
                                     s.PopLong();
                                     s.SetLocalLong(instr.NormalizedArg1, i);
                                     break;
-                                case NormalizedByteCode.__lconst_0:
-                                case NormalizedByteCode.__lconst_1:
+                                case NormalizedOpCode._lconst_0:
+                                case NormalizedOpCode._lconst_1:
                                     s.PushLong();
                                     break;
-                                case NormalizedByteCode.__fconst_0:
-                                case NormalizedByteCode.__fconst_1:
-                                case NormalizedByteCode.__fconst_2:
+                                case NormalizedOpCode._fconst_0:
+                                case NormalizedOpCode._fconst_1:
+                                case NormalizedOpCode._fconst_2:
                                     s.PushFloat();
                                     break;
-                                case NormalizedByteCode.__dconst_0:
-                                case NormalizedByteCode.__dconst_1:
+                                case NormalizedOpCode._dconst_0:
+                                case NormalizedOpCode._dconst_1:
                                     s.PushDouble();
                                     break;
-                                case NormalizedByteCode.__lcmp:
+                                case NormalizedOpCode._lcmp:
                                     s.PopLong();
                                     s.PopLong();
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__fcmpl:
-                                case NormalizedByteCode.__fcmpg:
+                                case NormalizedOpCode._fcmpl:
+                                case NormalizedOpCode._fcmpg:
                                     s.PopFloat();
                                     s.PopFloat();
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__dcmpl:
-                                case NormalizedByteCode.__dcmpg:
+                                case NormalizedOpCode._dcmpl:
+                                case NormalizedOpCode._dcmpg:
                                     s.PopDouble();
                                     s.PopDouble();
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__checkcast:
+                                case NormalizedOpCode._checkcast:
                                     s.PopObjectType();
-                                    s.PushType(GetConstantPoolClassType(instr.Arg1));
+                                    s.PushType(VerifyGetConstantPoolClassType(new((ushort)instr.Arg1)));
                                     break;
-                                case NormalizedByteCode.__instanceof:
+                                case NormalizedOpCode._instanceof:
                                     s.PopObjectType();
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__iinc:
+                                case NormalizedOpCode._iinc:
                                     s.GetLocalInt(instr.Arg1);
                                     break;
-                                case NormalizedByteCode.__athrow:
+                                case NormalizedOpCode._athrow:
                                     if (RuntimeVerifierJavaType.IsFaultBlockException(s.PeekType()))
                                     {
                                         s.PopFaultBlockException();
@@ -1156,80 +1104,80 @@ namespace IKVM.Runtime
                                         s.PopObjectType(context.JavaBase.TypeOfjavaLangThrowable);
                                     }
                                     break;
-                                case NormalizedByteCode.__tableswitch:
-                                case NormalizedByteCode.__lookupswitch:
+                                case NormalizedOpCode._tableswitch:
+                                case NormalizedOpCode._lookupswitch:
                                     s.PopInt();
                                     break;
-                                case NormalizedByteCode.__i2b:
-                                    s.PopInt();
-                                    s.PushInt();
-                                    break;
-                                case NormalizedByteCode.__i2c:
+                                case NormalizedOpCode._i2b:
                                     s.PopInt();
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__i2s:
+                                case NormalizedOpCode._i2c:
                                     s.PopInt();
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__i2l:
+                                case NormalizedOpCode._i2s:
+                                    s.PopInt();
+                                    s.PushInt();
+                                    break;
+                                case NormalizedOpCode._i2l:
                                     s.PopInt();
                                     s.PushLong();
                                     break;
-                                case NormalizedByteCode.__i2f:
+                                case NormalizedOpCode._i2f:
                                     s.PopInt();
                                     s.PushFloat();
                                     break;
-                                case NormalizedByteCode.__i2d:
+                                case NormalizedOpCode._i2d:
                                     s.PopInt();
                                     s.PushDouble();
                                     break;
-                                case NormalizedByteCode.__l2i:
+                                case NormalizedOpCode._l2i:
                                     s.PopLong();
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__l2f:
+                                case NormalizedOpCode._l2f:
                                     s.PopLong();
                                     s.PushFloat();
                                     break;
-                                case NormalizedByteCode.__l2d:
+                                case NormalizedOpCode._l2d:
                                     s.PopLong();
                                     s.PushDouble();
                                     break;
-                                case NormalizedByteCode.__f2i:
+                                case NormalizedOpCode._f2i:
                                     s.PopFloat();
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__f2l:
+                                case NormalizedOpCode._f2l:
                                     s.PopFloat();
                                     s.PushLong();
                                     break;
-                                case NormalizedByteCode.__f2d:
+                                case NormalizedOpCode._f2d:
                                     s.PopFloat();
                                     s.PushDouble();
                                     break;
-                                case NormalizedByteCode.__d2i:
+                                case NormalizedOpCode._d2i:
                                     s.PopDouble();
                                     s.PushInt();
                                     break;
-                                case NormalizedByteCode.__d2f:
+                                case NormalizedOpCode._d2f:
                                     s.PopDouble();
                                     s.PushFloat();
                                     break;
-                                case NormalizedByteCode.__d2l:
+                                case NormalizedOpCode._d2l:
                                     s.PopDouble();
                                     s.PushLong();
                                     break;
-                                case NormalizedByteCode.__nop:
+                                case NormalizedOpCode._nop:
                                     if (i + 1 == instructions.Length)
                                     {
                                         throw new VerifyError("Falling off the end of the code");
                                     }
                                     break;
-                                case NormalizedByteCode.__static_error:
+                                case NormalizedOpCode.__static_error:
                                     break;
-                                case NormalizedByteCode.__jsr:
-                                case NormalizedByteCode.__ret:
+                                case NormalizedOpCode._jsr:
+                                case NormalizedOpCode._ret:
                                     throw new VerifyError("Bad instruction");
                                 default:
                                     throw new NotImplementedException(instr.NormalizedOpCode.ToString());
@@ -1240,14 +1188,14 @@ namespace IKVM.Runtime
                             }
                             for (int j = 0; j < method.ExceptionTable.Length; j++)
                             {
-                                if (method.ExceptionTable[j].endIndex == i + 1)
+                                if (method.ExceptionTable[j].EndIndex == i + 1)
                                 {
                                     MergeExceptionHandler(j, s);
                                 }
                             }
                             try
                             {
-                                switch (ByteCodeMetaData.GetFlowControl(instr.NormalizedOpCode))
+                                switch (OpCodeMetaData.GetFlowControl(instr.NormalizedOpCode))
                                 {
                                     case ByteCodeFlowControl.Switch:
                                         for (int j = 0; j < instr.SwitchEntryCount; j++)
@@ -1299,25 +1247,26 @@ namespace IKVM.Runtime
 
         private void MergeExceptionHandler(int exceptionIndex, InstructionState curr)
         {
-            int idx = method.ExceptionTable[exceptionIndex].handlerIndex;
+            int idx = method.ExceptionTable[exceptionIndex].HandlerIndex;
             InstructionState ex = curr.CopyLocals();
-            int catch_type = method.ExceptionTable[exceptionIndex].catch_type;
-            if (catch_type == 0)
+            var catch_type = method.ExceptionTable[exceptionIndex].CatchType;
+            if (catch_type.IsNil)
             {
-                RuntimeJavaType tw;
-                if (!faultTypes.TryGetValue(idx, out tw))
+                if (!faultTypes.TryGetValue(idx, out var tw))
                 {
                     tw = RuntimeVerifierJavaType.MakeFaultBlockException(this, idx);
                     faultTypes.Add(idx, tw);
                 }
+
                 ex.PushType(tw);
             }
             else
             {
                 // TODO if the exception type is unloadable we should consider pushing
                 // Throwable as the type and recording a loader constraint
-                ex.PushType(GetConstantPoolClassType(catch_type));
+                ex.PushType(VerifyGetConstantPoolClassType(catch_type));
             }
+
             state[idx] += ex;
         }
 
@@ -1333,13 +1282,13 @@ namespace IKVM.Runtime
                     {
                         switch (instructions[i].NormalizedOpCode)
                         {
-                            case NormalizedByteCode.__invokeinterface:
-                            case NormalizedByteCode.__invokespecial:
-                            case NormalizedByteCode.__invokestatic:
-                            case NormalizedByteCode.__invokevirtual:
+                            case NormalizedOpCode._invokeinterface:
+                            case NormalizedOpCode._invokespecial:
+                            case NormalizedOpCode._invokestatic:
+                            case NormalizedOpCode._invokevirtual:
                                 VerifyInvokePassTwo(i);
                                 break;
-                            case NormalizedByteCode.__invokedynamic:
+                            case NormalizedOpCode._invokedynamic:
                                 VerifyInvokeDynamic(i);
                                 break;
                         }
@@ -1361,13 +1310,13 @@ namespace IKVM.Runtime
         private void VerifyInvokePassTwo(int index)
         {
             StackState stack = new StackState(state[index]);
-            NormalizedByteCode invoke = method.Instructions[index].NormalizedOpCode;
-            ClassFile.ConstantPoolItemMI cpi = GetMethodref(method.Instructions[index].Arg1);
-            if ((invoke == NormalizedByteCode.__invokestatic || invoke == NormalizedByteCode.__invokespecial) && classFile.MajorVersion >= 52)
+            NormalizedOpCode invoke = method.Instructions[index].NormalizedOpCode;
+            ClassFile.ConstantPoolItemMI cpi = VerifyGetMethodref(method.Instructions[index].Arg1);
+            if ((invoke == NormalizedOpCode._invokestatic || invoke == NormalizedOpCode._invokespecial) && classFile.MajorVersion >= 52)
             {
                 // invokestatic and invokespecial may be used to invoke interface methods in Java 8
                 // but invokespecial can only invoke methods in the current interface or a directly implemented interface
-                if (invoke == NormalizedByteCode.__invokespecial && cpi is ClassFile.ConstantPoolItemInterfaceMethodref)
+                if (invoke == NormalizedOpCode._invokespecial && cpi is ClassFile.ConstantPoolItemInterfaceMethodref)
                 {
                     if (cpi.GetClassType() == host)
                     {
@@ -1379,11 +1328,11 @@ namespace IKVM.Runtime
                     }
                 }
             }
-            else if ((cpi is ClassFile.ConstantPoolItemInterfaceMethodref) != (invoke == NormalizedByteCode.__invokeinterface))
+            else if ((cpi is ClassFile.ConstantPoolItemInterfaceMethodref) != (invoke == NormalizedOpCode._invokeinterface))
             {
                 throw new VerifyError("Illegal constant pool index");
             }
-            if (invoke != NormalizedByteCode.__invokespecial && ReferenceEquals(cpi.Name, StringConstants.INIT))
+            if (invoke != NormalizedOpCode._invokespecial && ReferenceEquals(cpi.Name, StringConstants.INIT))
             {
                 throw new VerifyError("Must call initializers using invokespecial");
             }
@@ -1396,7 +1345,7 @@ namespace IKVM.Runtime
             {
                 stack.PopType(args[j]);
             }
-            if (invoke == NormalizedByteCode.__invokeinterface)
+            if (invoke == NormalizedOpCode._invokeinterface)
             {
                 int argcount = args.Length + 1;
                 for (int j = 0; j < args.Length; j++)
@@ -1413,7 +1362,7 @@ namespace IKVM.Runtime
             }
             bool isnew = false;
             RuntimeJavaType thisType;
-            if (invoke == NormalizedByteCode.__invokestatic)
+            if (invoke == NormalizedOpCode._invokestatic)
             {
                 thisType = null;
             }
@@ -1438,7 +1387,7 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    if (invoke != NormalizedByteCode.__invokeinterface)
+                    if (invoke != NormalizedOpCode._invokeinterface)
                     {
                         RuntimeJavaType refType = stack.PopObjectType();
                         RuntimeJavaType targetType = cpi.GetClassType();
@@ -1449,7 +1398,7 @@ namespace IKVM.Runtime
                             throw new VerifyError("Incompatible object argument for function call");
                         }
                         // for invokespecial we also need to make sure we're calling ourself or a base class
-                        if (invoke == NormalizedByteCode.__invokespecial)
+                        if (invoke == NormalizedOpCode._invokespecial)
                         {
                             if (RuntimeVerifierJavaType.IsNullOrUnloadable(refType))
                             {
@@ -1507,7 +1456,7 @@ namespace IKVM.Runtime
         private void VerifyInvokeDynamic(int index)
         {
             StackState stack = new StackState(state[index]);
-            ClassFile.ConstantPoolItemInvokeDynamic cpi = GetInvokeDynamic(method.Instructions[index].Arg1);
+            ClassFile.ConstantPoolItemInvokeDynamic cpi = VerifyGetInvokeDynamic(new((ushort)method.Instructions[index].Arg1));
             RuntimeJavaType[] args = cpi.GetArgTypes();
             for (int j = args.Length - 1; j >= 0; j--)
             {
@@ -1529,8 +1478,8 @@ namespace IKVM.Runtime
                     ClassFile.Method.Instruction[] instructions = method.Instructions;
                     for (int i = 0; i < instructions.Length; i++)
                     {
-                        if (instructions[i].NormalizedOpCode == NormalizedByteCode.__getstatic
-                            && instructions[i + 1].NormalizedOpCode == NormalizedByteCode.__ifne
+                        if (instructions[i].NormalizedOpCode == NormalizedOpCode._getstatic
+                            && instructions[i + 1].NormalizedOpCode == NormalizedOpCode._ifne
                             && instructions[i + 1].TargetIndex > i
                             && (flags[i + 1] & InstructionFlags.BranchTarget) == 0)
                         {
@@ -1538,7 +1487,7 @@ namespace IKVM.Runtime
                             if (field != null && field.FieldTypeWrapper == classLoader.Context.PrimitiveJavaTypeFactory.BOOLEAN && (bool)field.GetConstantValue())
                             {
                                 // We know the branch will always be taken, so we replace the getstatic/ifne by a goto.
-                                instructions[i].PatchOpCode(NormalizedByteCode.__goto, instructions[i + 1].TargetIndex);
+                                instructions[i].PatchOpCode(NormalizedOpCode._goto, instructions[i + 1].TargetIndex);
                             }
                         }
                     }
@@ -1559,24 +1508,24 @@ namespace IKVM.Runtime
                         StackState stack = new StackState(state[i]);
                         switch (instructions[i].NormalizedOpCode)
                         {
-                            case NormalizedByteCode.__invokeinterface:
-                            case NormalizedByteCode.__invokespecial:
-                            case NormalizedByteCode.__invokestatic:
-                            case NormalizedByteCode.__invokevirtual:
+                            case NormalizedOpCode._invokeinterface:
+                            case NormalizedOpCode._invokespecial:
+                            case NormalizedOpCode._invokestatic:
+                            case NormalizedOpCode._invokevirtual:
                                 PatchInvoke(wrapper, ref instructions[i], stack);
                                 break;
-                            case NormalizedByteCode.__getfield:
-                            case NormalizedByteCode.__putfield:
-                            case NormalizedByteCode.__getstatic:
-                            case NormalizedByteCode.__putstatic:
+                            case NormalizedOpCode._getfield:
+                            case NormalizedOpCode._putfield:
+                            case NormalizedOpCode._getstatic:
+                            case NormalizedOpCode._putstatic:
                                 PatchFieldAccess(wrapper, mw, ref instructions[i], stack);
                                 break;
-                            case NormalizedByteCode.__ldc:
-                                switch (classFile.GetConstantPoolConstantType(instructions[i].Arg1))
+                            case NormalizedOpCode._ldc:
+                                switch (classFile.GetConstantPoolConstantType(new((ushort)instructions[i].Arg1)))
                                 {
                                     case ClassFile.ConstantType.Class:
                                         {
-                                            RuntimeJavaType tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+                                            RuntimeJavaType tw = classFile.GetConstantPoolClassType(new((ushort)instructions[i].Arg1));
                                             if (tw.IsUnloadable)
                                             {
                                                 ConditionalPatchNoClassDefFoundError(ref instructions[i], tw);
@@ -1585,7 +1534,7 @@ namespace IKVM.Runtime
                                         }
                                     case ClassFile.ConstantType.MethodType:
                                         {
-                                            ClassFile.ConstantPoolItemMethodType cpi = classFile.GetConstantPoolConstantMethodType(instructions[i].Arg1);
+                                            ClassFile.ConstantPoolItemMethodType cpi = classFile.GetConstantPoolConstantMethodType(new((ushort)instructions[i].Arg1));
                                             RuntimeJavaType[] args = cpi.GetArgTypes();
                                             RuntimeJavaType tw = cpi.GetRetType();
                                             for (int j = 0; !tw.IsUnloadable && j < args.Length; j++)
@@ -1603,9 +1552,9 @@ namespace IKVM.Runtime
                                         break;
                                 }
                                 break;
-                            case NormalizedByteCode.__new:
+                            case NormalizedOpCode._new:
                                 {
-                                    RuntimeJavaType tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+                                    RuntimeJavaType tw = classFile.GetConstantPoolClassType(new((ushort)instructions[i].Arg1));
                                     if (tw.IsUnloadable)
                                     {
                                         ConditionalPatchNoClassDefFoundError(ref instructions[i], tw);
@@ -1620,10 +1569,10 @@ namespace IKVM.Runtime
                                     }
                                     break;
                                 }
-                            case NormalizedByteCode.__multianewarray:
-                            case NormalizedByteCode.__anewarray:
+                            case NormalizedOpCode._multianewarray:
+                            case NormalizedOpCode._anewarray:
                                 {
-                                    RuntimeJavaType tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+                                    RuntimeJavaType tw = classFile.GetConstantPoolClassType(new((ushort)instructions[i].Arg1));
                                     if (tw.IsUnloadable)
                                     {
                                         ConditionalPatchNoClassDefFoundError(ref instructions[i], tw);
@@ -1634,10 +1583,10 @@ namespace IKVM.Runtime
                                     }
                                     break;
                                 }
-                            case NormalizedByteCode.__checkcast:
-                            case NormalizedByteCode.__instanceof:
+                            case NormalizedOpCode._checkcast:
+                            case NormalizedOpCode._instanceof:
                                 {
-                                    RuntimeJavaType tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+                                    RuntimeJavaType tw = classFile.GetConstantPoolClassType(new((ushort)instructions[i].Arg1));
                                     if (tw.IsUnloadable)
                                     {
                                         // If the type is unloadable, we always generate the dynamic code
@@ -1651,7 +1600,7 @@ namespace IKVM.Runtime
                                     }
                                     break;
                                 }
-                            case NormalizedByteCode.__aaload:
+                            case NormalizedOpCode._aaload:
                                 {
                                     stack.PopInt();
                                     RuntimeJavaType tw = stack.PopArrayType();
@@ -1661,7 +1610,7 @@ namespace IKVM.Runtime
                                     }
                                     break;
                                 }
-                            case NormalizedByteCode.__aastore:
+                            case NormalizedOpCode._aastore:
                                 {
                                     stack.PopObjectType();
                                     stack.PopInt();
@@ -1682,7 +1631,7 @@ namespace IKVM.Runtime
 
         private void PatchLdcMethodHandle(ref ClassFile.Method.Instruction instr)
         {
-            ClassFile.ConstantPoolItemMethodHandle cpi = classFile.GetConstantPoolConstantMethodHandle(instr.Arg1);
+            ClassFile.ConstantPoolItemMethodHandle cpi = classFile.GetConstantPoolConstantMethodHandle(new((ushort)instr.Arg1));
             if (cpi.GetClassType().IsUnloadable)
             {
                 ConditionalPatchNoClassDefFoundError(ref instr, cpi.GetClassType());
@@ -1815,9 +1764,9 @@ namespace IKVM.Runtime
                         // mark the exception handlers reachable from this instruction
                         for (int j = 0; j < exceptions.Length; j++)
                         {
-                            if (exceptions[j].startIndex <= i && i < exceptions[j].endIndex)
+                            if (exceptions[j].StartIndex <= i && i < exceptions[j].EndIndex)
                             {
-                                int idx = exceptions[j].handlerIndex;
+                                int idx = exceptions[j].HandlerIndex;
                                 if (!skipFaultBlocks || !RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(idx, 0)))
                                 {
                                     flags[idx] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
@@ -1832,7 +1781,7 @@ namespace IKVM.Runtime
 
         private static void MarkSuccessors(ClassFile.Method.Instruction[] code, InstructionFlags[] flags, int index)
         {
-            switch (ByteCodeMetaData.GetFlowControl(code[index].NormalizedOpCode))
+            switch (OpCodeMetaData.GetFlowControl(code[index].NormalizedOpCode))
             {
                 case ByteCodeFlowControl.Switch:
                     {
@@ -1880,26 +1829,26 @@ namespace IKVM.Runtime
             for (int i = 0; i < ar.Count; i++)
             {
                 ExceptionTableEntry ei = ar[i];
-                if (ei.startIndex == ei.handlerIndex && ei.catch_type == 0)
+                if (ei.StartIndex == ei.HandlerIndex && ei.CatchType.IsNil)
                 {
-                    int index = ei.startIndex;
+                    int index = ei.StartIndex;
                     if (index + 2 < instructions.Length
-                        && ei.endIndex == index + 2
-                        && instructions[index].NormalizedOpCode == NormalizedByteCode.__aload
-                        && instructions[index + 1].NormalizedOpCode == NormalizedByteCode.__monitorexit
-                        && instructions[index + 2].NormalizedOpCode == NormalizedByteCode.__athrow)
+                        && ei.EndIndex == index + 2
+                        && instructions[index].NormalizedOpCode == NormalizedOpCode._aload
+                        && instructions[index + 1].NormalizedOpCode == NormalizedOpCode._monitorexit
+                        && instructions[index + 2].NormalizedOpCode == NormalizedOpCode._athrow)
                     {
                         // this is the async exception guard that Jikes and the Eclipse Java Compiler produce
                         ar.RemoveAt(i);
                         i--;
                     }
                     else if (index + 4 < instructions.Length
-                        && ei.endIndex == index + 3
-                        && instructions[index].NormalizedOpCode == NormalizedByteCode.__astore
-                        && instructions[index + 1].NormalizedOpCode == NormalizedByteCode.__aload
-                        && instructions[index + 2].NormalizedOpCode == NormalizedByteCode.__monitorexit
-                        && instructions[index + 3].NormalizedOpCode == NormalizedByteCode.__aload
-                        && instructions[index + 4].NormalizedOpCode == NormalizedByteCode.__athrow
+                        && ei.EndIndex == index + 3
+                        && instructions[index].NormalizedOpCode == NormalizedOpCode._astore
+                        && instructions[index + 1].NormalizedOpCode == NormalizedOpCode._aload
+                        && instructions[index + 2].NormalizedOpCode == NormalizedOpCode._monitorexit
+                        && instructions[index + 3].NormalizedOpCode == NormalizedOpCode._aload
+                        && instructions[index + 4].NormalizedOpCode == NormalizedOpCode._athrow
                         && instructions[index].NormalizedArg1 == instructions[index + 3].NormalizedArg1)
                     {
                         // this is the async exception guard that javac produces
@@ -1907,8 +1856,8 @@ namespace IKVM.Runtime
                         i--;
                     }
                     else if (index + 1 < instructions.Length
-                        && ei.endIndex == index + 1
-                        && instructions[index].NormalizedOpCode == NormalizedByteCode.__astore)
+                        && ei.EndIndex == index + 1
+                        && instructions[index].NormalizedOpCode == NormalizedOpCode._astore)
                     {
                         // this is the finally guard that javac produces
                         ar.RemoveAt(i);
@@ -1921,12 +1870,12 @@ namespace IKVM.Runtime
             // Here we merge these exception blocks again, because it allows us to generate more efficient code.
             for (int i = 0; i < ar.Count - 1; i++)
             {
-                if (ar[i].endIndex + 1 == ar[i + 1].startIndex
-                    && ar[i].handlerIndex == ar[i + 1].handlerIndex
-                    && ar[i].catch_type == ar[i + 1].catch_type
-                    && IsReturn(instructions[ar[i].endIndex].NormalizedOpCode))
+                if (ar[i].EndIndex + 1 == ar[i + 1].StartIndex
+                    && ar[i].HandlerIndex == ar[i + 1].HandlerIndex
+                    && ar[i].CatchType == ar[i + 1].CatchType
+                    && IsReturn(instructions[ar[i].EndIndex].NormalizedOpCode))
                 {
-                    ar[i] = new ExceptionTableEntry(ar[i].startIndex, ar[i + 1].endIndex, ar[i].handlerIndex, ar[i].catch_type, ar[i].ordinal);
+                    ar[i] = new ExceptionTableEntry(ar[i].StartIndex, ar[i + 1].EndIndex, ar[i].HandlerIndex, ar[i].CatchType, ar[i].Ordinal);
                     ar.RemoveAt(i + 1);
                     i--;
                 }
@@ -1939,15 +1888,15 @@ namespace IKVM.Runtime
                 for (int j = 0; j < ar.Count; j++)
                 {
                     ExceptionTableEntry ej = ar[j];
-                    if (ei.startIndex <= ej.startIndex && ej.startIndex < ei.endIndex)
+                    if (ei.StartIndex <= ej.StartIndex && ej.StartIndex < ei.EndIndex)
                     {
                         // 0006/test.j
-                        if (ej.endIndex > ei.endIndex)
+                        if (ej.EndIndex > ei.EndIndex)
                         {
-                            ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                            ExceptionTableEntry emj = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ej.handlerIndex, ej.catch_type, ej.ordinal);
-                            ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                            ej = new ExceptionTableEntry(emj.endIndex, ej.endIndex, ej.handlerIndex, ej.catch_type, ej.ordinal);
+                            ExceptionTableEntry emi = new ExceptionTableEntry(ej.StartIndex, ei.EndIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                            ExceptionTableEntry emj = new ExceptionTableEntry(ej.StartIndex, ei.EndIndex, ej.HandlerIndex, ej.CatchType, ej.Ordinal);
+                            ei = new ExceptionTableEntry(ei.StartIndex, emi.StartIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                            ej = new ExceptionTableEntry(emj.EndIndex, ej.EndIndex, ej.HandlerIndex, ej.CatchType, ej.Ordinal);
                             ar[i] = ei;
                             ar[j] = ej;
                             ar.Insert(j, emj);
@@ -1955,11 +1904,11 @@ namespace IKVM.Runtime
                             goto restart;
                         }
                         // 0007/test.j
-                        else if (j > i && ej.endIndex < ei.endIndex)
+                        else if (j > i && ej.EndIndex < ei.EndIndex)
                         {
-                            ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ej.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                            ExceptionTableEntry eei = new ExceptionTableEntry(ej.endIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                            ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+                            ExceptionTableEntry emi = new ExceptionTableEntry(ej.StartIndex, ej.EndIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                            ExceptionTableEntry eei = new ExceptionTableEntry(ej.EndIndex, ei.EndIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                            ei = new ExceptionTableEntry(ei.StartIndex, emi.StartIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
                             ar[i] = ei;
                             ar.Insert(i + 1, eei);
                             ar.Insert(i + 1, emi);
@@ -1973,53 +1922,53 @@ namespace IKVM.Runtime
             for (int i = 0; i < ar.Count; i++)
             {
                 ExceptionTableEntry ei = ar[i];
-                int start = ei.startIndex;
-                int end = ei.endIndex;
+                int start = ei.StartIndex;
+                int end = ei.EndIndex;
                 for (int j = 0; j < instructions.Length; j++)
                 {
                     if (j < start || j >= end)
                     {
                         switch (instructions[j].NormalizedOpCode)
                         {
-                            case NormalizedByteCode.__tableswitch:
-                            case NormalizedByteCode.__lookupswitch:
+                            case NormalizedOpCode._tableswitch:
+                            case NormalizedOpCode._lookupswitch:
                                 // start at -1 to have an opportunity to handle the default offset
                                 for (int k = -1; k < instructions[j].SwitchEntryCount; k++)
                                 {
                                     int targetIndex = (k == -1 ? instructions[j].DefaultTarget : instructions[j].GetSwitchTargetIndex(k));
-                                    if (ei.startIndex < targetIndex && targetIndex < ei.endIndex)
+                                    if (ei.StartIndex < targetIndex && targetIndex < ei.EndIndex)
                                     {
-                                        ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                                        ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+                                        ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.EndIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                                        ei = new ExceptionTableEntry(ei.StartIndex, targetIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
                                         ar[i] = ei;
                                         ar.Insert(i + 1, en);
                                         goto restart_split;
                                     }
                                 }
                                 break;
-                            case NormalizedByteCode.__ifeq:
-                            case NormalizedByteCode.__ifne:
-                            case NormalizedByteCode.__iflt:
-                            case NormalizedByteCode.__ifge:
-                            case NormalizedByteCode.__ifgt:
-                            case NormalizedByteCode.__ifle:
-                            case NormalizedByteCode.__if_icmpeq:
-                            case NormalizedByteCode.__if_icmpne:
-                            case NormalizedByteCode.__if_icmplt:
-                            case NormalizedByteCode.__if_icmpge:
-                            case NormalizedByteCode.__if_icmpgt:
-                            case NormalizedByteCode.__if_icmple:
-                            case NormalizedByteCode.__if_acmpeq:
-                            case NormalizedByteCode.__if_acmpne:
-                            case NormalizedByteCode.__ifnull:
-                            case NormalizedByteCode.__ifnonnull:
-                            case NormalizedByteCode.__goto:
+                            case NormalizedOpCode._ifeq:
+                            case NormalizedOpCode._ifne:
+                            case NormalizedOpCode._iflt:
+                            case NormalizedOpCode._ifge:
+                            case NormalizedOpCode._ifgt:
+                            case NormalizedOpCode._ifle:
+                            case NormalizedOpCode._if_icmpeq:
+                            case NormalizedOpCode._if_icmpne:
+                            case NormalizedOpCode._if_icmplt:
+                            case NormalizedOpCode._if_icmpge:
+                            case NormalizedOpCode._if_icmpgt:
+                            case NormalizedOpCode._if_icmple:
+                            case NormalizedOpCode._if_acmpeq:
+                            case NormalizedOpCode._if_acmpne:
+                            case NormalizedOpCode._ifnull:
+                            case NormalizedOpCode._ifnonnull:
+                            case NormalizedOpCode._goto:
                                 {
                                     int targetIndex = instructions[j].Arg1;
-                                    if (ei.startIndex < targetIndex && targetIndex < ei.endIndex)
+                                    if (ei.StartIndex < targetIndex && targetIndex < ei.EndIndex)
                                     {
-                                        ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                                        ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+                                        ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.EndIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                                        ei = new ExceptionTableEntry(ei.StartIndex, targetIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
                                         ar[i] = ei;
                                         ar.Insert(i + 1, en);
                                         goto restart_split;
@@ -2037,10 +1986,10 @@ namespace IKVM.Runtime
                 for (int j = 0; j < ar.Count; j++)
                 {
                     ExceptionTableEntry ej = ar[j];
-                    if (ei.startIndex < ej.handlerIndex && ej.handlerIndex < ei.endIndex)
+                    if (ei.StartIndex < ej.HandlerIndex && ej.HandlerIndex < ei.EndIndex)
                     {
-                        ExceptionTableEntry en = new ExceptionTableEntry(ej.handlerIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                        ei = new ExceptionTableEntry(ei.startIndex, ej.handlerIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+                        ExceptionTableEntry en = new ExceptionTableEntry(ej.HandlerIndex, ei.EndIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
+                        ei = new ExceptionTableEntry(ei.StartIndex, ej.HandlerIndex, ei.HandlerIndex, ei.CatchType, ei.Ordinal);
                         ar[i] = ei;
                         ar.Insert(i + 1, en);
                         goto restart_split;
@@ -2050,8 +1999,8 @@ namespace IKVM.Runtime
             // filter out zero length try blocks
             for (int i = 0; i < ar.Count; i++)
             {
-                ExceptionTableEntry ei = ar[i];
-                if (ei.startIndex == ei.endIndex)
+                var ei = ar[i];
+                if (ei.StartIndex == ei.EndIndex)
                 {
                     ar.RemoveAt(i);
                     i--;
@@ -2060,7 +2009,7 @@ namespace IKVM.Runtime
                 {
                     // exception blocks that only contain harmless instructions (i.e. instructions that will *never* throw an exception)
                     // are also filtered out (to improve the quality of the generated code)
-                    RuntimeJavaType exceptionType = ei.catch_type == 0 ? context.JavaBase.TypeOfjavaLangThrowable : classFile.GetConstantPoolClassType(ei.catch_type);
+                    var exceptionType = ei.CatchType.IsNil ? context.JavaBase.TypeOfjavaLangThrowable : classFile.GetConstantPoolClassType(ei.CatchType);
                     if (exceptionType.IsUnloadable)
                     {
                         // we can't remove handlers for unloadable types
@@ -2071,40 +2020,40 @@ namespace IKVM.Runtime
                         // asynchronously (and thus appear on any instruction). This is particularly important to ensure that
                         // we run finally blocks when a thread is killed.
                         // Note that even so, we aren't remotely async exception safe.
-                        int start = ei.startIndex;
-                        int end = ei.endIndex;
+                        int start = ei.StartIndex;
+                        int end = ei.EndIndex;
                         for (int j = start; j < end; j++)
                         {
                             switch (instructions[j].NormalizedOpCode)
                             {
-                                case NormalizedByteCode.__aload:
-                                case NormalizedByteCode.__iload:
-                                case NormalizedByteCode.__lload:
-                                case NormalizedByteCode.__fload:
-                                case NormalizedByteCode.__dload:
-                                case NormalizedByteCode.__astore:
-                                case NormalizedByteCode.__istore:
-                                case NormalizedByteCode.__lstore:
-                                case NormalizedByteCode.__fstore:
-                                case NormalizedByteCode.__dstore:
+                                case NormalizedOpCode._aload:
+                                case NormalizedOpCode._iload:
+                                case NormalizedOpCode._lload:
+                                case NormalizedOpCode._fload:
+                                case NormalizedOpCode._dload:
+                                case NormalizedOpCode._astore:
+                                case NormalizedOpCode._istore:
+                                case NormalizedOpCode._lstore:
+                                case NormalizedOpCode._fstore:
+                                case NormalizedOpCode._dstore:
                                     break;
-                                case NormalizedByteCode.__dup:
-                                case NormalizedByteCode.__dup_x1:
-                                case NormalizedByteCode.__dup_x2:
-                                case NormalizedByteCode.__dup2:
-                                case NormalizedByteCode.__dup2_x1:
-                                case NormalizedByteCode.__dup2_x2:
-                                case NormalizedByteCode.__pop:
-                                case NormalizedByteCode.__pop2:
+                                case NormalizedOpCode._dup:
+                                case NormalizedOpCode._dup_x1:
+                                case NormalizedOpCode._dup_x2:
+                                case NormalizedOpCode._dup2:
+                                case NormalizedOpCode._dup2_x1:
+                                case NormalizedOpCode._dup2_x2:
+                                case NormalizedOpCode._pop:
+                                case NormalizedOpCode._pop2:
                                     break;
-                                case NormalizedByteCode.__return:
-                                case NormalizedByteCode.__areturn:
-                                case NormalizedByteCode.__ireturn:
-                                case NormalizedByteCode.__lreturn:
-                                case NormalizedByteCode.__freturn:
-                                case NormalizedByteCode.__dreturn:
+                                case NormalizedOpCode._return:
+                                case NormalizedOpCode._areturn:
+                                case NormalizedOpCode._ireturn:
+                                case NormalizedOpCode._lreturn:
+                                case NormalizedOpCode._freturn:
+                                case NormalizedOpCode._dreturn:
                                     break;
-                                case NormalizedByteCode.__goto:
+                                case NormalizedOpCode._goto:
                                     // if there is a branch that stays inside the block, we should keep the block
                                     if (start <= instructions[j].TargetIndex && instructions[j].TargetIndex < end)
                                         goto next;
@@ -2118,11 +2067,11 @@ namespace IKVM.Runtime
                     }
                     else
                     {
-                        int start = ei.startIndex;
-                        int end = ei.endIndex;
+                        int start = ei.StartIndex;
+                        int end = ei.EndIndex;
                         for (int j = start; j < end; j++)
                         {
-                            if (ByteCodeMetaData.CanThrowException(instructions[j].NormalizedOpCode))
+                            if (OpCodeMetaData.CanThrowException(instructions[j].NormalizedOpCode))
                             {
                                 goto next;
                             }
@@ -2140,72 +2089,75 @@ namespace IKVM.Runtime
             return new UntangledExceptionTable(exceptions);
         }
 
-        private static bool IsReturn(NormalizedByteCode bc)
+        private static bool IsReturn(NormalizedOpCode bc)
         {
-            return bc == NormalizedByteCode.__return
-                || bc == NormalizedByteCode.__areturn
-                || bc == NormalizedByteCode.__dreturn
-                || bc == NormalizedByteCode.__ireturn
-                || bc == NormalizedByteCode.__freturn
-                || bc == NormalizedByteCode.__lreturn;
+            return bc == NormalizedOpCode._return
+                || bc == NormalizedOpCode._areturn
+                || bc == NormalizedOpCode._dreturn
+                || bc == NormalizedOpCode._ireturn
+                || bc == NormalizedOpCode._freturn
+                || bc == NormalizedOpCode._lreturn;
         }
 
-        private static bool AnalyzePotentialFaultBlocks(CodeInfo codeInfo, ClassFile.Method method, UntangledExceptionTable exceptions)
+        static bool AnalyzePotentialFaultBlocks(CodeInfo codeInfo, ClassFile.Method method, UntangledExceptionTable exceptions)
         {
-            ClassFile.Method.Instruction[] code = method.Instructions;
-            bool changed = false;
-            bool done = false;
-            while (!done)
+            var code = method.Instructions;
+            var changed = false;
+
+            var done = false;
+            while (done == false)
             {
                 done = true;
-                Stack<ExceptionTableEntry> stack = new Stack<ExceptionTableEntry>();
-                ExceptionTableEntry current = new ExceptionTableEntry(0, code.Length, -1, ushort.MaxValue, -1);
+
+                var stack = new Stack<ExceptionTableEntry>();
+                var current = new ExceptionTableEntry(0, code.Length, -1, new(ushort.MaxValue), -1);
                 stack.Push(current);
+
                 for (int i = 0; i < exceptions.Length; i++)
                 {
-                    while (exceptions[i].startIndex >= current.endIndex)
-                    {
+                    while (exceptions[i].StartIndex >= current.EndIndex)
                         current = stack.Pop();
-                    }
-                    Debug.Assert(exceptions[i].startIndex >= current.startIndex && exceptions[i].endIndex <= current.endIndex);
-                    if (exceptions[i].catch_type == 0
-                        && codeInfo.HasState(exceptions[i].handlerIndex)
-                        && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
+
+                    Debug.Assert(exceptions[i].StartIndex >= current.StartIndex && exceptions[i].EndIndex <= current.EndIndex);
+
+                    if (exceptions[i].CatchType.IsNil && codeInfo.HasState(exceptions[i].HandlerIndex) && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].HandlerIndex, 0)))
                     {
-                        InstructionFlags[] flags = MethodAnalyzer.ComputePartialReachability(codeInfo, method.Instructions, exceptions, exceptions[i].handlerIndex, true);
+                        var flags = MethodAnalyzer.ComputePartialReachability(codeInfo, method.Instructions, exceptions, exceptions[i].HandlerIndex, true);
                         for (int j = 0; j < code.Length; j++)
                         {
                             if ((flags[j] & InstructionFlags.Reachable) != 0)
                             {
                                 switch (code[j].NormalizedOpCode)
                                 {
-                                    case NormalizedByteCode.__return:
-                                    case NormalizedByteCode.__areturn:
-                                    case NormalizedByteCode.__ireturn:
-                                    case NormalizedByteCode.__lreturn:
-                                    case NormalizedByteCode.__freturn:
-                                    case NormalizedByteCode.__dreturn:
+                                    case NormalizedOpCode._return:
+                                    case NormalizedOpCode._areturn:
+                                    case NormalizedOpCode._ireturn:
+                                    case NormalizedOpCode._lreturn:
+                                    case NormalizedOpCode._freturn:
+                                    case NormalizedOpCode._dreturn:
                                         goto not_fault_block;
-                                    case NormalizedByteCode.__athrow:
+
+                                    case NormalizedOpCode._athrow:
                                         for (int k = i + 1; k < exceptions.Length; k++)
                                         {
-                                            if (exceptions[k].startIndex <= j && j < exceptions[k].endIndex)
+                                            if (exceptions[k].StartIndex <= j && j < exceptions[k].EndIndex)
                                             {
                                                 goto not_fault_block;
                                             }
                                         }
-                                        if (RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(j, 0))
-                                            && codeInfo.GetRawStackTypeWrapper(j, 0) != codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0))
+
+                                        if (RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(j, 0)) && codeInfo.GetRawStackTypeWrapper(j, 0) != codeInfo.GetRawStackTypeWrapper(exceptions[i].HandlerIndex, 0))
                                         {
                                             goto not_fault_block;
                                         }
+
                                         break;
                                 }
-                                if (j < current.startIndex || j >= current.endIndex)
+                                if (j < current.StartIndex || j >= current.EndIndex)
                                 {
                                     goto not_fault_block;
                                 }
-                                else if (exceptions[i].startIndex <= j && j < exceptions[i].endIndex)
+                                else if (exceptions[i].StartIndex <= j && j < exceptions[i].EndIndex)
                                 {
                                     goto not_fault_block;
                                 }
@@ -2214,17 +2166,19 @@ namespace IKVM.Runtime
                                     continue;
                                 }
                             not_fault_block:
-                                RuntimeVerifierJavaType.ClearFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0));
+                                RuntimeVerifierJavaType.ClearFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].HandlerIndex, 0));
                                 done = false;
                                 changed = true;
                                 break;
                             }
                         }
                     }
+
                     stack.Push(current);
                     current = exceptions[i];
                 }
             }
+
             return changed;
         }
 
@@ -2234,22 +2188,19 @@ namespace IKVM.Runtime
             InstructionFlags[] flags = ComputePartialReachability(codeInfo, code, exceptions, 0, false);
             for (int i = 0; i < exceptions.Length; i++)
             {
-                if (exceptions[i].catch_type == 0
-                    && codeInfo.HasState(exceptions[i].handlerIndex)
-                    && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
+                if (exceptions[i].CatchType.IsNil && codeInfo.HasState(exceptions[i].HandlerIndex) && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].HandlerIndex, 0)))
                 {
-                    int exit;
-                    if (IsSynchronizedBlockHandler(code, exceptions[i].handlerIndex)
-                        && exceptions[i].endIndex - 2 >= exceptions[i].startIndex
-                        && TryFindSingleTryBlockExit(code, flags, exceptions, new ExceptionTableEntry(exceptions[i].startIndex, exceptions[i].endIndex - 2, exceptions[i].handlerIndex, 0, exceptions[i].ordinal), i, out exit)
-                        && exit == exceptions[i].endIndex - 2
+                    if (IsSynchronizedBlockHandler(code, exceptions[i].HandlerIndex)
+                        && exceptions[i].EndIndex - 2 >= exceptions[i].StartIndex
+                        && TryFindSingleTryBlockExit(code, flags, exceptions, new ExceptionTableEntry(exceptions[i].StartIndex, exceptions[i].EndIndex - 2, exceptions[i].HandlerIndex, new(0), exceptions[i].Ordinal), i, out var exit)
+                        && exit == exceptions[i].EndIndex - 2
                         && (flags[exit + 1] & InstructionFlags.BranchTarget) == 0
-                        && MatchInstructions(code, exit, exceptions[i].handlerIndex + 1)
-                        && MatchInstructions(code, exit + 1, exceptions[i].handlerIndex + 2)
-                        && MatchExceptionCoverage(exceptions, i, exceptions[i].handlerIndex + 1, exceptions[i].handlerIndex + 3, exit, exit + 2)
-                        && exceptions[i].handlerIndex <= ushort.MaxValue)
+                        && MatchInstructions(code, exit, exceptions[i].HandlerIndex + 1)
+                        && MatchInstructions(code, exit + 1, exceptions[i].HandlerIndex + 2)
+                        && MatchExceptionCoverage(exceptions, i, exceptions[i].HandlerIndex + 1, exceptions[i].HandlerIndex + 3, exit, exit + 2)
+                        && exceptions[i].HandlerIndex <= ushort.MaxValue)
                     {
-                        code[exit].PatchOpCode(NormalizedByteCode.__goto_finally, exceptions[i].endIndex, (short)exceptions[i].handlerIndex);
+                        code[exit].PatchOpCode(NormalizedOpCode.__goto_finally, exceptions[i].EndIndex, (short)exceptions[i].HandlerIndex);
                         exceptions.SetFinally(i);
                     }
                     else if (TryFindSingleTryBlockExit(code, flags, exceptions, exceptions[i], i, out exit)
@@ -2261,17 +2212,17 @@ namespace IKVM.Runtime
                     {
                         int exitHandlerEnd;
                         int faultHandlerEnd;
-                        if (MatchFinallyBlock(codeInfo, code, exceptions, exceptions[i].handlerIndex, exit, out exitHandlerEnd, out faultHandlerEnd))
+                        if (MatchFinallyBlock(codeInfo, code, exceptions, exceptions[i].HandlerIndex, exit, out exitHandlerEnd, out faultHandlerEnd))
                         {
                             if (exit != exitHandlerEnd
                                 && codeInfo.GetStackHeight(exitHandlerEnd) == 0
-                                && MatchExceptionCoverage(exceptions, -1, exceptions[i].handlerIndex, faultHandlerEnd, exit, exitHandlerEnd))
+                                && MatchExceptionCoverage(exceptions, -1, exceptions[i].HandlerIndex, faultHandlerEnd, exit, exitHandlerEnd))
                             {
                                 // We use Arg2 (which is a short) to store the handler in the __goto_finally pseudo-opcode,
                                 // so we can only do that if handlerIndex fits in a short (note that we can use the sign bit too).
-                                if (exceptions[i].handlerIndex <= ushort.MaxValue)
+                                if (exceptions[i].HandlerIndex <= ushort.MaxValue)
                                 {
-                                    code[exit].PatchOpCode(NormalizedByteCode.__goto_finally, exitHandlerEnd, (short)exceptions[i].handlerIndex);
+                                    code[exit].PatchOpCode(NormalizedOpCode.__goto_finally, exitHandlerEnd, (short)exceptions[i].HandlerIndex);
                                     exceptions.SetFinally(i);
                                 }
                             }
@@ -2283,11 +2234,11 @@ namespace IKVM.Runtime
 
         private static bool IsSynchronizedBlockHandler(ClassFile.Method.Instruction[] code, int index)
         {
-            return code[index].NormalizedOpCode == NormalizedByteCode.__astore
-                && code[index + 1].NormalizedOpCode == NormalizedByteCode.__aload
-                && code[index + 2].NormalizedOpCode == NormalizedByteCode.__monitorexit
-                && code[index + 3].NormalizedOpCode == NormalizedByteCode.__aload && code[index + 3].Arg1 == code[index].Arg1
-                && code[index + 4].NormalizedOpCode == NormalizedByteCode.__athrow;
+            return code[index].NormalizedOpCode == NormalizedOpCode._astore
+                && code[index + 1].NormalizedOpCode == NormalizedOpCode._aload
+                && code[index + 2].NormalizedOpCode == NormalizedOpCode._monitorexit
+                && code[index + 3].NormalizedOpCode == NormalizedOpCode._aload && code[index + 3].Arg1 == code[index].Arg1
+                && code[index + 4].NormalizedOpCode == NormalizedOpCode._athrow;
         }
 
         private static bool MatchExceptionCoverage(UntangledExceptionTable exceptions, int skipException, int startFault, int endFault, int startExit, int endExit)
@@ -2304,14 +2255,14 @@ namespace IKVM.Runtime
 
         private static bool ExceptionCovers(ExceptionTableEntry exception, int start, int end)
         {
-            return exception.startIndex < end && exception.endIndex > start;
+            return exception.StartIndex < end && exception.EndIndex > start;
         }
 
         private static bool MatchFinallyBlock(CodeInfo codeInfo, ClassFile.Method.Instruction[] code, UntangledExceptionTable exceptions, int faultHandler, int exitHandler, out int exitHandlerEnd, out int faultHandlerEnd)
         {
             exitHandlerEnd = -1;
             faultHandlerEnd = -1;
-            if (code[faultHandler].NormalizedOpCode != NormalizedByteCode.__astore)
+            if (code[faultHandler].NormalizedOpCode != NormalizedOpCode._astore)
             {
                 return false;
             }
@@ -2319,9 +2270,9 @@ namespace IKVM.Runtime
             int faultLocal = code[faultHandler++].NormalizedArg1;
             for (; ; )
             {
-                if (code[faultHandler].NormalizedOpCode == NormalizedByteCode.__aload
+                if (code[faultHandler].NormalizedOpCode == NormalizedOpCode._aload
                     && code[faultHandler].NormalizedArg1 == faultLocal
-                    && code[faultHandler + 1].NormalizedOpCode == NormalizedByteCode.__athrow)
+                    && code[faultHandler + 1].NormalizedOpCode == NormalizedOpCode._athrow)
                 {
                     // make sure that instructions that we haven't covered aren't reachable
                     InstructionFlags[] flags = ComputePartialReachability(codeInfo, code, exceptions, startFault, false);
@@ -2351,7 +2302,7 @@ namespace IKVM.Runtime
             {
                 return false;
             }
-            switch (ByteCodeMetaData.GetFlowControl(code[i].NormalizedOpCode))
+            switch (OpCodeMetaData.GetFlowControl(code[i].NormalizedOpCode))
             {
                 case ByteCodeFlowControl.Branch:
                 case ByteCodeFlowControl.CondBranch:
@@ -2397,7 +2348,7 @@ namespace IKVM.Runtime
             flags[0] |= InstructionFlags.Reachable;
             // We mark the first instruction of the try-block as already processed, so that UpdatePartialReachability will skip the try-block.
             // Note that we can do this, because it is not possible to jump into the middle of a try-block (after the exceptions have been untangled).
-            flags[tryBlock.startIndex] = InstructionFlags.Processed;
+            flags[tryBlock.StartIndex] = InstructionFlags.Processed;
             // We mark the successor instructions of the instruction we're examinining as reachable,
             // to figure out if the code following the handler somehow branches back to it.
             MarkSuccessors(code, flags, instructionIndex);
@@ -2410,19 +2361,19 @@ namespace IKVM.Runtime
             exit = -1;
             bool fail = false;
             bool nextIsReachable = false;
-            for (int i = exception.startIndex; !fail && i < exception.endIndex; i++)
+            for (int i = exception.StartIndex; !fail && i < exception.EndIndex; i++)
             {
                 if ((flags[i] & InstructionFlags.Reachable) != 0)
                 {
                     nextIsReachable = false;
                     for (int j = 0; j < exceptions.Length; j++)
                     {
-                        if (j != exceptionIndex && exceptions[j].startIndex >= exception.startIndex && exception.endIndex <= exceptions[j].endIndex)
+                        if (j != exceptionIndex && exceptions[j].StartIndex >= exception.StartIndex && exception.EndIndex <= exceptions[j].EndIndex)
                         {
-                            UpdateTryBlockExit(exception, exceptions[j].handlerIndex, ref exit, ref fail);
+                            UpdateTryBlockExit(exception, exceptions[j].HandlerIndex, ref exit, ref fail);
                         }
                     }
-                    switch (ByteCodeMetaData.GetFlowControl(code[i].NormalizedOpCode))
+                    switch (OpCodeMetaData.GetFlowControl(code[i].NormalizedOpCode))
                     {
                         case ByteCodeFlowControl.Switch:
                             {
@@ -2455,14 +2406,14 @@ namespace IKVM.Runtime
             }
             if (nextIsReachable)
             {
-                UpdateTryBlockExit(exception, exception.endIndex, ref exit, ref fail);
+                UpdateTryBlockExit(exception, exception.EndIndex, ref exit, ref fail);
             }
             return !fail && exit != -1;
         }
 
         private static void UpdateTryBlockExit(ExceptionTableEntry exception, int targetIndex, ref int exitIndex, ref bool fail)
         {
-            if (exception.startIndex <= targetIndex && targetIndex < exception.endIndex)
+            if (exception.StartIndex <= targetIndex && targetIndex < exception.EndIndex)
             {
                 // branch stays inside try block
             }
@@ -2525,47 +2476,49 @@ namespace IKVM.Runtime
             instruction.SetHardError(hardError, AllocErrorMessage(text));
         }
 
-        private void PatchInvoke(RuntimeJavaType wrapper, ref ClassFile.Method.Instruction instr, StackState stack)
+        void PatchInvoke(RuntimeJavaType wrapper, ref ClassFile.Method.Instruction instruction, StackState stack)
         {
-            ClassFile.ConstantPoolItemMI cpi = GetMethodref(instr.Arg1);
-            NormalizedByteCode invoke = instr.NormalizedOpCode;
-            bool isnew = false;
+            var cpi = VerifyGetMethodref(instruction.Arg1);
+            var invoke = instruction.NormalizedOpCode;
+
+            var isnew = false;
             RuntimeJavaType thisType;
-            if (invoke == NormalizedByteCode.__invokevirtual
-                && cpi.Class == "java.lang.invoke.MethodHandle"
-                && (cpi.Name == "invoke" || cpi.Name == "invokeExact" || cpi.Name == "invokeBasic"))
+
+            if (invoke == NormalizedOpCode._invokevirtual &&
+                cpi is { Class: "java.lang.invoke.MethodHandle", Name: "invoke" or "invokeExact" or "invokeBasic" })
             {
                 if (cpi.GetArgTypes().Length > 127 && context.MethodHandleUtil.SlotCount(cpi.GetArgTypes()) > 254)
                 {
-                    instr.SetHardError(HardError.LinkageError, AllocErrorMessage("bad parameter count"));
+                    instruction.SetHardError(HardError.LinkageError, AllocErrorMessage("bad parameter count"));
                     return;
                 }
-                instr.PatchOpCode(NormalizedByteCode.__methodhandle_invoke);
+
+                instruction.PatchOpCode(NormalizedOpCode.__methodhandle_invoke);
                 return;
             }
-            else if (invoke == NormalizedByteCode.__invokestatic
-                && cpi.Class == "java.lang.invoke.MethodHandle"
-                && (cpi.Name == "linkToVirtual" || cpi.Name == "linkToStatic" || cpi.Name == "linkToSpecial" || cpi.Name == "linkToInterface")
-                && context.JavaBase.TypeOfJavaLangInvokeMethodHandle.IsPackageAccessibleFrom(wrapper))
+
+            if (invoke == NormalizedOpCode._invokestatic &&
+                cpi is { Class: "java.lang.invoke.MethodHandle", Name: "linkToVirtual" or "linkToStatic" or "linkToSpecial" or "linkToInterface" } &&
+                context.JavaBase.TypeOfJavaLangInvokeMethodHandle.IsPackageAccessibleFrom(wrapper))
             {
-                instr.PatchOpCode(NormalizedByteCode.__methodhandle_link);
+                instruction.PatchOpCode(NormalizedOpCode.__methodhandle_link);
                 return;
             }
-            else if (invoke == NormalizedByteCode.__invokestatic)
+
+            if (invoke == NormalizedOpCode._invokestatic)
             {
                 thisType = null;
             }
             else
             {
-                RuntimeJavaType[] args = cpi.GetArgTypes();
+                var args = cpi.GetArgTypes();
                 for (int j = args.Length - 1; j >= 0; j--)
-                {
                     stack.PopType(args[j]);
-                }
+
                 thisType = SigTypeToClassName(stack.PeekType(), cpi.GetClassType(), wrapper);
                 if (ReferenceEquals(cpi.Name, StringConstants.INIT))
                 {
-                    RuntimeJavaType type = stack.PopType();
+                    var type = stack.PopType();
                     isnew = RuntimeVerifierJavaType.IsNew(type);
                 }
             }
@@ -2574,66 +2527,62 @@ namespace IKVM.Runtime
             {
                 if (wrapper.GetClassLoader().DisableDynamicBinding)
                 {
-                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.NoClassDefFoundError, "{0}", cpi.GetClassType().Name);
+                    SetHardError(wrapper.GetClassLoader(), ref instruction, HardError.NoClassDefFoundError, "{0}", cpi.GetClassType().Name);
                 }
                 else
                 {
                     switch (invoke)
                     {
-                        case NormalizedByteCode.__invokeinterface:
-                            instr.PatchOpCode(NormalizedByteCode.__dynamic_invokeinterface);
+                        case NormalizedOpCode._invokeinterface:
+                            instruction.PatchOpCode(NormalizedOpCode.__dynamic_invokeinterface);
                             break;
-                        case NormalizedByteCode.__invokestatic:
-                            instr.PatchOpCode(NormalizedByteCode.__dynamic_invokestatic);
+                        case NormalizedOpCode._invokestatic:
+                            instruction.PatchOpCode(NormalizedOpCode.__dynamic_invokestatic);
                             break;
-                        case NormalizedByteCode.__invokevirtual:
-                            instr.PatchOpCode(NormalizedByteCode.__dynamic_invokevirtual);
+                        case NormalizedOpCode._invokevirtual:
+                            instruction.PatchOpCode(NormalizedOpCode.__dynamic_invokevirtual);
                             break;
-                        case NormalizedByteCode.__invokespecial:
+                        case NormalizedOpCode._invokespecial:
                             if (isnew)
-                            {
-                                instr.PatchOpCode(NormalizedByteCode.__dynamic_invokespecial);
-                            }
+                                instruction.PatchOpCode(NormalizedOpCode.__dynamic_invokespecial);
                             else
-                            {
                                 throw new VerifyError("Invokespecial cannot call subclass methods");
-                            }
                             break;
                         default:
                             throw new InvalidOperationException();
                     }
                 }
             }
-            else if (invoke == NormalizedByteCode.__invokeinterface && !cpi.GetClassType().IsInterface)
+            else if (invoke == NormalizedOpCode._invokeinterface && !cpi.GetClassType().IsInterface)
             {
-                SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError, "invokeinterface on non-interface");
+                SetHardError(wrapper.GetClassLoader(), ref instruction, HardError.IncompatibleClassChangeError, "invokeinterface on non-interface");
             }
-            else if (cpi.GetClassType().IsInterface && invoke != NormalizedByteCode.__invokeinterface && ((invoke != NormalizedByteCode.__invokestatic && invoke != NormalizedByteCode.__invokespecial) || classFile.MajorVersion < 52))
+            else if (cpi.GetClassType().IsInterface && invoke != NormalizedOpCode._invokeinterface && ((invoke != NormalizedOpCode._invokestatic && invoke != NormalizedOpCode._invokespecial) || classFile.MajorVersion < 52))
             {
-                SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError,
+                SetHardError(wrapper.GetClassLoader(), ref instruction, HardError.IncompatibleClassChangeError,
                     classFile.MajorVersion < 52
                         ? "interface method must be invoked using invokeinterface"
                         : "interface method must be invoked using invokeinterface, invokespecial or invokestatic");
             }
             else
             {
-                RuntimeJavaMethod targetMethod = invoke == NormalizedByteCode.__invokespecial ? cpi.GetMethodForInvokespecial() : cpi.GetMethod();
+                var targetMethod = invoke == NormalizedOpCode._invokespecial ? cpi.GetMethodForInvokespecial() : cpi.GetMethod();
                 if (targetMethod != null)
                 {
-                    string errmsg = CheckLoaderConstraints(cpi, targetMethod);
+                    var errmsg = CheckLoaderConstraints(cpi, targetMethod);
                     if (errmsg != null)
                     {
-                        SetHardError(wrapper.GetClassLoader(), ref instr, HardError.LinkageError, "{0}", errmsg);
+                        SetHardError(wrapper.GetClassLoader(), ref instruction, HardError.LinkageError, "{0}", errmsg);
                     }
-                    else if (targetMethod.IsStatic == (invoke == NormalizedByteCode.__invokestatic))
+                    else if (targetMethod.IsStatic == (invoke == NormalizedOpCode._invokestatic))
                     {
-                        if (targetMethod.IsAbstract && invoke == NormalizedByteCode.__invokespecial && (targetMethod.GetMethod() == null || targetMethod.GetMethod().IsAbstract))
+                        if (targetMethod.IsAbstract && invoke == NormalizedOpCode._invokespecial && (targetMethod.GetMethod() == null || targetMethod.GetMethod().IsAbstract))
                         {
-                            SetHardError(wrapper.GetClassLoader(), ref instr, HardError.AbstractMethodError, "{0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
+                            SetHardError(wrapper.GetClassLoader(), ref instruction, HardError.AbstractMethodError, "{0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
                         }
-                        else if (invoke == NormalizedByteCode.__invokeinterface && targetMethod.IsPrivate)
+                        else if (invoke == NormalizedOpCode._invokeinterface && targetMethod.IsPrivate)
                         {
-                            SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError, "private interface method requires invokespecial, not invokeinterface: method {0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
+                            SetHardError(wrapper.GetClassLoader(), ref instruction, HardError.IncompatibleClassChangeError, "private interface method requires invokespecial, not invokeinterface: method {0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
                         }
                         else if (targetMethod.IsAccessibleFrom(cpi.GetClassType(), wrapper, thisType))
                         {
@@ -2643,18 +2592,19 @@ namespace IKVM.Runtime
                         {
                             switch (invoke)
                             {
-                                case NormalizedByteCode.__invokespecial:
-                                    instr.PatchOpCode(NormalizedByteCode.__privileged_invokespecial);
+                                case NormalizedOpCode._invokespecial:
+                                    instruction.PatchOpCode(NormalizedOpCode.__privileged_invokespecial);
                                     break;
-                                case NormalizedByteCode.__invokestatic:
-                                    instr.PatchOpCode(NormalizedByteCode.__privileged_invokestatic);
+                                case NormalizedOpCode._invokestatic:
+                                    instruction.PatchOpCode(NormalizedOpCode.__privileged_invokestatic);
                                     break;
-                                case NormalizedByteCode.__invokevirtual:
-                                    instr.PatchOpCode(NormalizedByteCode.__privileged_invokevirtual);
+                                case NormalizedOpCode._invokevirtual:
+                                    instruction.PatchOpCode(NormalizedOpCode.__privileged_invokevirtual);
                                     break;
                                 default:
                                     throw new InvalidOperationException();
                             }
+
                             return;
                         }
                         else
@@ -2662,72 +2612,75 @@ namespace IKVM.Runtime
                             // NOTE special case for incorrect invocation of Object.clone(), because this could mean
                             // we're calling clone() on an array
                             // (bug in javac, see http://developer.java.sun.com/developer/bugParade/bugs/4329886.html)
-                            if (cpi.GetClassType() == context.JavaBase.TypeOfJavaLangObject
-                                && thisType.IsArray
-                                && ReferenceEquals(cpi.Name, StringConstants.CLONE))
+                            if (cpi.GetClassType() == context.JavaBase.TypeOfJavaLangObject &&
+                                thisType.IsArray &&
+                                ReferenceEquals(cpi.Name, StringConstants.CLONE))
                             {
                                 // Patch the instruction, so that the compiler doesn't need to do this test again.
-                                instr.PatchOpCode(NormalizedByteCode.__clone_array);
+                                instruction.PatchOpCode(NormalizedOpCode.__clone_array);
                                 return;
                             }
-                            SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessError, "tried to access method {0}.{1}{2} from class {3}", ToSlash(targetMethod.DeclaringType.Name), cpi.Name, ToSlash(cpi.Signature), ToSlash(wrapper.Name));
+
+                            SetHardError(wrapper.GetClassLoader(), ref instruction, HardError.IllegalAccessError, "tried to access method {0}.{1}{2} from class {3}", ToSlash(targetMethod.DeclaringType.Name), cpi.Name, ToSlash(cpi.Signature), ToSlash(wrapper.Name));
                         }
                     }
                     else
                     {
-                        SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError, "static call to non-static method (or v.v.)");
+                        SetHardError(wrapper.GetClassLoader(), ref instruction, HardError.IncompatibleClassChangeError, "static call to non-static method (or v.v.)");
                     }
                 }
                 else
                 {
-                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.NoSuchMethodError, "{0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
+                    SetHardError(wrapper.GetClassLoader(), ref instruction, HardError.NoSuchMethodError, "{0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
                 }
             }
         }
 
-        private static string ToSlash(string str)
+        static string ToSlash(string str)
         {
             return str.Replace('.', '/');
         }
 
-        private void PatchFieldAccess(RuntimeJavaType wrapper, RuntimeJavaMethod mw, ref ClassFile.Method.Instruction instr, StackState stack)
+        void PatchFieldAccess(RuntimeJavaType wrapper, RuntimeJavaMethod mw, ref ClassFile.Method.Instruction instr, StackState stack)
         {
-            ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
+            var fieldRef = classFile.GetFieldref(instr.Arg1);
+
             bool isStatic;
             bool write;
             RuntimeJavaType thisType;
+
             switch (instr.NormalizedOpCode)
             {
-                case NormalizedByteCode.__getfield:
+                case NormalizedOpCode._getfield:
                     isStatic = false;
                     write = false;
-                    thisType = SigTypeToClassName(stack.PopObjectType(GetFieldref(instr.Arg1).GetClassType()), cpi.GetClassType(), wrapper);
+                    thisType = SigTypeToClassName(stack.PopObjectType(VerifyGetFieldref(instr.Arg1).GetClassType()), fieldRef.GetClassType(), wrapper);
                     break;
-                case NormalizedByteCode.__putfield:
-                    stack.PopType(GetFieldref(instr.Arg1).GetFieldType());
+                case NormalizedOpCode._putfield:
+                    stack.PopType(VerifyGetFieldref(instr.Arg1).GetFieldType());
                     isStatic = false;
                     write = true;
                     // putfield is allowed to access the unintialized this
                     if (stack.PeekType() == context.VerifierJavaTypeFactory.UninitializedThis
-                        && wrapper.IsAssignableTo(GetFieldref(instr.Arg1).GetClassType()))
+                        && wrapper.IsAssignableTo(VerifyGetFieldref(instr.Arg1).GetClassType()))
                     {
                         thisType = wrapper;
                     }
                     else
                     {
-                        thisType = SigTypeToClassName(stack.PopObjectType(GetFieldref(instr.Arg1).GetClassType()), cpi.GetClassType(), wrapper);
+                        thisType = SigTypeToClassName(stack.PopObjectType(VerifyGetFieldref(instr.Arg1).GetClassType()), fieldRef.GetClassType(), wrapper);
                     }
                     break;
-                case NormalizedByteCode.__getstatic:
+                case NormalizedOpCode._getstatic:
                     isStatic = true;
                     write = false;
                     thisType = null;
                     break;
-                case NormalizedByteCode.__putstatic:
+                case NormalizedOpCode._putstatic:
                     // special support for when we're being called from IsSideEffectFreeStaticInitializer
                     if (mw == null)
                     {
-                        switch (GetFieldref(instr.Arg1).Signature[0])
+                        switch (VerifyGetFieldref(instr.Arg1).Signature[0])
                         {
                             case 'B':
                             case 'Z':
@@ -2758,7 +2711,7 @@ namespace IKVM.Runtime
                     }
                     else
                     {
-                        stack.PopType(GetFieldref(instr.Arg1).GetFieldType());
+                        stack.PopType(VerifyGetFieldref(instr.Arg1).GetFieldType());
                     }
                     isStatic = true;
                     write = true;
@@ -2772,27 +2725,27 @@ namespace IKVM.Runtime
                 // We're being called from IsSideEffectFreeStaticInitializer,
                 // no further checks are possible (nor needed).
             }
-            else if (cpi.GetClassType().IsUnloadable)
+            else if (fieldRef.GetClassType().IsUnloadable)
             {
                 if (wrapper.GetClassLoader().DisableDynamicBinding)
                 {
-                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.NoClassDefFoundError, "{0}", cpi.GetClassType().Name);
+                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.NoClassDefFoundError, "{0}", fieldRef.GetClassType().Name);
                 }
                 else
                 {
                     switch (instr.NormalizedOpCode)
                     {
-                        case NormalizedByteCode.__getstatic:
-                            instr.PatchOpCode(NormalizedByteCode.__dynamic_getstatic);
+                        case NormalizedOpCode._getstatic:
+                            instr.PatchOpCode(NormalizedOpCode.__dynamic_getstatic);
                             break;
-                        case NormalizedByteCode.__putstatic:
-                            instr.PatchOpCode(NormalizedByteCode.__dynamic_putstatic);
+                        case NormalizedOpCode._putstatic:
+                            instr.PatchOpCode(NormalizedOpCode.__dynamic_putstatic);
                             break;
-                        case NormalizedByteCode.__getfield:
-                            instr.PatchOpCode(NormalizedByteCode.__dynamic_getfield);
+                        case NormalizedOpCode._getfield:
+                            instr.PatchOpCode(NormalizedOpCode.__dynamic_getfield);
                             break;
-                        case NormalizedByteCode.__putfield:
-                            instr.PatchOpCode(NormalizedByteCode.__dynamic_putfield);
+                        case NormalizedOpCode._putfield:
+                            instr.PatchOpCode(NormalizedOpCode.__dynamic_putfield);
                             break;
                         default:
                             throw new InvalidOperationException();
@@ -2802,33 +2755,36 @@ namespace IKVM.Runtime
             }
             else
             {
-                RuntimeJavaField field = cpi.GetField();
+                var field = fieldRef.GetField();
                 if (field == null)
                 {
-                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.NoSuchFieldError, "{0}.{1}", cpi.Class, cpi.Name);
+                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.NoSuchFieldError, "{0}.{1}", fieldRef.Class, fieldRef.Name);
                     return;
                 }
-                if (false && cpi.GetFieldType() != field.FieldTypeWrapper && !cpi.GetFieldType().IsUnloadable & !field.FieldTypeWrapper.IsUnloadable)
+
+                if (false && fieldRef.GetFieldType() != field.FieldTypeWrapper && !fieldRef.GetFieldType().IsUnloadable & !field.FieldTypeWrapper.IsUnloadable)
                 {
 #if IMPORTER
-                    StaticCompiler.LinkageError("Field \"{2}.{3}\" is of type \"{0}\" instead of type \"{1}\" as expected by \"{4}\"", field.FieldTypeWrapper, cpi.GetFieldType(), cpi.GetClassType().Name, cpi.Name, wrapper.Name);
+                    StaticCompiler.LinkageError("Field \"{2}.{3}\" is of type \"{0}\" instead of type \"{1}\" as expected by \"{4}\"", field.FieldTypeWrapper, fieldRef.GetFieldType(), fieldRef.GetClassType().Name, fieldRef.Name, wrapper.Name);
 #endif
                     SetHardError(wrapper.GetClassLoader(), ref instr, HardError.LinkageError, "Loader constraints violated: {0}.{1}", field.DeclaringType.Name, field.Name);
                     return;
                 }
+
                 if (field.IsStatic != isStatic)
                 {
                     SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError, "Static field access to non-static field (or v.v.)");
                     return;
                 }
-                if (!field.IsAccessibleFrom(cpi.GetClassType(), wrapper, thisType))
+
+                if (!field.IsAccessibleFrom(fieldRef.GetClassType(), wrapper, thisType))
                 {
                     SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessError, "Try to access field {0}.{1} from class {2}", field.DeclaringType.Name, field.Name, wrapper.Name);
                     return;
                 }
+
                 // are we trying to mutate a final field? (they are read-only from outside of the defining class)
-                if (write && field.IsFinal
-                    && ((isStatic ? wrapper != cpi.GetClassType() : wrapper != thisType) || (wrapper.GetClassLoader().StrictFinalFieldSemantics && (isStatic ? (mw != null && mw.Name != "<clinit>") : (mw == null || mw.Name != "<init>")))))
+                if (write && field.IsFinal && ((isStatic ? wrapper != fieldRef.GetClassType() : wrapper != thisType) || (wrapper.GetClassLoader().StrictFinalFieldSemantics && (isStatic ? (mw != null && mw.Name != "<clinit>") : (mw == null || mw.Name != "<init>")))))
                 {
                     SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessError, "Field {0}.{1} is final", field.DeclaringType.Name, field.Name);
                     return;
@@ -2837,7 +2793,7 @@ namespace IKVM.Runtime
         }
 
         // TODO this method should have a better name
-        private RuntimeJavaType SigTypeToClassName(RuntimeJavaType type, RuntimeJavaType nullType, RuntimeJavaType wrapper)
+        RuntimeJavaType SigTypeToClassName(RuntimeJavaType type, RuntimeJavaType nullType, RuntimeJavaType wrapper)
         {
             if (type == context.VerifierJavaTypeFactory.UninitializedThis)
             {
@@ -2857,23 +2813,20 @@ namespace IKVM.Runtime
             }
         }
 
-        private int AllocErrorMessage(string message)
+        int AllocErrorMessage(string message)
         {
-            if (errorMessages == null)
-            {
-                errorMessages = new List<string>();
-            }
-            int index = errorMessages.Count;
+            errorMessages ??= new List<string>();
+            var index = errorMessages.Count;
             errorMessages.Add(message);
             return index;
         }
 
-        private string CheckLoaderConstraints(ClassFile.ConstantPoolItemMI cpi, RuntimeJavaMethod mw)
+        string CheckLoaderConstraints(ClassFile.ConstantPoolItemMI cpi, RuntimeJavaMethod mw)
         {
 #if NETFRAMEWORK
             if (cpi.GetRetType() != mw.ReturnType && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
 #else
-        if (cpi.GetRetType() != mw.ReturnType && cpi.GetRetType().Name != mw.ReturnType.Name && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
+            if (cpi.GetRetType() != mw.ReturnType && cpi.GetRetType().Name != mw.ReturnType.Name && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
 #endif
             {
 #if IMPORTER
@@ -2881,14 +2834,16 @@ namespace IKVM.Runtime
 #endif
                 return "Loader constraints violated (return type): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature;
             }
-            RuntimeJavaType[] here = cpi.GetArgTypes();
-            RuntimeJavaType[] there = mw.GetParameters();
+
+            var here = cpi.GetArgTypes();
+            var there = mw.GetParameters();
+
             for (int i = 0; i < here.Length; i++)
             {
 #if NETFRAMEWORK
                 if (here[i] != there[i] && !here[i].IsUnloadable && !there[i].IsUnloadable)
 #else
-            if (here[i] != there[i] && here[i].Name != there[i].Name && !here[i].IsUnloadable && !there[i].IsUnloadable)
+                if (here[i] != there[i] && here[i].Name != there[i].Name && !here[i].IsUnloadable && !there[i].IsUnloadable)
 #endif
                 {
 #if IMPORTER
@@ -2897,71 +2852,99 @@ namespace IKVM.Runtime
                     return "Loader constraints violated (arg " + i + "): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature;
                 }
             }
+
             return null;
         }
 
-        private ClassFile.ConstantPoolItemInvokeDynamic GetInvokeDynamic(int index)
+        /// <summary>
+        /// Attempts to get an InvokeDynamic constant, or throws a <see cref="VerifyError"/>.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        /// <exception cref="VerifyError"></exception>
+        ClassFile.ConstantPoolItemInvokeDynamic VerifyGetInvokeDynamic(InvokeDynamicConstantHandle handle)
         {
             try
             {
-                ClassFile.ConstantPoolItemInvokeDynamic item = classFile.GetInvokeDynamic(index);
+                var item = classFile.GetInvokeDynamic(handle);
                 if (item != null)
-                {
                     return item;
-                }
             }
             catch (InvalidCastException)
             {
+
             }
             catch (IndexOutOfRangeException)
             {
+
             }
+
             throw new VerifyError("Illegal constant pool index");
         }
 
-        private ClassFile.ConstantPoolItemMI GetMethodref(int index)
+        /// <summary>
+        /// Attempts to get an Methodref constant, or throws a <see cref="VerifyError"/>.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        /// <exception cref="VerifyError"></exception>
+        ClassFile.ConstantPoolItemMI VerifyGetMethodref(int index)
         {
             try
             {
-                ClassFile.ConstantPoolItemMI item = classFile.GetMethodref(index);
+                var item = classFile.GetMethodref(index);
                 if (item != null)
-                {
                     return item;
-                }
             }
             catch (InvalidCastException)
             {
+
             }
             catch (IndexOutOfRangeException)
             {
+
             }
+
             throw new VerifyError("Illegal constant pool index");
         }
 
-        private ClassFile.ConstantPoolItemFieldref GetFieldref(int index)
+        /// <summary>
+        /// Attempts to get an Fieldref constant, or throws a <see cref="VerifyError"/>.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        /// <exception cref="VerifyError"></exception>
+        ClassFile.ConstantPoolItemFieldref VerifyGetFieldref(int index)
         {
             try
             {
-                ClassFile.ConstantPoolItemFieldref item = classFile.GetFieldref(index);
+                var item = classFile.GetFieldref(index);
                 if (item != null)
-                {
                     return item;
-                }
             }
             catch (InvalidCastException)
             {
+
             }
             catch (IndexOutOfRangeException)
             {
+
             }
+
             throw new VerifyError("Illegal constant pool index");
         }
 
-        private ClassFile.ConstantType GetConstantPoolConstantType(int index)
+        /// <summary>
+        /// Attempts to get the type of a constant, or throws a <see cref="VerifyError"/>.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        /// <exception cref="VerifyError"></exception>
+        ClassFile.ConstantType VerifyGetConstantPoolConstantType(ConstantHandle handle)
         {
             try
             {
-                return classFile.GetConstantPoolConstantType(index);
+                return classFile.GetConstantPoolConstantType(handle);
             }
             catch (IndexOutOfRangeException)
             {
@@ -2975,24 +2958,35 @@ namespace IKVM.Runtime
             {
                 // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
             }
+
             throw new VerifyError("Illegal constant pool index");
         }
 
-        private RuntimeJavaType GetConstantPoolClassType(int index)
+        /// <summary>
+        /// Attempts to get an Class constant's Java type, or throws a <see cref="VerifyError"/>.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        /// <exception cref="VerifyError"></exception>
+        RuntimeJavaType VerifyGetConstantPoolClassType(ClassConstantHandle handle)
         {
             try
             {
-                return classFile.GetConstantPoolClassType(index);
+                return classFile.GetConstantPoolClassType(handle);
             }
             catch (InvalidCastException)
             {
+
             }
             catch (IndexOutOfRangeException)
             {
+
             }
             catch (NullReferenceException)
             {
+
             }
+
             throw new VerifyError("Illegal constant pool index");
         }
 
@@ -3002,77 +2996,78 @@ namespace IKVM.Runtime
             state[instructionIndex].ClearFaultBlockException();
         }
 
-        private static void DumpMethod(CodeInfo codeInfo, ClassFile.Method method, UntangledExceptionTable exceptions)
+        static void DumpMethod(CodeInfo codeInfo, ClassFile.Method method, UntangledExceptionTable exceptions)
         {
-            ClassFile.Method.Instruction[] code = method.Instructions;
-            InstructionFlags[] flags = ComputePartialReachability(codeInfo, code, exceptions, 0, false);
+            var code = method.Instructions;
+            var flags = ComputePartialReachability(codeInfo, code, exceptions, 0, false);
+
             for (int i = 0; i < code.Length; i++)
             {
-                bool label = (flags[i] & InstructionFlags.BranchTarget) != 0;
+                var label = (flags[i] & InstructionFlags.BranchTarget) != 0;
                 if (!label)
                 {
                     for (int j = 0; j < exceptions.Length; j++)
                     {
-                        if (exceptions[j].startIndex == i
-                            || exceptions[j].endIndex == i
-                            || exceptions[j].handlerIndex == i)
+                        if (exceptions[j].StartIndex == i || exceptions[j].EndIndex == i || exceptions[j].HandlerIndex == i)
                         {
                             label = true;
                             break;
                         }
                     }
                 }
+
                 if (label)
-                {
                     Console.WriteLine("label{0}:", i);
-                }
+
                 if ((flags[i] & InstructionFlags.Reachable) != 0)
                 {
                     Console.Write("  {1}", i, code[i].NormalizedOpCode.ToString().Substring(2));
-                    switch (ByteCodeMetaData.GetFlowControl(code[i].NormalizedOpCode))
+
+                    switch (OpCodeMetaData.GetFlowControl(code[i].NormalizedOpCode))
                     {
                         case ByteCodeFlowControl.Branch:
                         case ByteCodeFlowControl.CondBranch:
                             Console.Write(" label{0}", code[i].Arg1);
                             break;
                     }
+
                     switch (code[i].NormalizedOpCode)
                     {
-                        case NormalizedByteCode.__iload:
-                        case NormalizedByteCode.__lload:
-                        case NormalizedByteCode.__fload:
-                        case NormalizedByteCode.__dload:
-                        case NormalizedByteCode.__aload:
-                        case NormalizedByteCode.__istore:
-                        case NormalizedByteCode.__lstore:
-                        case NormalizedByteCode.__fstore:
-                        case NormalizedByteCode.__dstore:
-                        case NormalizedByteCode.__astore:
-                        case NormalizedByteCode.__iconst:
+                        case NormalizedOpCode._iload:
+                        case NormalizedOpCode._lload:
+                        case NormalizedOpCode._fload:
+                        case NormalizedOpCode._dload:
+                        case NormalizedOpCode._aload:
+                        case NormalizedOpCode._istore:
+                        case NormalizedOpCode._lstore:
+                        case NormalizedOpCode._fstore:
+                        case NormalizedOpCode._dstore:
+                        case NormalizedOpCode._astore:
+                        case NormalizedOpCode.__iconst:
                             Console.Write(" {0}", code[i].Arg1);
                             break;
-                        case NormalizedByteCode.__ldc:
-                        case NormalizedByteCode.__ldc_nothrow:
-                        case NormalizedByteCode.__getfield:
-                        case NormalizedByteCode.__getstatic:
-                        case NormalizedByteCode.__putfield:
-                        case NormalizedByteCode.__putstatic:
-                        case NormalizedByteCode.__invokeinterface:
-                        case NormalizedByteCode.__invokespecial:
-                        case NormalizedByteCode.__invokestatic:
-                        case NormalizedByteCode.__invokevirtual:
-                        case NormalizedByteCode.__new:
+                        case NormalizedOpCode._ldc:
+                        case NormalizedOpCode.__ldc_nothrow:
+                        case NormalizedOpCode._getfield:
+                        case NormalizedOpCode._getstatic:
+                        case NormalizedOpCode._putfield:
+                        case NormalizedOpCode._putstatic:
+                        case NormalizedOpCode._invokeinterface:
+                        case NormalizedOpCode._invokespecial:
+                        case NormalizedOpCode._invokestatic:
+                        case NormalizedOpCode._invokevirtual:
+                        case NormalizedOpCode._new:
                             Console.Write(" #{0}", code[i].Arg1);
                             break;
                     }
                     Console.WriteLine();
                 }
             }
+
             for (int i = 0; i < exceptions.Length; i++)
-            {
-                Console.WriteLine(".catch #{0} from label{1} to label{2} using label{3}", exceptions[i].catch_type, exceptions[i].startIndex, exceptions[i].endIndex, exceptions[i].handlerIndex);
-            }
+                Console.WriteLine(".catch #{0} from label{1} to label{2} using label{3}", exceptions[i].CatchType, exceptions[i].StartIndex, exceptions[i].EndIndex, exceptions[i].HandlerIndex);
         }
+
     }
 
 }

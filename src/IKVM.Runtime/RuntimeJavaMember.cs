@@ -58,7 +58,7 @@ namespace IKVM.Runtime
                 return (RuntimeJavaMember)GCHandle.FromIntPtr(cookie).Target;
             }
 
-            GCHandle handle;
+            readonly GCHandle handle;
 
             /// <summary>
             /// Initializes a new instance.

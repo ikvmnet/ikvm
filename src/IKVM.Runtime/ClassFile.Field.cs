@@ -47,7 +47,7 @@ namespace IKVM.Runtime
             /// <param name="reader"></param>
             /// <exception cref="ClassFormatError"></exception>
             internal Field(ClassFile classFile, string[] utf8_cp, FieldReader reader) :
-                base(classFile, utf8_cp, reader.AccessFlags, reader.Record.NameIndex, reader.Record.DescriptorIndex)
+                base(classFile, utf8_cp, reader.AccessFlags, reader.Record.Name, reader.Record.Descriptor)
             {
                 if ((IsPrivate && IsPublic) || (IsPrivate && IsProtected) || (IsPublic && IsProtected) || (IsFinal && IsVolatile) || (classFile.IsInterface && (!IsPublic || !IsStatic || !IsFinal || IsTransient)))
                     throw new ClassFormatError("{0} (Illegal field modifiers: 0x{1:X})", classFile.Name, accessFlags);
@@ -56,7 +56,7 @@ namespace IKVM.Runtime
                 {
                     var attribute = reader.Attributes[i];
 
-                    switch (classFile.GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.NameIndex))
+                    switch (classFile.GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.Name))
                     {
                         case "Deprecated":
                             if (attribute is not DeprecatedAttributeReader deprecatedAttribute)
@@ -72,15 +72,15 @@ namespace IKVM.Runtime
                             {
                                 constantValue = Signature switch
                                 {
-                                    "I" => classFile.GetConstantPoolConstantInteger(constantValueAttribute.Record.ValueIndex),
-                                    "S" => (short)classFile.GetConstantPoolConstantInteger(constantValueAttribute.Record.ValueIndex),
-                                    "B" => (byte)classFile.GetConstantPoolConstantInteger(constantValueAttribute.Record.ValueIndex),
-                                    "C" => (char)classFile.GetConstantPoolConstantInteger(constantValueAttribute.Record.ValueIndex),
-                                    "Z" => classFile.GetConstantPoolConstantInteger(constantValueAttribute.Record.ValueIndex) != 0,
-                                    "J" => classFile.GetConstantPoolConstantLong(constantValueAttribute.Record.ValueIndex),
-                                    "F" => classFile.GetConstantPoolConstantFloat(constantValueAttribute.Record.ValueIndex),
-                                    "D" => classFile.GetConstantPoolConstantDouble(constantValueAttribute.Record.ValueIndex),
-                                    "Ljava.lang.String;" => classFile.GetConstantPoolConstantString(constantValueAttribute.Record.ValueIndex),
+                                    "I" => classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)constantValueAttribute.Record.Value),
+                                    "S" => (short)classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)constantValueAttribute.Record.Value),
+                                    "B" => (byte)classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)constantValueAttribute.Record.Value),
+                                    "C" => (char)classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)constantValueAttribute.Record.Value),
+                                    "Z" => classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)constantValueAttribute.Record.Value) != 0,
+                                    "J" => classFile.GetConstantPoolConstantLong((LongConstantHandle)constantValueAttribute.Record.Value),
+                                    "F" => classFile.GetConstantPoolConstantFloat((FloatConstantHandle)constantValueAttribute.Record.Value),
+                                    "D" => classFile.GetConstantPoolConstantDouble((DoubleConstantHandle)constantValueAttribute.Record.Value),
+                                    "Ljava.lang.String;" => classFile.GetConstantPoolConstantString((StringConstantHandle)constantValueAttribute.Record.Value),
                                     _ => throw new ClassFormatError("{0} (Invalid signature for constant)", classFile.Name),
                                 };
                             }
@@ -112,7 +112,7 @@ namespace IKVM.Runtime
                             if (attribute is not SignatureAttributeReader signatureAttribute)
                                 throw new ClassFormatError("Invalid Signature attribute type.");
 
-                            signature = classFile.GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Record.SignatureIndex);
+                            signature = classFile.GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Record.Signature);
                             break;
                         case "RuntimeVisibleAnnotations":
                             if (classFile.MajorVersion < 49)

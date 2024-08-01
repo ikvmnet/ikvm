@@ -1,7 +1,7 @@
 <Project>
 
     <ItemGroup>
-        <PackageReference Include="IKVM.ByteCode" Version="8.10.0" />
+        <PackageReference Include="IKVM.ByteCode" Version="8.11.0-dev.20" />
     </ItemGroup>
 
     <Choose>
@@ -11,7 +11,7 @@
                 <Reference Include="System.IO.Compression" />
                 <Reference Include="System.Security" />
                 <PackageReference Include="System.Buffers" Version="4.5.1" />
-                <PackageReference Include="System.IO.Pipelines" Version="6.0.3" />
+                <PackageReference Include="System.IO.Pipelines" Version="8.0.0" />
                 <PackageReference Include="System.Memory" Version="4.5.5"  />
                 <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
                 <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />

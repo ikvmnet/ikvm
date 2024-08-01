@@ -27,6 +27,8 @@ using System.Diagnostics;
 
 using IKVM.ByteCode.Reading;
 using IKVM.Attributes;
+using IKVM.ByteCode;
+
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -538,7 +540,7 @@ namespace IKVM.Runtime
                             }
 #endif
                             var nonleaf = false;
-                            Compiler.Compile(this, host, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf);
+                            CodeCompiler.Compile(this, host, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf);
                             ilGenerator.CheckLabels();
                             ilGenerator.DoEmit();
                             if (nonleaf)
@@ -817,24 +819,24 @@ namespace IKVM.Runtime
 
             static void MarkConstantPoolUsageForAnnotation(AnnotationReader annotation, bool[] inUse)
             {
-                ushort type_index = annotation.Record.TypeIndex;
-                inUse[type_index] = true;
+                var typeHandle = annotation.Record.Type;
+                inUse[typeHandle.Index] = true;
 
                 for (int i = 0; i < annotation.Record.Elements.Length; i++)
                 {
-                    inUse[annotation.Record.Elements[i].NameIndex] = true;
+                    inUse[annotation.Record.Elements[i].Name.Index] = true;
                     MarkConstantPoolUsageForAnnotationComponentValue(annotation.Elements[i], inUse);
                 }
             }
 
             static void MarkConstantPoolUsageForTypeAnnotation(TypeAnnotationReader annotation, bool[] inUse)
             {
-                ushort type_index = annotation.Record.TypeIndex;
-                inUse[type_index] = true;
+                var typeHandle = annotation.Record.Type;
+                inUse[typeHandle.Index] = true;
 
                 for (int i = 0; i < annotation.Record.Elements.Length; i++)
                 {
-                    inUse[annotation.Record.Elements[i].NameIndex] = true;
+                    inUse[annotation.Record.Elements[i].Name.Index] = true;
                     MarkConstantPoolUsageForAnnotationComponentValue(annotation.Elements[i], inUse);
                 }
             }
@@ -844,14 +846,14 @@ namespace IKVM.Runtime
                 switch (element)
                 {
                     case ElementValueConstantReader constant:
-                        inUse[constant.ValueRecord.Index] = true;
+                        inUse[constant.ValueRecord.Handle.Index] = true;
                         break;
                     case ElementValueClassReader classInfo:
-                        inUse[classInfo.ValueRecord.ClassIndex] = true;
+                        inUse[classInfo.ValueRecord.Class.Index] = true;
                         break;
                     case ElementValueEnumConstantReader enumConstant:
-                        inUse[enumConstant.ValueRecord.TypeNameIndex] = true;
-                        inUse[enumConstant.ValueRecord.ConstantNameIndex] = true;
+                        inUse[enumConstant.ValueRecord.TypeName.Index] = true;
+                        inUse[enumConstant.ValueRecord.ConstantName.Index] = true;
                         break;
                     case ElementValueAnnotationReader annotation:
                         MarkConstantPoolUsageForAnnotation(annotation.Annotation, inUse);
@@ -2066,7 +2068,7 @@ namespace IKVM.Runtime
                 }
 #endif
                 var nonLeaf = false;
-                Compiler.Compile(context, host, wrapper, methods[methodIndex], classFile, m, ilGenerator, ref nonLeaf);
+                CodeCompiler.Compile(context, host, wrapper, methods[methodIndex], classFile, m, ilGenerator, ref nonLeaf);
                 ilGenerator.DoEmit();
 #if IMPORTER
                 ilGenerator.EmitLineNumberTable((MethodBuilder)methods[methodIndex].GetMethod());
@@ -2229,20 +2231,22 @@ namespace IKVM.Runtime
 
                 if (!arfuMap.TryGetValue(field, out var cb))
                 {
-                    RuntimeJavaType arfuTypeWrapper = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
-                    TypeBuilder tb = typeBuilder.DefineNestedType(NestedTypeName.AtomicReferenceFieldUpdater + arfuMap.Count, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
+                    var arfuTypeWrapper = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
+                    var tb = typeBuilder.DefineNestedType(NestedTypeName.AtomicReferenceFieldUpdater + arfuMap.Count, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
                     AtomicReferenceFieldUpdaterEmitter.EmitImpl(context, tb, field.GetField());
+
                     cb = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, Type.EmptyTypes);
                     arfuMap.Add(field, cb);
-                    CodeEmitter ctorilgen = context.CodeEmitterFactory.Create(cb);
+                    var ctorilgen = context.CodeEmitterFactory.Create(cb);
                     ctorilgen.Emit(OpCodes.Ldarg_0);
-                    RuntimeJavaMethod basector = arfuTypeWrapper.GetMethodWrapper("<init>", "()V", false);
+                    var basector = arfuTypeWrapper.GetMethodWrapper("<init>", "()V", false);
                     basector.Link();
                     basector.EmitCall(ctorilgen);
                     ctorilgen.Emit(OpCodes.Ret);
                     ctorilgen.DoEmit();
                     RegisterNestedTypeBuilder(tb);
                 }
+
                 return cb;
             }
 
@@ -2254,16 +2258,16 @@ namespace IKVM.Runtime
                 return tb;
             }
 
-            internal TypeBuilder DefineMethodHandleConstantType(int index)
+            internal TypeBuilder DefineMethodHandleConstantType(MethodHandleConstantHandle handle)
             {
-                var tb = typeBuilder.DefineNestedType(NestedTypeName.MethodHandleConstant + index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit); ;
+                var tb = typeBuilder.DefineNestedType(NestedTypeName.MethodHandleConstant + handle.Index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit); ;
                 RegisterNestedTypeBuilder(tb);
                 return tb;
             }
 
-            internal TypeBuilder DefineMethodTypeConstantType(int index)
+            internal TypeBuilder DefineMethodTypeConstantType(MethodTypeConstantHandle handle)
             {
-                var tb = typeBuilder.DefineNestedType(NestedTypeName.MethodTypeConstant + index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
+                var tb = typeBuilder.DefineNestedType(NestedTypeName.MethodTypeConstant + handle.Index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
                 RegisterNestedTypeBuilder(tb);
                 return tb;
             }
@@ -2344,7 +2348,9 @@ namespace IKVM.Runtime
             }
 
 #endif
+
         }
+
     }
 
 }
