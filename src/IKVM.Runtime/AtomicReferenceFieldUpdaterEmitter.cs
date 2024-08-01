@@ -49,17 +49,17 @@ namespace IKVM.Runtime
                 && (flags[i - 1] & InstructionFlags.BranchTarget) == 0
                 && (flags[i - 2] & InstructionFlags.BranchTarget) == 0
                 && (flags[i - 3] & InstructionFlags.BranchTarget) == 0
-                && code[i - 1].NormalizedOpCode == NormalizedByteCode.__ldc_nothrow
-                && code[i - 2].NormalizedOpCode == NormalizedByteCode._ldc
-                && code[i - 3].NormalizedOpCode == NormalizedByteCode._ldc)
+                && code[i - 1].NormalizedOpCode == NormalizedOpCode.__ldc_nothrow
+                && code[i - 2].NormalizedOpCode == NormalizedOpCode._ldc
+                && code[i - 3].NormalizedOpCode == NormalizedOpCode._ldc)
             {
                 // we now have a structural match, now we need to make sure that the argument values are what we expect
                 var tclass = classFile.GetConstantPoolClassType(new((ushort)code[i - 3].Arg1));
                 var vclass = classFile.GetConstantPoolClassType(new((ushort)code[i - 2].Arg1));
-                string fieldName = classFile.GetConstantPoolConstantString(new((ushort)code[i - 1].Arg1));
+                var fieldName = classFile.GetConstantPoolConstantString(new((ushort)code[i - 1].Arg1));
                 if (tclass == wrapper && !vclass.IsUnloadable && !vclass.IsPrimitive && !vclass.IsNonPrimitiveValueType)
                 {
-                    RuntimeJavaField field = wrapper.GetFieldWrapper(fieldName, vclass.SigName);
+                    var field = wrapper.GetFieldWrapper(fieldName, vclass.SigName);
                     if (field != null && !field.IsStatic && field.IsVolatile && field.DeclaringType == wrapper && field.FieldTypeWrapper == vclass)
                     {
                         // everything matches up, now call the actual emitter
@@ -71,6 +71,7 @@ namespace IKVM.Runtime
                     }
                 }
             }
+
             return false;
         }
 
@@ -129,48 +130,6 @@ namespace IKVM.Runtime
             ilgen.DoEmit();
         }
 
-    }
-
-    class InterlockedMethods
-    {
-
-        readonly RuntimeContext context;
-
-        internal readonly MethodInfo AddInt32;
-        internal readonly MethodInfo CompareExchangeInt32;
-        internal readonly MethodInfo CompareExchangeInt64;
-        internal readonly MethodInfo CompareExchangeOfT;
-        internal readonly MethodInfo ExchangeOfT;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="context"></param>
-        public InterlockedMethods(RuntimeContext context)
-        {
-            this.context = context;
-
-            var type = context.Resolver.ResolveCoreType(typeof(System.Threading.Interlocked).FullName);
-            AddInt32 = type.GetMethod("Add", new Type[] { context.Types.Int32.MakeByRefType(), context.Types.Int32 });
-            CompareExchangeInt32 = type.GetMethod("CompareExchange", new Type[] { context.Types.Int32.MakeByRefType(), context.Types.Int32, context.Types.Int32 });
-            CompareExchangeInt64 = type.GetMethod("CompareExchange", new Type[] { context.Types.Int64.MakeByRefType(), context.Types.Int64, context.Types.Int64 });
-            foreach (MethodInfo m in type.GetMethods())
-            {
-                if (m.IsGenericMethodDefinition)
-                {
-                    switch (m.Name)
-                    {
-                        case "CompareExchange":
-                            CompareExchangeOfT = m;
-                            break;
-                        case "Exchange":
-                            ExchangeOfT = m;
-                            break;
-                    }
-                }
-            }
-
-        }
     }
 
 }

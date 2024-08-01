@@ -42,6 +42,18 @@ namespace IKVM.Runtime
         internal readonly InstructionFlags[] Flags;
         internal bool NonLeaf = true;
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="context"></param>
+        /// <param name="ilgen"></param>
+        /// <param name="ma"></param>
+        /// <param name="opcodeIndex"></param>
+        /// <param name="caller"></param>
+        /// <param name="classFile"></param>
+        /// <param name="code"></param>
+        /// <param name="flags"></param>
         internal EmitIntrinsicContext(RuntimeJavaMethod method, RuntimeByteCodeJavaType.FinishContext context, CodeEmitter ilgen, CodeInfo ma, int opcodeIndex, RuntimeJavaMethod caller, ClassFile classFile, Instruction[] code, InstructionFlags[] flags)
         {
             this.Method = method;
@@ -55,6 +67,12 @@ namespace IKVM.Runtime
             this.Flags = flags;
         }
 
+        /// <summary>
+        /// Returns <c>true</c> if there is at least <paramref name="length"/> instructions that are not the target of a branch beginning at <paramref name="offset"/>.
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
         internal bool MatchRange(int offset, int length)
         {
             if (OpcodeIndex + offset < 0)
@@ -71,12 +89,25 @@ namespace IKVM.Runtime
             return true;
         }
 
-        internal bool Match(int offset, NormalizedByteCode opcode)
+        /// <summary>
+        /// Returns <c>true</c> if the opcode at the specified index matches the given opcode.
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <param name="opcode"></param>
+        /// <returns></returns>
+        internal bool Match(int offset, NormalizedOpCode opcode)
         {
             return Code[OpcodeIndex + offset].NormalizedOpCode == opcode;
         }
 
-        internal bool Match(int offset, NormalizedByteCode opcode, int arg)
+        /// <summary>
+        /// Returns <c>true</c> if the opcode at the specified index matches the given opcode and has the specified first argument value.
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <param name="opcode"></param>
+        /// <param name="arg"></param>
+        /// <returns></returns>
+        internal bool Match(int offset, NormalizedOpCode opcode, int arg)
         {
             return Code[OpcodeIndex + offset].NormalizedOpCode == opcode && Code[OpcodeIndex + offset].Arg1 == arg;
         }
@@ -111,7 +142,7 @@ namespace IKVM.Runtime
             return ClassFile.GetConstantPoolConstantType(new((ushort)Code[OpcodeIndex + offset].Arg1));
         }
 
-        internal void PatchOpCode(int offset, NormalizedByteCode opc)
+        internal void PatchOpCode(int offset, NormalizedOpCode opc)
         {
             Code[OpcodeIndex + offset].PatchOpCode(opc);
         }

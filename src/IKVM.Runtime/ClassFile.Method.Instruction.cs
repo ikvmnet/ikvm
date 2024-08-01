@@ -45,14 +45,14 @@ namespace IKVM.Runtime
                 }
 
                 ushort pc;
-                NormalizedByteCode normopcode;
+                NormalizedOpCode normopcode;
                 int arg1;
                 short arg2;
                 SwitchEntry[] switch_entries;
 
                 internal void SetHardError(HardError error, int messageId)
                 {
-                    normopcode = NormalizedByteCode.__static_error;
+                    normopcode = NormalizedOpCode.__static_error;
                     arg2 = (short)error;
                     arg1 = messageId;
                 }
@@ -67,7 +67,7 @@ namespace IKVM.Runtime
                 /// Replaces the opcode with a new opcode.
                 /// </summary>
                 /// <param name="bc"></param>
-                internal void PatchOpCode(NormalizedByteCode bc)
+                internal void PatchOpCode(NormalizedOpCode bc)
                 {
                     this.normopcode = bc;
                 }
@@ -77,7 +77,7 @@ namespace IKVM.Runtime
                 /// </summary>
                 /// <param name="bc"></param>
                 /// <param name="arg1"></param>
-                internal void PatchOpCode(NormalizedByteCode bc, int arg1)
+                internal void PatchOpCode(NormalizedOpCode bc, int arg1)
                 {
                     this.normopcode = bc;
                     this.arg1 = arg1;
@@ -89,7 +89,7 @@ namespace IKVM.Runtime
                 /// <param name="bc"></param>
                 /// <param name="arg1"></param>
                 /// <param name="arg2"></param>
-                internal void PatchOpCode(NormalizedByteCode bc, int arg1, short arg2)
+                internal void PatchOpCode(NormalizedOpCode bc, int arg1, short arg2)
                 {
                     this.normopcode = bc;
                     this.arg1 = arg1;
@@ -110,7 +110,7 @@ namespace IKVM.Runtime
                 {
                     // TODO what happens if we already have exactly the maximum number of instructions?
                     this.pc = pc;
-                    this.normopcode = NormalizedByteCode._nop;
+                    this.normopcode = NormalizedOpCode._nop;
                 }
 
                 internal void MapSwitchTargets(int[] pcIndexMap)
@@ -124,7 +124,7 @@ namespace IKVM.Runtime
                 {
                     this.pc = pc;
                     var bc = (OpCode)br.ReadByte();
-                    switch (ByteCodeMetaData.GetMode(bc))
+                    switch (OpCodeMetaData.GetMode(bc))
                     {
                         case ByteCodeMode.Simple:
                             break;
@@ -221,7 +221,7 @@ namespace IKVM.Runtime
                             bc = (OpCode)br.ReadByte();
                             // NOTE the PC of a wide instruction is actually the PC of the
                             // wide prefix, not the following instruction (vmspec 4.9.2)
-                            switch (ByteCodeMetaData.GetWideMode(bc))
+                            switch (OpCodeMetaData.GetWideMode(bc))
                             {
                                 case ByteCodeModeWide.Local_2:
                                     arg1 = br.ReadUInt16();
@@ -237,8 +237,8 @@ namespace IKVM.Runtime
                         default:
                             throw new ClassFormatError("Invalid opcode: {0}", bc);
                     }
-                    this.normopcode = ByteCodeMetaData.GetNormalizedByteCode(bc);
-                    arg1 = ByteCodeMetaData.GetArg(bc, arg1);
+                    this.normopcode = OpCodeMetaData.GetNormalizedByteCode(bc);
+                    arg1 = OpCodeMetaData.GetArg(bc, arg1);
                 }
 
                 internal int PC
@@ -249,7 +249,7 @@ namespace IKVM.Runtime
                     }
                 }
 
-                internal NormalizedByteCode NormalizedOpCode
+                internal NormalizedOpCode NormalizedOpCode
                 {
                     get
                     {

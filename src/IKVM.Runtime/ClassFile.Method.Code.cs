@@ -66,7 +66,7 @@ namespace IKVM.Runtime
                         while (rdr.IsAtEnd == false)
                         {
                             instructions[instructionIndex].Read((ushort)(rdr.Position - basePosition), rdr, classFile);
-                            hasJsr |= instructions[instructionIndex].NormalizedOpCode == NormalizedByteCode._jsr;
+                            hasJsr |= instructions[instructionIndex].NormalizedOpCode == NormalizedOpCode._jsr;
                             instructionIndex++;
                         }
 
@@ -94,28 +94,28 @@ namespace IKVM.Runtime
                     {
                         switch (this.instructions[i].NormalizedOpCode)
                         {
-                            case NormalizedByteCode._ifeq:
-                            case NormalizedByteCode._ifne:
-                            case NormalizedByteCode._iflt:
-                            case NormalizedByteCode._ifge:
-                            case NormalizedByteCode._ifgt:
-                            case NormalizedByteCode._ifle:
-                            case NormalizedByteCode._if_icmpeq:
-                            case NormalizedByteCode._if_icmpne:
-                            case NormalizedByteCode._if_icmplt:
-                            case NormalizedByteCode._if_icmpge:
-                            case NormalizedByteCode._if_icmpgt:
-                            case NormalizedByteCode._if_icmple:
-                            case NormalizedByteCode._if_acmpeq:
-                            case NormalizedByteCode._if_acmpne:
-                            case NormalizedByteCode._ifnull:
-                            case NormalizedByteCode._ifnonnull:
-                            case NormalizedByteCode._goto:
-                            case NormalizedByteCode._jsr:
+                            case NormalizedOpCode._ifeq:
+                            case NormalizedOpCode._ifne:
+                            case NormalizedOpCode._iflt:
+                            case NormalizedOpCode._ifge:
+                            case NormalizedOpCode._ifgt:
+                            case NormalizedOpCode._ifle:
+                            case NormalizedOpCode._if_icmpeq:
+                            case NormalizedOpCode._if_icmpne:
+                            case NormalizedOpCode._if_icmplt:
+                            case NormalizedOpCode._if_icmpge:
+                            case NormalizedOpCode._if_icmpgt:
+                            case NormalizedOpCode._if_icmple:
+                            case NormalizedOpCode._if_acmpeq:
+                            case NormalizedOpCode._if_acmpne:
+                            case NormalizedOpCode._ifnull:
+                            case NormalizedOpCode._ifnonnull:
+                            case NormalizedOpCode._goto:
+                            case NormalizedOpCode._jsr:
                                 this.instructions[i].SetTargetIndex(pcIndexMap[this.instructions[i].Arg1 + this.instructions[i].PC]);
                                 break;
-                            case NormalizedByteCode._tableswitch:
-                            case NormalizedByteCode._lookupswitch:
+                            case NormalizedOpCode._tableswitch:
+                            case NormalizedOpCode._lookupswitch:
                                 this.instructions[i].MapSwitchTargets(pcIndexMap);
                                 break;
                         }

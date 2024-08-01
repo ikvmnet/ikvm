@@ -716,8 +716,8 @@ namespace IKVM.Runtime
                 noop = true;
                 for (int i = 0; i < m.Instructions.Length; i++)
                 {
-                    NormalizedByteCode bc;
-                    while ((bc = m.Instructions[i].NormalizedOpCode) == NormalizedByteCode._goto)
+                    NormalizedOpCode bc;
+                    while ((bc = m.Instructions[i].NormalizedOpCode) == NormalizedOpCode._goto)
                     {
                         int target = m.Instructions[i].TargetIndex;
                         if (target <= i)
@@ -730,7 +730,7 @@ namespace IKVM.Runtime
                         // uses a goto to remove the (now unused) code
                         i = target;
                     }
-                    if (bc == NormalizedByteCode._getstatic || bc == NormalizedByteCode._putstatic)
+                    if (bc == NormalizedOpCode._getstatic || bc == NormalizedOpCode._putstatic)
                     {
                         ClassFile.ConstantPoolItemFieldref fld = classFile.SafeGetFieldref(m.Instructions[i].Arg1);
                         if (fld == null || fld.Class != classFile.Name)
@@ -740,7 +740,7 @@ namespace IKVM.Runtime
                         }
                         // don't allow getstatic to load non-primitive fields, because that would
                         // cause the verifier to try to load the type
-                        if (bc == NormalizedByteCode._getstatic && "L[".IndexOf(fld.Signature[0]) != -1)
+                        if (bc == NormalizedOpCode._getstatic && "L[".IndexOf(fld.Signature[0]) != -1)
                         {
                             noop = false;
                             return false;
@@ -751,7 +751,7 @@ namespace IKVM.Runtime
                             noop = false;
                             return false;
                         }
-                        if (bc == NormalizedByteCode._putstatic)
+                        if (bc == NormalizedOpCode._putstatic)
                         {
                             if (field.IsProperty && field.PropertySetter != null)
                             {
@@ -765,15 +765,15 @@ namespace IKVM.Runtime
                             return false;
                         }
                     }
-                    else if (ByteCodeMetaData.CanThrowException(bc))
+                    else if (OpCodeMetaData.CanThrowException(bc))
                     {
                         noop = false;
                         return false;
                     }
-                    else if (bc == NormalizedByteCode._aconst_null
-                        || (bc == NormalizedByteCode.__iconst && m.Instructions[i].Arg1 == 0)
-                        || bc == NormalizedByteCode._return
-                        || bc == NormalizedByteCode._nop)
+                    else if (bc == NormalizedOpCode._aconst_null
+                        || (bc == NormalizedOpCode.__iconst && m.Instructions[i].Arg1 == 0)
+                        || bc == NormalizedOpCode._return
+                        || bc == NormalizedOpCode._nop)
                     {
                         // valid instructions in a potential noop <clinit>
                     }
@@ -2765,7 +2765,7 @@ namespace IKVM.Runtime
                             !m.IsAbstract && !m.IsNative &&
                             (!m.IsFinal || classFile.IsFinal) &&
                             m.Instructions.Length > 0 &&
-                            m.Instructions[0].NormalizedOpCode == NormalizedByteCode._return)
+                            m.Instructions[0].NormalizedOpCode == NormalizedOpCode._return)
                         {
                             // we've got an empty finalize method, so we don't need to override the real finalizer
                             // (not having a finalizer makes a huge perf difference)
@@ -2944,7 +2944,7 @@ namespace IKVM.Runtime
                 {
                     foreach (var instr in m.Instructions)
                     {
-                        if (instr.NormalizedOpCode == NormalizedByteCode._invokespecial)
+                        if (instr.NormalizedOpCode == NormalizedOpCode._invokespecial)
                         {
                             var cpi = classFile.SafeGetMethodref(new MethodrefConstantHandle((ushort)instr.Arg1));
                             return cpi != null && cpi.Name == m.Name && cpi.Signature == m.Signature;

@@ -80,10 +80,10 @@ namespace IKVM.Runtime
             {
                 // note that we're also (needlessly) processing the subroutines here, but that shouldn't be a problem (just a minor waste of cpu)
                 // because the code is unreachable anyway
-                if ((flags[i] & InstructionFlags.Reachable) != 0 && m.Instructions[i].NormalizedOpCode == NormalizedByteCode._jsr)
+                if ((flags[i] & InstructionFlags.Reachable) != 0 && m.Instructions[i].NormalizedOpCode == NormalizedOpCode._jsr)
                 {
                     int subroutineId = m.Instructions[i].TargetIndex;
-                    codeCopy[i].PatchOpCode(NormalizedByteCode._goto, codeLength);
+                    codeCopy[i].PatchOpCode(NormalizedOpCode._goto, codeLength);
                     SubroutineCall sub = new SubroutineCall(this, subroutineId, i + 1);
                     hasJsrs |= sub.InlineSubroutine();
                     subs.Add(sub);
@@ -134,7 +134,7 @@ namespace IKVM.Runtime
             private void EmitGoto(int targetIndex)
             {
                 ClassFile.Method.Instruction instr = new ClassFile.Method.Instruction();
-                instr.PatchOpCode(NormalizedByteCode._goto, targetIndex);
+                instr.PatchOpCode(NormalizedOpCode._goto, targetIndex);
                 instr.SetPC(-1);
                 Emit(instr);
             }
@@ -146,7 +146,7 @@ namespace IKVM.Runtime
                 {
                     // TODO consider exception handling around these instructions
                     ClassFile.Method.Instruction instr = new ClassFile.Method.Instruction();
-                    instr.PatchOpCode(NormalizedByteCode._aconst_null);
+                    instr.PatchOpCode(NormalizedOpCode._aconst_null);
                     instr.SetPC(inliner.m.Instructions[subroutineIndex].PC);
                     Emit(instr);
                     EmitGoto(subroutineIndex);
@@ -162,22 +162,22 @@ namespace IKVM.Runtime
                         branchMap[instructionIndex] = inliner.codeLength;
                         switch (inliner.m.Instructions[instructionIndex].NormalizedOpCode)
                         {
-                            case NormalizedByteCode._tableswitch:
-                            case NormalizedByteCode._lookupswitch:
-                            case NormalizedByteCode._ireturn:
-                            case NormalizedByteCode._lreturn:
-                            case NormalizedByteCode._freturn:
-                            case NormalizedByteCode._dreturn:
-                            case NormalizedByteCode._areturn:
-                            case NormalizedByteCode._return:
-                            case NormalizedByteCode._athrow:
-                            case NormalizedByteCode._goto:
+                            case NormalizedOpCode._tableswitch:
+                            case NormalizedOpCode._lookupswitch:
+                            case NormalizedOpCode._ireturn:
+                            case NormalizedOpCode._lreturn:
+                            case NormalizedOpCode._freturn:
+                            case NormalizedOpCode._dreturn:
+                            case NormalizedOpCode._areturn:
+                            case NormalizedOpCode._return:
+                            case NormalizedOpCode._athrow:
+                            case NormalizedOpCode._goto:
                                 Emit(inliner.m.Instructions[instructionIndex]);
                                 break;
-                            case NormalizedByteCode._jsr:
+                            case NormalizedOpCode._jsr:
                                 hasJsrs = true;
                                 goto default;
-                            case NormalizedByteCode._ret:
+                            case NormalizedOpCode._ret:
                                 {
                                     int subid = inliner.ma.GetLocalTypeWrapper(instructionIndex, inliner.m.Instructions[instructionIndex].TargetIndex).SubroutineIndex;
                                     if (subid == subroutineIndex)
@@ -213,8 +213,8 @@ namespace IKVM.Runtime
                 {
                     switch (inliner.codeCopy[instructionIndex].NormalizedOpCode)
                     {
-                        case NormalizedByteCode._lookupswitch:
-                        case NormalizedByteCode._tableswitch:
+                        case NormalizedOpCode._lookupswitch:
+                        case NormalizedOpCode._tableswitch:
                             {
                                 int[] targets = new int[inliner.codeCopy[instructionIndex].SwitchEntryCount];
                                 for (int i = 0; i < targets.Length; i++)
@@ -225,24 +225,24 @@ namespace IKVM.Runtime
                                 inliner.codeCopy[instructionIndex].DefaultTarget = branchMap[inliner.codeCopy[instructionIndex].DefaultTarget];
                             }
                             break;
-                        case NormalizedByteCode._ifeq:
-                        case NormalizedByteCode._ifne:
-                        case NormalizedByteCode._iflt:
-                        case NormalizedByteCode._ifge:
-                        case NormalizedByteCode._ifgt:
-                        case NormalizedByteCode._ifle:
-                        case NormalizedByteCode._if_icmpeq:
-                        case NormalizedByteCode._if_icmpne:
-                        case NormalizedByteCode._if_icmplt:
-                        case NormalizedByteCode._if_icmpge:
-                        case NormalizedByteCode._if_icmpgt:
-                        case NormalizedByteCode._if_icmple:
-                        case NormalizedByteCode._if_acmpeq:
-                        case NormalizedByteCode._if_acmpne:
-                        case NormalizedByteCode._ifnull:
-                        case NormalizedByteCode._ifnonnull:
-                        case NormalizedByteCode._goto:
-                        case NormalizedByteCode._jsr:
+                        case NormalizedOpCode._ifeq:
+                        case NormalizedOpCode._ifne:
+                        case NormalizedOpCode._iflt:
+                        case NormalizedOpCode._ifge:
+                        case NormalizedOpCode._ifgt:
+                        case NormalizedOpCode._ifle:
+                        case NormalizedOpCode._if_icmpeq:
+                        case NormalizedOpCode._if_icmpne:
+                        case NormalizedOpCode._if_icmplt:
+                        case NormalizedOpCode._if_icmpge:
+                        case NormalizedOpCode._if_icmpgt:
+                        case NormalizedOpCode._if_icmple:
+                        case NormalizedOpCode._if_acmpeq:
+                        case NormalizedOpCode._if_acmpne:
+                        case NormalizedOpCode._ifnull:
+                        case NormalizedOpCode._ifnonnull:
+                        case NormalizedOpCode._goto:
+                        case NormalizedOpCode._jsr:
                             inliner.codeCopy[instructionIndex].TargetIndex = branchMap[inliner.codeCopy[instructionIndex].TargetIndex];
                             break;
                     }
@@ -443,7 +443,7 @@ namespace IKVM.Runtime
                                 ClassFile.Method.Instruction instr = instructions[i];
                                 switch (instr.NormalizedOpCode)
                                 {
-                                    case NormalizedByteCode._aload:
+                                    case NormalizedOpCode._aload:
                                         {
                                             SimpleType type = s.GetLocalType(instr.NormalizedArg1);
                                             if (type == SimpleType.Invalid || type.IsPrimitive)
@@ -453,140 +453,140 @@ namespace IKVM.Runtime
                                             s.PushType(type);
                                             break;
                                         }
-                                    case NormalizedByteCode._astore:
+                                    case NormalizedOpCode._astore:
                                         s.SetLocalType(instr.NormalizedArg1, s.PopObjectType(), i);
                                         break;
-                                    case NormalizedByteCode._aconst_null:
+                                    case NormalizedOpCode._aconst_null:
                                         s.PushObject();
                                         break;
-                                    case NormalizedByteCode._aaload:
+                                    case NormalizedOpCode._aaload:
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         s.PushObject();
                                         break;
-                                    case NormalizedByteCode._aastore:
+                                    case NormalizedOpCode._aastore:
                                         s.PopObjectType();
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         break;
-                                    case NormalizedByteCode._baload:
+                                    case NormalizedOpCode._baload:
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._bastore:
+                                    case NormalizedOpCode._bastore:
                                         s.PopPrimitive();
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         break;
-                                    case NormalizedByteCode._caload:
-                                        s.PopPrimitive();
-                                        s.PopObjectType();
-                                        s.PushPrimitive();
-                                        break;
-                                    case NormalizedByteCode._castore:
-                                        s.PopPrimitive();
-                                        s.PopPrimitive();
-                                        s.PopObjectType();
-                                        break;
-                                    case NormalizedByteCode._saload:
+                                    case NormalizedOpCode._caload:
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._sastore:
+                                    case NormalizedOpCode._castore:
                                         s.PopPrimitive();
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         break;
-                                    case NormalizedByteCode._iaload:
+                                    case NormalizedOpCode._saload:
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._iastore:
+                                    case NormalizedOpCode._sastore:
                                         s.PopPrimitive();
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         break;
-                                    case NormalizedByteCode._laload:
+                                    case NormalizedOpCode._iaload:
+                                        s.PopPrimitive();
+                                        s.PopObjectType();
+                                        s.PushPrimitive();
+                                        break;
+                                    case NormalizedOpCode._iastore:
+                                        s.PopPrimitive();
+                                        s.PopPrimitive();
+                                        s.PopObjectType();
+                                        break;
+                                    case NormalizedOpCode._laload:
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._lastore:
+                                    case NormalizedOpCode._lastore:
                                         s.PopWidePrimitive();
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         break;
-                                    case NormalizedByteCode._daload:
+                                    case NormalizedOpCode._daload:
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._dastore:
+                                    case NormalizedOpCode._dastore:
                                         s.PopWidePrimitive();
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         break;
-                                    case NormalizedByteCode._faload:
+                                    case NormalizedOpCode._faload:
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._fastore:
+                                    case NormalizedOpCode._fastore:
                                         s.PopPrimitive();
                                         s.PopPrimitive();
                                         s.PopObjectType();
                                         break;
-                                    case NormalizedByteCode._arraylength:
+                                    case NormalizedOpCode._arraylength:
                                         s.PopObjectType();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode.__iconst:
+                                    case NormalizedOpCode.__iconst:
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._if_icmpeq:
-                                    case NormalizedByteCode._if_icmpne:
-                                    case NormalizedByteCode._if_icmplt:
-                                    case NormalizedByteCode._if_icmpge:
-                                    case NormalizedByteCode._if_icmpgt:
-                                    case NormalizedByteCode._if_icmple:
+                                    case NormalizedOpCode._if_icmpeq:
+                                    case NormalizedOpCode._if_icmpne:
+                                    case NormalizedOpCode._if_icmplt:
+                                    case NormalizedOpCode._if_icmpge:
+                                    case NormalizedOpCode._if_icmpgt:
+                                    case NormalizedOpCode._if_icmple:
                                         s.PopPrimitive();
                                         s.PopPrimitive();
                                         break;
-                                    case NormalizedByteCode._ifeq:
-                                    case NormalizedByteCode._ifge:
-                                    case NormalizedByteCode._ifgt:
-                                    case NormalizedByteCode._ifle:
-                                    case NormalizedByteCode._iflt:
-                                    case NormalizedByteCode._ifne:
+                                    case NormalizedOpCode._ifeq:
+                                    case NormalizedOpCode._ifge:
+                                    case NormalizedOpCode._ifgt:
+                                    case NormalizedOpCode._ifle:
+                                    case NormalizedOpCode._iflt:
+                                    case NormalizedOpCode._ifne:
                                         s.PopPrimitive();
                                         break;
-                                    case NormalizedByteCode._ifnonnull:
-                                    case NormalizedByteCode._ifnull:
+                                    case NormalizedOpCode._ifnonnull:
+                                    case NormalizedOpCode._ifnull:
                                         s.PopObjectType();
                                         break;
-                                    case NormalizedByteCode._if_acmpeq:
-                                    case NormalizedByteCode._if_acmpne:
+                                    case NormalizedOpCode._if_acmpeq:
+                                    case NormalizedOpCode._if_acmpne:
                                         s.PopObjectType();
                                         s.PopObjectType();
                                         break;
-                                    case NormalizedByteCode._getstatic:
+                                    case NormalizedOpCode._getstatic:
                                         s.PushType(GetFieldref(instr.Arg1).Signature);
                                         break;
-                                    case NormalizedByteCode._putstatic:
+                                    case NormalizedOpCode._putstatic:
                                         s.PopType(GetFieldref(instr.Arg1).Signature);
                                         break;
-                                    case NormalizedByteCode._getfield:
+                                    case NormalizedOpCode._getfield:
                                         s.PopObjectType();
                                         s.PushType(GetFieldref(instr.Arg1).Signature);
                                         break;
-                                    case NormalizedByteCode._putfield:
+                                    case NormalizedOpCode._putfield:
                                         s.PopType(GetFieldref(instr.Arg1).Signature);
                                         s.PopObjectType();
                                         break;
-                                    case NormalizedByteCode._ldc:
+                                    case NormalizedOpCode._ldc:
                                         {
                                             switch (GetConstantPoolConstantType(new((ushort)instr.Arg1)))
                                             {
@@ -613,14 +613,14 @@ namespace IKVM.Runtime
                                             }
                                             break;
                                         }
-                                    case NormalizedByteCode._invokevirtual:
-                                    case NormalizedByteCode._invokespecial:
-                                    case NormalizedByteCode._invokeinterface:
-                                    case NormalizedByteCode._invokestatic:
+                                    case NormalizedOpCode._invokevirtual:
+                                    case NormalizedOpCode._invokespecial:
+                                    case NormalizedOpCode._invokeinterface:
+                                    case NormalizedOpCode._invokestatic:
                                         {
                                             ClassFile.ConstantPoolItemMI cpi = GetMethodref(instr.Arg1);
                                             s.MultiPopAnyType(cpi.GetArgTypes().Length);
-                                            if (instr.NormalizedOpCode != NormalizedByteCode._invokestatic)
+                                            if (instr.NormalizedOpCode != NormalizedOpCode._invokestatic)
                                             {
                                                 s.PopType();
                                             }
@@ -632,87 +632,87 @@ namespace IKVM.Runtime
                                             }
                                             break;
                                         }
-                                    case NormalizedByteCode._goto:
+                                    case NormalizedOpCode._goto:
                                         break;
-                                    case NormalizedByteCode._istore:
+                                    case NormalizedOpCode._istore:
                                         s.PopPrimitive();
                                         s.SetLocalPrimitive(instr.NormalizedArg1, i);
                                         break;
-                                    case NormalizedByteCode._iload:
+                                    case NormalizedOpCode._iload:
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._ineg:
-                                        s.PopPrimitive();
-                                        s.PushPrimitive();
-                                        break;
-                                    case NormalizedByteCode._iadd:
-                                    case NormalizedByteCode._isub:
-                                    case NormalizedByteCode._imul:
-                                    case NormalizedByteCode._idiv:
-                                    case NormalizedByteCode._irem:
-                                    case NormalizedByteCode._iand:
-                                    case NormalizedByteCode._ior:
-                                    case NormalizedByteCode._ixor:
-                                    case NormalizedByteCode._ishl:
-                                    case NormalizedByteCode._ishr:
-                                    case NormalizedByteCode._iushr:
-                                        s.PopPrimitive();
+                                    case NormalizedOpCode._ineg:
                                         s.PopPrimitive();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._lneg:
-                                        s.PopWidePrimitive();
-                                        s.PushWidePrimitive();
-                                        break;
-                                    case NormalizedByteCode._ladd:
-                                    case NormalizedByteCode._lsub:
-                                    case NormalizedByteCode._lmul:
-                                    case NormalizedByteCode._ldiv:
-                                    case NormalizedByteCode._lrem:
-                                    case NormalizedByteCode._land:
-                                    case NormalizedByteCode._lor:
-                                    case NormalizedByteCode._lxor:
-                                        s.PopWidePrimitive();
-                                        s.PopWidePrimitive();
-                                        s.PushWidePrimitive();
-                                        break;
-                                    case NormalizedByteCode._lshl:
-                                    case NormalizedByteCode._lshr:
-                                    case NormalizedByteCode._lushr:
-                                        s.PopPrimitive();
-                                        s.PopWidePrimitive();
-                                        s.PushWidePrimitive();
-                                        break;
-                                    case NormalizedByteCode._fneg:
-                                        s.PopPrimitive();
-                                        s.PushPrimitive();
-                                        break;
-                                    case NormalizedByteCode._fadd:
-                                    case NormalizedByteCode._fsub:
-                                    case NormalizedByteCode._fmul:
-                                    case NormalizedByteCode._fdiv:
-                                    case NormalizedByteCode._frem:
+                                    case NormalizedOpCode._iadd:
+                                    case NormalizedOpCode._isub:
+                                    case NormalizedOpCode._imul:
+                                    case NormalizedOpCode._idiv:
+                                    case NormalizedOpCode._irem:
+                                    case NormalizedOpCode._iand:
+                                    case NormalizedOpCode._ior:
+                                    case NormalizedOpCode._ixor:
+                                    case NormalizedOpCode._ishl:
+                                    case NormalizedOpCode._ishr:
+                                    case NormalizedOpCode._iushr:
                                         s.PopPrimitive();
                                         s.PopPrimitive();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._dneg:
+                                    case NormalizedOpCode._lneg:
                                         s.PopWidePrimitive();
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._dadd:
-                                    case NormalizedByteCode._dsub:
-                                    case NormalizedByteCode._dmul:
-                                    case NormalizedByteCode._ddiv:
-                                    case NormalizedByteCode._drem:
+                                    case NormalizedOpCode._ladd:
+                                    case NormalizedOpCode._lsub:
+                                    case NormalizedOpCode._lmul:
+                                    case NormalizedOpCode._ldiv:
+                                    case NormalizedOpCode._lrem:
+                                    case NormalizedOpCode._land:
+                                    case NormalizedOpCode._lor:
+                                    case NormalizedOpCode._lxor:
                                         s.PopWidePrimitive();
                                         s.PopWidePrimitive();
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._new:
+                                    case NormalizedOpCode._lshl:
+                                    case NormalizedOpCode._lshr:
+                                    case NormalizedOpCode._lushr:
+                                        s.PopPrimitive();
+                                        s.PopWidePrimitive();
+                                        s.PushWidePrimitive();
+                                        break;
+                                    case NormalizedOpCode._fneg:
+                                        s.PopPrimitive();
+                                        s.PushPrimitive();
+                                        break;
+                                    case NormalizedOpCode._fadd:
+                                    case NormalizedOpCode._fsub:
+                                    case NormalizedOpCode._fmul:
+                                    case NormalizedOpCode._fdiv:
+                                    case NormalizedOpCode._frem:
+                                        s.PopPrimitive();
+                                        s.PopPrimitive();
+                                        s.PushPrimitive();
+                                        break;
+                                    case NormalizedOpCode._dneg:
+                                        s.PopWidePrimitive();
+                                        s.PushWidePrimitive();
+                                        break;
+                                    case NormalizedOpCode._dadd:
+                                    case NormalizedOpCode._dsub:
+                                    case NormalizedOpCode._dmul:
+                                    case NormalizedOpCode._ddiv:
+                                    case NormalizedOpCode._drem:
+                                        s.PopWidePrimitive();
+                                        s.PopWidePrimitive();
+                                        s.PushWidePrimitive();
+                                        break;
+                                    case NormalizedOpCode._new:
                                         s.PushObject();
                                         break;
-                                    case NormalizedByteCode._multianewarray:
+                                    case NormalizedOpCode._multianewarray:
                                         {
                                             if (instr.Arg2 < 1)
                                             {
@@ -725,15 +725,15 @@ namespace IKVM.Runtime
                                             s.PushObject();
                                             break;
                                         }
-                                    case NormalizedByteCode._anewarray:
+                                    case NormalizedOpCode._anewarray:
                                         s.PopPrimitive();
                                         s.PushObject();
                                         break;
-                                    case NormalizedByteCode._newarray:
+                                    case NormalizedOpCode._newarray:
                                         s.PopPrimitive();
                                         s.PushObject();
                                         break;
-                                    case NormalizedByteCode._swap:
+                                    case NormalizedOpCode._swap:
                                         {
                                             SimpleType t1 = s.PopType();
                                             SimpleType t2 = s.PopType();
@@ -741,14 +741,14 @@ namespace IKVM.Runtime
                                             s.PushType(t2);
                                             break;
                                         }
-                                    case NormalizedByteCode._dup:
+                                    case NormalizedOpCode._dup:
                                         {
                                             SimpleType t = s.PopType();
                                             s.PushType(t);
                                             s.PushType(t);
                                             break;
                                         }
-                                    case NormalizedByteCode._dup2:
+                                    case NormalizedOpCode._dup2:
                                         {
                                             SimpleType t = s.PopAnyType();
                                             if (t.IsWidePrimitive)
@@ -766,7 +766,7 @@ namespace IKVM.Runtime
                                             }
                                             break;
                                         }
-                                    case NormalizedByteCode._dup_x1:
+                                    case NormalizedOpCode._dup_x1:
                                         {
                                             SimpleType value1 = s.PopType();
                                             SimpleType value2 = s.PopType();
@@ -775,7 +775,7 @@ namespace IKVM.Runtime
                                             s.PushType(value1);
                                             break;
                                         }
-                                    case NormalizedByteCode._dup2_x1:
+                                    case NormalizedOpCode._dup2_x1:
                                         {
                                             SimpleType value1 = s.PopAnyType();
                                             if (value1.IsWidePrimitive)
@@ -797,7 +797,7 @@ namespace IKVM.Runtime
                                             }
                                             break;
                                         }
-                                    case NormalizedByteCode._dup_x2:
+                                    case NormalizedOpCode._dup_x2:
                                         {
                                             SimpleType value1 = s.PopType();
                                             SimpleType value2 = s.PopAnyType();
@@ -817,7 +817,7 @@ namespace IKVM.Runtime
                                             }
                                             break;
                                         }
-                                    case NormalizedByteCode._dup2_x2:
+                                    case NormalizedOpCode._dup2_x2:
                                         {
                                             SimpleType value1 = s.PopAnyType();
                                             if (value1.IsWidePrimitive)
@@ -867,10 +867,10 @@ namespace IKVM.Runtime
                                             }
                                             break;
                                         }
-                                    case NormalizedByteCode._pop:
+                                    case NormalizedOpCode._pop:
                                         s.PopType();
                                         break;
-                                    case NormalizedByteCode._pop2:
+                                    case NormalizedOpCode._pop2:
                                         {
                                             SimpleType type = s.PopAnyType();
                                             if (!type.IsWidePrimitive)
@@ -879,159 +879,159 @@ namespace IKVM.Runtime
                                             }
                                             break;
                                         }
-                                    case NormalizedByteCode._monitorenter:
-                                    case NormalizedByteCode._monitorexit:
+                                    case NormalizedOpCode._monitorenter:
+                                    case NormalizedOpCode._monitorexit:
                                         s.PopObjectType();
                                         break;
-                                    case NormalizedByteCode._return:
+                                    case NormalizedOpCode._return:
                                         break;
-                                    case NormalizedByteCode._areturn:
+                                    case NormalizedOpCode._areturn:
                                         s.PopObjectType();
                                         break;
-                                    case NormalizedByteCode._ireturn:
+                                    case NormalizedOpCode._ireturn:
                                         s.PopPrimitive();
                                         break;
-                                    case NormalizedByteCode._lreturn:
+                                    case NormalizedOpCode._lreturn:
                                         s.PopWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._freturn:
+                                    case NormalizedOpCode._freturn:
                                         s.PopPrimitive();
                                         break;
-                                    case NormalizedByteCode._dreturn:
+                                    case NormalizedOpCode._dreturn:
                                         s.PopWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._fload:
+                                    case NormalizedOpCode._fload:
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._fstore:
+                                    case NormalizedOpCode._fstore:
                                         s.PopPrimitive();
                                         s.SetLocalPrimitive(instr.NormalizedArg1, i);
                                         break;
-                                    case NormalizedByteCode._dload:
+                                    case NormalizedOpCode._dload:
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._dstore:
+                                    case NormalizedOpCode._dstore:
                                         s.PopWidePrimitive();
                                         s.SetLocalWidePrimitive(instr.NormalizedArg1, i);
                                         break;
-                                    case NormalizedByteCode._lload:
+                                    case NormalizedOpCode._lload:
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._lstore:
+                                    case NormalizedOpCode._lstore:
                                         s.PopWidePrimitive();
                                         s.SetLocalWidePrimitive(instr.NormalizedArg1, i);
                                         break;
-                                    case NormalizedByteCode._lconst_0:
-                                    case NormalizedByteCode._lconst_1:
+                                    case NormalizedOpCode._lconst_0:
+                                    case NormalizedOpCode._lconst_1:
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._fconst_0:
-                                    case NormalizedByteCode._fconst_1:
-                                    case NormalizedByteCode._fconst_2:
+                                    case NormalizedOpCode._fconst_0:
+                                    case NormalizedOpCode._fconst_1:
+                                    case NormalizedOpCode._fconst_2:
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._dconst_0:
-                                    case NormalizedByteCode._dconst_1:
+                                    case NormalizedOpCode._dconst_0:
+                                    case NormalizedOpCode._dconst_1:
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._lcmp:
+                                    case NormalizedOpCode._lcmp:
                                         s.PopWidePrimitive();
                                         s.PopWidePrimitive();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._fcmpl:
-                                    case NormalizedByteCode._fcmpg:
+                                    case NormalizedOpCode._fcmpl:
+                                    case NormalizedOpCode._fcmpg:
                                         s.PopPrimitive();
                                         s.PopPrimitive();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._dcmpl:
-                                    case NormalizedByteCode._dcmpg:
+                                    case NormalizedOpCode._dcmpl:
+                                    case NormalizedOpCode._dcmpg:
                                         s.PopWidePrimitive();
                                         s.PopWidePrimitive();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._checkcast:
+                                    case NormalizedOpCode._checkcast:
                                         s.PopObjectType();
                                         s.PushObject();
                                         break;
-                                    case NormalizedByteCode._instanceof:
+                                    case NormalizedOpCode._instanceof:
                                         s.PopObjectType();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._iinc:
+                                    case NormalizedOpCode._iinc:
                                         break;
-                                    case NormalizedByteCode._athrow:
+                                    case NormalizedOpCode._athrow:
                                         s.PopObjectType();
                                         break;
-                                    case NormalizedByteCode._tableswitch:
-                                    case NormalizedByteCode._lookupswitch:
+                                    case NormalizedOpCode._tableswitch:
+                                    case NormalizedOpCode._lookupswitch:
                                         s.PopPrimitive();
                                         break;
-                                    case NormalizedByteCode._i2b:
-                                        s.PopPrimitive();
-                                        s.PushPrimitive();
-                                        break;
-                                    case NormalizedByteCode._i2c:
+                                    case NormalizedOpCode._i2b:
                                         s.PopPrimitive();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._i2s:
+                                    case NormalizedOpCode._i2c:
                                         s.PopPrimitive();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._i2l:
+                                    case NormalizedOpCode._i2s:
+                                        s.PopPrimitive();
+                                        s.PushPrimitive();
+                                        break;
+                                    case NormalizedOpCode._i2l:
                                         s.PopPrimitive();
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._i2f:
+                                    case NormalizedOpCode._i2f:
                                         s.PopPrimitive();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._i2d:
+                                    case NormalizedOpCode._i2d:
                                         s.PopPrimitive();
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._l2i:
+                                    case NormalizedOpCode._l2i:
                                         s.PopWidePrimitive();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._l2f:
+                                    case NormalizedOpCode._l2f:
                                         s.PopWidePrimitive();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._l2d:
+                                    case NormalizedOpCode._l2d:
                                         s.PopWidePrimitive();
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._f2i:
+                                    case NormalizedOpCode._f2i:
                                         s.PopPrimitive();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._f2l:
+                                    case NormalizedOpCode._f2l:
                                         s.PopPrimitive();
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._f2d:
+                                    case NormalizedOpCode._f2d:
                                         s.PopPrimitive();
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._d2i:
+                                    case NormalizedOpCode._d2i:
                                         s.PopWidePrimitive();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._d2f:
+                                    case NormalizedOpCode._d2f:
                                         s.PopWidePrimitive();
                                         s.PushPrimitive();
                                         break;
-                                    case NormalizedByteCode._d2l:
+                                    case NormalizedOpCode._d2l:
                                         s.PopWidePrimitive();
                                         s.PushWidePrimitive();
                                         break;
-                                    case NormalizedByteCode._jsr:
+                                    case NormalizedOpCode._jsr:
                                         // TODO make sure we're not calling a subroutine we're already in
                                         break;
-                                    case NormalizedByteCode._ret:
+                                    case NormalizedOpCode._ret:
                                         {
                                             // TODO if we're returning from a higher level subroutine, invalidate
                                             // all the intermediate return addresses
@@ -1039,13 +1039,13 @@ namespace IKVM.Runtime
                                             s.CheckSubroutineActive(subroutineIndex);
                                             break;
                                         }
-                                    case NormalizedByteCode._nop:
+                                    case NormalizedOpCode._nop:
                                         if (i + 1 == instructions.Length)
                                         {
                                             throw new VerifyError("Falling off the end of the code");
                                         }
                                         break;
-                                    case NormalizedByteCode._invokedynamic:
+                                    case NormalizedOpCode._invokedynamic:
                                         // it is impossible to have a valid invokedynamic in a pre-7.0 class file
                                         throw new VerifyError("Illegal type in constant pool");
                                     default:
@@ -1067,37 +1067,37 @@ namespace IKVM.Runtime
                                     // another big switch to handle the opcode targets
                                     switch (instr.NormalizedOpCode)
                                     {
-                                        case NormalizedByteCode._tableswitch:
-                                        case NormalizedByteCode._lookupswitch:
+                                        case NormalizedOpCode._tableswitch:
+                                        case NormalizedOpCode._lookupswitch:
                                             for (int j = 0; j < instr.SwitchEntryCount; j++)
                                             {
                                                 state[instr.GetSwitchTargetIndex(j)] += s;
                                             }
                                             state[instr.DefaultTarget] += s;
                                             break;
-                                        case NormalizedByteCode._ifeq:
-                                        case NormalizedByteCode._ifne:
-                                        case NormalizedByteCode._iflt:
-                                        case NormalizedByteCode._ifge:
-                                        case NormalizedByteCode._ifgt:
-                                        case NormalizedByteCode._ifle:
-                                        case NormalizedByteCode._if_icmpeq:
-                                        case NormalizedByteCode._if_icmpne:
-                                        case NormalizedByteCode._if_icmplt:
-                                        case NormalizedByteCode._if_icmpge:
-                                        case NormalizedByteCode._if_icmpgt:
-                                        case NormalizedByteCode._if_icmple:
-                                        case NormalizedByteCode._if_acmpeq:
-                                        case NormalizedByteCode._if_acmpne:
-                                        case NormalizedByteCode._ifnull:
-                                        case NormalizedByteCode._ifnonnull:
+                                        case NormalizedOpCode._ifeq:
+                                        case NormalizedOpCode._ifne:
+                                        case NormalizedOpCode._iflt:
+                                        case NormalizedOpCode._ifge:
+                                        case NormalizedOpCode._ifgt:
+                                        case NormalizedOpCode._ifle:
+                                        case NormalizedOpCode._if_icmpeq:
+                                        case NormalizedOpCode._if_icmpne:
+                                        case NormalizedOpCode._if_icmplt:
+                                        case NormalizedOpCode._if_icmpge:
+                                        case NormalizedOpCode._if_icmpgt:
+                                        case NormalizedOpCode._if_icmple:
+                                        case NormalizedOpCode._if_acmpeq:
+                                        case NormalizedOpCode._if_acmpne:
+                                        case NormalizedOpCode._ifnull:
+                                        case NormalizedOpCode._ifnonnull:
                                             state[i + 1] += s;
                                             state[instr.TargetIndex] += s;
                                             break;
-                                        case NormalizedByteCode._goto:
+                                        case NormalizedOpCode._goto:
                                             state[instr.TargetIndex] += s;
                                             break;
-                                        case NormalizedByteCode._jsr:
+                                        case NormalizedOpCode._jsr:
                                             {
                                                 int index = instr.TargetIndex;
                                                 s.SetSubroutineId(index);
@@ -1120,7 +1120,7 @@ namespace IKVM.Runtime
                                                 AddCallSite(index, i);
                                                 break;
                                             }
-                                        case NormalizedByteCode._ret:
+                                        case NormalizedOpCode._ret:
                                             {
                                                 // HACK if the ret is processed before all of the jsr instructions to this subroutine
                                                 // we wouldn't be able to properly merge, so that is why we track the number of callsites
@@ -1135,13 +1135,13 @@ namespace IKVM.Runtime
                                                 }
                                                 break;
                                             }
-                                        case NormalizedByteCode._ireturn:
-                                        case NormalizedByteCode._lreturn:
-                                        case NormalizedByteCode._freturn:
-                                        case NormalizedByteCode._dreturn:
-                                        case NormalizedByteCode._areturn:
-                                        case NormalizedByteCode._return:
-                                        case NormalizedByteCode._athrow:
+                                        case NormalizedOpCode._ireturn:
+                                        case NormalizedOpCode._lreturn:
+                                        case NormalizedOpCode._freturn:
+                                        case NormalizedOpCode._dreturn:
+                                        case NormalizedOpCode._areturn:
+                                        case NormalizedOpCode._return:
+                                        case NormalizedOpCode._athrow:
                                             break;
                                         default:
                                             state[i + 1] += s;
@@ -1195,8 +1195,8 @@ namespace IKVM.Runtime
                             // mark the successor instructions
                             switch (instructions[i].NormalizedOpCode)
                             {
-                                case NormalizedByteCode._tableswitch:
-                                case NormalizedByteCode._lookupswitch:
+                                case NormalizedOpCode._tableswitch:
+                                case NormalizedOpCode._lookupswitch:
                                     {
                                         bool hasbackbranch = false;
                                         for (int j = 0; j < instructions[i].SwitchEntryCount; j++)
@@ -1208,49 +1208,49 @@ namespace IKVM.Runtime
                                         flags[instructions[i].DefaultTarget] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
                                         break;
                                     }
-                                case NormalizedByteCode._goto:
+                                case NormalizedOpCode._goto:
                                     flags[instructions[i].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
                                     break;
-                                case NormalizedByteCode._ifeq:
-                                case NormalizedByteCode._ifne:
-                                case NormalizedByteCode._iflt:
-                                case NormalizedByteCode._ifge:
-                                case NormalizedByteCode._ifgt:
-                                case NormalizedByteCode._ifle:
-                                case NormalizedByteCode._if_icmpeq:
-                                case NormalizedByteCode._if_icmpne:
-                                case NormalizedByteCode._if_icmplt:
-                                case NormalizedByteCode._if_icmpge:
-                                case NormalizedByteCode._if_icmpgt:
-                                case NormalizedByteCode._if_icmple:
-                                case NormalizedByteCode._if_acmpeq:
-                                case NormalizedByteCode._if_acmpne:
-                                case NormalizedByteCode._ifnull:
-                                case NormalizedByteCode._ifnonnull:
+                                case NormalizedOpCode._ifeq:
+                                case NormalizedOpCode._ifne:
+                                case NormalizedOpCode._iflt:
+                                case NormalizedOpCode._ifge:
+                                case NormalizedOpCode._ifgt:
+                                case NormalizedOpCode._ifle:
+                                case NormalizedOpCode._if_icmpeq:
+                                case NormalizedOpCode._if_icmpne:
+                                case NormalizedOpCode._if_icmplt:
+                                case NormalizedOpCode._if_icmpge:
+                                case NormalizedOpCode._if_icmpgt:
+                                case NormalizedOpCode._if_icmple:
+                                case NormalizedOpCode._if_acmpeq:
+                                case NormalizedOpCode._if_acmpne:
+                                case NormalizedOpCode._ifnull:
+                                case NormalizedOpCode._ifnonnull:
                                     flags[instructions[i].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
                                     flags[i + 1] |= InstructionFlags.Reachable;
                                     break;
-                                case NormalizedByteCode._jsr:
+                                case NormalizedOpCode._jsr:
                                     flags[instructions[i].TargetIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
                                     // Note that we don't mark the next instruction as reachable,
                                     // because that depends on the corresponding ret actually being
                                     // reachable. We handle this in the loop below.
                                     didJsrOrRet = true;
                                     break;
-                                case NormalizedByteCode._ret:
+                                case NormalizedOpCode._ret:
                                     // Note that we can't handle ret here, because we might encounter the ret
                                     // before having seen all the corresponding jsr instructions, so we can't
                                     // update all the call sites.
                                     // We handle ret in the loop below.
                                     didJsrOrRet = true;
                                     break;
-                                case NormalizedByteCode._ireturn:
-                                case NormalizedByteCode._lreturn:
-                                case NormalizedByteCode._freturn:
-                                case NormalizedByteCode._dreturn:
-                                case NormalizedByteCode._areturn:
-                                case NormalizedByteCode._return:
-                                case NormalizedByteCode._athrow:
+                                case NormalizedOpCode._ireturn:
+                                case NormalizedOpCode._lreturn:
+                                case NormalizedOpCode._freturn:
+                                case NormalizedOpCode._dreturn:
+                                case NormalizedOpCode._areturn:
+                                case NormalizedOpCode._return:
+                                case NormalizedOpCode._athrow:
                                     break;
                                 default:
                                     flags[i + 1] |= InstructionFlags.Reachable;
@@ -1262,7 +1262,7 @@ namespace IKVM.Runtime
                     {
                         for (int i = 0; i < instructions.Length; i++)
                         {
-                            if (instructions[i].NormalizedOpCode == NormalizedByteCode._ret
+                            if (instructions[i].NormalizedOpCode == NormalizedOpCode._ret
                                 && (flags[i] & InstructionFlags.Reachable) != 0)
                             {
                                 int subroutineIndex = state[i].GetLocalRet(instructions[i].Arg1);

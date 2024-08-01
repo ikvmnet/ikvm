@@ -2231,20 +2231,22 @@ namespace IKVM.Runtime
 
                 if (!arfuMap.TryGetValue(field, out var cb))
                 {
-                    RuntimeJavaType arfuTypeWrapper = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
-                    TypeBuilder tb = typeBuilder.DefineNestedType(NestedTypeName.AtomicReferenceFieldUpdater + arfuMap.Count, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
+                    var arfuTypeWrapper = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
+                    var tb = typeBuilder.DefineNestedType(NestedTypeName.AtomicReferenceFieldUpdater + arfuMap.Count, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
                     AtomicReferenceFieldUpdaterEmitter.EmitImpl(context, tb, field.GetField());
+
                     cb = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, Type.EmptyTypes);
                     arfuMap.Add(field, cb);
-                    CodeEmitter ctorilgen = context.CodeEmitterFactory.Create(cb);
+                    var ctorilgen = context.CodeEmitterFactory.Create(cb);
                     ctorilgen.Emit(OpCodes.Ldarg_0);
-                    RuntimeJavaMethod basector = arfuTypeWrapper.GetMethodWrapper("<init>", "()V", false);
+                    var basector = arfuTypeWrapper.GetMethodWrapper("<init>", "()V", false);
                     basector.Link();
                     basector.EmitCall(ctorilgen);
                     ctorilgen.Emit(OpCodes.Ret);
                     ctorilgen.DoEmit();
                     RegisterNestedTypeBuilder(tb);
                 }
+
                 return cb;
             }
 
@@ -2346,7 +2348,9 @@ namespace IKVM.Runtime
             }
 
 #endif
+
         }
+
     }
 
 }
