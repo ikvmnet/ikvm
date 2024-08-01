@@ -293,7 +293,7 @@ namespace IKVM.Runtime
                     // and doesn't buy us anything in dynamic mode (and if fact, due to an FXBUG it would make handling
                     // the TypeResolve event very hard)
                     var outerClass = getOuterClass();
-                    if (outerClass != null && outerClass.OuterClass != null)
+                    if (outerClass?.OuterClass != null)
                     {
                         enclosingClassName = classFile.GetConstantPoolClass(outerClass.OuterClass.Handle);
                     }
@@ -469,7 +469,7 @@ namespace IKVM.Runtime
                     // types that we're currently compiling (i.e. a cyclic dependency between the currently assembly we're compiling and a referenced assembly).
                     wrapper.Context.ClassLoaderFactory.SetWrapperForType(typeBuilder, wrapper);
 
-                    if (outerClass.OuterClass != null)
+                    if (outerClass?.OuterClass != null)
                     {
                         if (enclosing != null && cantNest)
                         {
@@ -522,7 +522,7 @@ namespace IKVM.Runtime
                         AddCliEnum();
                     }
 
-                    AddInnerClassAttribute(enclosing != null, outerClass.InnerClass != null, mangledTypeName, (Modifiers)outerClass.InnerClassAccessFlags);
+                    AddInnerClassAttribute(enclosing != null, outerClass?.InnerClass != null, mangledTypeName, outerClass != null ? (Modifiers)outerClass.InnerClassAccessFlags : default);
                     if (classFile.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(classFile.Annotations))
                     {
                         wrapper.Context.AttributeHelper.SetDeprecatedAttribute(typeBuilder);
@@ -534,7 +534,7 @@ namespace IKVM.Runtime
                     }
                     if (classFile.EnclosingMethod != null)
                     {
-                        if (outerClass.OuterClass == null && enclosing != null && !cantNest)
+                        if (outerClass?.OuterClass == null && enclosing != null && !cantNest)
                         {
                             // we don't need to record the enclosing type, if we're compiling the current type as a nested type because of the EnclosingMethod attribute
                             wrapper.Context.AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, null, classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
@@ -599,9 +599,9 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-            private void AddInnerClassAttribute(bool isNestedType, bool isInnerClass, string mangledTypeName, Modifiers innerClassFlags)
+            void AddInnerClassAttribute(bool isNestedType, bool isInnerClass, string mangledTypeName, Modifiers innerClassFlags)
             {
-                string name = classFile.Name;
+                var name = classFile.Name;
 
                 if (isNestedType)
                 {
@@ -622,25 +622,27 @@ namespace IKVM.Runtime
                 }
             }
 
-            private void AddCliEnum()
+            void AddCliEnum()
             {
-                CompilerClassLoader ccl = wrapper.classLoader;
-                string name = "__Enum";
+                var ccl = wrapper.classLoader;
+
+                var name = "__Enum";
                 while (!ccl.ReserveName(classFile.Name + "$" + name))
-                {
                     name += "_";
-                }
+
                 enumBuilder = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NestedPublic | TypeAttributes.Serializable, wrapper.Context.Types.Enum);
                 wrapper.Context.AttributeHelper.HideFromJava(enumBuilder);
                 enumBuilder.DefineField("value__", wrapper.Context.Types.Int32, FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
+
                 for (int i = 0; i < classFile.Fields.Length; i++)
                 {
                     if (classFile.Fields[i].IsEnum)
                     {
-                        FieldBuilder fieldBuilder = enumBuilder.DefineField(classFile.Fields[i].Name, enumBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
+                        var fieldBuilder = enumBuilder.DefineField(classFile.Fields[i].Name, enumBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
                         fieldBuilder.SetConstant(i);
                     }
                 }
+
                 wrapper.SetEnumType(enumBuilder);
             }
 #endif

@@ -22,6 +22,8 @@
   
 */
 
+using IKVM.ByteCode;
+
 namespace IKVM.Runtime
 {
 
@@ -121,7 +123,7 @@ namespace IKVM.Runtime
                 internal void Read(ushort pc, BigEndianBinaryReader br, ClassFile classFile)
                 {
                     this.pc = pc;
-                    var bc = (ByteCode)br.ReadByte();
+                    var bc = (OpCode)br.ReadByte();
                     switch (ByteCodeMetaData.GetMode(bc))
                     {
                         case ByteCodeMode.Simple:
@@ -216,7 +218,7 @@ namespace IKVM.Runtime
                                 break;
                             }
                         case ByteCodeMode.WidePrefix:
-                            bc = (ByteCode)br.ReadByte();
+                            bc = (OpCode)br.ReadByte();
                             // NOTE the PC of a wide instruction is actually the PC of the
                             // wide prefix, not the following instruction (vmspec 4.9.2)
                             switch (ByteCodeMetaData.GetWideMode(bc))
@@ -323,15 +325,17 @@ namespace IKVM.Runtime
 
                 internal void SetSwitchTargets(int[] targets)
                 {
-                    SwitchEntry[] newEntries = (SwitchEntry[])switch_entries.Clone();
+                    var newEntries = (SwitchEntry[])switch_entries.Clone();
                     for (int i = 0; i < newEntries.Length; i++)
-                    {
                         newEntries[i].target = targets[i];
-                    }
+
                     switch_entries = newEntries;
                 }
+
             }
+
         }
+
     }
 
 }

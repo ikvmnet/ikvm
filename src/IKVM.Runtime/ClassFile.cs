@@ -325,19 +325,19 @@ namespace IKVM.Runtime
                             {
                                 var item = innerClassesAttribute.Items[j];
 
-                                if (item.InnerClass.Handle.Index != 0 && !(GetConstantPoolItem(item.InnerClass.Handle) is ConstantPoolItemClass))
+                                if (item.InnerClass != null && !(GetConstantPoolItem(item.InnerClass.Handle) is ConstantPoolItemClass))
                                     throw new ClassFormatError("{0} (inner_class_info_index has bad constant pool index)", this.Name);
 
-                                if (item.OuterClass.Handle.Index != 0 && !(GetConstantPoolItem(item.OuterClass.Handle) is ConstantPoolItemClass))
+                                if (item.OuterClass != null && !(GetConstantPoolItem(item.OuterClass.Handle) is ConstantPoolItemClass))
                                     throw new ClassFormatError("{0} (outer_class_info_index has bad constant pool index)", this.Name);
 
-                                if (item.InnerName.Handle.Index != 0 && utf8_cp[item.InnerName.Handle.Index] == null)
+                                if (item.InnerName != null && utf8_cp[item.InnerName.Handle.Index] == null)
                                     throw new ClassFormatError("{0} (inner class name has bad constant pool index)", this.Name);
 
                                 if (item.InnerClass == item.OuterClass)
                                     throw new ClassFormatError("{0} (Class is both inner and outer class)", this.Name);
 
-                                if (item.InnerClass.Handle.Index != 0 && item.OuterClass.Handle.Index != 0)
+                                if (item.InnerClass != null && item.OuterClass != null)
                                 {
                                     MarkLinkRequiredConstantPoolItem(item.InnerClass.Handle);
                                     MarkLinkRequiredConstantPoolItem(item.OuterClass.Handle);
