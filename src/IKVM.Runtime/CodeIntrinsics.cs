@@ -42,7 +42,7 @@ using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 namespace IKVM.Runtime
 {
 
-    static class Intrinsics
+    static class CodeIntrinsics
     {
 
         delegate bool Emitter(EmitIntrinsicContext eic);
@@ -50,95 +50,62 @@ namespace IKVM.Runtime
         /// <summary>
         /// Uniquely defines an intrinisic method.
         /// </summary>
-        struct IntrinsicKey : IEquatable<IntrinsicKey>
+        readonly record struct MethodKey(string ClassName, string MethodName, string MethodSignature)
         {
-
-            readonly string className;
-            readonly string methodName;
-            readonly string methodSignature;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="className"></param>
-            /// <param name="methodName"></param>
-            /// <param name="methodSignature"></param>
-            internal IntrinsicKey(string className, string methodName, string methodSignature)
-            {
-                this.className = string.Intern(className);
-                this.methodName = string.Intern(methodName);
-                this.methodSignature = string.Intern(methodSignature);
-            }
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="method"></param>
-            internal IntrinsicKey(RuntimeJavaMethod method)
+            internal MethodKey(RuntimeJavaMethod method) :
+                this(method.DeclaringType.Name, method.Name, method.Signature)
             {
-                this.className = method.DeclaringType.Name;
-                this.methodName = method.Name;
-                this.methodSignature = method.Signature;
-            }
 
-            public override bool Equals(object obj)
-            {
-                return Equals((IntrinsicKey)obj);
-            }
-
-            public bool Equals(IntrinsicKey other)
-            {
-                return ReferenceEquals(className, other.className) && ReferenceEquals(methodName, other.methodName) && ReferenceEquals(methodSignature, other.methodSignature);
-            }
-
-            public override int GetHashCode()
-            {
-                return methodName.GetHashCode();
             }
 
         }
 
-        static readonly Dictionary<IntrinsicKey, Emitter> intrinsics = GetIntrinsics();
+        static readonly Dictionary<MethodKey, Emitter> intrinsics = GetIntrinsics();
 
         /// <summary>
         /// Gets the set of intrinsics available to apply.
         /// </summary>
         /// <returns></returns>
-        static Dictionary<IntrinsicKey, Emitter> GetIntrinsics()
+        static Dictionary<MethodKey, Emitter> GetIntrinsics()
         {
-            var intrinsics = new Dictionary<IntrinsicKey, Emitter>();
-            intrinsics.Add(new IntrinsicKey("java.lang.Object", "getClass", "()Ljava.lang.Class;"), Object_getClass);
-            intrinsics.Add(new IntrinsicKey("java.lang.Class", "desiredAssertionStatus", "()Z"), Class_desiredAssertionStatus);
-            intrinsics.Add(new IntrinsicKey("java.lang.Float", "floatToRawIntBits", "(F)I"), Float_floatToRawIntBits);
-            intrinsics.Add(new IntrinsicKey("java.lang.Float", "intBitsToFloat", "(I)F"), Float_intBitsToFloat);
-            intrinsics.Add(new IntrinsicKey("java.lang.Double", "doubleToRawLongBits", "(D)J"), Double_doubleToRawLongBits);
-            intrinsics.Add(new IntrinsicKey("java.lang.Double", "longBitsToDouble", "(J)D"), Double_longBitsToDouble);
-            intrinsics.Add(new IntrinsicKey("java.lang.System", "arraycopy", "(Ljava.lang.Object;ILjava.lang.Object;II)V"), System_arraycopy);
-            intrinsics.Add(new IntrinsicKey("java.util.concurrent.atomic.AtomicReferenceFieldUpdater", "newUpdater", "(Ljava.lang.Class;Ljava.lang.Class;Ljava.lang.String;)Ljava.util.concurrent.atomic.AtomicReferenceFieldUpdater;"), AtomicReferenceFieldUpdater_newUpdater);
+            var intrinsics = new Dictionary<MethodKey, Emitter>();
+            intrinsics.Add(new MethodKey("java.lang.Object", "getClass", "()Ljava.lang.Class;"), Object_getClass);
+            intrinsics.Add(new MethodKey("java.lang.Class", "desiredAssertionStatus", "()Z"), Class_desiredAssertionStatus);
+            intrinsics.Add(new MethodKey("java.lang.Float", "floatToRawIntBits", "(F)I"), Float_floatToRawIntBits);
+            intrinsics.Add(new MethodKey("java.lang.Float", "intBitsToFloat", "(I)F"), Float_intBitsToFloat);
+            intrinsics.Add(new MethodKey("java.lang.Double", "doubleToRawLongBits", "(D)J"), Double_doubleToRawLongBits);
+            intrinsics.Add(new MethodKey("java.lang.Double", "longBitsToDouble", "(J)D"), Double_longBitsToDouble);
+            intrinsics.Add(new MethodKey("java.lang.System", "arraycopy", "(Ljava.lang.Object;ILjava.lang.Object;II)V"), System_arraycopy);
+            intrinsics.Add(new MethodKey("java.util.concurrent.atomic.AtomicReferenceFieldUpdater", "newUpdater", "(Ljava.lang.Class;Ljava.lang.Class;Ljava.lang.String;)Ljava.util.concurrent.atomic.AtomicReferenceFieldUpdater;"), AtomicReferenceFieldUpdater_newUpdater);
 #if IMPORTER
-            intrinsics.Add(new IntrinsicKey("sun.reflect.Reflection", "getCallerClass", "()Ljava.lang.Class;"), Reflection_getCallerClass);
-            intrinsics.Add(new IntrinsicKey("ikvm.internal.CallerID", "getCallerID", "()Likvm.internal.CallerID;"), CallerID_getCallerID);
+            intrinsics.Add(new MethodKey("sun.reflect.Reflection", "getCallerClass", "()Ljava.lang.Class;"), Reflection_getCallerClass);
+            intrinsics.Add(new MethodKey("ikvm.internal.CallerID", "getCallerID", "()Likvm.internal.CallerID;"), CallerID_getCallerID);
 #endif
-            intrinsics.Add(new IntrinsicKey("ikvm.runtime.Util", "getInstanceTypeFromClass", "(Ljava.lang.Class;)Lcli.System.Type;"), Util_getInstanceTypeFromClass);
+            intrinsics.Add(new MethodKey("ikvm.runtime.Util", "getInstanceTypeFromClass", "(Ljava.lang.Class;)Lcli.System.Type;"), Util_getInstanceTypeFromClass);
 #if IMPORTER
             // this only applies to the core class library, so makes no sense in dynamic mode
-            intrinsics.Add(new IntrinsicKey("java.lang.Class", "getPrimitiveClass", "(Ljava.lang.String;)Ljava.lang.Class;"), Class_getPrimitiveClass);
+            intrinsics.Add(new MethodKey("java.lang.Class", "getPrimitiveClass", "(Ljava.lang.String;)Ljava.lang.Class;"), Class_getPrimitiveClass);
 #endif
 
-            intrinsics.Add(new IntrinsicKey("java.lang.ThreadLocal", "<init>", "()V"), ThreadLocal_new);
-            intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "ensureClassInitialized", "(Ljava.lang.Class;)V"), Unsafe_ensureClassInitialized);
+            intrinsics.Add(new MethodKey("java.lang.ThreadLocal", "<init>", "()V"), ThreadLocal_new);
+            intrinsics.Add(new MethodKey("sun.misc.Unsafe", "ensureClassInitialized", "(Ljava.lang.Class;)V"), Unsafe_ensureClassInitialized);
 
             // note that the following intrinsics don't pay off on CLR v2, but they do on CLR v4
-            intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "putObject", "(Ljava.lang.Object;JLjava.lang.Object;)V"), Unsafe_putObject);
-            intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "putOrderedObject", "(Ljava.lang.Object;JLjava.lang.Object;)V"), Unsafe_putOrderedObject);
-            intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "putObjectVolatile", "(Ljava.lang.Object;JLjava.lang.Object;)V"), Unsafe_putObjectVolatile);
-            intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "getObjectVolatile", "(Ljava.lang.Object;J)Ljava.lang.Object;"), Unsafe_getObjectVolatile);
-            intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "getObject", "(Ljava.lang.Object;J)Ljava.lang.Object;"), Unsafe_getObjectVolatile);
-            intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "compareAndSwapObject", "(Ljava.lang.Object;JLjava.lang.Object;Ljava.lang.Object;)Z"), Unsafe_compareAndSwapObject);
-            intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "getAndSetObject", "(Ljava.lang.Object;JLjava.lang.Object;)Ljava.lang.Object;"), Unsafe_getAndSetObject);
-            intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "compareAndSwapInt", "(Ljava.lang.Object;JII)Z"), Unsafe_compareAndSwapInt);
-            intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "getAndAddInt", "(Ljava.lang.Object;JI)I"), Unsafe_getAndAddInt);
-            intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "compareAndSwapLong", "(Ljava.lang.Object;JJJ)Z"), Unsafe_compareAndSwapLong);
+            intrinsics.Add(new MethodKey("sun.misc.Unsafe", "putObject", "(Ljava.lang.Object;JLjava.lang.Object;)V"), Unsafe_putObject);
+            intrinsics.Add(new MethodKey("sun.misc.Unsafe", "putOrderedObject", "(Ljava.lang.Object;JLjava.lang.Object;)V"), Unsafe_putOrderedObject);
+            intrinsics.Add(new MethodKey("sun.misc.Unsafe", "putObjectVolatile", "(Ljava.lang.Object;JLjava.lang.Object;)V"), Unsafe_putObjectVolatile);
+            intrinsics.Add(new MethodKey("sun.misc.Unsafe", "getObjectVolatile", "(Ljava.lang.Object;J)Ljava.lang.Object;"), Unsafe_getObjectVolatile);
+            intrinsics.Add(new MethodKey("sun.misc.Unsafe", "getObject", "(Ljava.lang.Object;J)Ljava.lang.Object;"), Unsafe_getObjectVolatile);
+            intrinsics.Add(new MethodKey("sun.misc.Unsafe", "compareAndSwapObject", "(Ljava.lang.Object;JLjava.lang.Object;Ljava.lang.Object;)Z"), Unsafe_compareAndSwapObject);
+            intrinsics.Add(new MethodKey("sun.misc.Unsafe", "getAndSetObject", "(Ljava.lang.Object;JLjava.lang.Object;)Ljava.lang.Object;"), Unsafe_getAndSetObject);
+            intrinsics.Add(new MethodKey("sun.misc.Unsafe", "compareAndSwapInt", "(Ljava.lang.Object;JII)Z"), Unsafe_compareAndSwapInt);
+            intrinsics.Add(new MethodKey("sun.misc.Unsafe", "getAndAddInt", "(Ljava.lang.Object;JI)I"), Unsafe_getAndAddInt);
+            intrinsics.Add(new MethodKey("sun.misc.Unsafe", "compareAndSwapLong", "(Ljava.lang.Object;JJJ)Z"), Unsafe_compareAndSwapLong);
             return intrinsics;
         }
 
@@ -174,7 +141,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         internal static bool IsIntrinsic(RuntimeJavaMethod mw)
         {
-            return intrinsics.ContainsKey(new IntrinsicKey(mw)) && mw.DeclaringType.GetClassLoader() == mw.DeclaringType.Context.JavaBase.TypeOfJavaLangObject.GetClassLoader();
+            return intrinsics.ContainsKey(new MethodKey(mw)) && mw.DeclaringType.GetClassLoader() == mw.DeclaringType.Context.JavaBase.TypeOfJavaLangObject.GetClassLoader();
         }
 
         /// <summary>
@@ -185,7 +152,7 @@ namespace IKVM.Runtime
         internal static bool Emit(EmitIntrinsicContext context)
         {
             // note that intrinsics can always refuse to emit code and the code generator will fall back to a normal method call
-            return intrinsics[new IntrinsicKey(context.Method)](context);
+            return intrinsics[new MethodKey(context.Method)](context);
         }
 
         /// <summary>

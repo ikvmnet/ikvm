@@ -48,89 +48,7 @@ using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 namespace IKVM.Runtime
 {
 
-    struct MethodKey : IEquatable<MethodKey>
-    {
-
-        readonly string className;
-        readonly string methodName;
-        readonly string methodSig;
-
-        internal MethodKey(string className, string methodName, string methodSig)
-        {
-            this.className = className;
-            this.methodName = methodName;
-            this.methodSig = methodSig;
-        }
-
-        public bool Equals(MethodKey other)
-        {
-            return className == other.className && methodName == other.methodName && methodSig == other.methodSig;
-        }
-
-        public override int GetHashCode()
-        {
-            return className.GetHashCode() ^ methodName.GetHashCode() ^ methodSig.GetHashCode();
-        }
-
-    }
-
-    /// <summary>
-    /// Manages instances of <see cref="Compiler"/>.
-    /// </summary>
-    class CompilerFactory
-    {
-
-        readonly RuntimeContext context;
-        readonly bool bootstrap;
-
-        MethodInfo unmapExceptionMethod;
-        MethodInfo fixateExceptionMethod;
-        MethodInfo suppressFillInStackTraceMethod;
-        MethodInfo getTypeFromHandleMethod;
-        MethodInfo getTypeMethod;
-        MethodInfo keepAliveMethod;
-        RuntimeJavaMethod getClassFromTypeHandle;
-        RuntimeJavaMethod getClassFromTypeHandle2;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="bootstrap"></param>
-        public CompilerFactory(RuntimeContext context, bool bootstrap)
-        {
-            this.context = context;
-            this.bootstrap = bootstrap;
-
-            if (bootstrap && Throwable.TypeAsBaseType is TypeBuilder)
-                foreach (var m in Throwable.GetMethods())
-                    m.Link();
-
-            GetClassFromTypeHandle.Link();
-            GetClassFromTypeHandle2.Link();
-        }
-
-        public RuntimeJavaType Throwable => context.JavaBase.TypeOfjavaLangThrowable;
-
-        public MethodInfo UnmapExceptionMethod => unmapExceptionMethod ??= bootstrap ? (MethodInfo)Throwable.GetMethodWrapper("__<unmap>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<unmap>", new Type[] { context.Types.Exception });
-
-        public MethodInfo FixateExceptionMethod => fixateExceptionMethod ??= bootstrap ? (MethodInfo)Throwable.GetMethodWrapper("__<fixate>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<fixate>", new Type[] { context.Types.Exception });
-
-        public MethodInfo SuppressFillInStackTraceMethod => suppressFillInStackTraceMethod ??= bootstrap ? (MethodInfo)Throwable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", Type.EmptyTypes);
-
-        public MethodInfo GetTypeFromHandleMethod => getTypeFromHandleMethod ??= context.Types.Type.GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, null, new Type[] { context.Types.RuntimeTypeHandle }, null);
-
-        public MethodInfo GetTypeMethod => getTypeMethod ??= context.Types.Object.GetMethod("GetType", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
-
-        public MethodInfo KeepAliveMethod => keepAliveMethod ??= context.Resolver.ResolveCoreType(typeof(GC).FullName).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, new Type[] { context.Types.Object }, null);
-
-        public RuntimeJavaMethod GetClassFromTypeHandle => getClassFromTypeHandle ??= context.ClassLoaderFactory.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;)Ljava.lang.Class;", false);
-
-        public RuntimeJavaMethod GetClassFromTypeHandle2 => getClassFromTypeHandle2 ??= context.ClassLoaderFactory.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;I)Ljava.lang.Class;", false);
-
-    }
-
-    sealed class Compiler
+    sealed class CodeCompiler
     {
 
         readonly RuntimeByteCodeJavaType.FinishContext finish;
@@ -166,7 +84,7 @@ namespace IKVM.Runtime
         /// <param name="m"></param>
         /// <param name="ilGenerator"></param>
         /// <param name="classLoader"></param>
-        Compiler(RuntimeByteCodeJavaType.FinishContext finish, RuntimeJavaType host, RuntimeByteCodeJavaType clazz, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, RuntimeClassLoader classLoader)
+        CodeCompiler(RuntimeByteCodeJavaType.FinishContext finish, RuntimeJavaType host, RuntimeByteCodeJavaType clazz, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, RuntimeClassLoader classLoader)
         {
             this.finish = finish;
             this.clazz = clazz;
@@ -431,7 +349,7 @@ namespace IKVM.Runtime
             internal readonly int TargetIndex;
             internal DupHelper dh;
 
-            internal BranchCookie(Compiler compiler, int stackHeight, int targetIndex)
+            internal BranchCookie(CodeCompiler compiler, int stackHeight, int targetIndex)
             {
                 this.Stub = compiler.ilGenerator.DefineLabel();
                 this.TargetIndex = targetIndex;
@@ -456,11 +374,11 @@ namespace IKVM.Runtime
                 FaultBlockException,
                 Other
             }
-            private readonly Compiler compiler;
+            private readonly CodeCompiler compiler;
             private readonly StackType[] types;
             private readonly CodeEmitterLocal[] locals;
 
-            internal DupHelper(Compiler compiler, int count)
+            internal DupHelper(CodeCompiler compiler, int count)
             {
                 this.compiler = compiler;
                 types = new StackType[count];
@@ -592,13 +510,13 @@ namespace IKVM.Runtime
                     }
                 }
             }
-            Compiler c;
+            CodeCompiler c;
             try
             {
                 Profiler.Enter("new Compiler");
                 try
                 {
-                    c = new Compiler(finish, host, clazz, mw, classFile, m, ilGenerator, classLoader);
+                    c = new CodeCompiler(finish, host, clazz, mw, classFile, m, ilGenerator, classLoader);
                 }
                 finally
                 {
@@ -667,7 +585,7 @@ namespace IKVM.Runtime
 
         private sealed class Block
         {
-            private readonly Compiler compiler;
+            private readonly CodeCompiler compiler;
             private readonly CodeEmitter ilgen;
             private readonly int beginIndex;
             private readonly int endIndex;
@@ -676,7 +594,7 @@ namespace IKVM.Runtime
             private readonly bool nested;
             private readonly object[] labels;
 
-            internal Block(Compiler compiler, int beginIndex, int endIndex, int exceptionIndex, List<object> exits, bool nested)
+            internal Block(CodeCompiler compiler, int beginIndex, int endIndex, int exceptionIndex, List<object> exits, bool nested)
             {
                 this.compiler = compiler;
                 this.ilgen = compiler.ilGenerator;
@@ -2717,7 +2635,7 @@ namespace IKVM.Runtime
         static class InvokeDynamicBuilder
         {
 
-            internal static void Emit(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType)
+            internal static void Emit(CodeCompiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType)
             {
                 var typeofOpenIndyCallSite = compiler.finish.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.IndyCallSite`1");
                 var methodLookup = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandles").GetMethodWrapper("lookup", "()Ljava.lang.invoke.MethodHandles$Lookup;", false);
@@ -2752,7 +2670,7 @@ namespace IKVM.Runtime
                 compiler.ilGenerator.Emit(OpCodes.Call, methodGetTarget);
             }
 
-            static MethodBuilder CreateBootstrapStub(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType, TypeBuilder tb, FieldBuilder fb, MethodInfo methodGetTarget)
+            static MethodBuilder CreateBootstrapStub(CodeCompiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType, TypeBuilder tb, FieldBuilder fb, MethodInfo methodGetTarget)
             {
                 var typeofCallSite = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.CallSite").TypeAsSignatureType;
                 var args = Type.EmptyTypes;
@@ -2816,7 +2734,7 @@ namespace IKVM.Runtime
                 return mb;
             }
 
-            static bool EmitCallBootstrapMethod(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen, CodeEmitterLocal ok)
+            static bool EmitCallBootstrapMethod(CodeCompiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen, CodeEmitterLocal ok)
             {
                 var methodLookup = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandles").GetMethodWrapper("lookup", "()Ljava.lang.invoke.MethodHandles$Lookup;", false);
                 methodLookup.Link();
@@ -2937,7 +2855,7 @@ namespace IKVM.Runtime
                 return true;
             }
 
-            static void EmitExtraArg(Compiler compiler, CodeEmitter ilgen, ClassFile.BootstrapMethod bsm, int index, RuntimeJavaType targetType, CodeEmitterLocal wrapException)
+            static void EmitExtraArg(CodeCompiler compiler, CodeEmitter ilgen, ClassFile.BootstrapMethod bsm, int index, RuntimeJavaType targetType, CodeEmitterLocal wrapException)
             {
                 var constant = bsm.GetArgument(index);
                 compiler.EmitLoadConstant(ilgen, constant);
@@ -3041,7 +2959,7 @@ namespace IKVM.Runtime
 
             FieldBuilder field;
 
-            internal void Emit(Compiler compiler, CodeEmitter ilgen, MethodHandleConstantHandle handle)
+            internal void Emit(CodeCompiler compiler, CodeEmitter ilgen, MethodHandleConstantHandle handle)
             {
                 if (field == null)
                     field = compiler.finish.DefineDynamicMethodHandleCacheField();
@@ -3064,7 +2982,7 @@ namespace IKVM.Runtime
             FieldBuilder field;
             bool dynamic;
 
-            internal void Emit(Compiler compiler, CodeEmitter ilgen, MethodTypeConstantHandle handle)
+            internal void Emit(CodeCompiler compiler, CodeEmitter ilgen, MethodTypeConstantHandle handle)
             {
                 if (field == null)
                     field = CreateField(compiler, handle, ref dynamic);
@@ -3082,7 +3000,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            static FieldBuilder CreateField(Compiler compiler, MethodTypeConstantHandle handle, ref bool dynamic)
+            static FieldBuilder CreateField(CodeCompiler compiler, MethodTypeConstantHandle handle, ref bool dynamic)
             {
                 var cpi = compiler.classFile.GetConstantPoolConstantMethodType(handle);
                 var args = cpi.GetArgTypes();
@@ -3385,11 +3303,11 @@ namespace IKVM.Runtime
         internal sealed class MethodHandleMethodWrapper : RuntimeJavaMethod
         {
 
-            private readonly Compiler compiler;
+            private readonly CodeCompiler compiler;
             private readonly RuntimeJavaType wrapper;
             private readonly ClassFile.ConstantPoolItemMI cpi;
 
-            internal MethodHandleMethodWrapper(Compiler compiler, RuntimeJavaType wrapper, ClassFile.ConstantPoolItemMI cpi)
+            internal MethodHandleMethodWrapper(CodeCompiler compiler, RuntimeJavaType wrapper, ClassFile.ConstantPoolItemMI cpi)
                 : base(compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle, cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), Modifiers.Public, MemberFlags.None)
             {
                 this.compiler = compiler;
@@ -3612,7 +3530,7 @@ namespace IKVM.Runtime
         {
             private MethodInfo method;
 
-            internal void Emit(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ReferenceKind kind)
+            internal void Emit(CodeCompiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ReferenceKind kind)
             {
                 if (method == null)
                 {
@@ -3621,7 +3539,7 @@ namespace IKVM.Runtime
                 compiler.ilGenerator.Emit(OpCodes.Call, method);
             }
 
-            private static MethodInfo CreateMethod(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ReferenceKind kind)
+            private static MethodInfo CreateMethod(CodeCompiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ReferenceKind kind)
             {
                 RuntimeJavaType ret;
                 RuntimeJavaType[] args;
@@ -3654,12 +3572,12 @@ namespace IKVM.Runtime
         {
             private RuntimeJavaMethod mw;
 
-            internal RuntimeJavaMethod Get(Compiler compiler, ReferenceKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
+            internal RuntimeJavaMethod Get(CodeCompiler compiler, ReferenceKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
             {
                 return mw ?? (mw = new DynamicBinderMethodWrapper(cpi, Emit(compiler, kind, cpi, privileged), kind));
             }
 
-            private static MethodInfo Emit(Compiler compiler, ReferenceKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
+            private static MethodInfo Emit(CodeCompiler compiler, ReferenceKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
             {
                 RuntimeJavaType ret;
                 RuntimeJavaType[] args;
@@ -3681,7 +3599,7 @@ namespace IKVM.Runtime
                 return Emit(compiler, kind, cpi, ret, args, privileged);
             }
 
-            internal static MethodInfo Emit(Compiler compiler, ReferenceKind kind, ClassFile.ConstantPoolItemFMI cpi, RuntimeJavaType ret, RuntimeJavaType[] args, bool privileged)
+            internal static MethodInfo Emit(CodeCompiler compiler, ReferenceKind kind, ClassFile.ConstantPoolItemFMI cpi, RuntimeJavaType ret, RuntimeJavaType[] args, bool privileged)
             {
                 bool ghostTarget = (kind == ReferenceKind.InvokeSpecial || kind == ReferenceKind.InvokeVirtual || kind == ReferenceKind.InvokeInterface) && args[0].IsGhost;
                 Type delegateType = compiler.finish.Context.MethodHandleUtil.CreateMethodHandleDelegateType(args, ret);

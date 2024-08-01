@@ -77,7 +77,7 @@ namespace IKVM.Runtime
 
         internal virtual bool EmitIntrinsic(EmitIntrinsicContext context)
         {
-            return Intrinsics.Emit(context);
+            return CodeIntrinsics.Emit(context);
         }
 
 #endif // EMITTERS
@@ -104,7 +104,7 @@ namespace IKVM.Runtime
             Debug.Assert(((returnType == null) == (parameterTypes == null)) || (returnType == declaringType.Context.PrimitiveJavaTypeFactory.VOID));
             this.returnTypeWrapper = returnType;
             this.parameterTypeWrappers = parameterTypes;
-            if (Intrinsics.IsIntrinsic(this))
+            if (CodeIntrinsics.IsIntrinsic(this))
                 SetIntrinsicFlag();
 
             UpdateNonPublicTypeInSignatureFlag();
@@ -607,6 +607,7 @@ namespace IKVM.Runtime
                 return IsProtected && (DeclaringType == DeclaringType.Context.JavaBase.TypeOfJavaLangObject || DeclaringType == DeclaringType.Context.JavaBase.TypeOfjavaLangThrowable) && (Name == StringConstants.CLONE || Name == StringConstants.FINALIZE);
             }
         }
+
     }
 
 }

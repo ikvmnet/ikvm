@@ -540,7 +540,7 @@ namespace IKVM.Runtime
                             }
 #endif
                             var nonleaf = false;
-                            Compiler.Compile(this, host, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf);
+                            CodeCompiler.Compile(this, host, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf);
                             ilGenerator.CheckLabels();
                             ilGenerator.DoEmit();
                             if (nonleaf)
@@ -2068,7 +2068,7 @@ namespace IKVM.Runtime
                 }
 #endif
                 var nonLeaf = false;
-                Compiler.Compile(context, host, wrapper, methods[methodIndex], classFile, m, ilGenerator, ref nonLeaf);
+                CodeCompiler.Compile(context, host, wrapper, methods[methodIndex], classFile, m, ilGenerator, ref nonLeaf);
                 ilGenerator.DoEmit();
 #if IMPORTER
                 ilGenerator.EmitLineNumberTable((MethodBuilder)methods[methodIndex].GetMethod());

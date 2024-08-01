@@ -588,7 +588,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
                     }
                     RuntimeJavaType ret = RuntimeJavaType.FromClass(mt.returnType());
                     ret.Finish();
-                    Compiler.MethodHandleMethodWrapper.EmitLinkToCall(context, ilgen, args, ret);
+                    CodeCompiler.MethodHandleMethodWrapper.EmitLinkToCall(context, ilgen, args, ret);
                     ret.EmitConvSignatureTypeToStackType(ilgen);
                 }
                 else if (IsMethodHandleInvokeBasic(member))
@@ -1097,7 +1097,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             }
             RuntimeJavaType ret = RuntimeJavaType.FromClass(mt.returnType());
             ret.Finish();
-            Compiler.MethodHandleMethodWrapper.EmitInvokeBasic(JVM.Context, ilgen, args, ret, false);
+            CodeCompiler.MethodHandleMethodWrapper.EmitInvokeBasic(JVM.Context, ilgen, args, ret, false);
         }
 
         private OpCode arrayLoadOpcode(byte tcode)

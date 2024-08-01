@@ -39,59 +39,6 @@ using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 namespace IKVM.Runtime
 {
 
-    /// <summary>
-    /// Provides instances of <see cref="MethodAnalyzer"/>.
-    /// </summary>
-    class MethodAnalyzerFactory
-    {
-
-        readonly RuntimeContext context;
-
-        public readonly RuntimeJavaType ByteArrayType;
-        public readonly RuntimeJavaType BooleanArrayType;
-        public readonly RuntimeJavaType ShortArrayType;
-        public readonly RuntimeJavaType CharArrayType;
-        public readonly RuntimeJavaType IntArrayType;
-        public readonly RuntimeJavaType FloatArrayType;
-        public readonly RuntimeJavaType DoubleArrayType;
-        public readonly RuntimeJavaType LongArrayType;
-        public readonly RuntimeJavaType javaLangThreadDeath;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="context"></param>
-        public MethodAnalyzerFactory(RuntimeContext context)
-        {
-            this.context = context ?? throw new ArgumentNullException(nameof(context));
-            ByteArrayType = context.PrimitiveJavaTypeFactory.BYTE.MakeArrayType(1);
-            BooleanArrayType = context.PrimitiveJavaTypeFactory.BOOLEAN.MakeArrayType(1);
-            ShortArrayType = context.PrimitiveJavaTypeFactory.SHORT.MakeArrayType(1);
-            CharArrayType = context.PrimitiveJavaTypeFactory.CHAR.MakeArrayType(1);
-            IntArrayType = context.PrimitiveJavaTypeFactory.INT.MakeArrayType(1);
-            FloatArrayType = context.PrimitiveJavaTypeFactory.FLOAT.MakeArrayType(1);
-            DoubleArrayType = context.PrimitiveJavaTypeFactory.DOUBLE.MakeArrayType(1);
-            LongArrayType = context.PrimitiveJavaTypeFactory.LONG.MakeArrayType(1);
-            javaLangThreadDeath = context.ClassLoaderFactory.LoadClassCritical("java.lang.ThreadDeath");
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="MethodAnalyzer"/>.
-        /// </summary>
-        /// <param name="host"></param>
-        /// <param name="wrapper"></param>
-        /// <param name="mw"></param>
-        /// <param name="classFile"></param>
-        /// <param name="method"></param>
-        /// <param name="classLoader"></param>
-        /// <returns></returns>
-        public MethodAnalyzer Create(RuntimeJavaType host, RuntimeJavaType wrapper, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method, RuntimeClassLoader classLoader)
-        {
-            return new MethodAnalyzer(context, host, wrapper, mw, classFile, method, classLoader);
-        }
-
-    }
-
     sealed class MethodAnalyzer
     {
 
@@ -115,7 +62,6 @@ namespace IKVM.Runtime
         MethodAnalyzer(RuntimeContext context)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
-
         }
 
         /// <summary>
@@ -640,7 +586,7 @@ namespace IKVM.Runtime
                                             && cpi.GetMethod().IsIntrinsic
                                             && cpi.Class == "sun.misc.Unsafe"
                                             && cpi.Name == "getObjectVolatile"
-                                            && Intrinsics.IsSupportedArrayTypeForUnsafeOperation(s.GetStackSlot(1)))
+                                            && CodeIntrinsics.IsSupportedArrayTypeForUnsafeOperation(s.GetStackSlot(1)))
                                         {
                                             retType = s.GetStackSlot(1).ElementTypeWrapper;
                                         }
