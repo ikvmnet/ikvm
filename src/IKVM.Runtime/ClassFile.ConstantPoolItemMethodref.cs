@@ -40,7 +40,7 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             /// <param name="reader"></param>
             internal ConstantPoolItemMethodref(RuntimeContext context, MethodrefConstantReader reader) :
-                base(context, reader.Record.ClassIndex, reader.Record.NameAndTypeIndex)
+                base(context, reader.Record.Class.Index, reader.Record.NameAndType.Index)
             {
 
             }

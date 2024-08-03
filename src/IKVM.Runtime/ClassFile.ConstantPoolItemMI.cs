@@ -22,6 +22,8 @@
   
 */
 
+using IKVM.ByteCode;
+
 namespace IKVM.Runtime
 {
 
@@ -54,7 +56,7 @@ namespace IKVM.Runtime
                 {
                     throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
                 }
-                if (!IsValidMethodName(name, majorVersion))
+                if (!IsValidMethodName(name, new ClassFormatVersion((ushort)majorVersion, 0)))
                 {
                     if (!ReferenceEquals(name, StringConstants.INIT))
                     {

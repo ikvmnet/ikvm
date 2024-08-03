@@ -48,7 +48,7 @@ namespace IKVM.Runtime
                 base(context)
             {
                 bootstrap_specifier_index = reader.Record.BootstrapMethodAttributeIndex;
-                name_and_type_index = reader.Record.NameAndTypeIndex;
+                name_and_type_index = reader.Record.NameAndType.Index;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)

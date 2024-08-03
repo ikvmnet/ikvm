@@ -817,24 +817,24 @@ namespace IKVM.Runtime
 
             static void MarkConstantPoolUsageForAnnotation(AnnotationReader annotation, bool[] inUse)
             {
-                ushort type_index = annotation.Record.TypeIndex;
+                ushort type_index = annotation.Record.Type.Index;
                 inUse[type_index] = true;
 
                 for (int i = 0; i < annotation.Record.Elements.Length; i++)
                 {
-                    inUse[annotation.Record.Elements[i].NameIndex] = true;
+                    inUse[annotation.Record.Elements[i].Name.Index] = true;
                     MarkConstantPoolUsageForAnnotationComponentValue(annotation.Elements[i], inUse);
                 }
             }
 
             static void MarkConstantPoolUsageForTypeAnnotation(TypeAnnotationReader annotation, bool[] inUse)
             {
-                ushort type_index = annotation.Record.TypeIndex;
+                ushort type_index = annotation.Record.Type.Index;
                 inUse[type_index] = true;
 
                 for (int i = 0; i < annotation.Record.Elements.Length; i++)
                 {
-                    inUse[annotation.Record.Elements[i].NameIndex] = true;
+                    inUse[annotation.Record.Elements[i].Name.Index] = true;
                     MarkConstantPoolUsageForAnnotationComponentValue(annotation.Elements[i], inUse);
                 }
             }
@@ -844,14 +844,14 @@ namespace IKVM.Runtime
                 switch (element)
                 {
                     case ElementValueConstantReader constant:
-                        inUse[constant.ValueRecord.Index] = true;
+                        inUse[constant.ValueRecord.Handle.Index] = true;
                         break;
                     case ElementValueClassReader classInfo:
-                        inUse[classInfo.ValueRecord.ClassIndex] = true;
+                        inUse[classInfo.ValueRecord.Class.Index] = true;
                         break;
                     case ElementValueEnumConstantReader enumConstant:
-                        inUse[enumConstant.ValueRecord.TypeNameIndex] = true;
-                        inUse[enumConstant.ValueRecord.ConstantNameIndex] = true;
+                        inUse[enumConstant.ValueRecord.TypeName.Index] = true;
+                        inUse[enumConstant.ValueRecord.ConstantName.Index] = true;
                         break;
                     case ElementValueAnnotationReader annotation:
                         MarkConstantPoolUsageForAnnotation(annotation.Annotation, inUse);

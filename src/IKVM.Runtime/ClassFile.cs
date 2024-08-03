@@ -236,10 +236,10 @@ namespace IKVM.Runtime
                 if ((IsInterface && IsFinal) || (IsAbstract && IsFinal) || (reader.Version >= 49 && IsAnnotation && !IsInterface) || (reader.Version >= 49 && IsInterface && (!IsAbstract || IsSuper || IsEnum)))
                     throw new ClassFormatError("{0} (Illegal class modifiers 0x{1:X})", inputClassName, access_flags);
 
-                ValidateConstantPoolItemClass(inputClassName, reader.Record.ThisClassIndex);
-                ValidateConstantPoolItemClass(inputClassName, reader.Record.SuperClassIndex);
+                ValidateConstantPoolItemClass(inputClassName, reader.Record.ThisClass.Index);
+                ValidateConstantPoolItemClass(inputClassName, reader.Record.SuperClass.Index);
 
-                if (IsInterface && (reader.Record.SuperClassIndex == 0 || SuperClass.Name != "java.lang.Object"))
+                if (IsInterface && (reader.Record.SuperClass.Index == 0 || SuperClass.Name != "java.lang.Object"))
                     throw new ClassFormatError("{0} (Interfaces must have java.lang.Object as superclass)", Name);
 
                 // most checks are already done by ConstantPoolItemClass.Resolve, but since it allows
@@ -250,7 +250,7 @@ namespace IKVM.Runtime
                 interfaces = new ConstantPoolItemClass[reader.Interfaces.Count];
                 for (int i = 0; i < interfaces.Length; i++)
                 {
-                    int index = reader.Interfaces[i].Record.ClassIndex;
+                    int index = reader.Interfaces[i].Record.Class.Index;
                     if (index == 0 || index >= constantpool.Length)
                         throw new ClassFormatError("{0} (Illegal constant pool index)", Name);
 
@@ -298,7 +298,7 @@ namespace IKVM.Runtime
                 {
                     var attribute = reader.Attributes[i];
 
-                    switch (GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.NameIndex))
+                    switch (GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.Name.Index))
                     {
                         case "Deprecated":
                             if (attribute is not DeprecatedAttributeReader deprecatedAttribute)
@@ -310,7 +310,7 @@ namespace IKVM.Runtime
                             if (attribute is not SourceFileAttributeReader sourceFileAttribute)
                                 throw new ClassFormatError("Invalid SourceFile attribute type.");
 
-                            sourceFile = GetConstantPoolUtf8String(utf8_cp, sourceFileAttribute.Record.SourceFileIndex);
+                            sourceFile = GetConstantPoolUtf8String(utf8_cp, sourceFileAttribute.Record.SourceFile.Index);
                             break;
                         case "InnerClasses":
                             if (MajorVersion < 49)
@@ -324,9 +324,9 @@ namespace IKVM.Runtime
                             {
                                 var item = innerClassesAttribute.Items[j];
 
-                                innerClasses[j].innerClass = item.InnerClass?.Index ?? 0;
-                                innerClasses[j].outerClass = item.OuterClass?.Index ?? 0;
-                                innerClasses[j].name = item.InnerName?.Index ?? 0;
+                                innerClasses[j].innerClass = item.InnerClass?.Handle.Index ?? 0;
+                                innerClasses[j].outerClass = item.OuterClass?.Handle.Index ?? 0;
+                                innerClasses[j].name = item.InnerName?.Handle.Index ?? 0;
                                 innerClasses[j].accessFlags = (Modifiers)item.InnerClassAccessFlags;
 
                                 if (innerClasses[j].innerClass != 0 && !(GetConstantPoolItem(innerClasses[j].innerClass) is ConstantPoolItemClass))
@@ -356,7 +356,7 @@ namespace IKVM.Runtime
                             if (attribute is not SignatureAttributeReader signatureAttribute)
                                 throw new ClassFormatError("Invalid Signature attribute type.");
 
-                            signature = GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Record.SignatureIndex);
+                            signature = GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Record.Signature.Index);
                             break;
                         case "EnclosingMethod":
                             if (reader.Version < 49)
@@ -365,8 +365,8 @@ namespace IKVM.Runtime
                             if (attribute is not EnclosingMethodAttributeReader enclosingMethodAttribute)
                                 throw new ClassFormatError("Invalid EnclosingMethod attribute type.");
 
-                            var classIndex = enclosingMethodAttribute.Record.ClassIndex;
-                            var methodIndex = enclosingMethodAttribute.Record.MethodIndex;
+                            var classIndex = enclosingMethodAttribute.Record.Class.Index;
+                            var methodIndex = enclosingMethodAttribute.Record.Method.Index;
                             ValidateConstantPoolItemClass(inputClassName, classIndex);
 
                             if (methodIndex == 0)
@@ -574,7 +574,7 @@ namespace IKVM.Runtime
             {
                 var method = methods[i];
 
-                var bsm_index = method.Record.MethodRefIndex;
+                var bsm_index = method.Record.Method.Index;
                 if (bsm_index >= classFile.constantpool.Length || classFile.constantpool[bsm_index] is not ConstantPoolItemMethodHandle)
                     throw new ClassFormatError("bootstrap_method_index {0} has bad constant type in class file {1}", bsm_index, classFile.Name);
 
@@ -584,7 +584,7 @@ namespace IKVM.Runtime
                 var args = new ushort[argument_count];
                 for (int j = 0; j < args.Length; j++)
                 {
-                    var argument_index = method.Record.Arguments[j];
+                    var argument_index = method.Record.Arguments[j].Index;
                     if (classFile.IsValidConstant(argument_index) == false)
                         throw new ClassFormatError("argument_index {0} has bad constant type in class file {1}", argument_index, classFile.Name);
 
@@ -630,10 +630,10 @@ namespace IKVM.Runtime
         {
             var l = new object[2 + reader.Elements.Count * 2];
             l[0] = AnnotationDefaultAttribute.TAG_ANNOTATION;
-            l[1] = classFile.GetConstantPoolUtf8String(utf8_cp, reader.Record.TypeIndex);
+            l[1] = classFile.GetConstantPoolUtf8String(utf8_cp, reader.Record.Type.Index);
             for (int i = 0; i < reader.Elements.Count; i++)
             {
-                l[2 + i * 2 + 0] = classFile.GetConstantPoolUtf8String(utf8_cp, reader.Record.Elements[i].NameIndex);
+                l[2 + i * 2 + 0] = classFile.GetConstantPoolUtf8String(utf8_cp, reader.Record.Elements[i].Name.Index);
                 l[2 + i * 2 + 1] = ReadAnnotationElementValue(reader.Elements[i], classFile, utf8_cp);
             }
 
@@ -646,34 +646,34 @@ namespace IKVM.Runtime
             {
                 switch (reader)
                 {
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Boolean:
-                        return classFile.GetConstantPoolConstantInteger(r.Value.Index) != 0;
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Byte:
-                        return (byte)classFile.GetConstantPoolConstantInteger(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Char:
-                        return (char)classFile.GetConstantPoolConstantInteger(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Short:
-                        return (short)classFile.GetConstantPoolConstantInteger(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Integer:
-                        return classFile.GetConstantPoolConstantInteger(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Float:
-                        return classFile.GetConstantPoolConstantFloat(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Long:
-                        return classFile.GetConstantPoolConstantLong(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.Double:
-                        return classFile.GetConstantPoolConstantDouble(r.Value.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.Parsing.ElementValueTag.String:
-                        return classFile.GetConstantPoolUtf8String(utf8_cp, r.Value.Index);
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Boolean:
+                        return classFile.GetConstantPoolConstantInteger(r.Value.Handle.Index) != 0;
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Byte:
+                        return (byte)classFile.GetConstantPoolConstantInteger(r.Value.Handle.Index);
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Char:
+                        return (char)classFile.GetConstantPoolConstantInteger(r.Value.Handle.Index);
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Short:
+                        return (short)classFile.GetConstantPoolConstantInteger(r.Value.Handle.Index);
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Integer:
+                        return classFile.GetConstantPoolConstantInteger(r.Value.Handle.Index);
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Float:
+                        return classFile.GetConstantPoolConstantFloat(r.Value.Handle.Index);
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Long:
+                        return classFile.GetConstantPoolConstantLong(r.Value.Handle.Index);
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Double:
+                        return classFile.GetConstantPoolConstantDouble(r.Value.Handle.Index);
+                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.String:
+                        return classFile.GetConstantPoolUtf8String(utf8_cp, r.Value.Handle.Index);
                     case ElementValueEnumConstantReader r:
                         return new object[] {
                             AnnotationDefaultAttribute.TAG_ENUM,
-                            classFile.GetConstantPoolUtf8String(utf8_cp, r.TypeName.Index),
-                            classFile.GetConstantPoolUtf8String(utf8_cp, r.ConstantName.Index)
+                            classFile.GetConstantPoolUtf8String(utf8_cp, r.TypeName.Handle.Index),
+                            classFile.GetConstantPoolUtf8String(utf8_cp, r.ConstantName.Handle.Index)
                         };
                     case ElementValueClassReader r:
                         return new object[] {
                             AnnotationDefaultAttribute.TAG_CLASS,
-                            classFile.GetConstantPoolUtf8String(utf8_cp, r.Class.Index)
+                            classFile.GetConstantPoolUtf8String(utf8_cp, r.Class.Handle.Index)
                         };
                     case ElementValueAnnotationReader r:
                         return ReadAnnotation(r.Annotation, classFile, utf8_cp);
@@ -861,7 +861,7 @@ namespace IKVM.Runtime
         internal void Link(RuntimeJavaType thisType, LoadMode mode)
         {
             // this is not just an optimization, it's required for anonymous classes to be able to refer to themselves
-            ((ConstantPoolItemClass)constantpool[reader.Record.ThisClassIndex]).LinkSelf(thisType);
+            ((ConstantPoolItemClass)constantpool[reader.Record.ThisClass.Index]).LinkSelf(thisType);
 
             for (int i = 1; i < constantpool.Length; i++)
                 if (constantpool[i] != null)
@@ -951,7 +951,7 @@ namespace IKVM.Runtime
             var s = utf8_cp[index];
             if (s == null)
             {
-                if (reader.This.Index == 0)
+                if (reader.This.Handle.Index == 0)
                 {
                     throw new ClassFormatError("Bad constant pool index #{0}", index);
                 }
@@ -1009,9 +1009,9 @@ namespace IKVM.Runtime
             return ((ConstantPoolItemLiveObject)constantpool[index]).Value;
         }
 
-        internal string Name => GetConstantPoolClass(reader.Record.ThisClassIndex);
+        internal string Name => GetConstantPoolClass(reader.Record.ThisClass.Index);
 
-        internal ConstantPoolItemClass SuperClass => (ConstantPoolItemClass)constantpool[reader.Record.SuperClassIndex];
+        internal ConstantPoolItemClass SuperClass => (ConstantPoolItemClass)constantpool[reader.Record.SuperClass.Index];
 
         internal Field[] Fields => fields;
 
