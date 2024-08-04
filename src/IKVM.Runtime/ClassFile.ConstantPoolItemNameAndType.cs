@@ -44,8 +44,8 @@ namespace IKVM.Runtime
             internal ConstantPoolItemNameAndType(RuntimeContext context, NameAndTypeConstantReader reader) :
                 base(context)
             {
-                nameIndex = reader.Record.NameIndex;
-                descriptorIndex = reader.Record.DescriptorIndex;
+                nameIndex = reader.Record.Name.Index;
+                descriptorIndex = reader.Record.Descriptor.Index;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)

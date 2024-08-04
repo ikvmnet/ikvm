@@ -534,7 +534,7 @@ namespace IKVM.Runtime
             for (int i = 0; i < capturedFields.Length; i++)
             {
                 ilgen.EmitLdarg(0);
-                OpCode opc = OpCodes.Ldfld;
+                var opc = OpCodes.Ldfld;
                 if (i == 0 && args[0].IsGhost)
                 {
                     switch (implMethod.Kind)

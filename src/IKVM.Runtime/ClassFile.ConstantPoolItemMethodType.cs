@@ -46,7 +46,7 @@ namespace IKVM.Runtime
             internal ConstantPoolItemMethodType(RuntimeContext context, MethodTypeConstantReader reader) :
                 base(context)
             {
-                signature_index = reader.Record.DescriptorIndex;
+                signature_index = reader.Record.Descriptor.Index;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)

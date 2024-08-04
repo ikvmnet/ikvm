@@ -58,18 +58,18 @@ namespace IKVM.Runtime
                     case ReferenceKind.GetStatic:
                     case ReferenceKind.PutField:
                     case ReferenceKind.PutStatic:
-                        cpi = classFile.GetConstantPoolItem(reader.Record.Index) as ConstantPoolItemFieldref;
+                        cpi = classFile.GetConstantPoolItem(reader.Record.Reference.Index) as ConstantPoolItemFieldref;
                         break;
                     case ReferenceKind.InvokeSpecial:
                     case ReferenceKind.InvokeVirtual:
                     case ReferenceKind.InvokeStatic:
                     case ReferenceKind.NewInvokeSpecial:
-                        cpi = classFile.GetConstantPoolItem(reader.Record.Index) as ConstantPoolItemMethodref;
+                        cpi = classFile.GetConstantPoolItem(reader.Record.Reference.Index) as ConstantPoolItemMethodref;
                         if (cpi == null && classFile.MajorVersion >= 52 && (reader.ReferenceKind is ReferenceKind.InvokeStatic or ReferenceKind.InvokeSpecial))
                             goto case ReferenceKind.InvokeInterface;
                         break;
                     case ReferenceKind.InvokeInterface:
-                        cpi = classFile.GetConstantPoolItem(reader.Record.Index) as ConstantPoolItemInterfaceMethodref;
+                        cpi = classFile.GetConstantPoolItem(reader.Record.Reference.Index) as ConstantPoolItemInterfaceMethodref;
                         break;
                 }
 

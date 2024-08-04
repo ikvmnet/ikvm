@@ -24,8 +24,10 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using IKVM.ByteCode.Buffers;
 using IKVM.ByteCode.Parsing;
 using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Writing;
 
 namespace IKVM.Runtime
 {
@@ -303,13 +305,13 @@ namespace IKVM.Runtime
                 if (annotations == null)
                     return null;
 
-                var record = new RuntimeVisibleTypeAnnotationsAttributeRecord(annotations.Select(i => i.Record).ToArray());
-                var buffer = new byte[record.GetSize()];
-                var writer = new ClassFormatWriter(buffer);
-                if (record.TryWrite(ref writer) == false)
-                    throw new InternalException("Failed to serialize raw type annotations.");
+                var builder = new BlobBuilder();
+                var encoder = new TypeAnnotationTableEncoder(builder);
 
-                return buffer;
+                foreach (var i in annotations)
+                    encoder.Encode(i.Record);
+
+                return builder.ToArray();
             }
 
         }

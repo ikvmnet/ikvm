@@ -129,7 +129,7 @@ namespace IKVM.Runtime
                         var start_pc = handler.StartOffset;
                         var end_pc = handler.EndOffset;
                         var handler_pc = handler.HandlerOffset;
-                        var catch_type = handler.CatchTypeIndex;
+                        var catch_type = handler.CatchType.Index;
 
                         if (start_pc >= end_pc || end_pc > code_length || handler_pc >= code_length || (catch_type != 0 && !classFile.SafeIsConstantPoolClass(catch_type)))
                             throw new ClassFormatError("Illegal exception table: {0}.{1}{2}", classFile.Name, method.Name, method.Signature);
@@ -160,7 +160,7 @@ namespace IKVM.Runtime
                     {
                         var attribute = reader.Attributes[i];
 
-                        switch (classFile.GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.NameIndex))
+                        switch (classFile.GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.Name.Index))
                         {
                             case "LineNumberTable":
                                 if (attribute is not LineNumberTableAttributeReader lnt)
@@ -191,8 +191,8 @@ namespace IKVM.Runtime
                                         var item = lvt.Record.Items[j];
                                         localVariableTable[j].start_pc = item.CodeOffset;
                                         localVariableTable[j].length = item.CodeLength;
-                                        localVariableTable[j].name = classFile.GetConstantPoolUtf8String(utf8_cp, item.NameIndex);
-                                        localVariableTable[j].descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, item.DescriptorIndex).Replace('/', '.');
+                                        localVariableTable[j].name = classFile.GetConstantPoolUtf8String(utf8_cp, item.Name.Index);
+                                        localVariableTable[j].descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, item.Descriptor.Index).Replace('/', '.');
                                         localVariableTable[j].index = item.Index;
                                     }
                                 }

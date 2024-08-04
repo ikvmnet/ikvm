@@ -40,6 +40,10 @@ using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
+using IKVM.ByteCode.Writing;
+using IKVM.ByteCode.Buffers;
+
+
 
 #else
 using System.Reflection;
@@ -892,38 +896,38 @@ namespace IKVM.Runtime
 
         internal void SetRuntimeVisibleTypeAnnotationsAttribute(TypeBuilder tb, IReadOnlyList<TypeAnnotationReader> data)
         {
-            var r = new RuntimeVisibleTypeAnnotationsAttributeRecord(data.Select(i => i.Record).ToArray());
-            var m = new byte[r.GetSize()];
-            var w = new ClassFormatWriter(m);
-            if (r.TryWrite(ref w) == false)
-                throw new InternalException();
+            var builder = new BlobBuilder();
+            var encoder = new TypeAnnotationTableEncoder(builder);
+
+            foreach (var i in data)
+                encoder.Encode(i.Record);
 
             runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { context.Types.Byte.MakeArrayType() });
-            tb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { m }));
+            tb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { builder.ToArray() }));
         }
 
         internal void SetRuntimeVisibleTypeAnnotationsAttribute(FieldBuilder fb, IReadOnlyList<TypeAnnotationReader> data)
         {
-            var r = new RuntimeVisibleTypeAnnotationsAttributeRecord(data.Select(i => i.Record).ToArray());
-            var m = new byte[r.GetSize()];
-            var w = new ClassFormatWriter(m);
-            if (r.TryWrite(ref w) == false)
-                throw new InternalException();
+            var builder = new BlobBuilder();
+            var encoder = new TypeAnnotationTableEncoder(builder);
+
+            foreach (var i in data)
+                encoder.Encode(i.Record);
 
             runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { context.Types.Byte.MakeArrayType() });
-            fb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { m }));
+            fb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { builder.ToArray() }));
         }
 
         internal void SetRuntimeVisibleTypeAnnotationsAttribute(MethodBuilder mb, IReadOnlyList<TypeAnnotationReader> data)
         {
-            var r = new RuntimeVisibleTypeAnnotationsAttributeRecord(data.Select(i => i.Record).ToArray());
-            var m = new byte[r.GetSize()];
-            var w = new ClassFormatWriter(m);
-            if (r.TryWrite(ref w) == false)
-                throw new InternalException();
+            var builder = new BlobBuilder();
+            var encoder = new TypeAnnotationTableEncoder(builder);
+
+            foreach (var i in data)
+                encoder.Encode(i.Record);
 
             runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { context.Types.Byte.MakeArrayType() });
-            mb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { m }));
+            mb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { builder.ToArray() }));
         }
 
         internal void SetConstantPoolAttribute(TypeBuilder tb, object[] constantPool)

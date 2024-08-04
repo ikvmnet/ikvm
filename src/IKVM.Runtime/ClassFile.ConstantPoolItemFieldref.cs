@@ -22,6 +22,7 @@
   
 */
 
+using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
 
 namespace IKVM.Runtime
@@ -42,7 +43,7 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             /// <param name="reader"></param>
             internal ConstantPoolItemFieldref(RuntimeContext context, FieldrefConstantReader reader) :
-                base(context, reader.Record.ClassIndex, reader.Record.NameAndTypeIndex)
+                base(context, reader.Record.Class.Index, reader.Record.NameAndType.Index)
             {
 
             }
@@ -51,7 +52,7 @@ namespace IKVM.Runtime
             {
                 if (!IsValidFieldSig(descriptor))
                     throw new ClassFormatError("Invalid field signature \"{0}\"", descriptor);
-                if (!IsValidFieldName(name, majorVersion))
+                if (!IsValidFieldName(name, new ClassFormatVersion((ushort)majorVersion, 0)))
                     throw new ClassFormatError("Invalid field name \"{0}\"", name);
             }
 

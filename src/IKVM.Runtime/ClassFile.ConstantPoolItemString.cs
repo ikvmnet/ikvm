@@ -44,7 +44,7 @@ namespace IKVM.Runtime
             internal ConstantPoolItemString(RuntimeContext context, StringConstantReader reader) :
                 base(context)
             {
-                valueIndex = reader.Record.ValueIndex;
+                valueIndex = reader.Record.Value.Index;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
