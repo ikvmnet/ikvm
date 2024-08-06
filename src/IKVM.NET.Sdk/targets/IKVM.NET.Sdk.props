@@ -26,6 +26,7 @@
         <StrictFinalFieldSemantics Condition=" '$(StrictFinalFieldSemantics)' == '' ">true</StrictFinalFieldSemantics>
         <RemoveAssertions Condition=" '$(RemoveAssertions)' == '' ">true</RemoveAssertions>
         <NoParameterReflection Condition=" '$(NoParameterReflection)' == '' ">true</NoParameterReflection>
+        <Static Condition=" '$(Static)' == '' ">false</Static>
     </PropertyGroup>
 
     <!-- language specific functionality -->

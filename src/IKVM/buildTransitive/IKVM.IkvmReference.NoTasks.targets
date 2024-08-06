@@ -41,6 +41,7 @@
             <_IkvmCompilerArgs Include="-removeassertions" Condition=" '$(RemoveAssertions)' == 'true' " />
             <_IkvmCompilerArgs Include="-target:library" />
             <_IkvmCompilerArgs Include="-nostdlib" />
+            <_IkvmCompilerArgs Include="-static" Condition=" '%(IkvmReferenceItem.Static)' == 'true' " />
             <_IkvmCompilerArgs Include="-classloader:%(IkvmReferenceItem.ClassLoader)" Condition=" '%(IkvmReferenceItem.ClassLoader)' != '' " />
             <_IkvmCompilerArgs Include="@(_IkvmCompilerReferencePath->'-reference:%(FullPath)')" />
             <_IkvmCompilerArgs Include="-out:%(IkvmReferenceItem.StagePath)" />

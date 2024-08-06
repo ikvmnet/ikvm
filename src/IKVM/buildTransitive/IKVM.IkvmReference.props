@@ -23,6 +23,7 @@
             <Private>true</Private>
             <CopyLocal>true</CopyLocal>
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+            <Static>false</Static>
         </IkvmReference>
     </ItemDefinitionGroup>
 

@@ -72,6 +72,7 @@
                 item.CacheSymbolsPath = item.Item.GetMetadata(IkvmReferenceItemMetadata.CacheSymbolsPath);
                 item.StagePath = item.Item.GetMetadata(IkvmReferenceItemMetadata.StagePath);
                 item.StageSymbolsPath = item.Item.GetMetadata(IkvmReferenceItemMetadata.StageSymbolsPath);
+                item.Static = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.Static), "true", StringComparison.OrdinalIgnoreCase);
                 item.Save();
             }
 
@@ -272,6 +273,11 @@
         public List<string> ResolvedReferences { get; set; }
 
         /// <summary>
+        /// Whether Ikvmc should enable static-semantics.
+        /// </summary>
+        public bool Static { get; set; } = false;
+
+        /// <summary>
         /// Writes the metadata to the item.
         /// </summary>
         public void Save()
@@ -300,6 +306,7 @@
             Item.SetMetadata(IkvmReferenceItemMetadata.Private, Private ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.ReferenceOutputAssembly, ReferenceOutputAssembly ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.ResolvedReferences, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, ResolvedReferences));
+            Item.SetMetadata(IkvmReferenceItemMetadata.Static, Static ? "true" : "false");
         }
 
         /// <summary>

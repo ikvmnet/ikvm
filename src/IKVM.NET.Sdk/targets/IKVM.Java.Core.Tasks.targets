@@ -132,6 +132,7 @@
             SharedClassLoader="$(SharedClassLoader)"
             NoStdLib="$(NoCompilerStandardLib)"
             NoParameterReflection="$(NoParameterReflection)"
+            Static="$(Static)"
             WarningLevel="$(WarningLevel)"
             References="@(_IkvmCompilerReferencePath)"
             StrictFinalFieldSemantics="$(StrictFinalFieldSemantics)"
