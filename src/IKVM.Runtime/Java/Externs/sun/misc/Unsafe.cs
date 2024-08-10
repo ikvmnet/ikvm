@@ -1674,7 +1674,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 var tw = RuntimeJavaType.FromClass(hostClass);
                 var cl = tw.GetClassLoader();
-                var cf = new ClassFile(JVM.Context, ReadClass(data), "<Unknown>", cl.ClassFileParseOptions, cpPatches);
+                var cf = new IKVM.Runtime.ClassFile(JVM.Context, ReadClass(data), "<Unknown>", cl.ClassFileParseOptions, cpPatches);
 
                 // if this happens, the OpenJDK is probably trying to load an OpenJDK class file as a resource,
                 // make sure the build process includes the original class file as a resource in that case
@@ -1697,11 +1697,11 @@ namespace IKVM.Java.Externs.sun.misc
         /// </summary>
         /// <param name="buffer"></param>
         /// <returns></returns>
-        static ClassReader ReadClass(byte[] buffer)
+        static IKVM.ByteCode.Reading.ClassFile ReadClass(byte[] buffer)
         {
             try
             {
-                return ClassReader.Read(buffer);
+                return IKVM.ByteCode.Reading.ClassFile.Read(buffer);
             }
             catch (InvalidClassMagicException)
             {
@@ -2699,7 +2699,7 @@ namespace IKVM.Java.Externs.sun.misc
                     {
                         ((global::java.lang.Object)currentThread.parkLock).wait(time / 1000000, (int)(time % 1000000));
                     }
-                    catch (global::java.lang.InterruptedException _)
+                    catch (global::java.lang.InterruptedException)
                     {
                         currentThread.interrupt();
                     }

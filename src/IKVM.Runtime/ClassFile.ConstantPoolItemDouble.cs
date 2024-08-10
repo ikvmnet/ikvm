@@ -22,6 +22,8 @@
   
 */
 
+using System;
+
 using IKVM.ByteCode.Reading;
 
 namespace IKVM.Runtime
@@ -39,11 +41,11 @@ namespace IKVM.Runtime
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
-            /// <param name="reader"></param>
-            internal ConstantPoolItemDouble(RuntimeContext context, DoubleConstantReader reader) :
+            /// <param name="data"></param>
+            internal ConstantPoolItemDouble(RuntimeContext context, DoubleConstantData data) :
                 base(context)
             {
-                d = reader.Value;
+                d = data.Value;
             }
 
             internal override ConstantType GetConstantType() => ConstantType.Double;

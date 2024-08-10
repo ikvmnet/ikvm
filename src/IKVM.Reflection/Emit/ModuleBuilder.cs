@@ -165,7 +165,10 @@ namespace IKVM.Reflection.Emit
                 return type.GetHashCode() + name.GetHashCode() + signature.GetHashCode();
             }
 
-            internal MethodBase LookupMethod() => type.FindMethod(name, (MethodSignature)signature);
+            internal MethodBase LookupMethod()
+            {
+                return type.FindMethod(name, (MethodSignature)signature);
+            }
 
         }
 

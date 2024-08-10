@@ -22,6 +22,8 @@
   
 */
 
+using System;
+
 using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
 
@@ -41,9 +43,9 @@ namespace IKVM.Runtime
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
-            /// <param name="reader"></param>
-            internal ConstantPoolItemFieldref(RuntimeContext context, FieldrefConstantReader reader) :
-                base(context, reader.Record.Class.Index, reader.Record.NameAndType.Index)
+            /// <param name="data"></param>
+            internal ConstantPoolItemFieldref(RuntimeContext context, FieldrefConstantData data) :
+                base(context, data.Class, data.NameAndType)
             {
 
             }

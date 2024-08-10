@@ -21,11 +21,7 @@
   jeroen@frijters.net
   
 */
-using System.Collections.Generic;
-using System.Linq;
-
 using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Parsing;
 using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
@@ -46,9 +42,9 @@ namespace IKVM.Runtime
             readonly string[][] genericMetaData;
             readonly object[][] annotations;
             readonly MethodParametersEntry[][] methodParameters;
-            readonly IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations;
-            readonly IReadOnlyList<TypeAnnotationReader>[] fieldRuntimeVisibleTypeAnnotations;
-            readonly IReadOnlyList<TypeAnnotationReader>[] methodRuntimeVisibleTypeAnnotations;
+            readonly TypeAnnotationTable runtimeVisibleTypeAnnotations;
+            readonly TypeAnnotationTable[] fieldRuntimeVisibleTypeAnnotations;
+            readonly TypeAnnotationTable[] methodRuntimeVisibleTypeAnnotations;
             readonly object[] constantPool;
 
             /// <summary>
@@ -59,7 +55,7 @@ namespace IKVM.Runtime
             /// <param name="methodParameters"></param>
             /// <param name="runtimeVisibleTypeAnnotations"></param>
             /// <param name="constantPool"></param>
-            Metadata(string[][] genericMetaData, object[][] annotations, MethodParametersEntry[][] methodParameters, IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations, IReadOnlyList<TypeAnnotationReader>[] fieldRuntimeVisibleTypeAnnotations, IReadOnlyList<TypeAnnotationReader>[] methodRuntimeVisibleTypeAnnotations, object[] constantPool)
+            Metadata(string[][] genericMetaData, object[][] annotations, MethodParametersEntry[][] methodParameters, TypeAnnotationTable runtimeVisibleTypeAnnotations, TypeAnnotationTable[] fieldRuntimeVisibleTypeAnnotations, TypeAnnotationTable[] methodRuntimeVisibleTypeAnnotations, object[] constantPool)
             {
                 this.genericMetaData = genericMetaData;
                 this.annotations = annotations;
@@ -78,9 +74,9 @@ namespace IKVM.Runtime
                 string[][] genericMetaData = null;
                 object[][] annotations = null;
                 MethodParametersEntry[][] methodParameters = null;
-                IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations = null;
-                IReadOnlyList<TypeAnnotationReader>[] fieldRuntimeVisibleTypeAnnotations = null;
-                IReadOnlyList<TypeAnnotationReader>[] methodRuntimeVisibleTypeAnnotations = null;
+                TypeAnnotationTable runtimeVisibleTypeAnnotations = TypeAnnotationTable.Empty;
+                TypeAnnotationTable[] fieldRuntimeVisibleTypeAnnotations = null;
+                TypeAnnotationTable[] methodRuntimeVisibleTypeAnnotations = null;
 
                 if (classFile.EnclosingMethod != null)
                 {
@@ -100,7 +96,7 @@ namespace IKVM.Runtime
                     annotations[0] = classFile.Annotations;
                 }
 
-                if (classFile.RuntimeVisibleTypeAnnotations != null)
+                if (classFile.RuntimeVisibleTypeAnnotations.Count > 0)
                 {
                     runtimeVisibleTypeAnnotations = classFile.RuntimeVisibleTypeAnnotations;
                 }
@@ -141,9 +137,9 @@ namespace IKVM.Runtime
                         methodParameters[i] = classFile.Methods[i].MethodParameters;
                     }
 
-                    if (classFile.Methods[i].RuntimeVisibleTypeAnnotations != null)
+                    if (classFile.Methods[i].RuntimeVisibleTypeAnnotations.Count > 0)
                     {
-                        methodRuntimeVisibleTypeAnnotations ??= new IReadOnlyList<TypeAnnotationReader>[classFile.Methods.Length];
+                        methodRuntimeVisibleTypeAnnotations ??= new TypeAnnotationTable[classFile.Methods.Length];
                         methodRuntimeVisibleTypeAnnotations[i] = classFile.Methods[i].RuntimeVisibleTypeAnnotations;
                     }
                 }
@@ -164,16 +160,16 @@ namespace IKVM.Runtime
                         annotations[4][i] = classFile.Fields[i].Annotations;
                     }
 
-                    if (classFile.Fields[i].RuntimeVisibleTypeAnnotations != null)
+                    if (classFile.Fields[i].RuntimeVisibleTypeAnnotations.Count > 0)
                     {
-                        fieldRuntimeVisibleTypeAnnotations ??= new IReadOnlyList<TypeAnnotationReader>[classFile.Fields.Length];
+                        fieldRuntimeVisibleTypeAnnotations ??= new TypeAnnotationTable[classFile.Fields.Length];
                         fieldRuntimeVisibleTypeAnnotations[i] = classFile.Fields[i].RuntimeVisibleTypeAnnotations;
                     }
                 }
 
-                if (genericMetaData != null || annotations != null || methodParameters != null || runtimeVisibleTypeAnnotations != null || fieldRuntimeVisibleTypeAnnotations != null || methodRuntimeVisibleTypeAnnotations != null)
+                if (genericMetaData != null || annotations != null || methodParameters != null || runtimeVisibleTypeAnnotations.Count > 0 || fieldRuntimeVisibleTypeAnnotations != null || methodRuntimeVisibleTypeAnnotations != null)
                 {
-                    var constantPool = runtimeVisibleTypeAnnotations != null || fieldRuntimeVisibleTypeAnnotations != null || methodRuntimeVisibleTypeAnnotations != null ? classFile.GetConstantPool() : null;
+                    var constantPool = runtimeVisibleTypeAnnotations.Count > 0 || fieldRuntimeVisibleTypeAnnotations != null || methodRuntimeVisibleTypeAnnotations != null ? classFile.GetConstantPool() : null;
                     return new Metadata(genericMetaData, annotations, methodParameters, runtimeVisibleTypeAnnotations, fieldRuntimeVisibleTypeAnnotations, methodRuntimeVisibleTypeAnnotations, constantPool);
                 }
 
@@ -278,7 +274,7 @@ namespace IKVM.Runtime
 
             internal static byte[] GetRawTypeAnnotations(Metadata m)
             {
-                if (m != null && m.runtimeVisibleTypeAnnotations != null)
+                if (m != null && m.runtimeVisibleTypeAnnotations.Count > 0)
                     return SerializeTypeAnnotations(m.runtimeVisibleTypeAnnotations);
                 else
                     return null;
@@ -300,17 +296,14 @@ namespace IKVM.Runtime
                     return null;
             }
 
-            static byte[] SerializeTypeAnnotations(IReadOnlyList<TypeAnnotationReader> annotations)
+            static byte[] SerializeTypeAnnotations(TypeAnnotationTable? annotations)
             {
                 if (annotations == null)
                     return null;
 
                 var builder = new BlobBuilder();
                 var encoder = new TypeAnnotationTableEncoder(builder);
-
-                foreach (var i in annotations)
-                    encoder.Encode(i.Record);
-
+                annotations.Value.WriteTo(ref encoder);
                 return builder.ToArray();
             }
 

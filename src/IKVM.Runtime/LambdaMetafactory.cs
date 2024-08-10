@@ -81,15 +81,15 @@ namespace IKVM.Runtime
             ClassFile.ConstantPoolItemMethodType[] bridges = null;
             if (bsm.ArgumentCount > 3)
             {
-                AltFlags flags = (AltFlags)classFile.GetConstantPoolConstantInteger(bsm.GetArgument(3));
+                AltFlags flags = (AltFlags)classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(3));
                 serializable = (flags & AltFlags.Serializable) != 0;
                 int argpos = 4;
                 if ((flags & AltFlags.Markers) != 0)
                 {
-                    markers = new RuntimeJavaType[classFile.GetConstantPoolConstantInteger(bsm.GetArgument(argpos++))];
+                    markers = new RuntimeJavaType[classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(argpos++))];
                     for (int i = 0; i < markers.Length; i++)
                     {
-                        if ((markers[i] = classFile.GetConstantPoolClassType(bsm.GetArgument(argpos++))).IsUnloadable)
+                        if ((markers[i] = classFile.GetConstantPoolClassType((ClassConstantHandle)bsm.GetArgument(argpos++))).IsUnloadable)
                         {
                             Fail("unloadable marker");
                             return false;
@@ -98,10 +98,10 @@ namespace IKVM.Runtime
                 }
                 if ((flags & AltFlags.Bridges) != 0)
                 {
-                    bridges = new ClassFile.ConstantPoolItemMethodType[classFile.GetConstantPoolConstantInteger(bsm.GetArgument(argpos++))];
+                    bridges = new ClassFile.ConstantPoolItemMethodType[classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(argpos++))];
                     for (int i = 0; i < bridges.Length; i++)
                     {
-                        bridges[i] = classFile.GetConstantPoolConstantMethodType(bsm.GetArgument(argpos++));
+                        bridges[i] = classFile.GetConstantPoolConstantMethodType((MethodTypeConstantHandle)bsm.GetArgument(argpos++));
                         if (HasUnloadable(bridges[i]))
                         {
                             Fail("unloadable bridge");
@@ -110,9 +110,10 @@ namespace IKVM.Runtime
                     }
                 }
             }
-            ClassFile.ConstantPoolItemMethodType samMethodType = classFile.GetConstantPoolConstantMethodType(bsm.GetArgument(0));
-            ClassFile.ConstantPoolItemMethodHandle implMethod = classFile.GetConstantPoolConstantMethodHandle(bsm.GetArgument(1));
-            ClassFile.ConstantPoolItemMethodType instantiatedMethodType = classFile.GetConstantPoolConstantMethodType(bsm.GetArgument(2));
+
+            var samMethodType = classFile.GetConstantPoolConstantMethodType((MethodTypeConstantHandle)bsm.GetArgument(0));
+            var implMethod = classFile.GetConstantPoolConstantMethodHandle((MethodHandleConstantHandle)bsm.GetArgument(1));
+            var instantiatedMethodType = classFile.GetConstantPoolConstantMethodType((MethodTypeConstantHandle)bsm.GetArgument(2));
             if (HasUnloadable(samMethodType)
                 || HasUnloadable((ClassFile.ConstantPoolItemMI)implMethod.MemberConstantPoolItem)
                 || HasUnloadable(instantiatedMethodType))
@@ -120,6 +121,7 @@ namespace IKVM.Runtime
                 Fail("bsm args has unloadable");
                 return false;
             }
+
             RuntimeJavaType interfaceType = cpi.GetRetType();
             RuntimeJavaMethod[] methodList;
             if (!CheckSupportedInterfaces(context.TypeWrapper, interfaceType, markers, bridges, out methodList))
@@ -256,9 +258,7 @@ namespace IKVM.Runtime
 
         private static RuntimeJavaType GetImplReturnType(ClassFile.ConstantPoolItemMethodHandle implMethod)
         {
-            return implMethod.Kind == ReferenceKind.NewInvokeSpecial
-                ? implMethod.Member.DeclaringType
-                : ((RuntimeJavaMethod)implMethod.Member).ReturnType;
+            return implMethod.Kind == MethodHandleKind.NewInvokeSpecial ? implMethod.Member.DeclaringType : ((RuntimeJavaMethod)implMethod.Member).ReturnType;
         }
 
         private static bool IsAdaptable(RuntimeJavaType Q, RuntimeJavaType S, bool isReturn)
@@ -539,9 +539,9 @@ namespace IKVM.Runtime
                 {
                     switch (implMethod.Kind)
                     {
-                        case ReferenceKind.InvokeInterface:
-                        case ReferenceKind.InvokeVirtual:
-                        case ReferenceKind.InvokeSpecial:
+                        case MethodHandleKind.InvokeInterface:
+                        case MethodHandleKind.InvokeVirtual:
+                        case MethodHandleKind.InvokeSpecial:
                             opc = OpCodes.Ldflda;
                             break;
                     }
@@ -604,15 +604,15 @@ namespace IKVM.Runtime
             }
             switch (implMethod.Kind)
             {
-                case ReferenceKind.InvokeVirtual:
-                case ReferenceKind.InvokeInterface:
+                case MethodHandleKind.InvokeVirtual:
+                case MethodHandleKind.InvokeInterface:
                     ((RuntimeJavaMethod)implMethod.Member).EmitCallvirt(ilgen);
                     break;
-                case ReferenceKind.NewInvokeSpecial:
+                case MethodHandleKind.NewInvokeSpecial:
                     ((RuntimeJavaMethod)implMethod.Member).EmitNewobj(ilgen);
                     break;
-                case ReferenceKind.InvokeStatic:
-                case ReferenceKind.InvokeSpecial:
+                case MethodHandleKind.InvokeStatic:
+                case MethodHandleKind.InvokeSpecial:
                     ((RuntimeJavaMethod)implMethod.Member).EmitCall(ilgen);
                     break;
                 default:
@@ -768,15 +768,15 @@ namespace IKVM.Runtime
             }
         }
 
-        private static bool IsSupportedImplMethod(ClassFile.ConstantPoolItemMethodHandle implMethod, RuntimeJavaType caller, RuntimeJavaType[] captured, ClassFile.ConstantPoolItemMethodType instantiatedMethodType)
+        static bool IsSupportedImplMethod(ClassFile.ConstantPoolItemMethodHandle implMethod, RuntimeJavaType caller, RuntimeJavaType[] captured, ClassFile.ConstantPoolItemMethodType instantiatedMethodType)
         {
             switch (implMethod.Kind)
             {
-                case ReferenceKind.InvokeVirtual:
-                case ReferenceKind.InvokeInterface:
-                case ReferenceKind.NewInvokeSpecial:
-                case ReferenceKind.InvokeStatic:
-                case ReferenceKind.InvokeSpecial:
+                case MethodHandleKind.InvokeVirtual:
+                case MethodHandleKind.InvokeInterface:
+                case MethodHandleKind.NewInvokeSpecial:
+                case MethodHandleKind.InvokeStatic:
+                case MethodHandleKind.InvokeSpecial:
                     break;
                 default:
                     return false;
@@ -973,7 +973,7 @@ namespace IKVM.Runtime
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(0)) == ClassFile.ConstantType.MethodType
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(1)) == ClassFile.ConstantType.MethodHandle
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(2)) == ClassFile.ConstantType.MethodType
-                && (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex)).Kind == ReferenceKind.InvokeStatic
+                && (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex)).Kind == MethodHandleKind.InvokeStatic
                 && mh.Member != null
                 && IsLambdaMetafactory(mh.Member);
         }
@@ -1000,48 +1000,42 @@ namespace IKVM.Runtime
             AltFlags flags;
             int argpos = 4;
             return bsm.ArgumentCount >= 4
-                && (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex)).Kind == ReferenceKind.InvokeStatic
+                && (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex)).Kind == MethodHandleKind.InvokeStatic
                 && mh.Member != null
                 && IsLambdaAltMetafactory(mh.Member)
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(0)) == ClassFile.ConstantType.MethodType
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(1)) == ClassFile.ConstantType.MethodHandle
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(2)) == ClassFile.ConstantType.MethodType
                 && classFile.GetConstantPoolConstantType(bsm.GetArgument(3)) == ClassFile.ConstantType.Integer
-                && ((flags = (AltFlags)classFile.GetConstantPoolConstantInteger(bsm.GetArgument(3))) & ~AltFlags.Mask) == 0
+                && ((flags = (AltFlags)classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(3))) & ~AltFlags.Mask) == 0
                 && ((flags & AltFlags.Markers) == 0 || CheckOptionalArgs(classFile, bsm, ClassFile.ConstantType.Class, ref argpos))
                 && ((flags & AltFlags.Bridges) == 0 || CheckOptionalArgs(classFile, bsm, ClassFile.ConstantType.MethodType, ref argpos))
                 && argpos == bsm.ArgumentCount;
         }
 
-        private static bool IsLambdaAltMetafactory(RuntimeJavaMember mw)
+        static bool IsLambdaAltMetafactory(RuntimeJavaMember mw)
         {
             return mw.Name == "altMetafactory"
                 && mw.Signature == "(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;"
                 && mw.DeclaringType.Name == "java.lang.invoke.LambdaMetafactory";
         }
 
-        private static bool CheckOptionalArgs(ClassFile classFile, ClassFile.BootstrapMethod bsm, ClassFile.ConstantType type, ref int argpos)
+        static bool CheckOptionalArgs(ClassFile classFile, ClassFile.BootstrapMethod bsm, ClassFile.ConstantType type, ref int argpos)
         {
             if (bsm.ArgumentCount - argpos < 1)
-            {
                 return false;
-            }
+
             if (classFile.GetConstantPoolConstantType(bsm.GetArgument(argpos)) != ClassFile.ConstantType.Integer)
-            {
                 return false;
-            }
-            int count = classFile.GetConstantPoolConstantInteger(bsm.GetArgument(argpos++));
+
+            int count = classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(argpos++));
             if (count < 0 || bsm.ArgumentCount - argpos < count)
-            {
                 return false;
-            }
+
             for (int i = 0; i < count; i++)
-            {
                 if (classFile.GetConstantPoolConstantType(bsm.GetArgument(argpos++)) != type)
-                {
                     return false;
-                }
-            }
+
             return true;
         }
 

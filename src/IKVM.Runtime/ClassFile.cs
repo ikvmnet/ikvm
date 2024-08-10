@@ -22,7 +22,6 @@
   
 */
 using System;
-using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -33,7 +32,7 @@ using IKVM.ByteCode.Reading;
 namespace IKVM.Runtime
 {
 
-    sealed partial class ClassFile
+    sealed partial class ClassFile : IDisposable
     {
 
         const ushort FLAG_MASK_DEPRECATED = 0x100;
@@ -46,28 +45,28 @@ namespace IKVM.Runtime
         const ushort FLAG_MODULE_INITIALIZER = 0x8000;
 
         readonly RuntimeContext context;
-        readonly ClassReader reader;
+        readonly IKVM.ByteCode.Reading.ClassFile clazz;
 
-        ConstantPoolItem[] constantpool;
-        string[] utf8_cp;
+        readonly ConstantPoolItem[] constantpool;
+        readonly string[] utf8_cp;
 
         // Modifiers is a ushort, so the next four fields combine into two 32 bit slots
         Modifiers access_flags;
         ushort flags;
-        ConstantPoolItemClass[] interfaces;
-        Field[] fields;
-        Method[] methods;
-        string sourceFile;
+        readonly ConstantPoolItemClass[] interfaces;
+        readonly Field[] fields;
+        readonly Method[] methods;
+        readonly string sourceFile;
 #if IMPORTER
         string sourcePath;
 #endif
-        string ikvmAssembly;
-        InnerClass[] innerClasses;
-        object[] annotations;
-        string signature;
-        string[] enclosingMethod;
-        BootstrapMethod[] bootstrapMethods;
-        TypeAnnotationReaderCollection runtimeVisibleTypeAnnotations;
+        readonly string ikvmAssembly;
+        readonly InnerClass[] innerClasses;
+        readonly object[] annotations;
+        readonly string signature;
+        readonly string[] enclosingMethod;
+        readonly BootstrapMethod[] bootstrapMethods;
+        readonly TypeAnnotationTable runtimeVisibleTypeAnnotations = TypeAnnotationTable.Empty;
 
 #if IMPORTER
 
@@ -83,7 +82,8 @@ namespace IKVM.Runtime
         {
             try
             {
-                return GetClassName(ClassReader.Read(bytes.AsMemory(offset, length)), out isstub);
+                using var clazz = IKVM.ByteCode.Reading.ClassFile.Read(bytes.AsMemory(offset, length));
+                return GetClassName(clazz, out isstub);
             }
             catch (UnsupportedClassVersionException e)
             {
@@ -103,14 +103,14 @@ namespace IKVM.Runtime
         /// <returns></returns>
         /// <exception cref="UnsupportedClassVersionError"></exception>
         /// <exception cref="ClassFormatError"></exception>
-        static string GetClassName(ClassReader reader, out bool isstub)
+        static string GetClassName(IKVM.ByteCode.Reading.ClassFile reader, out bool isstub)
         {
             if (reader.Version < new ClassFormatVersion(45, 3) || reader.Version > 52)
                 throw new UnsupportedClassVersionError(reader.Version);
 
             // this is a terrible way to go about encoding this information
-            isstub = reader.Constants.OfType<Utf8ConstantReader>().Any(i => i.Value == "IKVM.NET.Assembly");
-            return string.Intern(reader.This.Name.Value.Replace('/', '.'));
+            isstub = reader.Constants.Any(i => i.Kind == ConstantKind.Utf8 && reader.Constants.Get((Utf8ConstantHandle)i).Value == "IKVM.NET.Assembly");
+            return string.Intern(reader.Constants.Get(reader.This).Name.Replace('/', '.'));
         }
 
 #endif
@@ -119,79 +119,80 @@ namespace IKVM.Runtime
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="reader"></param>
+        /// <param name="clazz"></param>
         /// <param name="inputClassName"></param>
         /// <param name="options"></param>
         /// <param name="constantPoolPatches"></param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="UnsupportedClassVersionError"></exception>
         /// <exception cref="ClassFormatError"></exception>
-        internal ClassFile(RuntimeContext context, ClassReader reader, string inputClassName, ClassFileParseOptions options, object[] constantPoolPatches)
+        internal ClassFile(RuntimeContext context, IKVM.ByteCode.Reading.ClassFile clazz, string inputClassName, ClassFileParseOptions options, object[] constantPoolPatches)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
-            this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
+            this.clazz = clazz ?? throw new ArgumentNullException(nameof(clazz));
 
             try
             {
-                if (reader.Version < new ClassFormatVersion(45, 3) || reader.Version > 52)
-                    throw new UnsupportedClassVersionError(reader.Version);
+                if (clazz.Version < new ClassFormatVersion(45, 3) || clazz.Version > 52)
+                    throw new UnsupportedClassVersionError(clazz.Version);
 
-                constantpool = new ConstantPoolItem[reader.Constants.Count];
-                utf8_cp = new string[reader.Constants.Count];
-                for (int i = 1; i < reader.Constants.Count; i++)
+                // load a copy of the constant pool using our own custom class hierarchy, reading data from IKVM.ByteCdoe
+                constantpool = new ConstantPoolItem[clazz.Constants.SlotCount];
+                utf8_cp = new string[clazz.Constants.SlotCount];
+                for (ushort i = 1; i < clazz.Constants.SlotCount; i++)
                 {
-                    switch (reader.Constants[i])
+                    switch (clazz.Constants.GetKind(new ConstantHandle(ConstantKind.Unknown, i)))
                     {
-                        case null:
+                        case ConstantKind.Unknown:
                             // longs and doubles can leave holes in the constant pool
                             break;
-                        case ClassConstantReader clazzConstant:
-                            constantpool[i] = new ConstantPoolItemClass(context, clazzConstant);
+                        case ConstantKind.Class:
+                            constantpool[i] = new ConstantPoolItemClass(context, clazz.Constants.Read(new ClassConstantHandle(i)));
                             break;
-                        case DoubleConstantReader doubleConstant:
-                            constantpool[i] = new ConstantPoolItemDouble(context, doubleConstant);
+                        case ConstantKind.Double:
+                            constantpool[i] = new ConstantPoolItemDouble(context, clazz.Constants.Read(new DoubleConstantHandle(i)));
                             break;
-                        case FieldrefConstantReader fieldRefConstant:
-                            constantpool[i] = new ConstantPoolItemFieldref(context, fieldRefConstant);
+                        case ConstantKind.Fieldref:
+                            constantpool[i] = new ConstantPoolItemFieldref(context, clazz.Constants.Read(new FieldrefConstantHandle(i)));
                             break;
-                        case FloatConstantReader floatConstant:
-                            constantpool[i] = new ConstantPoolItemFloat(context, floatConstant);
+                        case ConstantKind.Float:
+                            constantpool[i] = new ConstantPoolItemFloat(context, clazz.Constants.Read(new FloatConstantHandle(i)));
                             break;
-                        case IntegerConstantReader integerConstant:
-                            constantpool[i] = new ConstantPoolItemInteger(context, integerConstant);
+                        case ConstantKind.Integer:
+                            constantpool[i] = new ConstantPoolItemInteger(context, clazz.Constants.Read(new IntegerConstantHandle(i)));
                             break;
-                        case InterfaceMethodrefConstantReader interfaceMethodrefConstant:
-                            constantpool[i] = new ConstantPoolItemInterfaceMethodref(context, interfaceMethodrefConstant);
+                        case ConstantKind.InterfaceMethodref:
+                            constantpool[i] = new ConstantPoolItemInterfaceMethodref(context, clazz.Constants.Read(new InterfaceMethodrefConstantHandle(i)));
                             break;
-                        case LongConstantReader longConstant:
-                            constantpool[i] = new ConstantPoolItemLong(context, longConstant);
+                        case ConstantKind.Long:
+                            constantpool[i] = new ConstantPoolItemLong(context, clazz.Constants.Read(new LongConstantHandle(i)));
                             break;
-                        case MethodrefConstantReader methodrefConstantReader:
-                            constantpool[i] = new ConstantPoolItemMethodref(context, methodrefConstantReader);
+                        case ConstantKind.Methodref:
+                            constantpool[i] = new ConstantPoolItemMethodref(context, clazz.Constants.Read(new MethodrefConstantHandle(i)));
                             break;
-                        case NameAndTypeConstantReader nameAndType:
-                            constantpool[i] = new ConstantPoolItemNameAndType(context, nameAndType);
+                        case ConstantKind.NameAndType:
+                            constantpool[i] = new ConstantPoolItemNameAndType(context, clazz.Constants.Read(new NameAndTypeConstantHandle(i)));
                             break;
-                        case MethodHandleConstantReader methodHandle:
-                            if (reader.Version < 51)
+                        case ConstantKind.MethodHandle:
+                            if (clazz.Version < 51)
                                 goto default;
-                            constantpool[i] = new ConstantPoolItemMethodHandle(context, methodHandle);
+                            constantpool[i] = new ConstantPoolItemMethodHandle(context, clazz.Constants.Read(new MethodHandleConstantHandle(i)));
                             break;
-                        case MethodTypeConstantReader methodType:
-                            if (reader.Version < 51)
+                        case ConstantKind.MethodType:
+                            if (clazz.Version < 51)
                                 goto default;
-                            constantpool[i] = new ConstantPoolItemMethodType(context, methodType);
+                            constantpool[i] = new ConstantPoolItemMethodType(context, clazz.Constants.Read(new MethodTypeConstantHandle(i)));
                             break;
-                        case InvokeDynamicConstantReader invokeDynamic:
-                            if (reader.Version < 51)
+                        case ConstantKind.InvokeDynamic:
+                            if (clazz.Version < 51)
                                 goto default;
-                            constantpool[i] = new ConstantPoolItemInvokeDynamic(context, invokeDynamic);
+                            constantpool[i] = new ConstantPoolItemInvokeDynamic(context, clazz.Constants.Read(new InvokeDynamicConstantHandle(i)));
                             break;
-                        case StringConstantReader stringConstant:
-                            constantpool[i] = new ConstantPoolItemString(context, stringConstant);
+                        case ConstantKind.String:
+                            constantpool[i] = new ConstantPoolItemString(context, clazz.Constants.Read(new StringConstantHandle(i)));
                             break;
-                        case Utf8ConstantReader utf8ConstantReader:
-                            utf8_cp[i] = utf8ConstantReader.Value;
+                        case ConstantKind.Utf8:
+                            utf8_cp[i] = clazz.Constants.Read(new Utf8ConstantHandle(i)).Value;
                             break;
                         default:
                             throw new ClassFormatError("Unknown constant type.");
@@ -201,7 +202,7 @@ namespace IKVM.Runtime
                 if (constantPoolPatches != null)
                     PatchConstantPool(constantPoolPatches, utf8_cp, inputClassName);
 
-                for (int i = 1; i < reader.Constants.Count; i++)
+                for (int i = 1; i < clazz.Constants.SlotCount; i++)
                 {
                     if (constantpool[i] != null)
                     {
@@ -226,20 +227,20 @@ namespace IKVM.Runtime
                     }
                 }
 
-                access_flags = (Modifiers)reader.AccessFlags;
+                access_flags = (Modifiers)clazz.AccessFlags;
 
                 // NOTE although the vmspec says (in 4.1) that interfaces must be marked abstract, earlier versions of
                 // javac (JDK 1.1) didn't do this, so the VM doesn't enforce this rule for older class files.
                 // NOTE although the vmspec implies (in 4.1) that ACC_SUPER is illegal on interfaces, it doesn't enforce this
                 // for older class files.
                 // (See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6320322)
-                if ((IsInterface && IsFinal) || (IsAbstract && IsFinal) || (reader.Version >= 49 && IsAnnotation && !IsInterface) || (reader.Version >= 49 && IsInterface && (!IsAbstract || IsSuper || IsEnum)))
+                if ((IsInterface && IsFinal) || (IsAbstract && IsFinal) || (clazz.Version >= 49 && IsAnnotation && !IsInterface) || (clazz.Version >= 49 && IsInterface && (!IsAbstract || IsSuper || IsEnum)))
                     throw new ClassFormatError("{0} (Illegal class modifiers 0x{1:X})", inputClassName, access_flags);
 
-                ValidateConstantPoolItemClass(inputClassName, reader.Record.ThisClass.Index);
-                ValidateConstantPoolItemClass(inputClassName, reader.Record.SuperClass.Index);
+                ValidateConstantPoolItemClass(inputClassName, clazz.This);
+                ValidateConstantPoolItemClass(inputClassName, clazz.Super);
 
-                if (IsInterface && (reader.Record.SuperClass.Index == 0 || SuperClass.Name != "java.lang.Object"))
+                if (IsInterface && (clazz.Super.IsNil || SuperClass.Name != "java.lang.Object"))
                     throw new ClassFormatError("{0} (Interfaces must have java.lang.Object as superclass)", Name);
 
                 // most checks are already done by ConstantPoolItemClass.Resolve, but since it allows
@@ -247,14 +248,14 @@ namespace IKVM.Runtime
                 if (Name[0] == '[')
                     throw new ClassFormatError("Bad name");
 
-                interfaces = new ConstantPoolItemClass[reader.Interfaces.Count];
+                interfaces = new ConstantPoolItemClass[clazz.Interfaces.Count];
                 for (int i = 0; i < interfaces.Length; i++)
                 {
-                    int index = reader.Interfaces[i].Record.Class.Index;
-                    if (index == 0 || index >= constantpool.Length)
+                    var handle = clazz.Interfaces[i].Class;
+                    if (handle.IsNil || handle.Slot >= constantpool.Length)
                         throw new ClassFormatError("{0} (Illegal constant pool index)", Name);
 
-                    var cpi = constantpool[index] as ConstantPoolItemClass;
+                    var cpi = constantpool[handle.Slot] as ConstantPoolItemClass;
                     if (cpi == null)
                         throw new ClassFormatError("{0} (Interface name has bad constant type)", Name);
 
@@ -263,25 +264,25 @@ namespace IKVM.Runtime
 
                 CheckDuplicates(interfaces, "Repetitive interface name");
 
-                fields = new Field[reader.Fields.Count];
-                for (int i = 0; i < reader.Fields.Count; i++)
+                fields = new Field[clazz.Fields.Count];
+                for (int i = 0; i < clazz.Fields.Count; i++)
                 {
-                    fields[i] = new Field(this, utf8_cp, reader.Fields[i]);
+                    fields[i] = new Field(this, utf8_cp, clazz.Fields[i]);
                     var name = fields[i].Name;
 
-                    if (!IsValidFieldName(name, reader.Version))
+                    if (!IsValidFieldName(name, clazz.Version))
                         throw new ClassFormatError("{0} (Illegal field name \"{1}\")", Name, name);
                 }
 
                 CheckDuplicates<FieldOrMethod>(fields, "Repetitive field name/signature");
 
-                methods = new Method[reader.Methods.Count];
-                for (int i = 0; i < reader.Methods.Count; i++)
+                methods = new Method[clazz.Methods.Count];
+                for (int i = 0; i < clazz.Methods.Count; i++)
                 {
-                    methods[i] = new Method(this, utf8_cp, options, reader.Methods[i]);
+                    methods[i] = new Method(this, utf8_cp, options, clazz.Methods[i]);
                     string name = methods[i].Name;
                     string sig = methods[i].Signature;
-                    if (!IsValidMethodName(name, reader.Version))
+                    if (!IsValidMethodName(name, clazz.Version))
                     {
                         if (!ReferenceEquals(name, StringConstants.INIT) && !ReferenceEquals(name, StringConstants.CLINIT))
                             throw new ClassFormatError("{0} (Illegal method name \"{1}\")", Name, name);
@@ -294,54 +295,48 @@ namespace IKVM.Runtime
 
                 CheckDuplicates<FieldOrMethod>(methods, "Repetitive method name/signature");
 
-                for (int i = 0; i < reader.Attributes.Count; i++)
+                for (int i = 0; i < clazz.Attributes.Count; i++)
                 {
-                    var attribute = reader.Attributes[i];
+                    var attribute = clazz.Attributes[i];
 
-                    switch (GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.Name.Index))
+                    switch (GetConstantPoolUtf8String(utf8_cp, attribute.Name))
                     {
-                        case "Deprecated":
-                            if (attribute is not DeprecatedAttributeReader deprecatedAttribute)
-                                throw new ClassFormatError("Invalid Deprecated attribute type.");
-
+                        case AttributeName.Deprecated:
+                            var deprecatedAttribute = (DeprecatedAttribute)attribute;
                             flags |= FLAG_MASK_DEPRECATED;
                             break;
-                        case "SourceFile":
-                            if (attribute is not SourceFileAttributeReader sourceFileAttribute)
-                                throw new ClassFormatError("Invalid SourceFile attribute type.");
-
-                            sourceFile = GetConstantPoolUtf8String(utf8_cp, sourceFileAttribute.Record.SourceFile.Index);
+                        case AttributeName.SourceFile:
+                            var sourceFileAttribute = (IKVM.ByteCode.Reading.SourceFileAttribute)attribute;
+                            sourceFile = GetConstantPoolUtf8String(utf8_cp, sourceFileAttribute.SourceFile);
                             break;
-                        case "InnerClasses":
+                        case AttributeName.InnerClasses:
                             if (MajorVersion < 49)
                                 goto default;
 
-                            if (attribute is not InnerClassesAttributeReader innerClassesAttribute)
-                                throw new ClassFormatError("Invalid InnerClasses attribute type.");
-
-                            innerClasses = new InnerClass[innerClassesAttribute.Items.Count];
+                            var innerClassesAttribute = (InnerClassesAttribute)attribute;
+                            innerClasses = new InnerClass[innerClassesAttribute.Table.Count];
                             for (int j = 0; j < innerClasses.Length; j++)
                             {
-                                var item = innerClassesAttribute.Items[j];
+                                var item = innerClassesAttribute.Table[j];
 
-                                innerClasses[j].innerClass = item.InnerClass?.Handle.Index ?? 0;
-                                innerClasses[j].outerClass = item.OuterClass?.Handle.Index ?? 0;
-                                innerClasses[j].name = item.InnerName?.Handle.Index ?? 0;
-                                innerClasses[j].accessFlags = (Modifiers)item.InnerClassAccessFlags;
+                                innerClasses[j].innerClass = item.Inner;
+                                innerClasses[j].outerClass = item.Outer;
+                                innerClasses[j].name = item.InnerName;
+                                innerClasses[j].accessFlags = (Modifiers)item.InnerAccessFlags;
 
-                                if (innerClasses[j].innerClass != 0 && !(GetConstantPoolItem(innerClasses[j].innerClass) is ConstantPoolItemClass))
+                                if (innerClasses[j].innerClass.IsNotNil && !(GetConstantPoolItem(innerClasses[j].innerClass) is ConstantPoolItemClass))
                                     throw new ClassFormatError("{0} (inner_class_info_index has bad constant pool index)", this.Name);
 
-                                if (innerClasses[j].outerClass != 0 && !(GetConstantPoolItem(innerClasses[j].outerClass) is ConstantPoolItemClass))
+                                if (innerClasses[j].outerClass.IsNotNil && !(GetConstantPoolItem(innerClasses[j].outerClass) is ConstantPoolItemClass))
                                     throw new ClassFormatError("{0} (outer_class_info_index has bad constant pool index)", this.Name);
 
-                                if (innerClasses[j].name != 0 && utf8_cp[innerClasses[j].name] == null)
+                                if (innerClasses[j].name.IsNotNil && utf8_cp[innerClasses[j].name.Slot] == null)
                                     throw new ClassFormatError("{0} (inner class name has bad constant pool index)", this.Name);
 
                                 if (innerClasses[j].innerClass == innerClasses[j].outerClass)
                                     throw new ClassFormatError("{0} (Class is both inner and outer class)", this.Name);
 
-                                if (innerClasses[j].innerClass != 0 && innerClasses[j].outerClass != 0)
+                                if (innerClasses[j].innerClass.IsNotNil && innerClasses[j].outerClass.IsNotNil)
                                 {
                                     MarkLinkRequiredConstantPoolItem(innerClasses[j].innerClass);
                                     MarkLinkRequiredConstantPoolItem(innerClasses[j].outerClass);
@@ -349,67 +344,59 @@ namespace IKVM.Runtime
                             }
 
                             break;
-                        case "Signature":
-                            if (reader.Version < 49)
+                        case AttributeName.Signature:
+                            if (clazz.Version < 49)
                                 goto default;
 
-                            if (attribute is not SignatureAttributeReader signatureAttribute)
-                                throw new ClassFormatError("Invalid Signature attribute type.");
-
-                            signature = GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Record.Signature.Index);
+                            var signatureAttribute = (IKVM.ByteCode.Reading.SignatureAttribute)attribute;
+                            signature = GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Signature);
                             break;
-                        case "EnclosingMethod":
-                            if (reader.Version < 49)
+                        case AttributeName.EnclosingMethod:
+                            if (clazz.Version < 49)
                                 goto default;
 
-                            if (attribute is not EnclosingMethodAttributeReader enclosingMethodAttribute)
-                                throw new ClassFormatError("Invalid EnclosingMethod attribute type.");
+                            var enclosingMethodAttribute = (IKVM.ByteCode.Reading.EnclosingMethodAttribute)attribute;
+                            var classHandle = enclosingMethodAttribute.Class;
+                            var methodHandle = enclosingMethodAttribute.Method;
+                            ValidateConstantPoolItemClass(inputClassName, classHandle);
 
-                            var classIndex = enclosingMethodAttribute.Record.Class.Index;
-                            var methodIndex = enclosingMethodAttribute.Record.Method.Index;
-                            ValidateConstantPoolItemClass(inputClassName, classIndex);
-
-                            if (methodIndex == 0)
+                            if (methodHandle.IsNil)
                             {
                                 enclosingMethod = new string[]
                                 {
-                                    GetConstantPoolClass(classIndex),
+                                    GetConstantPoolClass(classHandle),
                                     null,
                                     null
                                 };
                             }
                             else
                             {
-                                if (GetConstantPoolItem(methodIndex) is not ConstantPoolItemNameAndType m)
-                                    throw new ClassFormatError("{0} (Bad constant pool index #{1})", inputClassName, methodIndex);
+                                if (GetConstantPoolItem(methodHandle) is not ConstantPoolItemNameAndType m)
+                                    throw new ClassFormatError("{0} (Bad constant pool index #{1})", inputClassName, methodHandle);
 
                                 enclosingMethod = new string[]
                                 {
-                                    GetConstantPoolClass(classIndex),
-                                    GetConstantPoolUtf8String(utf8_cp, m.nameIndex),
-                                    GetConstantPoolUtf8String(utf8_cp, m.descriptorIndex).Replace('/', '.')
+                                    GetConstantPoolClass(classHandle),
+                                    GetConstantPoolUtf8String(utf8_cp, m.NameHandle),
+                                    GetConstantPoolUtf8String(utf8_cp, m.DescriptorHandle).Replace('/', '.')
                                 };
                             }
 
                             break;
-                        case "RuntimeVisibleAnnotations":
-                            if (reader.Version < 49)
+                        case AttributeName.RuntimeVisibleAnnotations:
+                            if (clazz.Version < 49)
                                 goto default;
 
-                            if (attribute is not RuntimeVisibleAnnotationsAttributeReader runtimeVisibleAnnotationsAttribute)
-                                throw new ClassFormatError("Invalid RuntimeVisibleAnnotations attribute type.");
-
+                            var runtimeVisibleAnnotationsAttribute = (RuntimeVisibleAnnotationsAttribute)attribute;
                             annotations = ReadAnnotations(runtimeVisibleAnnotationsAttribute.Annotations, this, utf8_cp);
                             break;
 #if IMPORTER
-                        case "RuntimeInvisibleAnnotations":
-                            if (reader.Version < 49)
+                        case AttributeName.RuntimeInvisibleAnnotations:
+                            if (clazz.Version < 49)
                                 goto default;
 
-                            if (attribute is not RuntimeInvisibleAnnotationsAttributeReader runtimeInvisibleAnnotationsAttribute)
-                                throw new ClassFormatError("Invalid RuntimeInvisibleAnnotations attribute type.");
-
-                            foreach (object[] annot in ReadAnnotations(runtimeInvisibleAnnotationsAttribute.Annotations, this, utf8_cp))
+                            var runtimeInvisibleAnnotationsAttribute = (RuntimeInvisibleAnnotationsAttribute)attribute;
+                            foreach (var annot in ReadAnnotations(runtimeInvisibleAnnotationsAttribute.Annotations, this, utf8_cp))
                             {
                                 if (annot[1].Equals("Likvm/lang/Internal;"))
                                 {
@@ -420,33 +407,30 @@ namespace IKVM.Runtime
 
                             break;
 #endif
-                        case "BootstrapMethods":
-                            if (reader.Version < 51)
+                        case AttributeName.BootstrapMethods:
+                            if (clazz.Version < 51)
                                 goto default;
 
-                            if (attribute is not BootstrapMethodsAttributeReader bootstrapMethodsAttribute)
-                                throw new ClassFormatError("Invalid BootstrapMethods attribute type.");
-
+                            var bootstrapMethodsAttribute = (BootstrapMethodsAttribute)attribute;
                             bootstrapMethods = ReadBootstrapMethods(bootstrapMethodsAttribute.Methods, this);
                             break;
-                        case "RuntimeVisibleTypeAnnotations":
-                            if (reader.Version < 52)
+                        case AttributeName.RuntimeVisibleTypeAnnotations:
+                            if (clazz.Version < 52)
                                 goto default;
 
-                            if (attribute is not RuntimeVisibleTypeAnnotationsAttributeReader runtimeVisibleTypeAnnotationsAttribute)
-                                throw new ClassFormatError("Invalid RuntimeVisibleTypeAnnotations attribute type.");
-
+                            var _runtimeVisibleTypeAnnotations = (IKVM.ByteCode.Reading.RuntimeVisibleTypeAnnotationsAttribute)attribute;
                             CreateUtf8ConstantPoolItems(utf8_cp);
-                            runtimeVisibleTypeAnnotations = runtimeVisibleTypeAnnotationsAttribute.Annotations;
+                            runtimeVisibleTypeAnnotations = _runtimeVisibleTypeAnnotations.TypeAnnotations;
                             break;
                         case "IKVM.NET.Assembly":
-                            if (attribute is not UnknownAttributeReader unknownAttributeReader)
-                                throw new ClassFormatError("Invalid IKVM.NET.Assembly attribute type.");
-
-                            if (unknownAttributeReader.Record.Data.Length != 2)
+                            if (attribute.Data.Length != 2)
                                 throw new ClassFormatError("IKVM.NET.Assembly attribute has incorrect length");
 
-                            ikvmAssembly = GetConstantPoolUtf8String(utf8_cp, BinaryPrimitives.ReadInt16BigEndian(unknownAttributeReader.Record.Data));
+                            var r = new ClassFormatReader(attribute.Data);
+                            if (r.TryReadU2(out var index) == false)
+                                throw new ClassFormatError("IKVM.NET.Assembly attribute has incorrect length");
+
+                            ikvmAssembly = GetConstantPoolUtf8String(utf8_cp, new(index));
                             break;
                         default:
                             break;
@@ -559,32 +543,35 @@ namespace IKVM.Runtime
 #endif
         }
 
-        void MarkLinkRequiredConstantPoolItem(int index)
+        void MarkLinkRequiredConstantPoolItem(ConstantHandle handle)
         {
-            if (index > 0 && index < constantpool.Length && constantpool[index] != null)
-            {
-                constantpool[index].MarkLinkRequired();
-            }
+            if (handle.Slot > 0 && handle.Slot < constantpool.Length && constantpool[handle.Slot] != null)
+                constantpool[handle.Slot].MarkLinkRequired();
         }
 
-        static BootstrapMethod[] ReadBootstrapMethods(IReadOnlyList<BootstrapMethodsAttributeMethodReader> methods, ClassFile classFile)
+        void MarkLinkRequiredConstantPoolItem(int index)
+        {
+            MarkLinkRequiredConstantPoolItem(new ConstantHandle(ConstantKind.Unknown, checked((ushort)index)));
+        }
+
+        static BootstrapMethod[] ReadBootstrapMethods(BootstrapMethodTable methods, ClassFile classFile)
         {
             var bsm = new BootstrapMethod[methods.Count];
             for (int i = 0; i < methods.Count; i++)
             {
                 var method = methods[i];
 
-                var bsm_index = method.Record.Method.Index;
-                if (bsm_index >= classFile.constantpool.Length || classFile.constantpool[bsm_index] is not ConstantPoolItemMethodHandle)
+                var bsm_index = method.Method;
+                if (bsm_index.Slot >= classFile.constantpool.Length || classFile.constantpool[bsm_index.Slot] is not ConstantPoolItemMethodHandle)
                     throw new ClassFormatError("bootstrap_method_index {0} has bad constant type in class file {1}", bsm_index, classFile.Name);
 
                 classFile.MarkLinkRequiredConstantPoolItem(bsm_index);
 
                 var argument_count = method.Arguments.Count;
-                var args = new ushort[argument_count];
+                var args = new ConstantHandle[argument_count];
                 for (int j = 0; j < args.Length; j++)
                 {
-                    var argument_index = method.Record.Arguments[j].Index;
+                    var argument_index = method.Arguments[j];
                     if (classFile.IsValidConstant(argument_index) == false)
                         throw new ClassFormatError("argument_index {0} has bad constant type in class file {1}", argument_index, classFile.Name);
 
@@ -598,13 +585,13 @@ namespace IKVM.Runtime
             return bsm;
         }
 
-        bool IsValidConstant(ushort index)
+        bool IsValidConstant(ConstantHandle handle)
         {
-            if (index < constantpool.Length && constantpool[index] != null)
+            if (handle.Slot < constantpool.Length && constantpool[handle.Slot] != null)
             {
                 try
                 {
-                    constantpool[index].GetConstantType();
+                    constantpool[handle.Slot].GetConstantType();
                     return true;
                 }
                 catch (InvalidOperationException)
@@ -616,9 +603,9 @@ namespace IKVM.Runtime
             return false;
         }
 
-        static object[] ReadAnnotations(AnnotationReaderCollection reader, ClassFile classFile, string[] utf8_cp)
+        static object[][] ReadAnnotations(AnnotationTable reader, ClassFile classFile, string[] utf8_cp)
         {
-            var annotations = new object[reader.Count];
+            var annotations = new object[reader.Count][];
 
             for (int i = 0; i < annotations.Length; i++)
                 annotations[i] = ReadAnnotation(reader[i], classFile, utf8_cp);
@@ -626,65 +613,70 @@ namespace IKVM.Runtime
             return annotations;
         }
 
-        static object ReadAnnotation(AnnotationReader reader, ClassFile classFile, string[] utf8_cp)
+        static object[] ReadAnnotation(IKVM.ByteCode.Reading.Annotation annotation, ClassFile classFile, string[] utf8_cp)
         {
-            var l = new object[2 + reader.Elements.Count * 2];
-            l[0] = AnnotationDefaultAttribute.TAG_ANNOTATION;
-            l[1] = classFile.GetConstantPoolUtf8String(utf8_cp, reader.Record.Type.Index);
-            for (int i = 0; i < reader.Elements.Count; i++)
+            var l = new object[2 + annotation.Elements.Count * 2];
+            l[0] = IKVM.Attributes.AnnotationDefaultAttribute.TAG_ANNOTATION;
+            l[1] = classFile.GetConstantPoolUtf8String(utf8_cp, annotation.Type);
+            for (int i = 0; i < annotation.Elements.Count; i++)
             {
-                l[2 + i * 2 + 0] = classFile.GetConstantPoolUtf8String(utf8_cp, reader.Record.Elements[i].Name.Index);
-                l[2 + i * 2 + 1] = ReadAnnotationElementValue(reader.Elements[i], classFile, utf8_cp);
+                l[2 + i * 2 + 0] = classFile.GetConstantPoolUtf8String(utf8_cp, annotation.Elements[i].Name);
+                l[2 + i * 2 + 1] = ReadAnnotationElementValue(annotation.Elements[i].Value, classFile, utf8_cp);
             }
 
             return l;
         }
 
-        static object ReadAnnotationElementValue(ElementValueReader reader, ClassFile classFile, string[] utf8_cp)
+        static object ReadAnnotationElementValue(in ElementValue reader, ClassFile classFile, string[] utf8_cp)
         {
             try
             {
-                switch (reader)
+                switch (reader.Kind)
                 {
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Boolean:
-                        return classFile.GetConstantPoolConstantInteger(r.Value.Handle.Index) != 0;
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Byte:
-                        return (byte)classFile.GetConstantPoolConstantInteger(r.Value.Handle.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Char:
-                        return (char)classFile.GetConstantPoolConstantInteger(r.Value.Handle.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Short:
-                        return (short)classFile.GetConstantPoolConstantInteger(r.Value.Handle.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Integer:
-                        return classFile.GetConstantPoolConstantInteger(r.Value.Handle.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Float:
-                        return classFile.GetConstantPoolConstantFloat(r.Value.Handle.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Long:
-                        return classFile.GetConstantPoolConstantLong(r.Value.Handle.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.Double:
-                        return classFile.GetConstantPoolConstantDouble(r.Value.Handle.Index);
-                    case ElementValueConstantReader r when r.Tag == IKVM.ByteCode.ElementValueTag.String:
-                        return classFile.GetConstantPoolUtf8String(utf8_cp, r.Value.Handle.Index);
-                    case ElementValueEnumConstantReader r:
+                    case ElementValueKind.Boolean:
+                        return classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)((ConstantElementValue)reader).Handle) != 0;
+                    case ElementValueKind.Byte:
+                        return (byte)classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)((ConstantElementValue)reader).Handle);
+                    case ElementValueKind.Char:
+                        return (char)classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)((ConstantElementValue)reader).Handle);
+                    case ElementValueKind.Short:
+                        return (short)classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)((ConstantElementValue)reader).Handle);
+                    case ElementValueKind.Integer:
+                        return classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)((ConstantElementValue)reader).Handle);
+                    case ElementValueKind.Float:
+                        return classFile.GetConstantPoolConstantFloat((FloatConstantHandle)((ConstantElementValue)reader).Handle);
+                    case ElementValueKind.Long:
+                        return classFile.GetConstantPoolConstantLong((LongConstantHandle)((ConstantElementValue)reader).Handle);
+                    case ElementValueKind.Double:
+                        return classFile.GetConstantPoolConstantDouble((DoubleConstantHandle)((ConstantElementValue)reader).Handle);
+                    case ElementValueKind.String:
+                        return classFile.GetConstantPoolUtf8String(utf8_cp, (Utf8ConstantHandle)((ConstantElementValue)reader).Handle);
+                    case ElementValueKind.Enum:
+                        var _enum = (EnumElementValue)reader;
                         return new object[] {
-                            AnnotationDefaultAttribute.TAG_ENUM,
-                            classFile.GetConstantPoolUtf8String(utf8_cp, r.TypeName.Handle.Index),
-                            classFile.GetConstantPoolUtf8String(utf8_cp, r.ConstantName.Handle.Index)
+                            IKVM.Attributes.AnnotationDefaultAttribute.TAG_ENUM,
+                            classFile.GetConstantPoolUtf8String(utf8_cp, _enum.TypeName),
+                            classFile.GetConstantPoolUtf8String(utf8_cp, _enum.ConstantName)
                         };
-                    case ElementValueClassReader r:
+                    case ElementValueKind.Class:
+                        var _class = (ClassElementValue)reader;
                         return new object[] {
-                            AnnotationDefaultAttribute.TAG_CLASS,
-                            classFile.GetConstantPoolUtf8String(utf8_cp, r.Class.Handle.Index)
+                            IKVM.Attributes.AnnotationDefaultAttribute.TAG_CLASS,
+                            classFile.GetConstantPoolUtf8String(utf8_cp, _class.Class)
                         };
-                    case ElementValueAnnotationReader r:
-                        return ReadAnnotation(r.Annotation, classFile, utf8_cp);
-                    case ElementValueArrayReader r:
-                        var array = new object[r.Values.Count + 1];
-                        array[0] = AnnotationDefaultAttribute.TAG_ARRAY;
-                        for (int i = 0; i < r.Values.Count; i++)
-                            array[i + 1] = ReadAnnotationElementValue(r.Values[i], classFile, utf8_cp);
+                    case ElementValueKind.Annotation:
+                        return ReadAnnotation(((AnnotationElementValue)reader).Annotation, classFile, utf8_cp);
+                    case ElementValueKind.Array:
+                        var _array = (ArrayElementValue)reader;
+
+                        var array = new object[_array.Count + 1];
+                        array[0] = IKVM.Attributes.AnnotationDefaultAttribute.TAG_ARRAY;
+                        for (int i = 0; i < _array.Count; i++)
+                            array[i + 1] = ReadAnnotationElementValue(_array[i], classFile, utf8_cp);
+
                         return array;
                     default:
-                        throw new ClassFormatError("Invalid tag {0} in annotation element_value", reader.Record.Tag);
+                        throw new ClassFormatError("Invalid tag {0} in annotation element_value", reader.Kind);
                 }
             }
             catch (NullReferenceException)
@@ -704,13 +696,13 @@ namespace IKVM.Runtime
 
             }
 
-            return new object[] { AnnotationDefaultAttribute.TAG_ERROR, "java.lang.IllegalArgumentException", "Wrong type at constant pool index" };
+            return new object[] { IKVM.Attributes.AnnotationDefaultAttribute.TAG_ERROR, "java.lang.IllegalArgumentException", "Wrong type at constant pool index" };
         }
 
-        private void ValidateConstantPoolItemClass(string classFile, ushort index)
+        private void ValidateConstantPoolItemClass(string classFile, ClassConstantHandle handle)
         {
-            if (index >= constantpool.Length || constantpool[index] is not ConstantPoolItemClass)
-                throw new ClassFormatError("{0} (Bad constant pool index #{1})", classFile, index);
+            if (handle.Slot >= constantpool.Length || constantpool[handle.Slot] is not ConstantPoolItemClass)
+                throw new ClassFormatError("{0} (Bad constant pool index #{1})", classFile, handle);
         }
 
         private static bool IsValidMethodName(string name, ClassFormatVersion version)
@@ -856,12 +848,12 @@ namespace IKVM.Runtime
             return true;
         }
 
-        internal int MajorVersion => reader.Version.Major;
+        internal int MajorVersion => clazz.Version.Major;
 
         internal void Link(RuntimeJavaType thisType, LoadMode mode)
         {
             // this is not just an optimization, it's required for anonymous classes to be able to refer to themselves
-            ((ConstantPoolItemClass)constantpool[reader.Record.ThisClass.Index]).LinkSelf(thisType);
+            ((ConstantPoolItemClass)constantpool[clazz.This.Slot]).LinkSelf(thisType);
 
             for (int i = 1; i < constantpool.Length; i++)
                 if (constantpool[i] != null)
@@ -893,125 +885,197 @@ namespace IKVM.Runtime
 
         internal bool IsReferenced(Field fld) => constantpool.OfType<ConstantPoolItemFieldref>().Any(i => i.Class == Name && i.Name == fld.Name && i.Signature == fld.Signature);
 
-        internal ConstantPoolItemFieldref GetFieldref(int index) => (ConstantPoolItemFieldref)constantpool[index];
-
-        // this won't throw an exception if index is invalid
-        // (used by IsSideEffectFreeStaticInitializer)
-        internal ConstantPoolItemFieldref SafeGetFieldref(int index)
+        internal ConstantPoolItemFieldref GetFieldref(FieldrefConstantHandle handle)
         {
-            if (index > 0 && index < constantpool.Length)
-                return constantpool[index] as ConstantPoolItemFieldref;
+            return (ConstantPoolItemFieldref)constantpool[handle.Slot];
+        }
+        internal ConstantPoolItemFieldref GetFieldref(int slot)
+        {
+            return GetFieldref(new FieldrefConstantHandle(checked((ushort)slot)));
+        }
+
+        /// <summary>
+        /// Version of GetFieldref that does not throw if the handle is invalid. Used by IsSideEffectFreeStaticInitializer.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        internal ConstantPoolItemFieldref SafeGetFieldref(ConstantHandle handle)
+        {
+            if (handle.IsNotNil && handle.Slot < constantpool.Length)
+                return constantpool[handle.Slot] as ConstantPoolItemFieldref;
 
             return null;
+        }
+
+        /// <summary>
+        /// Version of GetFieldref that does not throw if the handle is invalid. Used by IsSideEffectFreeStaticInitializer.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        internal ConstantPoolItemFieldref SafeGetFieldref(int index)
+        {
+            if (index > ushort.MaxValue || index < ushort.MinValue)
+                return null;
+            else
+                return SafeGetFieldref(new ConstantHandle(ConstantKind.Unknown, (ushort)index));
+        }
+
+        internal ConstantPoolItemMI GetMethodref(MethodrefConstantHandle handle)
+        {
+            return (ConstantPoolItemMI)constantpool[handle.Slot];
         }
 
         // NOTE this returns an MI, because it used for both normal methods and interface methods
-        internal ConstantPoolItemMI GetMethodref(int index) => (ConstantPoolItemMI)constantpool[index];
-
-        // this won't throw an exception if index is invalid
-        // (used by IsAccessBridge)
-        internal ConstantPoolItemMI SafeGetMethodref(int index)
+        internal ConstantPoolItemMI GetMethodref(int handle)
         {
-            if (index > 0 && index < constantpool.Length)
-                return constantpool[index] as ConstantPoolItemMI;
+            return GetMethodref(new MethodrefConstantHandle(checked((ushort)handle)));
+        }
+
+        /// <summary>
+        /// Version of GetMethodref that does not throw if the handle is invalid. Used by IsAccessBridge.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        internal ConstantPoolItemMI SafeGetMethodref(ConstantHandle handle)
+        {
+            if (handle.IsNotNil && handle.Slot < constantpool.Length)
+                return constantpool[handle.Slot] as ConstantPoolItemMI;
 
             return null;
         }
 
-        internal ConstantPoolItemInvokeDynamic GetInvokeDynamic(int index)
+        /// <summary>
+        /// Version of GetMethodref that does not throw if the handle is invalid. Used by IsAccessBridge.
+        /// </summary>
+        /// <param name="slot"></param>
+        /// <returns></returns>
+        internal ConstantPoolItemMI SafeGetMethodref(int slot)
         {
-            return (ConstantPoolItemInvokeDynamic)constantpool[index];
+            if (slot > ushort.MaxValue || slot < ushort.MinValue)
+                return null;
+            else
+                return SafeGetMethodref(new ConstantHandle(ConstantKind.Unknown, (ushort)slot));
         }
 
-        private ConstantPoolItem GetConstantPoolItem(int index)
+        internal ConstantPoolItemInvokeDynamic GetInvokeDynamic(InvokeDynamicConstantHandle handle)
         {
-            return constantpool[index];
+            return (ConstantPoolItemInvokeDynamic)constantpool[handle.Slot];
         }
 
-        internal string GetConstantPoolClass(int index)
+        private ConstantPoolItem GetConstantPoolItem(ConstantHandle handle)
         {
-            return ((ConstantPoolItemClass)constantpool[index]).Name;
+            return constantpool[handle.Slot];
         }
 
-        private bool SafeIsConstantPoolClass(int index)
+        internal string GetConstantPoolClass(ClassConstantHandle handle)
         {
-            if (index > 0 && index < constantpool.Length)
-                return constantpool[index] as ConstantPoolItemClass != null;
+            return ((ConstantPoolItemClass)constantpool[handle.Slot]).Name;
+        }
+
+        private bool SafeIsConstantPoolClass(ClassConstantHandle handle)
+        {
+            if (handle.Slot > 0 && handle.Slot < constantpool.Length)
+                return constantpool[handle.Slot] as ConstantPoolItemClass != null;
 
             return false;
         }
 
-        internal RuntimeJavaType GetConstantPoolClassType(int index)
+        internal RuntimeJavaType GetConstantPoolClassType(ClassConstantHandle handle)
         {
-            return ((ConstantPoolItemClass)constantpool[index]).GetClassType();
+            return ((ConstantPoolItemClass)constantpool[handle.Slot]).GetClassType();
         }
 
-        private string GetConstantPoolUtf8String(string[] utf8_cp, int index)
+
+        internal RuntimeJavaType GetConstantPoolClassType(int slot)
         {
-            var s = utf8_cp[index];
+            return GetConstantPoolClassType(new ClassConstantHandle(checked((ushort)slot)));
+        }
+        string GetConstantPoolUtf8String(string[] utf8_cp, Utf8ConstantHandle handle)
+        {
+            var s = utf8_cp[handle.Slot];
             if (s == null)
             {
-                if (reader.This.Handle.Index == 0)
+                if (clazz.This.IsNil)
                 {
-                    throw new ClassFormatError("Bad constant pool index #{0}", index);
+                    throw new ClassFormatError("Bad constant pool index #{0}", handle);
                 }
                 else
                 {
-                    throw new ClassFormatError("{0} (Bad constant pool index #{1})", this.Name, index);
+                    throw new ClassFormatError("{0} (Bad constant pool index #{1})", Name, handle);
                 }
             }
 
             return s;
         }
 
-        internal ConstantType GetConstantPoolConstantType(int index)
+        internal ConstantType GetConstantPoolConstantType(ConstantHandle handle)
         {
-            return constantpool[index].GetConstantType();
+            return constantpool[handle.Slot].GetConstantType();
         }
 
-        internal double GetConstantPoolConstantDouble(int index)
+        internal ConstantType GetConstantPoolConstantType(int slot)
         {
-            return ((ConstantPoolItemDouble)constantpool[index]).Value;
+            return GetConstantPoolConstantType(new ConstantHandle(ConstantKind.Unknown, checked((ushort)slot)));
         }
 
-        internal float GetConstantPoolConstantFloat(int index)
+        internal double GetConstantPoolConstantDouble(DoubleConstantHandle handle)
         {
-            return ((ConstantPoolItemFloat)constantpool[index]).Value;
+            return ((ConstantPoolItemDouble)constantpool[handle.Slot]).Value;
         }
 
-        internal int GetConstantPoolConstantInteger(int index)
+        internal float GetConstantPoolConstantFloat(FloatConstantHandle handle)
         {
-            return ((ConstantPoolItemInteger)constantpool[index]).Value;
+            return ((ConstantPoolItemFloat)constantpool[handle.Slot]).Value;
         }
 
-        internal long GetConstantPoolConstantLong(int index)
+        internal int GetConstantPoolConstantInteger(IntegerConstantHandle handle)
         {
-            return ((ConstantPoolItemLong)constantpool[index]).Value;
+            return ((ConstantPoolItemInteger)constantpool[handle.Slot]).Value;
         }
 
-        internal string GetConstantPoolConstantString(int index)
+        internal long GetConstantPoolConstantLong(LongConstantHandle handle)
         {
-            return ((ConstantPoolItemString)constantpool[index]).Value;
+            return ((ConstantPoolItemLong)constantpool[handle.Slot]).Value;
         }
 
-        internal ConstantPoolItemMethodHandle GetConstantPoolConstantMethodHandle(int index)
+        internal string GetConstantPoolConstantString(StringConstantHandle handle)
         {
-            return (ConstantPoolItemMethodHandle)constantpool[index];
+            return ((ConstantPoolItemString)constantpool[handle.Slot]).Value;
         }
 
-        internal ConstantPoolItemMethodType GetConstantPoolConstantMethodType(int index)
+        internal string GetConstantPoolConstantString(int slot)
         {
-            return (ConstantPoolItemMethodType)constantpool[index];
+            return GetConstantPoolConstantString(new StringConstantHandle(checked((ushort)slot)));
         }
 
-        internal object GetConstantPoolConstantLiveObject(int index)
+        internal ConstantPoolItemMethodHandle GetConstantPoolConstantMethodHandle(MethodHandleConstantHandle handle)
         {
-            return ((ConstantPoolItemLiveObject)constantpool[index]).Value;
+            return (ConstantPoolItemMethodHandle)constantpool[handle.Slot];
         }
 
-        internal string Name => GetConstantPoolClass(reader.Record.ThisClass.Index);
+        internal ConstantPoolItemMethodHandle GetConstantPoolConstantMethodHandle(int slot)
+        {
+            return GetConstantPoolConstantMethodHandle(new MethodHandleConstantHandle(checked((ushort)slot)));
+        }
 
-        internal ConstantPoolItemClass SuperClass => (ConstantPoolItemClass)constantpool[reader.Record.SuperClass.Index];
+        internal ConstantPoolItemMethodType GetConstantPoolConstantMethodType(MethodTypeConstantHandle handle)
+        {
+            return (ConstantPoolItemMethodType)constantpool[handle.Slot];
+        }
+
+        internal ConstantPoolItemMethodType GetConstantPoolConstantMethodType(int slot)
+        {
+            return GetConstantPoolConstantMethodType(new MethodTypeConstantHandle(checked((ushort)slot)));
+        }
+
+        internal object GetConstantPoolConstantLiveObject(int slot)
+        {
+            return ((ConstantPoolItemLiveObject)constantpool[slot]).Value;
+        }
+
+        internal string Name => GetConstantPoolClass(clazz.This);
+
+        internal ConstantPoolItemClass SuperClass => (ConstantPoolItemClass)constantpool[clazz.Super.Slot];
 
         internal Field[] Fields => fields;
 
@@ -1043,7 +1107,7 @@ namespace IKVM.Runtime
 
         internal string[] EnclosingMethod => enclosingMethod;
 
-        internal IReadOnlyList<TypeAnnotationReader> RuntimeVisibleTypeAnnotations => runtimeVisibleTypeAnnotations;
+        internal ref readonly TypeAnnotationTable RuntimeVisibleTypeAnnotations => ref runtimeVisibleTypeAnnotations;
 
         internal object[] GetConstantPool()
         {
@@ -1111,7 +1175,7 @@ namespace IKVM.Runtime
 			 */
             ConstantPoolItemFieldref fieldref;
             Field field;
-            if (m.Instructions[0].NormalizedOpCode == NormalizedByteCode.__ldc && SafeIsConstantPoolClass(m.Instructions[0].Arg1)
+            if (m.Instructions[0].NormalizedOpCode == NormalizedByteCode.__ldc && SafeIsConstantPoolClass(new ClassConstantHandle(checked((ushort)m.Instructions[0].Arg1)))
                 && m.Instructions[1].NormalizedOpCode == NormalizedByteCode.__invokevirtual && IsDesiredAssertionStatusMethodref(m.Instructions[1].Arg1)
                 && m.Instructions[2].NormalizedOpCode == NormalizedByteCode.__ifne && m.Instructions[2].TargetIndex == 5
                 && m.Instructions[3].NormalizedOpCode == NormalizedByteCode.__iconst && m.Instructions[3].Arg1 == 1
@@ -1131,13 +1195,9 @@ namespace IKVM.Runtime
             }
         }
 
-        private bool IsDesiredAssertionStatusMethodref(int cpi)
+        bool IsDesiredAssertionStatusMethodref(int cpi)
         {
-            ConstantPoolItemMethodref method = SafeGetMethodref(cpi) as ConstantPoolItemMethodref;
-            return method != null
-                && method.Class == "java.lang.Class"
-                && method.Name == "desiredAssertionStatus"
-                && method.Signature == "()Z";
+            return SafeGetMethodref(cpi) is ConstantPoolItemMethodref { Class: "java.lang.Class", Name: "desiredAssertionStatus", Signature: "()Z" };
         }
 
         private static bool HasBranchIntoRegion(Method.Instruction[] instructions, int checkStart, int checkEnd, int regionStart, int regionEnd)
@@ -1215,6 +1275,23 @@ namespace IKVM.Runtime
             }
             return false;
         }
+
+        /// <summary>
+        /// Dispses of the instance.
+        /// </summary>
+        public void Dispose()
+        {
+            clazz.Dispose();
+        }
+
+        /// <summary>
+        /// Finalizes the instance.
+        /// </summary>
+        ~ClassFile()
+        {
+            Dispose();
+        }
+
     }
 
 }
