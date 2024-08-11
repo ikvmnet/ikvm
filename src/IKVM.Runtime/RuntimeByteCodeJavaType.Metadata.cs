@@ -274,36 +274,33 @@ namespace IKVM.Runtime
 
             internal static byte[] GetRawTypeAnnotations(Metadata m)
             {
-                if (m != null && m.runtimeVisibleTypeAnnotations.Count > 0)
-                    return SerializeTypeAnnotations(m.runtimeVisibleTypeAnnotations);
+                if (m != null)
+                    return SerializeTypeAnnotations(in m.runtimeVisibleTypeAnnotations);
                 else
                     return null;
             }
 
             internal static byte[] GetMethodRawTypeAnnotations(Metadata m, int index)
             {
-                if (m != null && m.methodRuntimeVisibleTypeAnnotations != null)
-                    return SerializeTypeAnnotations(m.methodRuntimeVisibleTypeAnnotations[index]);
+                if (m != null)
+                    return SerializeTypeAnnotations(in m.methodRuntimeVisibleTypeAnnotations[index]);
                 else
                     return null;
             }
 
             internal static byte[] GetFieldRawTypeAnnotations(Metadata m, int index)
             {
-                if (m != null && m.fieldRuntimeVisibleTypeAnnotations != null)
-                    return SerializeTypeAnnotations(m.fieldRuntimeVisibleTypeAnnotations[index]);
+                if (m != null)
+                    return SerializeTypeAnnotations(in m.fieldRuntimeVisibleTypeAnnotations[index]);
                 else
                     return null;
             }
 
-            static byte[] SerializeTypeAnnotations(TypeAnnotationTable? annotations)
+            static byte[] SerializeTypeAnnotations(in TypeAnnotationTable annotations)
             {
-                if (annotations == null)
-                    return null;
-
                 var builder = new BlobBuilder();
                 var encoder = new TypeAnnotationTableEncoder(builder);
-                annotations.Value.WriteTo(ref encoder);
+                annotations.WriteTo(ref encoder);
                 return builder.ToArray();
             }
 
