@@ -362,12 +362,12 @@ namespace IKVM.Runtime
 
                             if (methodHandle.IsNil)
                             {
-                                enclosingMethod = new string[]
-                                {
+                                enclosingMethod =
+                                [
                                     GetConstantPoolClass(classHandle),
                                     null,
                                     null
-                                };
+                                ];
                             }
                             else
                             {
@@ -493,9 +493,8 @@ namespace IKVM.Runtime
                     if (utf8_cp[i] != null)
                     {
                         if (!(constantPoolPatches[i] is string))
-                        {
                             throw new ClassFormatError("Illegal utf8 patch at {0} in class file {1}", i, inputClassName);
-                        }
+
                         utf8_cp[i] = (string)constantPoolPatches[i];
                     }
                     else if (constantpool[i] != null)
@@ -510,7 +509,7 @@ namespace IKVM.Runtime
                                 string name;
                                 if ((clazz = constantPoolPatches[i] as java.lang.Class) != null)
                                 {
-                                    RuntimeJavaType tw = RuntimeJavaType.FromClass(clazz);
+                                    var tw = RuntimeJavaType.FromClass(clazz);
                                     constantpool[i] = new ConstantPoolItemClass(context, tw.Name, tw);
                                 }
                                 else if ((name = constantPoolPatches[i] as string) != null)
@@ -699,57 +698,45 @@ namespace IKVM.Runtime
             return new object[] { IKVM.Attributes.AnnotationDefaultAttribute.TAG_ERROR, "java.lang.IllegalArgumentException", "Wrong type at constant pool index" };
         }
 
-        private void ValidateConstantPoolItemClass(string classFile, ClassConstantHandle handle)
+        void ValidateConstantPoolItemClass(string classFile, ClassConstantHandle handle)
         {
             if (handle.Slot >= constantpool.Length || constantpool[handle.Slot] is not ConstantPoolItemClass)
                 throw new ClassFormatError("{0} (Bad constant pool index #{1})", classFile, handle);
         }
 
-        private static bool IsValidMethodName(string name, ClassFormatVersion version)
+        static bool IsValidMethodName(string name, ClassFormatVersion version)
         {
             if (name.Length == 0)
-            {
                 return false;
-            }
+
             for (int i = 0; i < name.Length; i++)
-            {
                 if (".;[/<>".IndexOf(name[i]) != -1)
-                {
                     return false;
-                }
-            }
+
             return version >= 49 || IsValidPre49Identifier(name);
         }
 
-        private static bool IsValidFieldName(string name, ClassFormatVersion version)
+        static bool IsValidFieldName(string name, ClassFormatVersion version)
         {
             if (name.Length == 0)
-            {
                 return false;
-            }
+
             for (int i = 0; i < name.Length; i++)
-            {
                 if (".;[/".IndexOf(name[i]) != -1)
-                {
                     return false;
-                }
-            }
+
             return version >= 49 || IsValidPre49Identifier(name);
         }
 
-        private static bool IsValidPre49Identifier(string name)
+        static bool IsValidPre49Identifier(string name)
         {
-            if (!Char.IsLetter(name[0]) && "$_".IndexOf(name[0]) == -1)
-            {
+            if (!char.IsLetter(name[0]) && "$_".IndexOf(name[0]) == -1)
                 return false;
-            }
+
             for (int i = 1; i < name.Length; i++)
-            {
-                if (!Char.IsLetterOrDigit(name[i]) && "$_".IndexOf(name[i]) == -1)
-                {
+                if (!char.IsLetterOrDigit(name[i]) && "$_".IndexOf(name[i]) == -1)
                     return false;
-                }
-            }
+
             return true;
         }
 
@@ -758,12 +745,11 @@ namespace IKVM.Runtime
             return IsValidFieldSigImpl(sig, 0, sig.Length);
         }
 
-        private static bool IsValidFieldSigImpl(string sig, int start, int end)
+        static bool IsValidFieldSigImpl(string sig, int start, int end)
         {
             if (start >= end)
-            {
                 return false;
-            }
+
             switch (sig[start])
             {
                 case 'L':
@@ -773,10 +759,9 @@ namespace IKVM.Runtime
                     {
                         start++;
                         if (start == end)
-                        {
                             return false;
-                        }
                     }
+
                     return IsValidFieldSigImpl(sig, start, end);
                 case 'B':
                 case 'Z':
@@ -795,18 +780,15 @@ namespace IKVM.Runtime
         internal static bool IsValidMethodSig(string sig)
         {
             if (sig.Length < 3 || sig[0] != '(')
-            {
                 return false;
-            }
+
             int end = sig.IndexOf(')');
             if (end == -1)
-            {
                 return false;
-            }
+
             if (!sig.EndsWith(")V") && !IsValidFieldSigImpl(sig, end + 1, sig.Length))
-            {
                 return false;
-            }
+
             for (int i = 1; i < end; i++)
             {
                 switch (sig[i])
@@ -825,26 +807,20 @@ namespace IKVM.Runtime
                         break;
                     case '[':
                         while (sig[i] == '[')
-                        {
                             i++;
-                        }
                         if ("BZCSIJFDL".IndexOf(sig[i]) == -1)
-                        {
                             return false;
-                        }
                         if (sig[i] == 'L')
-                        {
                             i = sig.IndexOf(';', i);
-                        }
                         break;
                     default:
                         return false;
                 }
+
                 if (i == -1 || i >= end)
-                {
                     return false;
-                }
             }
+
             return true;
         }
 
@@ -862,14 +838,13 @@ namespace IKVM.Runtime
 
         internal Modifiers Modifiers => access_flags;
 
-        internal bool IsAbstract
-        {
-            get
-            {
-                // interfaces are implicitly abstract
-                return (access_flags & (Modifiers.Abstract | Modifiers.Interface)) != 0;
-            }
-        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// interfaces are implicitly abstract
+        /// </remarks>
+        internal bool IsAbstract => (access_flags & (Modifiers.Abstract | Modifiers.Interface)) != 0;
 
         internal bool IsFinal => (access_flags & Modifiers.Final) != 0;
 
@@ -916,8 +891,8 @@ namespace IKVM.Runtime
         {
             if (index > ushort.MaxValue || index < ushort.MinValue)
                 return null;
-            else
-                return SafeGetFieldref(new ConstantHandle(ConstantKind.Unknown, (ushort)index));
+
+            return SafeGetFieldref(new ConstantHandle(ConstantKind.Unknown, (ushort)index));
         }
 
         internal ConstantPoolItemMI GetMethodref(MethodrefConstantHandle handle)
@@ -953,8 +928,8 @@ namespace IKVM.Runtime
         {
             if (slot > ushort.MaxValue || slot < ushort.MinValue)
                 return null;
-            else
-                return SafeGetMethodref(new ConstantHandle(ConstantKind.Unknown, (ushort)slot));
+
+            return SafeGetMethodref(new ConstantHandle(ConstantKind.Unknown, (ushort)slot));
         }
 
         internal ConstantPoolItemInvokeDynamic GetInvokeDynamic(InvokeDynamicConstantHandle handle)
@@ -985,7 +960,6 @@ namespace IKVM.Runtime
             return ((ConstantPoolItemClass)constantpool[handle.Slot]).GetClassType();
         }
 
-
         internal RuntimeJavaType GetConstantPoolClassType(int slot)
         {
             return GetConstantPoolClassType(new ClassConstantHandle(checked((ushort)slot)));
@@ -996,13 +970,9 @@ namespace IKVM.Runtime
             if (s == null)
             {
                 if (clazz.This.IsNil)
-                {
                     throw new ClassFormatError("Bad constant pool index #{0}", handle);
-                }
                 else
-                {
                     throw new ClassFormatError("{0} (Bad constant pool index #{1})", Name, handle);
-                }
             }
 
             return s;
