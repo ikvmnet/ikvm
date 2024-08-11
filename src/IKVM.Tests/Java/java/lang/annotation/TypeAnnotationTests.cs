@@ -152,7 +152,6 @@ namespace IKVM.Tests.Java.java.lang.annotation
             t.Length.Should().Be(0);
             t = w.getAnnotatedLowerBounds();
             t.Length.Should().Be(1);
-
         }
 
     }
