@@ -356,7 +356,7 @@ namespace IKVM.Runtime
                                 {
                                     enclosingClassWrapper.CreateStep2();
                                     enclosing = oimpl.typeBuilder;
-                                    if (outerClass.outerClass.IsNotNil)
+                                    if (outerClass.outerClass.IsNil)
                                     {
                                         // we need to record that we're not an inner classes, but an enclosed class
                                         typeAttribs |= TypeAttributes.SpecialName;
@@ -528,7 +528,7 @@ namespace IKVM.Runtime
                     }
                     if (classFile.EnclosingMethod != null)
                     {
-                        if (outerClass.outerClass.IsNotNil && enclosing != null && !cantNest)
+                        if (outerClass.outerClass.IsNil && enclosing != null && !cantNest)
                         {
                             // we don't need to record the enclosing type, if we're compiling the current type as a nested type because of the EnclosingMethod attribute
                             wrapper.Context.AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, null, classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);

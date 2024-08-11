@@ -264,8 +264,11 @@ namespace IKVM.Runtime
                 return null;
             }
 
-            static byte[] SerializeTypeAnnotations(in TypeAnnotationTable annotations)
+            static byte[] SerializeTypeAnnotations(ref readonly TypeAnnotationTable annotations)
             {
+                if (annotations.Count == 0)
+                    return null;
+
                 var builder = new BlobBuilder();
                 var encoder = new TypeAnnotationTableEncoder(builder);
                 annotations.WriteTo(ref encoder);
