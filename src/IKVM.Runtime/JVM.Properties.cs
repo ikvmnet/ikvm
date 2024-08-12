@@ -269,9 +269,6 @@ namespace IKVM.Runtime
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     p["jdk.lang.Process.launchMechanism"] = "FORK";
 
-                // cacerts is mounted by the VFS into ikvmHome
-                p.Add("javax.net.ssl.trustStore", Path.Combine(HomePath, "lib", "security", "cacerts"));
-
 #if NETFRAMEWORK
                 // read properties from app.config
                 try
