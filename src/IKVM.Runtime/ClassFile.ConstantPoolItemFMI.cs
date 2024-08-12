@@ -23,6 +23,8 @@
 */
 using System;
 
+using IKVM.ByteCode;
+
 namespace IKVM.Runtime
 {
 
@@ -32,8 +34,8 @@ namespace IKVM.Runtime
         internal abstract class ConstantPoolItemFMI : ConstantPoolItem
         {
 
-            readonly ushort class_index;
-            readonly ushort name_and_type_index;
+            readonly ClassConstantHandle clazzHandle;
+            readonly NameAndTypeConstantHandle nameAndType;
 
             ConstantPoolItemClass clazz;
             string name;
@@ -43,26 +45,28 @@ namespace IKVM.Runtime
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
-            /// <param name="classIndex"></param>
-            /// <param name="nameAndTypeIndex"></param>
-            internal ConstantPoolItemFMI(RuntimeContext context, ushort classIndex, ushort nameAndTypeIndex) :
+            /// <param name="clazz"></param>
+            /// <param name="nameAndType"></param>
+            internal ConstantPoolItemFMI(RuntimeContext context, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndType) :
                 base(context)
             {
-                class_index = classIndex;
-                name_and_type_index = nameAndTypeIndex;
+                this.clazzHandle = clazz;
+                this.nameAndType = nameAndType;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                ConstantPoolItemNameAndType name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(name_and_type_index);
-                clazz = (ConstantPoolItemClass)classFile.GetConstantPoolItem(class_index);
+                var name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(nameAndType);
+
+                clazz = (ConstantPoolItemClass)classFile.GetConstantPoolItem(clazzHandle);
                 // if the constant pool items referred to were strings, GetConstantPoolItem returns null
                 if (name_and_type == null || clazz == null)
                 {
                     throw new ClassFormatError("Bad index in constant pool");
                 }
-                name = String.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.nameIndex));
-                descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.descriptorIndex);
+
+                name = String.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.NameHandle));
+                descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.DescriptorHandle);
                 Validate(name, descriptor, classFile.MajorVersion);
                 descriptor = String.Intern(descriptor.Replace('/', '.'));
             }

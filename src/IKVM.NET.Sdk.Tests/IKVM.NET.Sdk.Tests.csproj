@@ -12,6 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="CliWrap" Version="3.6.6" />
         <PackageReference Include="FluentAssertions" Version="6.8.0" />
         <PackageReference Include="Buildalyzer" Version="6.0.4" />
         <PackageReference Include="Microsoft.CodeCoverage" Version="17.9.0" />
@@ -22,7 +23,6 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
-        <PackageProjectReference Include="..\IKVM.ByteCode\IKVM.ByteCode.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.MSBuild.Tools\IKVM.MSBuild.Tools.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win-x64\IKVM.MSBuild.Tools.runtime.win-x64.csproj" PackageTargetPath="nuget" Condition="$(_EnabledToolRuntimes.Contains(';win-x64;'))" />

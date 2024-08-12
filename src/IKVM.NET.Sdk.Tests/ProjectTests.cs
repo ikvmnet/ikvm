@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -9,9 +10,13 @@ using System.Xml.Linq;
 using Buildalyzer;
 using Buildalyzer.Environment;
 
+using CliWrap;
+using CliWrap.Buffered;
+
 using FluentAssertions;
 
 using Microsoft.Build.Framework;
+using Microsoft.Build.Tasks;
 using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -221,7 +226,7 @@ namespace IKVM.NET.Sdk.Tests
         [DataRow(EnvironmentPreference.Framework, "net8.0", "linux-musl-arm64", "{0}", "lib{0}.so")]
         [DataRow(EnvironmentPreference.Framework, "net8.0", "osx-x64", "{0}", "lib{0}.dylib")]
         [DataRow(EnvironmentPreference.Framework, "net8.0", "osx-arm64", "{0}", "lib{0}.dylib")]
-        public void CanBuildTestProject(EnvironmentPreference env, string tfm, string rid, string exe, string lib)
+        public async System.Threading.Tasks.Task CanBuildTestProject(EnvironmentPreference env, string tfm, string rid, string exe, string lib)
         {
             // skip framework tests for non-Windows platforms
             if (env == EnvironmentPreference.Framework || tfm == "net472" || tfm == "net48")
@@ -297,6 +302,28 @@ namespace IKVM.NET.Sdk.Tests
                 foreach (var libName in new[] { "awt", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
                     File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", string.Format(lib, libName))).Should().BeTrue();
             }
+
+            // current rid matches target, execute and check output
+            if (GetCurrentRid() == rid)
+                (await Cli.Wrap(Path.Combine(binDir, "publish", string.Format(exe, "ProjectExe"))).WithArguments("Hello").ExecuteBufferedAsync()).StandardOutput.Trim().Should().Be("Hello");
+        }
+
+        /// <summary>
+        /// Gets the current RID.
+        /// </summary>
+        /// <returns></returns>
+        string GetCurrentRid()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                return "win-x64";
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                return "linux-x64";
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                return "osx-x64";
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                return "osx-arm64";
+            else
+                return null;
         }
 
     }

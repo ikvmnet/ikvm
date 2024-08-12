@@ -30,9 +30,7 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics;
 
 using IKVM.ByteCode.Reading;
-using IKVM.ByteCode.Parsing;
 
-using System.Linq;
 using System.ComponentModel;
 
 #if IMPORTER || EXPORTER
@@ -40,6 +38,10 @@ using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
+using IKVM.ByteCode.Writing;
+using IKVM.ByteCode.Buffers;
+
+
 
 #else
 using System.Reflection;
@@ -118,9 +120,9 @@ namespace IKVM.Runtime
 
         Type TypeOfModifiers => typeofModifiers ??= LoadType(typeof(Modifiers));
 
-        Type TypeOfSourceFileAttribute => typeofSourceFileAttribute ??= LoadType(typeof(SourceFileAttribute));
+        Type TypeOfSourceFileAttribute => typeofSourceFileAttribute ??= LoadType(typeof(IKVM.Attributes.SourceFileAttribute));
 
-        Type TypeOfLineNumberTableAttribute => typeofLineNumberTableAttribute ??= LoadType(typeof(LineNumberTableAttribute));
+        Type TypeOfLineNumberTableAttribute => typeofLineNumberTableAttribute ??= LoadType(typeof(IKVM.Attributes.LineNumberTableAttribute));
 
 #endif
 
@@ -136,7 +138,7 @@ namespace IKVM.Runtime
 
         Type TypeOfJavaModuleAttribute => typeofJavaModuleAttribute ??= LoadType(typeof(JavaModuleAttribute));
 
-        Type TypeOfSignatureAttribute => typeofSignatureAttribute ??= LoadType(typeof(SignatureAttribute));
+        Type TypeOfSignatureAttribute => typeofSignatureAttribute ??= LoadType(typeof(IKVM.Attributes.SignatureAttribute));
 
         Type TypeOfInnerClassAttribute => typeofInnerClassAttribute ??= LoadType(typeof(InnerClassAttribute));
 
@@ -160,11 +162,11 @@ namespace IKVM.Runtime
 
         Type TypeOfNonNestedOuterClassAttribute => typeofNonNestedOuterClassAttribute ??= LoadType(typeof(NonNestedOuterClassAttribute));
 
-        Type TypeOfEnclosingMethodAttribute => typeofEnclosingMethodAttribute ??= LoadType(typeof(EnclosingMethodAttribute));
+        Type TypeOfEnclosingMethodAttribute => typeofEnclosingMethodAttribute ??= LoadType(typeof(IKVM.Attributes.EnclosingMethodAttribute));
 
-        Type TypeOfMethodParametersAttribute => typeofMethodParametersAttribute ??= LoadType(typeof(MethodParametersAttribute));
+        Type TypeOfMethodParametersAttribute => typeofMethodParametersAttribute ??= LoadType(typeof(IKVM.Attributes.MethodParametersAttribute));
 
-        Type TypeOfRuntimeVisibleTypeAnnotationsAttribute => typeofRuntimeVisibleTypeAnnotationsAttribute ??= LoadType(typeof(RuntimeVisibleTypeAnnotationsAttribute));
+        Type TypeOfRuntimeVisibleTypeAnnotationsAttribute => typeofRuntimeVisibleTypeAnnotationsAttribute ??= LoadType(typeof(IKVM.Attributes.RuntimeVisibleTypeAnnotationsAttribute));
 
         Type TypeOfConstantPoolAttribute => typeofConstantPoolAttribute ??= LoadType(typeof(ConstantPoolAttribute));
 
@@ -886,50 +888,44 @@ namespace IKVM.Runtime
 
         internal void SetMethodParametersAttribute(MethodBuilder mb, Modifiers[] modifiers)
         {
-            methodParametersAttribute ??= TypeOfMethodParametersAttribute.GetConstructor(new Type[] { TypeOfModifiers.MakeArrayType() });
-            mb.SetCustomAttribute(new CustomAttributeBuilder(methodParametersAttribute, new object[] { modifiers }));
+            methodParametersAttribute ??= TypeOfMethodParametersAttribute.GetConstructor(new[] { TypeOfModifiers.MakeArrayType() });
+            mb.SetCustomAttribute(new CustomAttributeBuilder(methodParametersAttribute, new[] { modifiers }));
         }
 
-        internal void SetRuntimeVisibleTypeAnnotationsAttribute(TypeBuilder tb, IReadOnlyList<TypeAnnotationReader> data)
+        internal void SetRuntimeVisibleTypeAnnotationsAttribute(TypeBuilder tb, ref readonly TypeAnnotationTable table)
         {
-            var r = new RuntimeVisibleTypeAnnotationsAttributeRecord(data.Select(i => i.Record).ToArray());
-            var m = new byte[r.GetSize()];
-            var w = new ClassFormatWriter(m);
-            if (r.TryWrite(ref w) == false)
-                throw new InternalException();
+            var builder = new BlobBuilder();
+            var encoder = new TypeAnnotationTableEncoder(builder);
+            table.WriteTo(ref encoder);
 
-            runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { context.Types.Byte.MakeArrayType() });
-            tb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { m }));
+            runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor([context.Types.Byte.MakeArrayType()]);
+            tb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, [builder.ToArray()]));
         }
 
-        internal void SetRuntimeVisibleTypeAnnotationsAttribute(FieldBuilder fb, IReadOnlyList<TypeAnnotationReader> data)
+        internal void SetRuntimeVisibleTypeAnnotationsAttribute(FieldBuilder fb, ref readonly TypeAnnotationTable table)
         {
-            var r = new RuntimeVisibleTypeAnnotationsAttributeRecord(data.Select(i => i.Record).ToArray());
-            var m = new byte[r.GetSize()];
-            var w = new ClassFormatWriter(m);
-            if (r.TryWrite(ref w) == false)
-                throw new InternalException();
+            var builder = new BlobBuilder();
+            var encoder = new TypeAnnotationTableEncoder(builder);
+            table.WriteTo(ref encoder);
 
-            runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { context.Types.Byte.MakeArrayType() });
-            fb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { m }));
+            runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor([context.Types.Byte.MakeArrayType()]);
+            fb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, [builder.ToArray()]));
         }
 
-        internal void SetRuntimeVisibleTypeAnnotationsAttribute(MethodBuilder mb, IReadOnlyList<TypeAnnotationReader> data)
+        internal void SetRuntimeVisibleTypeAnnotationsAttribute(MethodBuilder mb, ref readonly TypeAnnotationTable table)
         {
-            var r = new RuntimeVisibleTypeAnnotationsAttributeRecord(data.Select(i => i.Record).ToArray());
-            var m = new byte[r.GetSize()];
-            var w = new ClassFormatWriter(m);
-            if (r.TryWrite(ref w) == false)
-                throw new InternalException();
+            var builder = new BlobBuilder();
+            var encoder = new TypeAnnotationTableEncoder(builder);
+            table.WriteTo(ref encoder);
 
-            runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { context.Types.Byte.MakeArrayType() });
-            mb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { m }));
+            runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor([context.Types.Byte.MakeArrayType()]);
+            mb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, [builder.ToArray()]));
         }
 
         internal void SetConstantPoolAttribute(TypeBuilder tb, object[] constantPool)
         {
             constantPoolAttribute ??= TypeOfConstantPoolAttribute.GetConstructor(new Type[] { context.Types.Object.MakeArrayType() });
-            tb.SetCustomAttribute(new CustomAttributeBuilder(constantPoolAttribute, new object[] { constantPool }));
+            tb.SetCustomAttribute(new CustomAttributeBuilder(constantPoolAttribute, [constantPool]));
         }
 
         internal void SetParamArrayAttribute(ParameterBuilder pb)
@@ -1045,32 +1041,32 @@ namespace IKVM.Runtime
 #endif
         }
 
-        internal SignatureAttribute GetSignature(MemberInfo member)
+        internal IKVM.Attributes.SignatureAttribute GetSignature(MemberInfo member)
         {
 #if !IMPORTER && !EXPORTER
-            var attribs = member.GetCustomAttributes(typeof(SignatureAttribute), false);
-            return attribs.Length == 1 ? (SignatureAttribute)attribs[0] : null;
+            var attribs = member.GetCustomAttributes(typeof(IKVM.Attributes.SignatureAttribute), false);
+            return attribs.Length == 1 ? (IKVM.Attributes.SignatureAttribute)attribs[0] : null;
 #else
             foreach (var cad in CustomAttributeData.__GetCustomAttributes(member, TypeOfSignatureAttribute, false))
             {
                 var args = cad.ConstructorArguments;
-                return new SignatureAttribute((string)args[0].Value);
+                return new IKVM.Attributes.SignatureAttribute((string)args[0].Value);
             }
 
             return null;
 #endif
         }
 
-        internal MethodParametersAttribute GetMethodParameters(MethodBase method)
+        internal IKVM.Attributes.MethodParametersAttribute GetMethodParameters(MethodBase method)
         {
 #if !IMPORTER && !EXPORTER
-            var attribs = method.GetCustomAttributes(typeof(MethodParametersAttribute), false);
-            return attribs.Length == 1 ? (MethodParametersAttribute)attribs[0] : null;
+            var attribs = method.GetCustomAttributes(typeof(IKVM.Attributes.MethodParametersAttribute), false);
+            return attribs.Length == 1 ? (IKVM.Attributes.MethodParametersAttribute)attribs[0] : null;
 #else
             foreach (var cad in CustomAttributeData.__GetCustomAttributes(method, TypeOfMethodParametersAttribute, false))
             {
                 var args = cad.ConstructorArguments;
-                return new MethodParametersAttribute(DecodeArray<Modifiers>(args[0]));
+                return new IKVM.Attributes.MethodParametersAttribute(DecodeArray<Modifiers>(args[0]));
             }
             return null;
 #endif
@@ -1092,8 +1088,8 @@ namespace IKVM.Runtime
         internal byte[] GetRuntimeVisibleTypeAnnotations(MemberInfo member)
         {
 #if !IMPORTER && !EXPORTER
-            object[] attribs = member.GetCustomAttributes(typeof(RuntimeVisibleTypeAnnotationsAttribute), false);
-            return attribs.Length == 1 ? ((RuntimeVisibleTypeAnnotationsAttribute)attribs[0]).data : null;
+            object[] attribs = member.GetCustomAttributes(typeof(IKVM.Attributes.RuntimeVisibleTypeAnnotationsAttribute), false);
+            return attribs.Length == 1 ? ((IKVM.Attributes.RuntimeVisibleTypeAnnotationsAttribute)attribs[0]).data : null;
 #else
             foreach (CustomAttributeData cad in CustomAttributeData.__GetCustomAttributes(member, TypeOfRuntimeVisibleTypeAnnotationsAttribute, false))
             {
@@ -1247,17 +1243,17 @@ namespace IKVM.Runtime
             return type.IsDefined(TypeOfEnclosingMethodAttribute, false);
         }
 
-        internal EnclosingMethodAttribute GetEnclosingMethodAttribute(Type type)
+        internal IKVM.Attributes.EnclosingMethodAttribute GetEnclosingMethodAttribute(Type type)
         {
 #if !IMPORTER && !EXPORTER
-            var attr = type.GetCustomAttributes(typeof(EnclosingMethodAttribute), false);
+            var attr = type.GetCustomAttributes(typeof(IKVM.Attributes.EnclosingMethodAttribute), false);
             if (attr.Length == 1)
-                return ((EnclosingMethodAttribute)attr[0]).SetClassName(context, type);
+                return ((IKVM.Attributes.EnclosingMethodAttribute)attr[0]).SetClassName(context, type);
 
             return null;
 #else
             foreach (var cad in CustomAttributeData.__GetCustomAttributes(type, TypeOfEnclosingMethodAttribute, false))
-                return new EnclosingMethodAttribute((string)cad.ConstructorArguments[0].Value, (string)cad.ConstructorArguments[1].Value, (string)cad.ConstructorArguments[2].Value).SetClassName(context, type);
+                return new IKVM.Attributes.EnclosingMethodAttribute((string)cad.ConstructorArguments[0].Value, (string)cad.ConstructorArguments[1].Value, (string)cad.ConstructorArguments[2].Value).SetClassName(context, type);
 
             return null;
 #endif

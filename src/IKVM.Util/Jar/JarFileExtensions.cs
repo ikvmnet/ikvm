@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
@@ -35,14 +36,26 @@ namespace IKVM.Util.Jar
         /// <returns></returns>
         static ModuleInfo GetModuleInfoFromClass(JarFile jar)
         {
+            if (jar is null)
+                throw new ArgumentNullException(nameof(jar));
+
             var e = jar.GetEntry("module-info.class");
             if (e == null)
                 return null;
 
             using var s = e.Open();
-            var c = ClassReader.Read(s);
-            if ((c.AccessFlags & AccessFlag.ACC_MODULE) != 0 && c.Attributes.Module != null)
-                return new ModuleInfo(c.Attributes.Module.Name.Name.Value, c.Attributes.Module.Version != null && ModuleVersion.TryParse(c.Attributes.Module.Version.Value.AsSpan(), out var version) ? version : null);
+            using var c = ClassFile.Read(s);
+            if ((c.AccessFlags & AccessFlag.ACC_MODULE) != 0)
+            {
+                var a = c.Attributes.FirstOrDefault(i => i.IsNotNil && i.Name.IsNotNil && c.Constants.Get(i.Name).Value == AttributeName.Module);
+                if (a.IsNotNil)
+                {
+                    var m = (ModuleAttribute)a;
+                    var name_ = c.Constants.Get(m.Name).Name;
+                    var version_ = c.Constants.Get(m.Version).Value;
+                    return new ModuleInfo(name_, version_ != null && ModuleVersion.TryParse(version_.AsSpan(), out var version) ? version : null);
+                }
+            }
 
             return null;
         }

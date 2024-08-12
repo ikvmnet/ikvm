@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
 
 namespace IKVM.Runtime
@@ -32,7 +33,7 @@ namespace IKVM.Runtime
         internal sealed class ConstantPoolItemMethodType : ConstantPoolItem
         {
 
-            readonly ushort signature_index;
+            readonly Utf8ConstantHandle signature;
 
             string descriptor;
             RuntimeJavaType[] argTypeWrappers;
@@ -42,16 +43,16 @@ namespace IKVM.Runtime
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
-            /// <param name="reader"></param>
-            internal ConstantPoolItemMethodType(RuntimeContext context, MethodTypeConstantReader reader) :
+            /// <param name="data"></param>
+            internal ConstantPoolItemMethodType(RuntimeContext context, MethodTypeConstantData data) :
                 base(context)
             {
-                signature_index = reader.Record.DescriptorIndex;
+                signature = data.Descriptor;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                var descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, signature_index);
+                var descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, signature);
                 if (descriptor == null || !IsValidMethodSig(descriptor))
                     throw new ClassFormatError("Invalid MethodType signature");
 

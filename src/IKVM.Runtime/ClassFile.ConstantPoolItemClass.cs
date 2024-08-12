@@ -36,7 +36,7 @@ namespace IKVM.Runtime
 
             static readonly char[] invalidJava15Characters = { '.', ';', '[', ']' };
 
-            readonly ClassConstantReader reader;
+            readonly ClassConstantData data;
 
             string name;
             RuntimeJavaType typeWrapper;
@@ -45,12 +45,12 @@ namespace IKVM.Runtime
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
-            /// <param name="reader"></param>
+            /// <param name="data"></param>
             /// <exception cref="ArgumentNullException"></exception>
-            internal ConstantPoolItemClass(RuntimeContext context, ClassConstantReader reader) :
+            internal ConstantPoolItemClass(RuntimeContext context, ClassConstantData data) :
                 base(context)
             {
-                this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
+                this.data = data;
             }
 
             /// <summary>
@@ -72,7 +72,7 @@ namespace IKVM.Runtime
                 if (name != null)
                     return;
 
-                name = classFile.GetConstantPoolUtf8String(utf8_cp, reader.Record.NameIndex);
+                name = classFile.GetConstantPoolUtf8String(utf8_cp, data.Name);
                 if (name.Length > 0)
                 {
                     // We don't enforce the strict class name rules in the static compiler, since HotSpot doesn't enforce *any* rules on

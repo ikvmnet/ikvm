@@ -71,7 +71,7 @@ namespace IKVM.Runtime
 
         internal void SetFinally(int index)
         {
-            exceptions[index] = new ExceptionTableEntry(exceptions[index].startIndex, exceptions[index].endIndex, exceptions[index].handlerIndex, exceptions[index].catch_type, exceptions[index].ordinal, true);
+            exceptions[index] = new ExceptionTableEntry(exceptions[index].startIndex, exceptions[index].endIndex, exceptions[index].handlerIndex, exceptions[index].catchType, exceptions[index].ordinal, true);
         }
     }
 

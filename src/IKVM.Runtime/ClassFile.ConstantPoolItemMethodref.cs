@@ -38,9 +38,9 @@ namespace IKVM.Runtime
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
-            /// <param name="reader"></param>
-            internal ConstantPoolItemMethodref(RuntimeContext context, MethodrefConstantReader reader) :
-                base(context, reader.Record.ClassIndex, reader.Record.NameAndTypeIndex)
+            /// <param name="data"></param>
+            internal ConstantPoolItemMethodref(RuntimeContext context, MethodrefConstantData data) :
+                base(context, data.Class, data.NameAndType)
             {
 
             }

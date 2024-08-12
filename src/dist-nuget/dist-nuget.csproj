@@ -6,9 +6,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageProjectReference Include="..\IKVM.ByteCode\IKVM.ByteCode.csproj">
-            <PackageTargetPath>.</PackageTargetPath>
-        </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>

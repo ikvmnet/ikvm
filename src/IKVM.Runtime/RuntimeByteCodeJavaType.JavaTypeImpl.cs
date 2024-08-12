@@ -288,7 +288,7 @@ namespace IKVM.Runtime
                     // and doesn't buy us anything in dynamic mode (and if fact, due to an FXBUG it would make handling
                     // the TypeResolve event very hard)
                     var outerClass = getOuterClass();
-                    if (outerClass.outerClass != 0)
+                    if (outerClass.outerClass.IsNotNil)
                     {
                         enclosingClassName = classFile.GetConstantPoolClass(outerClass.outerClass);
                     }
@@ -301,7 +301,7 @@ namespace IKVM.Runtime
                     {
                         if (!CheckInnerOuterNames(f.Name, enclosingClassName))
                         {
-                            Tracer.Warning(Tracer.Compiler, "Incorrect {0} attribute on {1}", outerClass.outerClass != 0 ? "InnerClasses" : "EnclosingMethod", f.Name);
+                            Tracer.Warning(Tracer.Compiler, "Incorrect {0} attribute on {1}", outerClass.outerClass.IsNotNil ? "InnerClasses" : "EnclosingMethod", f.Name);
                         }
                         else
                         {
@@ -334,10 +334,7 @@ namespace IKVM.Runtime
                                         var ok = false;
                                         for (int i = 0; i < outerInnerClasses.Length; i++)
                                         {
-                                            if (((outerInnerClasses[i].outerClass != 0 && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].outerClass) == outerClassFile.Name)
-                                                    || (outerInnerClasses[i].outerClass == 0 && outerClass.outerClass == 0))
-                                                && outerInnerClasses[i].innerClass != 0
-                                                && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].innerClass) == f.Name)
+                                            if (((outerInnerClasses[i].outerClass.IsNotNil && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].outerClass) == outerClassFile.Name) || (outerInnerClasses[i].outerClass.IsNil && outerClass.outerClass.IsNil)) && outerInnerClasses[i].innerClass.IsNotNil && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].innerClass) == f.Name)
                                             {
                                                 ok = true;
                                                 break;
@@ -359,7 +356,7 @@ namespace IKVM.Runtime
                                 {
                                     enclosingClassWrapper.CreateStep2();
                                     enclosing = oimpl.typeBuilder;
-                                    if (outerClass.outerClass == 0)
+                                    if (outerClass.outerClass.IsNil)
                                     {
                                         // we need to record that we're not an inner classes, but an enclosed class
                                         typeAttribs |= TypeAttributes.SpecialName;
@@ -466,7 +463,7 @@ namespace IKVM.Runtime
                     // types that we're currently compiling (i.e. a cyclic dependency between the currently assembly we're compiling and a referenced assembly).
                     wrapper.Context.ClassLoaderFactory.SetWrapperForType(typeBuilder, wrapper);
 
-                    if (outerClass.outerClass != 0)
+                    if (outerClass.outerClass.IsNotNil)
                     {
                         if (enclosing != null && cantNest)
                         {
@@ -519,7 +516,7 @@ namespace IKVM.Runtime
                         AddCliEnum();
                     }
 
-                    AddInnerClassAttribute(enclosing != null, outerClass.innerClass != 0, mangledTypeName, outerClass.accessFlags);
+                    AddInnerClassAttribute(enclosing != null, outerClass.innerClass.IsNotNil, mangledTypeName, outerClass.accessFlags);
                     if (classFile.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(classFile.Annotations))
                     {
                         wrapper.Context.AttributeHelper.SetDeprecatedAttribute(typeBuilder);
@@ -531,7 +528,7 @@ namespace IKVM.Runtime
                     }
                     if (classFile.EnclosingMethod != null)
                     {
-                        if (outerClass.outerClass == 0 && enclosing != null && !cantNest)
+                        if (outerClass.outerClass.IsNil && enclosing != null && !cantNest)
                         {
                             // we don't need to record the enclosing type, if we're compiling the current type as a nested type because of the EnclosingMethod attribute
                             wrapper.Context.AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, null, classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
@@ -541,10 +538,10 @@ namespace IKVM.Runtime
                             wrapper.Context.AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, classFile.EnclosingMethod[0], classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
                         }
                     }
-                    if (classFile.RuntimeVisibleTypeAnnotations != null)
-                    {
-                        wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(typeBuilder, classFile.RuntimeVisibleTypeAnnotations);
-                    }
+
+                    if (classFile.RuntimeVisibleTypeAnnotations.Count > 0)
+                        wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(typeBuilder, in classFile.RuntimeVisibleTypeAnnotations);
+
                     if (wrapper.classLoader.EmitStackTraceInfo)
                     {
                         if (f.SourceFileAttribute != null)
@@ -696,8 +693,7 @@ namespace IKVM.Runtime
                 {
                     for (int j = 0; j < innerClasses.Length; j++)
                     {
-                        if (innerClasses[j].innerClass != 0
-                            && classFile.GetConstantPoolClass(innerClasses[j].innerClass) == classFile.Name)
+                        if (innerClasses[j].innerClass.IsNotNil && classFile.GetConstantPoolClass(innerClasses[j].innerClass) == classFile.Name)
                         {
                             return innerClasses[j];
                         }
@@ -1120,7 +1116,7 @@ namespace IKVM.Runtime
                 }
                 if (fld.IsTransient)
                 {
-                    CustomAttributeBuilder transientAttrib = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveCoreType(typeof(NonSerializedAttribute).FullName).GetConstructor(Type.EmptyTypes), new object[0]);
+                    var transientAttrib = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveCoreType(typeof(NonSerializedAttribute).FullName).GetConstructor(Type.EmptyTypes), []);
                     field.SetCustomAttribute(transientAttrib);
                 }
 #if IMPORTER
@@ -1128,39 +1124,32 @@ namespace IKVM.Runtime
                     // if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
                     // the Java modifiers
                     if (setModifiers)
-                    {
                         wrapper.Context.AttributeHelper.SetModifiers(field, fld.Modifiers, fld.IsInternal);
-                    }
+
                     if (fld.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(fld.Annotations))
-                    {
                         wrapper.Context.AttributeHelper.SetDeprecatedAttribute(field);
-                    }
+
                     if (fld.GenericSignature != null)
-                    {
                         wrapper.Context.AttributeHelper.SetSignatureAttribute(field, fld.GenericSignature);
-                    }
-                    if (fld.RuntimeVisibleTypeAnnotations != null)
-                    {
-                        wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(field, fld.RuntimeVisibleTypeAnnotations);
-                    }
+
+                    if (fld.RuntimeVisibleTypeAnnotations.Count > 0)
+                        wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(field, in fld.RuntimeVisibleTypeAnnotations);
                 }
 #endif
 
                 return field;
             }
 
-            private FieldBuilder DefineField(string name, RuntimeJavaType tw, FieldAttributes attribs, bool isVolatile)
+            FieldBuilder DefineField(string name, RuntimeJavaType tw, FieldAttributes attribs, bool isVolatile)
             {
-                Type[] modreq = isVolatile ? new Type[] { wrapper.Context.Types.IsVolatile } : Type.EmptyTypes;
+                var modreq = isVolatile ? [wrapper.Context.Types.IsVolatile] : Type.EmptyTypes;
                 return typeBuilder.DefineField(name, tw.TypeAsSignatureType, modreq, wrapper.GetModOpt(tw, false), attribs);
             }
 
             internal override void EmitRunClassConstructor(CodeEmitter ilgen)
             {
                 if (clinitMethod != null)
-                {
                     ilgen.Emit(OpCodes.Call, clinitMethod);
-                }
             }
 
             internal override DynamicImpl Finish()
@@ -1255,7 +1244,7 @@ namespace IKVM.Runtime
                         var wrappers = new List<RuntimeJavaType>();
                         for (int i = 0; i < innerclasses.Length; i++)
                         {
-                            if (innerclasses[i].innerClass != 0 && innerclasses[i].outerClass != 0)
+                            if (innerclasses[i].innerClass.IsNotNil && innerclasses[i].outerClass.IsNotNil)
                             {
                                 if (classFile.GetConstantPoolClassType(innerclasses[i].outerClass) == wrapper)
                                 {
@@ -1930,7 +1919,7 @@ namespace IKVM.Runtime
                     {
                         for (int i = 0; i < innerclasses.Length; i++)
                         {
-                            if (innerclasses[i].innerClass != 0)
+                            if (innerclasses[i].innerClass.IsNotNil)
                             {
                                 if (classFile.GetConstantPoolClass(innerclasses[i].innerClass) == wrapper.Name)
                                 {
@@ -2554,10 +2543,8 @@ namespace IKVM.Runtime
                     }
 
                     // copy runtime visible annotations as attributes
-                    if (m.RuntimeVisibleTypeAnnotations != null)
-                    {
-                        wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(method, m.RuntimeVisibleTypeAnnotations);
-                    }
+                    if (m.RuntimeVisibleTypeAnnotations.Count > 0)
+                        wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(method, in m.RuntimeVisibleTypeAnnotations);
 
 #else // IMPORTER
 

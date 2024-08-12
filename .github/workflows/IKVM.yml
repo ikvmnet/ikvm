@@ -153,6 +153,12 @@ jobs:
         fileName: "*.tar.gz"
         out-file-path: ext/ikvm-native-sdk
         extract: true
+    - name: Add NuGet Source (GitHub)
+      shell: pwsh
+      run: dotnet nuget add source --username USERNAME --password $env:GITHUB_TOKEN --store-password-in-clear-text --name ikvm $env:GITHUB_REPOS
+      env:
+        GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
     - name: Build Artifacts
@@ -223,16 +229,6 @@ jobs:
         path: /tmp/jdk.tar.gz
     - name: Delete JDK
       run: rm /tmp/jdk.tar.gz
-    - name: Package Tests (IKVM.ByteCode.Tests)
-      run: tar czvf /tmp/tests--IKVM.ByteCode.Tests.tar.gz tests/IKVM.ByteCode.Tests
-      working-directory: dist
-    - name: Upload Tests (IKVM.ByteCode.Tests)
-      uses: actions/upload-artifact@v4
-      with:
-        name: tests--IKVM.ByteCode.Tests
-        path: /tmp/tests--IKVM.ByteCode.Tests.tar.gz
-    - name: Delete Tests (IKVM.ByteCode.Tests)
-      run: rm /tmp/tests--IKVM.ByteCode.Tests.tar.gz
     - name: Package Tests (IKVM.Reflection.Tests)
       run: tar czvf /tmp/tests--IKVM.Reflection.Tests.tar.gz tests/IKVM.Reflection.Tests
       working-directory: dist
@@ -382,7 +378,6 @@ jobs:
         }
 
         $run = @(
-          "IKVM.ByteCode.Tests",
           "IKVM.Reflection.Tests",
           "IKVM.Tests",
           "IKVM.Java.Tests",
@@ -405,6 +400,10 @@ jobs:
           @{
             "tfm" = "net472"
             "sys" = "osx-x64"
+          },
+          @{
+            "tfm" = "net472"
+            "sys" = "osx-arm64"
           },
           @{
             "run" = "IKVM.MSBuild.Tests"

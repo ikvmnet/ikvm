@@ -22,8 +22,10 @@
   
 */
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 
+using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
 
 namespace IKVM.Runtime
@@ -48,11 +50,11 @@ namespace IKVM.Runtime
                 internal LineNumberTableEntry[] lineNumberTable;
                 internal LocalVariableTableEntry[] localVariableTable;
 
-                internal void Read(ClassFile classFile, string[] utf8_cp, Method method, CodeAttributeReader reader, ClassFileParseOptions options)
+                internal void Read(ClassFile classFile, string[] utf8_cp, Method method, CodeAttribute attribute, ClassFileParseOptions options)
                 {
-                    max_stack = reader.MaxStack;
-                    max_locals = reader.MaxLocals;
-                    var code_length = (uint)reader.Code.Length;
+                    max_stack = attribute.MaxStack;
+                    max_locals = attribute.MaxLocals;
+                    var code_length = (uint)attribute.Code.Length;
                     if (code_length == 0 || code_length > 65535)
                         throw new ClassFormatError("Invalid method Code length {1} in class file {0}", classFile.Name, code_length);
 
@@ -62,7 +64,9 @@ namespace IKVM.Runtime
 
                     try
                     {
-                        var rdr = new BigEndianBinaryReader(reader.Code);
+                        var buf = new byte[attribute.Code.Length];
+                        attribute.Code.CopyTo(buf);
+                        var rdr = new BigEndianBinaryReader(buf);
                         while (rdr.IsAtEnd == false)
                         {
                             instructions[instructionIndex].Read((ushort)(rdr.Position - basePosition), rdr, classFile);
@@ -122,16 +126,16 @@ namespace IKVM.Runtime
                     }
 
                     // read exception table
-                    exception_table = new ExceptionTableEntry[reader.ExceptionTable.Count];
-                    for (int i = 0; i < reader.ExceptionTable.Count; i++)
+                    exception_table = new ExceptionTableEntry[attribute.ExceptionTable.Count];
+                    for (int i = 0; i < attribute.ExceptionTable.Count; i++)
                     {
-                        var handler = reader.ExceptionTable[i];
+                        var handler = attribute.ExceptionTable[i];
                         var start_pc = handler.StartOffset;
                         var end_pc = handler.EndOffset;
                         var handler_pc = handler.HandlerOffset;
-                        var catch_type = handler.CatchTypeIndex;
+                        var catch_type = handler.CatchType;
 
-                        if (start_pc >= end_pc || end_pc > code_length || handler_pc >= code_length || (catch_type != 0 && !classFile.SafeIsConstantPoolClass(catch_type)))
+                        if (start_pc >= end_pc || end_pc > code_length || handler_pc >= code_length || (catch_type.IsNotNil && !classFile.SafeIsConstantPoolClass(catch_type)))
                             throw new ClassFormatError("Illegal exception table: {0}.{1}{2}", classFile.Name, method.Name, method.Signature);
 
                         classFile.MarkLinkRequiredConstantPoolItem(catch_type);
@@ -156,44 +160,38 @@ namespace IKVM.Runtime
                         exception_table[i] = new ExceptionTableEntry(startIndex, endIndex, handlerIndex, catch_type, i);
                     }
 
-                    for (int i = 0; i < reader.Attributes.Count; i++)
+                    foreach (var _attribute in attribute.Attributes)
                     {
-                        var attribute = reader.Attributes[i];
-
-                        switch (classFile.GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.NameIndex))
+                        switch (classFile.GetConstantPoolUtf8String(utf8_cp, _attribute.Name))
                         {
-                            case "LineNumberTable":
-                                if (attribute is not LineNumberTableAttributeReader lnt)
-                                    throw new ClassFormatError("Invalid reader for line number table.");
-
+                            case AttributeName.LineNumberTable:
+                                var lnt = (IKVM.ByteCode.Reading.LineNumberTableAttribute)_attribute;
                                 if ((options & ClassFileParseOptions.LineNumberTable) != 0)
                                 {
-                                    lineNumberTable = new LineNumberTableEntry[lnt.Record.Items.Length];
-                                    for (int j = 0; j < lnt.Record.Items.Length; j++)
+                                    lineNumberTable = new LineNumberTableEntry[lnt.LineNumbers.Count];
+                                    for (int j = 0; j < lnt.LineNumbers.Count; j++)
                                     {
-                                        var item = lnt.Record.Items[j];
-                                        lineNumberTable[j].start_pc = item.CodeOffset;
+                                        var item = lnt.LineNumbers[j];
+                                        lineNumberTable[j].start_pc = item.StartPc;
                                         lineNumberTable[j].line_number = item.LineNumber;
                                         if (lineNumberTable[j].start_pc >= code_length)
                                             throw new ClassFormatError("{0} (LineNumberTable has invalid pc)", classFile.Name);
                                     }
                                 }
                                 break;
-                            case "LocalVariableTable":
-                                if (attribute is not LocalVariableTableAttributeReader lvt)
-                                    throw new ClassFormatError("Invalid reader for local variable table.");
-
+                            case AttributeName.LocalVariableTable:
+                                var lvt = (IKVM.ByteCode.Reading.LocalVariableTableAttribute)_attribute;
                                 if ((options & ClassFileParseOptions.LocalVariableTable) != 0)
                                 {
-                                    localVariableTable = new LocalVariableTableEntry[lvt.Record.Items.Length];
-                                    for (int j = 0; j < lvt.Record.Items.Length; j++)
+                                    localVariableTable = new LocalVariableTableEntry[lvt.LocalVariables.Count];
+                                    for (int j = 0; j < lvt.LocalVariables.Count; j++)
                                     {
-                                        var item = lvt.Record.Items[j];
-                                        localVariableTable[j].start_pc = item.CodeOffset;
-                                        localVariableTable[j].length = item.CodeLength;
-                                        localVariableTable[j].name = classFile.GetConstantPoolUtf8String(utf8_cp, item.NameIndex);
-                                        localVariableTable[j].descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, item.DescriptorIndex).Replace('/', '.');
-                                        localVariableTable[j].index = item.Index;
+                                        var item = lvt.LocalVariables[j];
+                                        localVariableTable[j].start_pc = item.StartPc;
+                                        localVariableTable[j].length = item.Length;
+                                        localVariableTable[j].name = classFile.GetConstantPoolUtf8String(utf8_cp, item.Name);
+                                        localVariableTable[j].descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, item.Descriptor).Replace('/', '.');
+                                        localVariableTable[j].index = item.Slot;
                                     }
                                 }
                                 break;
