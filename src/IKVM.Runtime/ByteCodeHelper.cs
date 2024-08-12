@@ -316,7 +316,7 @@ namespace IKVM.Runtime
             return cache;
         }
 
-        private static global::java.lang.invoke.MethodHandle DynamicLoadMethodHandleImpl(int kind, string clazz, string name, string sig, ikvm.@internal.CallerID callerID)
+        static global::java.lang.invoke.MethodHandle DynamicLoadMethodHandleImpl(int kind, string clazz, string name, string sig, ikvm.@internal.CallerID callerID)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -325,19 +325,19 @@ namespace IKVM.Runtime
 
             try
             {
-                switch ((ReferenceKind)kind)
+                switch ((MethodHandleKind)kind)
                 {
-                    case ReferenceKind.GetStatic:
-                    case ReferenceKind.PutStatic:
-                    case ReferenceKind.GetField:
-                    case ReferenceKind.PutField:
+                    case MethodHandleKind.GetStatic:
+                    case MethodHandleKind.PutStatic:
+                    case MethodHandleKind.GetField:
+                    case MethodHandleKind.PutField:
                         global::java.lang.Class type = RuntimeClassLoader.FromCallerID(callerID).FieldTypeWrapperFromSig(sig, LoadMode.LoadOrThrow).ClassObject;
                         return global::java.lang.invoke.MethodHandleNatives.linkMethodHandleConstant(callerID.getCallerClass(), kind, refc, name, type);
                     default:
                         global::java.lang.invoke.MethodType mt = null;
                         DynamicLoadMethodType(ref mt, sig, callerID);
                         // HACK linkMethodHandleConstant is broken for MethodHandle.invoke[Exact]
-                        if (kind == (int)ReferenceKind.InvokeVirtual && refc == JVM.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject)
+                        if (kind == (int)MethodHandleKind.InvokeVirtual && refc == JVM.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject)
                         {
                             switch (name)
                             {
@@ -1233,13 +1233,10 @@ namespace IKVM.Runtime
             if (cs != null)
             {
                 if (cs.ics == null)
-                {
                     MethodHandleNatives.InitializeCallSite(cs);
-                }
+
                 lock (cs.ics)
-                {
                     cs.ics.SetTarget(cs.target);
-                }
             }
 
             global::java.lang.invoke.MethodType typeCache = null;
@@ -1267,11 +1264,10 @@ namespace IKVM.Runtime
                 ics = new IndyCallSite<T>();
                 ((IIndyCallSite)ics).SetTarget(cs.dynamicInvoker().asType(LoadMethodType<T>()));
             }
+
             IndyCallSite<T> curr = site;
             if (curr.IsBootstrap)
-            {
                 Interlocked.CompareExchange(ref site, ics, curr);
-            }
 #endif
         }
 

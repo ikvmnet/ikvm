@@ -21,9 +21,8 @@
   jeroen@frijters.net
   
 */
-using System.Collections.Generic;
-
 using IKVM.Attributes;
+using IKVM.ByteCode;
 using IKVM.ByteCode.Reading;
 
 #if IMPORTER
@@ -52,8 +51,8 @@ namespace IKVM.Runtime
             /// <param name="options"></param>
             /// <param name="reader"></param>
             /// <exception cref="ClassFormatError"></exception>
-            internal Method(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options, MethodReader reader) :
-                base(classFile, utf8_cp, reader.AccessFlags, reader.Record.Name.Index, reader.Record.Descriptor.Index)
+            internal Method(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options, IKVM.ByteCode.Reading.Method reader) :
+                base(classFile, utf8_cp, reader.AccessFlags, reader.Name, reader.Descriptor)
             {
                 // vmspec 4.6 says that all flags, except ACC_STRICT are ignored on <clinit>
                 // however, since Java 7 it does need to be marked static
@@ -80,53 +79,45 @@ namespace IKVM.Runtime
                 {
                     var attribute = reader.Attributes[i];
 
-                    switch (classFile.GetConstantPoolUtf8String(utf8_cp, attribute.Info.Record.Name.Index))
+                    switch (classFile.GetConstantPoolUtf8String(utf8_cp, attribute.Name))
                     {
-                        case "Deprecated":
-                            if (attribute is not DeprecatedAttributeReader deprecatedAttribute)
-                                throw new ClassFormatError("Invalid Deprecated attribute type.");
-
+                        case AttributeName.Deprecated:
+                            var deprecatedAttribute = (DeprecatedAttribute)attribute;
                             flags |= FLAG_MASK_DEPRECATED;
                             break;
-                        case "Code":
+                        case AttributeName.Code:
                             {
-                                if (attribute is not CodeAttributeReader codeAttribute)
-                                    throw new ClassFormatError("Invalid attribute reader type.");
+                                var codeAttribute = (CodeAttribute)attribute;
                                 if (code.IsEmpty == false)
                                     throw new ClassFormatError("{0} (Duplicate Code attribute)", classFile.Name);
 
                                 code.Read(classFile, utf8_cp, this, codeAttribute, options);
                                 break;
                             }
-                        case "Exceptions":
+                        case AttributeName.Exceptions:
                             {
-                                if (attribute is not ExceptionsAttributeReader exceptionsAttribute)
-                                    throw new ClassFormatError("Invalid Exceptions attribute type.");
                                 if (exceptions != null)
                                     throw new ClassFormatError("{0} (Duplicate Exceptions attribute)", classFile.Name);
 
-                                exceptions = new string[exceptionsAttribute.Record.Exceptions.Length];
-                                for (int j = 0; j < exceptionsAttribute.Record.Exceptions.Length; j++)
-                                    exceptions[j] = classFile.GetConstantPoolClass(exceptionsAttribute.Record.Exceptions[j].Index);
+                                var exceptionsAttribute = (ExceptionsAttribute)attribute;
+                                exceptions = new string[exceptionsAttribute.Exceptions.Count];
+                                for (int j = 0; j < exceptionsAttribute.Exceptions.Count; j++)
+                                    exceptions[j] = classFile.GetConstantPoolClass(exceptionsAttribute.Exceptions[j]);
 
                                 break;
                             }
-                        case "Signature":
+                        case AttributeName.Signature:
                             if (classFile.MajorVersion < 49)
                                 goto default;
 
-                            if (attribute is not SignatureAttributeReader signatureAttribute)
-                                throw new ClassFormatError("Invalid Signature attribute type.");
-
-                            signature = classFile.GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Record.Signature.Index);
+                            var signatureAttribute = (IKVM.ByteCode.Reading.SignatureAttribute)attribute;
+                            signature = classFile.GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Signature);
                             break;
-                        case "RuntimeVisibleAnnotations":
+                        case AttributeName.RuntimeVisibleAnnotations:
                             if (classFile.MajorVersion < 49)
                                 goto default;
 
-                            if (attribute is not RuntimeVisibleAnnotationsAttributeReader runtimeVisibleAnnotationsAttribute)
-                                throw new ClassFormatError("Invalid RuntimeVisibleAnnotations attribute type.");
-
+                            var runtimeVisibleAnnotationsAttribute = (RuntimeVisibleAnnotationsAttribute)attribute;
                             annotations = ReadAnnotations(runtimeVisibleAnnotationsAttribute.Annotations, classFile, utf8_cp);
                             if ((options & ClassFileParseOptions.TrustedAnnotations) != 0)
                             {
@@ -152,42 +143,37 @@ namespace IKVM.Runtime
                                 }
                             }
                             break;
-                        case "RuntimeVisibleParameterAnnotations":
+                        case AttributeName.RuntimeVisibleParameterAnnotations:
                             if (classFile.MajorVersion < 49)
                                 goto default;
 
-                            if (attribute is not RuntimeVisibleParameterAnnotationsAttributeReader runtimeVisibleParameterAnnotationsAttribute)
-                                throw new ClassFormatError("Invalid RuntimeVisibleParameterAnnotations attribute type.");
-
+                            var runtimeVisibleParameterAnnotationsAttribute = (RuntimeVisibleParameterAnnotationsAttribute)attribute;
                             low ??= new LowFreqData();
-                            low.parameterAnnotations = new object[runtimeVisibleParameterAnnotationsAttribute.Parameters.Count][];
-                            for (int j = 0; j < runtimeVisibleParameterAnnotationsAttribute.Parameters.Count; j++)
+                            low.parameterAnnotations = new object[runtimeVisibleParameterAnnotationsAttribute.ParameterAnnotations.Count][];
+                            for (int j = 0; j < runtimeVisibleParameterAnnotationsAttribute.ParameterAnnotations.Count; j++)
                             {
-                                var parameter = runtimeVisibleParameterAnnotationsAttribute.Parameters[j];
+                                var parameter = runtimeVisibleParameterAnnotationsAttribute.ParameterAnnotations[j];
                                 low.parameterAnnotations[j] = new object[parameter.Annotations.Count];
                                 for (int k = 0; k < parameter.Annotations.Count; k++)
                                     low.parameterAnnotations[j][k] = ReadAnnotation(parameter.Annotations[k], classFile, utf8_cp);
                             }
 
                             break;
-                        case "AnnotationDefault":
+                        case AttributeName.AnnotationDefault:
                             if (classFile.MajorVersion < 49)
                                 goto default;
 
-                            if (attribute is not AnnotationDefaultAttributeReader annotationDefaultAttribute)
-                                throw new ClassFormatError("Invalid AnnotationDefault attribute type.");
-
+                            var annotationDefaultAttribute = (IKVM.ByteCode.Reading.AnnotationDefaultAttribute)attribute;
                             low ??= new LowFreqData();
                             low.annotationDefault = ReadAnnotationElementValue(annotationDefaultAttribute.DefaultValue, classFile, utf8_cp);
 
                             break;
 #if IMPORTER
-                        case "RuntimeInvisibleAnnotations":
+                        case AttributeName.RuntimeInvisibleAnnotations:
                             if (classFile.MajorVersion < 49)
                                 goto default;
 
-                            if (attribute is not RuntimeInvisibleAnnotationsAttributeReader runtimeInvisibleAnnotationsAttribute)
-                                throw new ClassFormatError("Invalid RuntimeInvisibleAnnotations attribute type.");
+                            var runtimeInvisibleAnnotationsAttribute = (RuntimeInvisibleAnnotationsAttribute)attribute;
 
                             foreach (object[] annot in ReadAnnotations(runtimeInvisibleAnnotationsAttribute.Annotations, classFile, utf8_cp))
                             {
@@ -215,7 +201,7 @@ namespace IKVM.Runtime
                                         low ??= new LowFreqData();
                                         low.InterlockedCompareAndSetField = field;
                                     }
-                                } 
+                                }
                                 else if (annot[1].Equals("Likvm/lang/ModuleInitializer;"))
                                 {
                                     if (classFile.IsInterface || IsConstructor || IsClassInitializer || IsPrivate || IsStatic == false)
@@ -231,28 +217,24 @@ namespace IKVM.Runtime
 
                             break;
 #endif
-                        case "MethodParameters":
+                        case AttributeName.MethodParameters:
                             if (classFile.MajorVersion < 52)
                                 goto default;
-
-                            if (attribute is not MethodParametersAttributeReader methodParametersAttribute)
-                                throw new ClassFormatError("Invalid attribute reader type.");
 
                             if (parameters != null)
                                 throw new ClassFormatError("{0} (Duplicate MethodParameters attribute)", classFile.Name);
 
+                            var methodParametersAttribute = (IKVM.ByteCode.Reading.MethodParametersAttribute)attribute;
                             parameters = ReadMethodParameters(methodParametersAttribute.Parameters, utf8_cp);
 
                             break;
-                        case "RuntimeVisibleTypeAnnotations":
+                        case AttributeName.RuntimeVisibleTypeAnnotations:
                             if (classFile.MajorVersion < 52)
                                 goto default;
 
-                            if (attribute is not RuntimeVisibleTypeAnnotationsAttributeReader runtimeVisibleTypeAnnotationsAttribute)
-                                throw new ClassFormatError("Invalid attribute reader type.");
-
+                            var runtimeVisibleTypeAnnotationsAttribute = (IKVM.ByteCode.Reading.RuntimeVisibleTypeAnnotationsAttribute)attribute;
                             classFile.CreateUtf8ConstantPoolItems(utf8_cp);
-                            runtimeVisibleTypeAnnotations = runtimeVisibleTypeAnnotationsAttribute.Annotations;
+                            runtimeVisibleTypeAnnotations = runtimeVisibleTypeAnnotationsAttribute.TypeAnnotations;
                             break;
                         default:
                             break;
@@ -279,17 +261,17 @@ namespace IKVM.Runtime
                 }
             }
 
-            private static MethodParametersEntry[] ReadMethodParameters(IReadOnlyList<MethodParametersAttributeParameterReader> parameters, string[] utf8_cp)
+            private static MethodParametersEntry[] ReadMethodParameters(MethodParameterTable parameters, string[] utf8_cp)
             {
                 var l = new MethodParametersEntry[parameters.Count];
 
                 for (int i = 0; i < parameters.Count; i++)
                 {
-                    var name = parameters[i].Record.Name.Index;
-                    if (name >= utf8_cp.Length || (name != 0 && utf8_cp[name] == null))
+                    var name = parameters[i].Name;
+                    if (name.Slot >= utf8_cp.Length || (name.IsNotNil && utf8_cp[name.Slot] == null))
                         return MethodParametersEntry.Malformed;
 
-                    l[i].name = utf8_cp[name];
+                    l[i].name = utf8_cp[name.Slot];
                     l[i].accessFlags = parameters[i].AccessFlags;
                 }
 

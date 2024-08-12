@@ -39,11 +39,11 @@ namespace IKVM.Runtime
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
-            /// <param name="reader"></param>
-            internal ConstantPoolItemInteger(RuntimeContext context, IntegerConstantReader reader) :
+            /// <param name="data"></param>
+            internal ConstantPoolItemInteger(RuntimeContext context, IntegerConstantData data) :
                 base(context)
             {
-                v = reader.Value;
+                v = data.Value;
             }
 
             internal override ConstantType GetConstantType() => ConstantType.Integer;

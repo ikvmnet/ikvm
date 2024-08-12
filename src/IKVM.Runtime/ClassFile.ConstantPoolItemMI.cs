@@ -42,10 +42,10 @@ namespace IKVM.Runtime
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
-            /// <param name="classIndex"></param>
+            /// <param name="clazz"></param>
             /// <param name="nameAndTypeIndex"></param>
-            internal ConstantPoolItemMI(RuntimeContext context, ushort classIndex, ushort nameAndTypeIndex) :
-                base(context, classIndex, nameAndTypeIndex)
+            internal ConstantPoolItemMI(RuntimeContext context, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndTypeIndex) :
+                base(context, clazz, nameAndTypeIndex)
             {
 
             }

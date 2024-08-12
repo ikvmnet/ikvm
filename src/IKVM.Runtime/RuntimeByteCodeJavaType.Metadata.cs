@@ -21,11 +21,7 @@
   jeroen@frijters.net
   
 */
-using System.Collections.Generic;
-using System.Linq;
-
 using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Parsing;
 using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
@@ -43,33 +39,6 @@ namespace IKVM.Runtime
         sealed class Metadata
         {
 
-            readonly string[][] genericMetaData;
-            readonly object[][] annotations;
-            readonly MethodParametersEntry[][] methodParameters;
-            readonly IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations;
-            readonly IReadOnlyList<TypeAnnotationReader>[] fieldRuntimeVisibleTypeAnnotations;
-            readonly IReadOnlyList<TypeAnnotationReader>[] methodRuntimeVisibleTypeAnnotations;
-            readonly object[] constantPool;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="genericMetaData"></param>
-            /// <param name="annotations"></param>
-            /// <param name="methodParameters"></param>
-            /// <param name="runtimeVisibleTypeAnnotations"></param>
-            /// <param name="constantPool"></param>
-            Metadata(string[][] genericMetaData, object[][] annotations, MethodParametersEntry[][] methodParameters, IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations, IReadOnlyList<TypeAnnotationReader>[] fieldRuntimeVisibleTypeAnnotations, IReadOnlyList<TypeAnnotationReader>[] methodRuntimeVisibleTypeAnnotations, object[] constantPool)
-            {
-                this.genericMetaData = genericMetaData;
-                this.annotations = annotations;
-                this.methodParameters = methodParameters;
-                this.runtimeVisibleTypeAnnotations = runtimeVisibleTypeAnnotations;
-                this.fieldRuntimeVisibleTypeAnnotations = fieldRuntimeVisibleTypeAnnotations;
-                this.methodRuntimeVisibleTypeAnnotations = methodRuntimeVisibleTypeAnnotations;
-                this.constantPool = constantPool;
-            }
-
             internal static Metadata Create(ClassFile classFile)
             {
                 if (classFile.MajorVersion < 49)
@@ -78,9 +47,9 @@ namespace IKVM.Runtime
                 string[][] genericMetaData = null;
                 object[][] annotations = null;
                 MethodParametersEntry[][] methodParameters = null;
-                IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations = null;
-                IReadOnlyList<TypeAnnotationReader>[] fieldRuntimeVisibleTypeAnnotations = null;
-                IReadOnlyList<TypeAnnotationReader>[] methodRuntimeVisibleTypeAnnotations = null;
+                TypeAnnotationTable runtimeVisibleTypeAnnotations = TypeAnnotationTable.Empty;
+                TypeAnnotationTable[] fieldRuntimeVisibleTypeAnnotations = null;
+                TypeAnnotationTable[] methodRuntimeVisibleTypeAnnotations = null;
 
                 if (classFile.EnclosingMethod != null)
                 {
@@ -100,7 +69,7 @@ namespace IKVM.Runtime
                     annotations[0] = classFile.Annotations;
                 }
 
-                if (classFile.RuntimeVisibleTypeAnnotations != null)
+                if (classFile.RuntimeVisibleTypeAnnotations.Count > 0)
                 {
                     runtimeVisibleTypeAnnotations = classFile.RuntimeVisibleTypeAnnotations;
                 }
@@ -141,9 +110,9 @@ namespace IKVM.Runtime
                         methodParameters[i] = classFile.Methods[i].MethodParameters;
                     }
 
-                    if (classFile.Methods[i].RuntimeVisibleTypeAnnotations != null)
+                    if (classFile.Methods[i].RuntimeVisibleTypeAnnotations.Count > 0)
                     {
-                        methodRuntimeVisibleTypeAnnotations ??= new IReadOnlyList<TypeAnnotationReader>[classFile.Methods.Length];
+                        methodRuntimeVisibleTypeAnnotations ??= new TypeAnnotationTable[classFile.Methods.Length];
                         methodRuntimeVisibleTypeAnnotations[i] = classFile.Methods[i].RuntimeVisibleTypeAnnotations;
                     }
                 }
@@ -164,16 +133,21 @@ namespace IKVM.Runtime
                         annotations[4][i] = classFile.Fields[i].Annotations;
                     }
 
-                    if (classFile.Fields[i].RuntimeVisibleTypeAnnotations != null)
+                    if (classFile.Fields[i].RuntimeVisibleTypeAnnotations.Count > 0)
                     {
-                        fieldRuntimeVisibleTypeAnnotations ??= new IReadOnlyList<TypeAnnotationReader>[classFile.Fields.Length];
+                        fieldRuntimeVisibleTypeAnnotations ??= new TypeAnnotationTable[classFile.Fields.Length];
                         fieldRuntimeVisibleTypeAnnotations[i] = classFile.Fields[i].RuntimeVisibleTypeAnnotations;
                     }
                 }
 
-                if (genericMetaData != null || annotations != null || methodParameters != null || runtimeVisibleTypeAnnotations != null || fieldRuntimeVisibleTypeAnnotations != null || methodRuntimeVisibleTypeAnnotations != null)
+                if (genericMetaData != null ||
+                    annotations != null ||
+                    methodParameters != null ||
+                    runtimeVisibleTypeAnnotations.Count > 0 ||
+                    fieldRuntimeVisibleTypeAnnotations != null ||
+                    methodRuntimeVisibleTypeAnnotations != null)
                 {
-                    var constantPool = runtimeVisibleTypeAnnotations != null || fieldRuntimeVisibleTypeAnnotations != null || methodRuntimeVisibleTypeAnnotations != null ? classFile.GetConstantPool() : null;
+                    var constantPool = runtimeVisibleTypeAnnotations.Count > 0 || fieldRuntimeVisibleTypeAnnotations != null || methodRuntimeVisibleTypeAnnotations != null ? classFile.GetConstantPool() : null;
                     return new Metadata(genericMetaData, annotations, methodParameters, runtimeVisibleTypeAnnotations, fieldRuntimeVisibleTypeAnnotations, methodRuntimeVisibleTypeAnnotations, constantPool);
                 }
 
@@ -183,81 +157,72 @@ namespace IKVM.Runtime
             internal static string GetGenericSignature(Metadata m)
             {
                 if (m != null && m.genericMetaData != null && m.genericMetaData[3] != null)
-                {
                     return m.genericMetaData[3][0];
-                }
+
                 return null;
             }
 
             internal static string[] GetEnclosingMethod(Metadata m)
             {
                 if (m != null && m.genericMetaData != null)
-                {
                     return m.genericMetaData[2];
-                }
+
                 return null;
             }
 
             internal static string GetGenericMethodSignature(Metadata m, int index)
             {
                 if (m != null && m.genericMetaData != null && m.genericMetaData[0] != null)
-                {
                     return m.genericMetaData[0][index];
-                }
+
                 return null;
             }
 
             internal static string GetGenericFieldSignature(Metadata m, int index)
             {
                 if (m != null && m.genericMetaData != null && m.genericMetaData[1] != null)
-                {
                     return m.genericMetaData[1][index];
-                }
+
                 return null;
             }
 
             internal static object[] GetAnnotations(Metadata m)
             {
                 if (m != null && m.annotations != null)
-                {
                     return m.annotations[0];
-                }
+
                 return null;
             }
 
             internal static object[] GetMethodAnnotations(Metadata m, int index)
             {
                 if (m != null && m.annotations != null && m.annotations[1] != null)
-                {
                     return (object[])m.annotations[1][index];
-                }
+
                 return null;
             }
 
             internal static object[][] GetMethodParameterAnnotations(Metadata m, int index)
             {
                 if (m != null && m.annotations != null && m.annotations[2] != null)
-                {
                     return (object[][])m.annotations[2][index];
-                }
+
                 return null;
             }
 
             internal static MethodParametersEntry[] GetMethodParameters(Metadata m, int index)
             {
                 if (m != null && m.methodParameters != null)
-                {
                     return m.methodParameters[index];
-                }
+
                 return null;
             }
 
             internal static object GetMethodDefaultValue(Metadata m, int index)
             {
                 if (m != null && m.annotations != null && m.annotations[3] != null)
-                {
                     return m.annotations[3][index];
-                }
+
                 return null;
             }
 
@@ -265,9 +230,8 @@ namespace IKVM.Runtime
             internal static object[] GetFieldAnnotations(Metadata m, int index)
             {
                 if (m != null && m.annotations != null && m.annotations[4] != null)
-                {
                     return (object[])m.annotations[4][index];
-                }
+
                 return null;
             }
 
@@ -278,40 +242,64 @@ namespace IKVM.Runtime
 
             internal static byte[] GetRawTypeAnnotations(Metadata m)
             {
-                if (m != null && m.runtimeVisibleTypeAnnotations != null)
-                    return SerializeTypeAnnotations(m.runtimeVisibleTypeAnnotations);
-                else
-                    return null;
+                if (m != null)
+                    return SerializeTypeAnnotations(in m.runtimeVisibleTypeAnnotations);
+
+                return null;
             }
 
             internal static byte[] GetMethodRawTypeAnnotations(Metadata m, int index)
             {
                 if (m != null && m.methodRuntimeVisibleTypeAnnotations != null)
-                    return SerializeTypeAnnotations(m.methodRuntimeVisibleTypeAnnotations[index]);
-                else
-                    return null;
+                    return SerializeTypeAnnotations(in m.methodRuntimeVisibleTypeAnnotations[index]);
+
+                return null;
             }
 
             internal static byte[] GetFieldRawTypeAnnotations(Metadata m, int index)
             {
                 if (m != null && m.fieldRuntimeVisibleTypeAnnotations != null)
-                    return SerializeTypeAnnotations(m.fieldRuntimeVisibleTypeAnnotations[index]);
-                else
-                    return null;
+                    return SerializeTypeAnnotations(in m.fieldRuntimeVisibleTypeAnnotations[index]);
+
+                return null;
             }
 
-            static byte[] SerializeTypeAnnotations(IReadOnlyList<TypeAnnotationReader> annotations)
+            static byte[] SerializeTypeAnnotations(ref readonly TypeAnnotationTable annotations)
             {
-                if (annotations == null)
+                if (annotations.Count == 0)
                     return null;
 
                 var builder = new BlobBuilder();
                 var encoder = new TypeAnnotationTableEncoder(builder);
-
-                foreach (var i in annotations)
-                    encoder.Encode(i.Record);
-
+                annotations.WriteTo(ref encoder);
                 return builder.ToArray();
+            }
+
+            readonly string[][] genericMetaData;
+            readonly object[][] annotations;
+            readonly MethodParametersEntry[][] methodParameters;
+            readonly TypeAnnotationTable runtimeVisibleTypeAnnotations;
+            readonly TypeAnnotationTable[] fieldRuntimeVisibleTypeAnnotations;
+            readonly TypeAnnotationTable[] methodRuntimeVisibleTypeAnnotations;
+            readonly object[] constantPool;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="genericMetaData"></param>
+            /// <param name="annotations"></param>
+            /// <param name="methodParameters"></param>
+            /// <param name="runtimeVisibleTypeAnnotations"></param>
+            /// <param name="constantPool"></param>
+            Metadata(string[][] genericMetaData, object[][] annotations, MethodParametersEntry[][] methodParameters, TypeAnnotationTable runtimeVisibleTypeAnnotations, TypeAnnotationTable[] fieldRuntimeVisibleTypeAnnotations, TypeAnnotationTable[] methodRuntimeVisibleTypeAnnotations, object[] constantPool)
+            {
+                this.genericMetaData = genericMetaData;
+                this.annotations = annotations;
+                this.methodParameters = methodParameters;
+                this.runtimeVisibleTypeAnnotations = runtimeVisibleTypeAnnotations;
+                this.fieldRuntimeVisibleTypeAnnotations = fieldRuntimeVisibleTypeAnnotations;
+                this.methodRuntimeVisibleTypeAnnotations = methodRuntimeVisibleTypeAnnotations;
+                this.constantPool = constantPool;
             }
 
         }

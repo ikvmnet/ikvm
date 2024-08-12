@@ -22,6 +22,8 @@
   
 */
 
+using IKVM.ByteCode;
+
 using Instruction = IKVM.Runtime.ClassFile.Method.Instruction;
 using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 
@@ -98,17 +100,17 @@ namespace IKVM.Runtime
 
         internal RuntimeJavaType GetClassLiteral(int offset)
         {
-            return ClassFile.GetConstantPoolClassType(Code[OpcodeIndex + offset].Arg1);
+            return ClassFile.GetConstantPoolClassType(new ClassConstantHandle(checked((ushort)Code[OpcodeIndex + offset].Arg1)));
         }
 
         internal string GetStringLiteral(int offset)
         {
-            return ClassFile.GetConstantPoolConstantString(Code[OpcodeIndex + offset].Arg1);
+            return ClassFile.GetConstantPoolConstantString(new StringConstantHandle(checked((ushort)Code[OpcodeIndex + offset].Arg1)));
         }
 
         internal ClassFile.ConstantType GetConstantType(int offset)
         {
-            return ClassFile.GetConstantPoolConstantType(Code[OpcodeIndex + offset].Arg1);
+            return ClassFile.GetConstantPoolConstantType(new ConstantHandle(ConstantKind.Unknown, checked((ushort)Code[OpcodeIndex + offset].Arg1)));
         }
 
         internal void PatchOpCode(int offset, NormalizedByteCode opc)

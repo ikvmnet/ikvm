@@ -30,87 +30,87 @@ namespace IKVM.Attributes
 {
 
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
-	public sealed class ConstantPoolAttribute : Attribute
-	{
+    public sealed class ConstantPoolAttribute : Attribute
+    {
 
-		internal readonly object[] constantPool;
+        internal static object[] Decompress(object[] constantPool)
+        {
+            var list = new List<object>();
 
-		public ConstantPoolAttribute(object[] constantPool)
-		{
-			this.constantPool = Decompress(constantPool);
-		}
+            foreach (var obj in constantPool)
+            {
+                int emptySlots = obj as byte? ?? obj as ushort? ?? 0;
+                if (emptySlots == 0)
+                {
+                    list.Add(Unescape(obj));
+                }
+                else
+                {
+                    for (int i = 0; i < emptySlots; i++)
+                        list.Add(null);
+                }
+            }
 
-		internal static object[] Decompress(object[] constantPool)
-		{
-			List<object> list = new List<object>();
-			foreach (object obj in constantPool)
-			{
-				int emptySlots = obj as byte? ?? obj as ushort? ?? 0;
-				if (emptySlots == 0)
-				{
-					list.Add(Unescape(obj));
-				}
-				else
-				{
-					for (int i = 0; i < emptySlots; i++)
-					{
-						list.Add(null);
-					}
-				}
-			}
-			return list.ToArray();
-		}
+            return list.ToArray();
+        }
 
-		private static object Unescape(object obj)
-		{
-			string str = obj as string;
-			if (str != null)
-			{
-				obj = UnicodeUtil.UnescapeInvalidSurrogates(str);
-			}
-			return obj;
-		}
+        static object Unescape(object obj)
+        {
+            if (obj is string str)
+                obj = UnicodeUtil.UnescapeInvalidSurrogates(str);
 
-		internal static object[] Compress(object[] constantPool, bool[] inUse)
-		{
-			int length = constantPool.Length;
-			while (!inUse[length - 1])
-			{
-				length--;
-			}
-			int write = 0;
-			for (int read = 0; read < length; read++)
-			{
-				int start = read;
-				while (!inUse[read])
-				{
-					read++;
-				}
-				int emptySlots = read - start;
-				if (emptySlots > 255)
-				{
-					constantPool[write++] = (ushort)emptySlots;
-				}
-				else if (emptySlots > 0)
-				{
-					constantPool[write++] = (byte)emptySlots;
-				}
-				constantPool[write++] = Escape(constantPool[read]);
-			}
-			Array.Resize(ref constantPool, write);
-			return constantPool;
-		}
+            return obj;
+        }
 
-		private static object Escape(object obj)
-		{
-			string str = obj as string;
-			if (str != null)
-			{
-				obj = UnicodeUtil.EscapeInvalidSurrogates(str);
-			}
-			return obj;
-		}
+        internal static object[] Compress(object[] constantPool, bool[] inUse)
+        {
+            int length = constantPool.Length;
+            while (!inUse[length - 1])
+                length--;
 
-	}
+            int write = 0;
+            for (int read = 0; read < length; read++)
+            {
+                int start = read;
+                while (!inUse[read])
+                    read++;
+
+                int emptySlots = read - start;
+                if (emptySlots > 255)
+                {
+                    constantPool[write++] = (ushort)emptySlots;
+                }
+                else if (emptySlots > 0)
+                {
+                    constantPool[write++] = (byte)emptySlots;
+                }
+
+                constantPool[write++] = Escape(constantPool[read]);
+            }
+
+            Array.Resize(ref constantPool, write);
+            return constantPool;
+        }
+
+        static object Escape(object obj)
+        {
+            if (obj is string str)
+                obj = UnicodeUtil.EscapeInvalidSurrogates(str);
+
+            return obj;
+        }
+
+        internal readonly object[] constantPool;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="constantPool"></param>
+        public ConstantPoolAttribute(object[] constantPool)
+        {
+            this.constantPool = Decompress(constantPool);
+        }
+
+    }
 
 }
