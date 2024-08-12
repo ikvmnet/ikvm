@@ -9,7 +9,6 @@
 
     <ItemGroup>
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjvm\libjvm.clangproj " />
-        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libfdlibm\libfdlibm.clangproj " />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libverify\libverify.clangproj" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libiava\libiava.clangproj" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libnet\libnet.clangproj" />
