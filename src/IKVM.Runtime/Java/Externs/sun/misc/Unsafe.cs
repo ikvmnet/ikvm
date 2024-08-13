@@ -1697,11 +1697,11 @@ namespace IKVM.Java.Externs.sun.misc
         /// </summary>
         /// <param name="buffer"></param>
         /// <returns></returns>
-        static IKVM.ByteCode.Encoding.ClassFile ReadClass(byte[] buffer)
+        static IKVM.ByteCode.Decoding.ClassFile ReadClass(byte[] buffer)
         {
             try
             {
-                return IKVM.ByteCode.Encoding.ClassFile.Read(buffer);
+                return IKVM.ByteCode.Decoding.ClassFile.Read(buffer);
             }
             catch (InvalidClassMagicException)
             {

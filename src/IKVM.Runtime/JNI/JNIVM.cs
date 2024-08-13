@@ -25,7 +25,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-using IKVM.ByteCode.Encoding;
+using IKVM.ByteCode.Text;
 using IKVM.Runtime.Extensions;
 
 namespace IKVM.Runtime.JNI

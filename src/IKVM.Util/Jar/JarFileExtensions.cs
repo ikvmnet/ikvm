@@ -2,7 +2,7 @@
 using System.Linq;
 
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Decoding;
 using IKVM.Util.Modules;
 
 using static IKVM.Util.Jar.JarFileUtil;
