@@ -29,7 +29,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Decoding;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -1176,7 +1176,7 @@ namespace IKVM.Tools.Importer
 
             try
             {
-                cf = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Reading.ClassFile.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
+                cf = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
             }
             catch (ClassFormatError)
             {
@@ -1424,7 +1424,7 @@ namespace IKVM.Tools.Importer
             try
             {
                 using var file = File.OpenRead(filename);
-                var cf = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Reading.ClassFile.Read(file), null, ClassFileParseOptions.None, null);
+                var cf = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(file), null, ClassFileParseOptions.None, null);
                 ArrayAppend(ref annotations, cf.Annotations);
             }
             catch (Exception x)

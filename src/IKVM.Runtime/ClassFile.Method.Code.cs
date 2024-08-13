@@ -26,7 +26,7 @@ using System.Buffers;
 using System.Collections.Generic;
 
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Decoding;
 
 namespace IKVM.Runtime
 {
@@ -165,7 +165,7 @@ namespace IKVM.Runtime
                         switch (classFile.GetConstantPoolUtf8String(utf8_cp, _attribute.Name))
                         {
                             case AttributeName.LineNumberTable:
-                                var lnt = (IKVM.ByteCode.Reading.LineNumberTableAttribute)_attribute;
+                                var lnt = (IKVM.ByteCode.Decoding.LineNumberTableAttribute)_attribute;
                                 if ((options & ClassFileParseOptions.LineNumberTable) != 0)
                                 {
                                     lineNumberTable = new LineNumberTableEntry[lnt.LineNumbers.Count];
@@ -180,7 +180,7 @@ namespace IKVM.Runtime
                                 }
                                 break;
                             case AttributeName.LocalVariableTable:
-                                var lvt = (IKVM.ByteCode.Reading.LocalVariableTableAttribute)_attribute;
+                                var lvt = (IKVM.ByteCode.Decoding.LocalVariableTableAttribute)_attribute;
                                 if ((options & ClassFileParseOptions.LocalVariableTable) != 0)
                                 {
                                     localVariableTable = new LocalVariableTableEntry[lvt.LocalVariables.Count];

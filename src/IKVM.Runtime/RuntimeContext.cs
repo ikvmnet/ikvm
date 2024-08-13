@@ -197,6 +197,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Gets the <see cref="CompilerFactory"/> associated with this instance of the runtime.
         /// </summary>
+        /// 
         public CompilerFactory CompilerFactory => GetOrCreateSingleton(ref compilerFactory, () => new CompilerFactory(this, bootstrap));
 
         /// <summary>

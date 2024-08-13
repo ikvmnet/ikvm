@@ -25,12 +25,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using IKVM.ByteCode.Reading;
 using IKVM.Attributes;
 using IKVM.ByteCode;
-using System.ComponentModel;
-
-
+using IKVM.ByteCode.Decoding;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -843,7 +840,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            static void MarkConstantPoolUsageForAnnotation(ref readonly IKVM.ByteCode.Reading.Annotation annotation, bool[] inUse)
+            static void MarkConstantPoolUsageForAnnotation(ref readonly IKVM.ByteCode.Decoding.Annotation annotation, bool[] inUse)
             {
                 inUse[annotation.Type.Slot] = true;
 

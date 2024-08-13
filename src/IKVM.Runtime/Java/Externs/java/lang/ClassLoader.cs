@@ -27,7 +27,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Encoding;
 using IKVM.Runtime;
 
 using sun.nio.ch;
@@ -119,11 +119,11 @@ namespace IKVM.Java.Externs.java.lang
         /// </summary>
         /// <param name="buffer"></param>
         /// <returns></returns>
-        static IKVM.ByteCode.Reading.ClassFile ReadClass(byte[] buffer)
+        static IKVM.ByteCode.Decoding.ClassFile ReadClass(byte[] buffer)
         {
             try
             {
-                return IKVM.ByteCode.Reading.ClassFile.Read(buffer);
+                return IKVM.ByteCode.Decoding.ClassFile.Read(buffer);
             }
             catch (InvalidClassMagicException)
             {
@@ -144,7 +144,7 @@ namespace IKVM.Java.Externs.java.lang
         /// <param name="pd"></param>
         /// <param name="source"></param>
         /// <returns></returns>
-        static global::java.lang.Class DefineClass(global::java.lang.ClassLoader self, string name, IKVM.ByteCode.Reading.ClassFile clazz, global::java.security.ProtectionDomain pd, string source)
+        static global::java.lang.Class DefineClass(global::java.lang.ClassLoader self, string name, IKVM.ByteCode.Decoding.ClassFile clazz, global::java.security.ProtectionDomain pd, string source)
         {
             try
             {

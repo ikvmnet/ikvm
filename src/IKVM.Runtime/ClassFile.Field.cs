@@ -25,7 +25,7 @@ using System;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Decoding;
 
 namespace IKVM.Runtime
 {
@@ -46,7 +46,7 @@ namespace IKVM.Runtime
             /// <param name="utf8_cp"></param>
             /// <param name="field"></param>
             /// <exception cref="ClassFormatError"></exception>
-            internal Field(ClassFile classFile, string[] utf8_cp, IKVM.ByteCode.Reading.Field field) :
+            internal Field(ClassFile classFile, string[] utf8_cp, IKVM.ByteCode.Decoding.Field field) :
                 base(classFile, utf8_cp, field.AccessFlags, field.Name, field.Descriptor)
             {
                 if ((IsPrivate && IsPublic) || (IsPrivate && IsProtected) || (IsPublic && IsProtected) || (IsFinal && IsVolatile) || (classFile.IsInterface && (!IsPublic || !IsStatic || !IsFinal || IsTransient)))
@@ -105,7 +105,7 @@ namespace IKVM.Runtime
                             if (classFile.MajorVersion < 49)
                                 goto default;
 
-                            var _signature = (IKVM.ByteCode.Reading.SignatureAttribute)attribute;
+                            var _signature = (IKVM.ByteCode.Decoding.SignatureAttribute)attribute;
                             signature = classFile.GetConstantPoolUtf8String(utf8_cp, _signature.Signature);
                             break;
                         case AttributeName.RuntimeVisibleAnnotations:
@@ -139,7 +139,7 @@ namespace IKVM.Runtime
                             if (classFile.MajorVersion < 52)
                                 goto default;
 
-                            var _runtimeVisibleTypeAnnotations = (IKVM.ByteCode.Reading.RuntimeVisibleTypeAnnotationsAttribute)attribute;
+                            var _runtimeVisibleTypeAnnotations = (IKVM.ByteCode.Decoding.RuntimeVisibleTypeAnnotationsAttribute)attribute;
                             classFile.CreateUtf8ConstantPoolItems(utf8_cp);
                             runtimeVisibleTypeAnnotations = _runtimeVisibleTypeAnnotations.TypeAnnotations;
                             break;

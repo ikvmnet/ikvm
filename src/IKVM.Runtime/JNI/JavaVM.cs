@@ -24,7 +24,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-using IKVM.ByteCode.Encoding;
+using IKVM.ByteCode.Text;
 using IKVM.Runtime.Extensions;
 
 namespace IKVM.Runtime.JNI

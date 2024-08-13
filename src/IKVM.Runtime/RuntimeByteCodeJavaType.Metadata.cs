@@ -22,8 +22,8 @@
   
 */
 using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
-using IKVM.ByteCode.Writing;
+using IKVM.ByteCode.Decoding;
+using IKVM.ByteCode.Encoding;
 
 namespace IKVM.Runtime
 {
