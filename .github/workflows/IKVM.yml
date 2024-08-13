@@ -129,6 +129,7 @@ jobs:
       with:
         crate: apple-codesign
         version: latest
+        locked: false
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v1
       with:
