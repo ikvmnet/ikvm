@@ -1132,7 +1132,11 @@ namespace IKVM.Runtime
             return null;
         }
 
-        private void RemoveAssertionInit(Method m)
+        /// <summary>
+        /// Removes a call to java.lang.Class.desiredAssertionStatus() and replaces it with a hard coded constant (true).
+        /// </summary>
+        /// <param name="method"></param>
+        void RemoveAssertionInit(Method method)
         {
             /* We match the following code sequence:
 			 *   0  ldc <class X>
@@ -1145,22 +1149,31 @@ namespace IKVM.Runtime
 			 */
             ConstantPoolItemFieldref fieldref;
             Field field;
-            if (m.Instructions[0].NormalizedOpCode == NormalizedByteCode.__ldc && SafeIsConstantPoolClass(new ClassConstantHandle(checked((ushort)m.Instructions[0].Arg1)))
-                && m.Instructions[1].NormalizedOpCode == NormalizedByteCode.__invokevirtual && IsDesiredAssertionStatusMethodref(m.Instructions[1].Arg1)
-                && m.Instructions[2].NormalizedOpCode == NormalizedByteCode.__ifne && m.Instructions[2].TargetIndex == 5
-                && m.Instructions[3].NormalizedOpCode == NormalizedByteCode.__iconst && m.Instructions[3].Arg1 == 1
-                && m.Instructions[4].NormalizedOpCode == NormalizedByteCode.__goto && m.Instructions[4].TargetIndex == 6
-                && m.Instructions[5].NormalizedOpCode == NormalizedByteCode.__iconst && m.Instructions[5].Arg1 == 0
-                && m.Instructions[6].NormalizedOpCode == NormalizedByteCode.__putstatic && (fieldref = SafeGetFieldref(m.Instructions[6].Arg1)) != null
-                && fieldref.Class == Name && fieldref.Signature == "Z"
-                && (field = GetField(fieldref.Name, fieldref.Signature)) != null
-                && field.IsStatic && field.IsFinal
-                && !HasBranchIntoRegion(m.Instructions, 7, m.Instructions.Length, 0, 7)
-                && !HasStaticFieldWrite(m.Instructions, 7, m.Instructions.Length, field)
-                && !HasExceptionHandlerInRegion(m.ExceptionTable, 0, 7))
+            if (method.Instructions is [
+                { NormalizedOpCode: NormalizedByteCode.__ldc },
+                { NormalizedOpCode: NormalizedByteCode.__invokevirtual },
+                { NormalizedOpCode: NormalizedByteCode.__ifne },
+                { NormalizedOpCode: NormalizedByteCode.__iconst },
+                { NormalizedOpCode: NormalizedByteCode.__goto },
+                { NormalizedOpCode: NormalizedByteCode.__iconst },
+                { NormalizedOpCode: NormalizedByteCode.__putstatic },
+                ..] &&
+                method.Instructions[0].NormalizedOpCode == NormalizedByteCode.__ldc && SafeIsConstantPoolClass(new ClassConstantHandle(checked((ushort)method.Instructions[0].Arg1))) &&
+                method.Instructions[1].NormalizedOpCode == NormalizedByteCode.__invokevirtual && IsDesiredAssertionStatusMethodref(method.Instructions[1].Arg1) &&
+                method.Instructions[2].NormalizedOpCode == NormalizedByteCode.__ifne && method.Instructions[2].TargetIndex == 5 &&
+                method.Instructions[3].NormalizedOpCode == NormalizedByteCode.__iconst && method.Instructions[3].Arg1 == 1 &&
+                method.Instructions[4].NormalizedOpCode == NormalizedByteCode.__goto && method.Instructions[4].TargetIndex == 6 &&
+                method.Instructions[5].NormalizedOpCode == NormalizedByteCode.__iconst && method.Instructions[5].Arg1 == 0 &&
+                method.Instructions[6].NormalizedOpCode == NormalizedByteCode.__putstatic && (fieldref = SafeGetFieldref(method.Instructions[6].Arg1)) != null &&
+                fieldref.Class == Name && fieldref.Signature == "Z" &&
+                (field = GetField(fieldref.Name, fieldref.Signature)) != null &&
+                field.IsStatic && field.IsFinal &&
+                !HasBranchIntoRegion(method.Instructions, 7, method.Instructions.Length, 0, 7) &&
+                !HasStaticFieldWrite(method.Instructions, 7, method.Instructions.Length, field) &&
+                !HasExceptionHandlerInRegion(method.ExceptionTable, 0, 7))
             {
                 field.PatchConstantValue(true);
-                m.Instructions[0].PatchOpCode(NormalizedByteCode.__goto, 7);
+                method.Instructions[0].PatchOpCode(NormalizedByteCode.__goto, 7);
                 flags |= FLAG_HAS_ASSERTIONS;
             }
         }
