@@ -88,14 +88,16 @@ namespace IKVM.Runtime
                             // we add an additional nop instruction to make it easier for consumers of the code array
                             _instructions[instructionCount++].SetTermNop((ushort)decoder.Position.GetInteger());
                         }
+                        catch (ArgumentOutOfRangeException e)
+                        {
+                            verifyError = e.Message;
+                        }
                         catch (ClassFormatError e)
                         {
-                            // any class format errors in the code block are actually verify errors
                             verifyError = e.Message;
                         }
                         catch (ByteCodeException e)
                         {
-                            // any errors in the code block are actually verify errors
                             verifyError = e.Message;
                         }
 
