@@ -2,8 +2,10 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-#if NETSTANDARD2_1
-[assembly: TypeForwardedTo(typeof(System.Range))]
+#if NETSTANDARD2_1 || NET
+using System.Runtime.CompilerServices;
+
+[assembly: TypeForwardedTo(typeof(global::System.Range))]
 #else
 using System.Runtime.CompilerServices;
 

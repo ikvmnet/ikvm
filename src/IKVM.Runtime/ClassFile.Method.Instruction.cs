@@ -670,7 +670,7 @@ namespace IKVM.Runtime
                                 foreach (var _case in _lookupswitch.Cases)
                                 {
                                     lookupswitchentries[_lookupswitchindex].value = _case.Key;
-                                    lookupswitchentries[_lookupswitchindex].value = _case.Target;
+                                    lookupswitchentries[_lookupswitchindex].target = _case.Target;
                                     _lookupswitchindex++;
                                 }
 
@@ -688,7 +688,7 @@ namespace IKVM.Runtime
                                 foreach (var _case in _tableswitch.Cases)
                                 {
                                     tableswitchentries[_tableswitchindex].value = _tableswitch.Low + _tableswitchindex;
-                                    tableswitchentries[_tableswitchindex].value = _case;
+                                    tableswitchentries[_tableswitchindex].target = _case;
                                     _tableswitchindex++;
                                 }
 
