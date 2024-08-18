@@ -5,7 +5,25 @@
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <PackageId>IKVM.Java</PackageId>
         <IkvmJavaRuntimeIdentifier>ref</IkvmJavaRuntimeIdentifier>
+        <DebugSymbols>false</DebugSymbols>
+        <DebugType>none</DebugType>
+        <TargetsTriggeredByCompilation>$(TargetsTriggeredByCompilation);ConvertRefAssembly</TargetsTriggeredByCompilation>
     </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Refasmer.CliTool" Version="1.0.33">
+            <PrivateAssets>all</PrivateAssets>
+            <ExcludeAssets>all</ExcludeAssets>
+            <GeneratePathProperty>true</GeneratePathProperty>
+        </PackageReference>
+    </ItemGroup>
+
+    <Target Name="ConvertRefAssembly">
+        <ItemGroup>
+            <RefasmerCliTool Include="$(PkgJetBrains_Refasmer_CliTool)\tools\net6.0\any\RefasmerCliTool.dll" />
+        </ItemGroup>
+        <Exec Command="dotnet exec @(RefasmerCliTool) --refasm --overwrite --noattr --all &quot;@(IntermediateAssembly)&quot; " />
+    </Target>
 
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />

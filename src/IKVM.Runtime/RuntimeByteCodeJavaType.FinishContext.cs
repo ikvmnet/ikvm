@@ -25,8 +25,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using IKVM.ByteCode.Reading;
 using IKVM.Attributes;
+using IKVM.ByteCode;
+using IKVM.ByteCode.Decoding;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -765,17 +766,26 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER
+
             static void AddConstantPoolAttributeIfNecessary(RuntimeContext context, ClassFile classFile, TypeBuilder typeBuilder)
             {
                 object[] constantPool = null;
                 bool[] inUse = null;
-                MarkConstantPoolUsage(classFile, classFile.RuntimeVisibleTypeAnnotations, ref constantPool, ref inUse);
+
+                ref readonly var runtimeVisibleTypeAnnotations = ref classFile.RuntimeVisibleTypeAnnotations;
+                MarkConstantPoolUsage(classFile, in runtimeVisibleTypeAnnotations, ref constantPool, ref inUse);
 
                 foreach (var method in classFile.Methods)
-                    MarkConstantPoolUsage(classFile, method.RuntimeVisibleTypeAnnotations, ref constantPool, ref inUse);
+                {
+                    ref readonly var methodRuntimeVisibleTypeAnnotations = ref method.RuntimeVisibleTypeAnnotations;
+                    MarkConstantPoolUsage(classFile, in methodRuntimeVisibleTypeAnnotations, ref constantPool, ref inUse);
+                }
 
                 foreach (var field in classFile.Fields)
-                    MarkConstantPoolUsage(classFile, field.RuntimeVisibleTypeAnnotations, ref constantPool, ref inUse);
+                {
+                    ref readonly var fieldRuntimeVisibleTypeAnnotations = ref field.RuntimeVisibleTypeAnnotations;
+                    MarkConstantPoolUsage(classFile, in field.RuntimeVisibleTypeAnnotations, ref constantPool, ref inUse);
+                }
 
                 if (constantPool != null)
                 {
@@ -785,9 +795,16 @@ namespace IKVM.Runtime
                 }
             }
 
-            private static void MarkConstantPoolUsage(ClassFile classFile, IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations, ref object[] constantPool, ref bool[] inUse)
+            /// <summary>
+            /// Scans the specified <see cref="TypeAnnotationTable"/> for used constant handles and marks them as in-use.
+            /// </summary>
+            /// <param name="classFile"></param>
+            /// <param name="runtimeVisibleTypeAnnotations"></param>
+            /// <param name="constantPool"></param>
+            /// <param name="inUse"></param>
+            static void MarkConstantPoolUsage(ClassFile classFile, ref readonly TypeAnnotationTable runtimeVisibleTypeAnnotations, ref object[] constantPool, ref bool[] inUse)
             {
-                if (runtimeVisibleTypeAnnotations != null)
+                if (runtimeVisibleTypeAnnotations.Count > 0)
                 {
                     if (constantPool == null)
                     {
@@ -796,69 +813,89 @@ namespace IKVM.Runtime
                     }
                     try
                     {
-                        foreach (var annotation in runtimeVisibleTypeAnnotations)
-                            MarkConstantPoolUsageForTypeAnnotation(annotation, inUse);
+                        foreach (ref readonly var annotation in runtimeVisibleTypeAnnotations)
+                        {
+                            ref readonly var i = ref annotation;
+                            MarkConstantPoolUsageForTypeAnnotation(in i, inUse);
+                        }
 
                         return;
                     }
                     catch (ClassFormatError)
                     {
+
                     }
                     catch (IndexOutOfRangeException)
                     {
+
                     }
+                    catch (ByteCodeException)
+                    {
+
+                    }
+
                     // if we fail to parse the annotations (e.g. due to a malformed attribute), we simply keep all the constant pool entries
                     for (int i = 0; i < inUse.Length; i++)
-                    {
                         inUse[i] = true;
-                    }
                 }
             }
 
-            static void MarkConstantPoolUsageForAnnotation(AnnotationReader annotation, bool[] inUse)
+            static void MarkConstantPoolUsageForAnnotation(ref readonly IKVM.ByteCode.Decoding.Annotation annotation, bool[] inUse)
             {
-                ushort type_index = annotation.Record.TypeIndex;
-                inUse[type_index] = true;
+                inUse[annotation.Type.Slot] = true;
 
-                for (int i = 0; i < annotation.Record.Elements.Length; i++)
+                for (int i = 0; i < annotation.Elements.Count; i++)
                 {
-                    inUse[annotation.Record.Elements[i].NameIndex] = true;
-                    MarkConstantPoolUsageForAnnotationComponentValue(annotation.Elements[i], inUse);
+                    ref readonly var element = ref annotation.Elements[i];
+                    ref readonly var elementValue = ref element.Value;
+                    inUse[element.Name.Slot] = true;
+                    MarkConstantPoolUsageForAnnotationComponentValue(in elementValue, inUse);
                 }
             }
 
-            static void MarkConstantPoolUsageForTypeAnnotation(TypeAnnotationReader annotation, bool[] inUse)
+            static void MarkConstantPoolUsageForTypeAnnotation(ref readonly TypeAnnotation annotation, bool[] inUse)
             {
-                ushort type_index = annotation.Record.TypeIndex;
-                inUse[type_index] = true;
+                inUse[annotation.Type.Slot] = true;
 
-                for (int i = 0; i < annotation.Record.Elements.Length; i++)
+                for (int i = 0; i < annotation.Elements.Count; i++)
                 {
-                    inUse[annotation.Record.Elements[i].NameIndex] = true;
-                    MarkConstantPoolUsageForAnnotationComponentValue(annotation.Elements[i], inUse);
+                    ref readonly var element = ref annotation.Elements[i];
+                    ref readonly var elementValue = ref element.Value;
+                    inUse[element.Name.Slot] = true;
+                    MarkConstantPoolUsageForAnnotationComponentValue(in elementValue, inUse);
                 }
             }
 
-            static void MarkConstantPoolUsageForAnnotationComponentValue(ElementValueReader element, bool[] inUse)
+            static void MarkConstantPoolUsageForAnnotationComponentValue(ref readonly ElementValue element, bool[] inUse)
             {
-                switch (element)
+                switch (element.Kind)
                 {
-                    case ElementValueConstantReader constant:
-                        inUse[constant.ValueRecord.Index] = true;
+                    case ElementValueKind.Boolean:
+                    case ElementValueKind.Byte:
+                    case ElementValueKind.Char:
+                    case ElementValueKind.Double:
+                    case ElementValueKind.Float:
+                    case ElementValueKind.Integer:
+                    case ElementValueKind.Long:
+                    case ElementValueKind.Short:
+                    case ElementValueKind.String:
+                        inUse[((ConstantElementValue)element).Handle.Slot] = true;
                         break;
-                    case ElementValueClassReader classInfo:
-                        inUse[classInfo.ValueRecord.ClassIndex] = true;
+                    case ElementValueKind.Class:
+                        inUse[((ClassElementValue)element).Class.Slot] = true;
                         break;
-                    case ElementValueEnumConstantReader enumConstant:
-                        inUse[enumConstant.ValueRecord.TypeNameIndex] = true;
-                        inUse[enumConstant.ValueRecord.ConstantNameIndex] = true;
+                    case ElementValueKind.Enum:
+                        var enum_ = (EnumElementValue)element;
+                        inUse[enum_.TypeName.Slot] = true;
+                        inUse[enum_.ConstantName.Slot] = true;
                         break;
-                    case ElementValueAnnotationReader annotation:
-                        MarkConstantPoolUsageForAnnotation(annotation.Annotation, inUse);
+                    case ElementValueKind.Annotation:
+                        var annotation = ((AnnotationElementValue)element).Annotation;
+                        MarkConstantPoolUsageForAnnotation(ref annotation, inUse);
                         break;
-                    case ElementValueArrayReader array:
-                        foreach (var i in array.Values)
-                            MarkConstantPoolUsageForAnnotationComponentValue(i, inUse);
+                    case ElementValueKind.Array:
+                        foreach (ref readonly var i in (ArrayElementValue)element)
+                            MarkConstantPoolUsageForAnnotationComponentValue(in i, inUse);
                         break;
                 }
             }
@@ -893,7 +930,7 @@ namespace IKVM.Runtime
                 {
                     return false;
                 }
-                
+
                 var fieldType = parameters[firstValueIndex];
                 if (fieldType != parameters[firstValueIndex + 1])
                 {
@@ -1070,71 +1107,14 @@ namespace IKVM.Runtime
                 return tb;
             }
 
-            private void AddInterfaceFieldsInterop(RuntimeJavaField[] fields)
+            void AddInterfaceFieldsInterop(RuntimeJavaField[] fields)
             {
-                if (classFile.IsInterface && classFile.IsPublic && !wrapper.IsGhost && classFile.Fields.Length > 0 && wrapper.classLoader.WorkaroundInterfaceFields)
-                {
-                    TypeBuilder tbFields = DefineNestedInteropType(NestedTypeName.Fields);
-                    CodeEmitter ilgenClinit = null;
-                    for (int i = 0; i < classFile.Fields.Length; i++)
-                    {
-                        ClassFile.Field f = classFile.Fields[i];
-                        if (f.ConstantValue != null)
-                        {
-                            FieldAttributes attribs = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal;
-                            FieldBuilder fb = tbFields.DefineField(f.Name, fields[i].FieldTypeWrapper.TypeAsSignatureType, attribs);
-                            fb.SetConstant(f.ConstantValue);
-                        }
-                        else
-                        {
-                            FieldAttributes attribs = FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly;
-                            FieldBuilder fb = tbFields.DefineField(f.Name, fields[i].FieldTypeWrapper.TypeAsPublicSignatureType, attribs);
-                            if (ilgenClinit == null)
-                            {
-                                ilgenClinit = context.CodeEmitterFactory.Create(ReflectUtil.DefineTypeInitializer(tbFields, wrapper.classLoader));
-                            }
-                            wrapper.GetFieldWrapper(f.Name, f.Signature).EmitGet(ilgenClinit);
-                            ilgenClinit.Emit(OpCodes.Stsfld, fb);
-                        }
-                    }
-                    if (ilgenClinit != null)
-                    {
-                        ilgenClinit.Emit(OpCodes.Ret);
-                        ilgenClinit.DoEmit();
-                    }
-                }
+
             }
 
-            private void AddInterfaceMethodsInterop(RuntimeJavaMethod[] methods)
+            void AddInterfaceMethodsInterop(RuntimeJavaMethod[] methods)
             {
-                if (classFile.IsInterface && classFile.IsPublic && classFile.MajorVersion >= 52 && !wrapper.IsGhost && methods.Length > 0 && wrapper.classLoader.WorkaroundInterfaceStaticMethods)
-                {
-                    TypeBuilder tbMethods = null;
-                    foreach (var mw in methods)
-                    {
-                        if (mw.IsStatic && mw.IsPublic && mw.Name != StringConstants.CLINIT && ParametersAreAccessible(mw))
-                        {
-                            if (tbMethods == null)
-                            {
-                                tbMethods = DefineNestedInteropType(NestedTypeName.Methods);
-                            }
-                            var mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), tbMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, null, true);
-                            var ilgen = context.CodeEmitterFactory.Create(mb);
-                            var parameters = mw.GetParameters();
-                            for (int i = 0; i < parameters.Length; i++)
-                            {
-                                ilgen.EmitLdarg(i);
-                                if (!parameters[i].IsUnloadable && !parameters[i].IsPublic)
-                                {
-                                    parameters[i].EmitCheckcast(ilgen);
-                                }
-                            }
-                            mw.EmitCall(ilgen);
-                            ilgen.Emit(OpCodes.Ret);
-                            ilgen.DoEmit();
-                        }
-                    }
-                }
+
             }
 
             private void CreateDefaultMethodInterop(ref TypeBuilder tbDefaultMethods, MethodBuilder defaultMethod, RuntimeJavaMethod mw)
@@ -2311,16 +2291,16 @@ namespace IKVM.Runtime
                 return tb;
             }
 
-            internal TypeBuilder DefineMethodHandleConstantType(int index)
+            internal TypeBuilder DefineMethodHandleConstantType(MethodHandleConstantHandle handle)
             {
-                var tb = typeBuilder.DefineNestedType(NestedTypeName.MethodHandleConstant + index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit); ;
+                var tb = typeBuilder.DefineNestedType(NestedTypeName.MethodHandleConstant + handle.Slot, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit); ;
                 RegisterNestedTypeBuilder(tb);
                 return tb;
             }
 
-            internal TypeBuilder DefineMethodTypeConstantType(int index)
+            internal TypeBuilder DefineMethodTypeConstantType(MethodTypeConstantHandle handle)
             {
-                var tb = typeBuilder.DefineNestedType(NestedTypeName.MethodTypeConstant + index, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
+                var tb = typeBuilder.DefineNestedType(NestedTypeName.MethodTypeConstant + handle.Slot, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
                 RegisterNestedTypeBuilder(tb);
                 return tb;
             }
@@ -2336,20 +2316,6 @@ namespace IKVM.Runtime
 
             MethodBuilder DefineHelperMethod(string name, Type returnType, Type[] parameterTypes)
             {
-#if IMPORTER
-                // FXBUG csc.exe doesn't like non-public methods in interfaces, so for public interfaces we move
-                // the helper methods into a nested type.
-                if (wrapper.IsPublic && wrapper.IsInterface && wrapper.classLoader.WorkaroundInterfacePrivateMethods)
-                {
-                    if (interfaceHelperMethodsTypeBuilder == null)
-                    {
-                        interfaceHelperMethodsTypeBuilder = typeBuilder.DefineNestedType(NestedTypeName.InterfaceHelperMethods, TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.BeforeFieldInit);
-                        RegisterNestedTypeBuilder(interfaceHelperMethodsTypeBuilder);
-                    }
-                    return interfaceHelperMethodsTypeBuilder.DefineMethod(name, MethodAttributes.PrivateScope | MethodAttributes.Static, returnType, parameterTypes);
-                }
-#endif
-
                 return typeBuilder.DefineMethod(name, MethodAttributes.PrivateScope | MethodAttributes.Static, returnType, parameterTypes);
             }
 

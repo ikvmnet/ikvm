@@ -54,11 +54,6 @@
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\hijrah-config-umalqura.properties" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\%(Filename)%(Extension)" />
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\cmm\lcms\*.pf" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\cmm\%(Filename)%(Extension)" />
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\security\java.policy" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\java.policy" />
-        <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\blacklisted.certs" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\blacklisted.certs" />
-        <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\policy\limited\local_policy.jar" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\policy\limited\local_policy.jar" />
-        <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\policy\limited\US_export_policy.jar" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\policy\limited\US_export_policy.jar" />
-        <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\policy\unlimited\local_policy.jar" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\policy\unlimited\local_policy.jar" />
-        <IkvmImageItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\policy\unlimited\US_export_policy.jar" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\security\policy\unlimited\US_export_policy.jar" />
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\sound.properties" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\%(Filename)%(Extension)" />
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\share\lib\net.properties" TargetFramework="any" RuntimeIdentifier="any" ImagePath="lib\%(Filename)%(Extension)" />
     </ItemGroup>
@@ -69,16 +64,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <TzFile Include="africa;antarctica;asia;australasia;europe;northamerica;pacificnew;southamerica;backward;etcetera;gmt;jdk11_backward" />
+        <TzFile Include="africa;antarctica;asia;australasia;europe;northamerica;southamerica;backward;etcetera;gmt;jdk11_backward" />
     </ItemGroup>
 
-    <Target Name="GenerateTZDB" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(TzFile->'$(TzDataDir)\%(Identity)')" Outputs="$(TzDbDat)">
+    <Target Name="GenerateTZDB" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(TzFile->'$(TzDataDir)\%(Identity)')" Outputs="$(TzDbDat)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <Delete Files="$(TzDbDat)" />
-        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.tzdb.TzdbZoneRulesCompiler -srcdir $(TzDataDir) -dstfile $(TzDbDat) @(TzFile, ' ')" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.tzdb.TzdbZoneRulesCompiler -srcdir $(TzDataDir) -dstfile $(TzDbDat) @(TzFile, ' ')" />
         <Touch Files="$(TzDbDat)" ForceTouch="true" AlwaysCreate="true" />
 
         <ItemGroup>
@@ -92,13 +87,13 @@
         <CurrencyDataDst>$(IntermediateOutputPath)currency.data</CurrencyDataDst>
     </PropertyGroup>
 
-    <Target Name="GenerateCurrencyData" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);$(CurrencyDataSrc)" Outputs="$(CurrencyDataDst)">
+    <Target Name="GenerateCurrencyData" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);$(CurrencyDataSrc)" Outputs="$(CurrencyDataDst)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <Delete Files="$(CurrencyDataDst).tmp" />
-        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.generatecurrencydata.GenerateCurrencyData -o $(CurrencyDataDst).tmp &lt; $(CurrencyDataSrc)" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.generatecurrencydata.GenerateCurrencyData -o $(CurrencyDataDst).tmp &lt; $(CurrencyDataSrc)" />
         <Move SourceFiles="$(CurrencyDataDst).tmp" DestinationFiles="$(CurrencyDataDst)" />
         <Touch Files="$(CurrencyDataDst)" ForceTouch="true" AlwaysCreate="true" />
 
@@ -117,13 +112,13 @@
         <CacertDst>$(IntermediateOutputPath)cacerts</CacertDst>
     </PropertyGroup>
 
-    <Target Name="GenerateCacerts" DependsOnTargets="OpenJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkBuildToolsStampFile);@(CacertSrc)" Outputs="$(CacertDst)">
+    <Target Name="GenerateCacerts" DependsOnTargets="BuildJdkBuildTools;ResolveJava" Inputs="$(MSBuildThisFileFullPath);$(JdkBuildToolsStampFile);@(CacertSrc)" Outputs="$(CacertDst)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <Delete Files="$(CacertDst).tmp" />
-        <Exec Command="$(JavaExec) -cp $(OpenJdkBuildToolsOutputPath) build.tools.generatecacerts.GenerateCacerts $(OpenJdkDir)jdk/make/data/cacerts/ $(CacertDst).tmp" />
+        <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.generatecacerts.GenerateCacerts $(OpenJdkDir)jdk/make/data/cacerts/ $(CacertDst).tmp" />
         <Move SourceFiles="$(CacertDst).tmp" DestinationFiles="$(CacertDst)" />
         <Touch Files="$(CacertDst)" ForceTouch="true" AlwaysCreate="true" />
 
@@ -139,6 +134,128 @@
             GenerateTZDB;
             GenerateCurrencyData;
             GenerateCacerts;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <BlacklistedCertsSrc>$(OpenJdkDir)jdk\src\share\lib\security\blacklisted.certs</BlacklistedCertsSrc>
+        <BlacklistedCertsDst>$(IntermediateOutputPath)blacklisted.certs</BlacklistedCertsDst>
+    </PropertyGroup>
+
+    <Target Name="GenerateBlacklistedCerts" Inputs="$(MSBuildThisFileFullPath);$(BlacklistedCertsSrc)" Outputs="$(BlacklistedCertsDst)">
+        <Copy SourceFiles="$(BlacklistedCertsSrc)" DestinationFiles="$(BlacklistedCertsDst)" />
+
+        <ItemGroup>
+            <IkvmImageItem Include="$(BlacklistedCertsDst)" ImagePath="lib\security\blacklisted.certs" TargetFramework="any" RuntimeIdentifier="any" />
+            <FileWrites Include="$(BlacklistedCertsDst)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            GenerateBlacklistedCerts;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <USExportPolicyArchive>$(IntermediateOutputPath)US_export_policy.jar</USExportPolicyArchive>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <USExportPolicyFiles Include="$(OpenJdkDir)jdk\make\data\cryptopolicy\unlimited\default_local.policy" />
+    </ItemGroup>
+
+    <Target Name="GenerateUSExportPolicy" DependsOnTargets="ResolveJar" Inputs="$(MSBuildThisFileFullPath);$(OpenJdkDir)jdk\make\data\cryptopolicy\unlimited\default_US_export.policy" Outputs="$(USExportPolicyArchive)">
+        <Error Text="Could not locate jar executable." Condition=" '$(JarPath)' == '' " />
+        <Error Text="jar could not be located at '$(JarPath)'." Condition="!Exists('$(JarPath)')" />
+        <Exec Command="chmod +x $(JarPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <WriteLinesToFile Lines="Crypto-Strength: unlimited" File="$(USExportPolicyArchive).manifest" Overwrite="true" />
+        <Exec Command="$(JarExec) cfm $(USExportPolicyArchive).tmp $(USExportPolicyArchive).manifest @(USExportPolicyFiles->'-C %(RootDir)%(Directory) %(Filename)%(Extension)', ' ')" />
+        <Move SourceFiles="$(USExportPolicyArchive).tmp" DestinationFiles="$(USExportPolicyArchive)" />
+        <Touch Files="$(USExportPolicyArchive)" ForceTouch="true" AlwaysCreate="true" />
+        
+        <ItemGroup>
+            <IkvmImageItem Include="$(USExportPolicyArchive)" ImagePath="lib\security\policy\unlimited\US_export_policy.jar" TargetFramework="any" RuntimeIdentifier="any" />
+            <IkvmImageItem Include="$(USExportPolicyArchive)" ImagePath="lib\security\policy\limited\US_export_policy.jar" TargetFramework="any" RuntimeIdentifier="any" />
+            <FileWrites Include="$(USExportPolicyArchive)" />
+            <FileWrites Include="$(USExportPolicyArchive).tmp" />
+            <FileWrites Include="$(USExportPolicyArchive).manifest" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            GenerateUSExportPolicy;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <LimitedLocalPolicyArchive>$(IntermediateOutputPath)limited_local_policy.jar</LimitedLocalPolicyArchive>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <LimitedLocalPolicyFiles Include="$(OpenJdkDir)jdk\make\data\cryptopolicy\limited\default_local.policy" />
+        <LimitedLocalPolicyFiles Include="$(OpenJdkDir)jdk\make\data\cryptopolicy\limited\exempt_local.policy" />
+    </ItemGroup>
+
+    <Target Name="GenerateLimitedLocalPolicy" DependsOnTargets="ResolveJar" Inputs="$(MSBuildThisFileFullPath);@(LimitedLocalPolicyFiles)" Outputs="$(LimitedLocalPolicyArchive)">
+        <Error Text="Could not locate jar executable." Condition=" '$(JarPath)' == '' " />
+        <Error Text="jar could not be located at '$(JarPath)'." Condition="!Exists('$(JarPath)')" />
+        <Exec Command="chmod +x $(JarPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <WriteLinesToFile Lines="Crypto-Strength: limited" File="$(LimitedLocalPolicyArchive).manifest" Overwrite="true" />
+        <Exec Command="$(JarExec) cfm $(LimitedLocalPolicyArchive).tmp $(LimitedLocalPolicyArchive).manifest @(LimitedLocalPolicyFiles->'-C %(RootDir)%(Directory) %(Filename)%(Extension)', ' ')" />
+        <Move SourceFiles="$(LimitedLocalPolicyArchive).tmp" DestinationFiles="$(LimitedLocalPolicyArchive)" />
+        <Touch Files="$(LimitedLocalPolicyArchive)" ForceTouch="true" AlwaysCreate="true" />
+
+        <ItemGroup>
+            <IkvmImageItem Include="$(LimitedLocalPolicyArchive)" ImagePath="lib\security\policy\limited\local_policy.jar" TargetFramework="any" RuntimeIdentifier="any" />
+            <FileWrites Include="$(LimitedLocalPolicyArchive)" />
+            <FileWrites Include="$(LimitedLocalPolicyArchive).tmp" />
+            <FileWrites Include="$(LimitedLocalPolicyArchive).manifest" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            GenerateLimitedLocalPolicy;
+            $(GenerateDependsOn);
+        </GenerateDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <UnlimitedLocalPolicyArchive>$(IntermediateOutputPath)unlimited_local_policy.jar</UnlimitedLocalPolicyArchive>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <UnlimitedLocalPolicyFiles Include="$(OpenJdkDir)jdk\make\data\cryptopolicy\unlimited\default_local.policy" />
+    </ItemGroup>
+
+    <Target Name="GenerateUnlimitedLocalPolicy" DependsOnTargets="ResolveJar" Inputs="$(MSBuildThisFileFullPath);@(UnlimitedLocalPolicyFiles)" Outputs="$(UnlimitedLocalPolicyArchive)">
+        <Error Text="Could not locate jar executable." Condition=" '$(JarPath)' == '' " />
+        <Error Text="jar could not be located at '$(JarPath)'." Condition="!Exists('$(JarPath)')" />
+        <Exec Command="chmod +x $(JarPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <WriteLinesToFile Lines="Crypto-Strength: unlimited" File="$(UnlimitedLocalPolicyArchive).manifest" Overwrite="true" />
+        <Exec Command="$(JarExec) cfm $(UnlimitedLocalPolicyArchive).tmp $(UnlimitedLocalPolicyArchive).manifest @(UnlimitedLocalPolicyFiles->'-C %(RootDir)%(Directory) %(Filename)%(Extension)', ' ')" />
+        <Move SourceFiles="$(UnlimitedLocalPolicyArchive).tmp" DestinationFiles="$(UnlimitedLocalPolicyArchive)" />
+        <Touch Files="$(UnlimitedLocalPolicyArchive)" ForceTouch="true" AlwaysCreate="true" />
+
+        <ItemGroup>
+            <IkvmImageItem Include="$(UnlimitedLocalPolicyArchive)" ImagePath="lib\security\policy\unlimited\local_policy.jar" TargetFramework="any" RuntimeIdentifier="any" />
+            <FileWrites Include="$(UnlimitedLocalPolicyArchive)" />
+            <FileWrites Include="$(UnlimitedLocalPolicyArchive).tmp" />
+            <FileWrites Include="$(UnlimitedLocalPolicyArchive).manifest" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GenerateDependsOn>
+            GenerateUnlimitedLocalPolicy;
             $(GenerateDependsOn);
         </GenerateDependsOn>
     </PropertyGroup>

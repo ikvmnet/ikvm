@@ -8,7 +8,7 @@ public final class Startup {
 
     @ikvm.lang.ModuleInitializer
     public static void init() {
-        cli.System.GC.KeepAlive(cli.IKVM.Runtime.JVM.class);
+        cli.System.GC.KeepAlive(cli.IKVM.Runtime.RuntimeUtil.get_RuntimeIdentifier());
     };
 
     /**

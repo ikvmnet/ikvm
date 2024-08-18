@@ -22,19 +22,22 @@
   
 */
 using IKVM.Attributes;
+using IKVM.ByteCode;
 
 namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile
     {
+
         internal struct InnerClass
         {
-            internal ushort innerClass;     // ConstantPoolItemClass
-            internal ushort outerClass;     // ConstantPoolItemClass
-            internal ushort name;           // ConstantPoolItemUtf8
+            internal ClassConstantHandle innerClass;     // ConstantPoolItemClass
+            internal ClassConstantHandle outerClass;     // ConstantPoolItemClass
+            internal Utf8ConstantHandle name;           // ConstantPoolItemUtf8
             internal Modifiers accessFlags;
         }
+
     }
 
 }

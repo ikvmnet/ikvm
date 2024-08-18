@@ -25,7 +25,7 @@
 using System;
 
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Decoding;
 
 namespace IKVM.Runtime
 {
@@ -36,47 +36,47 @@ namespace IKVM.Runtime
         internal sealed class ConstantPoolItemMethodHandle : ConstantPoolItem
         {
 
-            readonly MethodHandleConstantReader reader;
+            readonly MethodHandleConstantData data;
             ConstantPoolItemFMI cpi;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
-            /// <param name="reader"></param>
-            internal ConstantPoolItemMethodHandle(RuntimeContext context, MethodHandleConstantReader reader) :
+            /// <param name="data"></param>
+            internal ConstantPoolItemMethodHandle(RuntimeContext context, MethodHandleConstantData data) :
                 base(context)
             {
-                this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
+                this.data = data;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                switch (reader.ReferenceKind)
+                switch (data.Kind)
                 {
-                    case ReferenceKind.GetField:
-                    case ReferenceKind.GetStatic:
-                    case ReferenceKind.PutField:
-                    case ReferenceKind.PutStatic:
-                        cpi = classFile.GetConstantPoolItem(reader.Record.Index) as ConstantPoolItemFieldref;
+                    case MethodHandleKind.GetField:
+                    case MethodHandleKind.GetStatic:
+                    case MethodHandleKind.PutField:
+                    case MethodHandleKind.PutStatic:
+                        cpi = classFile.GetConstantPoolItem(data.Reference) as ConstantPoolItemFieldref;
                         break;
-                    case ReferenceKind.InvokeSpecial:
-                    case ReferenceKind.InvokeVirtual:
-                    case ReferenceKind.InvokeStatic:
-                    case ReferenceKind.NewInvokeSpecial:
-                        cpi = classFile.GetConstantPoolItem(reader.Record.Index) as ConstantPoolItemMethodref;
-                        if (cpi == null && classFile.MajorVersion >= 52 && (reader.ReferenceKind is ReferenceKind.InvokeStatic or ReferenceKind.InvokeSpecial))
-                            goto case ReferenceKind.InvokeInterface;
+                    case MethodHandleKind.InvokeSpecial:
+                    case MethodHandleKind.InvokeVirtual:
+                    case MethodHandleKind.InvokeStatic:
+                    case MethodHandleKind.NewInvokeSpecial:
+                        cpi = classFile.GetConstantPoolItem(data.Reference) as ConstantPoolItemMethodref;
+                        if (cpi == null && classFile.MajorVersion >= 52 && (data.Kind is MethodHandleKind.InvokeStatic or MethodHandleKind.InvokeSpecial))
+                            goto case MethodHandleKind.InvokeInterface;
                         break;
-                    case ReferenceKind.InvokeInterface:
-                        cpi = classFile.GetConstantPoolItem(reader.Record.Index) as ConstantPoolItemInterfaceMethodref;
+                    case MethodHandleKind.InvokeInterface:
+                        cpi = classFile.GetConstantPoolItem(data.Reference) as ConstantPoolItemInterfaceMethodref;
                         break;
                 }
 
                 if (cpi == null)
                     throw new ClassFormatError("Invalid constant pool item MethodHandle");
 
-                if (ReferenceEquals(cpi.Name, StringConstants.INIT) && reader.ReferenceKind != ReferenceKind.NewInvokeSpecial)
+                if (ReferenceEquals(cpi.Name, StringConstants.INIT) && data.Kind != MethodHandleKind.NewInvokeSpecial)
                     throw new ClassFormatError("Bad method name");
             }
 
@@ -105,9 +105,9 @@ namespace IKVM.Runtime
                 get { return cpi; }
             }
 
-            internal ReferenceKind Kind
+            internal MethodHandleKind Kind
             {
-                get { return reader.ReferenceKind; }
+                get { return data.Kind; }
             }
 
             internal RuntimeJavaMember Member

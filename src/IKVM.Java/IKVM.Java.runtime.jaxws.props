@@ -12,13 +12,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <OpenJdkSource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.java" PackagePath="" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.java" PackagePath="" />
-    </ItemGroup>
+        <OpenJdkSource Include="$(OpenJdkDir)jaxws\src\share\jaf_classes\**\*.java" PackagePath="" />
+        <OpenJdkSource Include="$(OpenJdkDir)jaxws\src\share\jaxws_classes\**\*.java" PackagePath="" />
 
-    <ItemGroup>
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*" Exclude="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\_*;$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.java;$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*" Exclude="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\_*;$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.java;$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)jaxws\src\share\jaf_classes\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)jaxws\src\share\jaf_classes\**\*.xsd" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)jaxws\src\share\jaf_classes\**\*.xml" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)jaxws\src\share\jaxws_classes\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)jaxws\src\share\jaxws_classes\**\*.xsd" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)jaxws\src\share\jaxws_classes\**\*.xml" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)jaxws\src\share\jaxws_classes\com\sun\tools\internal\xjc\runtime\JAXBContextFactory.java" ResourcePath="com\sun\tools\internal\xjc\runtime\JAXBContextFactory.java" />
+        <OpenJdkResource Include="$(OpenJdkDir)jaxws\src\share\jaxws_classes\com\sun\tools\internal\xjc\runtime\ZeroOneBooleanAdapter.java" ResourcePath="com\sun\tools\internal\xjc\runtime\ZeroOneBooleanAdapter.java" />
+
+        <ServiceFile Include="$(OpenJdkDir)jaxws\src\share\jaxws_classes\com\sun\tools\etc\META-INF\services\com.sun.tools.internal.ws.wscompile.Plugin" />
+        <ServiceFile Include="$(OpenJdkDir)jaxws\src\share\jaxws_classes\com\sun\tools\etc\META-INF\services\com.sun.tools.internal.xjc.Plugin" />
     </ItemGroup>
 
 </Project>

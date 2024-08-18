@@ -22,7 +22,8 @@
   
 */
 
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode;
+using IKVM.ByteCode.Decoding;
 
 namespace IKVM.Runtime
 {
@@ -33,24 +34,24 @@ namespace IKVM.Runtime
         sealed class ConstantPoolItemNameAndType : ConstantPoolItem
         {
 
-            internal ushort nameIndex;
-            internal ushort descriptorIndex;
+            internal Utf8ConstantHandle NameHandle;
+            internal Utf8ConstantHandle DescriptorHandle;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
-            /// <param name="reader"></param>
-            internal ConstantPoolItemNameAndType(RuntimeContext context, NameAndTypeConstantReader reader) :
+            /// <param name="data"></param>
+            internal ConstantPoolItemNameAndType(RuntimeContext context, NameAndTypeConstantData data) :
                 base(context)
             {
-                nameIndex = reader.Record.NameIndex;
-                descriptorIndex = reader.Record.DescriptorIndex;
+                NameHandle = data.Name;
+                DescriptorHandle = data.Descriptor;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                if (classFile.GetConstantPoolUtf8String(utf8_cp, nameIndex) == null || classFile.GetConstantPoolUtf8String(utf8_cp, descriptorIndex) == null)
+                if (classFile.GetConstantPoolUtf8String(utf8_cp, NameHandle) == null || classFile.GetConstantPoolUtf8String(utf8_cp, DescriptorHandle) == null)
                     throw new ClassFormatError("Illegal constant pool index");
             }
 

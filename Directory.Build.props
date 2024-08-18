@@ -16,12 +16,12 @@
     </PropertyGroup>
 
     <PropertyGroup Label="OpenJDK Info">
-        <OpenJdkDir>$(MSBuildThisFileDirectory)openjdk\</OpenJdkDir>
+        <OpenJdkDir>$(MSBuildThisFileDirectory)ext\openjdk\</OpenJdkDir>
         <OpenJdkMajorVersion>1</OpenJdkMajorVersion>
         <OpenJdkMinorVersion>8</OpenJdkMinorVersion>
         <OpenJdkMicroVersion>0</OpenJdkMicroVersion>
-        <OpenJdkUpdateVersion>275</OpenJdkUpdateVersion>
-        <OpenJdkBuildNumber>b01</OpenJdkBuildNumber>
+        <OpenJdkUpdateVersion>422</OpenJdkUpdateVersion>
+        <OpenJdkBuildNumber>b05</OpenJdkBuildNumber>
         <OpenJdkVersion>OpenJDK $(OpenJdkMinorVersion)u$(OpenJdkUpdateVersion) $(OpenJdkBuildNumber)</OpenJdkVersion>
         <OpenJdkFullVersion>$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)_$(OpenJdkUpdateVersion)-$(OpenJdkBuildNumber)</OpenJdkFullVersion>
         <OpenJdkVendor>Oracle</OpenJdkVendor>
@@ -65,7 +65,7 @@
     </PropertyGroup>
 
     <PropertyGroup Label="Build Info">
-        <LangVersion Condition=" '$(LangVersion)' == '' ">10.0</LangVersion>
+        <LangVersion Condition=" '$(LangVersion)' == '' ">12.0</LangVersion>
         <NoWarn>$(NoWarn);1591;1573;CS8002;NU5100;NU5118;NU5128;MSB3245;NETSDK1023</NoWarn>
         <AutoGenerateBindingRedirects Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
@@ -102,10 +102,6 @@
         <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.102">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
     </ItemGroup>
 

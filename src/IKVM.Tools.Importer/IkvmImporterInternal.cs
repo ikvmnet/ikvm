@@ -29,7 +29,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Decoding;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -1172,11 +1172,11 @@ namespace IKVM.Tools.Importer
 
         static bool EmitStubWarning(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, byte[] buf)
         {
-            ClassFile cf;
+            IKVM.Runtime.ClassFile cf;
 
             try
             {
-                cf = new ClassFile(context, ClassReader.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
+                cf = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
             }
             catch (ClassFormatError)
             {
@@ -1217,7 +1217,7 @@ namespace IKVM.Tools.Importer
             {
                 try
                 {
-                    var name = ClassFile.GetClassName(data, 0, data.Length, out var stub);
+                    var name = IKVM.Runtime.ClassFile.GetClassName(data, 0, data.Length, out var stub);
                     if (options.IsExcludedClass(name) || (stub && EmitStubWarning(context, compiler, options, data)))
                     {
                         // we use stubs to add references, but otherwise ignore them
@@ -1308,7 +1308,7 @@ namespace IKVM.Tools.Importer
 
         void ProcessFile(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, DirectoryInfo baseDir, string file)
         {
-            FileInfo fileInfo = GetFileInfo(file);
+            var fileInfo = GetFileInfo(file);
             if (fileInfo.Extension.Equals(".jar", StringComparison.OrdinalIgnoreCase) || fileInfo.Extension.Equals(".zip", StringComparison.OrdinalIgnoreCase))
             {
                 ProcessZipFile(context, compiler, options, file, null);
@@ -1320,17 +1320,14 @@ namespace IKVM.Tools.Importer
                     byte[] data = ReadAllBytes(fileInfo);
                     try
                     {
-                        bool stub;
-                        string name = ClassFile.GetClassName(data, 0, data.Length, out stub);
+                        var name = IKVM.Runtime.ClassFile.GetClassName(data, 0, data.Length, out var stub);
                         if (options.IsExcludedClass(name))
-                        {
                             return;
-                        }
+
+                        // we use stubs to add references, but otherwise ignore them
                         if (stub && EmitStubWarning(context, compiler, options, data))
-                        {
-                            // we use stubs to add references, but otherwise ignore them
                             return;
-                        }
+
                         options.GetClassesJar().Add(name.Replace('.', '/') + ".class", data, fileInfo);
                         return;
                     }
@@ -1339,6 +1336,7 @@ namespace IKVM.Tools.Importer
                         IssueMessage(compiler, Message.ClassFormatError, file, x.Message);
                     }
                 }
+
                 if (baseDir == null)
                 {
                     IssueMessage(compiler, Message.UnknownFileType, file);
@@ -1347,8 +1345,7 @@ namespace IKVM.Tools.Importer
                 {
                     // include as resource
                     // extract the resource name by chopping off the base directory
-                    string name = file.Substring(baseDir.FullName.Length);
-                    Console.WriteLine("ADDING ZIP HERE");
+                    var name = file.Substring(baseDir.FullName.Length);
                     name = name.TrimStart(Path.DirectorySeparatorChar).Replace('\\', '/');
                     options.GetResourcesJar().Add(name, ReadAllBytes(fileInfo), fileInfo);
                 }
@@ -1427,7 +1424,7 @@ namespace IKVM.Tools.Importer
             try
             {
                 using var file = File.OpenRead(filename);
-                var cf = new ClassFile(context, ClassReader.Read(file), null, ClassFileParseOptions.None, null);
+                var cf = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(file), null, ClassFileParseOptions.None, null);
                 ArrayAppend(ref annotations, cf.Annotations);
             }
             catch (Exception x)

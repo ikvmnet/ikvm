@@ -40,6 +40,7 @@
         <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libzip\mapfile-vers" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
+        <PreprocessorDefinitions Include="HAVE_UNISTD_H" />
         <Dependencies Include="z" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />

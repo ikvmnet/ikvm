@@ -1299,25 +1299,27 @@ namespace IKVM.Runtime
 
         private void MergeExceptionHandler(int exceptionIndex, InstructionState curr)
         {
-            int idx = method.ExceptionTable[exceptionIndex].handlerIndex;
-            InstructionState ex = curr.CopyLocals();
-            int catch_type = method.ExceptionTable[exceptionIndex].catch_type;
-            if (catch_type == 0)
+            var idx = method.ExceptionTable[exceptionIndex].handlerIndex;
+            var ex = curr.CopyLocals();
+
+            var catchType = method.ExceptionTable[exceptionIndex].catchType;
+            if (catchType.IsNil)
             {
-                RuntimeJavaType tw;
-                if (!faultTypes.TryGetValue(idx, out tw))
+                if (!faultTypes.TryGetValue(idx, out var tw))
                 {
                     tw = RuntimeVerifierJavaType.MakeFaultBlockException(this, idx);
                     faultTypes.Add(idx, tw);
                 }
+
                 ex.PushType(tw);
             }
             else
             {
                 // TODO if the exception type is unloadable we should consider pushing
                 // Throwable as the type and recording a loader constraint
-                ex.PushType(GetConstantPoolClassType(catch_type));
+                ex.PushType(GetConstantPoolClassType(catchType));
             }
+
             state[idx] += ex;
         }
 
@@ -1576,18 +1578,17 @@ namespace IKVM.Runtime
                                 {
                                     case ClassFile.ConstantType.Class:
                                         {
-                                            RuntimeJavaType tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
+                                            var tw = classFile.GetConstantPoolClassType(instructions[i].Arg1);
                                             if (tw.IsUnloadable)
-                                            {
                                                 ConditionalPatchNoClassDefFoundError(ref instructions[i], tw);
-                                            }
+
                                             break;
                                         }
                                     case ClassFile.ConstantType.MethodType:
                                         {
-                                            ClassFile.ConstantPoolItemMethodType cpi = classFile.GetConstantPoolConstantMethodType(instructions[i].Arg1);
-                                            RuntimeJavaType[] args = cpi.GetArgTypes();
-                                            RuntimeJavaType tw = cpi.GetRetType();
+                                            var cpi = classFile.GetConstantPoolConstantMethodType(instructions[i].Arg1);
+                                            var args = cpi.GetArgTypes();
+                                            var tw = cpi.GetRetType();
                                             for (int j = 0; !tw.IsUnloadable && j < args.Length; j++)
                                             {
                                                 tw = args[j];
@@ -1680,9 +1681,9 @@ namespace IKVM.Runtime
             }
         }
 
-        private void PatchLdcMethodHandle(ref ClassFile.Method.Instruction instr)
+        void PatchLdcMethodHandle(ref ClassFile.Method.Instruction instr)
         {
-            ClassFile.ConstantPoolItemMethodHandle cpi = classFile.GetConstantPoolConstantMethodHandle(instr.Arg1);
+            var cpi = classFile.GetConstantPoolConstantMethodHandle(instr.Arg1);
             if (cpi.GetClassType().IsUnloadable)
             {
                 ConditionalPatchNoClassDefFoundError(ref instr, cpi.GetClassType());
@@ -1691,22 +1692,20 @@ namespace IKVM.Runtime
             {
                 SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessError, "tried to access class {0} from class {1}", cpi.Class, wrapper.Name);
             }
-            else if (cpi.Kind == ReferenceKind.InvokeVirtual
-                && cpi.GetClassType() == context.JavaBase.TypeOfJavaLangInvokeMethodHandle
-                && (cpi.Name == "invoke" || cpi.Name == "invokeExact"))
+            else if (cpi.Kind == MethodHandleKind.InvokeVirtual && cpi.GetClassType() == context.JavaBase.TypeOfJavaLangInvokeMethodHandle && (cpi.Name == "invoke" || cpi.Name == "invokeExact"))
             {
                 // it's allowed to use ldc to create a MethodHandle invoker
             }
-            else if (cpi.Member == null || cpi.Member.IsStatic != (cpi.Kind == ReferenceKind.GetStatic || cpi.Kind == ReferenceKind.PutStatic || cpi.Kind == ReferenceKind.InvokeStatic))
+            else if (cpi.Member == null || cpi.Member.IsStatic != (cpi.Kind == MethodHandleKind.GetStatic || cpi.Kind == MethodHandleKind.PutStatic || cpi.Kind == MethodHandleKind.InvokeStatic))
             {
                 HardError err;
                 string msg;
                 switch (cpi.Kind)
                 {
-                    case ReferenceKind.GetField:
-                    case ReferenceKind.GetStatic:
-                    case ReferenceKind.PutField:
-                    case ReferenceKind.PutStatic:
+                    case MethodHandleKind.GetField:
+                    case MethodHandleKind.GetStatic:
+                    case MethodHandleKind.PutField:
+                    case MethodHandleKind.PutStatic:
                         err = HardError.NoSuchFieldError;
                         msg = cpi.Name;
                         break;
@@ -1730,10 +1729,10 @@ namespace IKVM.Runtime
             }
         }
 
-        private static string SigToString(string sig)
+        static string SigToString(string sig)
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            string sep = "";
+            var sb = new System.Text.StringBuilder();
+            var sep = "";
             int dims = 0;
             for (int i = 0; i < sig.Length; i++)
             {
@@ -1748,6 +1747,7 @@ namespace IKVM.Runtime
                     dims++;
                     continue;
                 }
+
                 sb.Append(sep);
                 sep = ",";
                 switch (sig[i])
@@ -1784,11 +1784,11 @@ namespace IKVM.Runtime
                         i = sig.IndexOf(';', i + 1);
                         break;
                 }
+
                 for (; dims != 0; dims--)
-                {
                     sb.Append("[]");
-                }
             }
+
             return sb.ToString();
         }
 
@@ -1800,7 +1800,7 @@ namespace IKVM.Runtime
             return flags;
         }
 
-        private static void UpdatePartialReachability(InstructionFlags[] flags, CodeInfo codeInfo, ClassFile.Method.Instruction[] instructions, UntangledExceptionTable exceptions, bool skipFaultBlocks)
+        static void UpdatePartialReachability(InstructionFlags[] flags, CodeInfo codeInfo, ClassFile.Method.Instruction[] instructions, UntangledExceptionTable exceptions, bool skipFaultBlocks)
         {
             bool done = false;
             while (!done)
@@ -1880,7 +1880,7 @@ namespace IKVM.Runtime
             for (int i = 0; i < ar.Count; i++)
             {
                 ExceptionTableEntry ei = ar[i];
-                if (ei.startIndex == ei.handlerIndex && ei.catch_type == 0)
+                if (ei.startIndex == ei.handlerIndex && ei.catchType.IsNil)
                 {
                     int index = ei.startIndex;
                     if (index + 2 < instructions.Length
@@ -1923,10 +1923,10 @@ namespace IKVM.Runtime
             {
                 if (ar[i].endIndex + 1 == ar[i + 1].startIndex
                     && ar[i].handlerIndex == ar[i + 1].handlerIndex
-                    && ar[i].catch_type == ar[i + 1].catch_type
+                    && ar[i].catchType == ar[i + 1].catchType
                     && IsReturn(instructions[ar[i].endIndex].NormalizedOpCode))
                 {
-                    ar[i] = new ExceptionTableEntry(ar[i].startIndex, ar[i + 1].endIndex, ar[i].handlerIndex, ar[i].catch_type, ar[i].ordinal);
+                    ar[i] = new ExceptionTableEntry(ar[i].startIndex, ar[i + 1].endIndex, ar[i].handlerIndex, ar[i].catchType, ar[i].ordinal);
                     ar.RemoveAt(i + 1);
                     i--;
                 }
@@ -1944,10 +1944,10 @@ namespace IKVM.Runtime
                         // 0006/test.j
                         if (ej.endIndex > ei.endIndex)
                         {
-                            ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                            ExceptionTableEntry emj = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ej.handlerIndex, ej.catch_type, ej.ordinal);
-                            ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                            ej = new ExceptionTableEntry(emj.endIndex, ej.endIndex, ej.handlerIndex, ej.catch_type, ej.ordinal);
+                            ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
+                            ExceptionTableEntry emj = new ExceptionTableEntry(ej.startIndex, ei.endIndex, ej.handlerIndex, ej.catchType, ej.ordinal);
+                            ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
+                            ej = new ExceptionTableEntry(emj.endIndex, ej.endIndex, ej.handlerIndex, ej.catchType, ej.ordinal);
                             ar[i] = ei;
                             ar[j] = ej;
                             ar.Insert(j, emj);
@@ -1957,9 +1957,9 @@ namespace IKVM.Runtime
                         // 0007/test.j
                         else if (j > i && ej.endIndex < ei.endIndex)
                         {
-                            ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ej.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                            ExceptionTableEntry eei = new ExceptionTableEntry(ej.endIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                            ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+                            ExceptionTableEntry emi = new ExceptionTableEntry(ej.startIndex, ej.endIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
+                            ExceptionTableEntry eei = new ExceptionTableEntry(ej.endIndex, ei.endIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
+                            ei = new ExceptionTableEntry(ei.startIndex, emi.startIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
                             ar[i] = ei;
                             ar.Insert(i + 1, eei);
                             ar.Insert(i + 1, emi);
@@ -1989,8 +1989,8 @@ namespace IKVM.Runtime
                                     int targetIndex = (k == -1 ? instructions[j].DefaultTarget : instructions[j].GetSwitchTargetIndex(k));
                                     if (ei.startIndex < targetIndex && targetIndex < ei.endIndex)
                                     {
-                                        ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                                        ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+                                        ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
+                                        ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
                                         ar[i] = ei;
                                         ar.Insert(i + 1, en);
                                         goto restart_split;
@@ -2018,8 +2018,8 @@ namespace IKVM.Runtime
                                     int targetIndex = instructions[j].Arg1;
                                     if (ei.startIndex < targetIndex && targetIndex < ei.endIndex)
                                     {
-                                        ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                                        ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+                                        ExceptionTableEntry en = new ExceptionTableEntry(targetIndex, ei.endIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
+                                        ei = new ExceptionTableEntry(ei.startIndex, targetIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
                                         ar[i] = ei;
                                         ar.Insert(i + 1, en);
                                         goto restart_split;
@@ -2039,8 +2039,8 @@ namespace IKVM.Runtime
                     ExceptionTableEntry ej = ar[j];
                     if (ei.startIndex < ej.handlerIndex && ej.handlerIndex < ei.endIndex)
                     {
-                        ExceptionTableEntry en = new ExceptionTableEntry(ej.handlerIndex, ei.endIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
-                        ei = new ExceptionTableEntry(ei.startIndex, ej.handlerIndex, ei.handlerIndex, ei.catch_type, ei.ordinal);
+                        ExceptionTableEntry en = new ExceptionTableEntry(ej.handlerIndex, ei.endIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
+                        ei = new ExceptionTableEntry(ei.startIndex, ej.handlerIndex, ei.handlerIndex, ei.catchType, ei.ordinal);
                         ar[i] = ei;
                         ar.Insert(i + 1, en);
                         goto restart_split;
@@ -2050,7 +2050,7 @@ namespace IKVM.Runtime
             // filter out zero length try blocks
             for (int i = 0; i < ar.Count; i++)
             {
-                ExceptionTableEntry ei = ar[i];
+                var ei = ar[i];
                 if (ei.startIndex == ei.endIndex)
                 {
                     ar.RemoveAt(i);
@@ -2060,7 +2060,7 @@ namespace IKVM.Runtime
                 {
                     // exception blocks that only contain harmless instructions (i.e. instructions that will *never* throw an exception)
                     // are also filtered out (to improve the quality of the generated code)
-                    RuntimeJavaType exceptionType = ei.catch_type == 0 ? context.JavaBase.TypeOfjavaLangThrowable : classFile.GetConstantPoolClassType(ei.catch_type);
+                    RuntimeJavaType exceptionType = ei.catchType.IsNil ? context.JavaBase.TypeOfjavaLangThrowable : classFile.GetConstantPoolClassType(ei.catchType);
                     if (exceptionType.IsUnloadable)
                     {
                         // we can't remove handlers for unloadable types
@@ -2158,21 +2158,18 @@ namespace IKVM.Runtime
             while (!done)
             {
                 done = true;
-                Stack<ExceptionTableEntry> stack = new Stack<ExceptionTableEntry>();
-                ExceptionTableEntry current = new ExceptionTableEntry(0, code.Length, -1, ushort.MaxValue, -1);
+                var stack = new Stack<ExceptionTableEntry>();
+                var current = new ExceptionTableEntry(0, code.Length, -1, new ClassConstantHandle(ushort.MaxValue), -1);
                 stack.Push(current);
                 for (int i = 0; i < exceptions.Length; i++)
                 {
                     while (exceptions[i].startIndex >= current.endIndex)
-                    {
                         current = stack.Pop();
-                    }
+
                     Debug.Assert(exceptions[i].startIndex >= current.startIndex && exceptions[i].endIndex <= current.endIndex);
-                    if (exceptions[i].catch_type == 0
-                        && codeInfo.HasState(exceptions[i].handlerIndex)
-                        && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
+                    if (exceptions[i].catchType.IsNil && codeInfo.HasState(exceptions[i].handlerIndex) && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
                     {
-                        InstructionFlags[] flags = MethodAnalyzer.ComputePartialReachability(codeInfo, method.Instructions, exceptions, exceptions[i].handlerIndex, true);
+                        var flags = MethodAnalyzer.ComputePartialReachability(codeInfo, method.Instructions, exceptions, exceptions[i].handlerIndex, true);
                         for (int j = 0; j < code.Length; j++)
                         {
                             if ((flags[j] & InstructionFlags.Reachable) != 0)
@@ -2234,14 +2231,12 @@ namespace IKVM.Runtime
             InstructionFlags[] flags = ComputePartialReachability(codeInfo, code, exceptions, 0, false);
             for (int i = 0; i < exceptions.Length; i++)
             {
-                if (exceptions[i].catch_type == 0
-                    && codeInfo.HasState(exceptions[i].handlerIndex)
-                    && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
+                if (exceptions[i].catchType.IsNil && codeInfo.HasState(exceptions[i].handlerIndex) && RuntimeVerifierJavaType.IsFaultBlockException(codeInfo.GetRawStackTypeWrapper(exceptions[i].handlerIndex, 0)))
                 {
                     int exit;
                     if (IsSynchronizedBlockHandler(code, exceptions[i].handlerIndex)
                         && exceptions[i].endIndex - 2 >= exceptions[i].startIndex
-                        && TryFindSingleTryBlockExit(code, flags, exceptions, new ExceptionTableEntry(exceptions[i].startIndex, exceptions[i].endIndex - 2, exceptions[i].handlerIndex, 0, exceptions[i].ordinal), i, out exit)
+                        && TryFindSingleTryBlockExit(code, flags, exceptions, new ExceptionTableEntry(exceptions[i].startIndex, exceptions[i].endIndex - 2, exceptions[i].handlerIndex, ClassConstantHandle.Nil, exceptions[i].ordinal), i, out exit)
                         && exit == exceptions[i].endIndex - 2
                         && (flags[exit + 1] & InstructionFlags.BranchTarget) == 0
                         && MatchInstructions(code, exit, exceptions[i].handlerIndex + 1)
@@ -2692,7 +2687,7 @@ namespace IKVM.Runtime
 
         private void PatchFieldAccess(RuntimeJavaType wrapper, RuntimeJavaMethod mw, ref ClassFile.Method.Instruction instr, StackState stack)
         {
-            ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
+            var cpi = GetFieldref(instr.Arg1);
             bool isStatic;
             bool write;
             RuntimeJavaType thisType;
@@ -2900,68 +2895,23 @@ namespace IKVM.Runtime
             return null;
         }
 
-        private ClassFile.ConstantPoolItemInvokeDynamic GetInvokeDynamic(int index)
+        ClassFile.ConstantPoolItemInvokeDynamic GetInvokeDynamic(int index)
         {
             try
             {
-                ClassFile.ConstantPoolItemInvokeDynamic item = classFile.GetInvokeDynamic(index);
+                var item = classFile.GetInvokeDynamic(new InvokeDynamicConstantHandle(checked((ushort)index)));
                 if (item != null)
                 {
                     return item;
                 }
             }
-            catch (InvalidCastException)
+            catch (OverflowException)
             {
-            }
-            catch (IndexOutOfRangeException)
-            {
-            }
-            throw new VerifyError("Illegal constant pool index");
-        }
-
-        private ClassFile.ConstantPoolItemMI GetMethodref(int index)
-        {
-            try
-            {
-                ClassFile.ConstantPoolItemMI item = classFile.GetMethodref(index);
-                if (item != null)
-                {
-                    return item;
-                }
+                // constant pool index out of range
             }
             catch (InvalidCastException)
             {
-            }
-            catch (IndexOutOfRangeException)
-            {
-            }
-            throw new VerifyError("Illegal constant pool index");
-        }
-
-        private ClassFile.ConstantPoolItemFieldref GetFieldref(int index)
-        {
-            try
-            {
-                ClassFile.ConstantPoolItemFieldref item = classFile.GetFieldref(index);
-                if (item != null)
-                {
-                    return item;
-                }
-            }
-            catch (InvalidCastException)
-            {
-            }
-            catch (IndexOutOfRangeException)
-            {
-            }
-            throw new VerifyError("Illegal constant pool index");
-        }
-
-        private ClassFile.ConstantType GetConstantPoolConstantType(int index)
-        {
-            try
-            {
-                return classFile.GetConstantPoolConstantType(index);
+                // constant pool index not of proper type
             }
             catch (IndexOutOfRangeException)
             {
@@ -2975,25 +2925,129 @@ namespace IKVM.Runtime
             {
                 // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
             }
+
             throw new VerifyError("Illegal constant pool index");
         }
 
-        private RuntimeJavaType GetConstantPoolClassType(int index)
+        ClassFile.ConstantPoolItemMI GetMethodref(int index)
         {
             try
             {
-                return classFile.GetConstantPoolClassType(index);
+                var item = classFile.GetMethodref(new MethodrefConstantHandle(checked((ushort)index)));
+                if (item != null)
+                    return item;
+            }
+            catch (OverflowException)
+            {
+                // constant pool index out of range
             }
             catch (InvalidCastException)
             {
+                // constant pool index not of proper type
             }
             catch (IndexOutOfRangeException)
             {
+                // constant pool index out of range
+            }
+            catch (InvalidOperationException)
+            {
+                // specified constant pool entry doesn't contain a constant
             }
             catch (NullReferenceException)
             {
+                // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
             }
+
             throw new VerifyError("Illegal constant pool index");
+        }
+
+        ClassFile.ConstantPoolItemFieldref GetFieldref(int index)
+        {
+            try
+            {
+                var item = classFile.GetFieldref(new FieldrefConstantHandle(checked((ushort)index)));
+                if (item != null)
+                    return item;
+            }
+            catch (OverflowException)
+            {
+                // constant pool index out of range
+            }
+            catch (InvalidCastException)
+            {
+                // constant pool index not of proper type
+            }
+            catch (IndexOutOfRangeException)
+            {
+                // constant pool index out of range
+            }
+            catch (InvalidOperationException)
+            {
+                // specified constant pool entry doesn't contain a constant
+            }
+            catch (NullReferenceException)
+            {
+                // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
+            }
+
+            throw new VerifyError("Illegal constant pool index");
+        }
+
+        ClassFile.ConstantType GetConstantPoolConstantType(int slot)
+        {
+            try
+            {
+                return classFile.GetConstantPoolConstantType(new ConstantHandle(ConstantKind.Unknown, checked((ushort)slot)));
+            }
+            catch (OverflowException)
+            {
+                // constant pool index out of range
+            }
+            catch (IndexOutOfRangeException)
+            {
+                // constant pool index out of range
+            }
+            catch (InvalidOperationException)
+            {
+                // specified constant pool entry doesn't contain a constant
+            }
+            catch (NullReferenceException)
+            {
+                // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
+            }
+
+            throw new VerifyError("Illegal constant pool index");
+        }
+
+        RuntimeJavaType GetConstantPoolClassType(int slot)
+        {
+            try
+            {
+                return classFile.GetConstantPoolClassType(new ClassConstantHandle(checked((ushort)slot)));
+            }
+            catch (OverflowException)
+            {
+                // constant pool index out of range
+            }
+            catch (InvalidCastException)
+            {
+                // constant pool index out of range
+            }
+            catch (IndexOutOfRangeException)
+            {
+                // specified constant pool entry doesn't contain a constant
+            }
+            catch (NullReferenceException)
+            {
+                // specified constant pool entry is empty (entry 0 or the filler following a wide entry)
+            }
+
+            throw new VerifyError("Illegal constant pool index");
+        }
+
+        RuntimeJavaType GetConstantPoolClassType(ClassConstantHandle handle)
+        {
+            return GetConstantPoolClassType(handle.Slot);
         }
 
         internal void ClearFaultBlockException(int instructionIndex)
@@ -3070,7 +3124,7 @@ namespace IKVM.Runtime
             }
             for (int i = 0; i < exceptions.Length; i++)
             {
-                Console.WriteLine(".catch #{0} from label{1} to label{2} using label{3}", exceptions[i].catch_type, exceptions[i].startIndex, exceptions[i].endIndex, exceptions[i].handlerIndex);
+                Console.WriteLine(".catch #{0} from label{1} to label{2} using label{3}", exceptions[i].catchType, exceptions[i].startIndex, exceptions[i].endIndex, exceptions[i].handlerIndex);
             }
         }
     }

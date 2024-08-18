@@ -1,0 +1,169 @@
+<!--
+
+    IKVM.Java.runtime.nashorn.targets
+    
+    Build targets for the OpenJDK nashorn distribution.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <NashornTempPath>$(IntermediateOutputPath)nashorn_tmp\</NashornTempPath>
+        <NashornTempResponseFile>$(IntermediateOutputPath)nashorn_tmp.javac.rsp</NashornTempResponseFile>
+        <NashornTempStampFile>$(NashornTempPath)stamp</NashornTempStampFile>
+        <NashornOutputPath>$(IntermediateOutputPath)nashorn_classes\</NashornOutputPath>
+        <NashornStampFile>$(NashornOutputPath)stamp</NashornStampFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <NashornSource Include="$(OpenJdkDir)nashorn\src\**\*.java" />
+    </ItemGroup>
+
+    <Target Name="NashornTempResponseFile" DependsOnTargets="CompileJava" Inputs="$(MSBuildThisFileFullPath);@(NashornSource)" Outputs="$(NashornTempResponseFile)">
+        <ItemGroup>
+            <_NashornTempJavaCompilerClasspath Include="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />
+        </ItemGroup>
+        <PropertyGroup>
+            <_NashornTempJavaCompilerClasspathArg>@(_NashornTempJavaCompilerClasspath, '$([System.IO.Path]::PathSeparator)')</_NashornTempJavaCompilerClasspathArg>
+            <_NashornTempJavaCompilerClasspathArg>$(_NashornTempJavaCompilerClasspathArg.Replace('\', '\\'))</_NashornTempJavaCompilerClasspathArg>
+        </PropertyGroup>
+        
+        <ItemGroup>
+            <_NashornTempJavaCompilerArgs Include="-cp" />
+            <_NashornTempJavaCompilerArgs Include="&quot;$([MSBuild]::Escape('$(_NashornTempJavaCompilerClasspathArg)'))&quot;" />
+            <_NashornTempJavaCompilerArgs Include="-g" />
+            <_NashornTempJavaCompilerArgs Include="-source" />
+            <_NashornTempJavaCompilerArgs Include="7" />
+            <_NashornTempJavaCompilerArgs Include="-target" />
+            <_NashornTempJavaCompilerArgs Include="7" />
+            <_NashornTempJavaCompilerArgs Include="-nowarn" />
+            <_NashornTempJavaCompilerArgs Include="-d" />
+            <_NashornTempJavaCompilerArgs Include="$(NashornTempPath)" />
+            <_NashornTempJavaCompilerArgs Include="@(NashornSource->'%(FullPath)')" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(NashornTempResponseFile)" Lines="@(_NashornTempJavaCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(NashornTempResponseFile)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildNashornTemp" DependsOnTargets="ResolveJavaCompiler;NashornTempResponseFile" Inputs="$(MSBuildThisFileFullPath);@(NashornSource);$(NashornTempResponseFile)" Outputs="$(NashornTempStampFile)">
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
+        <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
+        <Exec Command="chmod +x $(JavaCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Delete Files="$(NashornTempStampFile)" />
+        <RemoveDir Directories="$(NashornTempPath)" />
+        <MakeDir Directories="$(NashornTempPath)" />
+        <Message Text="$(JavaCompilerExec) @$(NashornTempResponseFile)" />
+        <Exec Command="$(JavaCompilerExec) @$(NashornTempResponseFile)" />
+        <Touch Files="$(NashornTempStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(NashornTempStampFile)" />
+            <FileWrites Include="$(NashornTempPath)**\*.class" />
+            <NashornTempClasses Include="$(NashornTempPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <NasgenOutputPath>$(IntermediateOutputPath)nashorn_nasgen\</NasgenOutputPath>
+        <NasgenResponseFile>$(IntermediateOutputPath)nashorn_nasgen.javac.rsp</NasgenResponseFile>
+        <NasgenStampFile>$(NasgenOutputPath)stamp</NasgenStampFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <NasgenSource Include="$(OpenJdkDir)nashorn\buildtools\nasgen\src\**\*.java" />
+    </ItemGroup>
+
+    <Target Name="NasgenResponseFile" DependsOnTargets="BuildNashornTemp;CompileJava" Inputs="$(MSBuildThisFileFullPath);@(NasgenSource);@(NashornTempClasses);$(NashornTempStampFile)" Outputs="$(NasgenResponseFile)">
+        <ItemGroup>
+            <_NasgenJavaCompilerClasspath Include="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />
+            <_NasgenJavaCompilerClasspath Include="$([System.IO.Path]::GetFullPath('$(NashornOutputPath)'))" />
+        </ItemGroup>
+        <PropertyGroup>
+            <_NasgenJavaCompilerClasspathArg>@(_NasgenJavaCompilerClasspath, '$([System.IO.Path]::PathSeparator)')</_NasgenJavaCompilerClasspathArg>
+            <_NasgenJavaCompilerClasspathArg>$(_NasgenJavaCompilerClasspathArg.Replace('\', '\\'))</_NasgenJavaCompilerClasspathArg>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <_NasgenJavaCompilerArgs Include="-bootclasspath" />
+            <_NasgenJavaCompilerArgs Include="&quot;$([MSBuild]::Escape('$(_NasgenJavaCompilerClasspathArg)'))&quot;" />
+            <_NasgenJavaCompilerArgs Include="-g" />
+            <_NasgenJavaCompilerArgs Include="-source" />
+            <_NasgenJavaCompilerArgs Include="7" />
+            <_NasgenJavaCompilerArgs Include="-target" />
+            <_NasgenJavaCompilerArgs Include="7" />
+            <_NasgenJavaCompilerArgs Include="-nowarn" />
+            <_NasgenJavaCompilerArgs Include="-d" />
+            <_NasgenJavaCompilerArgs Include="$(NasgenOutputPath)" />
+            <_NasgenJavaCompilerArgs Include="@(NasgenSource->'%(FullPath)')" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(NasgenResponseFile)" Lines="@(_NasgenJavaCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(NasgenResponseFile)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildNasgen" DependsOnTargets="ResolveJavaCompiler;NasgenResponseFile" Inputs="$(MSBuildThisFileFullPath);@(NasgenSource);$(NasgenResponseFile);@(NashornTempClasses);$(NashornTempStampFile)" Outputs="$(NasgenStampFile)">
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
+        <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
+        <Exec Command="chmod +x $(JavaCompilerPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <Delete Files="$(NasgenStampFile)" />
+        <RemoveDir Directories="$(NasgenOutputPath)" />
+        <MakeDir Directories="$(NasgenOutputPath)" />
+        <Message Text="$(JavaCompilerExec) @$(NasgenResponseFile)" />
+        <Exec Command="$(JavaCompilerExec) @$(NasgenResponseFile)" />
+        <Touch Files="$(NasgenStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(NasgenStampFile)" />
+            <FileWrites Include="$(NasgenOutputPath)**\*.class" />
+            <NasgenClasses Include="$(NasgenOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="RunNasgen" DependsOnTargets="ResolveJava;BuildNashornTemp;BuildNasgen" Inputs="$(MSBuildThisFileFullPath);@(NasgenSource);$(NasgenResponseFile);@(NashornTempClasses);$(NashornTempStampFile);@(NasgenClasses);$(NasgenStampFile)" Outputs="$(NashornStampFile)">
+        <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
+        <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
+        <Exec Command="chmod +x $(JavaPath) >/dev/null 2>&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+
+        <ItemGroup>
+            <_NasgenClasspath Include="$([System.IO.Path]::GetFullPath('$(NasgenOutputPath)'))" />
+            <_NasgenClasspath Include="$([System.IO.Path]::GetFullPath('$(NashornTempPath)'))" />
+        </ItemGroup>
+
+        <PropertyGroup>
+            <_NasgenClasspathArg>@(_NasgenClasspath, '$([System.IO.Path]::PathSeparator)')</_NasgenClasspathArg>
+            <_NasgenClasspathArg>$(_NasgenClasspathArg.Replace('\', '\\'))</_NasgenClasspathArg>
+        </PropertyGroup>
+
+        <RemoveDir Directories="$(NashornOutputPath)" />
+        <MakeDir Directories="$(NashornOutputPath)" />
+        <Message Text="$(JavaExec) -cp &quot;$([MSBuild]::Escape('$(_NasgenClasspathArg)'))&quot; jdk.nashorn.internal.tools.nasgen.Main $(NashornTempPath) jdk.nashorn.internal.objects $(NashornOutputPath)" />
+        <Exec Command="$(JavaExec) -cp &quot;$([MSBuild]::Escape('$(_NasgenClasspathArg)'))&quot; jdk.nashorn.internal.tools.nasgen.Main $(NashornTempPath) jdk.nashorn.internal.objects $(NashornOutputPath)" />
+        <Copy SourceFiles="@(NashornTempClasses)" DestinationFiles="@(NashornTempClasses->'$(NashornOutputPath)%(RecursiveDir)%(Filename)%(Extension)')" Condition="!Exists('$(NashornOutputPath)%(RecursiveDir)%(Filename)%(Extension)')"  />
+        <Touch Files="$(NashornStampFile)" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(NashornStampFile)" />
+            <FileWrites Include="$(NashornOutputPath)**\*" />
+            <Convert Include="$(NashornOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <CoreCompileDependsOn>
+            RunNasgen;
+            $(CoreCompileDependsOn);
+        </CoreCompileDependsOn>
+    </PropertyGroup>
+
+</Project>

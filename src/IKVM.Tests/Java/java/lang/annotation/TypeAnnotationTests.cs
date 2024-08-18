@@ -18,13 +18,13 @@ namespace IKVM.Tests.Java.java.lang.annotation
 
         static readonly string[] FilesToBuild = new[]
         {
-                "TypeAnnotation1",
-                "TypeAnnotation2",
-                "TypeAnnotationArrayTest",
-                "TypeAnnotationClassTypeVarAndField",
-                "TypeAnnotationNestedTestOuter",
-                "TypeAnnotationNestedTest",
-                "TypeAnnotationWildcardTest"
+            "TypeAnnotation1",
+            "TypeAnnotation2",
+            "TypeAnnotationArrayTest",
+            "TypeAnnotationClassTypeVarAndField",
+            "TypeAnnotationNestedTestOuter",
+            "TypeAnnotationNestedTest",
+            "TypeAnnotationWildcardTest"
         };
 
         static readonly string Package = "ikvm.tests.java.lang.annotation";
@@ -152,7 +152,6 @@ namespace IKVM.Tests.Java.java.lang.annotation
             t.Length.Should().Be(0);
             t = w.getAnnotatedLowerBounds();
             t.Length.Should().Be(1);
-
         }
 
     }

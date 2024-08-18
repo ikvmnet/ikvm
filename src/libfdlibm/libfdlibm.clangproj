@@ -12,6 +12,7 @@
     <ItemGroup>
         <Header Include="$(OpenJdkDir)jdk\src\share\native\java\lang\fdlibm\include\**\*.h" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\java\lang\fdlibm\include" />
+        <AdditionalCompileOptions Include="-ffp-contract=off;-O0" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\lang\fdlibm\src\**\*.c" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />

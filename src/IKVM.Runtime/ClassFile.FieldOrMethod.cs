@@ -22,11 +22,10 @@
   
 */
 using System;
-using System.Collections.Generic;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Decoding;
 
 namespace IKVM.Runtime
 {
@@ -37,32 +36,39 @@ namespace IKVM.Runtime
         internal abstract class FieldOrMethod : IEquatable<FieldOrMethod>
         {
 
+            readonly ClassFile clazz;
             protected Modifiers accessFlags;
             protected ushort flags;
             string name;
             string descriptor;
             protected string signature;
             protected object[] annotations;
-            protected IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations;
-            protected IReadOnlyList<TypeAnnotationReader> runtimeInvisibleTypeAnnotations;
+            protected TypeAnnotationTable runtimeVisibleTypeAnnotations = TypeAnnotationTable.Empty;
+            protected TypeAnnotationTable runtimeInvisibleTypeAnnotations = TypeAnnotationTable.Empty;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="classFile"></param>
+            /// <param name="clazz"></param>
             /// <param name="utf8_cp"></param>
             /// <param name="accessFlags"></param>
-            /// <param name="nameIndex"></param>
-            /// <param name="descriptorIndex"></param>
-            internal FieldOrMethod(ClassFile classFile, string[] utf8_cp, AccessFlag accessFlags, ushort nameIndex, ushort descriptorIndex)
+            /// <param name="name"></param>
+            /// <param name="descriptor"></param>
+            internal FieldOrMethod(ClassFile clazz, string[] utf8_cp, AccessFlag accessFlags, Utf8ConstantHandle name, Utf8ConstantHandle descriptor)
             {
+                this.clazz = clazz ?? throw new ArgumentNullException(nameof(clazz));
                 this.accessFlags = (Modifiers)accessFlags;
-                this.name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameIndex));
-                this.descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, descriptorIndex);
+                this.name = string.Intern(clazz.GetConstantPoolUtf8String(utf8_cp, name));
+                this.descriptor = clazz.GetConstantPoolUtf8String(utf8_cp, descriptor);
 
-                ValidateSig(classFile, descriptor);
-                this.descriptor = string.Intern(descriptor.Replace('/', '.'));
+                ValidateSig(clazz, this.descriptor);
+                this.descriptor = string.Intern(this.descriptor.Replace('/', '.'));
             }
+
+            /// <summary>
+            /// Gets the declaring <see cref="ClassFile"/>.
+            /// </summary>
+            public ClassFile Class => clazz;
 
             protected abstract void ValidateSig(ClassFile classFile, string descriptor);
 
@@ -104,7 +110,7 @@ namespace IKVM.Runtime
 
             internal bool IsModuleInitializer => (flags & FLAG_MODULE_INITIALIZER) != 0;
 
-            internal IReadOnlyList<TypeAnnotationReader> RuntimeVisibleTypeAnnotations => runtimeVisibleTypeAnnotations;
+            internal ref readonly TypeAnnotationTable RuntimeVisibleTypeAnnotations => ref runtimeVisibleTypeAnnotations;
 
             public sealed override int GetHashCode() => name.GetHashCode() ^ descriptor.GetHashCode();
 

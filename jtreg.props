@@ -1,6 +1,6 @@
 ﻿<Project>
     <PropertyGroup>
-        <JTRegDir>$(MSBuildThisFileDirectory)jtreg\</JTRegDir>
+        <JTRegDir>$(MSBuildThisFileDirectory)ext\jtreg\</JTRegDir>
     </PropertyGroup>
 
     <ItemGroup>

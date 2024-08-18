@@ -22,7 +22,7 @@
   
 */
 
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Decoding;
 
 namespace IKVM.Runtime
 {
@@ -39,11 +39,11 @@ namespace IKVM.Runtime
             /// initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
-            /// <param name="reader"></param>
-            internal ConstantPoolItemLong(RuntimeContext context, LongConstantReader reader) :
+            /// <param name="data"></param>
+            internal ConstantPoolItemLong(RuntimeContext context, LongConstantData data) :
                 base(context)
             {
-                l = reader.Value;
+                l = data.Value;
             }
 
             internal override ConstantType GetConstantType() => ConstantType.Long;

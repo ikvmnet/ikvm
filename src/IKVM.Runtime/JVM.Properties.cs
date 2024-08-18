@@ -97,18 +97,19 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static Dictionary<string, IkvmPropEntry> GetIkvmProperties()
             {
+                var props = new Dictionary<string, IkvmPropEntry>();
+
                 foreach (var basePath in GetIkvmPropertiesSearchPaths())
                 {
                     var ikvmPropertiesPath = Path.Combine(basePath, "ikvm.properties");
                     if (File.Exists(ikvmPropertiesPath))
                     {
-                        var props = new Dictionary<string, IkvmPropEntry>();
                         LoadProperties(basePath, File.ReadAllLines(ikvmPropertiesPath), props);
-                        return props;
+                        break;
                     }
                 }
 
-                return null;
+                return props;
             }
 
             /// <summary>
@@ -267,9 +268,6 @@ namespace IKVM.Runtime
                 // default to FORK on OSX, instead of posix_spawn with jspawnhelper
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     p["jdk.lang.Process.launchMechanism"] = "FORK";
-
-                // cacerts is mounted by the VFS into ikvmHome
-                p.Add("javax.net.ssl.trustStore", Path.Combine(HomePath, "lib", "security", "cacerts"));
 
 #if NETFRAMEWORK
                 // read properties from app.config

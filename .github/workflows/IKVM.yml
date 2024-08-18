@@ -22,89 +22,37 @@ env:
   NATIVE_SDK_VERSION: "20240614.1"
 
 jobs:
-  build-openjdk:
-    name: Build OpenJDK
+  build-jtreg:
+    name: Build OpenJDK Test Harness
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Source
       uses: actions/checkout@v4
       with:
         submodules: recursive
-    - name: Cache OpenJDK Build
-      uses: actions/cache@v4
-      with:
-        path: openjdk/build/linux-x86_64-normal-server-release
-        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-10
-    - name: Check OpenJDK Build Stamp
-      id: openjdk-build-stamp
-      uses: andstor/file-existence-action@v3
-      with:
-        files: openjdk/build/linux-x86_64-normal-server-release/stamp
-    - name: Fetch OpenJDK 7
-      if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
-      run: |
-        mkdir -p openjdk/build && 
-        curl -o openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz "https://download.java.net/openjdk/jdk7u75/ri/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz" &&
-        tar xzvf openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk/build
-    - name: Build OpenJDK
-      if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
-      uses: docker://debian/eol:lenny
-      with:
-        args: >
-          /bin/bash -c "
-            echo 'deb http://archive.debian.org/debian/ lenny main' > /etc/apt/sources.list &&
-            apt-get update &&
-            apt-get install -y \
-              build-essential \
-              unzip \
-              zip \
-              curl \
-              gcc-4.3 \
-              g++-4.3 \
-              libx11-dev \
-              libxext-dev \
-              libxrender-dev \
-              libxtst-dev \
-              libxt-dev \
-              libxi-dev \
-              libcups2-dev \
-              libasound2-dev \
-              libfreetype6-dev \
-              libfontconfig1-dev &&
-            cd openjdk &&
-            JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
-            make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images &&
-            touch build/linux-x86_64-normal-server-release/stamp"
-    - name: Update OpenJDK Attributes
-      run: |
-        sudo chown -R `id -u`:`id -g` linux-x86_64-normal-server-release && \
-        sudo chmod -R +rwx linux-x86_64-normal-server-release/images/j2sdk-image/bin
-      working-directory: openjdk/build
-    - name: Package OpenJDK
-      run: zip -r /tmp/openjdk-build-linux-x86_64-normal-server-release.zip linux-x86_64-normal-server-release/*
-      working-directory: openjdk/build
-    - name: Upload OpenJDK
-      uses: actions/upload-artifact@v4
-      with:
-        name: openjdk-build-linux-x86_64-normal-server-release
-        path: /tmp/openjdk-build-linux-x86_64-normal-server-release.zip
     - name: Cache OpenJDK Test Harness Build
       uses: actions/cache@v4
       with:
-        path: jtreg/build
-        key: jtreg-build--${{ runner.os }}--${{ hashFiles('jtreg/**', 'openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image', '!jtreg/build') }}-6
+        path: ext/jtreg/build
+        key: jtreg-build--${{ runner.os }}--${{ hashFiles('ext/jtreg/**') }}-8
     - name: Check OpenJDK Test Harness Build Stamp
       id: jtreg-build-stamp
       uses: andstor/file-existence-action@v3
       with:
-        files: jtreg/build/stamp
+        files: ext/jtreg/build/stamp
+    - name: Install Java
+      run: |
+        sudo apt-get update && \
+        sudo apt-get install -y \
+          openjdk-8-jdk-headless && \
+        echo "JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> $GITHUB_ENV
     - name: Build OpenJDK Test Harness
       if: steps.jtreg-build-stamp.outputs.files_exists != 'true'
-      run: WGET_OPTS='-U Mozilla/5.0' bash make/build-all.sh `realpath ../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image` && touch build/stamp
-      working-directory: jtreg
+      run: WGET_OPTS='-U Mozilla/5.0' bash make/build-all.sh $JAVA_HOME && touch build/stamp
+      working-directory: ext/jtreg
     - name: Package OpenJDK Test Harness
       run: zip -r /tmp/jtreg-build.zip build
-      working-directory: jtreg
+      working-directory: ext/jtreg
     - name: Upload OpenJDK Test Harness
       uses: actions/upload-artifact@v4
       with:
@@ -113,7 +61,7 @@ jobs:
   build-ikvm:
     name: Build IKVM
     needs:
-    - build-openjdk
+    - build-jtreg
     timeout-minutes: 720
     runs-on: ubuntu-24.04
     env:
@@ -181,6 +129,7 @@ jobs:
       with:
         crate: apple-codesign
         version: latest
+        locked: false
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v1
       with:
@@ -190,20 +139,13 @@ jobs:
       with:
         useConfigFile: true
         configFilePath: GitVersion.yml
-    - name: Download OpenJDK 8 Build
-      uses: actions/download-artifact@v4
-      with:
-        name: openjdk-build-linux-x86_64-normal-server-release
-        path: /tmp
-    - name: Restore OpenJDK 8 Build
-      run: mkdir -p openjdk/build && cd openjdk/build && unzip /tmp/openjdk-build-linux-x86_64-normal-server-release.zip && rm /tmp/openjdk-build-linux-x86_64-normal-server-release.zip
     - name: Download JTReg Build
       uses: actions/download-artifact@v4
       with:
         name: jtreg-build
         path: /tmp
     - name: Restore JTReg Build
-      run: mkdir -p jtreg && cd jtreg && unzip /tmp/jtreg-build.zip && rm /tmp/jtreg-build.zip
+      run: mkdir -p ext/jtreg && cd ext/jtreg && unzip /tmp/jtreg-build.zip && rm /tmp/jtreg-build.zip
     - name: Download Native SDKs
       uses: robinraju/release-downloader@v1.9
       with:
@@ -212,6 +154,12 @@ jobs:
         fileName: "*.tar.gz"
         out-file-path: ext/ikvm-native-sdk
         extract: true
+    - name: Add NuGet Source (GitHub)
+      shell: pwsh
+      run: dotnet nuget add source --username USERNAME --password $env:GITHUB_TOKEN --store-password-in-clear-text --name ikvm $env:GITHUB_REPOS
+      env:
+        GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
     - name: Build Artifacts
@@ -282,16 +230,6 @@ jobs:
         path: /tmp/jdk.tar.gz
     - name: Delete JDK
       run: rm /tmp/jdk.tar.gz
-    - name: Package Tests (IKVM.ByteCode.Tests)
-      run: tar czvf /tmp/tests--IKVM.ByteCode.Tests.tar.gz tests/IKVM.ByteCode.Tests
-      working-directory: dist
-    - name: Upload Tests (IKVM.ByteCode.Tests)
-      uses: actions/upload-artifact@v4
-      with:
-        name: tests--IKVM.ByteCode.Tests
-        path: /tmp/tests--IKVM.ByteCode.Tests.tar.gz
-    - name: Delete Tests (IKVM.ByteCode.Tests)
-      run: rm /tmp/tests--IKVM.ByteCode.Tests.tar.gz
     - name: Package Tests (IKVM.Reflection.Tests)
       run: tar czvf /tmp/tests--IKVM.Reflection.Tests.tar.gz tests/IKVM.Reflection.Tests
       working-directory: dist
@@ -424,18 +362,23 @@ jobs:
       run: |
         $sys = @(
           "win-x64",
-          "linux-x64",
-          "osx-x64"
+          "linux-x64"
         )
+
+        if ($env:FULL_TEST -eq "true") {
+          $sys += @( "osx-x64", "osx-arm64" )
+        }
         
         $tfm = @(
           "net472",
-          "net6.0",
           "net8.0"
         )
 
+        if ($env:FULL_TEST -eq "true") {
+          $tfm += @( "net6.0" )
+        }
+
         $run = @(
-          "IKVM.ByteCode.Tests",
           "IKVM.Reflection.Tests",
           "IKVM.Tests",
           "IKVM.Java.Tests",
@@ -458,6 +401,10 @@ jobs:
           @{
             "tfm" = "net472"
             "sys" = "osx-x64"
+          },
+          @{
+            "tfm" = "net472"
+            "sys" = "osx-arm64"
           },
           @{
             "run" = "IKVM.MSBuild.Tests"
@@ -496,15 +443,6 @@ jobs:
             "tfm" = "net7.0"
           }
         )
-
-        if ($env:FULL_TEST -ne "true") {
-            foreach ($_ in (0..15)) {
-              $exclude += @(@{
-                "run" = "IKVM.OpenJDK.Tests?TestPartition=$_"
-                "tfm" = "net8.0"
-              })
-            }
-        }
 
         $include = @(
           @{
@@ -671,7 +609,7 @@ jobs:
                 "--blame",
                 "--blame-crash",
                 "--blame-hang",
-                "--blame-hang-timeout", "60m",
+                "--blame-hang-timeout", "120m",
                 "--blame-hang-dump-type", "full",
                 "-v:diag",
                 "--results-directory", "TestResults",

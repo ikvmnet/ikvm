@@ -24,9 +24,10 @@
 using System;
 using System.Buffers;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Encoding;
 using IKVM.Runtime;
 
 using sun.nio.ch;
@@ -60,7 +61,9 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return DefineClass(self, name, ReadClass(new ReadOnlyMemory<byte>(b, off, len)), pd, null);
+            var buf = new byte[len];
+            Array.Copy(b, off, buf, 0, len);
+            return DefineClass(self, name, ReadClass(buf), pd, null);
 #endif
         }
 
@@ -81,7 +84,9 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return DefineClass(self, name, ReadClass(new ReadOnlyMemory<byte>(b, off, len)), pd, source);
+            var buf = new byte[len];
+            Array.Copy(b, off, buf, 0, len);
+            return DefineClass(self, name, ReadClass(buf), pd, source);
 #endif
         }
 
@@ -101,28 +106,9 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (bb.hasArray())
-            {
-                return DefineClass(self, name, ReadClass(new ReadOnlyMemory<byte>(bb.array(), bb.arrayOffset() + bb.position(), bb.remaining())), pd, source);
-            }
-            else if (bb.isDirect())
-            {
-                return DefineClass(self, name, ReadClass((byte*)((DirectBuffer)bb).address() + bb.position(), bb.remaining()), pd, source);
-            }
-            else
-            {
-                var buf = ArrayPool<byte>.Shared.Rent(bb.remaining());
-
-                try
-                {
-                    bb.get(buf);
-                    return DefineClass(self, name, ReadClass(new ReadOnlyMemory<byte>(buf, 0, bb.remaining())), pd, source);
-                }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(buf);
-                }
-            }
+            var buf = new byte[bb.remaining()];
+            bb.get(buf);
+            return DefineClass(self, name, ReadClass(buf), pd, source);
 #endif
         }
 
@@ -133,32 +119,11 @@ namespace IKVM.Java.Externs.java.lang
         /// </summary>
         /// <param name="buffer"></param>
         /// <returns></returns>
-        static ClassReader ReadClass(ReadOnlyMemory<byte> buffer)
+        static IKVM.ByteCode.Decoding.ClassFile ReadClass(byte[] buffer)
         {
             try
             {
-                return ClassReader.Read(buffer);
-            }
-            catch (InvalidClassMagicException)
-            {
-                throw new global::java.lang.ClassFormatError("Incompatible magic value");
-            }
-            catch (ByteCodeException e)
-            {
-                throw new global::java.lang.ClassFormatError(e.Message);
-            }
-        }
-
-        /// <summary>
-        /// Attempts to read the class, handling exceptions.
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <returns></returns>
-        static unsafe ClassReader ReadClass(byte* buffer, int length)
-        {
-            try
-            {
-                return ClassReader.Read(buffer, length);
+                return IKVM.ByteCode.Decoding.ClassFile.Read(buffer);
             }
             catch (InvalidClassMagicException)
             {
@@ -175,16 +140,16 @@ namespace IKVM.Java.Externs.java.lang
         /// </summary>
         /// <param name="self"></param>
         /// <param name="name"></param>
-        /// <param name="reader"></param>
+        /// <param name="clazz"></param>
         /// <param name="pd"></param>
         /// <param name="source"></param>
         /// <returns></returns>
-        static global::java.lang.Class DefineClass(global::java.lang.ClassLoader self, string name, ClassReader reader, global::java.security.ProtectionDomain pd, string source)
+        static global::java.lang.Class DefineClass(global::java.lang.ClassLoader self, string name, IKVM.ByteCode.Decoding.ClassFile clazz, global::java.security.ProtectionDomain pd, string source)
         {
             try
             {
                 var runtimeClassLoader = JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(self);
-                var classFile = new ClassFile(JVM.Context, reader, name, runtimeClassLoader.ClassFileParseOptions, null);
+                var classFile = new IKVM.Runtime.ClassFile(JVM.Context, clazz, name, runtimeClassLoader.ClassFileParseOptions, null);
                 if (name != null && classFile.Name != name)
                     throw new global::java.lang.NoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");
 

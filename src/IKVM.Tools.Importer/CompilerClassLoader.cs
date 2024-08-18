@@ -35,7 +35,6 @@ using System.Xml.Linq;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -273,7 +272,7 @@ namespace IKVM.Tools.Importer
             return null;
         }
 
-        private RuntimeJavaType GetTypeWrapperCompilerHook(string name)
+        RuntimeJavaType GetTypeWrapperCompilerHook(string name)
         {
             if (remapped.TryGetValue(name, out var rtw))
             {
@@ -285,10 +284,11 @@ namespace IKVM.Tools.Importer
                 {
                     classes.Remove(name);
 
-                    ClassFile f;
+                    IKVM.Runtime.ClassFile f;
+
                     try
                     {
-                        f = new ClassFile(Context, ClassReader.Read(itemRef.GetData()), name, ClassFileParseOptions, null);
+                        f = new IKVM.Runtime.ClassFile(Context, IKVM.ByteCode.Decoding.ClassFile.Read(itemRef.GetData()), name, ClassFileParseOptions, null);
                     }
                     catch (UnsupportedClassVersionException e)
                     {
@@ -514,19 +514,24 @@ namespace IKVM.Tools.Importer
 
             var ilgen = Context.CodeEmitterFactory.Create(mainMethodProxy);
 
-            // first argument to Launch (type name)
+            // first argument to Launch (assembly)
+            ilgen.Emit(OpCodes.Ldtoken, type.TypeAsTBD);
+            ilgen.Emit(OpCodes.Call, Context.CompilerFactory.GetTypeFromHandleMethod);
+            ilgen.Emit(OpCodes.Callvirt, Context.Types.Type.GetProperty(nameof(System.Type.Assembly)).GetGetMethod());
+
+            // second argument to Launch (type name)
             ilgen.Emit(OpCodes.Ldstr, type.Name);
 
-            // second argument: is this a jar
+            // third argument: is this a jar
             ilgen.Emit(OpCodes.Ldc_I4_0);
 
-            // third argument: args
+            // fourth argument: args
             ilgen.Emit(OpCodes.Ldarg_0);
 
-            // fourth argument, runtime prefix
+            // fifth argument, runtime prefix
             ilgen.Emit(OpCodes.Ldstr, DEFAULT_RUNTIME_ARGS_PREFIX);
 
-            // fifth argument, property set to initialize JVM
+            // sixth argument, property set to initialize JVM
             if (properties.Count > 0)
             {
                 var environmentType = Context.Resolver.ResolveCoreType(typeof(Environment).FullName);
@@ -557,7 +562,7 @@ namespace IKVM.Tools.Importer
             }
 
             // invoke the launcher main method
-            var launchMethod = Context.Resolver.ResolveRuntimeType("IKVM.Runtime.Launcher").GetMethod("Run");
+            var launchMethod = Context.Resolver.ResolveRuntimeType(typeof(IKVM.Runtime.Launcher).FullName).GetMethod(nameof(IKVM.Runtime.Launcher.Run));
             ilgen.Emit(OpCodes.Call, launchMethod);
             ilgen.Emit(OpCodes.Ret);
 
@@ -2644,12 +2649,11 @@ namespace IKVM.Tools.Importer
             if (options.assemblyAttributeAnnotations == null)
             {
                 // look for "assembly" type that acts as a placeholder for assembly attributes
-                Jar.Item assemblyType;
-                if (h.TryGetValue("assembly", out assemblyType))
+                if (h.TryGetValue("assembly", out var assemblyType))
                 {
                     try
                     {
-                        var f = new ClassFile(context, ClassReader.Read(assemblyType.GetData()), null, ClassFileParseOptions.None, null);
+                        var f = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(assemblyType.GetData()), null, ClassFileParseOptions.None, null);
 
                         // NOTE the "assembly" type in the unnamed package is a magic type
                         // that acts as the placeholder for assembly attributes
@@ -2661,6 +2665,10 @@ namespace IKVM.Tools.Importer
                             assemblyType.Remove();
                             compiler.IssueMessage(Message.LegacyAssemblyAttributesFound);
                         }
+                    }
+                    catch (ByteCodeException)
+                    {
+
                     }
                     catch (ClassFormatError)
                     {
@@ -2676,7 +2684,7 @@ namespace IKVM.Tools.Importer
                 {
                     try
                     {
-                        var f = new ClassFile(context, ClassReader.Read(h[className].GetData()), null, ClassFileParseOptions.None, null);
+                        var f = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(h[className].GetData()), null, ClassFileParseOptions.None, null);
                         if (f.Name == className)
                         {
                             foreach (var m in f.Methods)
@@ -2692,6 +2700,7 @@ namespace IKVM.Tools.Importer
                     }
                     catch (ClassFormatError)
                     {
+
                     }
                 }
             break_outer:;
@@ -3033,7 +3042,7 @@ namespace IKVM.Tools.Importer
             {
                 foreach (object[] def in options.assemblyAttributeAnnotations)
                 {
-                    var annotation = Annotation.LoadAssemblyCustomAttribute(this, def);
+                    var annotation = IKVM.Runtime.Annotation.LoadAssemblyCustomAttribute(this, def);
                     if (annotation != null)
                         annotation.Apply(this, assemblyBuilder, def);
                 }
@@ -3184,7 +3193,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private void ValidatePropertyGetterSetter(string getterOrSetter, string clazz, string property, IKVM.Tools.Importer.MapXml.Method method, ref bool valid)
+        void ValidatePropertyGetterSetter(string getterOrSetter, string clazz, string property, IKVM.Tools.Importer.MapXml.Method method, ref bool valid)
         {
             if (method != null)
             {
@@ -3193,7 +3202,7 @@ namespace IKVM.Tools.Importer
                     valid = false;
                     Context.StaticCompiler.IssueMessage(Message.InvalidPropertyNameInMapFile, getterOrSetter, clazz, property, method.Name);
                 }
-                if (!ClassFile.IsValidMethodSig(method.Sig))
+                if (!IKVM.Runtime.ClassFile.IsValidMethodSig(method.Sig))
                 {
                     valid = false;
                     Context.StaticCompiler.IssueMessage(Message.InvalidPropertySignatureInMapFile, getterOrSetter, clazz, property, method.Sig);
@@ -3201,14 +3210,14 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private static bool IsValidName(string name)
+        static bool IsValidName(string name)
         {
             return name != null && name.Length != 0;
         }
 
-        private static bool IsValidSig(string sig, bool field)
+        static bool IsValidSig(string sig, bool field)
         {
-            return sig != null && (field ? ClassFile.IsValidFieldSig(sig) : ClassFile.IsValidMethodSig(sig));
+            return sig != null && (field ? IKVM.Runtime.ClassFile.IsValidFieldSig(sig) : IKVM.Runtime.ClassFile.IsValidMethodSig(sig));
         }
 
         internal Type GetTypeFromReferencedAssembly(string name)

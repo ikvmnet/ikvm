@@ -204,7 +204,7 @@ Files = files.ToArray();
     </PropertyGroup>
 
     <Target Name="CoreCompile" DependsOnTargets="$(CoreCompileDependsOn)">
-        <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition=" '$(TargetsTriggeredByCompilation)' != '' " />
+        
     </Target>
 
     <Target Name="CleanCoreCompile">
