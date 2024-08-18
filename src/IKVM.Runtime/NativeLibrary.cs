@@ -73,7 +73,7 @@ namespace IKVM.Runtime
                 return h1;
 
             // start looking at assembly path, or path given by environmental variable
-            var asml = typeof(NativeLibrary).Assembly.Location is string s ? Path.GetDirectoryName(s) : null;
+            var asml = typeof(NativeLibrary).Assembly.Location is string s && !string.IsNullOrEmpty(s) ? Path.GetDirectoryName(s) : null;
             var root = Environment.GetEnvironmentVariable("IKVM_LIBRARY_PATH") ?? asml;
 
             // assembly possible loaded in memory: we have no available search path
