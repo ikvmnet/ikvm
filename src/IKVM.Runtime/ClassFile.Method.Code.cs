@@ -76,17 +76,20 @@ namespace IKVM.Runtime
                         try
                         {
                             var decoder = new CodeDecoder(attribute.Code);
+                            var lastIns = default(IKVM.ByteCode.Decoding.Instruction);
 
                             // read instructions and parse them into local structure
                             foreach (var instruction in decoder)
                             {
+                                lastIns = instruction;
+
                                 _instructions[instructionCount].Read(instruction, classFile);
                                 hasJsr |= _instructions[instructionCount].NormalizedOpCode == NormalizedByteCode.__jsr;
                                 instructionCount++;
                             }
 
                             // we add an additional nop instruction to make it easier for consumers of the code array
-                            _instructions[instructionCount++].SetTermNop((ushort)decoder.Position.GetInteger());
+                            _instructions[instructionCount++].SetTermNop((ushort)(lastIns.IsNotNil ? lastIns.Offset + lastIns.Data.Length : 0));
                         }
                         catch (ArgumentOutOfRangeException e)
                         {
@@ -107,8 +110,7 @@ namespace IKVM.Runtime
 
                         // build the pcIndexMap
                         var pcIndexMap = new int[instructions[instructionCount - 1].PC + 1];
-                        for (int i = 0; i < pcIndexMap.Length; i++)
-                            pcIndexMap[i] = -1;
+                        pcIndexMap.AsSpan().Fill(-1);
                         for (int i = 0; i < instructionCount - 1; i++)
                             pcIndexMap[instructions[i].PC] = i;
 
