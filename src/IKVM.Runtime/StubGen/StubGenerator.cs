@@ -133,23 +133,7 @@ namespace IKVM.Runtime.StubGen
                         AddExceptionsAttribute(builder, type, method, attributes, methodBase);
                         AddDeprecatedAttribute(builder, type, method, attributes, methodBase);
                         AddAnnotationDefaultAttribute(builder, type, method, attributes, methodBase);
-
-                        if (includeParameterNames)
-                        {
-                            var mp = type.GetMethodParameters(method);
-                            if (mp == MethodParametersEntry.Malformed)
-                            {
-                                attributes.MethodParameters(e => { });
-                            }
-                            else if (mp != null)
-                            {
-                                attributes.MethodParameters(e =>
-                                {
-                                    foreach (var i in mp)
-                                        e.MethodParameter(builder.Constants.GetOrAddUtf8(i.name), i.accessFlags);
-                                });
-                            }
-                        }
+                        AddMethodParameters(builder, type, method, attributes, includeParameterNames);
                     }
 
                     AddSignatureAttribute(builder, type, method, attributes);
@@ -190,7 +174,6 @@ namespace IKVM.Runtime.StubGen
                         AddDeprecatedAttribute(builder, type, field, attributes);
                         AddRuntimeVisibleAnnotationsAttribute(builder, type, field, attributes);
                         AddRuntimeVisibleTypeAnnotationsAttribute(builder, type, field, attributes);
-
                         builder.AddField((AccessFlag)field.Modifiers, field.Name, field.Signature.Replace('.', '/'), attributes);
                     }
                 }
@@ -361,6 +344,35 @@ namespace IKVM.Runtime.StubGen
             }
         }
 
+
+        /// <summary>
+        /// Adds the MethodParameters attribute for a method.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        /// <param name="method"></param>
+        /// <param name="attributes"></param>
+        /// <param name="includeParameterNames"></param>
+        void AddMethodParameters(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder attributes, bool includeParameterNames)
+        {
+            if (includeParameterNames)
+            {
+                var mp = type.GetMethodParameters(method);
+                if (mp == MethodParametersEntry.Malformed)
+                {
+                    attributes.MethodParameters(e => { });
+                }
+                else if (mp != null)
+                {
+                    attributes.MethodParameters(e =>
+                    {
+                        foreach (var i in mp)
+                            e.MethodParameter(builder.Constants.GetOrAddUtf8(i.name), i.accessFlags);
+                    });
+                }
+            }
+        }
+
         /// <summary>
         /// Adds the AnnotationDefault attribute for a method.
         /// </summary>
@@ -380,12 +392,12 @@ namespace IKVM.Runtime.StubGen
         /// Adds the Signature attribute for a method.
         /// </summary>
         /// <param name="builder"></param>
-        /// <param name="javaType"></param>
+        /// <param name="type"></param>
         /// <param name="method"></param>
         /// <param name="methodAttributes"></param>
-        void AddSignatureAttribute(ClassFileBuilder builder, RuntimeJavaType javaType, RuntimeJavaMethod method, AttributeTableBuilder methodAttributes)
+        void AddSignatureAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder methodAttributes)
         {
-            var signature = javaType.GetGenericMethodSignature(method);
+            var signature = type.GetGenericMethodSignature(method);
             if (signature != null)
                 methodAttributes.Signature(signature);
         }
@@ -411,10 +423,10 @@ namespace IKVM.Runtime.StubGen
         /// Adds the RuntimeVisibleParameterAnnotations attribute for a method.
         /// </summary>
         /// <param name="builder"></param>
-        /// <param name="javaType"></param>
+        /// <param name="type"></param>
         /// <param name="method"></param>
         /// <param name="attributes"></param>
-        void AddRuntimeVisibleParameterAnnotationsAttribute(ClassFileBuilder builder, RuntimeJavaType javaType, RuntimeJavaMethod method, AttributeTableBuilder attributes)
+        void AddRuntimeVisibleParameterAnnotationsAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder attributes)
         {
             var blob = new BlobBuilder();
             var encoder = new ParameterAnnotationTableEncoder(blob);
@@ -426,14 +438,14 @@ namespace IKVM.Runtime.StubGen
         /// Adds the RuntimeVisibleTypeAnnotations attribute for a method.
         /// </summary>
         /// <param name="builder"></param>
-        /// <param name="javaType"></param>
+        /// <param name="type"></param>
         /// <param name="method"></param>
         /// <param name="attributes"></param>
-        void AddRuntimeVisibleTypeAnnotationsAttribute(ClassFileBuilder builder, RuntimeJavaType javaType, RuntimeJavaMethod method, AttributeTableBuilder attributes)
+        void AddRuntimeVisibleTypeAnnotationsAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder attributes)
         {
             var blob = new BlobBuilder();
             var encoder = new TypeAnnotationTableEncoder(blob);
-            if (ImportTypeAnnotations(builder, ref encoder, javaType, javaType.GetMethodRawTypeAnnotations(method)))
+            if (ImportTypeAnnotations(builder, ref encoder, type, type.GetMethodRawTypeAnnotations(method)))
                 attributes.Attribute(AttributeName.RuntimeVisibleTypeAnnotations, blob);
         }
 
