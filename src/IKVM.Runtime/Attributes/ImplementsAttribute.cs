@@ -32,9 +32,12 @@ namespace IKVM.Attributes
 	public sealed class ImplementsAttribute : Attribute
 	{
 
-		private string[] interfaces;
+		string[] interfaces;
 
-		// NOTE this is not CLS compliant, so maybe we should have a couple of overloads
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="interfaces"></param>
 		public ImplementsAttribute(string[] interfaces)
 		{
 			this.interfaces = UnicodeUtil.UnescapeInvalidSurrogates(interfaces);
