@@ -387,7 +387,7 @@ namespace IKVM.Tools.Exporter
             entry.LastWriteTime = new DateTime(1980, 01, 01, 0, 0, 0, DateTimeKind.Utc);
             using Stream stream = entry.Open();
 
-            tw.Context.StubGenerator.WriteClass(stream, tw, options.IncludeNonPublicTypes, options.IncludeNonPublicInterfaces, options.IncludeNonPublicMembers, options.IncludeParameterNames, options.SerialVersionUID);
+            tw.Context.StubGenerator.Write(stream, tw, options.IncludeNonPublicTypes, options.IncludeNonPublicInterfaces, options.IncludeNonPublicMembers, options.IncludeParameterNames, options.SerialVersionUID);
         }
 
         static bool ExportNamespace(IList<string> namespaces, Type type)

@@ -3,7 +3,7 @@ using System.Buffers;
 using System.Buffers.Binary;
 using System.Security.Cryptography;
 
-namespace IKVM.StubGen
+namespace IKVM.Runtime.StubGen
 {
 
     /// <summary>
@@ -34,7 +34,7 @@ namespace IKVM.StubGen
             BinaryPrimitives.WriteUInt16BigEndian(temp, s);
             hash.AppendData(temp, 0, 2);
 #else
-			var buf = (Span<byte>)stackalloc byte[2];
+            var buf = (Span<byte>)stackalloc byte[2];
             BinaryPrimitives.WriteUInt16BigEndian(buf, s);
             hash.AppendData(buf);
 #endif
@@ -46,9 +46,9 @@ namespace IKVM.StubGen
             BinaryPrimitives.WriteUInt32BigEndian(temp, u);
             hash.AppendData(temp, 0, 4);
 #else
-			var span = (Span<byte>)stackalloc byte[4];
-			BinaryPrimitives.WriteUInt32BigEndian(span, u);
-			hash.AppendData(span);
+            var span = (Span<byte>)stackalloc byte[4];
+            BinaryPrimitives.WriteUInt32BigEndian(span, u);
+            hash.AppendData(span);
 #endif
         }
 
@@ -58,9 +58,9 @@ namespace IKVM.StubGen
             BinaryPrimitives.WriteInt64BigEndian(temp, l);
             hash.AppendData(temp, 0, 8);
 #else
-			var span = (Span<byte>)stackalloc byte[8];
-			BinaryPrimitives.WriteInt64BigEndian(span, l);
-			hash.AppendData(span);
+            var span = (Span<byte>)stackalloc byte[8];
+            BinaryPrimitives.WriteInt64BigEndian(span, l);
+            hash.AppendData(span);
 #endif
         }
 
@@ -80,15 +80,15 @@ namespace IKVM.StubGen
             temp[0] = b;
             hash.AppendData(temp, 0, 1);
 #else
-			var span = (Span<byte>)stackalloc byte[1];
-			span[0] = b;
-			hash.AppendData(span);
+            var span = (Span<byte>)stackalloc byte[1];
+            span[0] = b;
+            hash.AppendData(span);
 #endif
         }
 
         public void WriteBytes(byte[] data)
         {
-			hash.AppendData(data);
+            hash.AppendData(data);
         }
 
         public void WriteUtf8(string str)

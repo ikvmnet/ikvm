@@ -1,37 +1,13 @@
-/*
-  Copyright (C) 2002-2013 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
 using System;
 using System.IO;
-using System.Linq;
 using System.Collections.Generic;
 
 using IKVM.ByteCode.Encoding;
 using IKVM.Attributes;
-using IKVM.Runtime;
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 using IKVM.ByteCode.Buffers;
+
 
 #if EXPORTER
 using IKVM.Reflection;
@@ -41,7 +17,7 @@ using Type = IKVM.Reflection.Type;
 using System.Reflection;
 #endif
 
-namespace IKVM.StubGen
+namespace IKVM.Runtime.StubGen
 {
 
     class StubGenerator
@@ -58,172 +34,116 @@ namespace IKVM.StubGen
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        internal void WriteClass(Stream stream, RuntimeJavaType javaType, bool includeNonPublicTypes, bool includeNonPublicInterfaces, bool includeNonPublicMembers, bool includeParameterNames, bool includeSerialVersionUID)
+        /// <summary>
+        /// Generates a class file stub for the specified <see cref="RuntimeJavaType"/>.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="type"></param>
+        /// <param name="includeNonPublicTypes"></param>
+        /// <param name="includeNonPublicInterfaces"></param>
+        /// <param name="includeNonPublicMembers"></param>
+        /// <param name="includeParameterNames"></param>
+        /// <param name="includeSerialVersionUID"></param>
+        internal void Write(Stream stream, RuntimeJavaType type, bool includeNonPublicTypes, bool includeNonPublicInterfaces, bool includeNonPublicMembers, bool includeParameterNames, bool includeSerialVersionUID)
         {
-            var name = javaType.Name.Replace('.', '/');
+            var name = type.Name.Replace('.', '/');
 
             string super = null;
-            if (javaType.IsInterface)
+            if (type.IsInterface)
                 super = "java/lang/Object";
-            else if (javaType.BaseTypeWrapper != null)
-                super = javaType.BaseTypeWrapper.Name.Replace('.', '/');
+            else if (type.BaseTypeWrapper != null)
+                super = type.BaseTypeWrapper.Name.Replace('.', '/');
 
-            var builder = new ClassFileBuilder(new ClassFormatVersion(includeParameterNames ? (ushort)52 : (ushort)49, 0), (AccessFlag)javaType.Modifiers, name, super);
+            var builder = new ClassFileBuilder(new ClassFormatVersion(includeParameterNames ? (ushort)52 : (ushort)49, 0), (AccessFlag)type.Modifiers, name, super);
 
-            // add inner classes
-            if (javaType.DeclaringTypeWrapper != null || javaType.InnerClasses.Any(i => i.IsPublic || includeNonPublicTypes))
-            {
-                builder.Attributes.InnerClasses(e =>
-                {
-                    if (javaType.DeclaringTypeWrapper != null)
-                    {
-                        var innerName = name;
-                        int idx = name.LastIndexOf('$');
-                        if (idx >= 0)
-                            innerName = innerName.Substring(idx + 1);
+            AddInterfaces(builder, type, includeNonPublicInterfaces);
+            AddMethods(builder, type, includeNonPublicMembers, includeParameterNames);
+            AddFields(builder, type, includeNonPublicMembers, includeSerialVersionUID);
+            AddInnerClassesAttribute(builder, type, name, includeNonPublicTypes);
+            AddSignatureAttribute(builder, type);
+            AddAssemblyAttribute(builder, type);
+            AddDeprecatedAttribute(builder, type);
+            AddRuntimeVisibleAnnotationsAttribute(builder, type);
+            AddRuntimeVisibleTypeAnnotationsAttribute(builder, type);
 
-                        e.InnerClass(
-                            builder.Constants.GetOrAddClass(name),
-                            builder.Constants.GetOrAddClass(javaType.DeclaringTypeWrapper.Name.Replace('.', '/')),
-                            builder.Constants.GetOrAddUtf8(innerName),
-                            (AccessFlag)javaType.ReflectiveModifiers);
-                    }
+            // serialize final class file
+            var blob = new BlobBuilder();
+            builder.Serialize(blob);
+            blob.WriteContentTo(stream);
+        }
 
-                    foreach (var innerType in javaType.InnerClasses)
-                    {
-                        if (innerType.IsPublic || includeNonPublicTypes)
-                        {
-                            var namePart = innerType.Name;
-                            namePart = namePart.Substring(namePart.LastIndexOf('$') + 1);
-
-                            e.InnerClass(
-                                builder.Constants.GetOrAddClass(innerType.Name.Replace('.', '/')),
-                                builder.Constants.GetOrAddClass(name),
-                                builder.Constants.GetOrAddUtf8(namePart),
-                                (AccessFlag)innerType.ReflectiveModifiers);
-                        }
-                    }
-                });
-            }
-
-            // add generic signature
-            var genericTypeSignature = javaType.GetGenericSignature();
-            if (genericTypeSignature != null)
-                builder.Attributes.Signature(genericTypeSignature);
-
-            // add custom IKVM.NET.Assembly attribute
-            // consists of a U2 constant pointing to the full name of the assembly
-            var assemblyAttributeBlob = new BlobBuilder();
-            new ClassFormatWriter(assemblyAttributeBlob.ReserveBytes(ClassFormatWriter.U2).GetBytes()).WriteU2(builder.Constants.GetOrAddUtf8(GetAssemblyName(javaType)).Slot);
-            builder.Attributes.Encoder.Attribute(builder.Constants.GetOrAddUtf8("IKVM.NET.Assembly"), assemblyAttributeBlob);
-
-            // add Deprecated attribute
-            if (javaType.TypeAsBaseType.IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false))
-                builder.Attributes.Deprecated();
-
-            var annotationsBlob = new BlobBuilder();
-            var annotationsEncoder = new AnnotationTableEncoder(annotationsBlob);
-            if (EncodeAnnotations(builder, ref annotationsEncoder, javaType.TypeAsBaseType) ||
-                EncodeAnnotationsForType(builder, ref annotationsEncoder, javaType))
-                builder.Attributes.Attribute(AttributeName.RuntimeVisibleAnnotations, annotationsBlob);
-
-            var typeAnnotationsBlob = new BlobBuilder();
-            var typeAnnotationsEncoder = new TypeAnnotationTableEncoder(typeAnnotationsBlob);
-            if (ImportTypeAnnotations(builder, ref typeAnnotationsEncoder, javaType, javaType.GetRawTypeAnnotations()))
-                builder.Attributes.Attribute(AttributeName.RuntimeVisibleTypeAnnotations, typeAnnotationsBlob);
-
-            // add interfaces to the class
-            foreach (var iface in javaType.Interfaces)
+        /// <summary>
+        /// Adds the Interfaces available to the type.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        /// <param name="includeNonPublicInterfaces"></param>
+        void AddInterfaces(ClassFileBuilder builder, RuntimeJavaType type, bool includeNonPublicInterfaces)
+        {
+            foreach (var iface in type.Interfaces)
                 if (iface.IsPublic || includeNonPublicInterfaces)
                     builder.AddInterface(iface.Name.Replace('.', '/'));
+        }
 
-            // add methods to the class
-            foreach (var mw in javaType.GetMethods())
+        /// <summary>
+        /// Adds the methods for a type.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        /// <param name="includeNonPublicMembers"></param>
+        /// <param name="includeParameterNames"></param>
+        void AddMethods(ClassFileBuilder builder, RuntimeJavaType type, bool includeNonPublicMembers, bool includeParameterNames)
+        {
+            foreach (var method in type.GetMethods())
             {
-                var methodAccessFlags = (AccessFlag)mw.Modifiers;
-                var methodAttributes = new AttributeTableBuilder(builder.Constants);
+                var accessFlags = (AccessFlag)method.Modifiers;
+                var attributes = new AttributeTableBuilder(builder.Constants);
 
-                if (mw.IsHideFromReflection == false && (mw.IsPublic || mw.IsProtected || includeNonPublicMembers))
+                if (method.IsHideFromReflection == false && (method.IsPublic || method.IsProtected || includeNonPublicMembers))
                 {
                     // HACK javac has a bug in com.sun.tools.javac.code.Types.isSignaturePolymorphic() where it assumes that
                     // MethodHandle doesn't have any native methods with an empty argument list
                     // (or at least it throws a NPE when it examines the signature of a method without any parameters when it
                     // accesses argtypes.tail.tail)
-                    if (mw.Name == "<init>" || (javaType == context.JavaBase.TypeOfJavaLangInvokeMethodHandle && (mw.Modifiers & Modifiers.Native) == 0))
+                    if (method.Name == "<init>" || (type == context.JavaBase.TypeOfJavaLangInvokeMethodHandle && (method.Modifiers & Modifiers.Native) == 0))
                     {
                         // generate the method code which throws a UnsatisfiedLinkError.
                         var codeBlob = new BlobBuilder();
                         new CodeBuilder(codeBlob)
                             .New(builder.Constants.GetOrAddClass("java/lang/UnsatisfiedLinkError"))
                             .Dup()
-                            .LoadConstant(builder.Constants.GetOrAddString("ikvmstub generated stubs can only be used on IKVM.NET"))
+                            .LoadConstant(builder.Constants.GetOrAddString("IKVM stubs can only be used on IKVM"))
                             .InvokeSpecial(builder.Constants.GetOrAddMethodref("java/lang/UnsatisfiedLinkError", "<init>", "(Ljava/lang/String;)V"))
                             .Athrow();
 
-                        methodAttributes.Code(3, (ushort)(mw.GetParameters().Length * 2 + 1), codeBlob, e => { }, new AttributeTableBuilder(builder.Constants));
+                        attributes.Code(3, (ushort)(method.GetParameters().Length * 2 + 1), codeBlob, e => { }, new AttributeTableBuilder(builder.Constants));
                     }
                     else
                     {
-                        if ((methodAccessFlags & AccessFlag.Abstract) == 0)
-                            methodAccessFlags |= AccessFlag.Native;
+                        if ((accessFlags & AccessFlag.Abstract) == 0)
+                            accessFlags |= AccessFlag.Native;
 
-                        if (mw.IsOptionalAttributeAnnotationValue)
-                            methodAttributes.AnnotationDefault(e => EncodeAnnotationDefault(builder, ref e, mw.ReturnType));
+                        if (method.IsOptionalAttributeAnnotationValue)
+                            attributes.AnnotationDefault(e => EncodeAnnotationDefault(builder, ref e, method.ReturnType));
                     }
 
-                    var mb = mw.GetMethod();
-                    if (mb != null)
+                    var methodBase = method.GetMethod();
+                    if (methodBase != null)
                     {
-                        var throws = context.AttributeHelper.GetThrows(mb);
-                        if (throws == null)
-                        {
-                            var throwsArray = mw.GetDeclaredExceptions();
-                            if (throwsArray != null && throwsArray.Length > 0)
-                            {
-                                methodAttributes.Exceptions(e =>
-                                {
-                                    foreach (string ex in throwsArray)
-                                        e.Class(builder.Constants.GetOrAddClass(ex.Replace('.', '/')));
-                                });
-                            }
-                        }
-                        else
-                        {
-                            if (throws.classes != null || throws.types != null)
-                            {
-                                methodAttributes.Exceptions(e =>
-                                {
-                                    if (throws.classes != null)
-                                        foreach (string ex in throws.classes)
-                                            e.Class(builder.Constants.GetOrAddClass(ex.Replace('.', '/')));
-
-                                    if (throws.types != null)
-                                        foreach (Type ex in throws.types)
-                                            e.Class(builder.Constants.GetOrAddClass(context.ClassLoaderFactory.GetJavaTypeFromType(ex).Name.Replace('.', '/')));
-                                });
-                            }
-                        }
-
-                        // HACK the instancehelper methods are marked as Obsolete (to direct people toward the ikvm.extensions methods instead)
-                        // but in the Java world most of them are not deprecated (and to keep the Japi results clean we need to reflect this)
-                        // the Java deprecated methods actually have two Obsolete attributes
-                        if (mb.IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false) && (!mb.Name.StartsWith("instancehelper_") || mb.DeclaringType.FullName != "java.lang.String" || GetObsoleteCount(mb) == 2))
-                            methodAttributes.Deprecated();
-
-                        var attr = GetAnnotationDefault(mb);
-                        if (attr != null)
-                            methodAttributes.AnnotationDefault(e => EncodeAnnotationDefault(builder, ref e, attr.ConstructorArguments[0]));
+                        AddExceptionsAttribute(builder, type, method, attributes, methodBase);
+                        AddDeprecatedAttribute(builder, type, method, attributes, methodBase);
+                        AddAnnotationDefaultAttribute(builder, type, method, attributes, methodBase);
 
                         if (includeParameterNames)
                         {
-                            var mp = javaType.GetMethodParameters(mw);
+                            var mp = type.GetMethodParameters(method);
                             if (mp == MethodParametersEntry.Malformed)
                             {
-                                methodAttributes.MethodParameters(e => { });
+                                attributes.MethodParameters(e => { });
                             }
                             else if (mp != null)
                             {
-                                methodAttributes.MethodParameters(e =>
+                                attributes.MethodParameters(e =>
                                 {
                                     foreach (var i in mp)
                                         e.MethodParameter(builder.Constants.GetOrAddUtf8(i.name), i.accessFlags);
@@ -232,122 +152,416 @@ namespace IKVM.StubGen
                         }
                     }
 
-                    var sig = javaType.GetGenericMethodSignature(mw);
-                    if (sig != null)
-                        methodAttributes.Signature(sig);
+                    AddSignatureAttribute(builder, type, method, attributes);
+                    AddRuntimeVisibleAnnotationsAttribute(builder, type, method, attributes);
+                    AddRuntimeVisibleTypeAnnotationsAttribute(builder, type, method, attributes);
+                    AddRuntimeVisibleParameterAnnotationsAttribute(builder, type, method, attributes);
 
-                    var methodAnnotationsBlob = new BlobBuilder();
-                    var methodAnnotationsEncoder = new AnnotationTableEncoder(methodAnnotationsBlob);
-                    if (EncodeAnnotations(builder, ref methodAnnotationsEncoder, mw.GetMethod()))
-                        methodAttributes.Attribute(AttributeName.RuntimeVisibleAnnotations, methodAnnotationsBlob);
-
-                    var methodTypeAnnotationsBlob = new BlobBuilder();
-                    var methodTypeAnnotationsEncoder = new TypeAnnotationTableEncoder(methodTypeAnnotationsBlob);
-                    if (ImportTypeAnnotations(builder, ref methodTypeAnnotationsEncoder, javaType, javaType.GetMethodRawTypeAnnotations(mw)))
-                        methodAttributes.Attribute(AttributeName.RuntimeVisibleTypeAnnotations, methodTypeAnnotationsBlob);
-
-                    var methodParameterAnnotationsBlob = new BlobBuilder();
-                    var methodParameterAnnotationsEncoder = new ParameterAnnotationTableEncoder(methodParameterAnnotationsBlob);
-                    if (EncodeParameterAnnotations(builder, ref methodParameterAnnotationsEncoder, mw.GetMethod()))
-                        methodAttributes.Attribute(AttributeName.RuntimeVisibleParameterAnnotations, methodParameterAnnotationsBlob);
-
-                    builder.AddMethod(methodAccessFlags, mw.Name, mw.Signature.Replace('.', '/'), methodAttributes);
+                    builder.AddMethod(accessFlags, method.Name, method.Signature.Replace('.', '/'), attributes);
                 }
             }
+        }
 
-            // add fields to the class
+        /// <summary>
+        /// Adds the fields for a type.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        /// <param name="includeNonPublicMembers"></param>
+        /// <param name="includeSerialVersionUID"></param>
+        /// <exception cref="Exception"></exception>
+        void AddFields(ClassFileBuilder builder, RuntimeJavaType type, bool includeNonPublicMembers, bool includeSerialVersionUID)
+        {
             var hasSerialVersionUID = false;
-            foreach (var fw in javaType.GetFields())
-            {
-                if (fw.IsHideFromReflection == false)
-                {
-                    var fieldAttributes = new AttributeTableBuilder(builder.Constants);
 
-                    var isSerialVersionUID = includeSerialVersionUID && fw.IsSerialVersionUID;
+            foreach (var field in type.GetFields())
+            {
+                if (field.IsHideFromReflection == false)
+                {
+                    var attributes = new AttributeTableBuilder(builder.Constants);
+
+                    var isSerialVersionUID = includeSerialVersionUID && field.IsSerialVersionUID;
                     hasSerialVersionUID |= isSerialVersionUID;
 
-                    if (fw.IsPublic || fw.IsProtected || isSerialVersionUID || includeNonPublicMembers)
+                    if (field.IsPublic || field.IsProtected || isSerialVersionUID || includeNonPublicMembers)
                     {
-                        if (fw.GetField() != null && fw.GetField().IsLiteral && (fw.FieldTypeWrapper.IsPrimitive || fw.FieldTypeWrapper == context.JavaBase.TypeOfJavaLangString))
-                        {
-                            var constant = fw.GetField().GetRawConstantValue();
-                            if (fw.GetField().FieldType.IsEnum)
-                                constant = EnumHelper.GetPrimitiveValue(context, EnumHelper.GetUnderlyingType(fw.GetField().FieldType), constant);
+                        AddConstantValueAttribute(builder, type, field, attributes);
+                        AddSignatureAttribute(builder, type, field, attributes);
+                        AddDeprecatedAttribute(builder, type, field, attributes);
+                        AddRuntimeVisibleAnnotationsAttribute(builder, type, field, attributes);
+                        AddRuntimeVisibleTypeAnnotationsAttribute(builder, type, field, attributes);
 
-                            if (constant != null)
-                            {
-                                switch (constant)
-                                {
-                                    case int i:
-                                        fieldAttributes.ConstantValue(i);
-                                        break;
-                                    case short s:
-                                        fieldAttributes.ConstantValue(s);
-                                        break;
-                                    case char c:
-                                        fieldAttributes.ConstantValue(c);
-                                        break;
-                                    case byte b:
-                                        fieldAttributes.ConstantValue(b);
-                                        break;
-                                    case bool z:
-                                        fieldAttributes.ConstantValue(z);
-                                        break;
-                                    case float f:
-                                        fieldAttributes.ConstantValue(f);
-                                        break;
-                                    case long j:
-                                        fieldAttributes.ConstantValue(j);
-                                        break;
-                                    case double d:
-                                        fieldAttributes.ConstantValue(d);
-                                        break;
-                                    case string l:
-                                        fieldAttributes.ConstantValue(l);
-                                        break;
-                                    default:
-                                        throw new Exception();
-                                }
-                            }
-                        }
-
-                        // build generic field signature
-                        var sig = javaType.GetGenericFieldSignature(fw);
-                        if (sig != null)
-                            fieldAttributes.Signature(sig);
-
-                        // .NET ObsoleteAttribute translates to Deprecated attribute
-                        if (fw.GetField() != null && fw.GetField().IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false))
-                            fieldAttributes.Deprecated();
-
-                        var fieldAnnotationsBlob = new BlobBuilder();
-                        var fieldAnnotationsEncoder = new AnnotationTableEncoder(fieldAnnotationsBlob);
-                        if (EncodeAnnotations(builder, ref fieldAnnotationsEncoder, fw.GetField()))
-                            fieldAttributes.Attribute(AttributeName.RuntimeVisibleAnnotations, fieldAnnotationsBlob);
-
-                        var fieldTypeAnnotationsBlob = new BlobBuilder();
-                        var fieldTypeAnnotationsEncoder = new TypeAnnotationTableEncoder(fieldTypeAnnotationsBlob);
-                        if (ImportTypeAnnotations(builder, ref fieldTypeAnnotationsEncoder, javaType, javaType.GetFieldRawTypeAnnotations(fw)))
-                            fieldAttributes.Attribute(AttributeName.RuntimeVisibleTypeAnnotations, fieldTypeAnnotationsBlob);
-
-                        builder.AddField((AccessFlag)fw.Modifiers, fw.Name, fw.Signature.Replace('.', '/'), fieldAttributes);
+                        builder.AddField((AccessFlag)field.Modifiers, field.Name, field.Signature.Replace('.', '/'), attributes);
                     }
                 }
             }
 
             // class is serializable but doesn't have an explicit serialVersionUID, so we add the field to record
             // the serialVersionUID as we see it (mainly to make the Japi reports more realistic)
-            if (includeSerialVersionUID && hasSerialVersionUID == false && IsSerializable(javaType))
+            if (includeSerialVersionUID && hasSerialVersionUID == false && IsSerializable(type))
             {
                 var fieldAttributes = new AttributeTableBuilder(builder.Constants);
-                fieldAttributes.ConstantValue(SerialVersionUID.Compute(javaType));
+                fieldAttributes.ConstantValue(SerialVersionUID.Compute(type));
                 builder.AddField(AccessFlag.Private | AccessFlag.Static | AccessFlag.Final, "serialVersionUID", "J", fieldAttributes);
             }
+        }
 
-            // serialize final class file
+        /// <summary>
+        /// Adds the RuntimeVisibleTypeAnnotations attribute for a type.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        void AddRuntimeVisibleTypeAnnotationsAttribute(ClassFileBuilder builder, RuntimeJavaType type)
+        {
             var blob = new BlobBuilder();
-            builder.Serialize(blob);
-            blob.WriteContentTo(stream);
+            var encoder = new TypeAnnotationTableEncoder(blob);
+            if (ImportTypeAnnotations(builder, ref encoder, type, type.GetRawTypeAnnotations()))
+                builder.Attributes.Attribute(AttributeName.RuntimeVisibleTypeAnnotations, blob);
+        }
+
+        /// <summary>
+        /// Adds the RuntimeVisibleAnnotations attribute for a type.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        void AddRuntimeVisibleAnnotationsAttribute(ClassFileBuilder builder, RuntimeJavaType type)
+        {
+            var blob = new BlobBuilder();
+            var encoder = new AnnotationTableEncoder(blob);
+            if (EncodeAnnotations(builder, ref encoder, type.TypeAsBaseType) ||
+                EncodeAnnotationsForType(builder, ref encoder, type))
+                builder.Attributes.Attribute(AttributeName.RuntimeVisibleAnnotations, blob);
+        }
+
+        /// <summary>
+        /// Adds the Deprecated attribute.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        void AddDeprecatedAttribute(ClassFileBuilder builder, RuntimeJavaType type)
+        {
+            if (type.TypeAsBaseType.IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false))
+                builder.Attributes.Deprecated();
+        }
+
+        /// <summary>
+        /// Adds the InnerClasses attribute.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="javaType"></param>
+        /// <param name="name"></param>
+        /// <param name="includeNonPublicTypes"></param>
+        void AddInnerClassesAttribute(ClassFileBuilder builder, RuntimeJavaType javaType, string name, bool includeNonPublicTypes)
+        {
+            var any = false;
+            var blob = new BlobBuilder();
+            var encoder = new InnerClassTableEncoder(blob);
+
+            if (javaType.DeclaringTypeWrapper != null)
+            {
+                var innerName = name;
+                int idx = name.LastIndexOf('$');
+                if (idx >= 0)
+                    innerName = innerName.Substring(idx + 1);
+
+                encoder.InnerClass(
+                    builder.Constants.GetOrAddClass(name),
+                    builder.Constants.GetOrAddClass(javaType.DeclaringTypeWrapper.Name.Replace('.', '/')),
+                    builder.Constants.GetOrAddUtf8(innerName),
+                    (AccessFlag)javaType.ReflectiveModifiers);
+
+                any = true;
+            }
+
+            foreach (var innerType in javaType.InnerClasses)
+            {
+                if (innerType.IsPublic || includeNonPublicTypes)
+                {
+                    var namePart = innerType.Name;
+                    namePart = namePart.Substring(namePart.LastIndexOf('$') + 1);
+
+                    encoder.InnerClass(
+                        builder.Constants.GetOrAddClass(innerType.Name.Replace('.', '/')),
+                        builder.Constants.GetOrAddClass(name),
+                        builder.Constants.GetOrAddUtf8(namePart),
+                        (AccessFlag)innerType.ReflectiveModifiers);
+
+                    any = true;
+                }
+            }
+
+            if (any)
+                builder.Attributes.Attribute(AttributeName.InnerClasses, blob);
+        }
+
+        /// <summary>
+        /// Adds the Signature attribute for a type.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="javaType"></param>
+        void AddSignatureAttribute(ClassFileBuilder builder, RuntimeJavaType javaType)
+        {
+            var signature = javaType.GetGenericSignature();
+            if (signature != null)
+                builder.Attributes.Signature(signature);
+        }
+
+        /// <summary>
+        /// Adds the IKVM.NET.Assembly attribute for a type.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="javaType"></param>
+        void AddAssemblyAttribute(ClassFileBuilder builder, RuntimeJavaType javaType)
+        {
+
+            // consists of a U2 constant pointing to the full name of the assembly
+            var assemblyAttributeBlob = new BlobBuilder();
+            new ClassFormatWriter(assemblyAttributeBlob.ReserveBytes(ClassFormatWriter.U2).GetBytes()).WriteU2(builder.Constants.GetOrAddUtf8(GetAssemblyName(javaType)).Slot);
+            builder.Attributes.Encoder.Attribute(builder.Constants.GetOrAddUtf8("IKVM.NET.Assembly"), assemblyAttributeBlob);
+        }
+
+        /// <summary>
+        /// Adds the Exceptions attribute for the method.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        /// <param name="method"></param>
+        /// <param name="attributes"></param>
+        /// <param name="methodBase"></param>
+        void AddExceptionsAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder attributes, MethodBase methodBase)
+        {
+            var throws = context.AttributeHelper.GetThrows(methodBase);
+            if (throws == null)
+            {
+                var throwsArray = method.GetDeclaredExceptions();
+                if (throwsArray != null && throwsArray.Length > 0)
+                {
+                    attributes.Exceptions(e =>
+                    {
+                        foreach (string ex in throwsArray)
+                            e.Class(builder.Constants.GetOrAddClass(ex.Replace('.', '/')));
+                    });
+                }
+            }
+            else
+            {
+                if (throws.classes != null || throws.types != null)
+                {
+                    attributes.Exceptions(e =>
+                    {
+                        if (throws.classes != null)
+                            foreach (string ex in throws.classes)
+                                e.Class(builder.Constants.GetOrAddClass(ex.Replace('.', '/')));
+
+                        if (throws.types != null)
+                            foreach (Type ex in throws.types)
+                                e.Class(builder.Constants.GetOrAddClass(context.ClassLoaderFactory.GetJavaTypeFromType(ex).Name.Replace('.', '/')));
+                    });
+                }
+            }
+        }
+
+        /// <summary>
+        /// Adds the AnnotationDefault attribute for a method.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        /// <param name="method"></param>
+        /// <param name="attributes"></param>
+        /// <param name="methodBase"></param>
+        void AddAnnotationDefaultAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder attributes, MethodBase methodBase)
+        {
+            var attr = GetAnnotationDefault(methodBase);
+            if (attr != null)
+                attributes.AnnotationDefault(e => EncodeAnnotationDefault(builder, ref e, attr.ConstructorArguments[0]));
+        }
+
+        /// <summary>
+        /// Adds the Signature attribute for a method.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="javaType"></param>
+        /// <param name="method"></param>
+        /// <param name="methodAttributes"></param>
+        void AddSignatureAttribute(ClassFileBuilder builder, RuntimeJavaType javaType, RuntimeJavaMethod method, AttributeTableBuilder methodAttributes)
+        {
+            var signature = javaType.GetGenericMethodSignature(method);
+            if (signature != null)
+                methodAttributes.Signature(signature);
+        }
+
+        /// <summary>
+        /// Adds the Deprecated attribute for a method.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        /// <param name="method"></param>
+        /// <param name="attributes"></param>
+        /// <param name="methodBase"></param>
+        void AddDeprecatedAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder attributes, MethodBase methodBase)
+        {
+            // HACK the instancehelper methods are marked as Obsolete (to direct people toward the ikvm.extensions methods instead)
+            // but in the Java world most of them are not deprecated (and to keep the Japi results clean we need to reflect this)
+            // the Java deprecated methods actually have two Obsolete attributes
+            if (methodBase.IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false) && (!methodBase.Name.StartsWith("instancehelper_") || methodBase.DeclaringType.FullName != "java.lang.String" || GetObsoleteCount(methodBase) == 2))
+                attributes.Deprecated();
+        }
+
+        /// <summary>
+        /// Adds the RuntimeVisibleParameterAnnotations attribute for a method.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="javaType"></param>
+        /// <param name="method"></param>
+        /// <param name="attributes"></param>
+        void AddRuntimeVisibleParameterAnnotationsAttribute(ClassFileBuilder builder, RuntimeJavaType javaType, RuntimeJavaMethod method, AttributeTableBuilder attributes)
+        {
+            var blob = new BlobBuilder();
+            var encoder = new ParameterAnnotationTableEncoder(blob);
+            if (EncodeParameterAnnotations(builder, ref encoder, method.GetMethod()))
+                attributes.Attribute(AttributeName.RuntimeVisibleParameterAnnotations, blob);
+        }
+
+        /// <summary>
+        /// Adds the RuntimeVisibleTypeAnnotations attribute for a method.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="javaType"></param>
+        /// <param name="method"></param>
+        /// <param name="attributes"></param>
+        void AddRuntimeVisibleTypeAnnotationsAttribute(ClassFileBuilder builder, RuntimeJavaType javaType, RuntimeJavaMethod method, AttributeTableBuilder attributes)
+        {
+            var blob = new BlobBuilder();
+            var encoder = new TypeAnnotationTableEncoder(blob);
+            if (ImportTypeAnnotations(builder, ref encoder, javaType, javaType.GetMethodRawTypeAnnotations(method)))
+                attributes.Attribute(AttributeName.RuntimeVisibleTypeAnnotations, blob);
+        }
+
+        /// <summary>
+        /// Adds the RuntimeVisibleAnnotations attribute for a method.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        /// <param name="method"></param>
+        /// <param name="attributes"></param>
+        void AddRuntimeVisibleAnnotationsAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder attributes)
+        {
+            var blob = new BlobBuilder();
+            var encoder = new AnnotationTableEncoder(blob);
+            if (EncodeAnnotations(builder, ref encoder, method.GetMethod()))
+                attributes.Attribute(AttributeName.RuntimeVisibleAnnotations, blob);
+        }
+
+        /// <summary>
+        /// Adds the ConstantValue attribute for a field.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        /// <param name="field"></param>
+        /// <param name="attributes"></param>
+        /// <exception cref="Exception"></exception>
+        void AddConstantValueAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaField field, AttributeTableBuilder attributes)
+        {
+            if (field.GetField() != null && field.GetField().IsLiteral && (field.FieldTypeWrapper.IsPrimitive || field.FieldTypeWrapper == context.JavaBase.TypeOfJavaLangString))
+            {
+                var constant = field.GetField().GetRawConstantValue();
+                if (field.GetField().FieldType.IsEnum)
+                    constant = EnumHelper.GetPrimitiveValue(context, EnumHelper.GetUnderlyingType(field.GetField().FieldType), constant);
+
+                if (constant != null)
+                {
+                    switch (constant)
+                    {
+                        case int i:
+                            attributes.ConstantValue(i);
+                            break;
+                        case short s:
+                            attributes.ConstantValue(s);
+                            break;
+                        case char c:
+                            attributes.ConstantValue(c);
+                            break;
+                        case byte b:
+                            attributes.ConstantValue(b);
+                            break;
+                        case bool z:
+                            attributes.ConstantValue(z);
+                            break;
+                        case float f:
+                            attributes.ConstantValue(f);
+                            break;
+                        case long j:
+                            attributes.ConstantValue(j);
+                            break;
+                        case double d:
+                            attributes.ConstantValue(d);
+                            break;
+                        case string l:
+                            attributes.ConstantValue(l);
+                            break;
+                        default:
+                            throw new Exception();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Adds the Signature attribute for a field.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        /// <param name="field"></param>
+        /// <param name="attributes"></param>
+        void AddSignatureAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaField field, AttributeTableBuilder attributes)
+        {
+            var signature = type.GetGenericFieldSignature(field);
+            if (signature != null)
+                attributes.Signature(signature);
+        }
+
+        /// <summary>
+        /// Adds the Deprecated attribute for a field.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        /// <param name="field"></param>
+        /// <param name="attributes"></param>
+        void AddDeprecatedAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaField field, AttributeTableBuilder attributes)
+        {
+            // .NET ObsoleteAttribute translates to Deprecated attribute
+            if (field.GetField() != null && field.GetField().IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false))
+                attributes.Deprecated();
+        }
+
+        /// <summary>
+        /// Adds the RuntimeVisibleTypeAnnotations attribute for a field.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        /// <param name="field"></param>
+        /// <param name="attributes"></param>
+        void AddRuntimeVisibleTypeAnnotationsAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaField field, AttributeTableBuilder attributes)
+        {
+            var blob = new BlobBuilder();
+            var encoder = new TypeAnnotationTableEncoder(blob);
+            if (ImportTypeAnnotations(builder, ref encoder, type, type.GetFieldRawTypeAnnotations(field)))
+                attributes.Attribute(AttributeName.RuntimeVisibleTypeAnnotations, blob);
+        }
+
+        /// <summary>
+        /// Adds the RuntimeVisibleAnnotations attribute for a field.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="type"></param>
+        /// <param name="field"></param>
+        /// <param name="attributes"></param>
+        void AddRuntimeVisibleAnnotationsAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaField field, AttributeTableBuilder attributes)
+        {
+            var blob = new BlobBuilder();
+            var encoder = new AnnotationTableEncoder(blob);
+            if (EncodeAnnotations(builder, ref encoder, field.GetField()))
+                attributes.Attribute(AttributeName.RuntimeVisibleAnnotations, blob);
         }
 
         /// <summary>
@@ -461,7 +675,7 @@ namespace IKVM.StubGen
                 this.pool = pool;
             }
 
-            public ByteCode.Constant Get(ConstantHandle handle)
+            public Constant Get(ConstantHandle handle)
             {
                 return handle.Kind switch
                 {

@@ -1,9 +1,8 @@
 using System.Linq;
 
 using IKVM.Attributes;
-using IKVM.Runtime;
 
-namespace IKVM.StubGen
+namespace IKVM.Runtime.StubGen
 {
 
     /// <summary>
