@@ -494,7 +494,7 @@ namespace IKVM.Runtime.StubGen
                             attributes.ConstantValue(c);
                             break;
                         case byte b:
-                            attributes.ConstantValue(b);
+                            attributes.ConstantValue((int)(sbyte)b);
                             break;
                         case bool z:
                             attributes.ConstantValue(z);
@@ -1078,7 +1078,7 @@ namespace IKVM.Runtime.StubGen
 
             if (value is byte b)
             {
-                encoder.Byte(builder.Constants.GetOrAddInteger(b));
+                encoder.Byte(builder.Constants.GetOrAddInteger((sbyte)b));
                 return;
             }
 
@@ -1388,7 +1388,7 @@ namespace IKVM.Runtime.StubGen
             // typed argument of byte type holds BYTE
             if (value.ArgumentType == context.Types.Byte)
             {
-                encoder.Byte(builder.Constants.GetOrAddInteger((byte)value.Value));
+                encoder.Byte(builder.Constants.GetOrAddInteger((sbyte)(byte)value.Value));
                 return;
             }
 
