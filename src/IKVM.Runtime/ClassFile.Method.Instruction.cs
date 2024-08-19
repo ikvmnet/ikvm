@@ -22,15 +22,20 @@
   
 */
 
+using System;
+
 namespace IKVM.Runtime
 {
 
     sealed partial class ClassFile
     {
+
         internal sealed partial class Method
         {
+
             internal struct Instruction
             {
+
                 private ushort pc;
                 private NormalizedByteCode normopcode;
                 private int arg1;
@@ -115,198 +120,616 @@ namespace IKVM.Runtime
                     }
                 }
 
-                internal void Read(ushort pc, BigEndianBinaryReader br, ClassFile classFile)
+                internal void Read(IKVM.ByteCode.Decoding.Instruction instruction, ClassFile classFile)
                 {
-                    this.pc = pc;
-                    var bc = (ByteCode)br.ReadByte();
-                    switch (ByteCodeMetaData.GetMode(bc))
+                    this.pc = (ushort)instruction.Offset;
+
+                    try
                     {
-                        case ByteCodeMode.Simple:
-                            break;
-                        case ByteCodeMode.Constant_1:
-                            arg1 = br.ReadByte();
-                            classFile.MarkLinkRequiredConstantPoolItem(arg1);
-                            break;
-                        case ByteCodeMode.Local_1:
-                            arg1 = br.ReadByte();
-                            break;
-                        case ByteCodeMode.Constant_2:
-                            arg1 = br.ReadUInt16();
-                            classFile.MarkLinkRequiredConstantPoolItem(arg1);
-                            break;
-                        case ByteCodeMode.Branch_2:
-                            arg1 = br.ReadInt16();
-                            break;
-                        case ByteCodeMode.Branch_4:
-                            arg1 = br.ReadInt32();
-                            break;
-                        case ByteCodeMode.Constant_2_1_1:
-                            arg1 = br.ReadUInt16();
-                            classFile.MarkLinkRequiredConstantPoolItem(arg1);
-                            arg2 = br.ReadByte();
-                            if (br.ReadByte() != 0)
-                            {
-                                throw new ClassFormatError("invokeinterface filler must be zero");
-                            }
-                            break;
-                        case ByteCodeMode.Immediate_1:
-                            arg1 = br.ReadSByte();
-                            break;
-                        case ByteCodeMode.Immediate_2:
-                            arg1 = br.ReadInt16();
-                            break;
-                        case ByteCodeMode.Local_1_Immediate_1:
-                            arg1 = br.ReadByte();
-                            arg2 = br.ReadSByte();
-                            break;
-                        case ByteCodeMode.Constant_2_Immediate_1:
-                            arg1 = br.ReadUInt16();
-                            classFile.MarkLinkRequiredConstantPoolItem(arg1);
-                            arg2 = br.ReadSByte();
-                            break;
-                        case ByteCodeMode.Tableswitch:
-                            {
-                                // skip the padding
-                                uint p = pc + 1u;
-                                uint align = ((p + 3) & 0x7ffffffc) - p;
-                                br.Skip(align);
-                                int default_offset = br.ReadInt32();
-                                this.arg1 = default_offset;
-                                int low = br.ReadInt32();
-                                int high = br.ReadInt32();
-                                if (low > high || high > 16384L + low)
-                                {
-                                    throw new ClassFormatError("Incorrect tableswitch");
-                                }
-                                SwitchEntry[] entries = new SwitchEntry[high - low + 1];
-                                for (int i = low; i < high; i++)
-                                {
-                                    entries[i - low].value = i;
-                                    entries[i - low].target = br.ReadInt32();
-                                }
-                                // do the last entry outside the loop, to avoid overflowing "i", if high == int.MaxValue
-                                entries[high - low].value = high;
-                                entries[high - low].target = br.ReadInt32();
-                                this.switch_entries = entries;
+                        switch (instruction.OpCode)
+                        {
+                            case IKVM.ByteCode.OpCode.Nop:
                                 break;
-                            }
-                        case ByteCodeMode.Lookupswitch:
-                            {
-                                // skip the padding
-                                uint p = pc + 1u;
-                                uint align = ((p + 3) & 0x7ffffffc) - p;
-                                br.Skip(align);
-                                int default_offset = br.ReadInt32();
-                                this.arg1 = default_offset;
-                                int count = br.ReadInt32();
-                                if (count < 0 || count > 16384)
-                                {
+                            case IKVM.ByteCode.OpCode.AconstNull:
+                                break;
+                            case IKVM.ByteCode.OpCode.IconstM1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iconst0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iconst1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iconst2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iconst3:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iconst4:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iconst5:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lconst0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lconst1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fconst0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fconst1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fconst2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dconst0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dconst1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Bipush:
+                                var _bipush = instruction.AsBipush();
+                                arg1 = _bipush.Value;
+                                break;
+                            case IKVM.ByteCode.OpCode.Sipush:
+                                var _sipush = instruction.AsSipush();
+                                arg1 = _sipush.Value;
+                                break;
+                            case IKVM.ByteCode.OpCode.Ldc:
+                                var _ldc = instruction.AsLdc();
+                                arg1 = _ldc.Constant.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.LdcW:
+                                var _ldcw = instruction.AsLdcW();
+                                arg1 = _ldcw.Constant.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.Ldc2W:
+                                var _ldc2w = instruction.AsLdc2W();
+                                arg1 = _ldc2w.Constant.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.Iload:
+                                var _iload = instruction.AsIload();
+                                arg1 = _iload.Local;
+                                break;
+                            case IKVM.ByteCode.OpCode.Lload:
+                                var _lload = instruction.AsLload();
+                                arg1 = _lload.Local;
+                                break;
+                            case IKVM.ByteCode.OpCode.Fload:
+                                var _fload = instruction.AsFload();
+                                arg1 = _fload.Local;
+                                break;
+                            case IKVM.ByteCode.OpCode.Dload:
+                                var _dload = instruction.AsDload();
+                                arg1 = _dload.Local;
+                                break;
+                            case IKVM.ByteCode.OpCode.Aload:
+                                var _aload = instruction.AsAload();
+                                arg1 = _aload.Local;
+                                break;
+                            case IKVM.ByteCode.OpCode.Iload0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iload1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iload2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iload3:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lload0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lload1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lload2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lload3:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fload0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fload1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fload2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fload3:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dload0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dload1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dload2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dload3:
+                                break;
+                            case IKVM.ByteCode.OpCode.Aload0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Aload1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Aload2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Aload3:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iaload:
+                                break;
+                            case IKVM.ByteCode.OpCode.Laload:
+                                break;
+                            case IKVM.ByteCode.OpCode.Faload:
+                                break;
+                            case IKVM.ByteCode.OpCode.Daload:
+                                break;
+                            case IKVM.ByteCode.OpCode.Aaload:
+                                break;
+                            case IKVM.ByteCode.OpCode.Baload:
+                                break;
+                            case IKVM.ByteCode.OpCode.Caload:
+                                break;
+                            case IKVM.ByteCode.OpCode.Saload:
+                                break;
+                            case IKVM.ByteCode.OpCode.Istore:
+                                var _istore = instruction.AsIstore();
+                                arg1 = _istore.Local;
+                                break;
+                            case IKVM.ByteCode.OpCode.Lstore:
+                                var _lstore = instruction.AsLstore();
+                                arg1 = _lstore.Local;
+                                break;
+                            case IKVM.ByteCode.OpCode.Fstore:
+                                var _fstore = instruction.AsFstore();
+                                arg1 = _fstore.Local;
+                                break;
+                            case IKVM.ByteCode.OpCode.Dstore:
+                                var _dstore = instruction.AsDstore();
+                                arg1 = _dstore.Local;
+                                break;
+                            case IKVM.ByteCode.OpCode.Astore:
+                                var _astore = instruction.AsAstore();
+                                arg1 = _astore.Local;
+                                break;
+                            case IKVM.ByteCode.OpCode.Istore0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Istore1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Istore2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Istore3:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lstore0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lstore1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lstore2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lstore3:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fstore0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fstore1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fstore2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fstore3:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dstore0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dstore1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dstore2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dstore3:
+                                break;
+                            case IKVM.ByteCode.OpCode.Astore0:
+                                break;
+                            case IKVM.ByteCode.OpCode.Astore1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Astore2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Astore3:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iastore:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lastore:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fastore:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dastore:
+                                break;
+                            case IKVM.ByteCode.OpCode.Aastore:
+                                break;
+                            case IKVM.ByteCode.OpCode.Bastore:
+                                break;
+                            case IKVM.ByteCode.OpCode.Castore:
+                                break;
+                            case IKVM.ByteCode.OpCode.Sastore:
+                                break;
+                            case IKVM.ByteCode.OpCode.Pop:
+                                break;
+                            case IKVM.ByteCode.OpCode.Pop2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dup:
+                                break;
+                            case IKVM.ByteCode.OpCode.DupX1:
+                                break;
+                            case IKVM.ByteCode.OpCode.DupX2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dup2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dup2X1:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dup2X2:
+                                break;
+                            case IKVM.ByteCode.OpCode.Swap:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iadd:
+                                break;
+                            case IKVM.ByteCode.OpCode.Ladd:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fadd:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dadd:
+                                break;
+                            case IKVM.ByteCode.OpCode.Isub:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lsub:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fsub:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dsub:
+                                break;
+                            case IKVM.ByteCode.OpCode.Imul:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lmul:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fmul:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dmul:
+                                break;
+                            case IKVM.ByteCode.OpCode.Idiv:
+                                break;
+                            case IKVM.ByteCode.OpCode.Ldiv:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fdiv:
+                                break;
+                            case IKVM.ByteCode.OpCode.Ddiv:
+                                break;
+                            case IKVM.ByteCode.OpCode.Irem:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lrem:
+                                break;
+                            case IKVM.ByteCode.OpCode.Frem:
+                                break;
+                            case IKVM.ByteCode.OpCode.Drem:
+                                break;
+                            case IKVM.ByteCode.OpCode.Ineg:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lneg:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fneg:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dneg:
+                                break;
+                            case IKVM.ByteCode.OpCode.Ishl:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lshl:
+                                break;
+                            case IKVM.ByteCode.OpCode.Ishr:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lshr:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iushr:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lushr:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iand:
+                                break;
+                            case IKVM.ByteCode.OpCode.Land:
+                                break;
+                            case IKVM.ByteCode.OpCode.Ior:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lor:
+                                break;
+                            case IKVM.ByteCode.OpCode.Ixor:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lxor:
+                                break;
+                            case IKVM.ByteCode.OpCode.Iinc:
+                                var _iinc = instruction.AsIinc();
+                                arg1 = _iinc.Local;
+                                arg2 = _iinc.Value;
+                                break;
+                            case IKVM.ByteCode.OpCode.I2l:
+                                break;
+                            case IKVM.ByteCode.OpCode.I2f:
+                                break;
+                            case IKVM.ByteCode.OpCode.I2d:
+                                break;
+                            case IKVM.ByteCode.OpCode.L2i:
+                                break;
+                            case IKVM.ByteCode.OpCode.L2f:
+                                break;
+                            case IKVM.ByteCode.OpCode.L2d:
+                                break;
+                            case IKVM.ByteCode.OpCode.F2i:
+                                break;
+                            case IKVM.ByteCode.OpCode.F2l:
+                                break;
+                            case IKVM.ByteCode.OpCode.F2d:
+                                break;
+                            case IKVM.ByteCode.OpCode.D2i:
+                                break;
+                            case IKVM.ByteCode.OpCode.D2l:
+                                break;
+                            case IKVM.ByteCode.OpCode.D2f:
+                                break;
+                            case IKVM.ByteCode.OpCode.I2b:
+                                break;
+                            case IKVM.ByteCode.OpCode.I2c:
+                                break;
+                            case IKVM.ByteCode.OpCode.I2s:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lcmp:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fcmpl:
+                                break;
+                            case IKVM.ByteCode.OpCode.Fcmpg:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dcmpl:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dcmpg:
+                                break;
+                            case IKVM.ByteCode.OpCode.Ifeq:
+                                var _ifeq = instruction.AsIfeq();
+                                arg1 = _ifeq.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.Ifne:
+                                var _ifne = instruction.AsIfne();
+                                arg1 = _ifne.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.Iflt:
+                                var _iflt = instruction.AsIflt();
+                                arg1 = _iflt.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.Ifge:
+                                var _ifge = instruction.AsIfge();
+                                arg1 = _ifge.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.Ifgt:
+                                var _ifgt = instruction.AsIfgt();
+                                arg1 = _ifgt.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.Ifle:
+                                var _ifle = instruction.AsIfle();
+                                arg1 = _ifle.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.IfIcmpeq:
+                                var _ificmpeq = instruction.AsIfIcmpeq();
+                                arg1 = _ificmpeq.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.IfIcmpne:
+                                var _ificmpne = instruction.AsIfIcmpne();
+                                arg1 = _ificmpne.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.IfIcmplt:
+                                var _ificmplt = instruction.AsIfIcmplt();
+                                arg1 = _ificmplt.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.IfIcmpge:
+                                var _ificmpge = instruction.AsIfIcmpge();
+                                arg1 = _ificmpge.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.IfIcmpgt:
+                                var _ificmpgt = instruction.AsIfIcmpgt();
+                                arg1 = _ificmpgt.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.IfIcmple:
+                                var _ificmple = instruction.AsIfIcmple();
+                                arg1 = _ificmple.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.IfAcmpeq:
+                                var _ifacmpeq = instruction.AsIfAcmpeq();
+                                arg1 = _ifacmpeq.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.IfAcmpne:
+                                var _ifacmpne = instruction.AsIfAcmpne();
+                                arg1 = _ifacmpne.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.Goto:
+                                var _goto = instruction.AsGoto();
+                                arg1 = _goto.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.Jsr:
+                                var _jsr = instruction.AsJsr();
+                                arg1 = _jsr.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.Ret:
+                                var _ret = instruction.AsRet();
+                                arg1 = _ret.Local;
+                                break;
+                            case IKVM.ByteCode.OpCode.Ireturn:
+                                break;
+                            case IKVM.ByteCode.OpCode.Lreturn:
+                                break;
+                            case IKVM.ByteCode.OpCode.Freturn:
+                                break;
+                            case IKVM.ByteCode.OpCode.Dreturn:
+                                break;
+                            case IKVM.ByteCode.OpCode.Areturn:
+                                break;
+                            case IKVM.ByteCode.OpCode.Return:
+                                break;
+                            case IKVM.ByteCode.OpCode.GetStatic:
+                                var _getstatic = instruction.AsGetStatic();
+                                arg1 = _getstatic.Field.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.PutStatic:
+                                var _putstatic = instruction.AsPutStatic();
+                                arg1 = _putstatic.Field.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.GetField:
+                                var _getfield = instruction.AsGetField();
+                                arg1 = _getfield.Field.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.PutField:
+                                var _putfield = instruction.AsPutField();
+                                arg1 = _putfield.Field.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.InvokeVirtual:
+                                var _invokevirtual = instruction.AsInvokeVirtual();
+                                arg1 = _invokevirtual.Method.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.InvokeSpecial:
+                                var _invokespecial = instruction.AsInvokeSpecial();
+                                arg1 = _invokespecial.Method.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.InvokeStatic:
+                                var _invokestatic = instruction.AsInvokeStatic();
+                                arg1 = _invokestatic.Method.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.InvokeInterface:
+                                var _invokeinterface = instruction.AsInvokeInterface();
+                                if (_invokeinterface.Zero != 0)
+                                    throw new ClassFormatError("invokeinterface filler must be zero");
+
+                                arg1 = _invokeinterface.Method.Slot;
+                                arg2 = _invokeinterface.Count;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.InvokeDynamic:
+                                var _invokedynamic = instruction.AsInvokeDynamic();
+                                if (_invokedynamic.Zero != 0)
+                                    throw new ClassFormatError("invokedynamic filler must be zero");
+                                if (_invokedynamic.Zero2 != 0)
+                                    throw new ClassFormatError("invokedynamic filler must be zero");
+
+                                arg1 = _invokedynamic.Method.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.New:
+                                var _new = instruction.AsNew();
+                                arg1 = _new.Constant.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.Newarray:
+                                var _newarray = instruction.AsNewarray();
+                                arg1 = _newarray.Value;
+                                break;
+                            case IKVM.ByteCode.OpCode.Anewarray:
+                                var _anewarray = instruction.AsAnewarray();
+                                arg1 = _anewarray.Constant.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.Arraylength:
+                                break;
+                            case IKVM.ByteCode.OpCode.Athrow:
+                                break;
+                            case IKVM.ByteCode.OpCode.Checkcast:
+                                var _checkcast = instruction.AsCheckcast();
+                                arg1 = _checkcast.Type.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.InstanceOf:
+                                var _instanceof = instruction.AsInstanceOf();
+                                arg1 = _instanceof.Type.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                break;
+                            case IKVM.ByteCode.OpCode.MonitorEnter:
+                                break;
+                            case IKVM.ByteCode.OpCode.MonitorExit:
+                                break;
+                            case IKVM.ByteCode.OpCode.Multianewarray:
+                                var _multianewarray = instruction.AsMultianewarray();
+                                arg1 = _multianewarray.Type.Slot;
+                                classFile.MarkLinkRequiredConstantPoolItem(arg1);
+                                arg2 = _multianewarray.Dimensions;
+                                break;
+                            case IKVM.ByteCode.OpCode.IfNull:
+                                var _ifnull = instruction.AsIfNull();
+                                arg1 = _ifnull.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.IfNonNull:
+                                var _ifnonnull = instruction.AsIfNonNull();
+                                arg1 = _ifnonnull.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.GotoW:
+                                var _gotow = instruction.AsGotoW();
+                                arg1 = _gotow.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.JsrW:
+                                var _jsrw = instruction.AsJsrW();
+                                arg1 = _jsrw.Target;
+                                break;
+                            case IKVM.ByteCode.OpCode.LookupSwitch:
+                                var _lookupswitch = instruction.AsLookupSwitch();
+                                if (_lookupswitch.Cases.Count < 0 || _lookupswitch.Cases.Count > 16384)
                                     throw new ClassFormatError("Incorrect lookupswitch");
-                                }
-                                SwitchEntry[] entries = new SwitchEntry[count];
-                                for (int i = 0; i < count; i++)
+
+                                arg1 = _lookupswitch.DefaultTarget;
+
+                                var _lookupswitchindex = 0;
+                                var lookupswitchentries = new SwitchEntry[_lookupswitch.Cases.Count];
+                                foreach (var _case in _lookupswitch.Cases)
                                 {
-                                    entries[i].value = br.ReadInt32();
-                                    entries[i].target = br.ReadInt32();
+                                    lookupswitchentries[_lookupswitchindex].value = _case.Key;
+                                    lookupswitchentries[_lookupswitchindex].target = _case.Target;
+                                    _lookupswitchindex++;
                                 }
-                                this.switch_entries = entries;
+
+                                switch_entries = lookupswitchentries;
                                 break;
-                            }
-                        case ByteCodeMode.WidePrefix:
-                            bc = (ByteCode)br.ReadByte();
-                            // NOTE the PC of a wide instruction is actually the PC of the
-                            // wide prefix, not the following instruction (vmspec 4.9.2)
-                            switch (ByteCodeMetaData.GetWideMode(bc))
-                            {
-                                case ByteCodeModeWide.Local_2:
-                                    arg1 = br.ReadUInt16();
-                                    break;
-                                case ByteCodeModeWide.Local_2_Immediate_2:
-                                    arg1 = br.ReadUInt16();
-                                    arg2 = br.ReadInt16();
-                                    break;
-                                default:
-                                    throw new ClassFormatError("Invalid wide prefix on opcode: {0}", bc);
-                            }
-                            break;
-                        default:
-                            throw new ClassFormatError("Invalid opcode: {0}", bc);
-                    }
-                    this.normopcode = ByteCodeMetaData.GetNormalizedByteCode(bc);
-                    arg1 = ByteCodeMetaData.GetArg(bc, arg1);
-                }
+                            case IKVM.ByteCode.OpCode.TableSwitch:
+                                var _tableswitch = instruction.AsTableSwitch();
+                                if (_tableswitch.Low > _tableswitch.High || _tableswitch.High > 16384L + _tableswitch.Low)
+                                    throw new ClassFormatError("Incorrect tableswitch");
 
-                internal int PC
-                {
-                    get
+                                arg1 = _tableswitch.DefaultTarget;
+
+                                var _tableswitchindex = 0;
+                                var tableswitchentries = new SwitchEntry[_tableswitch.Cases.Count];
+                                foreach (var _case in _tableswitch.Cases)
+                                {
+                                    tableswitchentries[_tableswitchindex].value = _tableswitch.Low + _tableswitchindex;
+                                    tableswitchentries[_tableswitchindex].target = _case;
+                                    _tableswitchindex++;
+                                }
+
+                                switch_entries = tableswitchentries;
+                                break;
+                            default:
+                                throw new ClassFormatError($"Invalid opcode: {instruction.OpCode}");
+                        }
+
+                        this.normopcode = ByteCodeMetaData.GetNormalizedByteCode((ByteCode)(int)instruction.OpCode);
+                        arg1 = ByteCodeMetaData.GetArg((ByteCode)(int)instruction.OpCode, arg1);
+                    }
+                    catch (ArgumentOutOfRangeException)
                     {
-                        return pc;
+                        throw new ClassFormatError($"Invalid instruction data: {instruction.OpCode}");
                     }
                 }
 
-                internal NormalizedByteCode NormalizedOpCode
-                {
-                    get
-                    {
-                        return normopcode;
-                    }
-                }
+                internal int PC => pc;
 
-                internal int Arg1
-                {
-                    get
-                    {
-                        return arg1;
-                    }
-                }
+                internal NormalizedByteCode NormalizedOpCode => normopcode;
+
+                internal int Arg1 => arg1;
 
                 internal int TargetIndex
                 {
-                    get
-                    {
-                        return arg1;
-                    }
-                    set
-                    {
-                        arg1 = value;
-                    }
+                    get => arg1;
+                    set => arg1 = value;
                 }
 
-                internal int Arg2
-                {
-                    get
-                    {
-                        return arg2;
-                    }
-                }
+                internal int Arg2 => arg2;
 
-                internal int NormalizedArg1
-                {
-                    get
-                    {
-                        return arg1;
-                    }
-                }
+                internal int NormalizedArg1 => arg1;
 
                 internal int DefaultTarget
                 {
-                    get
-                    {
-                        return arg1;
-                    }
-                    set
-                    {
-                        arg1 = value;
-                    }
+                    get => arg1;
+                    set => arg1 = value;
                 }
 
-                internal int SwitchEntryCount
-                {
-                    get
-                    {
-                        return switch_entries.Length;
-                    }
-                }
+                internal int SwitchEntryCount => switch_entries.Length;
 
                 internal int GetSwitchValue(int i)
                 {
@@ -320,15 +743,17 @@ namespace IKVM.Runtime
 
                 internal void SetSwitchTargets(int[] targets)
                 {
-                    SwitchEntry[] newEntries = (SwitchEntry[])switch_entries.Clone();
+                    var newEntries = (SwitchEntry[])switch_entries.Clone();
                     for (int i = 0; i < newEntries.Length; i++)
-                    {
                         newEntries[i].target = targets[i];
-                    }
+
                     switch_entries = newEntries;
                 }
+
             }
+
         }
+
     }
 
 }

@@ -1,5 +1,0 @@
-#if NETFRAMEWORK
-
-
-
-#endif
