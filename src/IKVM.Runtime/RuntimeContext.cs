@@ -10,7 +10,7 @@ using IKVM.Tools.Exporter;
 #endif
 
 #if IMPORTER == false
-using IKVM.StubGen;
+using IKVM.Runtime.StubGen;
 #endif
 
 namespace IKVM.Runtime

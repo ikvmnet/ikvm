@@ -37,7 +37,32 @@ namespace IKVM.Attributes
         public const byte TAG_ANNOTATION = (byte)'@';
         public const byte TAG_ARRAY = (byte)'[';
         public const byte TAG_ERROR = (byte)'?';
-        private object defaultValue;
+
+        internal static object Escape(object obj)
+        {
+            return EscapeOrUnescape(obj, true);
+        }
+
+        internal static object Unescape(object obj)
+        {
+            return EscapeOrUnescape(obj, false);
+        }
+
+        static object EscapeOrUnescape(object obj, bool escape)
+        {
+            var str = obj as string;
+            if (str != null)
+                return escape ? UnicodeUtil.EscapeInvalidSurrogates(str) : UnicodeUtil.UnescapeInvalidSurrogates(str);
+
+            var arr = obj as object[];
+            if (arr != null)
+                for (int i = 0; i < arr.Length; i++)
+                    arr[i] = EscapeOrUnescape(arr[i], escape);
+
+            return obj;
+        }
+
+        object defaultValue;
 
         // element_value encoding:
         // primitives:
@@ -59,41 +84,7 @@ namespace IKVM.Attributes
             this.defaultValue = Unescape(defaultValue);
         }
 
-        public object Value
-        {
-            get
-            {
-                return defaultValue;
-            }
-        }
-
-        internal static object Escape(object obj)
-        {
-            return EscapeOrUnescape(obj, true);
-        }
-
-        internal static object Unescape(object obj)
-        {
-            return EscapeOrUnescape(obj, false);
-        }
-
-        private static object EscapeOrUnescape(object obj, bool escape)
-        {
-            string str = obj as string;
-            if (str != null)
-            {
-                return escape ? UnicodeUtil.EscapeInvalidSurrogates(str) : UnicodeUtil.UnescapeInvalidSurrogates(str);
-            }
-            object[] arr = obj as object[];
-            if (arr != null)
-            {
-                for (int i = 0; i < arr.Length; i++)
-                {
-                    arr[i] = EscapeOrUnescape(arr[i], escape);
-                }
-            }
-            return obj;
-        }
+        public object Value => defaultValue;
 
     }
 

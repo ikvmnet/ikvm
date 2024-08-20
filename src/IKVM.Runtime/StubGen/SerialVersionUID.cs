@@ -1,140 +1,120 @@
-/*
-  Copyright (C) 2010 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 
 using IKVM.Attributes;
-using IKVM.Runtime;
 
-namespace IKVM.StubGen
+namespace IKVM.Runtime.StubGen
 {
 
+    /// <summary>
+    /// Generates a SerialVerisonUID value by hashing data related to the type.
+    /// </summary>
     static class SerialVersionUID
     {
 
-
-        readonly static SHA1 sha1 = SHA1.Create();
-
-        internal static long Compute(RuntimeJavaType tw)
+        /// <summary>
+        /// Computes the SerialVerisonUID for the given Java type.
+        /// </summary>
+        /// <param name="javaType"></param>
+        /// <returns></returns>
+        internal static long Compute(RuntimeJavaType javaType)
         {
-            var mem = new MemoryStream();
-            var bes = new BigEndianStream(mem);
-            WriteClassName(bes, tw);
-            WriteModifiers(bes, tw);
-            WriteInterfaces(bes, tw);
-            WriteFields(bes, tw);
-            WriteStaticInitializer(bes, tw);
-            WriteConstructors(bes, tw);
-            WriteMethods(bes, tw);
-            mem.Position = 0;
-            var buf = sha1.ComputeHash(mem);
-            var hash = 0;
+            // dump class structure into hash writer
+            var writer = new SHA1HashWriter();
+            WriteClassName(writer, javaType);
+            WriteModifiers(writer, javaType);
+            WriteInterfaces(writer, javaType);
+            WriteFields(writer, javaType);
+            WriteStaticInitializer(writer, javaType);
+            WriteConstructors(writer, javaType);
+            WriteMethods(writer, javaType);
+
+            // finalize and convert to long
+            var hash = writer.Finalize();
+            var uuid = 0;
             for (var i = 7; i >= 0; i--)
             {
-                hash <<= 8;
-                hash |= buf[i];
+                uuid <<= 8;
+                uuid |= hash[i];
             }
 
-            return hash;
+            return uuid;
         }
 
-        static void WriteClassName(BigEndianStream bes, RuntimeJavaType tw)
+        static void WriteClassName(SHA1HashWriter writer, RuntimeJavaType javaType)
         {
-            bes.WriteUtf8(tw.Name);
+            writer.WriteUtf8(javaType.Name);
         }
 
-        static void WriteModifiers(BigEndianStream bes, RuntimeJavaType tw)
+        static void WriteModifiers(SHA1HashWriter writer, RuntimeJavaType javaType)
         {
-            var mods = tw.ReflectiveModifiers & (Modifiers.Public | Modifiers.Final | Modifiers.Interface | Modifiers.Abstract);
+            var mods = javaType.ReflectiveModifiers & (Modifiers.Public | Modifiers.Final | Modifiers.Interface | Modifiers.Abstract);
             if ((mods & Modifiers.Interface) != 0)
             {
                 mods &= ~Modifiers.Abstract;
-                if (HasJavaMethods(tw))
+                if (HasJavaMethods(javaType))
                     mods |= Modifiers.Abstract;
             }
 
-            bes.WriteUInt32((uint)mods);
+            writer.WriteUInt32((uint)mods);
         }
 
-        static bool HasJavaMethods(RuntimeJavaType tw)
+        static bool HasJavaMethods(RuntimeJavaType javaType)
         {
-            return tw.GetMethods().Any(i => !i.IsHideFromReflection && !i.IsClassInitializer);
+            return javaType.GetMethods().Any(i => !i.IsHideFromReflection && !i.IsClassInitializer);
         }
 
-        static void WriteInterfaces(BigEndianStream bes, RuntimeJavaType tw)
+        static void WriteInterfaces(SHA1HashWriter writer, RuntimeJavaType javaType)
         {
-            foreach (var i in tw.Interfaces.OrderBy(i => i.Name))
-                bes.WriteUtf8(i.Name);
+            foreach (var i in javaType.Interfaces.OrderBy(i => i.Name))
+                writer.WriteUtf8(i.Name);
         }
 
-        static void WriteFields(BigEndianStream bes, RuntimeJavaType tw)
+        static void WriteFields(SHA1HashWriter writer, RuntimeJavaType javaType)
         {
-            foreach (var fw in tw.GetFields().Where(i => !i.IsHideFromReflection).OrderBy(i => i.Name))
+            foreach (var fw in javaType.GetFields().Where(i => !i.IsHideFromReflection).OrderBy(i => i.Name))
             {
                 var mods = fw.Modifiers & (Modifiers.Public | Modifiers.Private | Modifiers.Protected | Modifiers.Static | Modifiers.Final | Modifiers.Volatile | Modifiers.Transient);
                 if (((mods & Modifiers.Private) == 0) || ((mods & (Modifiers.Static | Modifiers.Transient)) == 0))
                 {
-                    bes.WriteUtf8(fw.Name);
-                    bes.WriteUInt32((uint)mods);
-                    bes.WriteUtf8(fw.Signature.Replace('.', '/'));
+                    writer.WriteUtf8(fw.Name);
+                    writer.WriteUInt32((uint)mods);
+                    writer.WriteUtf8(fw.Signature.Replace('.', '/'));
                 }
             }
         }
 
-        static void WriteStaticInitializer(BigEndianStream bes, RuntimeJavaType tw)
+        static void WriteStaticInitializer(SHA1HashWriter writer, RuntimeJavaType javaType)
         {
-            var type = tw.TypeAsTBD;
+            var type = javaType.TypeAsTBD;
             if (!type.IsArray && type.TypeInitializer != null)
             {
-                if (!tw.Context.AttributeHelper.IsHideFromJava(type.TypeInitializer))
+                if (!javaType.Context.AttributeHelper.IsHideFromJava(type.TypeInitializer))
                 {
-                    bes.WriteUtf8("<clinit>");
-                    bes.WriteUInt32((uint)Modifiers.Static);
-                    bes.WriteUtf8("()V");
+                    writer.WriteUtf8("<clinit>");
+                    writer.WriteUInt32((uint)Modifiers.Static);
+                    writer.WriteUtf8("()V");
                 }
             }
         }
 
-        static void WriteConstructors(BigEndianStream bes, RuntimeJavaType tw)
+        static void WriteConstructors(SHA1HashWriter writer, RuntimeJavaType javaType)
         {
-            var ctors = tw.GetMethods()
+            var ctors = javaType.GetMethods()
                 .Where(i => i.IsConstructor && !i.IsHideFromReflection && !i.IsPrivate)
                 .OrderBy(i => i.Signature);
 
             foreach (var ctor in ctors)
             {
                 var mods = ctor.Modifiers & (Modifiers.Public | Modifiers.Private | Modifiers.Protected | Modifiers.Static | Modifiers.Final | Modifiers.Synchronized | Modifiers.Native | Modifiers.Abstract | Modifiers.Strictfp);
-                bes.WriteUtf8(ctor.Name);
-                bes.WriteUInt32((uint)mods);
-                bes.WriteUtf8(ctor.Signature);
+                writer.WriteUtf8(ctor.Name);
+                writer.WriteUInt32((uint)mods);
+                writer.WriteUtf8(ctor.Signature);
             }
         }
 
-        static void WriteMethods(BigEndianStream bes, RuntimeJavaType tw)
+        static void WriteMethods(SHA1HashWriter writer, RuntimeJavaType javaType)
         {
-            var methods = tw.GetMethods()
+            var methods = javaType.GetMethods()
                 .Where(i => !i.IsConstructor && !i.IsHideFromReflection && !i.IsPrivate)
                 .OrderBy(i => i.Name)
                 .ThenBy(i => i.Signature);
@@ -142,9 +122,9 @@ namespace IKVM.StubGen
             foreach (var method in methods)
             {
                 var mods = method.Modifiers & (Modifiers.Public | Modifiers.Private | Modifiers.Protected | Modifiers.Static | Modifiers.Final | Modifiers.Synchronized | Modifiers.Native | Modifiers.Abstract | Modifiers.Strictfp);
-                bes.WriteUtf8(method.Name);
-                bes.WriteUInt32((uint)mods);
-                bes.WriteUtf8(method.Signature);
+                writer.WriteUtf8(method.Name);
+                writer.WriteUInt32((uint)mods);
+                writer.WriteUtf8(method.Signature);
             }
         }
 
