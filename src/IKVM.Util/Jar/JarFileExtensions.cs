@@ -2,7 +2,7 @@
 using System.Linq;
 
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Decoding;
 using IKVM.Util.Modules;
 
 using static IKVM.Util.Jar.JarFileUtil;
@@ -45,7 +45,7 @@ namespace IKVM.Util.Jar
 
             using var s = e.Open();
             using var c = ClassFile.Read(s);
-            if ((c.AccessFlags & AccessFlag.ACC_MODULE) != 0)
+            if ((c.AccessFlags & AccessFlag.Module) != 0)
             {
                 var a = c.Attributes.FirstOrDefault(i => i.IsNotNil && i.Name.IsNotNil && c.Constants.Get(i.Name).Value == AttributeName.Module);
                 if (a.IsNotNil)

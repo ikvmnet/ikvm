@@ -23,7 +23,7 @@
 */
 using IKVM.Attributes;
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Decoding;
 
 #if IMPORTER
 using IKVM.Tools.Importer;
@@ -51,7 +51,7 @@ namespace IKVM.Runtime
             /// <param name="options"></param>
             /// <param name="reader"></param>
             /// <exception cref="ClassFormatError"></exception>
-            internal Method(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options, IKVM.ByteCode.Reading.Method reader) :
+            internal Method(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options, IKVM.ByteCode.Decoding.Method reader) :
                 base(classFile, utf8_cp, reader.AccessFlags, reader.Name, reader.Descriptor)
             {
                 // vmspec 4.6 says that all flags, except ACC_STRICT are ignored on <clinit>
@@ -110,7 +110,7 @@ namespace IKVM.Runtime
                             if (classFile.MajorVersion < 49)
                                 goto default;
 
-                            var signatureAttribute = (IKVM.ByteCode.Reading.SignatureAttribute)attribute;
+                            var signatureAttribute = (IKVM.ByteCode.Decoding.SignatureAttribute)attribute;
                             signature = classFile.GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Signature);
                             break;
                         case AttributeName.RuntimeVisibleAnnotations:
@@ -163,7 +163,7 @@ namespace IKVM.Runtime
                             if (classFile.MajorVersion < 49)
                                 goto default;
 
-                            var annotationDefaultAttribute = (IKVM.ByteCode.Reading.AnnotationDefaultAttribute)attribute;
+                            var annotationDefaultAttribute = (IKVM.ByteCode.Decoding.AnnotationDefaultAttribute)attribute;
                             low ??= new LowFreqData();
                             low.annotationDefault = ReadAnnotationElementValue(annotationDefaultAttribute.DefaultValue, classFile, utf8_cp);
 
@@ -224,7 +224,7 @@ namespace IKVM.Runtime
                             if (parameters != null)
                                 throw new ClassFormatError("{0} (Duplicate MethodParameters attribute)", classFile.Name);
 
-                            var methodParametersAttribute = (IKVM.ByteCode.Reading.MethodParametersAttribute)attribute;
+                            var methodParametersAttribute = (IKVM.ByteCode.Decoding.MethodParametersAttribute)attribute;
                             parameters = ReadMethodParameters(methodParametersAttribute.Parameters, utf8_cp);
 
                             break;
@@ -232,7 +232,7 @@ namespace IKVM.Runtime
                             if (classFile.MajorVersion < 52)
                                 goto default;
 
-                            var runtimeVisibleTypeAnnotationsAttribute = (IKVM.ByteCode.Reading.RuntimeVisibleTypeAnnotationsAttribute)attribute;
+                            var runtimeVisibleTypeAnnotationsAttribute = (IKVM.ByteCode.Decoding.RuntimeVisibleTypeAnnotationsAttribute)attribute;
                             classFile.CreateUtf8ConstantPoolItems(utf8_cp);
                             runtimeVisibleTypeAnnotations = runtimeVisibleTypeAnnotationsAttribute.TypeAnnotations;
                             break;

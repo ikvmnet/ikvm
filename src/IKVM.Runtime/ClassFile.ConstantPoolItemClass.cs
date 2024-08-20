@@ -23,7 +23,7 @@
 */
 using System;
 
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Decoding;
 
 namespace IKVM.Runtime
 {

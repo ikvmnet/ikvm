@@ -39,7 +39,7 @@ These tasks can be done **without porting source code** to .NET.
 - .NET Framework 4.7.2 and higher (SDK-style projects)
 - .NET 6 and higher
 - Java SE 8
-- Windows x86/x64/ARM/ARM64
+- Windows x86/x64/ARM64
 - Linux x64/ARM/ARM64 (GLIBC and MUSL)
 - Mac OS X x64/arm64
  

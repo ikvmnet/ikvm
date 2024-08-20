@@ -10,7 +10,7 @@ using IKVM.Tools.Exporter;
 #endif
 
 #if IMPORTER == false
-using IKVM.StubGen;
+using IKVM.Runtime.StubGen;
 #endif
 
 namespace IKVM.Runtime
@@ -197,6 +197,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Gets the <see cref="CompilerFactory"/> associated with this instance of the runtime.
         /// </summary>
+        /// 
         public CompilerFactory CompilerFactory => GetOrCreateSingleton(ref compilerFactory, () => new CompilerFactory(this, bootstrap));
 
         /// <summary>

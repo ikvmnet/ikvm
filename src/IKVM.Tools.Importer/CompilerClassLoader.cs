@@ -35,7 +35,6 @@ using System.Xml.Linq;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -289,7 +288,7 @@ namespace IKVM.Tools.Importer
 
                     try
                     {
-                        f = new IKVM.Runtime.ClassFile(Context, IKVM.ByteCode.Reading.ClassFile.Read(itemRef.GetData()), name, ClassFileParseOptions, null);
+                        f = new IKVM.Runtime.ClassFile(Context, IKVM.ByteCode.Decoding.ClassFile.Read(itemRef.GetData()), name, ClassFileParseOptions, null);
                     }
                     catch (UnsupportedClassVersionException e)
                     {
@@ -2654,7 +2653,7 @@ namespace IKVM.Tools.Importer
                 {
                     try
                     {
-                        var f = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Reading.ClassFile.Read(assemblyType.GetData()), null, ClassFileParseOptions.None, null);
+                        var f = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(assemblyType.GetData()), null, ClassFileParseOptions.None, null);
 
                         // NOTE the "assembly" type in the unnamed package is a magic type
                         // that acts as the placeholder for assembly attributes
@@ -2685,7 +2684,7 @@ namespace IKVM.Tools.Importer
                 {
                     try
                     {
-                        var f = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Reading.ClassFile.Read(h[className].GetData()), null, ClassFileParseOptions.None, null);
+                        var f = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(h[className].GetData()), null, ClassFileParseOptions.None, null);
                         if (f.Name == className)
                         {
                             foreach (var m in f.Methods)

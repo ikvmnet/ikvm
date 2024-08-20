@@ -23,26 +23,20 @@
 */
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 using IKVM.Attributes;
-
-using System.Runtime.CompilerServices;
-using System.Diagnostics;
-
-using IKVM.ByteCode.Reading;
-
-using System.ComponentModel;
+using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Decoding;
+using IKVM.ByteCode.Encoding;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
-using IKVM.ByteCode.Writing;
-using IKVM.ByteCode.Buffers;
-
-
-
 #else
 using System.Reflection;
 using System.Reflection.Emit;

@@ -30,7 +30,7 @@ using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 
-using IKVM.ByteCode.Encoding;
+using IKVM.ByteCode.Text;
 using IKVM.Runtime.Extensions;
 
 namespace IKVM.Runtime.JNI

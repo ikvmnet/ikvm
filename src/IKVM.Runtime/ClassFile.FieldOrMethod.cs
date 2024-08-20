@@ -25,7 +25,7 @@ using System;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Decoding;
 
 namespace IKVM.Runtime
 {

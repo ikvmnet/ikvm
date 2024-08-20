@@ -27,7 +27,7 @@ using System.Linq;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Decoding;
 
 namespace IKVM.Runtime
 {
@@ -45,7 +45,7 @@ namespace IKVM.Runtime
         const ushort FLAG_MODULE_INITIALIZER = 0x8000;
 
         readonly RuntimeContext context;
-        readonly IKVM.ByteCode.Reading.ClassFile clazz;
+        readonly IKVM.ByteCode.Decoding.ClassFile clazz;
 
         readonly ConstantPoolItem[] constantpool;
         readonly string[] utf8_cp;
@@ -82,7 +82,7 @@ namespace IKVM.Runtime
         {
             try
             {
-                using var clazz = IKVM.ByteCode.Reading.ClassFile.Read(bytes.AsMemory(offset, length));
+                using var clazz = IKVM.ByteCode.Decoding.ClassFile.Read(bytes.AsMemory(offset, length));
                 return GetClassName(clazz, out isstub);
             }
             catch (UnsupportedClassVersionException e)
@@ -103,7 +103,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         /// <exception cref="UnsupportedClassVersionError"></exception>
         /// <exception cref="ClassFormatError"></exception>
-        static string GetClassName(IKVM.ByteCode.Reading.ClassFile reader, out bool isstub)
+        static string GetClassName(IKVM.ByteCode.Decoding.ClassFile reader, out bool isstub)
         {
             if (reader.Version < new ClassFormatVersion(45, 3) || reader.Version > 52)
                 throw new UnsupportedClassVersionError(reader.Version);
@@ -126,7 +126,7 @@ namespace IKVM.Runtime
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="UnsupportedClassVersionError"></exception>
         /// <exception cref="ClassFormatError"></exception>
-        internal ClassFile(RuntimeContext context, IKVM.ByteCode.Reading.ClassFile clazz, string inputClassName, ClassFileParseOptions options, object[] constantPoolPatches)
+        internal ClassFile(RuntimeContext context, IKVM.ByteCode.Decoding.ClassFile clazz, string inputClassName, ClassFileParseOptions options, object[] constantPoolPatches)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
             this.clazz = clazz ?? throw new ArgumentNullException(nameof(clazz));
@@ -306,7 +306,7 @@ namespace IKVM.Runtime
                             flags |= FLAG_MASK_DEPRECATED;
                             break;
                         case AttributeName.SourceFile:
-                            var sourceFileAttribute = (IKVM.ByteCode.Reading.SourceFileAttribute)attribute;
+                            var sourceFileAttribute = (IKVM.ByteCode.Decoding.SourceFileAttribute)attribute;
                             sourceFile = GetConstantPoolUtf8String(utf8_cp, sourceFileAttribute.SourceFile);
                             break;
                         case AttributeName.InnerClasses:
@@ -348,14 +348,14 @@ namespace IKVM.Runtime
                             if (clazz.Version < 49)
                                 goto default;
 
-                            var signatureAttribute = (IKVM.ByteCode.Reading.SignatureAttribute)attribute;
+                            var signatureAttribute = (IKVM.ByteCode.Decoding.SignatureAttribute)attribute;
                             signature = GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Signature);
                             break;
                         case AttributeName.EnclosingMethod:
                             if (clazz.Version < 49)
                                 goto default;
 
-                            var enclosingMethodAttribute = (IKVM.ByteCode.Reading.EnclosingMethodAttribute)attribute;
+                            var enclosingMethodAttribute = (IKVM.ByteCode.Decoding.EnclosingMethodAttribute)attribute;
                             var classHandle = enclosingMethodAttribute.Class;
                             var methodHandle = enclosingMethodAttribute.Method;
                             ValidateConstantPoolItemClass(inputClassName, classHandle);
@@ -418,7 +418,7 @@ namespace IKVM.Runtime
                             if (clazz.Version < 52)
                                 goto default;
 
-                            var _runtimeVisibleTypeAnnotations = (IKVM.ByteCode.Reading.RuntimeVisibleTypeAnnotationsAttribute)attribute;
+                            var _runtimeVisibleTypeAnnotations = (IKVM.ByteCode.Decoding.RuntimeVisibleTypeAnnotationsAttribute)attribute;
                             CreateUtf8ConstantPoolItems(utf8_cp);
                             runtimeVisibleTypeAnnotations = _runtimeVisibleTypeAnnotations.TypeAnnotations;
                             break;
@@ -612,7 +612,7 @@ namespace IKVM.Runtime
             return annotations;
         }
 
-        static object[] ReadAnnotation(IKVM.ByteCode.Reading.Annotation annotation, ClassFile classFile, string[] utf8_cp)
+        static object[] ReadAnnotation(IKVM.ByteCode.Decoding.Annotation annotation, ClassFile classFile, string[] utf8_cp)
         {
             var l = new object[2 + annotation.Elements.Count * 2];
             l[0] = IKVM.Attributes.AnnotationDefaultAttribute.TAG_ANNOTATION;
@@ -1132,7 +1132,11 @@ namespace IKVM.Runtime
             return null;
         }
 
-        private void RemoveAssertionInit(Method m)
+        /// <summary>
+        /// Removes a call to java.lang.Class.desiredAssertionStatus() and replaces it with a hard coded constant (true).
+        /// </summary>
+        /// <param name="method"></param>
+        void RemoveAssertionInit(Method method)
         {
             /* We match the following code sequence:
 			 *   0  ldc <class X>
@@ -1145,22 +1149,31 @@ namespace IKVM.Runtime
 			 */
             ConstantPoolItemFieldref fieldref;
             Field field;
-            if (m.Instructions[0].NormalizedOpCode == NormalizedByteCode.__ldc && SafeIsConstantPoolClass(new ClassConstantHandle(checked((ushort)m.Instructions[0].Arg1)))
-                && m.Instructions[1].NormalizedOpCode == NormalizedByteCode.__invokevirtual && IsDesiredAssertionStatusMethodref(m.Instructions[1].Arg1)
-                && m.Instructions[2].NormalizedOpCode == NormalizedByteCode.__ifne && m.Instructions[2].TargetIndex == 5
-                && m.Instructions[3].NormalizedOpCode == NormalizedByteCode.__iconst && m.Instructions[3].Arg1 == 1
-                && m.Instructions[4].NormalizedOpCode == NormalizedByteCode.__goto && m.Instructions[4].TargetIndex == 6
-                && m.Instructions[5].NormalizedOpCode == NormalizedByteCode.__iconst && m.Instructions[5].Arg1 == 0
-                && m.Instructions[6].NormalizedOpCode == NormalizedByteCode.__putstatic && (fieldref = SafeGetFieldref(m.Instructions[6].Arg1)) != null
-                && fieldref.Class == Name && fieldref.Signature == "Z"
-                && (field = GetField(fieldref.Name, fieldref.Signature)) != null
-                && field.IsStatic && field.IsFinal
-                && !HasBranchIntoRegion(m.Instructions, 7, m.Instructions.Length, 0, 7)
-                && !HasStaticFieldWrite(m.Instructions, 7, m.Instructions.Length, field)
-                && !HasExceptionHandlerInRegion(m.ExceptionTable, 0, 7))
+            if (method.Instructions is [
+                { NormalizedOpCode: NormalizedByteCode.__ldc },
+                { NormalizedOpCode: NormalizedByteCode.__invokevirtual },
+                { NormalizedOpCode: NormalizedByteCode.__ifne },
+                { NormalizedOpCode: NormalizedByteCode.__iconst },
+                { NormalizedOpCode: NormalizedByteCode.__goto },
+                { NormalizedOpCode: NormalizedByteCode.__iconst },
+                { NormalizedOpCode: NormalizedByteCode.__putstatic },
+                ..] &&
+                method.Instructions[0].NormalizedOpCode == NormalizedByteCode.__ldc && SafeIsConstantPoolClass(new ClassConstantHandle(checked((ushort)method.Instructions[0].Arg1))) &&
+                method.Instructions[1].NormalizedOpCode == NormalizedByteCode.__invokevirtual && IsDesiredAssertionStatusMethodref(method.Instructions[1].Arg1) &&
+                method.Instructions[2].NormalizedOpCode == NormalizedByteCode.__ifne && method.Instructions[2].TargetIndex == 5 &&
+                method.Instructions[3].NormalizedOpCode == NormalizedByteCode.__iconst && method.Instructions[3].Arg1 == 1 &&
+                method.Instructions[4].NormalizedOpCode == NormalizedByteCode.__goto && method.Instructions[4].TargetIndex == 6 &&
+                method.Instructions[5].NormalizedOpCode == NormalizedByteCode.__iconst && method.Instructions[5].Arg1 == 0 &&
+                method.Instructions[6].NormalizedOpCode == NormalizedByteCode.__putstatic && (fieldref = SafeGetFieldref(method.Instructions[6].Arg1)) != null &&
+                fieldref.Class == Name && fieldref.Signature == "Z" &&
+                (field = GetField(fieldref.Name, fieldref.Signature)) != null &&
+                field.IsStatic && field.IsFinal &&
+                !HasBranchIntoRegion(method.Instructions, 7, method.Instructions.Length, 0, 7) &&
+                !HasStaticFieldWrite(method.Instructions, 7, method.Instructions.Length, field) &&
+                !HasExceptionHandlerInRegion(method.ExceptionTable, 0, 7))
             {
                 field.PatchConstantValue(true);
-                m.Instructions[0].PatchOpCode(NormalizedByteCode.__goto, 7);
+                method.Instructions[0].PatchOpCode(NormalizedByteCode.__goto, 7);
                 flags |= FLAG_HAS_ASSERTIONS;
             }
         }

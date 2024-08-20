@@ -43,7 +43,7 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
             throw new NotImplementedException();
 #else
             using var mem = new MemoryStream();
-            JVM.Context.StubGenerator.WriteClass(mem, RuntimeJavaType.FromClass(c), true, true, true, true, false);
+            JVM.Context.StubGenerator.Write(mem, RuntimeJavaType.FromClass(c), true, true, true, true, false);
             return mem.ToArray();
 #endif
         }
