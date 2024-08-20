@@ -153,7 +153,6 @@ namespace IKVM.Runtime.StubGen
         /// <param name="type"></param>
         /// <param name="includeNonPublicMembers"></param>
         /// <param name="includeSerialVersionUID"></param>
-        /// <exception cref="Exception"></exception>
         void AddFields(ClassFileBuilder builder, RuntimeJavaType type, bool includeNonPublicMembers, bool includeSerialVersionUID)
         {
             var hasSerialVersionUID = false;
@@ -1078,7 +1077,7 @@ namespace IKVM.Runtime.StubGen
 
             if (value is byte b)
             {
-                encoder.Byte(builder.Constants.GetOrAddInteger((sbyte)b));
+                encoder.Byte(builder.Constants.GetOrAddInteger(unchecked((sbyte)b)));
                 return;
             }
 
@@ -1388,7 +1387,7 @@ namespace IKVM.Runtime.StubGen
             // typed argument of byte type holds BYTE
             if (value.ArgumentType == context.Types.Byte)
             {
-                encoder.Byte(builder.Constants.GetOrAddInteger((sbyte)(byte)value.Value));
+                encoder.Byte(builder.Constants.GetOrAddInteger(unchecked((sbyte)(byte)value.Value)));
                 return;
             }
 
