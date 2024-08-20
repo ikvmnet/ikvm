@@ -30,6 +30,7 @@
         public static readonly string Aliases = "Aliases";
         public static readonly string Private = "Private";
         public static readonly string ReferenceOutputAssembly = "ReferenceOutputAssembly";
+        public static readonly string Static = "Static";
 
     }
 
