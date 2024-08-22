@@ -29,7 +29,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 using IKVM.ByteCode;
-using IKVM.ByteCode.Decoding;
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -59,7 +59,7 @@ namespace IKVM.Tools.Importer
             {
                 if (depth++ > 16)
                 {
-                    throw new FatalCompilerErrorException(Message.ResponseFileDepthExceeded);
+                    throw new FatalCompilerErrorException(Diagnostic.ResponseFileDepthExceeded.Event([]));
                 }
                 try
                 {
@@ -82,7 +82,7 @@ namespace IKVM.Tools.Importer
                 }
                 catch (Exception x)
                 {
-                    throw new FatalCompilerErrorException(Message.ErrorReadingFile, s.Substring(1), x.Message);
+                    throw new FatalCompilerErrorException(Diagnostic.ErrorReadingFile.Event([s.Substring(1), x.Message]));
                 }
             }
             else
@@ -172,7 +172,7 @@ namespace IKVM.Tools.Importer
             var importer = new IkvmImporterInternal();
             var targets = new List<CompilerOptions>();
             var rootTarget = new CompilerOptions();
-            var context = new RuntimeContext(new RuntimeContextOptions(), new ManagedResolver(compiler), argList.Contains("-bootstrap"), compiler);
+            var context = new RuntimeContext(new RuntimeContextOptions(), compiler, new ManagedResolver(compiler), argList.Contains("-bootstrap"), compiler);
 
             compiler.rootTarget = rootTarget;
             importer.ParseCommandLine(context, compiler, argList.GetEnumerator(), targets, rootTarget);
@@ -184,7 +184,7 @@ namespace IKVM.Tools.Importer
 
             if (targets.Count == 0)
             {
-                throw new FatalCompilerErrorException(Message.NoTargetsFound);
+                throw new FatalCompilerErrorException(Diagnostic.NoTargetsFound.Event([]));
             }
             if (compiler.errorCount != 0)
             {
@@ -197,7 +197,7 @@ namespace IKVM.Tools.Importer
             }
             catch (FileFormatLimitationExceededException x)
             {
-                throw new FatalCompilerErrorException(Message.FileFormatLimitationExceeded, x.Message);
+                throw new FatalCompilerErrorException(Diagnostic.FileFormatLimitationExceeded.Event([x.Message]));
             }
         }
 
@@ -206,22 +206,22 @@ namespace IKVM.Tools.Importer
             switch (warning)
             {
                 case AssemblyResolver.WarningId.HigherVersion:
-                    IssueMessage(compiler, Message.AssumeAssemblyVersionMatch, parameters);
+                    Report(compiler, Diagnostic.AssumeAssemblyVersionMatch.Event([parameters]));
                     break;
                 case AssemblyResolver.WarningId.InvalidLibDirectoryOption:
-                    IssueMessage(compiler, Message.InvalidDirectoryInLibOptionPath, parameters);
+                    Report(compiler, Diagnostic.InvalidDirectoryInLibOptionPath.Event([parameters]));
                     break;
                 case AssemblyResolver.WarningId.InvalidLibDirectoryEnvironment:
-                    IssueMessage(compiler, Message.InvalidDirectoryInLibEnvironmentPath, parameters);
+                    Report(compiler, Diagnostic.InvalidDirectoryInLibEnvironmentPath.Event([parameters]));
                     break;
                 case AssemblyResolver.WarningId.LegacySearchRule:
-                    IssueMessage(compiler, Message.LegacySearchRule, parameters);
+                    Report(compiler, Diagnostic.LegacySearchRule.Event([parameters]));
                     break;
                 case AssemblyResolver.WarningId.LocationIgnored:
-                    IssueMessage(compiler, Message.AssemblyLocationIgnored, parameters);
+                    Report(compiler, Diagnostic.AssemblyLocationIgnored.Event([parameters]));
                     break;
                 default:
-                    IssueMessage(compiler, Message.UnknownWarning, string.Format(message, parameters));
+                    Report(compiler, Diagnostic.UnknownWarning.Event([string.Format(message, parameters)]));
                     break;
             }
         }
@@ -231,10 +231,10 @@ namespace IKVM.Tools.Importer
             foreach (var options in targets)
             {
                 if (options.keyfile != null && options.keycontainer != null)
-                    throw new FatalCompilerErrorException(Message.CannotSpecifyBothKeyFileAndContainer);
+                    throw new FatalCompilerErrorException(Diagnostic.CannotSpecifyBothKeyFileAndContainer.Event([]));
 
                 if (options.keyfile == null && options.keycontainer == null && options.delaysign)
-                    throw new FatalCompilerErrorException(Message.DelaySignRequiresKey);
+                    throw new FatalCompilerErrorException(Diagnostic.DelaySignRequiresKey.Event([]));
 
                 if (options.keyfile != null)
                 {
@@ -278,7 +278,7 @@ namespace IKVM.Tools.Importer
             }
             catch (Exception x)
             {
-                throw new FatalCompilerErrorException(Message.ErrorReadingFile, path.ToString(), x.Message);
+                throw new FatalCompilerErrorException(Diagnostic.ErrorReadingFile.Event([path.ToString(), x.Message]));
             }
         }
 
@@ -432,7 +432,7 @@ namespace IKVM.Tools.Importer
                 }
                 else if (nonleaf)
                 {
-                    throw new FatalCompilerErrorException(Message.OptionsMustPreceedChildLevels);
+                    throw new FatalCompilerErrorException(Diagnostic.OptionsMustPreceedChildLevels.Event([]));
                 }
                 else if (s[0] == '-')
                 {
@@ -475,7 +475,7 @@ namespace IKVM.Tools.Importer
                                 options.guessFileKind = false;
                                 break;
                             default:
-                                throw new FatalCompilerErrorException(Message.UnrecognizedTargetType, s.Substring(8));
+                                throw new FatalCompilerErrorException(Diagnostic.UnrecognizedTargetType.Event([s.Substring(8)]));
                         }
                     }
                     else if (s.StartsWith("-platform:"))
@@ -507,7 +507,7 @@ namespace IKVM.Tools.Importer
                                 options.imageFileMachine = ImageFileMachine.UNKNOWN;
                                 break;
                             default:
-                                throw new FatalCompilerErrorException(Message.UnrecognizedPlatform, s.Substring(10));
+                                throw new FatalCompilerErrorException(Diagnostic.UnrecognizedPlatform.Event([s.Substring(10)]));
                         }
                     }
                     else if (s.StartsWith("-apartment:"))
@@ -524,7 +524,7 @@ namespace IKVM.Tools.Importer
                                 options.apartment = ApartmentState.Unknown;
                                 break;
                             default:
-                                throw new FatalCompilerErrorException(Message.UnrecognizedApartment, s.Substring(11));
+                                throw new FatalCompilerErrorException(Diagnostic.UnrecognizedApartment.Event([s.Substring(11)]));
                         }
                     }
                     else if (s == "-noglobbing")
@@ -567,7 +567,7 @@ namespace IKVM.Tools.Importer
                     {
                         var r = s.Substring(s.IndexOf(':') + 1);
                         if (r == "")
-                            throw new FatalCompilerErrorException(Message.MissingFileSpecification, s);
+                            throw new FatalCompilerErrorException(Diagnostic.MissingFileSpecification.Event([s]));
 
                         ArrayAppend(ref options.unresolvedReferences, r);
                     }
@@ -608,26 +608,26 @@ namespace IKVM.Tools.Importer
                             }
                             catch (PathTooLongException)
                             {
-                                throw new FatalCompilerErrorException(Message.PathTooLong, spec);
+                                throw new FatalCompilerErrorException(Diagnostic.PathTooLong.Event([spec]));
                             }
                             catch (DirectoryNotFoundException)
                             {
-                                throw new FatalCompilerErrorException(Message.PathNotFound, spec);
+                                throw new FatalCompilerErrorException(Diagnostic.PathNotFound.Event([spec]));
                             }
                             catch (ArgumentException)
                             {
-                                throw new FatalCompilerErrorException(Message.InvalidPath, spec);
+                                throw new FatalCompilerErrorException(Diagnostic.InvalidPath.Event([spec]));
                             }
                         }
 
                         if (!found)
-                            throw new FatalCompilerErrorException(Message.FileNotFound, spec);
+                            throw new FatalCompilerErrorException(Diagnostic.FileNotFound.Event([spec]));
                     }
                     else if (s.StartsWith("-resource:"))
                     {
                         var spec = s.Substring(10).Split('=');
                         if (spec.Length != 2)
-                            throw new FatalCompilerErrorException(Message.InvalidOptionSyntax, s);
+                            throw new FatalCompilerErrorException(Diagnostic.InvalidOptionSyntax.Event([s]));
 
                         var fileInfo = GetFileInfo(spec[1]);
                         var fileName = spec[0].TrimStart('/').TrimEnd('/');
@@ -637,11 +637,11 @@ namespace IKVM.Tools.Importer
                     {
                         var spec = s.Substring(18).Split('=');
                         if (spec.Length != 2)
-                            throw new FatalCompilerErrorException(Message.InvalidOptionSyntax, s);
+                            throw new FatalCompilerErrorException(Diagnostic.InvalidOptionSyntax.Event([s]));
                         if (!File.Exists(spec[1]))
-                            throw new FatalCompilerErrorException(Message.ExternalResourceNotFound, spec[1]);
+                            throw new FatalCompilerErrorException(Diagnostic.ExternalResourceNotFound.Event([spec[1]]));
                         if (Path.GetFileName(spec[1]) != spec[1])
-                            throw new FatalCompilerErrorException(Message.ExternalResourceNameInvalid, spec[1]);
+                            throw new FatalCompilerErrorException(Diagnostic.ExternalResourceNameInvalid.Event([spec[1]]));
 
                         // TODO resource name clashes should be tested
                         options.externalResources ??= new Dictionary<string, string>();
@@ -659,7 +659,7 @@ namespace IKVM.Tools.Importer
                     {
                         var str = s.Substring(9);
                         if (!TryParseVersion(s.Substring(9), out options.version))
-                            throw new FatalCompilerErrorException(Message.InvalidVersionFormat, str);
+                            throw new FatalCompilerErrorException(Diagnostic.InvalidVersionFormat.Event([str]));
                     }
                     else if (s.StartsWith("-fileversion:"))
                     {
@@ -805,7 +805,7 @@ namespace IKVM.Tools.Importer
                     else if (s.StartsWith("-filealign:"))
                     {
                         if (!uint.TryParse(s.Substring(11), out var filealign) || filealign < 512 || filealign > 8192 || (filealign & (filealign - 1)) != 0)
-                            throw new FatalCompilerErrorException(Message.InvalidFileAlignment, s.Substring(11));
+                            throw new FatalCompilerErrorException(Diagnostic.InvalidFileAlignment.Event([s.Substring(11)]));
 
                         options.fileAlignment = filealign;
                     }
@@ -841,14 +841,14 @@ namespace IKVM.Tools.Importer
                         }
                         catch (Exception x)
                         {
-                            throw new FatalCompilerErrorException(Message.ErrorWritingFile, options.writeSuppressWarningsFile, x.Message);
+                            throw new FatalCompilerErrorException(Diagnostic.ErrorWritingFile.Event([options.writeSuppressWarningsFile, x.Message]));
                         }
                     }
                     else if (s.StartsWith("-proxy:")) // currently undocumented!
                     {
                         var proxy = s.Substring(7);
                         if (options.proxies.Contains(proxy))
-                            IssueMessage(compiler, Message.DuplicateProxy, proxy);
+                            Report(compiler, Diagnostic.DuplicateProxy.Event([proxy]));
 
                         options.proxies.Add(proxy);
                     }
@@ -887,7 +887,7 @@ namespace IKVM.Tools.Importer
                     }
                     else
                     {
-                        throw new FatalCompilerErrorException(Message.UnrecognizedOption, s);
+                        throw new FatalCompilerErrorException(Diagnostic.UnrecognizedOption.Event([s]));
                     }
                 }
                 else
@@ -896,7 +896,7 @@ namespace IKVM.Tools.Importer
                 }
                 if (options.targetIsModule && options.sharedclassloader != null)
                 {
-                    throw new FatalCompilerErrorException(Message.SharedClassLoaderCannotBeUsedOnModuleTarget);
+                    throw new FatalCompilerErrorException(Diagnostic.SharedClassLoaderCannotBeUsedOnModuleTarget.Event([]));
                 }
             }
 
@@ -911,7 +911,7 @@ namespace IKVM.Tools.Importer
             {
                 var basename = options.path == null ? defaultAssemblyName : options.path.Name;
                 if (basename == null)
-                    throw new FatalCompilerErrorException(Message.NoOutputFileSpecified);
+                    throw new FatalCompilerErrorException(Diagnostic.NoOutputFileSpecified.Event([]));
 
                 int idx = basename.LastIndexOf('.');
                 if (idx > 0)
@@ -930,7 +930,7 @@ namespace IKVM.Tools.Importer
 
             if (options.mainClass == null && manifestMainClass != null && (options.guessFileKind || options.target != PEFileKinds.Dll))
             {
-                IssueMessage(compiler, options, Message.MainMethodFromManifest, manifestMainClass);
+                Report(compiler, options, Diagnostic.MainMethodFromManifest.Event([manifestMainClass]));
                 options.mainClass = manifestMainClass;
             }
 
@@ -945,26 +945,26 @@ namespace IKVM.Tools.Importer
                 if (fileInfo.Directory == null)
                 {
                     // this happens with an incorrect unc path (e.g. "\\foo\bar")
-                    throw new FatalCompilerErrorException(Message.InvalidPath, path);
+                    throw new FatalCompilerErrorException(Diagnostic.InvalidPath.Event([path]));
                 }
                 return fileInfo;
             }
             catch (ArgumentException)
             {
-                throw new FatalCompilerErrorException(Message.InvalidPath, path);
+                throw new FatalCompilerErrorException(Diagnostic.InvalidPath.Event([path]));
             }
             catch (NotSupportedException)
             {
-                throw new FatalCompilerErrorException(Message.InvalidPath, path);
+                throw new FatalCompilerErrorException(Diagnostic.InvalidPath.Event([path]));
             }
             catch (PathTooLongException)
             {
-                throw new FatalCompilerErrorException(Message.PathTooLong, path);
+                throw new FatalCompilerErrorException(Diagnostic.PathTooLong.Event([path]));
             }
             catch (UnauthorizedAccessException)
             {
                 // this exception does not appear to be possible
-                throw new FatalCompilerErrorException(Message.InvalidPath, path);
+                throw new FatalCompilerErrorException(Diagnostic.InvalidPath.Event([path]));
             }
         }
 
@@ -999,7 +999,7 @@ namespace IKVM.Tools.Importer
                 catch { }
                 if (files == null || files.Length == 0)
                 {
-                    IssueMessage(compiler, Message.InputFileNotFound, fileName);
+                    Report(compiler, Diagnostic.InputFileNotFound.Event([fileName]));
                 }
                 else
                 {
@@ -1066,7 +1066,7 @@ namespace IKVM.Tools.Importer
             }
             catch (Exception x)
             {
-                throw new FatalCompilerErrorException(Message.InvalidStrongNameKeyPair, keyFile != null ? "file" : "container", x.Message);
+                throw new FatalCompilerErrorException(Diagnostic.InvalidStrongNameKeyPair.Event([keyFile != null ? "file" : "container", x.Message]));
             }
         }
 
@@ -1089,7 +1089,7 @@ namespace IKVM.Tools.Importer
                         }
                         if (!resolver.ResolveReference(cache, ref target.references, reference))
                         {
-                            throw new FatalCompilerErrorException(Message.ReferenceNotFound, reference);
+                            throw new FatalCompilerErrorException(Diagnostic.ReferenceNotFound.Event([reference]));
                         }
                     next_reference:;
                     }
@@ -1106,7 +1106,7 @@ namespace IKVM.Tools.Importer
                         Type forwarder = asm.GetType("__<MainAssembly>");
                         if (forwarder != null && forwarder.Assembly != asm)
                         {
-                            IssueMessage(compiler, Message.NonPrimaryAssemblyReference, asm.Location, forwarder.Assembly.GetName().Name);
+                            Report(compiler, Diagnostic.NonPrimaryAssemblyReference.Event([asm.Location, forwarder.Assembly.GetName().Name]));
                         }
                     }
                 }
@@ -1199,13 +1199,13 @@ namespace IKVM.Tools.Importer
                 foreach (Match m in mc)
                 {
                     options.legacyStubReferences[m.Groups[1].Value] = null;
-                    IssueMessage(compiler, options, Message.StubsAreDeprecated, m.Groups[1].Value);
+                    Report(compiler, options, Diagnostic.StubsAreDeprecated.Event([m.Groups[1].Value]));
                 }
             }
             else
             {
                 options.legacyStubReferences[cf.IKVMAssemblyAttribute] = null;
-                IssueMessage(compiler, options, Message.StubsAreDeprecated, cf.IKVMAssemblyAttribute);
+                Report(compiler, options, Diagnostic.StubsAreDeprecated.Event([cf.IKVMAssemblyAttribute]));
             }
 
             return true;
@@ -1302,7 +1302,7 @@ namespace IKVM.Tools.Importer
             }
             catch (InvalidDataException x)
             {
-                throw new FatalCompilerErrorException(Message.ErrorReadingFile, file, x.Message);
+                throw new FatalCompilerErrorException(Diagnostic.ErrorReadingFile.Event([file, x.Message]));
             }
         }
 
@@ -1333,13 +1333,13 @@ namespace IKVM.Tools.Importer
                     }
                     catch (ClassFormatError x)
                     {
-                        IssueMessage(compiler, Message.ClassFormatError, file, x.Message);
+                        Report(compiler, Diagnostic.ClassFormatError.Event([file, x.Message]));
                     }
                 }
 
                 if (baseDir == null)
                 {
-                    IssueMessage(compiler, Message.UnknownFileType, file);
+                    Report(compiler, Diagnostic.UnknownFileType.Event([file]));
                 }
                 else
                 {
@@ -1415,7 +1415,7 @@ namespace IKVM.Tools.Importer
             }
             catch (Exception x)
             {
-                throw new FatalCompilerErrorException(Message.ErrorReadingFile, filename, x.Message);
+                throw new FatalCompilerErrorException(Diagnostic.ErrorReadingFile.Event([filename, x.Message]));
             }
         }
 
@@ -1429,261 +1429,66 @@ namespace IKVM.Tools.Importer
             }
             catch (Exception x)
             {
-                throw new FatalCompilerErrorException(Message.ErrorReadingFile, filename, x.Message);
+                throw new FatalCompilerErrorException(Diagnostic.ErrorReadingFile.Event([filename, x.Message]));
             }
         }
 
-        internal static void IssueMessage(StaticCompiler compiler, Message msgId, params string[] values)
+        /// <summary>
+        /// Handles a <see cref="DiagnosticEvent"/>.
+        /// </summary>
+        /// <param name="compiler"></param>
+        /// <param name="evt"></param>
+        internal static void Report(StaticCompiler compiler, in DiagnosticEvent evt)
         {
-            IssueMessage(compiler, compiler.rootTarget, msgId, values);
+            Report(compiler, compiler.rootTarget, evt);
         }
 
-        internal static void IssueMessage(StaticCompiler compiler, CompilerOptions options, Message msgId, params string[] values)
+        /// <summary>
+        /// Handles a <see cref="DiagnosticEvent"/>.
+        /// </summary>
+        /// <param name="compiler"></param>
+        /// <param name="options"></param>
+        /// <param name="evt"></param>
+        /// <exception cref="FatalCompilerErrorException"></exception>
+        internal static void Report(StaticCompiler compiler, CompilerOptions options, in DiagnosticEvent evt)
         {
-            if (compiler.errorCount != 0 && msgId < Message.StartErrors && !options.warnaserror)
-            {
-                // don't display any warnings after we've emitted an error message
-                return;
-            }
-
-            string key = ((int)msgId).ToString();
+            var key = evt.Diagnostic.Id.Value.ToString();
             for (int i = 0; ; i++)
             {
                 if (options.suppressWarnings.ContainsKey(key))
-                {
                     return;
-                }
-                if (i == values.Length)
-                {
+
+                if (i == evt.Args.Length)
                     break;
-                }
-                key += ":" + values[i];
+
+                key += ":" + evt.Args[i];
             }
+
             options.suppressWarnings.Add(key, key);
             if (options.writeSuppressWarningsFile != null)
-            {
                 File.AppendAllText(options.writeSuppressWarningsFile.FullName, "-nowarn:" + key + Environment.NewLine);
-            }
-            string msg;
-            switch (msgId)
-            {
-                case Message.MainMethodFound:
-                    msg = "Found main method in class \"{0}\"";
-                    break;
-                case Message.OutputFileIs:
-                    msg = "Output file is \"{0}\"";
-                    break;
-                case Message.AutoAddRef:
-                    msg = "Automatically adding reference to \"{0}\"";
-                    break;
-                case Message.MainMethodFromManifest:
-                    msg = "Using main class \"{0}\" based on jar manifest";
-                    break;
-                case Message.ClassNotFound:
-                    msg = "Class \"{0}\" not found";
-                    break;
-                case Message.ClassFormatError:
-                    msg = "Unable to compile class \"{0}\"" + Environment.NewLine +
-                        "    (class format error \"{1}\")";
-                    break;
-                case Message.DuplicateClassName:
-                    msg = "Duplicate class name: \"{0}\"";
-                    break;
-                case Message.IllegalAccessError:
-                    msg = "Unable to compile class \"{0}\"" + Environment.NewLine +
-                        "    (illegal access error \"{1}\")";
-                    break;
-                case Message.VerificationError:
-                    msg = "Unable to compile class \"{0}\"" + Environment.NewLine +
-                        "    (verification error \"{1}\")";
-                    break;
-                case Message.NoClassDefFoundError:
-                    msg = "Unable to compile class \"{0}\"" + Environment.NewLine +
-                        "    (missing class \"{1}\")";
-                    break;
-                case Message.GenericUnableToCompileError:
-                    msg = "Unable to compile class \"{0}\"" + Environment.NewLine +
-                        "    (\"{1}\": \"{2}\")";
-                    break;
-                case Message.DuplicateResourceName:
-                    msg = "Skipping resource (name clash): \"{0}\"";
-                    break;
-                case Message.SkippingReferencedClass:
-                    msg = "Skipping class: \"{0}\"" + Environment.NewLine +
-                        "    (class is already available in referenced assembly \"{1}\")";
-                    break;
-                case Message.NoJniRuntime:
-                    msg = "Unable to load runtime JNI assembly";
-                    break;
-                case Message.EmittedNoClassDefFoundError:
-                    msg = "Emitted java.lang.NoClassDefFoundError in \"{0}\"" + Environment.NewLine +
-                        "    (\"{1}\")";
-                    break;
-                case Message.EmittedIllegalAccessError:
-                    msg = "Emitted java.lang.IllegalAccessError in \"{0}\"" + Environment.NewLine +
-                        "    (\"{1}\")";
-                    break;
-                case Message.EmittedInstantiationError:
-                    msg = "Emitted java.lang.InstantiationError in \"{0}\"" + Environment.NewLine +
-                        "    (\"{1}\")";
-                    break;
-                case Message.EmittedIncompatibleClassChangeError:
-                    msg = "Emitted java.lang.IncompatibleClassChangeError in \"{0}\"" + Environment.NewLine +
-                        "    (\"{1}\")";
-                    break;
-                case Message.EmittedNoSuchFieldError:
-                    msg = "Emitted java.lang.NoSuchFieldError in \"{0}\"" + Environment.NewLine +
-                        "    (\"{1}\")";
-                    break;
-                case Message.EmittedAbstractMethodError:
-                    msg = "Emitted java.lang.AbstractMethodError in \"{0}\"" + Environment.NewLine +
-                        "    (\"{1}\")";
-                    break;
-                case Message.EmittedNoSuchMethodError:
-                    msg = "Emitted java.lang.NoSuchMethodError in \"{0}\"" + Environment.NewLine +
-                        "    (\"{1}\")";
-                    break;
-                case Message.EmittedLinkageError:
-                    msg = "Emitted java.lang.LinkageError in \"{0}\"" + Environment.NewLine +
-                        "    (\"{1}\")";
-                    break;
-                case Message.EmittedVerificationError:
-                    msg = "Emitted java.lang.VerificationError in \"{0}\"" + Environment.NewLine +
-                        "    (\"{1}\")";
-                    break;
-                case Message.EmittedClassFormatError:
-                    msg = "Emitted java.lang.ClassFormatError in \"{0}\"" + Environment.NewLine +
-                        "    (\"{1}\")";
-                    break;
-                case Message.InvalidCustomAttribute:
-                    msg = "Error emitting \"{0}\" custom attribute" + Environment.NewLine +
-                        "    (\"{1}\")";
-                    break;
-                case Message.IgnoredCustomAttribute:
-                    msg = "Custom attribute \"{0}\" was ignored" + Environment.NewLine +
-                        "    (\"{1}\")";
-                    break;
-                case Message.AssumeAssemblyVersionMatch:
-                    msg = "Assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy";
-                    break;
-                case Message.InvalidDirectoryInLibOptionPath:
-                    msg = "Directory \"{0}\" specified in -lib option is not valid";
-                    break;
-                case Message.InvalidDirectoryInLibEnvironmentPath:
-                    msg = "Directory \"{0}\" specified in LIB environment is not valid";
-                    break;
-                case Message.LegacySearchRule:
-                    msg = "Found assembly \"{0}\" using legacy search rule, please append '.dll' to the reference";
-                    break;
-                case Message.AssemblyLocationIgnored:
-                    msg = "Assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identity \"{2}\"";
-                    break;
-                case Message.InterfaceMethodCantBeInternal:
-                    msg = "Ignoring @ikvm.lang.Internal annotation on interface method" + Environment.NewLine +
-                        "    (\"{0}.{1}{2}\")";
-                    break;
-                case Message.NonPrimaryAssemblyReference:
-                    msg = "Referenced assembly \"{0}\" is not the primary assembly of a shared class loader group, please reference primary assembly \"{1}\" instead";
-                    break;
-                case Message.MissingType:
-                    msg = "Reference to type \"{0}\" claims it is defined in \"{1}\", but it could not be found";
-                    break;
-                case Message.MissingReference:
-                    msg = "The type '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'";
-                    break;
-                case Message.DuplicateAssemblyReference:
-                    msg = "Duplicate assembly reference \"{0}\"";
-                    break;
-                case Message.UnableToResolveType:
-                    msg = "Reference in \"{0}\" to type \"{1}\" claims it is defined in \"{2}\", but it could not be found";
-                    break;
-                case Message.StubsAreDeprecated:
-                    msg = "Compiling stubs is deprecated. Please add a reference to assembly \"{0}\" instead.";
-                    break;
-                case Message.WrongClassName:
-                    msg = "Unable to compile \"{0}\" (wrong name: \"{1}\")";
-                    break;
-                case Message.ReflectionCallerClassRequiresCallerID:
-                    msg = "Reflection.getCallerClass() called from non-CallerID method" + Environment.NewLine +
-                        "    (\"{0}.{1}{2}\")";
-                    break;
-                case Message.LegacyAssemblyAttributesFound:
-                    msg = "Legacy assembly attributes container found. Please use the -assemblyattributes:<file> option.";
-                    break;
-                case Message.UnableToCreateLambdaFactory:
-                    msg = "Unable to create static lambda factory.";
-                    break;
-                case Message.UnableToCreateProxy:
-                    msg = "Unable to create proxy \"{0}\"" + Environment.NewLine +
-                        "    (\"{1}\")";
-                    break;
-                case Message.DuplicateProxy:
-                    msg = "Duplicate proxy \"{0}\"";
-                    break;
-                case Message.MapXmlUnableToResolveOpCode:
-                    msg = "Unable to resolve opcode in remap file: {0}";
-                    break;
-                case Message.MapXmlError:
-                    msg = "Error in remap file: {0}";
-                    break;
-                case Message.InputFileNotFound:
-                    msg = "Source file '{0}' not found";
-                    break;
-                case Message.UnknownFileType:
-                    msg = "Unknown file type: {0}";
-                    break;
-                case Message.UnknownElementInMapFile:
-                    msg = "Unknown element {0} in remap file, line {1}, column {2}";
-                    break;
-                case Message.UnknownAttributeInMapFile:
-                    msg = "Unknown attribute {0} in remap file, line {1}, column {2}";
-                    break;
-                case Message.InvalidMemberNameInMapFile:
-                    msg = "Invalid {0} name '{1}' in remap file in class {2}";
-                    break;
-                case Message.InvalidMemberSignatureInMapFile:
-                    msg = "Invalid {0} signature '{3}' in remap file for {0} {1}.{2}";
-                    break;
-                case Message.InvalidPropertyNameInMapFile:
-                    msg = "Invalid property {0} name '{3}' in remap file for property {1}.{2}";
-                    break;
-                case Message.InvalidPropertySignatureInMapFile:
-                    msg = "Invalid property {0} signature '{3}' in remap file for property {1}.{2}";
-                    break;
-                case Message.UnknownWarning:
-                    msg = "{0}";
-                    break;
-                case Message.CallerSensitiveOnUnsupportedMethod:
-                    msg = "CallerSensitive annotation on unsupported method" + Environment.NewLine +
-                        "    (\"{0}.{1}{2}\")";
-                    break;
-                case Message.RemappedTypeMissingDefaultInterfaceMethod:
-                    msg = "{0} does not implement default interface method {1}";
-                    break;
-                default:
-                    throw new InvalidProgramException();
-            }
-            bool error = msgId >= Message.StartErrors
-                || (options.warnaserror && msgId >= Message.StartWarnings)
-                || options.errorWarnings.ContainsKey(key)
-                || options.errorWarnings.ContainsKey(((int)msgId).ToString());
-            Console.Error.Write("{0} IKVMC{1:D4}: ", error ? "error" : msgId < Message.StartWarnings ? "note" : "warning", (int)msgId);
-            if (error && Message.StartWarnings <= msgId && msgId < Message.StartErrors)
-            {
+
+#if NET8_0_OR_GREATER
+            var msg = evt.Diagnostic.Message.Format;
+#else
+            var msg = evt.Diagnostic.Message;
+#endif
+            var err =
+                evt.Diagnostic.Level is DiagnosticLevel.Error or DiagnosticLevel.Fatal ||
+                evt.Diagnostic.Level is DiagnosticLevel.Warning && options.errorWarnings.ContainsKey(key) ||
+                evt.Diagnostic.Level is DiagnosticLevel.Warning && options.errorWarnings.ContainsKey(evt.Diagnostic.Id.Value.ToString());
+
+            Console.Error.Write("{0} IKVMC{1:D4}: ", err ? "error" : evt.Diagnostic.Level is DiagnosticLevel.Informational or DiagnosticLevel.Trace ? "note" : "warning", evt.Diagnostic.Id.Value);
+            if (err && evt.Diagnostic.Level is DiagnosticLevel.Warning)
                 Console.Error.Write("Warning as Error: ");
-            }
-            Console.Error.WriteLine(msg, values);
+
+            Console.Error.WriteLine(msg, evt.Args.ToArray());
             if (options != compiler.rootTarget && options.path != null)
-            {
                 Console.Error.WriteLine("    (in {0})", options.path);
-            }
-            if (error)
-            {
+
+            if (err)
                 if (++compiler.errorCount == 100)
-                {
-                    throw new FatalCompilerErrorException(Message.MaximumErrorCountReached);
-                }
-            }
+                    throw new FatalCompilerErrorException(Diagnostic.MaximumErrorCountReached.Event([]));
         }
 
     }

@@ -27,11 +27,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Runtime.Serialization;
+using System.Runtime.CompilerServices;
 
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Runtime.Syntax;
-
-using System.Runtime.CompilerServices;
 
 
 #if IMPORTER || EXPORTER
@@ -715,7 +715,7 @@ namespace IKVM.Runtime
                 if (javaType.TypeAsTBD != type && (!javaType.IsRemapped || javaType.TypeAsBaseType != type))
                 {
 #if IMPORTER
-                    throw new FatalCompilerErrorException(Message.AssemblyContainsDuplicateClassNames, type.FullName, javaType.TypeAsTBD.FullName, javaType.Name, type.Assembly.FullName);
+                    throw new FatalCompilerErrorException(Diagnostic.AssemblyContainsDuplicateClassNames.Event([type.FullName, javaType.TypeAsTBD.FullName, javaType.Name, type.Assembly.FullName]));
 #else
                     throw new InternalException($"\nType \"{type.FullName}\" and \"{javaType.TypeAsTBD.FullName}\" both map to the same name \"{javaType.Name}\".");
 #endif

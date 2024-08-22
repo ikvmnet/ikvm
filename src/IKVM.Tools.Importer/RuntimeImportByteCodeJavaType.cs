@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -689,7 +690,7 @@ namespace IKVM.Tools.Importer
                                 if (methods[i].IsAbstract)
                                 {
                                     // This should only happen for remapped types (defined in map.xml), because normally you'd get a miranda method.
-                                    throw new FatalCompilerErrorException(Message.GhostInterfaceMethodMissing, implementers[j].Name, Name, methods[i].Name, methods[i].Signature);
+                                    throw new FatalCompilerErrorException(Diagnostic.GhostInterfaceMethodMissing.Event([implementers[j].Name, Name, methods[i].Name, methods[i].Signature]));
                                 }
                                 // We're inheriting a default method
                                 ilgen.Emit(OpCodes.Pop);

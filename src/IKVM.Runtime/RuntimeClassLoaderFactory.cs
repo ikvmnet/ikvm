@@ -25,7 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using IKVM.Runtime;
+using IKVM.CoreLib.Diagnostics;
 
 #if NETCOREAPP
 using System.Runtime.Loader;
@@ -111,7 +111,7 @@ namespace IKVM.Runtime
                 else
                 {
 #if IMPORTER
-                    throw new FatalCompilerErrorException(Message.CoreClassesMissing);
+                    throw new FatalCompilerErrorException(Diagnostic.CoreClassesMissing.Event([]));
 #else
                     throw new InternalException("Failed to find core classes in core library.");
 #endif
@@ -292,7 +292,7 @@ namespace IKVM.Runtime
 #if IMPORTER
             var wrapper = GetBootstrapClassLoader().TryLoadClassByName(name);
             if (wrapper == null)
-                throw new FatalCompilerErrorException(Message.CriticalClassNotFound, name);
+                throw new FatalCompilerErrorException(Diagnostic.CriticalClassNotFound.Event([name]));
 
             return wrapper;
 #else

@@ -24,6 +24,8 @@
 using IKVM.Attributes;
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
+using IKVM.CoreLib.Diagnostics;
+
 
 #if IMPORTER
 using IKVM.Tools.Importer;
@@ -181,7 +183,7 @@ namespace IKVM.Runtime
                                 {
                                     if (classFile.IsInterface)
                                     {
-                                        classFile.context.StaticCompiler.IssueMessage(Message.InterfaceMethodCantBeInternal, classFile.Name, Name, Signature);
+                                        classFile.context.Report(Diagnostic.InterfaceMethodCantBeInternal.Event([classFile.Name, Name, Signature]));
                                     }
                                     else
                                     {
@@ -206,7 +208,7 @@ namespace IKVM.Runtime
                                 {
                                     if (classFile.IsInterface || IsConstructor || IsClassInitializer || IsPrivate || IsStatic == false)
                                     {
-                                        classFile.context.StaticCompiler.IssueMessage(Message.ModuleInitializerMethodRequirements, classFile.Name, Name, Signature);
+                                        classFile.context.Report(Diagnostic.ModuleInitializerMethodRequirements.Event([classFile.Name, Name, Signature]));
                                     }
                                     else
                                     {

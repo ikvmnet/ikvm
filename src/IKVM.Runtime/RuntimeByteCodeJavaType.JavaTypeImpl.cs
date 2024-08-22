@@ -24,9 +24,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Collections.Concurrent;
 
 using IKVM.Attributes;
-using System.Collections.Concurrent;
+
+using IKVM.CoreLib.Diagnostics;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -225,7 +227,7 @@ namespace IKVM.Runtime
                 {
                     // If we end up here, we either have to add support or add them to the white-list in the above clause
                     // to allow them to fall back to dynamic stack walking.
-                    wrapper.Context.StaticCompiler.IssueMessage(Message.CallerSensitiveOnUnsupportedMethod, classFile.Name, method.Name, method.Signature);
+                    wrapper.Context.Report(Diagnostic.CallerSensitiveOnUnsupportedMethod.Event([classFile.Name, method.Name, method.Signature]));
                     return false;
                 }
             }

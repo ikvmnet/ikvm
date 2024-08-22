@@ -1,12 +1,10 @@
-﻿using IKVM.CoreLib.Diagnostics;
-
-namespace IKVM.Runtime
+﻿namespace IKVM.CoreLib.Diagnostics
 {
 
     /// <summary>
     /// Accepts a <see cref="DiagnosticEvent"> and routes it to the appropriate source.
     /// </summary>
-    internal interface IDiagnosticHandler
+    interface IDiagnosticHandler
     {
 
         /// <summary>

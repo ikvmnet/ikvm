@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Runtime.Syntax;
 using IKVM.ByteCode;
@@ -317,7 +318,7 @@ namespace IKVM.Runtime
                     if (interfaceWrappers[i] == null)
                     {
 #if IMPORTER
-                        throw new FatalCompilerErrorException(Message.UnableToResolveInterface, interfaceNames[i], this);
+                        throw new FatalCompilerErrorException(Diagnostic.UnableToResolveInterface.Event([interfaceNames[i], this]));
 #else
                         throw new InternalException($"Unable to resolve interface {interfaceNames[i]} on type {this}");
 #endif

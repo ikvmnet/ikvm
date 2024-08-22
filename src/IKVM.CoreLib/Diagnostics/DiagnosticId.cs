@@ -10,6 +10,12 @@
 
         public static implicit operator DiagnosticId(int id) => new DiagnosticId(id);
 
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
+
     }
 
 }

@@ -7,6 +7,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography.Xml;
 
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Reflection;
 using IKVM.Runtime;
 using IKVM.Tools.Importer;
@@ -21,6 +22,16 @@ namespace IKVM.Tools.Exporter
     /// </summary>
     static class IkvmExporterInternal
     {
+
+        class DiagnosticHandler : IDiagnosticHandler
+        {
+
+            public void Report(in DiagnosticEvent evnt)
+            {
+                throw new NotImplementedException();
+            }
+
+        }
 
         class ManagedResolver : IManagedTypeResolver
         {
@@ -191,7 +202,7 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), new ManagedResolver(compiler, null), true, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), new DiagnosticHandler(), new ManagedResolver(compiler, null), true, compiler);
                     context.ClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader(context));
                 }
                 else
@@ -218,7 +229,7 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), new ManagedResolver(compiler, baseAssembly), false, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), new DiagnosticHandler(), new ManagedResolver(compiler, baseAssembly), false, compiler);
                 }
 
                 if (context.AttributeHelper.IsJavaModule(assembly.ManifestModule))

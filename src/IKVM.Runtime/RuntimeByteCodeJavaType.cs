@@ -26,6 +26,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Diagnostics;
+
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -97,10 +99,10 @@ namespace IKVM.Runtime
                     Type mt = ReflectUtil.GetMissingType(missing.MissingType);
                     if (mt.Assembly.__IsMissing)
                     {
-                        throw new FatalCompilerErrorException(Message.MissingBaseTypeReference, mt.FullName, mt.Assembly.FullName);
+                        throw new FatalCompilerErrorException(Diagnostic.MissingBaseTypeReference.Event([mt.FullName, mt.Assembly.FullName]));
                     }
-                    throw new FatalCompilerErrorException(Message.MissingBaseType, mt.FullName, mt.Assembly.FullName,
-                        prev.TypeAsBaseType.FullName, prev.TypeAsBaseType.Module.Name);
+
+                    throw new FatalCompilerErrorException(Diagnostic.MissingBaseType.Event([mt.FullName, mt.Assembly.FullName, prev.TypeAsBaseType.FullName, prev.TypeAsBaseType.Module.Name]));
                 }
                 foreach (RuntimeJavaType iface in tw.Interfaces)
                 {
@@ -1064,10 +1066,10 @@ namespace IKVM.Runtime
                 switch (error)
                 {
                     case HardError.AbstractMethodError:
-                        GetClassLoader().IssueMessage(Message.EmittedAbstractMethodError, this.Name, message);
+                        GetClassLoader().Report(Diagnostic.EmittedAbstractMethodError.Event([this.Name, message]));
                         break;
                     case HardError.IncompatibleClassChangeError:
-                        GetClassLoader().IssueMessage(Message.EmittedIncompatibleClassChangeError, this.Name, message);
+                        GetClassLoader().Report(Diagnostic.EmittedIncompatibleClassChangeError.Event([this.Name, message]));
                         break;
                     default:
                         throw new InvalidOperationException();

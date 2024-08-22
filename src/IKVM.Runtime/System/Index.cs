@@ -3,9 +3,6 @@
 // See the LICENSE file in the project root for more information.
 
 #if NETSTANDARD2_1 || NET
-using System.Runtime.CompilerServices;
-
-[assembly: TypeForwardedTo(typeof(System.Index))]
 #else
 using System.Runtime.CompilerServices;
 
@@ -19,7 +16,7 @@ namespace System;
 /// int lastElement = someArray[^1]; // lastElement = 5
 /// </code>
 /// </remarks>
-public readonly struct Index : IEquatable<Index>
+readonly struct Index : IEquatable<Index>
 {
     private readonly int _value;
 

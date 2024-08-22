@@ -27,6 +27,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 
+using IKVM.Runtime.Accessors.Java.Lang;
+using IKVM.CoreLib.Diagnostics;
+
 #if NETCOREAPP
 using System.Runtime.Loader;
 #endif
@@ -40,10 +43,6 @@ using ProtectionDomain = System.Object;
 using System.Reflection;
 
 using ProtectionDomain = java.security.ProtectionDomain;
-
-using IKVM.Runtime.Accessors.Java.Lang;
-
-using System.Text;
 #endif
 
 #if IMPORTER
@@ -371,7 +370,7 @@ namespace IKVM.Runtime
 #if IMPORTER
 
                 if (!(name.Length > 1 && name[0] == '[') && ((mode & LoadMode.WarnClassNotFound) != 0) || WarningLevelHigh)
-                    IssueMessage(Message.ClassNotFound, name);
+                    Context.Report(Diagnostic.ClassNotFound.Event([name]));
 
 #else
 
@@ -943,11 +942,11 @@ namespace IKVM.Runtime
 #endif
 
 #if IMPORTER
-        internal virtual void IssueMessage(Message msgId, params string[] values)
+        internal virtual void Report(in DiagnosticEvent evt)
         {
             // it's not ideal when we end up here (because it means we're emitting a warning that is not associated with a specific output target),
             // but it happens when we're decoding something in a referenced assembly that either doesn't make sense or contains an unloadable type
-            Context.StaticCompiler.IssueMessage(msgId, values);
+            Context.StaticCompiler.Report(evt);
         }
 #endif
 

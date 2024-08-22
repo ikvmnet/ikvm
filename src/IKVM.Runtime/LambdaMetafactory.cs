@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.ByteCode;
+using IKVM.CoreLib.Diagnostics;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -60,7 +61,7 @@ namespace IKVM.Runtime
 #if IMPORTER
                 if (context.TypeWrapper.GetClassLoader().DisableDynamicBinding)
                 {
-                    context.Context.StaticCompiler.IssueMessage(Message.UnableToCreateLambdaFactory);
+                    context.Context.Report(Diagnostic.UnableToCreateLambdaFactory.Event([]));
                 }
 #endif
                 return false;

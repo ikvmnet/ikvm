@@ -26,6 +26,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.ByteCode;
+using IKVM.CoreLib.Diagnostics;
+
 
 #if IMPORTER
 using IKVM.Tools.Importer;
@@ -2484,38 +2486,38 @@ namespace IKVM.Runtime
         {
             string text = string.Format(message, args);
 #if IMPORTER
-            Message msg;
+            Diagnostic msg;
             switch (hardError)
             {
                 case HardError.NoClassDefFoundError:
-                    msg = Message.EmittedNoClassDefFoundError;
+                    msg = Diagnostic.EmittedNoClassDefFoundError;
                     break;
                 case HardError.IllegalAccessError:
-                    msg = Message.EmittedIllegalAccessError;
+                    msg = Diagnostic.EmittedIllegalAccessError;
                     break;
                 case HardError.InstantiationError:
-                    msg = Message.EmittedIllegalAccessError;
+                    msg = Diagnostic.EmittedIllegalAccessError;
                     break;
                 case HardError.IncompatibleClassChangeError:
                 case HardError.IllegalAccessException:
-                    msg = Message.EmittedIncompatibleClassChangeError;
+                    msg = Diagnostic.EmittedIncompatibleClassChangeError;
                     break;
                 case HardError.NoSuchFieldError:
-                    msg = Message.EmittedNoSuchFieldError;
+                    msg = Diagnostic.EmittedNoSuchFieldError;
                     break;
                 case HardError.AbstractMethodError:
-                    msg = Message.EmittedAbstractMethodError;
+                    msg = Diagnostic.EmittedAbstractMethodError;
                     break;
                 case HardError.NoSuchMethodError:
-                    msg = Message.EmittedNoSuchMethodError;
+                    msg = Diagnostic.EmittedNoSuchMethodError;
                     break;
                 case HardError.LinkageError:
-                    msg = Message.EmittedLinkageError;
+                    msg = Diagnostic.EmittedLinkageError;
                     break;
                 default:
                     throw new InvalidOperationException();
             }
-            classLoader.IssueMessage(msg, classFile.Name + "." + method.Name + method.Signature, text);
+            classLoader.Report(msg.Event([classFile.Name + "." + method.Name + method.Signature, text]));
 #endif
             instruction.SetHardError(hardError, AllocErrorMessage(text));
         }
@@ -2868,7 +2870,7 @@ namespace IKVM.Runtime
 #if NETFRAMEWORK
             if (cpi.GetRetType() != mw.ReturnType && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
 #else
-        if (cpi.GetRetType() != mw.ReturnType && cpi.GetRetType().Name != mw.ReturnType.Name && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
+            if (cpi.GetRetType() != mw.ReturnType && cpi.GetRetType().Name != mw.ReturnType.Name && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
 #endif
             {
 #if IMPORTER
@@ -2883,7 +2885,7 @@ namespace IKVM.Runtime
 #if NETFRAMEWORK
                 if (here[i] != there[i] && !here[i].IsUnloadable && !there[i].IsUnloadable)
 #else
-            if (here[i] != there[i] && here[i].Name != there[i].Name && !here[i].IsUnloadable && !there[i].IsUnloadable)
+                if (here[i] != there[i] && here[i].Name != there[i].Name && !here[i].IsUnloadable && !there[i].IsUnloadable)
 #endif
                 {
 #if IMPORTER

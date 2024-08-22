@@ -28,6 +28,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Diagnostics;
 using IKVM.ByteCode.Buffers;
 using IKVM.ByteCode.Decoding;
 using IKVM.ByteCode.Encoding;
@@ -199,7 +200,7 @@ namespace IKVM.Runtime
             }
             else if (tw.IsUnloadable)
             {
-                throw new FatalCompilerErrorException(Message.MapFileTypeNotFound, tw.Name);
+                throw new FatalCompilerErrorException(Diagnostic.MapFileTypeNotFound.Event([tw.Name]));
             }
             else if (tw.TypeAsTBD.IsEnum)
             {

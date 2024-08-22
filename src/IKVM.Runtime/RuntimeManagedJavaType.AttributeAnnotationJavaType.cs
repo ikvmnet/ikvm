@@ -24,12 +24,14 @@
 using System;
 using System.Collections.Generic;
 
+using IKVM.CoreLib.Diagnostics;
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
-using System.Net.Mime;
+
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -543,7 +545,7 @@ namespace IKVM.Runtime
                         // we have to handle this explicitly, because if we apply an illegal StructLayoutAttribute,
                         // TypeBuilder.CreateType() will later on throw an exception.
 #if IMPORTER
-                        loader.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Type '" + tb.FullName + "' does not extend cli.System.Object");
+                        loader.Report(Diagnostic.IgnoredCustomAttribute.Event([type.FullName, "Type '" + tb.FullName + "' does not extend cli.System.Object"]));
 #else
                         Tracer.Error(Tracer.Runtime, "StructLayoutAttribute cannot be applied to {0}, because it does not directly extend cli.System.Object", tb.FullName);
 #endif
@@ -590,7 +592,7 @@ namespace IKVM.Runtime
                         }
                         else
                         {
-                            loader.IssueMessage(Message.InvalidCustomAttribute, type.FullName, "The version '" + str + "' is invalid.");
+                            loader.Report(Diagnostic.InvalidCustomAttribute.Event([type.FullName, "The version '" + str + "' is invalid."]));
                         }
                     }
                     else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyCultureAttribute).FullName))
@@ -605,7 +607,7 @@ namespace IKVM.Runtime
                         || type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyKeyFileAttribute).FullName)
                         || type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyKeyNameAttribute).FullName))
                     {
-                        loader.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Please use the corresponding compiler switch.");
+                        loader.Report(Diagnostic.IgnoredCustomAttribute.Event([type.FullName, "Please use the corresponding compiler switch."]));
                     }
                     else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyAlgorithmIdAttribute).FullName))
                     {

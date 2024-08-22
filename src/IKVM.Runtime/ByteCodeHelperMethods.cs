@@ -23,7 +23,7 @@
 */
 using System;
 
-using IKVM.Runtime;
+using IKVM.CoreLib.Diagnostics;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -179,7 +179,7 @@ namespace IKVM.Runtime
             var mi = parameters == null ? type.GetMethod(method) : type.GetMethod(method, parameters);
             if (mi == null)
 #if IMPORTER
-			    throw new FatalCompilerErrorException(Message.RuntimeMethodMissing, method);
+			    throw new FatalCompilerErrorException(Diagnostic.RuntimeMethodMissing.Event([method]));
 #else
                 throw new InternalException("Missing ByteCodeHelper method in runtime.");
 #endif

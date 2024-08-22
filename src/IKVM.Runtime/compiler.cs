@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
 
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Attributes;
 using IKVM.ByteCode;
 
@@ -608,7 +609,7 @@ namespace IKVM.Runtime
             catch (VerifyError x)
             {
 #if IMPORTER
-                classLoader.IssueMessage(Message.EmittedVerificationError, classFile.Name + "." + m.Name + m.Signature, x.Message);
+                classLoader.Report(Diagnostic.EmittedVerificationError.Event([ classFile.Name + "." + m.Name + m.Signature, x.Message]));
 #endif
                 Tracer.Error(Tracer.Verifier, x.ToString());
                 clazz.SetHasVerifyError();
@@ -620,7 +621,7 @@ namespace IKVM.Runtime
             catch (ClassFormatError x)
             {
 #if IMPORTER
-                classLoader.IssueMessage(Message.EmittedClassFormatError, classFile.Name + "." + m.Name + m.Signature, x.Message);
+                classLoader.Report(Diagnostic.EmittedClassFormatError.Event([ classFile.Name + "." + m.Name + m.Signature, x.Message]));
 #endif
                 Tracer.Error(Tracer.Verifier, x.ToString());
                 clazz.SetHasClassFormatError();

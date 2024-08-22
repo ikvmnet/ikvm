@@ -23,6 +23,7 @@
 */
 using System;
 
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Reflection;
 using IKVM.Tools.Importer;
 

@@ -25,6 +25,8 @@
 using System;
 using System.Collections.Generic;
 
+using IKVM.CoreLib.Diagnostics;
+
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -353,7 +355,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                eic.Context.TypeWrapper.Context.StaticCompiler.IssueMessage(Message.ReflectionCallerClassRequiresCallerID, eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature);
+                eic.Context.TypeWrapper.Context.Report(Diagnostic.ReflectionCallerClassRequiresCallerID.Event([eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature]));
             }
             return false;
         }
@@ -372,7 +374,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                throw new FatalCompilerErrorException(Message.CallerIDRequiresHasCallerIDAnnotation);
+                throw new FatalCompilerErrorException(Diagnostic.CallerIDRequiresHasCallerIDAnnotation.Event([]));
             }
         }
 
