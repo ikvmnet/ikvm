@@ -1,0 +1,30 @@
+﻿<#+
+
+public class DiagnosticFile : Dictionary<string, Diagnostic>
+{
+
+    public static DiagnosticFile Read(string path)
+    {
+        return JObject.Parse(File.ReadAllText(path)).ToObject<DiagnosticFile>();
+    }
+
+}
+
+public class Diagnostic
+{
+
+    [JsonProperty("id")]
+    public int Id { get; set; }
+
+    [JsonProperty("description")]
+    public string Description { get; set; }
+
+    [JsonProperty("message")]
+    public string Message { get; set; }
+    
+    [JsonProperty("level")]
+    public string Level { get; set; }
+    
+}
+
+#>

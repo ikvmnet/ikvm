@@ -1,0 +1,671 @@
+﻿{
+    "MainMethodFound": {
+        "id": 1,
+        "level": "Informational",
+        "message": "Found main method in class \"{0}\""
+    },
+    "OutputFileIs": {
+        "id": 2,
+        "level": "Informational",
+        "message": "Output file is \"{0}\""
+    },
+    "AutoAddRef": {
+        "id": 3,
+        "level": "Informational",
+        "message": "Automatically adding reference to \"{0}\""
+    },
+    "MainMethodFromManifest": {
+        "id": 4,
+        "level": "Informational",
+        "message": "Using main class \"{0}\" based on jar manifest"
+    },
+    "GenericCompilerInfo": {
+        "id": 5,
+        "level": "Informational",
+        "message": "{0}"
+    },
+    "GenericClassLoadingInfo": {
+        "id": 6,
+        "level": "Informational",
+        "message": "{0}"
+    },
+    "GenericVerifierInfo": {
+        "id": 6,
+        "level": "Informational",
+        "message": "{0}"
+    },
+    "GenericRuntimeInfo": {
+        "id": 7,
+        "level": "Informational",
+        "message": "{0}"
+    },
+    "GenericJniInfo": {
+        "id": 6,
+        "level": "Informational",
+        "message": "{0}"
+    },
+    "ClassNotFound": {
+        "id": 100,
+        "level": "Warning",
+        "message": "Class \"{0}\" not found"
+    },
+    "ClassFormatError": {
+        "id": 101,
+        "level": "Warning",
+        "message": "Unable to compile class \"{0}\" \n    (class format error \"{1}\")"
+    },
+    "DuplicateClassName": {
+        "id": 102,
+        "level": "Warning",
+        "message": "Duplicate class name: \"{0}\""
+    },
+    "IllegalAccessError": {
+        "id": 103,
+        "level": "Warning",
+        "message": "Unable to compile class \"{0}\" \n    (illegal access error \"{1}\")"
+    },
+    "VerificationError": {
+        "id": 104,
+        "level": "Warning",
+        "message": "Unable to compile class \"{0}\" \n    (verification error \"{1}\")"
+    },
+    "NoClassDefFoundError": {
+        "id": 105,
+        "level": "Warning",
+        "message": "Unable to compile class \"{0}\" \n    (missing class \"{1}\")"
+    },
+    "GenericUnableToCompileError": {
+        "id": 106,
+        "level": "Warning",
+        "message": "Unable to compile class \"{0}\" \n    (\"{1}\": \"{2}\")"
+    },
+    "DuplicateResourceName": {
+        "id": 107,
+        "level": "Warning",
+        "message": "Skipping resource (name clash): \"{0}\""
+    },
+    "SkippingReferencedClass": {
+        "id": 109,
+        "level": "Warning",
+        "message": "Skipping class: \"{0}\"\n    (class is already available in referenced assembly \"{1}\")"
+    },
+    "NoJniRuntime": {
+        "id": 110,
+        "level": "Warning",
+        "message": "Unable to load runtime JNI assembly"
+    },
+    "EmittedNoClassDefFoundError": {
+        "id": 111,
+        "level": "Warning",
+        "message": "Emitted java.lang.NoClassDefFoundError in \"{0}\"\n    (\"{1}\")"
+    },
+    "EmittedIllegalAccessError": {
+        "id": 112,
+        "level": "Warning",
+        "message": "Emitted java.lang.IllegalAccessError in \"{0}\"\n    (\"{1}\")"
+    },
+    "EmittedInstantiationError": {
+        "id": 113,
+        "level": "Warning",
+        "message": "Emitted java.lang.InstantiationError in \"{0}\"\n    (\"{1}\")"
+    },
+    "EmittedIncompatibleClassChangeError": {
+        "id": 114,
+        "level": "Warning",
+        "message": "Emitted java.lang.IncompatibleClassChangeError in \"{0}\"\n    (\"{1}\")"
+    },
+    "EmittedNoSuchFieldError": {
+        "id": 115,
+        "level": "Warning",
+        "message": "Emitted java.lang.NoSuchFieldError in \"{0}\"\n    (\"{1}\")"
+    },
+    "EmittedAbstractMethodError": {
+        "id": 116,
+        "level": "Warning",
+        "message": "Emitted java.lang.AbstractMethodError in \"{0}\"\n    (\"{1}\")"
+    },
+    "EmittedNoSuchMethodError": {
+        "id": 117,
+        "level": "Warning",
+        "message": "Emitted java.lang.NoSuchMethodError in \"{0}\"\n    (\"{1}\")"
+    },
+    "EmittedLinkageError": {
+        "id": 118,
+        "level": "Warning",
+        "message": "Emitted java.lang.LinkageError in \"{0}\"\n    (\"{1}\")"
+    },
+    "EmittedVerificationError": {
+        "id": 119,
+        "level": "Warning",
+        "message": "Emitted java.lang.VerificationError in \"{0}\"\n    (\"{1}\")"
+    },
+    "EmittedClassFormatError": {
+        "id": 120,
+        "level": "Warning",
+        "message": "Emitted java.lang.ClassFormatError in \"{0}\"\n    (\"{1}\")"
+    },
+    "InvalidCustomAttribute": {
+        "id": 121,
+        "level": "Warning",
+        "message": "Error emitting \"{0}\" custom attribute\n    (\"{1}\")"
+    },
+    "IgnoredCustomAttribute": {
+        "id": 122,
+        "level": "Warning",
+        "message": "Custom attribute \"{0}\" was ignored\n    (\"{1}\")"
+    },
+    "AssumeAssemblyVersionMatch": {
+        "id": 123,
+        "level": "Warning",
+        "message": "Assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy"
+    },
+    "InvalidDirectoryInLibOptionPath": {
+        "id": 124,
+        "level": "Warning",
+        "message": "Directory \"{0}\" specified in -lib option is not valid"
+    },
+    "InvalidDirectoryInLibEnvironmentPath": {
+        "id": 125,
+        "level": "Warning",
+        "message": "Directory \"{0}\" specified in LIB environment is not valid"
+    },
+    "LegacySearchRule": {
+        "id": 126,
+        "level": "Warning",
+        "message": "Found assembly \"{0}\" using legacy search rule, please append '.dll' to the reference"
+    },
+    "AssemblyLocationIgnored": {
+        "id": 127,
+        "level": "Warning",
+        "message": "Assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identity \"{2}\""
+    },
+    "InterfaceMethodCantBeInternal": {
+        "id": 128,
+        "level": "Warning",
+        "message": "Ignoring @ikvm.lang.Internal annotation on interface method\n    (\"{0}.{1}{2}\")"
+    },
+    "DuplicateAssemblyReference": {
+        "id": 132,
+        "level": "Warning",
+        "message": "Duplicate assembly reference \"{0}\""
+    },
+    "UnableToResolveType": {
+        "id": 133,
+        "level": "Warning",
+        "message": "Reference in \"{0}\" to type \"{1}\" claims it is defined in \"{2}\", but it could not be found"
+    },
+    "StubsAreDeprecated": {
+        "id": 134,
+        "level": "Warning",
+        "message": "Compiling stubs is deprecated. Please add a reference to assembly \"{0}\" instead."
+    },
+    "WrongClassName": {
+        "id": 135,
+        "level": "Warning",
+        "message": "Unable to compile \"{0}\" (wrong name: \"{1}\")"
+    },
+    "ReflectionCallerClassRequiresCallerID": {
+        "id": 136,
+        "level": "Warning",
+        "message": "Reflection.getCallerClass() called from non-CallerID method\n    (\"{0}.{1}{2}\")"
+    },
+    "LegacyAssemblyAttributesFound": {
+        "id": 137,
+        "level": "Warning",
+        "message": "Legacy assembly attributes container found. Please use the -assemblyattributes:<file> option."
+    },
+    "UnableToCreateLambdaFactory": {
+        "id": 138,
+        "level": "Warning",
+        "message": "Unable to create static lambda factory."
+    },
+    "UnknownWarning": {
+        "id": 999,
+        "level": "Warning",
+        "message": "{0}"
+    },
+    "DuplicateIkvmLangProperty": {
+        "id": 139,
+        "level": "Warning",
+        "message": "Ignoring duplicate ikvm.lang.Property annotation on {0}.{1}"
+    },
+    "MalformedIkvmLangProperty": {
+        "id": 140,
+        "level": "Warning",
+        "message": "Ignoring duplicate ikvm.lang.Property annotation on {0}.{1}"
+    },
+    "GenericCompilerWarning": {
+        "id": 5,
+        "level": "Warning",
+        "message": "{0}"
+    },
+    "GenericClassLoadingWarning": {
+        "id": 6,
+        "level": "Warning",
+        "message": "{0}"
+    },
+    "GenericVerifierWarning": {
+        "id": 6,
+        "level": "Warning",
+        "message": "{0}"
+    },
+    "GenericRuntimeWarning": {
+        "id": 7,
+        "level": "Warning",
+        "message": "{0}"
+    },
+    "GenericJniWarning": {
+        "id": 6,
+        "level": "Warning",
+        "message": "{0}"
+    },
+    "UnableToCreateProxy": {
+        "id": 4001,
+        "level": "Error",
+        "message": "Unable to create proxy \"{0}\"\n    (\"{1}\")"
+    },
+    "DuplicateProxy": {
+        "id": 4002,
+        "level": "Error",
+        "message": "Duplicate proxy \"{0}\""
+    },
+    "MapXmlUnableToResolveOpCode": {
+        "id": 4003,
+        "level": "Error",
+        "message": "Unable to resolve opcode in remap file: {0}"
+    },
+    "MapXmlError": {
+        "id": 4004,
+        "level": "Error",
+        "message": "Error in remap file: {0}"
+    },
+    "InputFileNotFound": {
+        "id": 4005,
+        "level": "Error",
+        "message": "Source file '{0}' not found"
+    },
+    "UnknownFileType": {
+        "id": 4006,
+        "level": "Error",
+        "message": "Unknown file type: {0}"
+    },
+    "UnknownElementInMapFile": {
+        "id": 4007,
+        "level": "Error",
+        "message": "Unknown element {0} in remap file, line {1}, column {2}"
+    },
+    "UnknownAttributeInMapFile": {
+        "id": 4008,
+        "level": "Error",
+        "message": "Unknown attribute {0} in remap file, line {1}, column {2}"
+    },
+    "InvalidMemberNameInMapFile": {
+        "id": 4009,
+        "level": "Error",
+        "message": "Invalid {0} name '{1}' in remap file in class {2}"
+    },
+    "InvalidMemberSignatureInMapFile": {
+        "id": 4010,
+        "level": "Error",
+        "message": "Invalid {0} signature '{3}' in remap file for {0} {1}.{2}"
+    },
+    "InvalidPropertyNameInMapFile": {
+        "id": 4011,
+        "level": "Error",
+        "message": "Invalid property {0} name '{3}' in remap file for property {1}.{2}"
+    },
+    "InvalidPropertySignatureInMapFile": {
+        "id": 4012,
+        "level": "Error",
+        "message": "Invalid property {0} signature '{3}' in remap file for property {1}.{2}"
+    },
+    "NonPrimaryAssemblyReference": {
+        "id": 4013,
+        "level": "Error",
+        "message": "Referenced assembly \"{0}\" is not the primary assembly of a shared class loader group, please reference primary assembly \"{1}\" instead"
+    },
+    "MissingType": {
+        "id": 4014,
+        "level": "Error",
+        "message": "Reference to type \"{0}\" claims it is defined in \"{1}\", but it could not be found"
+    },
+    "MissingReference": {
+        "id": 4015,
+        "level": "Error",
+        "message": "The type '{0}' is defined in an assembly that is notResponseFileDepthExceeded referenced. You must add a reference to assembly '{1}'"
+    },
+    "CallerSensitiveOnUnsupportedMethod": {
+        "id": 4016,
+        "level": "Error",
+        "message": "CallerSensitive annotation on unsupported method\n    (\"{0}.{1}{2}\")"
+    },
+    "RemappedTypeMissingDefaultInterfaceMethod": {
+        "id": 4017,
+        "level": "Error",
+        "message": "{0} does not implement default interface method {1}"
+    },
+    "GenericCompilerError": {
+        "id": 4018,
+        "level": "Error",
+        "message": "{0}"
+    },
+    "GenericClassLoadingError": {
+        "id": 4019,
+        "level": "Error",
+        "message": "{0}"
+    },
+    "GenericVerifierError": {
+        "id": 4020,
+        "level": "Error",
+        "message": "{0}"
+    },
+    "GenericRuntimeError": {
+        "id": 4021,
+        "level": "Error",
+        "message": "{0}"
+    },
+    "GenericJniError": {
+        "id": 4022,
+        "level": "Error",
+        "message": "{0}"
+    },
+    "ResponseFileDepthExceeded": {
+        "id": 5000,
+        "level": "Fatal",
+        "message": "Response file nesting depth exceeded"
+    },
+    "ErrorReadingFile": {
+        "id": 5001,
+        "level": "Fatal",
+        "message": "Unable to read file: {0}\n\t({1})"
+    },
+    "NoTargetsFound": {
+        "id": 5002,
+        "level": "Fatal",
+        "message": "No targets found"
+    },
+    "FileFormatLimitationExceeded": {
+        "id": 5003,
+        "level": "Fatal",
+        "message": "File format limitation exceeded: {0}"
+    },
+    "CannotSpecifyBothKeyFileAndContainer": {
+        "id": 5004,
+        "level": "Fatal",
+        "message": "You cannot specify both a key file and container"
+    },
+    "DelaySignRequiresKey": {
+        "id": 5005,
+        "level": "Fatal",
+        "message": "You cannot delay sign without a key file or container"
+    },
+    "InvalidStrongNameKeyPair": {
+        "id": 5006,
+        "level": "Fatal",
+        "message": "Invalid key {0} specified.\n\t(\"{1}\")"
+    },
+    "ReferenceNotFound": {
+        "id": 5007,
+        "level": "Fatal",
+        "message": "Reference not found: {0}"
+    },
+    "OptionsMustPreceedChildLevels": {
+        "id": 5008,
+        "level": "Fatal",
+        "message": "You can only specify options before any child levels"
+    },
+    "UnrecognizedTargetType": {
+        "id": 5009,
+        "level": "Fatal",
+        "message": "Invalid value '{0}' for -target option"
+    },
+    "UnrecognizedPlatform": {
+        "id": 5010,
+        "level": "Fatal",
+        "message": "Invalid value '{0}' for -platform option"
+    },
+    "UnrecognizedApartment": {
+        "id": 5011,
+        "level": "Fatal",
+        "message": "Invalid value '{0}' for -apartment option"
+    },
+    "MissingFileSpecification": {
+        "id": 5012,
+        "level": "Fatal",
+        "message": "Missing file specification for '{0}' option"
+    },
+    "PathTooLong": {
+        "id": 5013,
+        "level": "Fatal",
+        "message": "Path too long: {0}"
+    },
+    "PathNotFound": {
+        "id": 5014,
+        "level": "Fatal",
+        "message": "Path not found: {0}"
+    },
+    "InvalidPath": {
+        "id": 5015,
+        "level": "Fatal",
+        "message": "Invalid path: {0}"
+    },
+    "InvalidOptionSyntax": {
+        "id": 5016,
+        "level": "Fatal",
+        "message": "Invalid option: {0}"
+    },
+    "ExternalResourceNotFound": {
+        "id": 5017,
+        "level": "Fatal",
+        "message": "External resource file does not exist: {0}"
+    },
+    "ExternalResourceNameInvalid": {
+        "id": 5018,
+        "level": "Fatal",
+        "message": "External resource file may not include path specification: {0}"
+    },
+    "InvalidVersionFormat": {
+        "id": 5019,
+        "level": "Fatal",
+        "message": "Invalid version specified: {0}"
+    },
+    "InvalidFileAlignment": {
+        "id": 5020,
+        "level": "Fatal",
+        "message": "Invalid value '{0}' for -filealign option"
+    },
+    "ErrorWritingFile": {
+        "id": 5021,
+        "level": "Fatal",
+        "message": "Unable to write file: {0}\n\t({1})"
+    },
+    "UnrecognizedOption": {
+        "id": 5022,
+        "level": "Fatal",
+        "message": "Unrecognized option: {0}"
+    },
+    "NoOutputFileSpecified": {
+        "id": 5023,
+        "level": "Fatal",
+        "message": "No output file specified"
+    },
+    "SharedClassLoaderCannotBeUsedOnModuleTarget": {
+        "id": 5024,
+        "level": "Fatal",
+        "message": "Incompatible options: -target:module and -sharedclassloader cannot be combined"
+    },
+    "RuntimeNotFound": {
+        "id": 5025,
+        "level": "Fatal",
+        "message": "Unable to load runtime assembly"
+    },
+    "MainClassRequiresExe": {
+        "id": 5026,
+        "level": "Fatal",
+        "message": "Main class cannot be specified for library or module"
+    },
+    "ExeRequiresMainClass": {
+        "id": 5027,
+        "level": "Fatal",
+        "message": "No main method found"
+    },
+    "PropertiesRequireExe": {
+        "id": 5028,
+        "level": "Fatal",
+        "message": "Properties cannot be specified for library or module"
+    },
+    "ModuleCannotHaveClassLoader": {
+        "id": 5029,
+        "level": "Fatal",
+        "message": "Cannot specify assembly class loader for modules"
+    },
+    "ErrorParsingMapFile": {
+        "id": 5030,
+        "level": "Fatal",
+        "message": "Unable to parse remap file: {0}\n\t({1})"
+    },
+    "BootstrapClassesMissing": {
+        "id": 5031,
+        "level": "Fatal",
+        "message": "Bootstrap classes missing and core assembly not found"
+    },
+    "StrongNameRequiresStrongNamedRefs": {
+        "id": 5032,
+        "level": "Fatal",
+        "message": "All referenced assemblies must be strong named, to be able to sign the output assembly"
+    },
+    "MainClassNotFound": {
+        "id": 5033,
+        "level": "Fatal",
+        "message": "Main class not found"
+    },
+    "MainMethodNotFound": {
+        "id": 5034,
+        "level": "Fatal",
+        "message": "Main method not found"
+    },
+    "UnsupportedMainMethod": {
+        "id": 5035,
+        "level": "Fatal",
+        "message": "Redirected main method not supported"
+    },
+    "ExternalMainNotAccessible": {
+        "id": 5036,
+        "level": "Fatal",
+        "message": "External main method must be public and in a public class"
+    },
+    "ClassLoaderNotFound": {
+        "id": 5037,
+        "level": "Fatal",
+        "message": "Custom assembly class loader class not found"
+    },
+    "ClassLoaderNotAccessible": {
+        "id": 5038,
+        "level": "Fatal",
+        "message": "Custom assembly class loader class is not accessible"
+    },
+    "ClassLoaderIsAbstract": {
+        "id": 5039,
+        "level": "Fatal",
+        "message": "Custom assembly class loader class is abstract"
+    },
+    "ClassLoaderNotClassLoader": {
+        "id": 5040,
+        "level": "Fatal",
+        "message": "Custom assembly class loader class does not extend java.lang.ClassLoader"
+    },
+    "ClassLoaderConstructorMissing": {
+        "id": 5041,
+        "level": "Fatal",
+        "message": "Custom assembly class loader constructor is missing"
+    },
+    "MapFileTypeNotFound": {
+        "id": 5042,
+        "level": "Fatal",
+        "message": "Type '{0}' referenced in remap file was not found"
+    },
+    "MapFileClassNotFound": {
+        "id": 5043,
+        "level": "Fatal",
+        "message": "Class '{0}' referenced in remap file was not found"
+    },
+    "MaximumErrorCountReached": {
+        "id": 5044,
+        "level": "Fatal",
+        "message": "Maximum error count reached"
+    },
+    "LinkageError": {
+        "id": 5045,
+        "level": "Fatal",
+        "message": "Link error: {0}"
+    },
+    "RuntimeMismatch": {
+        "id": 5046,
+        "level": "Fatal",
+        "message": "Referenced assembly {0} was compiled with an incompatible IKVM.Runtime version\n\tCurrent runtime: {1}\n\tReferenced assembly runtime: {2}"
+    },
+    "RuntimeMismatchStrongName": {
+        "id": 5047,
+        "level": "Fatal"
+    },
+    "CoreClassesMissing": {
+        "id": 5048,
+        "level": "Fatal",
+        "message": "Failed to find core classes in core library"
+    },
+    "CriticalClassNotFound": {
+        "id": 5049,
+        "level": "Fatal",
+        "message": "Unable to load critical class '{0}'"
+    },
+    "AssemblyContainsDuplicateClassNames": {
+        "id": 5050,
+        "level": "Fatal",
+        "message": "Type '{0}' and '{1}' both map to the same name '{2}'\n\t({3})"
+    },
+    "CallerIDRequiresHasCallerIDAnnotation": {
+        "id": 5051,
+        "level": "Fatal",
+        "message": "CallerID.getCallerID() requires a HasCallerID annotation"
+    },
+    "UnableToResolveInterface": {
+        "id": 5052,
+        "level": "Fatal",
+        "message": "Unable to resolve interface '{0}' on type '{1}'"
+    },
+    "MissingBaseType": {
+        "id": 5053,
+        "level": "Fatal",
+        "message": "The base class or interface '{0}' in assembly '{1}' referenced by type '{2}' in '{3}' could not be resolved"
+    },
+    "MissingBaseTypeReference": {
+        "id": 5054,
+        "level": "Fatal",
+        "message": "The type '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'"
+    },
+    "FileNotFound": {
+        "id": 5055,
+        "level": "Fatal",
+        "message": "File not found: {0}"
+    },
+    "RuntimeMethodMissing": {
+        "id": 5056,
+        "level": "Fatal",
+        "message": "Runtime method '{0}' not found"
+    },
+    "MapFileFieldNotFound": {
+        "id": 5057,
+        "level": "Fatal",
+        "message": "Field '{0}' referenced in remap file was not found in class '{1}'"
+    },
+    "GhostInterfaceMethodMissing": {
+        "id": 5058,
+        "level": "Fatal",
+        "message": "Remapped class '{0}' does not implement ghost interface method\n\t({1}.{2}{3})"
+    },
+    "ModuleInitializerMethodRequirements": {
+        "id": 5059,
+        "level": "Fatal",
+        "message": "Method '{1}.{2}{3}' does not meet the requirements of a module initializer."
+    }
+}

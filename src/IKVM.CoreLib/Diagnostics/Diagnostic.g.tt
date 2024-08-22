@@ -1,0 +1,63 @@
+﻿<#@ template debug="false" hostspecific="true" language="C#" #>
+<#@ include file="Diagnostic.t4" #>
+<#@ assembly name="System.CodeDom" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="Newtonsoft.Json" #>
+<#@ import namespace="System.CodeDom" #>
+<#@ import namespace="System.CodeDom.Compiler" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="Newtonsoft.Json" #>
+<#@ import namespace="Newtonsoft.Json.Linq" #>
+<#@ output extension=".cs" #>
+using System.Text;
+
+namespace IKVM.CoreLib.Diagnostics
+{
+
+    partial record class Diagnostic
+    {
+
+<#
+foreach (var i in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnostic.json"))))
+{
+    var desc = i.Value.Description;
+    if (string.IsNullOrWhiteSpace(desc))
+        desc = $"The '{i.Key}' diagnostic.";
+
+    var message = i.Value.Message;
+    if (string.IsNullOrWhiteSpace(message))
+        message = "";
+
+#>
+        /// <summary>
+        /// <#= desc #>
+        /// </summary>
+#if NET8_0_OR_GREATER
+        public static readonly Diagnostic <#= i.Key #> = new Diagnostic(new DiagnosticId(<#= i.Value.Id #>), nameof(<#= i.Key #>), CompositeFormat.Parse(<#= ToLiteral(message) #>), DiagnosticLevel.<#= i.Value.Level #>);
+#else
+        public static readonly Diagnostic <#= i.Key #> = new Diagnostic(new DiagnosticId(<#= i.Value.Id #>), nameof(<#= i.Key #>), <#= ToLiteral(message) #>, DiagnosticLevel.<#= i.Value.Level #>);
+#endif
+
+<#
+}
+#>
+    }
+
+}
+<#+
+
+static string ToLiteral(string input)
+{
+    using (var writer = new StringWriter())
+    {
+        using (var provider = CodeDomProvider.CreateProvider("CSharp"))
+        {
+            provider.GenerateCodeFromExpression(new CodePrimitiveExpression(input), writer, null);
+            return writer.ToString();
+        }
+    }
+}
+
+#>
