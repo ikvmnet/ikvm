@@ -1,4 +1,6 @@
-﻿using IKVM.CoreLib.Diagnostics;
+﻿using System.Diagnostics;
+
+using IKVM.CoreLib.Diagnostics;
 
 namespace IKVM.Runtime
 {
@@ -19,6 +21,7 @@ namespace IKVM.Runtime
                 switch (evnt.Diagnostic.Level)
                 {
                     case DiagnosticLevel.Trace:
+                        DiagnosticSource.Write()
                         break;
                     case DiagnosticLevel.Informational:
                         break;
@@ -37,6 +40,11 @@ namespace IKVM.Runtime
         /// Gets the JVM diagnostic handler.
         /// </summary>
         static IDiagnosticHandler Diagnostics { get; } = new DiagnosticHandler();
+
+        /// <summary>
+        /// Source of diagnostics for the IKVM runtime.
+        /// </summary>
+        static DiagnosticSource DiagnosticSource { get; } = new DiagnosticListener("IKVM.Runtime");
 
     }
 

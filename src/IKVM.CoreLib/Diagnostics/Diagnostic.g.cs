@@ -3,6 +3,11 @@
 namespace IKVM.CoreLib.Diagnostics
 {
 
+    readonly record struct MainMethodFoundData()
+    {
+    
+    }
+
     partial record class Diagnostic
     {
 
@@ -15,6 +20,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic MainMethodFound = new Diagnostic(new DiagnosticId(1), nameof(MainMethodFound), "Found main method in class \"{0}\"", DiagnosticLevel.Informational);
 #endif
 
+    }
+
+    readonly record struct OutputFileIsData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'OutputFileIs' diagnostic.
         /// </summary>
@@ -23,6 +38,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic OutputFileIs = new Diagnostic(new DiagnosticId(2), nameof(OutputFileIs), "Output file is \"{0}\"", DiagnosticLevel.Informational);
 #endif
+
+    }
+
+    readonly record struct AutoAddRefData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'AutoAddRef' diagnostic.
@@ -33,6 +58,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic AutoAddRef = new Diagnostic(new DiagnosticId(3), nameof(AutoAddRef), "Automatically adding reference to \"{0}\"", DiagnosticLevel.Informational);
 #endif
 
+    }
+
+    readonly record struct MainMethodFromManifestData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'MainMethodFromManifest' diagnostic.
         /// </summary>
@@ -41,6 +76,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic MainMethodFromManifest = new Diagnostic(new DiagnosticId(4), nameof(MainMethodFromManifest), "Using main class \"{0}\" based on jar manifest", DiagnosticLevel.Informational);
 #endif
+
+    }
+
+    readonly record struct GenericCompilerInfoData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'GenericCompilerInfo' diagnostic.
@@ -51,6 +96,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic GenericCompilerInfo = new Diagnostic(new DiagnosticId(5), nameof(GenericCompilerInfo), "{0}", DiagnosticLevel.Informational);
 #endif
 
+    }
+
+    readonly record struct GenericClassLoadingInfoData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'GenericClassLoadingInfo' diagnostic.
         /// </summary>
@@ -59,6 +114,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic GenericClassLoadingInfo = new Diagnostic(new DiagnosticId(6), nameof(GenericClassLoadingInfo), "{0}", DiagnosticLevel.Informational);
 #endif
+
+    }
+
+    readonly record struct GenericVerifierInfoData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'GenericVerifierInfo' diagnostic.
@@ -69,6 +134,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic GenericVerifierInfo = new Diagnostic(new DiagnosticId(6), nameof(GenericVerifierInfo), "{0}", DiagnosticLevel.Informational);
 #endif
 
+    }
+
+    readonly record struct GenericRuntimeInfoData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'GenericRuntimeInfo' diagnostic.
         /// </summary>
@@ -77,6 +152,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic GenericRuntimeInfo = new Diagnostic(new DiagnosticId(7), nameof(GenericRuntimeInfo), "{0}", DiagnosticLevel.Informational);
 #endif
+
+    }
+
+    readonly record struct GenericJniInfoData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'GenericJniInfo' diagnostic.
@@ -87,6 +172,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic GenericJniInfo = new Diagnostic(new DiagnosticId(6), nameof(GenericJniInfo), "{0}", DiagnosticLevel.Informational);
 #endif
 
+    }
+
+    readonly record struct ClassNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'ClassNotFound' diagnostic.
         /// </summary>
@@ -95,6 +190,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic ClassNotFound = new Diagnostic(new DiagnosticId(100), nameof(ClassNotFound), "Class \"{0}\" not found", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct ClassFormatErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'ClassFormatError' diagnostic.
@@ -105,6 +210,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic ClassFormatError = new Diagnostic(new DiagnosticId(101), nameof(ClassFormatError), "Unable to compile class \"{0}\" \n    (class format error \"{1}\")", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct DuplicateClassNameData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'DuplicateClassName' diagnostic.
         /// </summary>
@@ -113,6 +228,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic DuplicateClassName = new Diagnostic(new DiagnosticId(102), nameof(DuplicateClassName), "Duplicate class name: \"{0}\"", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct IllegalAccessErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'IllegalAccessError' diagnostic.
@@ -123,6 +248,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic IllegalAccessError = new Diagnostic(new DiagnosticId(103), nameof(IllegalAccessError), "Unable to compile class \"{0}\" \n    (illegal access error \"{1}\")", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct VerificationErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'VerificationError' diagnostic.
         /// </summary>
@@ -131,6 +266,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic VerificationError = new Diagnostic(new DiagnosticId(104), nameof(VerificationError), "Unable to compile class \"{0}\" \n    (verification error \"{1}\")", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct NoClassDefFoundErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'NoClassDefFoundError' diagnostic.
@@ -141,6 +286,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic NoClassDefFoundError = new Diagnostic(new DiagnosticId(105), nameof(NoClassDefFoundError), "Unable to compile class \"{0}\" \n    (missing class \"{1}\")", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct GenericUnableToCompileErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'GenericUnableToCompileError' diagnostic.
         /// </summary>
@@ -150,6 +305,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic GenericUnableToCompileError = new Diagnostic(new DiagnosticId(106), nameof(GenericUnableToCompileError), "Unable to compile class \"{0}\" \n    (\"{1}\": \"{2}\")", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct DuplicateResourceNameData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'DuplicateResourceName' diagnostic.
         /// </summary>
@@ -158,6 +323,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic DuplicateResourceName = new Diagnostic(new DiagnosticId(107), nameof(DuplicateResourceName), "Skipping resource (name clash): \"{0}\"", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct SkippingReferencedClassData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'SkippingReferencedClass' diagnostic.
@@ -170,6 +345,16 @@ namespace IKVM.CoreLib.Diagnostics
     "\")", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct NoJniRuntimeData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'NoJniRuntime' diagnostic.
         /// </summary>
@@ -178,6 +363,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic NoJniRuntime = new Diagnostic(new DiagnosticId(110), nameof(NoJniRuntime), "Unable to load runtime JNI assembly", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct EmittedNoClassDefFoundErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'EmittedNoClassDefFoundError' diagnostic.
@@ -188,6 +383,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic EmittedNoClassDefFoundError = new Diagnostic(new DiagnosticId(111), nameof(EmittedNoClassDefFoundError), "Emitted java.lang.NoClassDefFoundError in \"{0}\"\n    (\"{1}\")", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct EmittedIllegalAccessErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'EmittedIllegalAccessError' diagnostic.
         /// </summary>
@@ -196,6 +401,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic EmittedIllegalAccessError = new Diagnostic(new DiagnosticId(112), nameof(EmittedIllegalAccessError), "Emitted java.lang.IllegalAccessError in \"{0}\"\n    (\"{1}\")", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct EmittedInstantiationErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'EmittedInstantiationError' diagnostic.
@@ -206,6 +421,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic EmittedInstantiationError = new Diagnostic(new DiagnosticId(113), nameof(EmittedInstantiationError), "Emitted java.lang.InstantiationError in \"{0}\"\n    (\"{1}\")", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct EmittedIncompatibleClassChangeErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'EmittedIncompatibleClassChangeError' diagnostic.
         /// </summary>
@@ -214,6 +439,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic EmittedIncompatibleClassChangeError = new Diagnostic(new DiagnosticId(114), nameof(EmittedIncompatibleClassChangeError), "Emitted java.lang.IncompatibleClassChangeError in \"{0}\"\n    (\"{1}\")", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct EmittedNoSuchFieldErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'EmittedNoSuchFieldError' diagnostic.
@@ -224,6 +459,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic EmittedNoSuchFieldError = new Diagnostic(new DiagnosticId(115), nameof(EmittedNoSuchFieldError), "Emitted java.lang.NoSuchFieldError in \"{0}\"\n    (\"{1}\")", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct EmittedAbstractMethodErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'EmittedAbstractMethodError' diagnostic.
         /// </summary>
@@ -232,6 +477,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic EmittedAbstractMethodError = new Diagnostic(new DiagnosticId(116), nameof(EmittedAbstractMethodError), "Emitted java.lang.AbstractMethodError in \"{0}\"\n    (\"{1}\")", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct EmittedNoSuchMethodErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'EmittedNoSuchMethodError' diagnostic.
@@ -242,6 +497,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic EmittedNoSuchMethodError = new Diagnostic(new DiagnosticId(117), nameof(EmittedNoSuchMethodError), "Emitted java.lang.NoSuchMethodError in \"{0}\"\n    (\"{1}\")", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct EmittedLinkageErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'EmittedLinkageError' diagnostic.
         /// </summary>
@@ -250,6 +515,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic EmittedLinkageError = new Diagnostic(new DiagnosticId(118), nameof(EmittedLinkageError), "Emitted java.lang.LinkageError in \"{0}\"\n    (\"{1}\")", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct EmittedVerificationErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'EmittedVerificationError' diagnostic.
@@ -260,6 +535,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic EmittedVerificationError = new Diagnostic(new DiagnosticId(119), nameof(EmittedVerificationError), "Emitted java.lang.VerificationError in \"{0}\"\n    (\"{1}\")", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct EmittedClassFormatErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'EmittedClassFormatError' diagnostic.
         /// </summary>
@@ -268,6 +553,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic EmittedClassFormatError = new Diagnostic(new DiagnosticId(120), nameof(EmittedClassFormatError), "Emitted java.lang.ClassFormatError in \"{0}\"\n    (\"{1}\")", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct InvalidCustomAttributeData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'InvalidCustomAttribute' diagnostic.
@@ -278,6 +573,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic InvalidCustomAttribute = new Diagnostic(new DiagnosticId(121), nameof(InvalidCustomAttribute), "Error emitting \"{0}\" custom attribute\n    (\"{1}\")", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct IgnoredCustomAttributeData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'IgnoredCustomAttribute' diagnostic.
         /// </summary>
@@ -286,6 +591,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic IgnoredCustomAttribute = new Diagnostic(new DiagnosticId(122), nameof(IgnoredCustomAttribute), "Custom attribute \"{0}\" was ignored\n    (\"{1}\")", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct AssumeAssemblyVersionMatchData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'AssumeAssemblyVersionMatch' diagnostic.
@@ -298,6 +613,16 @@ namespace IKVM.CoreLib.Diagnostics
     "olicy", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct InvalidDirectoryInLibOptionPathData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'InvalidDirectoryInLibOptionPath' diagnostic.
         /// </summary>
@@ -307,6 +632,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic InvalidDirectoryInLibOptionPath = new Diagnostic(new DiagnosticId(124), nameof(InvalidDirectoryInLibOptionPath), "Directory \"{0}\" specified in -lib option is not valid", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct InvalidDirectoryInLibEnvironmentPathData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'InvalidDirectoryInLibEnvironmentPath' diagnostic.
         /// </summary>
@@ -315,6 +650,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic InvalidDirectoryInLibEnvironmentPath = new Diagnostic(new DiagnosticId(125), nameof(InvalidDirectoryInLibEnvironmentPath), "Directory \"{0}\" specified in LIB environment is not valid", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct LegacySearchRuleData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'LegacySearchRule' diagnostic.
@@ -327,6 +672,16 @@ namespace IKVM.CoreLib.Diagnostics
     "nce", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct AssemblyLocationIgnoredData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'AssemblyLocationIgnored' diagnostic.
         /// </summary>
@@ -338,6 +693,16 @@ namespace IKVM.CoreLib.Diagnostics
     "ty \"{2}\"", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct InterfaceMethodCantBeInternalData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'InterfaceMethodCantBeInternal' diagnostic.
         /// </summary>
@@ -347,6 +712,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic InterfaceMethodCantBeInternal = new Diagnostic(new DiagnosticId(128), nameof(InterfaceMethodCantBeInternal), "Ignoring @ikvm.lang.Internal annotation on interface method\n    (\"{0}.{1}{2}\")", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct DuplicateAssemblyReferenceData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'DuplicateAssemblyReference' diagnostic.
         /// </summary>
@@ -355,6 +730,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic DuplicateAssemblyReference = new Diagnostic(new DiagnosticId(132), nameof(DuplicateAssemblyReference), "Duplicate assembly reference \"{0}\"", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct UnableToResolveTypeData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'UnableToResolveType' diagnostic.
@@ -367,6 +752,16 @@ namespace IKVM.CoreLib.Diagnostics
     "be found", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct StubsAreDeprecatedData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'StubsAreDeprecated' diagnostic.
         /// </summary>
@@ -375,6 +770,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic StubsAreDeprecated = new Diagnostic(new DiagnosticId(134), nameof(StubsAreDeprecated), "Compiling stubs is deprecated. Please add a reference to assembly \"{0}\" instead.", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct WrongClassNameData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'WrongClassName' diagnostic.
@@ -385,6 +790,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic WrongClassName = new Diagnostic(new DiagnosticId(135), nameof(WrongClassName), "Unable to compile \"{0}\" (wrong name: \"{1}\")", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct ReflectionCallerClassRequiresCallerIDData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'ReflectionCallerClassRequiresCallerID' diagnostic.
         /// </summary>
@@ -393,6 +808,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic ReflectionCallerClassRequiresCallerID = new Diagnostic(new DiagnosticId(136), nameof(ReflectionCallerClassRequiresCallerID), "Reflection.getCallerClass() called from non-CallerID method\n    (\"{0}.{1}{2}\")", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct LegacyAssemblyAttributesFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'LegacyAssemblyAttributesFound' diagnostic.
@@ -405,6 +830,16 @@ namespace IKVM.CoreLib.Diagnostics
     "ile> option.", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct UnableToCreateLambdaFactoryData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'UnableToCreateLambdaFactory' diagnostic.
         /// </summary>
@@ -413,6 +848,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic UnableToCreateLambdaFactory = new Diagnostic(new DiagnosticId(138), nameof(UnableToCreateLambdaFactory), "Unable to create static lambda factory.", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct UnknownWarningData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'UnknownWarning' diagnostic.
@@ -423,6 +868,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic UnknownWarning = new Diagnostic(new DiagnosticId(999), nameof(UnknownWarning), "{0}", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct DuplicateIkvmLangPropertyData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'DuplicateIkvmLangProperty' diagnostic.
         /// </summary>
@@ -431,6 +886,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic DuplicateIkvmLangProperty = new Diagnostic(new DiagnosticId(139), nameof(DuplicateIkvmLangProperty), "Ignoring duplicate ikvm.lang.Property annotation on {0}.{1}", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct MalformedIkvmLangPropertyData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'MalformedIkvmLangProperty' diagnostic.
@@ -441,6 +906,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic MalformedIkvmLangProperty = new Diagnostic(new DiagnosticId(140), nameof(MalformedIkvmLangProperty), "Ignoring duplicate ikvm.lang.Property annotation on {0}.{1}", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct GenericCompilerWarningData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'GenericCompilerWarning' diagnostic.
         /// </summary>
@@ -449,6 +924,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic GenericCompilerWarning = new Diagnostic(new DiagnosticId(5), nameof(GenericCompilerWarning), "{0}", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct GenericClassLoadingWarningData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'GenericClassLoadingWarning' diagnostic.
@@ -459,6 +944,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic GenericClassLoadingWarning = new Diagnostic(new DiagnosticId(6), nameof(GenericClassLoadingWarning), "{0}", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct GenericVerifierWarningData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'GenericVerifierWarning' diagnostic.
         /// </summary>
@@ -467,6 +962,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic GenericVerifierWarning = new Diagnostic(new DiagnosticId(6), nameof(GenericVerifierWarning), "{0}", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct GenericRuntimeWarningData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'GenericRuntimeWarning' diagnostic.
@@ -477,6 +982,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic GenericRuntimeWarning = new Diagnostic(new DiagnosticId(7), nameof(GenericRuntimeWarning), "{0}", DiagnosticLevel.Warning);
 #endif
 
+    }
+
+    readonly record struct GenericJniWarningData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'GenericJniWarning' diagnostic.
         /// </summary>
@@ -485,6 +1000,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic GenericJniWarning = new Diagnostic(new DiagnosticId(6), nameof(GenericJniWarning), "{0}", DiagnosticLevel.Warning);
 #endif
+
+    }
+
+    readonly record struct UnableToCreateProxyData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'UnableToCreateProxy' diagnostic.
@@ -495,6 +1020,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic UnableToCreateProxy = new Diagnostic(new DiagnosticId(4001), nameof(UnableToCreateProxy), "Unable to create proxy \"{0}\"\n    (\"{1}\")", DiagnosticLevel.Error);
 #endif
 
+    }
+
+    readonly record struct DuplicateProxyData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'DuplicateProxy' diagnostic.
         /// </summary>
@@ -503,6 +1038,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic DuplicateProxy = new Diagnostic(new DiagnosticId(4002), nameof(DuplicateProxy), "Duplicate proxy \"{0}\"", DiagnosticLevel.Error);
 #endif
+
+    }
+
+    readonly record struct MapXmlUnableToResolveOpCodeData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'MapXmlUnableToResolveOpCode' diagnostic.
@@ -513,6 +1058,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic MapXmlUnableToResolveOpCode = new Diagnostic(new DiagnosticId(4003), nameof(MapXmlUnableToResolveOpCode), "Unable to resolve opcode in remap file: {0}", DiagnosticLevel.Error);
 #endif
 
+    }
+
+    readonly record struct MapXmlErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'MapXmlError' diagnostic.
         /// </summary>
@@ -521,6 +1076,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic MapXmlError = new Diagnostic(new DiagnosticId(4004), nameof(MapXmlError), "Error in remap file: {0}", DiagnosticLevel.Error);
 #endif
+
+    }
+
+    readonly record struct InputFileNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'InputFileNotFound' diagnostic.
@@ -531,6 +1096,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic InputFileNotFound = new Diagnostic(new DiagnosticId(4005), nameof(InputFileNotFound), "Source file \'{0}\' not found", DiagnosticLevel.Error);
 #endif
 
+    }
+
+    readonly record struct UnknownFileTypeData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'UnknownFileType' diagnostic.
         /// </summary>
@@ -539,6 +1114,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic UnknownFileType = new Diagnostic(new DiagnosticId(4006), nameof(UnknownFileType), "Unknown file type: {0}", DiagnosticLevel.Error);
 #endif
+
+    }
+
+    readonly record struct UnknownElementInMapFileData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'UnknownElementInMapFile' diagnostic.
@@ -549,6 +1134,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic UnknownElementInMapFile = new Diagnostic(new DiagnosticId(4007), nameof(UnknownElementInMapFile), "Unknown element {0} in remap file, line {1}, column {2}", DiagnosticLevel.Error);
 #endif
 
+    }
+
+    readonly record struct UnknownAttributeInMapFileData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'UnknownAttributeInMapFile' diagnostic.
         /// </summary>
@@ -557,6 +1152,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic UnknownAttributeInMapFile = new Diagnostic(new DiagnosticId(4008), nameof(UnknownAttributeInMapFile), "Unknown attribute {0} in remap file, line {1}, column {2}", DiagnosticLevel.Error);
 #endif
+
+    }
+
+    readonly record struct InvalidMemberNameInMapFileData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'InvalidMemberNameInMapFile' diagnostic.
@@ -567,6 +1172,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic InvalidMemberNameInMapFile = new Diagnostic(new DiagnosticId(4009), nameof(InvalidMemberNameInMapFile), "Invalid {0} name \'{1}\' in remap file in class {2}", DiagnosticLevel.Error);
 #endif
 
+    }
+
+    readonly record struct InvalidMemberSignatureInMapFileData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'InvalidMemberSignatureInMapFile' diagnostic.
         /// </summary>
@@ -575,6 +1190,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic InvalidMemberSignatureInMapFile = new Diagnostic(new DiagnosticId(4010), nameof(InvalidMemberSignatureInMapFile), "Invalid {0} signature \'{3}\' in remap file for {0} {1}.{2}", DiagnosticLevel.Error);
 #endif
+
+    }
+
+    readonly record struct InvalidPropertyNameInMapFileData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'InvalidPropertyNameInMapFile' diagnostic.
@@ -585,6 +1210,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic InvalidPropertyNameInMapFile = new Diagnostic(new DiagnosticId(4011), nameof(InvalidPropertyNameInMapFile), "Invalid property {0} name \'{3}\' in remap file for property {1}.{2}", DiagnosticLevel.Error);
 #endif
 
+    }
+
+    readonly record struct InvalidPropertySignatureInMapFileData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'InvalidPropertySignatureInMapFile' diagnostic.
         /// </summary>
@@ -593,6 +1228,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic InvalidPropertySignatureInMapFile = new Diagnostic(new DiagnosticId(4012), nameof(InvalidPropertySignatureInMapFile), "Invalid property {0} signature \'{3}\' in remap file for property {1}.{2}", DiagnosticLevel.Error);
 #endif
+
+    }
+
+    readonly record struct NonPrimaryAssemblyReferenceData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'NonPrimaryAssemblyReference' diagnostic.
@@ -605,6 +1250,16 @@ namespace IKVM.CoreLib.Diagnostics
     "oup, please reference primary assembly \"{1}\" instead", DiagnosticLevel.Error);
 #endif
 
+    }
+
+    readonly record struct MissingTypeData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'MissingType' diagnostic.
         /// </summary>
@@ -613,6 +1268,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic MissingType = new Diagnostic(new DiagnosticId(4014), nameof(MissingType), "Reference to type \"{0}\" claims it is defined in \"{1}\", but it could not be found", DiagnosticLevel.Error);
 #endif
+
+    }
+
+    readonly record struct MissingReferenceData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'MissingReference' diagnostic.
@@ -625,6 +1290,16 @@ namespace IKVM.CoreLib.Diagnostics
     "erenced. You must add a reference to assembly \'{1}\'", DiagnosticLevel.Error);
 #endif
 
+    }
+
+    readonly record struct CallerSensitiveOnUnsupportedMethodData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'CallerSensitiveOnUnsupportedMethod' diagnostic.
         /// </summary>
@@ -633,6 +1308,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic CallerSensitiveOnUnsupportedMethod = new Diagnostic(new DiagnosticId(4016), nameof(CallerSensitiveOnUnsupportedMethod), "CallerSensitive annotation on unsupported method\n    (\"{0}.{1}{2}\")", DiagnosticLevel.Error);
 #endif
+
+    }
+
+    readonly record struct RemappedTypeMissingDefaultInterfaceMethodData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'RemappedTypeMissingDefaultInterfaceMethod' diagnostic.
@@ -643,6 +1328,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic RemappedTypeMissingDefaultInterfaceMethod = new Diagnostic(new DiagnosticId(4017), nameof(RemappedTypeMissingDefaultInterfaceMethod), "{0} does not implement default interface method {1}", DiagnosticLevel.Error);
 #endif
 
+    }
+
+    readonly record struct GenericCompilerErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'GenericCompilerError' diagnostic.
         /// </summary>
@@ -651,6 +1346,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic GenericCompilerError = new Diagnostic(new DiagnosticId(4018), nameof(GenericCompilerError), "{0}", DiagnosticLevel.Error);
 #endif
+
+    }
+
+    readonly record struct GenericClassLoadingErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'GenericClassLoadingError' diagnostic.
@@ -661,6 +1366,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic GenericClassLoadingError = new Diagnostic(new DiagnosticId(4019), nameof(GenericClassLoadingError), "{0}", DiagnosticLevel.Error);
 #endif
 
+    }
+
+    readonly record struct GenericVerifierErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'GenericVerifierError' diagnostic.
         /// </summary>
@@ -669,6 +1384,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic GenericVerifierError = new Diagnostic(new DiagnosticId(4020), nameof(GenericVerifierError), "{0}", DiagnosticLevel.Error);
 #endif
+
+    }
+
+    readonly record struct GenericRuntimeErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'GenericRuntimeError' diagnostic.
@@ -679,6 +1404,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic GenericRuntimeError = new Diagnostic(new DiagnosticId(4021), nameof(GenericRuntimeError), "{0}", DiagnosticLevel.Error);
 #endif
 
+    }
+
+    readonly record struct GenericJniErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'GenericJniError' diagnostic.
         /// </summary>
@@ -687,6 +1422,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic GenericJniError = new Diagnostic(new DiagnosticId(4022), nameof(GenericJniError), "{0}", DiagnosticLevel.Error);
 #endif
+
+    }
+
+    readonly record struct ResponseFileDepthExceededData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'ResponseFileDepthExceeded' diagnostic.
@@ -697,6 +1442,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic ResponseFileDepthExceeded = new Diagnostic(new DiagnosticId(5000), nameof(ResponseFileDepthExceeded), "Response file nesting depth exceeded", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct ErrorReadingFileData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'ErrorReadingFile' diagnostic.
         /// </summary>
@@ -705,6 +1460,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic ErrorReadingFile = new Diagnostic(new DiagnosticId(5001), nameof(ErrorReadingFile), "Unable to read file: {0}\n\t({1})", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct NoTargetsFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'NoTargetsFound' diagnostic.
@@ -715,6 +1480,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic NoTargetsFound = new Diagnostic(new DiagnosticId(5002), nameof(NoTargetsFound), "No targets found", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct FileFormatLimitationExceededData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'FileFormatLimitationExceeded' diagnostic.
         /// </summary>
@@ -723,6 +1498,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic FileFormatLimitationExceeded = new Diagnostic(new DiagnosticId(5003), nameof(FileFormatLimitationExceeded), "File format limitation exceeded: {0}", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct CannotSpecifyBothKeyFileAndContainerData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'CannotSpecifyBothKeyFileAndContainer' diagnostic.
@@ -733,6 +1518,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic CannotSpecifyBothKeyFileAndContainer = new Diagnostic(new DiagnosticId(5004), nameof(CannotSpecifyBothKeyFileAndContainer), "You cannot specify both a key file and container", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct DelaySignRequiresKeyData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'DelaySignRequiresKey' diagnostic.
         /// </summary>
@@ -741,6 +1536,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic DelaySignRequiresKey = new Diagnostic(new DiagnosticId(5005), nameof(DelaySignRequiresKey), "You cannot delay sign without a key file or container", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct InvalidStrongNameKeyPairData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'InvalidStrongNameKeyPair' diagnostic.
@@ -751,6 +1556,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic InvalidStrongNameKeyPair = new Diagnostic(new DiagnosticId(5006), nameof(InvalidStrongNameKeyPair), "Invalid key {0} specified.\n\t(\"{1}\")", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct ReferenceNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'ReferenceNotFound' diagnostic.
         /// </summary>
@@ -759,6 +1574,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic ReferenceNotFound = new Diagnostic(new DiagnosticId(5007), nameof(ReferenceNotFound), "Reference not found: {0}", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct OptionsMustPreceedChildLevelsData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'OptionsMustPreceedChildLevels' diagnostic.
@@ -769,6 +1594,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic OptionsMustPreceedChildLevels = new Diagnostic(new DiagnosticId(5008), nameof(OptionsMustPreceedChildLevels), "You can only specify options before any child levels", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct UnrecognizedTargetTypeData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'UnrecognizedTargetType' diagnostic.
         /// </summary>
@@ -777,6 +1612,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic UnrecognizedTargetType = new Diagnostic(new DiagnosticId(5009), nameof(UnrecognizedTargetType), "Invalid value \'{0}\' for -target option", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct UnrecognizedPlatformData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'UnrecognizedPlatform' diagnostic.
@@ -787,6 +1632,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic UnrecognizedPlatform = new Diagnostic(new DiagnosticId(5010), nameof(UnrecognizedPlatform), "Invalid value \'{0}\' for -platform option", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct UnrecognizedApartmentData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'UnrecognizedApartment' diagnostic.
         /// </summary>
@@ -795,6 +1650,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic UnrecognizedApartment = new Diagnostic(new DiagnosticId(5011), nameof(UnrecognizedApartment), "Invalid value \'{0}\' for -apartment option", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct MissingFileSpecificationData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'MissingFileSpecification' diagnostic.
@@ -805,6 +1670,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic MissingFileSpecification = new Diagnostic(new DiagnosticId(5012), nameof(MissingFileSpecification), "Missing file specification for \'{0}\' option", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct PathTooLongData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'PathTooLong' diagnostic.
         /// </summary>
@@ -813,6 +1688,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic PathTooLong = new Diagnostic(new DiagnosticId(5013), nameof(PathTooLong), "Path too long: {0}", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct PathNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'PathNotFound' diagnostic.
@@ -823,6 +1708,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic PathNotFound = new Diagnostic(new DiagnosticId(5014), nameof(PathNotFound), "Path not found: {0}", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct InvalidPathData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'InvalidPath' diagnostic.
         /// </summary>
@@ -831,6 +1726,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic InvalidPath = new Diagnostic(new DiagnosticId(5015), nameof(InvalidPath), "Invalid path: {0}", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct InvalidOptionSyntaxData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'InvalidOptionSyntax' diagnostic.
@@ -841,6 +1746,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic InvalidOptionSyntax = new Diagnostic(new DiagnosticId(5016), nameof(InvalidOptionSyntax), "Invalid option: {0}", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct ExternalResourceNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'ExternalResourceNotFound' diagnostic.
         /// </summary>
@@ -849,6 +1764,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic ExternalResourceNotFound = new Diagnostic(new DiagnosticId(5017), nameof(ExternalResourceNotFound), "External resource file does not exist: {0}", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct ExternalResourceNameInvalidData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'ExternalResourceNameInvalid' diagnostic.
@@ -859,6 +1784,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic ExternalResourceNameInvalid = new Diagnostic(new DiagnosticId(5018), nameof(ExternalResourceNameInvalid), "External resource file may not include path specification: {0}", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct InvalidVersionFormatData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'InvalidVersionFormat' diagnostic.
         /// </summary>
@@ -867,6 +1802,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic InvalidVersionFormat = new Diagnostic(new DiagnosticId(5019), nameof(InvalidVersionFormat), "Invalid version specified: {0}", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct InvalidFileAlignmentData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'InvalidFileAlignment' diagnostic.
@@ -877,6 +1822,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic InvalidFileAlignment = new Diagnostic(new DiagnosticId(5020), nameof(InvalidFileAlignment), "Invalid value \'{0}\' for -filealign option", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct ErrorWritingFileData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'ErrorWritingFile' diagnostic.
         /// </summary>
@@ -885,6 +1840,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic ErrorWritingFile = new Diagnostic(new DiagnosticId(5021), nameof(ErrorWritingFile), "Unable to write file: {0}\n\t({1})", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct UnrecognizedOptionData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'UnrecognizedOption' diagnostic.
@@ -895,6 +1860,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic UnrecognizedOption = new Diagnostic(new DiagnosticId(5022), nameof(UnrecognizedOption), "Unrecognized option: {0}", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct NoOutputFileSpecifiedData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'NoOutputFileSpecified' diagnostic.
         /// </summary>
@@ -903,6 +1878,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic NoOutputFileSpecified = new Diagnostic(new DiagnosticId(5023), nameof(NoOutputFileSpecified), "No output file specified", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct SharedClassLoaderCannotBeUsedOnModuleTargetData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'SharedClassLoaderCannotBeUsedOnModuleTarget' diagnostic.
@@ -913,6 +1898,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic SharedClassLoaderCannotBeUsedOnModuleTarget = new Diagnostic(new DiagnosticId(5024), nameof(SharedClassLoaderCannotBeUsedOnModuleTarget), "Incompatible options: -target:module and -sharedclassloader cannot be combined", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct RuntimeNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'RuntimeNotFound' diagnostic.
         /// </summary>
@@ -921,6 +1916,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic RuntimeNotFound = new Diagnostic(new DiagnosticId(5025), nameof(RuntimeNotFound), "Unable to load runtime assembly", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct MainClassRequiresExeData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'MainClassRequiresExe' diagnostic.
@@ -931,6 +1936,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic MainClassRequiresExe = new Diagnostic(new DiagnosticId(5026), nameof(MainClassRequiresExe), "Main class cannot be specified for library or module", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct ExeRequiresMainClassData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'ExeRequiresMainClass' diagnostic.
         /// </summary>
@@ -939,6 +1954,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic ExeRequiresMainClass = new Diagnostic(new DiagnosticId(5027), nameof(ExeRequiresMainClass), "No main method found", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct PropertiesRequireExeData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'PropertiesRequireExe' diagnostic.
@@ -949,6 +1974,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic PropertiesRequireExe = new Diagnostic(new DiagnosticId(5028), nameof(PropertiesRequireExe), "Properties cannot be specified for library or module", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct ModuleCannotHaveClassLoaderData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'ModuleCannotHaveClassLoader' diagnostic.
         /// </summary>
@@ -957,6 +1992,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic ModuleCannotHaveClassLoader = new Diagnostic(new DiagnosticId(5029), nameof(ModuleCannotHaveClassLoader), "Cannot specify assembly class loader for modules", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct ErrorParsingMapFileData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'ErrorParsingMapFile' diagnostic.
@@ -967,6 +2012,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic ErrorParsingMapFile = new Diagnostic(new DiagnosticId(5030), nameof(ErrorParsingMapFile), "Unable to parse remap file: {0}\n\t({1})", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct BootstrapClassesMissingData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'BootstrapClassesMissing' diagnostic.
         /// </summary>
@@ -975,6 +2030,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic BootstrapClassesMissing = new Diagnostic(new DiagnosticId(5031), nameof(BootstrapClassesMissing), "Bootstrap classes missing and core assembly not found", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct StrongNameRequiresStrongNamedRefsData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'StrongNameRequiresStrongNamedRefs' diagnostic.
@@ -987,6 +2052,16 @@ namespace IKVM.CoreLib.Diagnostics
     "embly", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct MainClassNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'MainClassNotFound' diagnostic.
         /// </summary>
@@ -995,6 +2070,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic MainClassNotFound = new Diagnostic(new DiagnosticId(5033), nameof(MainClassNotFound), "Main class not found", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct MainMethodNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'MainMethodNotFound' diagnostic.
@@ -1005,6 +2090,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic MainMethodNotFound = new Diagnostic(new DiagnosticId(5034), nameof(MainMethodNotFound), "Main method not found", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct UnsupportedMainMethodData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'UnsupportedMainMethod' diagnostic.
         /// </summary>
@@ -1013,6 +2108,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic UnsupportedMainMethod = new Diagnostic(new DiagnosticId(5035), nameof(UnsupportedMainMethod), "Redirected main method not supported", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct ExternalMainNotAccessibleData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'ExternalMainNotAccessible' diagnostic.
@@ -1023,6 +2128,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic ExternalMainNotAccessible = new Diagnostic(new DiagnosticId(5036), nameof(ExternalMainNotAccessible), "External main method must be public and in a public class", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct ClassLoaderNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'ClassLoaderNotFound' diagnostic.
         /// </summary>
@@ -1031,6 +2146,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic ClassLoaderNotFound = new Diagnostic(new DiagnosticId(5037), nameof(ClassLoaderNotFound), "Custom assembly class loader class not found", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct ClassLoaderNotAccessibleData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'ClassLoaderNotAccessible' diagnostic.
@@ -1041,6 +2166,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic ClassLoaderNotAccessible = new Diagnostic(new DiagnosticId(5038), nameof(ClassLoaderNotAccessible), "Custom assembly class loader class is not accessible", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct ClassLoaderIsAbstractData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'ClassLoaderIsAbstract' diagnostic.
         /// </summary>
@@ -1049,6 +2184,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic ClassLoaderIsAbstract = new Diagnostic(new DiagnosticId(5039), nameof(ClassLoaderIsAbstract), "Custom assembly class loader class is abstract", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct ClassLoaderNotClassLoaderData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'ClassLoaderNotClassLoader' diagnostic.
@@ -1059,6 +2204,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic ClassLoaderNotClassLoader = new Diagnostic(new DiagnosticId(5040), nameof(ClassLoaderNotClassLoader), "Custom assembly class loader class does not extend java.lang.ClassLoader", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct ClassLoaderConstructorMissingData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'ClassLoaderConstructorMissing' diagnostic.
         /// </summary>
@@ -1067,6 +2222,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic ClassLoaderConstructorMissing = new Diagnostic(new DiagnosticId(5041), nameof(ClassLoaderConstructorMissing), "Custom assembly class loader constructor is missing", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct MapFileTypeNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'MapFileTypeNotFound' diagnostic.
@@ -1077,6 +2242,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic MapFileTypeNotFound = new Diagnostic(new DiagnosticId(5042), nameof(MapFileTypeNotFound), "Type \'{0}\' referenced in remap file was not found", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct MapFileClassNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'MapFileClassNotFound' diagnostic.
         /// </summary>
@@ -1085,6 +2260,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic MapFileClassNotFound = new Diagnostic(new DiagnosticId(5043), nameof(MapFileClassNotFound), "Class \'{0}\' referenced in remap file was not found", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct MaximumErrorCountReachedData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'MaximumErrorCountReached' diagnostic.
@@ -1095,6 +2280,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic MaximumErrorCountReached = new Diagnostic(new DiagnosticId(5044), nameof(MaximumErrorCountReached), "Maximum error count reached", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct LinkageErrorData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'LinkageError' diagnostic.
         /// </summary>
@@ -1103,6 +2298,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic LinkageError = new Diagnostic(new DiagnosticId(5045), nameof(LinkageError), "Link error: {0}", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct RuntimeMismatchData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'RuntimeMismatch' diagnostic.
@@ -1115,6 +2320,16 @@ namespace IKVM.CoreLib.Diagnostics
     "urrent runtime: {1}\n\tReferenced assembly runtime: {2}", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct RuntimeMismatchStrongNameData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'RuntimeMismatchStrongName' diagnostic.
         /// </summary>
@@ -1123,6 +2338,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic RuntimeMismatchStrongName = new Diagnostic(new DiagnosticId(5047), nameof(RuntimeMismatchStrongName), "", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct CoreClassesMissingData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'CoreClassesMissing' diagnostic.
@@ -1133,6 +2358,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic CoreClassesMissing = new Diagnostic(new DiagnosticId(5048), nameof(CoreClassesMissing), "Failed to find core classes in core library", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct CriticalClassNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'CriticalClassNotFound' diagnostic.
         /// </summary>
@@ -1141,6 +2376,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic CriticalClassNotFound = new Diagnostic(new DiagnosticId(5049), nameof(CriticalClassNotFound), "Unable to load critical class \'{0}\'", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct AssemblyContainsDuplicateClassNamesData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'AssemblyContainsDuplicateClassNames' diagnostic.
@@ -1151,6 +2396,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic AssemblyContainsDuplicateClassNames = new Diagnostic(new DiagnosticId(5050), nameof(AssemblyContainsDuplicateClassNames), "Type \'{0}\' and \'{1}\' both map to the same name \'{2}\'\n\t({3})", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct CallerIDRequiresHasCallerIDAnnotationData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'CallerIDRequiresHasCallerIDAnnotation' diagnostic.
         /// </summary>
@@ -1160,6 +2415,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic CallerIDRequiresHasCallerIDAnnotation = new Diagnostic(new DiagnosticId(5051), nameof(CallerIDRequiresHasCallerIDAnnotation), "CallerID.getCallerID() requires a HasCallerID annotation", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct UnableToResolveInterfaceData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'UnableToResolveInterface' diagnostic.
         /// </summary>
@@ -1168,6 +2433,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic UnableToResolveInterface = new Diagnostic(new DiagnosticId(5052), nameof(UnableToResolveInterface), "Unable to resolve interface \'{0}\' on type \'{1}\'", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct MissingBaseTypeData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'MissingBaseType' diagnostic.
@@ -1180,6 +2455,16 @@ namespace IKVM.CoreLib.Diagnostics
     "{3}\' could not be resolved", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct MissingBaseTypeReferenceData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'MissingBaseTypeReference' diagnostic.
         /// </summary>
@@ -1191,6 +2476,16 @@ namespace IKVM.CoreLib.Diagnostics
     "eference to assembly \'{1}\'", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct FileNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'FileNotFound' diagnostic.
         /// </summary>
@@ -1199,6 +2494,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic FileNotFound = new Diagnostic(new DiagnosticId(5055), nameof(FileNotFound), "File not found: {0}", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct RuntimeMethodMissingData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'RuntimeMethodMissing' diagnostic.
@@ -1209,6 +2514,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic RuntimeMethodMissing = new Diagnostic(new DiagnosticId(5056), nameof(RuntimeMethodMissing), "Runtime method \'{0}\' not found", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct MapFileFieldNotFoundData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'MapFileFieldNotFound' diagnostic.
         /// </summary>
@@ -1217,6 +2532,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic MapFileFieldNotFound = new Diagnostic(new DiagnosticId(5057), nameof(MapFileFieldNotFound), "Field \'{0}\' referenced in remap file was not found in class \'{1}\'", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct GhostInterfaceMethodMissingData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'GhostInterfaceMethodMissing' diagnostic.
@@ -1227,6 +2552,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic GhostInterfaceMethodMissing = new Diagnostic(new DiagnosticId(5058), nameof(GhostInterfaceMethodMissing), "Remapped class \'{0}\' does not implement ghost interface method\n\t({1}.{2}{3})", DiagnosticLevel.Fatal);
 #endif
 
+    }
+
+    readonly record struct ModuleInitializerMethodRequirementsData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'ModuleInitializerMethodRequirements' diagnostic.
         /// </summary>
@@ -1235,6 +2570,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic ModuleInitializerMethodRequirements = new Diagnostic(new DiagnosticId(5059), nameof(ModuleInitializerMethodRequirements), "Method \'{1}.{2}{3}\' does not meet the requirements of a module initializer.", DiagnosticLevel.Fatal);
 #endif
+
+    }
+
+    readonly record struct GenericRuntimeTraceData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'GenericRuntimeTrace' diagnostic.
@@ -1245,6 +2590,16 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic GenericRuntimeTrace = new Diagnostic(new DiagnosticId(6000), nameof(GenericRuntimeTrace), "{0}", DiagnosticLevel.Trace);
 #endif
 
+    }
+
+    readonly record struct GenericJniTraceData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
+
         /// <summary>
         /// The 'GenericJniTrace' diagnostic.
         /// </summary>
@@ -1253,6 +2608,16 @@ namespace IKVM.CoreLib.Diagnostics
 #else
         public static readonly Diagnostic GenericJniTrace = new Diagnostic(new DiagnosticId(6001), nameof(GenericJniTrace), "{0}", DiagnosticLevel.Trace);
 #endif
+
+    }
+
+    readonly record struct GenericCompilerTraceData()
+    {
+    
+    }
+
+    partial record class Diagnostic
+    {
 
         /// <summary>
         /// The 'GenericCompilerTrace' diagnostic.
@@ -1264,5 +2629,6 @@ namespace IKVM.CoreLib.Diagnostics
 #endif
 
     }
+
 
 }

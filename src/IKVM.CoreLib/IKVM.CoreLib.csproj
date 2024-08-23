@@ -20,6 +20,10 @@
         <Generator>TextTemplatingFileGenerator</Generator>
         <LastGenOutput>Diagnostic.g.cs</LastGenOutput>
       </None>
+      <None Update="Diagnostics\Tracing\DiagnosticEventSource.g.tt">
+        <LastGenOutput>DiagnosticEventSource.g.cs</LastGenOutput>
+        <Generator>TextTemplatingFileGenerator</Generator>
+      </None>
     </ItemGroup>
 
     <ItemGroup>
@@ -31,6 +35,11 @@
         <DesignTime>True</DesignTime>
         <AutoGen>True</AutoGen>
         <DependentUpon>Diagnostic.g.tt</DependentUpon>
+      </Compile>
+      <Compile Update="Diagnostics\Tracing\DiagnosticEventSource.g.cs">
+        <DependentUpon>DiagnosticEventSource.g.tt</DependentUpon>
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
       </Compile>
     </ItemGroup>
 
