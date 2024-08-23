@@ -33,7 +33,6 @@
         <Compile Include="..\IKVM.Runtime\RuntimeJavaMember.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\profiler.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\ReflectUtil.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\tracer.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\Types.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeJavaType.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeJavaTypeFactory.cs" LinkBase="IKVM.Runtime" />

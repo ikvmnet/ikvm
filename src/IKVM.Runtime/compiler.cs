@@ -45,6 +45,7 @@ using ExceptionTableEntry = IKVM.Runtime.ClassFile.Method.ExceptionTableEntry;
 using LocalVariableTableEntry = IKVM.Runtime.ClassFile.Method.LocalVariableTableEntry;
 using Instruction = IKVM.Runtime.ClassFile.Method.Instruction;
 using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.Runtime
 {
@@ -609,9 +610,9 @@ namespace IKVM.Runtime
             catch (VerifyError x)
             {
 #if IMPORTER
-                classLoader.Report(Diagnostic.EmittedVerificationError.Event([ classFile.Name + "." + m.Name + m.Signature, x.Message]));
+                clazz.Context.ReportEvent(Diagnostic.EmittedVerificationError.Event([ classFile.Name + "." + m.Name + m.Signature, x.Message]));
 #endif
-                Tracer.Error(Tracer.Verifier, x.ToString());
+                clazz.Context.ReportEvent(Diagnostic.GenericVerifierError.Event([x.ToString()]));
                 clazz.SetHasVerifyError();
                 // because in Java the method is only verified if it is actually called,
                 // we generate code here to throw the VerificationError
@@ -621,9 +622,9 @@ namespace IKVM.Runtime
             catch (ClassFormatError x)
             {
 #if IMPORTER
-                classLoader.Report(Diagnostic.EmittedClassFormatError.Event([ classFile.Name + "." + m.Name + m.Signature, x.Message]));
+                clazz.Context.ReportEvent(Diagnostic.EmittedClassFormatError.Event([ classFile.Name + "." + m.Name + m.Signature, x.Message]));
 #endif
-                Tracer.Error(Tracer.Verifier, x.ToString());
+                clazz.Context.ReportEvent(Diagnostic.GenericVerifierError.Event([x.ToString()]));
                 clazz.SetHasClassFormatError();
                 ilGenerator.EmitThrow("java.lang.ClassFormatError", x.Message);
                 return;
@@ -2561,7 +2562,7 @@ namespace IKVM.Runtime
                                 finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.IncompatibleClassChangeError").GetMethodWrapper("<init>", "()V", false).EmitNewobj(ilGenerator);
                             }
                             string message = harderrors[instr.HardErrorMessageId];
-                            Tracer.Error(Tracer.Compiler, "{0}: {1}\n\tat {2}.{3}{4}", exceptionType.Name, message, classFile.Name, m.Name, m.Signature);
+                            finish.Context.ReportEvent(Diagnostic.GenericCompilerError.Event([$"{exceptionType.Name}: {message}\n\tat {classFile.Name}.{m.Name}{m.Signature}"]));
                             ilGenerator.Emit(OpCodes.Ldstr, message);
                             RuntimeJavaMethod method = exceptionType.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
                             method.Link();

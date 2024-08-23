@@ -25,6 +25,8 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
+using IKVM.CoreLib.Diagnostics;
+
 namespace IKVM.Runtime.JNI
 {
 
@@ -50,7 +52,7 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         public static long LoadLibrary(string filename, RuntimeJavaType fromClass)
         {
-            Tracer.Info(Tracer.Jni, "loadLibrary: '{0}' fromClass '{1}'", filename, fromClass);
+            JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"loadLibrary: '{filename}' fromClass '{fromClass}'"]));
 
             lock (SyncRoot)
             {
@@ -61,7 +63,7 @@ namespace IKVM.Runtime.JNI
                     // attempt to load the native library
                     if ((p = LibJvm.Instance.JVM_LoadLibrary(filename)) == 0)
                     {
-                        Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', message = {2}", filename, "NULL handle returned.");
+                        JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Failed to load library: path = '{filename}', message = {"NULL handle returned."}"]));
                         return 0;
                     }
 
@@ -71,7 +73,7 @@ namespace IKVM.Runtime.JNI
                         if (h == p)
                         {
                             LibJvm.Instance.JVM_UnloadLibrary(p);
-                            Tracer.Warning(Tracer.Jni, "Library was already loaded, returning same reference.", filename);
+                            JVM.Context.ReportEvent(Diagnostic.GenericJniWarning.Event(["Library was already loaded, returning same reference"]));
                             return p;
                         }
                     }
@@ -80,25 +82,25 @@ namespace IKVM.Runtime.JNI
                     if (loaded.Contains(p))
                     {
                         var msg = $"Native library '{filename}' already loaded in another classloader.";
-                        Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", msg);
+                        JVM.Context.ReportEvent(Diagnostic.GenericJniError.Event([$"UnsatisfiedLinkError: {msg}"]));
                         throw new java.lang.UnsatisfiedLinkError(msg);
                     }
 
-                    Tracer.Info(Tracer.Jni, "Library loaded: {0}, handle = 0x{1:X}", filename, p);
+                    JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Library loaded: {filename}, handle = 0x{p:X}"]));
 
                     try
                     {
                         var onload = LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName("JNI_OnLoad", sizeof(nint) + sizeof(nint)));
                         if (onload != 0)
                         {
-                            Tracer.Info(Tracer.Jni, "Calling JNI_OnLoad on: {0}", filename);
+                            JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Calling JNI_OnLoad on: {filename}"]));
                             var f = new JNIFrame();
                             int v;
                             var w = f.Enter(ikvm.@internal.CallerID.create(fromClass.ClassObject, fromClass.ClassObject.getClassLoader()));
                             try
                             {
                                 v = Marshal.GetDelegateForFunctionPointer<JNI_OnLoadFunc>(onload)(JavaVM.pJavaVM, null);
-                                Tracer.Info(Tracer.Jni, "JNI_OnLoad returned: 0x{0:X8}", v);
+                                JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"JNI_OnLoad returned: 0x{v:X8}"]));
                             }
                             finally
                             {
@@ -108,7 +110,7 @@ namespace IKVM.Runtime.JNI
                             if (JNIVM.IsSupportedJNIVersion(v) == false)
                             {
                                 var msg = $"Unsupported JNI version 0x{v:X} required by {filename}";
-                                Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", msg);
+                                JVM.Context.ReportEvent(Diagnostic.GenericJniError.Event([$"UnsatisfiedLinkError: {msg}"]));
                                 throw new java.lang.UnsatisfiedLinkError(msg);
                             }
                         }
@@ -125,12 +127,12 @@ namespace IKVM.Runtime.JNI
                 }
                 catch (DllNotFoundException e)
                 {
-                    Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', error = {1}, message = {2}", filename, "DllNotFoundException", e.Message);
+                    JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Failed to load library: path = '{filename}', error = DllNotFoundException, message = {e.Message}"]));
                     return 0;
                 }
                 catch (Exception e)
                 {
-                    Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', error = {1}, message = {2}", filename, "Exception", e.Message);
+                    JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Failed to load library: path = '{filename}', error = Exception, message = {e.Message}"]));
                     LibJvm.Instance.JVM_UnloadLibrary(p);
                     throw;
                 }
@@ -148,14 +150,14 @@ namespace IKVM.Runtime.JNI
 
             lock (SyncRoot)
             {
-                Tracer.Info(Tracer.Jni, "Unloading library: handle = 0x{0:X}, class = {1}", handle, fromClass);
+                JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Unloading library: handle = 0x{handle:X}, class = {fromClass}"]));
 
                 try
                 {
                     var onunload = LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName("JNI_OnUnload", sizeof(nint) + sizeof(nint)));
                     if (onunload != 0)
                     {
-                        Tracer.Info(Tracer.Jni, "Calling JNI_OnUnload on: handle = 0x{0:X}", handle);
+                        JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Calling JNI_OnUnload on: handle = 0x{handle:X}"]));
 
                         var f = new JNIFrame();
                         var w = f.Enter(ikvm.@internal.CallerID.create(fromClass.ClassObject, fromClass.ClassObject.getClassLoader()));

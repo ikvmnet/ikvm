@@ -31,6 +31,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 
 using IKVM.ByteCode.Text;
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Runtime.Extensions;
 
 namespace IKVM.Runtime.JNI
@@ -445,7 +446,7 @@ namespace IKVM.Runtime.JNI
         {
             Console.Error.WriteLine("FATAL ERROR in native method: {0}", msg == null ? "(null)" : DecodeMUTF8Argument(msg, nameof(msg)));
             Console.Error.WriteLine(new StackTrace(1, true));
-            Environment.Exit(1);
+            System.Environment.Exit(1);
         }
 
         /// <summary>
@@ -2763,14 +2764,14 @@ namespace IKVM.Runtime.JNI
         {
             try
             {
-                RuntimeJavaType wrapper = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
+                var wrapper = RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
                 wrapper.Finish();
                 for (int i = 0; i < nMethods; i++)
                 {
                     var methodName = DecodeMUTF8(methods[i].name);
                     var methodSig = DecodeMUTF8(methods[i].signature);
 
-                    Tracer.Info(Tracer.Jni, "Registering native method: {0}.{1}{2}, fnPtr = 0x{3:X}", wrapper.Name, methodName, methodSig, ((IntPtr)methods[i].fnPtr).ToInt64());
+                    JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Registering native method: {wrapper.Name}.{methodName}{methodSig}, fnPtr = 0x{((IntPtr)methods[i].fnPtr).ToInt64():X}"]));
                     FieldInfo fi = null;
 
                     // don't allow dotted names!
@@ -2779,7 +2780,7 @@ namespace IKVM.Runtime.JNI
 
                     if (fi == null)
                     {
-                        Tracer.Error(Tracer.Jni, "Failed to register native method: {0}.{1}{2}", wrapper.Name, methodName, methodSig);
+                        JVM.Context.ReportEvent(Diagnostic.GenericJniError.Event([$"Failed to register native method: {wrapper.Name}.{methodName}{methodSig}"]));
                         throw new java.lang.NoSuchMethodError(methodName);
                     }
 
@@ -2811,7 +2812,7 @@ namespace IKVM.Runtime.JNI
                     string name = fi.Name;
                     if (name.StartsWith(METHOD_PTR_FIELD_PREFIX))
                     {
-                        Tracer.Info(Tracer.Jni, "Unregistering native method: {0}.{1}", wrapper.Name, name.Substring(METHOD_PTR_FIELD_PREFIX.Length));
+                        JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Unregistering native method: {wrapper.Name}.{name.Substring(METHOD_PTR_FIELD_PREFIX.Length)}"]));
                         fi.SetValue(null, IntPtr.Zero);
                     }
                 }

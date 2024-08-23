@@ -286,7 +286,14 @@ namespace IKVM.Runtime
         /// Reports a <see cref="DiagnosticEvent"/>.
         /// </summary>
         /// <param name="evt"></param>
-        public void Report(in DiagnosticEvent evt) => diagnostics.Report(evt);
+        public void ReportEvent(in DiagnosticEvent evt) => diagnostics.ReportEvent(evt);
+
+        /// <summary>
+        /// Returns <c>true</c> if the diagnostic is enabled.
+        /// </summary>
+        /// <param name="diagnostic"></param>
+        /// <returns></returns>
+        public bool IsDiagnosticEnabled(Diagnostic diagnostic) => diagnostics.IsDiagnosticEnabled(diagnostic);
 
     }
 

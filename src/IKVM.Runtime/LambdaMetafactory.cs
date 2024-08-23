@@ -61,7 +61,7 @@ namespace IKVM.Runtime
 #if IMPORTER
                 if (context.TypeWrapper.GetClassLoader().DisableDynamicBinding)
                 {
-                    context.Context.Report(Diagnostic.UnableToCreateLambdaFactory.Event([]));
+                    context.Context.ReportEvent(Diagnostic.UnableToCreateLambdaFactory.Event([]));
                 }
 #endif
                 return false;

@@ -545,9 +545,9 @@ namespace IKVM.Runtime
                         // we have to handle this explicitly, because if we apply an illegal StructLayoutAttribute,
                         // TypeBuilder.CreateType() will later on throw an exception.
 #if IMPORTER
-                        loader.Report(Diagnostic.IgnoredCustomAttribute.Event([type.FullName, "Type '" + tb.FullName + "' does not extend cli.System.Object"]));
+                        loader.Context.ReportEvent(Diagnostic.IgnoredCustomAttribute.Event([type.FullName, $"Type '{tb.FullName}' does not extend cli.System.Object"]));
 #else
-                        Tracer.Error(Tracer.Runtime, "StructLayoutAttribute cannot be applied to {0}, because it does not directly extend cli.System.Object", tb.FullName);
+                        loader.Context.ReportEvent(Diagnostic.GenericRuntimeError.Event([$"StructLayoutAttribute cannot be applied to {tb.FullName}, because it does not directly extend cli.System.Object"]));
 #endif
                         return;
                     }

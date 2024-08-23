@@ -1236,6 +1236,33 @@ namespace IKVM.CoreLib.Diagnostics
         public static readonly Diagnostic ModuleInitializerMethodRequirements = new Diagnostic(new DiagnosticId(5059), nameof(ModuleInitializerMethodRequirements), "Method \'{1}.{2}{3}\' does not meet the requirements of a module initializer.", DiagnosticLevel.Fatal);
 #endif
 
+        /// <summary>
+        /// The 'GenericRuntimeTrace' diagnostic.
+        /// </summary>
+#if NET8_0_OR_GREATER
+        public static readonly Diagnostic GenericRuntimeTrace = new Diagnostic(new DiagnosticId(6000), nameof(GenericRuntimeTrace), CompositeFormat.Parse("{0}"), DiagnosticLevel.Trace);
+#else
+        public static readonly Diagnostic GenericRuntimeTrace = new Diagnostic(new DiagnosticId(6000), nameof(GenericRuntimeTrace), "{0}", DiagnosticLevel.Trace);
+#endif
+
+        /// <summary>
+        /// The 'GenericJniTrace' diagnostic.
+        /// </summary>
+#if NET8_0_OR_GREATER
+        public static readonly Diagnostic GenericJniTrace = new Diagnostic(new DiagnosticId(6001), nameof(GenericJniTrace), CompositeFormat.Parse("{0}"), DiagnosticLevel.Trace);
+#else
+        public static readonly Diagnostic GenericJniTrace = new Diagnostic(new DiagnosticId(6001), nameof(GenericJniTrace), "{0}", DiagnosticLevel.Trace);
+#endif
+
+        /// <summary>
+        /// The 'GenericCompilerTrace' diagnostic.
+        /// </summary>
+#if NET8_0_OR_GREATER
+        public static readonly Diagnostic GenericCompilerTrace = new Diagnostic(new DiagnosticId(6002), nameof(GenericCompilerTrace), CompositeFormat.Parse("{0}"), DiagnosticLevel.Trace);
+#else
+        public static readonly Diagnostic GenericCompilerTrace = new Diagnostic(new DiagnosticId(6002), nameof(GenericCompilerTrace), "{0}", DiagnosticLevel.Trace);
+#endif
+
     }
 
 }

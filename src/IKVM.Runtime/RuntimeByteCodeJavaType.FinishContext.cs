@@ -28,6 +28,8 @@ using System.Diagnostics;
 using IKVM.Attributes;
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
+using IKVM.CoreLib.Diagnostics;
+
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -348,7 +350,6 @@ namespace IKVM.Runtime
                             if (stub)
                             {
                                 var ilGenerator = context.CodeEmitterFactory.Create(mb);
-                                new TraceHelper(context).EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
                                 ilGenerator.EmitThrow("java.lang.AbstractMethodError", classFile.Name + "." + m.Name + m.Signature);
                                 ilGenerator.DoEmit();
                             }
@@ -370,7 +371,6 @@ namespace IKVM.Runtime
                             try
                             {
                                 var ilGenerator = context.CodeEmitterFactory.Create(mb);
-                                new TraceHelper(context).EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 #if IMPORTER
                                 // do we have an implementation in map.xml?
                                 if (wrapper.EmitMapXmlMethodPrologueAndOrBody(ilGenerator, classFile, m))
@@ -492,7 +492,7 @@ namespace IKVM.Runtime
                                     if (wrapper.classLoader.NoJNI)
                                     {
                                         // since NoJniStubs can only be set when we're statically compiling, it is safe to use the "compiler" trace switch
-                                        Tracer.Warning(Tracer.Compiler, "Native method not implemented: {0}.{1}.{2}", classFile.Name, m.Name, m.Signature);
+                                        Context.ReportEvent(Diagnostic.GenericCompilerWarning.Event([$"Native method not implemented: {classFile.Name}.{m.Name}.{m.Signature}"]));
                                         ilGenerator.EmitThrow("java.lang.UnsatisfiedLinkError", "Native method not implemented (compiled with -nojni): " + classFile.Name + "." + m.Name + m.Signature);
                                     }
                                     else
@@ -529,7 +529,6 @@ namespace IKVM.Runtime
                                 ilGenerator.EmitNullCheck();
                             }
 
-                            new TraceHelper(context).EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 #if IMPORTER
                             // do we have an implementation in map.xml?
                             if (wrapper.EmitMapXmlMethodPrologueAndOrBody(ilGenerator, classFile, m))
@@ -1856,43 +1855,6 @@ namespace IKVM.Runtime
                 }
             }
 
-            class TraceHelper
-            {
-
-                readonly RuntimeContext context;
-
-                /// <summary>
-                /// Initializes a new instance.
-                /// </summary>
-                /// <param name="context"></param>
-                public TraceHelper(RuntimeContext context)
-                {
-                    this.context = context ?? throw new ArgumentNullException(nameof(context));
-                }
-
-#if IMPORTER
-                MethodInfo MethodIsTracedMethod => context.Resolver.ResolveRuntimeType(typeof(Tracer).FullName).GetMethod("IsTracedMethod");
-#endif
-                MethodInfo MethodMethodInfo => context.Resolver.ResolveRuntimeType(typeof(Tracer).FullName).GetMethod("MethodInfo");
-
-                internal void EmitMethodTrace(CodeEmitter ilgen, string tracemessage)
-                {
-                    if (Tracer.IsTracedMethod(tracemessage))
-                    {
-                        var label = ilgen.DefineLabel();
-#if IMPORTER
-                        // TODO this should be a boolean field test instead of a call to Tracer.IsTracedMessage
-                        ilgen.Emit(OpCodes.Ldstr, tracemessage);
-                        ilgen.Emit(OpCodes.Call, MethodIsTracedMethod);
-                        ilgen.EmitBrfalse(label);
-#endif
-                        ilgen.Emit(OpCodes.Ldstr, tracemessage);
-                        ilgen.Emit(OpCodes.Call, MethodMethodInfo);
-                        ilgen.MarkLabel(label);
-                    }
-                }
-            }
-
 #if IMPORTER
 
             void EmitCallerIDStub(RuntimeJavaMethod mw, string[] parameterNames)
@@ -2093,7 +2055,7 @@ namespace IKVM.Runtime
             {
                 var methods = wrapper.GetMethods();
                 var m = classFile.Methods[methodIndex];
-                new TraceHelper(context.context).EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
+
 #if IMPORTER
                 // do we have an implementation in map.xml?
                 if (wrapper.EmitMapXmlMethodPrologueAndOrBody(ilGenerator, classFile, m))

@@ -143,7 +143,7 @@ namespace IKVM.Tools.Importer
         {
             if (requestingModule != null && member is Type)
             {
-                Report(Diagnostic.UnableToResolveType.Event([requestingModule.Name, ((Type)member).FullName, member.Module.FullyQualifiedName]));
+                ReportEvent(Diagnostic.UnableToResolveType.Event([requestingModule.Name, ((Type)member).FullName, member.Module.FullyQualifiedName]));
             }
         }
 
@@ -226,7 +226,7 @@ namespace IKVM.Tools.Importer
         internal void IssueMissingTypeMessage(Type type)
         {
             type = ReflectUtil.GetMissingType(type);
-            Report((type.Assembly.__IsMissing ? Diagnostic.MissingReference : Diagnostic.MissingType).Event([type.FullName, type.Assembly.FullName]));
+            ReportEvent((type.Assembly.__IsMissing ? Diagnostic.MissingReference : Diagnostic.MissingType).Event([type.FullName, type.Assembly.FullName]));
         }
 
         internal void SuppressWarning(CompilerOptions options, Diagnostic diagnostic, string name)
@@ -234,14 +234,19 @@ namespace IKVM.Tools.Importer
             options.suppressWarnings[diagnostic.Id.Value + ":" + name] = null;
         }
 
-        public void Report(in DiagnosticEvent evt)
+        public void ReportEvent(in DiagnosticEvent evt)
         {
-            IkvmImporterInternal.Report(this, evt);
+            IkvmImporterInternal.ReportEvent(this, evt);
         }
 
-        internal void Report(CompilerOptions options, in DiagnosticEvent evt)
+        internal void ReportEvent(CompilerOptions options, in DiagnosticEvent evt)
         {
-            IkvmImporterInternal.Report(this, options, evt);
+            IkvmImporterInternal.ReportEvent(this, options, evt);
+        }
+
+        public bool IsDiagnosticEnabled(Diagnostic diagnostic)
+        {
+            return IkvmImporterInternal.IsDiagnosticEnabled(this, diagnostic);
         }
 
     }

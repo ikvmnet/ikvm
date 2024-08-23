@@ -75,7 +75,7 @@ namespace IKVM.Runtime
 
             internal JavaTypeImpl(RuntimeJavaType host, ClassFile f, RuntimeByteCodeJavaType wrapper)
             {
-                Tracer.Info(Tracer.Compiler, "constructing JavaTypeImpl for " + f.Name);
+                wrapper.Context.ReportEvent(Diagnostic.GenericCompilerInfo.Event(["constructing JavaTypeImpl for " + f.Name]));
                 this.host = host;
                 this.classFile = f;
                 this.wrapper = (RuntimeDynamicOrImportJavaType)wrapper;
@@ -227,7 +227,7 @@ namespace IKVM.Runtime
                 {
                     // If we end up here, we either have to add support or add them to the white-list in the above clause
                     // to allow them to fall back to dynamic stack walking.
-                    wrapper.Context.Report(Diagnostic.CallerSensitiveOnUnsupportedMethod.Event([classFile.Name, method.Name, method.Signature]));
+                    wrapper.Context.ReportEvent(Diagnostic.CallerSensitiveOnUnsupportedMethod.Event([classFile.Name, method.Name, method.Signature]));
                     return false;
                 }
             }
@@ -303,7 +303,7 @@ namespace IKVM.Runtime
                     {
                         if (!CheckInnerOuterNames(f.Name, enclosingClassName))
                         {
-                            Tracer.Warning(Tracer.Compiler, "Incorrect {0} attribute on {1}", outerClass.outerClass.IsNotNil ? "InnerClasses" : "EnclosingMethod", f.Name);
+                            wrapper.Context.ReportEvent(Diagnostic.GenericCompilerWarning.Event([$"Incorrect {(outerClass.outerClass.IsNotNil ? "InnerClasses" : "EnclosingMethod")} attribute on {f.Name}"]));
                         }
                         else
                         {
@@ -313,7 +313,7 @@ namespace IKVM.Runtime
                             }
                             catch (RetargetableJavaException x)
                             {
-                                Tracer.Warning(Tracer.Compiler, "Unable to load outer class {0} for inner class {1} ({2}: {3})", enclosingClassName, f.Name, x.GetType().Name, x.Message);
+                                wrapper.Context.ReportEvent(Diagnostic.GenericCompilerWarning.Event([$"Unable to load outer class {enclosingClassName} for inner class {f.Name} ({x.GetType().Name}: {x.Message})"]));
                             }
 
                             if (enclosingClassWrapper != null)
@@ -366,7 +366,7 @@ namespace IKVM.Runtime
                                 }
                                 else
                                 {
-                                    Tracer.Warning(Tracer.Compiler, "Non-reciprocal inner class {0}", f.Name);
+                                    wrapper.Context.ReportEvent(Diagnostic.GenericCompilerWarning.Event([$"Non-reciprocal inner class {f.Name}"]));
                                 }
                             }
                         }
@@ -986,7 +986,7 @@ namespace IKVM.Runtime
                     && !classFile.IsReferenced(classFile.Fields[fieldIndex]))
                 {
                     // unused, so we skip it
-                    Tracer.Info(Tracer.Compiler, "Unused field {0}::{1}", wrapper.Name, fw.Name);
+                    wrapper.Context.ReportEvent(Diagnostic.GenericCompilerInfo.Event([$"Unused field {wrapper.Name}::{fw.Name}"]));
                     return null;
                 }
 
@@ -1230,7 +1230,7 @@ namespace IKVM.Runtime
                     throw new InvalidOperationException("Recursive finish attempt for " + wrapper.Name);
 
                 finishInProgress = true;
-                Tracer.Info(Tracer.Compiler, "Finishing: {0}", wrapper.Name);
+                wrapper.Context.ReportEvent(Diagnostic.GenericCompilerTrace.Event([$"Finishing: {wrapper.Name}"]));
                 Profiler.Enter("JavaTypeImpl.Finish.Core");
 
                 try

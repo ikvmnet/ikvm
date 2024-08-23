@@ -5,7 +5,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using System.Security.Cryptography.Xml;
 
 using IKVM.CoreLib.Diagnostics;
 using IKVM.Reflection;
@@ -23,12 +22,32 @@ namespace IKVM.Tools.Exporter
     static class IkvmExporterInternal
     {
 
+        /// <summary>
+        /// Handles diagnostic messages from IKVM.
+        /// </summary>
         class DiagnosticHandler : IDiagnosticHandler
         {
 
-            public void Report(in DiagnosticEvent evnt)
+            readonly IkvmExporterOptions options;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="compiler"></param>
+            /// <param name="options"></param>
+            public DiagnosticHandler(IkvmExporterOptions options)
             {
-                throw new NotImplementedException();
+                this.options = options ?? throw new ArgumentNullException(nameof(options));
+            }
+
+            public bool IsDiagnosticEnabled(Diagnostic diagnostic)
+            {
+                return IkvmExporterInternal.IsDiagnosticEnabled(options, diagnostic);
+            }
+
+            public void ReportEvent(in DiagnosticEvent evnt)
+            {
+                IkvmExporterInternal.ReportEvent(options, evnt);
             }
 
         }
@@ -105,8 +124,7 @@ namespace IKVM.Tools.Exporter
         /// <param name="options"></param>
         public static int Execute(IkvmExporterOptions options)
         {
-            IKVM.Runtime.Tracer.EnableTraceConsoleListener();
-            IKVM.Runtime.Tracer.EnableTraceForDebug();
+            var diagnostics = new DiagnosticHandler(options);
 
             var references = new List<string>();
             if (options.References != null)
@@ -134,7 +152,7 @@ namespace IKVM.Tools.Exporter
             var coreLibName = FindCoreLibName(references, libpaths);
             if (coreLibName == null)
             {
-                Console.Error.WriteLine("Error: core library not found");
+                diagnostics.ReportEvent(Diagnostic.CoreClassesMissing.Event([]));
                 return 1;
             }
 
@@ -150,7 +168,7 @@ namespace IKVM.Tools.Exporter
                 Assembly[] dummy = null;
                 if (assemblyResolver.ResolveReference(cache, ref dummy, reference) == false)
                 {
-                    Console.Error.WriteLine("Error: reference not found {0}", reference);
+                    diagnostics.ReportEvent(Diagnostic.ReferenceNotFound.Event([reference]));
                     return 1;
                 }
             }
@@ -160,9 +178,14 @@ namespace IKVM.Tools.Exporter
             {
                 file = new FileInfo(options.Assembly);
             }
+            catch (FileNotFoundException)
+            {
+                diagnostics.ReportEvent(Diagnostic.InputFileNotFound.Event([options.Assembly]));
+                return 1;
+            }
             catch (Exception x)
             {
-                Console.Error.WriteLine("Error: unable to load \"{0}\"\n  {1}", options.Assembly, x.Message);
+                diagnostics.ReportEvent(Diagnostic.ErrorReadingFile.Event(x, [options.Assembly]));
                 return 1;
             }
 
@@ -202,7 +225,7 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), new DiagnosticHandler(), new ManagedResolver(compiler, null), true, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedResolver(compiler, null), true, compiler);
                     context.ClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader(context));
                 }
                 else
@@ -229,7 +252,7 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), new DiagnosticHandler(), new ManagedResolver(compiler, baseAssembly), false, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedResolver(compiler, baseAssembly), false, compiler);
                 }
 
                 if (context.AttributeHelper.IsJavaModule(assembly.ManifestModule))
@@ -539,6 +562,39 @@ namespace IKVM.Tools.Exporter
                     AddToExportListIfNeeded(fw.FieldTypeWrapper);
                 }
             }
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the specified diagnostic is enabled.
+        /// </summary>
+        /// <param name="diagnostic"></param>
+        /// <returns></returns>
+        internal static bool IsDiagnosticEnabled(IkvmExporterOptions options, Diagnostic diagnostic)
+        {
+            return diagnostic.Level is not DiagnosticLevel.Trace and not DiagnosticLevel.Informational;
+        }
+
+        /// <summary>
+        /// Handles a <see cref="DiagnosticEvent"/>.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="evt"></param>
+        internal static void ReportEvent(IkvmExporterOptions options, in DiagnosticEvent evt)
+        {
+            if (evt.Diagnostic.Level is DiagnosticLevel.Trace or DiagnosticLevel.Informational)
+                return;
+
+            var err = evt.Diagnostic.Level is DiagnosticLevel.Error or DiagnosticLevel.Fatal;
+
+            Console.Error.Write("{0} IKVM{1:D4}: ", err ? "error" : evt.Diagnostic.Level is DiagnosticLevel.Informational or DiagnosticLevel.Trace ? "note" : "warning", evt.Diagnostic.Id.Value);
+            if (err && evt.Diagnostic.Level is DiagnosticLevel.Warning)
+                Console.Error.Write("Warning as Error: ");
+
+#if NET8_0_OR_GREATER
+            Console.Error.WriteLine(string.Format(null, evt.Diagnostic.Message, evt.Args));
+#else
+            Console.Error.WriteLine(string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray()));
+#endif
         }
 
     }

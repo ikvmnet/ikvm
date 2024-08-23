@@ -28,6 +28,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Collections.Concurrent;
 using static System.Diagnostics.DebuggableAttribute;
+using IKVM.CoreLib.Diagnostics;
+
 
 
 #if IMPORTER
@@ -179,9 +181,7 @@ namespace IKVM.Runtime
             // advance through unique type names until we find a free one
             while (dict.TryAdd(mangledTypeName, javaType) == false)
             {
-#if IMPORTER
-                Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
-#endif
+                javaType.Context.ReportEvent(Diagnostic.GenericCompilerWarning.Event([$"Class name clash: {mangledTypeName}"]));
                 mangledTypeName = baseTypeName + "/" + (++instanceId);
             }
 
@@ -410,7 +410,7 @@ namespace IKVM.Runtime
                     {
                         more = true;
                         done.Add(tw, tw);
-                        Tracer.Info(Tracer.Runtime, "Finishing {0}", tw.TypeAsTBD.FullName);
+                        context.ReportEvent(Diagnostic.GenericRuntimeTrace.Event([$"Finishing: {tw.TypeAsTBD.FullName}"]));
                         tw.Finish();
                     }
                 }

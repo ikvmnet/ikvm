@@ -103,8 +103,6 @@ namespace IKVM.Tools.Importer
         {
             DateTime start = DateTime.Now;
             System.Threading.Thread.CurrentThread.Name = "compiler";
-            Tracer.EnableTraceConsoleListener();
-            Tracer.EnableTraceForDebug();
 
             try
             {
@@ -206,22 +204,22 @@ namespace IKVM.Tools.Importer
             switch (warning)
             {
                 case AssemblyResolver.WarningId.HigherVersion:
-                    Report(compiler, Diagnostic.AssumeAssemblyVersionMatch.Event([parameters]));
+                    ReportEvent(compiler, Diagnostic.AssumeAssemblyVersionMatch.Event([parameters]));
                     break;
                 case AssemblyResolver.WarningId.InvalidLibDirectoryOption:
-                    Report(compiler, Diagnostic.InvalidDirectoryInLibOptionPath.Event([parameters]));
+                    ReportEvent(compiler, Diagnostic.InvalidDirectoryInLibOptionPath.Event([parameters]));
                     break;
                 case AssemblyResolver.WarningId.InvalidLibDirectoryEnvironment:
-                    Report(compiler, Diagnostic.InvalidDirectoryInLibEnvironmentPath.Event([parameters]));
+                    ReportEvent(compiler, Diagnostic.InvalidDirectoryInLibEnvironmentPath.Event([parameters]));
                     break;
                 case AssemblyResolver.WarningId.LegacySearchRule:
-                    Report(compiler, Diagnostic.LegacySearchRule.Event([parameters]));
+                    ReportEvent(compiler, Diagnostic.LegacySearchRule.Event([parameters]));
                     break;
                 case AssemblyResolver.WarningId.LocationIgnored:
-                    Report(compiler, Diagnostic.AssemblyLocationIgnored.Event([parameters]));
+                    ReportEvent(compiler, Diagnostic.AssemblyLocationIgnored.Event([parameters]));
                     break;
                 default:
-                    Report(compiler, Diagnostic.UnknownWarning.Event([string.Format(message, parameters)]));
+                    ReportEvent(compiler, Diagnostic.UnknownWarning.Event([string.Format(message, parameters)]));
                     break;
             }
         }
@@ -439,14 +437,6 @@ namespace IKVM.Tools.Importer
                     if (s.StartsWith("-out:"))
                     {
                         options.path = GetFileInfo(s.Substring(5));
-                    }
-                    else if (s.StartsWith("-Xtrace:"))
-                    {
-                        Tracer.SetTraceLevel(s.Substring(8));
-                    }
-                    else if (s.StartsWith("-Xmethodtrace:"))
-                    {
-                        Tracer.HandleMethodTrace(s.Substring(14));
                     }
                     else if (s.StartsWith("-assembly:"))
                     {
@@ -848,7 +838,7 @@ namespace IKVM.Tools.Importer
                     {
                         var proxy = s.Substring(7);
                         if (options.proxies.Contains(proxy))
-                            Report(compiler, Diagnostic.DuplicateProxy.Event([proxy]));
+                            ReportEvent(compiler, Diagnostic.DuplicateProxy.Event([proxy]));
 
                         options.proxies.Add(proxy);
                     }
@@ -930,7 +920,7 @@ namespace IKVM.Tools.Importer
 
             if (options.mainClass == null && manifestMainClass != null && (options.guessFileKind || options.target != PEFileKinds.Dll))
             {
-                Report(compiler, options, Diagnostic.MainMethodFromManifest.Event([manifestMainClass]));
+                ReportEvent(compiler, options, Diagnostic.MainMethodFromManifest.Event([manifestMainClass]));
                 options.mainClass = manifestMainClass;
             }
 
@@ -999,7 +989,7 @@ namespace IKVM.Tools.Importer
                 catch { }
                 if (files == null || files.Length == 0)
                 {
-                    Report(compiler, Diagnostic.InputFileNotFound.Event([fileName]));
+                    ReportEvent(compiler, Diagnostic.InputFileNotFound.Event([fileName]));
                 }
                 else
                 {
@@ -1106,7 +1096,7 @@ namespace IKVM.Tools.Importer
                         Type forwarder = asm.GetType("__<MainAssembly>");
                         if (forwarder != null && forwarder.Assembly != asm)
                         {
-                            Report(compiler, Diagnostic.NonPrimaryAssemblyReference.Event([asm.Location, forwarder.Assembly.GetName().Name]));
+                            ReportEvent(compiler, Diagnostic.NonPrimaryAssemblyReference.Event([asm.Location, forwarder.Assembly.GetName().Name]));
                         }
                     }
                 }
@@ -1199,13 +1189,13 @@ namespace IKVM.Tools.Importer
                 foreach (Match m in mc)
                 {
                     options.legacyStubReferences[m.Groups[1].Value] = null;
-                    Report(compiler, options, Diagnostic.StubsAreDeprecated.Event([m.Groups[1].Value]));
+                    ReportEvent(compiler, options, Diagnostic.StubsAreDeprecated.Event([m.Groups[1].Value]));
                 }
             }
             else
             {
                 options.legacyStubReferences[cf.IKVMAssemblyAttribute] = null;
-                Report(compiler, options, Diagnostic.StubsAreDeprecated.Event([cf.IKVMAssemblyAttribute]));
+                ReportEvent(compiler, options, Diagnostic.StubsAreDeprecated.Event([cf.IKVMAssemblyAttribute]));
             }
 
             return true;
@@ -1333,13 +1323,13 @@ namespace IKVM.Tools.Importer
                     }
                     catch (ClassFormatError x)
                     {
-                        Report(compiler, Diagnostic.ClassFormatError.Event([file, x.Message]));
+                        ReportEvent(compiler, Diagnostic.ClassFormatError.Event([file, x.Message]));
                     }
                 }
 
                 if (baseDir == null)
                 {
-                    Report(compiler, Diagnostic.UnknownFileType.Event([file]));
+                    ReportEvent(compiler, Diagnostic.UnknownFileType.Event([file]));
                 }
                 else
                 {
@@ -1438,9 +1428,20 @@ namespace IKVM.Tools.Importer
         /// </summary>
         /// <param name="compiler"></param>
         /// <param name="evt"></param>
-        internal static void Report(StaticCompiler compiler, in DiagnosticEvent evt)
+        internal static void ReportEvent(StaticCompiler compiler, in DiagnosticEvent evt)
         {
-            Report(compiler, compiler.rootTarget, evt);
+            ReportEvent(compiler, compiler.rootTarget, evt);
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the specified diagnostic is enabled.
+        /// </summary>
+        /// <param name="compiler"></param>
+        /// <param name="diagnostic"></param>
+        /// <returns></returns>
+        internal static bool IsDiagnosticEnabled(StaticCompiler compiler, Diagnostic diagnostic)
+        {
+            return diagnostic.Level is not DiagnosticLevel.Trace and not DiagnosticLevel.Informational;
         }
 
         /// <summary>
@@ -1450,8 +1451,11 @@ namespace IKVM.Tools.Importer
         /// <param name="options"></param>
         /// <param name="evt"></param>
         /// <exception cref="FatalCompilerErrorException"></exception>
-        internal static void Report(StaticCompiler compiler, CompilerOptions options, in DiagnosticEvent evt)
+        internal static void ReportEvent(StaticCompiler compiler, CompilerOptions options, in DiagnosticEvent evt)
         {
+            if (evt.Diagnostic.Level is DiagnosticLevel.Trace or DiagnosticLevel.Informational)
+                return;
+
             var key = evt.Diagnostic.Id.Value.ToString();
             for (int i = 0; ; i++)
             {
@@ -1478,17 +1482,17 @@ namespace IKVM.Tools.Importer
                 evt.Diagnostic.Level is DiagnosticLevel.Warning && options.errorWarnings.ContainsKey(key) ||
                 evt.Diagnostic.Level is DiagnosticLevel.Warning && options.errorWarnings.ContainsKey(evt.Diagnostic.Id.Value.ToString());
 
-            Console.Error.Write("{0} IKVMC{1:D4}: ", err ? "error" : evt.Diagnostic.Level is DiagnosticLevel.Informational or DiagnosticLevel.Trace ? "note" : "warning", evt.Diagnostic.Id.Value);
+            Console.Error.Write("{0} IKVM{1:D4}: ", err ? "error" : evt.Diagnostic.Level is DiagnosticLevel.Informational or DiagnosticLevel.Trace ? "note" : "warning", evt.Diagnostic.Id.Value);
             if (err && evt.Diagnostic.Level is DiagnosticLevel.Warning)
                 Console.Error.Write("Warning as Error: ");
 
-            Console.Error.WriteLine(msg, evt.Args.ToArray());
+#if NET8_0_OR_GREATER
+            Console.Error.WriteLine(string.Format(null, evt.Diagnostic.Message, evt.Args));
+#else
+            Console.Error.WriteLine(string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray()));
+#endif
             if (options != compiler.rootTarget && options.path != null)
                 Console.Error.WriteLine("    (in {0})", options.path);
-
-            if (err)
-                if (++compiler.errorCount == 100)
-                    throw new FatalCompilerErrorException(Diagnostic.MaximumErrorCountReached.Event([]));
         }
 
     }

@@ -355,7 +355,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                eic.Context.TypeWrapper.Context.Report(Diagnostic.ReflectionCallerClassRequiresCallerID.Event([eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature]));
+                eic.Context.TypeWrapper.Context.ReportEvent(Diagnostic.ReflectionCallerClassRequiresCallerID.Event([eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature]));
             }
             return false;
         }

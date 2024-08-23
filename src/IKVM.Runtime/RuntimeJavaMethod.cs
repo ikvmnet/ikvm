@@ -27,6 +27,8 @@ using System.Diagnostics;
 using IKVM.Attributes;
 
 using System.Linq;
+using IKVM.CoreLib.Diagnostics;
+
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -345,18 +347,16 @@ namespace IKVM.Runtime
 
         protected virtual void DoLinkMethod()
         {
-            method = this.DeclaringType.LinkMethod(this);
+            method = DeclaringType.LinkMethod(this);
         }
 
         [Conditional("DEBUG")]
         internal void AssertLinked()
         {
             if (!(parameterTypeWrappers != null && returnTypeWrapper != null))
-            {
-                Tracer.Error(Tracer.Runtime, "AssertLinked failed: " + this.DeclaringType.Name + "::" + this.Name + this.Signature);
-            }
+                DeclaringType.Context.ReportEvent(Diagnostic.GenericRuntimeError.Event([$"AssertLinked failed: {DeclaringType.Name}::{Name}{Signature}"]));
 
-            Debug.Assert(parameterTypeWrappers != null && returnTypeWrapper != null, this.DeclaringType.Name + "::" + this.Name + this.Signature);
+            Debug.Assert(parameterTypeWrappers != null && returnTypeWrapper != null, DeclaringType.Name + "::" + Name + Signature);
         }
 
         internal RuntimeJavaType ReturnType

@@ -25,6 +25,7 @@ using System;
 using System.Diagnostics;
 using System.Text;
 
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Runtime.Accessors.Java.Lang;
 
 using jarray = System.IntPtr;
@@ -113,7 +114,7 @@ namespace IKVM.Runtime.JNI
             var mangledSig = JniMangle(sig.Substring(1, sig.IndexOf(')') - 1));
             var methodName = $"Java_{mangledClass}_{mangledName}";
             var longMethodName = $"Java_{mangledClass}_{mangledName}__{mangledSig}";
-            Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, classLoader = {3}, methodName = {4}, longMethodName = {5}, argl = {6}", clazz, name, sig, loader, methodName, longMethodName, argl);
+            JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Linking native method: {clazz}.{name}{sig}, classLoader = {loader}, methodName = {methodName}, longMethodName = {longMethodName}, argl = {argl}"]));
 
             lock (JNINativeLoader.SyncRoot)
             {
@@ -121,20 +122,20 @@ namespace IKVM.Runtime.JNI
                 {
                     if (LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName(methodName, argl)) is nint h1 and not 0)
                     {
-                        Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (short)", clazz, name, sig, p);
+                        JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Native method {clazz}.{name}{sig} found in library 0x{p:X} (short)"]));
                         return h1;
                     }
 
                     if (LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName(longMethodName, argl)) is nint h2 and not 0)
                     {
-                        Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (long)", clazz, name, sig, p);
+                        JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Native method {clazz}.{name}{sig} found in library 0x{p:X} (long)"]));
                         return h2;
                     }
                 }
             }
 
             var msg = $"{clazz}.{name}{sig}";
-            Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", msg);
+            JVM.Context.ReportEvent(Diagnostic.GenericJniError.Event([$"UnsatisfiedLinkError: {msg}"]));
             throw new java.lang.UnsatisfiedLinkError(msg);
 #endif
         }

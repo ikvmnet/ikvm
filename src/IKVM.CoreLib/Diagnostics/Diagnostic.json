@@ -667,5 +667,20 @@
         "id": 5059,
         "level": "Fatal",
         "message": "Method '{1}.{2}{3}' does not meet the requirements of a module initializer."
+    },
+    "GenericRuntimeTrace": {
+        "id": 6000,
+        "level": "Trace",
+        "message": "{0}"
+    },
+    "GenericJniTrace": {
+        "id": 6001,
+        "level": "Trace",
+        "message": "{0}"
+    },
+    "GenericCompilerTrace": {
+        "id": 6002,
+        "level": "Trace",
+        "message": "{0}"
     }
 }

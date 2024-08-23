@@ -107,7 +107,7 @@ namespace IKVM.Tools.Importer.MapXml
             }
             else
             {
-                context.ClassLoader.Context.Report(Diagnostic.MapXmlUnableToResolveOpCode.Event([ToString()]));
+                context.ClassLoader.Context.ReportEvent(Diagnostic.MapXmlUnableToResolveOpCode.Event([ToString()]));
             }
         }
 
@@ -117,7 +117,7 @@ namespace IKVM.Tools.Importer.MapXml
             {
                 if (Method != null || Field != null || Sig != null)
                 {
-                    context.ClassLoader.Context.Report(Diagnostic.MapXmlError.Event(["not implemented: cannot use 'type' attribute with 'method' or 'field' attribute for ldtoken"]));
+                    context.ClassLoader.Context.ReportEvent(Diagnostic.MapXmlError.Event(["not implemented: cannot use 'type' attribute with 'method' or 'field' attribute for ldtoken"]));
                     return false;
                 }
                 return true;
@@ -128,20 +128,20 @@ namespace IKVM.Tools.Importer.MapXml
                 {
                     if (Sig != null)
                     {
-                        context.ClassLoader.Context.Report(Diagnostic.MapXmlError.Event(["cannot specify 'sig' attribute without either 'method' or 'field' attribute for ldtoken"]));
+                        context.ClassLoader.Context.ReportEvent(Diagnostic.MapXmlError.Event(["cannot specify 'sig' attribute without either 'method' or 'field' attribute for ldtoken"]));
                     }
                     return true;
                 }
                 if (Method != null && Field != null)
                 {
-                    context.ClassLoader.Context.Report(Diagnostic.MapXmlError.Event(["cannot specify both 'method' and 'field' attribute for ldtoken"]));
+                    context.ClassLoader.Context.ReportEvent(Diagnostic.MapXmlError.Event(["cannot specify both 'method' and 'field' attribute for ldtoken"]));
                     return false;
                 }
                 return true;
             }
             else
             {
-                context.ClassLoader.Context.Report(Diagnostic.MapXmlError.Event(["must specify either 'type' or 'class' attribute for ldtoken"]));
+                context.ClassLoader.Context.ReportEvent(Diagnostic.MapXmlError.Event(["must specify either 'type' or 'class' attribute for ldtoken"]));
                 return false;
             }
         }

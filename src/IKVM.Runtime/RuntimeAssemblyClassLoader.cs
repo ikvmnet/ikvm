@@ -190,7 +190,7 @@ namespace IKVM.Runtime
                     // context and the requested type references a type in another assembly
                     // that cannot be found in the ReflectionOnly context
                     // TODO figure out what other exceptions Assembly.GetType() can throw
-                    Tracer.Info(Tracer.Runtime, e.Message);
+                    context.ReportEvent(Diagnostic.GenericRuntimeInfo.Event([e.Message]));
                 }
 
                 return null;
@@ -218,7 +218,7 @@ namespace IKVM.Runtime
                     // context and the requested type references a type in another assembly
                     // that cannot be found in the ReflectionOnly context
                     // TODO figure out what other exceptions Assembly.GetType() can throw
-                    Tracer.Info(Tracer.Runtime, e.Message);
+                    context.ReportEvent(Diagnostic.GenericRuntimeInfo.Event([e.Message]));
                 }
 
                 return null;
@@ -251,7 +251,7 @@ namespace IKVM.Runtime
                 {
                     // we can end up here because we replace the $ with a plus sign
                     // (or client code did a Class.forName() on an invalid name)
-                    Tracer.Info(Tracer.Runtime, x.Message);
+                    context.ReportEvent(Diagnostic.GenericRuntimeInfo.Event([x.Message]));
                 }
 
                 return null;
@@ -1177,7 +1177,7 @@ namespace IKVM.Runtime
                     }
                     catch (Exception x)
                     {
-                        Tracer.Error(Tracer.Runtime, "Unable to load custom class loader {0} specified in app.config for assembly {1}: {2}", kv.Value, assembly, x);
+                        Context.ReportEvent(Diagnostic.GenericRuntimeError.Event([$"Unable to load custom class loader {kv.Value} specified in app.config for assembly {assembly}: {x}"]));
                     }
 
                     break;
@@ -1223,7 +1223,7 @@ namespace IKVM.Runtime
                         jclcip.javaClassLoader = newJavaClassLoader;
                         Context.ClassLoaderFactory.SetWrapperForClassLoader(jclcip.javaClassLoader, this);
                         DoPrivileged(new CustomClassLoaderCtorCaller(customClassLoaderCtor, jclcip.javaClassLoader, assembly));
-                        Tracer.Info(Tracer.Runtime, "Created custom assembly class loader {0} for assembly {1}", customClassLoaderClass.FullName, assembly);
+                        Context.ReportEvent(Diagnostic.GenericRuntimeInfo.Event([$"Created custom assembly class loader {customClassLoaderClass.FullName} for assembly {assembly}"]));
                     }
                     else
                     {
@@ -1233,7 +1233,7 @@ namespace IKVM.Runtime
                 }
                 catch (Exception x)
                 {
-                    Tracer.Error(Tracer.Runtime, "Unable to create custom assembly class loader {0} for {1}: {2}", customClassLoaderClass.FullName, assembly, x);
+                    Context.ReportEvent(Diagnostic.GenericRuntimeError.Event([$"Unable to create custom assembly class loader {customClassLoaderClass.FullName} for {assembly}: {x}"]));
                 }
             }
 
@@ -1279,7 +1279,7 @@ namespace IKVM.Runtime
                 }
                 catch (Exception x)
                 {
-                    Tracer.Error(Tracer.Runtime, "Error while reading custom class loader redirects: {0}", x);
+                    context.ReportEvent(Diagnostic.GenericRuntimeError.Event([$"Error while reading custom class loader redirects: {x}"]));
                 }
                 finally
                 {

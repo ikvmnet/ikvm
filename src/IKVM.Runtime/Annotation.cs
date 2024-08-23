@@ -25,6 +25,10 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using System.Runtime.CompilerServices;
+using IKVM.CoreLib.Diagnostics;
+
+
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -106,7 +110,8 @@ namespace IKVM.Runtime
                     return tw.Annotation;
                 }
             }
-            Tracer.Warning(Tracer.Compiler, "Unable to load annotation class {0}", annotationClass);
+
+            owner.Context.ReportEvent(Diagnostic.GenericCompilerWarning.Event([$"Unable to load annotation class {annotationClass}"]));
 #if IMPORTER
             return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(owner.Context, owner.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
 #else

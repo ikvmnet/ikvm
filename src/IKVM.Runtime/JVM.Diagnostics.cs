@@ -14,7 +14,7 @@ namespace IKVM.Runtime
         class DiagnosticHandler : IDiagnosticHandler
         {
 
-            public void Report(in DiagnosticEvent evnt)
+            public void ReportEvent(in DiagnosticEvent evnt)
             {
                 switch (evnt.Diagnostic.Level)
                 {
