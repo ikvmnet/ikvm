@@ -42,7 +42,6 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("..", "Dia
         level = "Verbose";
 
     var message = new List<string>();
-    var index = 0;
     foreach (var segment in CompositeFormat.Parse(kvp.Value.Message ?? "").Segments)
         message.Add(segment.Literal != null ? segment.Literal : $"{{{kvp.Value.Args.FindIndex(i => i.Name == segment.Arg)}}}");
 
