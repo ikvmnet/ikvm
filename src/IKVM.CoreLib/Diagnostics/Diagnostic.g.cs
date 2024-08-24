@@ -824,9 +824,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// {arg0}
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic GenericCompilerWarning = new Diagnostic(5, nameof(GenericCompilerWarning), CompositeFormat.Parse("{0}"), DiagnosticLevel.Warning);
+        public static readonly Diagnostic GenericCompilerWarning = new Diagnostic(141, nameof(GenericCompilerWarning), CompositeFormat.Parse("{0}"), DiagnosticLevel.Warning);
 #else
-        public static readonly Diagnostic GenericCompilerWarning = new Diagnostic(5, nameof(GenericCompilerWarning), "{0}", DiagnosticLevel.Warning);
+        public static readonly Diagnostic GenericCompilerWarning = new Diagnostic(141, nameof(GenericCompilerWarning), "{0}", DiagnosticLevel.Warning);
 #endif
 
     }
@@ -841,9 +841,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// {arg0}
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic GenericClassLoadingWarning = new Diagnostic(6, nameof(GenericClassLoadingWarning), CompositeFormat.Parse("{0}"), DiagnosticLevel.Warning);
+        public static readonly Diagnostic GenericClassLoadingWarning = new Diagnostic(142, nameof(GenericClassLoadingWarning), CompositeFormat.Parse("{0}"), DiagnosticLevel.Warning);
 #else
-        public static readonly Diagnostic GenericClassLoadingWarning = new Diagnostic(6, nameof(GenericClassLoadingWarning), "{0}", DiagnosticLevel.Warning);
+        public static readonly Diagnostic GenericClassLoadingWarning = new Diagnostic(142, nameof(GenericClassLoadingWarning), "{0}", DiagnosticLevel.Warning);
 #endif
 
     }
@@ -858,9 +858,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// {arg0}
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic GenericVerifierWarning = new Diagnostic(6, nameof(GenericVerifierWarning), CompositeFormat.Parse("{0}"), DiagnosticLevel.Warning);
+        public static readonly Diagnostic GenericVerifierWarning = new Diagnostic(143, nameof(GenericVerifierWarning), CompositeFormat.Parse("{0}"), DiagnosticLevel.Warning);
 #else
-        public static readonly Diagnostic GenericVerifierWarning = new Diagnostic(6, nameof(GenericVerifierWarning), "{0}", DiagnosticLevel.Warning);
+        public static readonly Diagnostic GenericVerifierWarning = new Diagnostic(143, nameof(GenericVerifierWarning), "{0}", DiagnosticLevel.Warning);
 #endif
 
     }
@@ -875,9 +875,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// {arg0}
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic GenericRuntimeWarning = new Diagnostic(7, nameof(GenericRuntimeWarning), CompositeFormat.Parse("{0}"), DiagnosticLevel.Warning);
+        public static readonly Diagnostic GenericRuntimeWarning = new Diagnostic(144, nameof(GenericRuntimeWarning), CompositeFormat.Parse("{0}"), DiagnosticLevel.Warning);
 #else
-        public static readonly Diagnostic GenericRuntimeWarning = new Diagnostic(7, nameof(GenericRuntimeWarning), "{0}", DiagnosticLevel.Warning);
+        public static readonly Diagnostic GenericRuntimeWarning = new Diagnostic(144, nameof(GenericRuntimeWarning), "{0}", DiagnosticLevel.Warning);
 #endif
 
     }
@@ -892,9 +892,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// {arg0}
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic GenericJniWarning = new Diagnostic(6, nameof(GenericJniWarning), CompositeFormat.Parse("{0}"), DiagnosticLevel.Warning);
+        public static readonly Diagnostic GenericJniWarning = new Diagnostic(145, nameof(GenericJniWarning), CompositeFormat.Parse("{0}"), DiagnosticLevel.Warning);
 #else
-        public static readonly Diagnostic GenericJniWarning = new Diagnostic(6, nameof(GenericJniWarning), "{0}", DiagnosticLevel.Warning);
+        public static readonly Diagnostic GenericJniWarning = new Diagnostic(145, nameof(GenericJniWarning), "{0}", DiagnosticLevel.Warning);
 #endif
 
     }

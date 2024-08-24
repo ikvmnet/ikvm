@@ -626,7 +626,7 @@
         ]
     },
     "GenericCompilerWarning": {
-        "id": 5,
+        "id": 141,
         "level": "Warning",
         "message": "{arg0}",
         "args": [
@@ -637,7 +637,7 @@
         ]
     },
     "GenericClassLoadingWarning": {
-        "id": 6,
+        "id": 142,
         "level": "Warning",
         "message": "{arg0}",
         "args": [
@@ -648,7 +648,7 @@
         ]
     },
     "GenericVerifierWarning": {
-        "id": 6,
+        "id": 143,
         "level": "Warning",
         "message": "{arg0}",
         "args": [
@@ -659,7 +659,7 @@
         ]
     },
     "GenericRuntimeWarning": {
-        "id": 7,
+        "id": 144,
         "level": "Warning",
         "message": "{arg0}",
         "args": [
@@ -670,7 +670,7 @@
         ]
     },
     "GenericJniWarning": {
-        "id": 6,
+        "id": 145,
         "level": "Warning",
         "message": "{arg0}",
         "args": [

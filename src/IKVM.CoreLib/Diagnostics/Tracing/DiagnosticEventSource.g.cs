@@ -442,8 +442,8 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        [Event(5, Message = "{0}", Level = EventLevel.Warning)]
-        public void GenericCompilerWarning(string arg0) => WriteEvent(5, arg0);
+        [Event(141, Message = "{0}", Level = EventLevel.Warning)]
+        public void GenericCompilerWarning(string arg0) => WriteEvent(141, arg0);
 
         /// <summary>
         /// The 'GenericClassLoadingWarning' diagnostic.
@@ -451,8 +451,8 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        [Event(6, Message = "{0}", Level = EventLevel.Warning)]
-        public void GenericClassLoadingWarning(string arg0) => WriteEvent(6, arg0);
+        [Event(142, Message = "{0}", Level = EventLevel.Warning)]
+        public void GenericClassLoadingWarning(string arg0) => WriteEvent(142, arg0);
 
         /// <summary>
         /// The 'GenericVerifierWarning' diagnostic.
@@ -460,8 +460,8 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        [Event(6, Message = "{0}", Level = EventLevel.Warning)]
-        public void GenericVerifierWarning(string arg0) => WriteEvent(6, arg0);
+        [Event(143, Message = "{0}", Level = EventLevel.Warning)]
+        public void GenericVerifierWarning(string arg0) => WriteEvent(143, arg0);
 
         /// <summary>
         /// The 'GenericRuntimeWarning' diagnostic.
@@ -469,8 +469,8 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        [Event(7, Message = "{0}", Level = EventLevel.Warning)]
-        public void GenericRuntimeWarning(string arg0) => WriteEvent(7, arg0);
+        [Event(144, Message = "{0}", Level = EventLevel.Warning)]
+        public void GenericRuntimeWarning(string arg0) => WriteEvent(144, arg0);
 
         /// <summary>
         /// The 'GenericJniWarning' diagnostic.
@@ -478,8 +478,8 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        [Event(6, Message = "{0}", Level = EventLevel.Warning)]
-        public void GenericJniWarning(string arg0) => WriteEvent(6, arg0);
+        [Event(145, Message = "{0}", Level = EventLevel.Warning)]
+        public void GenericJniWarning(string arg0) => WriteEvent(145, arg0);
 
         /// <summary>
         /// The 'UnableToCreateProxy' diagnostic.
