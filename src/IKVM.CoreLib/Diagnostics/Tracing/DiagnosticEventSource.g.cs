@@ -68,8 +68,8 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// <remarks>
 /// {0}
         /// </remarks>
-        [Event(6, Message = "{0}", Level = EventLevel.Informational)]
-        public void GenericVerifierInfo(string arg0) => WriteEvent(6, arg0);
+        [Event(7, Message = "{0}", Level = EventLevel.Informational)]
+        public void GenericVerifierInfo(string arg0) => WriteEvent(7, arg0);
 
         /// <summary>
         /// The 'GenericRuntimeInfo' diagnostic.
@@ -77,8 +77,8 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// <remarks>
 /// {0}
         /// </remarks>
-        [Event(7, Message = "{0}", Level = EventLevel.Informational)]
-        public void GenericRuntimeInfo(string arg0) => WriteEvent(7, arg0);
+        [Event(8, Message = "{0}", Level = EventLevel.Informational)]
+        public void GenericRuntimeInfo(string arg0) => WriteEvent(8, arg0);
 
         /// <summary>
         /// The 'GenericJniInfo' diagnostic.
@@ -86,8 +86,8 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// <remarks>
 /// {0}
         /// </remarks>
-        [Event(6, Message = "{0}", Level = EventLevel.Informational)]
-        public void GenericJniInfo(string arg0) => WriteEvent(6, arg0);
+        [Event(9, Message = "{0}", Level = EventLevel.Informational)]
+        public void GenericJniInfo(string arg0) => WriteEvent(9, arg0);
 
         /// <summary>
         /// The 'ClassNotFound' diagnostic.

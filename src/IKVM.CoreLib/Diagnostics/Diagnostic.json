@@ -66,17 +66,6 @@
         ]
     },
     "GenericVerifierInfo": {
-        "id": 6,
-        "level": "Informational",
-        "message": "{arg0}",
-        "args": [
-            {
-                "name": "arg0",
-                "type": "string"
-            }
-        ]
-    },
-    "GenericRuntimeInfo": {
         "id": 7,
         "level": "Informational",
         "message": "{arg0}",
@@ -87,8 +76,19 @@
             }
         ]
     },
+    "GenericRuntimeInfo": {
+        "id": 8,
+        "level": "Informational",
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
+    },
     "GenericJniInfo": {
-        "id": 6,
+        "id": 9,
         "level": "Informational",
         "message": "{arg0}",
         "args": [

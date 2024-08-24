@@ -117,9 +117,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// {arg0}
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic GenericVerifierInfo = new Diagnostic(6, nameof(GenericVerifierInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericVerifierInfo = new Diagnostic(7, nameof(GenericVerifierInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Informational);
 #else
-        public static readonly Diagnostic GenericVerifierInfo = new Diagnostic(6, nameof(GenericVerifierInfo), "{0}", DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericVerifierInfo = new Diagnostic(7, nameof(GenericVerifierInfo), "{0}", DiagnosticLevel.Informational);
 #endif
 
     }
@@ -134,9 +134,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// {arg0}
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic GenericRuntimeInfo = new Diagnostic(7, nameof(GenericRuntimeInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericRuntimeInfo = new Diagnostic(8, nameof(GenericRuntimeInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Informational);
 #else
-        public static readonly Diagnostic GenericRuntimeInfo = new Diagnostic(7, nameof(GenericRuntimeInfo), "{0}", DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericRuntimeInfo = new Diagnostic(8, nameof(GenericRuntimeInfo), "{0}", DiagnosticLevel.Informational);
 #endif
 
     }
@@ -151,9 +151,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// {arg0}
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic GenericJniInfo = new Diagnostic(6, nameof(GenericJniInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericJniInfo = new Diagnostic(9, nameof(GenericJniInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Informational);
 #else
-        public static readonly Diagnostic GenericJniInfo = new Diagnostic(6, nameof(GenericJniInfo), "{0}", DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericJniInfo = new Diagnostic(9, nameof(GenericJniInfo), "{0}", DiagnosticLevel.Informational);
 #endif
 
     }
